@@ -38,6 +38,8 @@ enum State {
     PREPARED,
     /** Running */
     RUNNING,
+    /** Paused */
+    PAUSED,
     /** Stopped */
     STOPPED,
     /** Released */
@@ -68,6 +70,7 @@ public:
 
     // Common APIs
     bool StartAudioStream();
+    bool PauseAudioStream();
     bool StopAudioStream();
     bool ReleaseAudioStream();
     bool FlushAudioStream();

@@ -155,6 +155,20 @@ public:
     virtual bool Drain() const = 0;
 
     /**
+     * @brief flush renderer stream.
+     *
+     * @return Returns <b>true</b> if the object is successfully flushed; returns <b>false</b> otherwise.
+     */
+    virtual bool Flush() const = 0;
+
+    /**
+     * @brief Pauses audio rendering.
+     *
+     * @return Returns <b>true</b> if the rendering is successfully Paused; returns <b>false</b> otherwise.
+     */
+    virtual bool Pause() const = 0;
+
+    /**
      * @brief Stops audio rendering.
      *
      * @return Returns <b>true</b> if the rendering is successfully stopped; returns <b>false</b> otherwise.
