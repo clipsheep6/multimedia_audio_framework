@@ -118,7 +118,7 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, const char *a
 
 int32_t AudioCapturerSource::InitAudioManager()
 {
-    char resolvedPath[100] = "/system/lib/libhdi_audio.z.so";
+    char resolvedPath[100] = "/system/lib/libaudio_hdi_proxy_server.z.so";
     struct AudioManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);
@@ -127,7 +127,7 @@ int32_t AudioCapturerSource::InitAudioManager()
         return ERR_INVALID_HANDLE;
     }
 
-    getAudioManager = (struct AudioManager *(*)())(dlsym(handle_, "GetAudioManagerFuncs"));
+    getAudioManager = (struct AudioManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
     audioManager_ = getAudioManager();
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
