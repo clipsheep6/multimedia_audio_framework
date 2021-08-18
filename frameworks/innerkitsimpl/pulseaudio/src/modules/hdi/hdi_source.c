@@ -119,7 +119,8 @@ static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t off
 static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t new_state, pa_suspend_cause_t new_suspend_cause) {
     struct userdata *u = NULL;
     pa_assert(s);
-    pa_assert_se(u = s->userdata);
+    u = (struct userdata *)s->userdata;
+    pa_assert_se(u);
     if (s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) {
         if (PA_SOURCE_IS_OPENED(new_state))
             u->timestamp = pa_rtclock_now();
@@ -189,7 +190,7 @@ static void thread_func(void *userdata) {
 
     pa_thread_mq_install(&u->thread_mq);
     u->timestamp = pa_rtclock_now();
-    MEDIA_DEBUG_LOG("HDI Source: u->timestamp : %{public}llu", u->timestamp);
+    MEDIA_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
 
     while(true) {
         int ret = 0;
@@ -203,7 +204,7 @@ static void thread_func(void *userdata) {
             pa_memchunk chunk;
 
             now = pa_rtclock_now();
-            MEDIA_DEBUG_LOG("HDI Source: now: %{public}llu timer_elapsed: %{public}d", now, timer_elapsed);
+            MEDIA_DEBUG_LOG("HDI Source: now: %{public}" PRIu64 " timer_elapsed: %{public}d", now, timer_elapsed);
 
             if (timer_elapsed && (chunk.length = pa_usec_to_bytes(now - u->timestamp, &u->source->sample_spec)) > 0) {
                 chunk.length = u->buffer_size;
@@ -217,16 +218,16 @@ static void thread_func(void *userdata) {
                 AudioCapturerSourceFrame((char *) p, (uint64_t)requestBytes, &replyBytes);
 
                 pa_memblock_release(chunk.memblock);
-                MEDIA_DEBUG_LOG("HDI Source: request bytes: %{public}llu, replyBytes: %{public}llu", requestBytes, replyBytes);
+                MEDIA_DEBUG_LOG("HDI Source: request bytes: %{public}" PRIu64 ", replyBytes: %{public}" PRIu64, requestBytes, replyBytes);
                 if(replyBytes > requestBytes) {
-                    MEDIA_ERR_LOG("HDI Source: Error replyBytes > requestBytes. Requested data Length: %{public}llu, Read: %{public}llu bytes, %{public}d ret", requestBytes, replyBytes, ret);
+                    MEDIA_ERR_LOG("HDI Source: Error replyBytes > requestBytes. Requested data Length: %{public}" PRIu64 ", Read: %{public}" PRIu64 " bytes, %{public}d ret", requestBytes, replyBytes, ret);
                     pa_memblock_unref(chunk.memblock);
                     break;
                 }
 
                 if (replyBytes == 0) {
-                    MEDIA_ERR_LOG("HDI Source: Failed to read, Requested data Length: %{public}llu bytes,"
-                        " Read: %{public}llu bytes, %{public}d ret", requestBytes, replyBytes, ret);
+                    MEDIA_ERR_LOG("HDI Source: Failed to read, Requested data Length: %{public}" PRIu64 " bytes,"
+                        " Read: %{public}" PRIu64 " bytes, %{public}d ret", requestBytes, replyBytes, ret);
                     pa_memblock_unref(chunk.memblock);
                     break;
                 }
@@ -236,7 +237,7 @@ static void thread_func(void *userdata) {
                 pa_source_post(u->source, &chunk);
                 pa_memblock_unref(chunk.memblock);
                 u->timestamp += pa_bytes_to_usec(chunk.length, &u->source->sample_spec);
-                MEDIA_INFO_LOG("HDI Source: new u->timestamp : %{public}llu", u->timestamp);
+                MEDIA_INFO_LOG("HDI Source: new u->timestamp : %{public}" PRIu64, u->timestamp);
             }
 
             pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + u->block_usec);
@@ -407,18 +408,20 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char*driver) {
 fail:
     pa_xfree(thread_name);
 
-    if (u->IsCapturerInit)
-        pa_capturer_exit();
-
-    if (u)
+    if (u) {
+        if (u->IsCapturerInit) {
+            pa_capturer_exit();
+        }
         userdata_free(u);
+    }
 
     return NULL;
 }
 
 void pa_hdi_source_free(pa_source *s) {
-    struct userdata *u;
+    struct userdata *u = NULL;
     pa_source_assert_ref(s);
-    pa_assert_se(u = s->userdata);
+    u = (struct userdata *)s->userdata;
+    pa_assert_se(u);
     userdata_free(u);
 }
