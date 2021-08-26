@@ -104,6 +104,10 @@ public:
 
         uint8_t* buffer = nullptr;
         buffer = (uint8_t *) malloc(bufferLen);
+        if (buffer == nullptr) {
+            MEDIA_ERR_LOG("AudioCapturerTest: Failed to allocate buffer");
+            return false;
+        }
 
         size_t size = 1;
         size_t numBuffersToCapture = 1024;
@@ -120,7 +124,7 @@ public:
                 }
             }
             if (bytesRead < 0) {
-                MEDIA_ERR_LOG("Bytes read failed. error code %{public}d", bytesRead);
+                MEDIA_ERR_LOG("Bytes read failed. error code %{public}zu", bytesRead);
                 break;
             } else if (bytesRead > 0) {
                 fwrite(buffer, size, bytesRead, pFile);
@@ -133,7 +137,7 @@ public:
                     if (!audioCapturer->Start()) {
                         MEDIA_ERR_LOG("resume stream failed");
                         audioCapturer->Release();
-                        return false;
+                        break;
                     }
                 }
             }
@@ -164,8 +168,14 @@ public:
         bool isBlocking = (atoi(argv[AudioTestConstants::THIRD_ARG_IDX]) == 1);
         MEDIA_INFO_LOG("Is blocking read: %{public}s", isBlocking ? "true" : "false");
         FILE *pFile = fopen(argv[AudioTestConstants::SECOND_ARG_IDX - 1], "wb");
+        if (pFile == nullptr) {
+            MEDIA_INFO_LOG("AudioCapturerTest: Unable to open file");
+            return false;
+        }
+
         if (!StartCapture(audioCapturer, isBlocking, pFile)) {
             MEDIA_ERR_LOG("Start capturer failed");
+            fclose(pFile);
             return false;
         }
 

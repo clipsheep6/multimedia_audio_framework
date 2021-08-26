@@ -42,7 +42,7 @@
 #define MAX_SINK_VOLUME_LEVEL 1.0
 
 struct Userdata {
-    size_t buffer_size;
+    uint32_t buffer_size;
     size_t bytes_dropped;
     pa_thread_mq thread_mq;
     pa_memchunk memchunk;
@@ -80,23 +80,23 @@ static ssize_t RenderWrite(pa_memchunk *pchunk)
 
         ret = AudioRendererRenderFrame((char *) p + index, (uint64_t)length, &writeLen);
         if (writeLen > length) {
-            pa_log_error("Error writeLen > actual bytes. Length: %u, Written: %llu bytes, %d ret",
+            pa_log_error("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
             count = -1 - count;
             break;
         }
         if (writeLen == 0) {
-            pa_log_error("Failed to render Length: %u, Written: %llu bytes, %d ret",
+            pa_log_error("Failed to render Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
             count = -1 - count;
             break;
         } else {
-            pa_log_info("Success: outputting to audio renderer Length: %u, Written: %llu bytes, %d ret",
+            pa_log_info("Success: outputting to audio renderer Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                         length, writeLen, ret);
             count += writeLen;
             index += writeLen;
             length -= writeLen;
-            pa_log_info("Remaining bytes Length: %u", length);
+            pa_log_info("Remaining bytes Length: %zu", length);
             if (length <= 0) {
                 break;
             }
@@ -205,7 +205,8 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
     size_t nbytes;
 
     pa_sink_assert_ref(s);
-    pa_assert_se(u = s->userdata);
+    u = (struct Userdata *)s->userdata;
+    pa_assert_se(u);
 
     u->block_usec = pa_sink_get_requested_latency_within_thread(s);
 
@@ -251,7 +252,8 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
     struct Userdata *u = NULL;
 
     pa_assert(s);
-    pa_assert_se(u = s->userdata);
+    u = (struct Userdata *)s->userdata;
+    pa_assert_se(u);
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT) {
         if (PA_SINK_IS_OPENED(newState)) {
@@ -292,6 +294,7 @@ static int32_t PrepareDevice(const pa_sample_spec *ss)
     int32_t ret;
 
     sample_attrs.format = AUDIO_FORMAT_PCM_16_BIT;
+    sample_attrs.sampleFmt = AUDIO_FORMAT_PCM_16_BIT;
     sample_attrs.sampleRate = ss->rate;
     sample_attrs.channel = ss->channels;
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
@@ -425,10 +428,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     return u->sink;
 fail:
     pa_xfree(threadName);
-
-    if (u) {
-        UserdataFree(u);
-    }
+    UserdataFree(u);
 
     return NULL;
 }
@@ -467,7 +467,8 @@ void PaHdiSinkFree(pa_sink *s)
     struct Userdata *u = NULL;
 
     pa_sink_assert_ref(s);
-    pa_assert_se(u = s->userdata);
+    u = (struct Userdata *)s->userdata;
+    pa_assert_se(u);
 
     UserdataFree(u);
 }

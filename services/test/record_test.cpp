@@ -87,6 +87,11 @@ int main(int argc, char* argv[])
 
     uint8_t* buffer = nullptr;
     buffer = (uint8_t *) malloc(bufferLen);
+    if (buffer == nullptr) {
+        MEDIA_ERR_LOG("Failed to allocate buffer");
+        return -1;
+    }
+
     FILE *pFile = fopen(argv[1], "wb");
 
     size_t size = 1;
@@ -105,7 +110,7 @@ int main(int argc, char* argv[])
         if (bytesRead > 0) {
             fwrite(stream.buffer, size, bytesRead, pFile);
             if (client->GetCurrentTimeStamp(timeStamp) >= 0)
-                MEDIA_DEBUG_LOG("current timestamp: %{public}llu", timeStamp);
+                MEDIA_DEBUG_LOG("current timestamp: %{public}" PRIu64, timeStamp);
             numBuffersToCapture--;
         }
     }
