@@ -37,6 +37,7 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/include",
     "//drivers/peripheral/audio/interfaces/include",
     "//drivers/peripheral/audio/hal/hdi_binder/proxy/include",
+    "//drivers/adapter/uhdf2/osal/include"
   ]
 
   if (target_cpu == "arm") {

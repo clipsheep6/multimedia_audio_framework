@@ -27,6 +27,7 @@ config("hdi_config") {
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
     "//drivers/peripheral/audio/interfaces/include",
+    "//drivers/adapter/uhdf2/osal/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorenderer/include",
