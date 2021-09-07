@@ -36,6 +36,7 @@ config("audio_service_config") {
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/include",
     "//drivers/peripheral/audio/interfaces/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//drivers/peripheral/audio/hal/hdi_binder/proxy/include",
   ]
 
@@ -50,6 +51,7 @@ ohos_shared_library("audio_service") {
   sources = [
     "src/server/audio_manager_stub.cpp",
     "src/server/audio_server.cpp",
+    "src/server/audio_manager_listener_proxy.cpp"
   ]
 
   configs = [ ":audio_service_config" ]

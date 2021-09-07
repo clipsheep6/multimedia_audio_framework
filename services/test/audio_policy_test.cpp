@@ -61,8 +61,28 @@ static void PrintUsage(void)
     cout << "-R\n\tSets RingerMode" << endl << endl;
     cout << "-r\n\tGets RingerMode status" << endl << endl;
     cout << "-s\n\tGet Stream Status" << endl << endl;
+	cout << "-X\n\t Test Callback with Get Max Volume " << endl << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
+}
+
+class AudioManagerCallbackTest : public AudioManagerCallback {
+    void OnError(AudioManagerErrorType errorType, int32_t errorCode) override
+    {
+        MEDIA_DEBUG_LOG("OnError is called, type: %{public}d, error code: %{public}d", errorType, errorCode);
+    }
+    void OnInfo(AudioManagerInfoType type, int32_t extra) override
+    {
+         MEDIA_DEBUG_LOG("OnInfo is called:, type: %{public}d, error code: %{public}d", type, extra);
+    }
+};
+
+static void HandleGetMaxVolume(AudioSystemManager *audioSystemMgr)
+{
+    std::shared_ptr<AudioManagerCallback> callbackAudioMngr_ = std::make_shared<AudioManagerCallbackTest>();
+    int32_t result = audioSystemMgr->SetAudioManagerCallback(callbackAudioMngr_);
+    result = audioSystemMgr->GetMaxVolume(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
+    cout << "GetMax Volume Result: " << result << endl;
 }
 
 static void HandleVolume(const AudioSystemManager *audioSystemMgr, int streamType, char option)
@@ -195,6 +215,9 @@ int main(int argc, char* argv[])
             case 'R':
             case 'r':
                 HandleRingerMode(audioSystemMgr, opt);
+                break;
+            case 'X':
+                HandleGetMaxVolume(audioSystemMgr);
                 break;
             case ':':
                 NoValueError();

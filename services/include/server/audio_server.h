@@ -19,6 +19,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <pthread.h>
+#include "i_audio_manager_hdi.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
 #include "audio_system_manager.h"
@@ -26,7 +27,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioServer : public SystemAbility, public AudioManagerStub {
+class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioManagerHdi {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);
@@ -43,7 +44,13 @@ public:
     static void* paDaemonThread(void* arg);
     void SetAudioParameter(const std::string key, const std::string value) override;
     const std::string GetAudioParameter(const std::string key) override;
+    int32_t SetAudioManagerCallback(const sptr<IRemoteObject> &object) override;
+
+    // override IAudioManagerHdi
+    void OnError(AudioManagerErrorType errorType, int32_t errorCode) override;
+    void OnInfo(AudioManagerInfoType type, int32_t extra) override;
 private:
+    std::shared_ptr<AudioManagerCallback> audioManagerCb_ = nullptr;
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
     static std::unordered_map<int, float> AudioStreamVolumeMap;

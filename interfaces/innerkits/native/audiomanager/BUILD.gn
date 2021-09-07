@@ -58,10 +58,12 @@ ohos_shared_library("audio_client") {
   install_enable = true
   sources = [
     "//foundation/multimedia/audio_standard/services/src/client/audio_manager_proxy.cpp",
+    "//foundation/multimedia/audio_standard/services/src/client/audio_manager_listener_stub.cpp",
     "//foundation/multimedia/audio_standard/services/src/client/audio_service_client.cpp",
     "//foundation/multimedia/audio_standard/services/src/client/audio_session.cpp",
     "//foundation/multimedia/audio_standard/services/src/client/audio_stream.cpp",
     "//foundation/multimedia/audio_standard/services/src/client/audio_system_manager.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/src/audio_errors.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]

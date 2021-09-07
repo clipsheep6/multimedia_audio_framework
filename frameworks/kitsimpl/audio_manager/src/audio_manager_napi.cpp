@@ -14,8 +14,10 @@
  */
 
 #include "audio_manager_napi.h"
+#include "audio_manager_callback_napi.h"
 #include "audio_device_descriptor_napi.h"
 #include "hilog/log.h"
+#include "media_log.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
@@ -29,6 +31,11 @@ napi_ref AudioManagerNapi::deviceFlagRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceRoleRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceTypeRef_ = nullptr;
 napi_ref AudioManagerNapi::audioRingModeRef_ = nullptr;
+
+const std::string CALLBACK_ERROR_TYPE_CALLBACK = "callbackError";
+const std::string CALLBACK_ERROR_TYPE_DEVICE = "deviceError";
+const std::string CALLBACK_ERROR_TYPE_INTERRUPT = "interruptError";
+const std::string CALLBACK_ERROR_TYPE_ON = "onError";
 
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
@@ -465,7 +472,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setAudioParameter", SetAudioParameter),
         DECLARE_NAPI_FUNCTION("getAudioParameter", GetAudioParameter),
         DECLARE_NAPI_FUNCTION("setMicrophoneMute", SetMicrophoneMute),
-        DECLARE_NAPI_FUNCTION("isMicrophoneMute", IsMicrophoneMute)
+        DECLARE_NAPI_FUNCTION("isMicrophoneMute", IsMicrophoneMute),
+        DECLARE_NAPI_FUNCTION("on", On)
     };
 
     napi_property_descriptor static_prop[] = {
@@ -506,6 +514,8 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
     napi_value jsThis;
     napi_value  result = nullptr;
     size_t argCount = 0;
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
 
     status = napi_get_cb_info(env, info, &argCount, nullptr, &jsThis, nullptr);
     if (status == napi_ok) {
@@ -513,6 +523,15 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
         if (obj != nullptr) {
             obj->env_ = env;
             obj->audioMngr_ = AudioSystemManager::GetInstance();
+            if (obj->callbackAudioMngr_ == nullptr) {
+                obj->callbackAudioMngr_ = std::make_shared<AudioManagerCallbackNapi>(env, *obj);
+                int32_t ret = obj->audioMngr_->SetAudioManagerCallback(obj->callbackAudioMngr_);
+                if (ret) {
+                    SendErrorCallback(env, obj->errorCallback_, std::to_string(ret), CALLBACK_ERROR_TYPE_CALLBACK); // TODO check. seems wrong to call erroCallback , before SaveRefence.
+                    return undefinedResult; // TODO check if it needs to be returned
+                }
+            }
+
             status = napi_wrap(env, jsThis, static_cast<void*>(obj.get()),
                                AudioManagerNapi::Destructor, nullptr, &(obj->wrapper_));
             if (status == napi_ok) {
@@ -1664,6 +1683,93 @@ napi_value AudioManagerNapi::GetDevices(napi_env env, napi_callback_info info)
     }
 
     return result;
+}
+
+void AudioManagerNapi::SendErrorCallback(napi_env env, napi_ref &callbackRef,
+    const std::string &errCode, const std::string &errType)
+{
+    MEDIA_ERR_LOG("fail to %{public}s, code = %{public}s", errType.c_str(), errCode.c_str());
+    CHECK_AND_RETURN_LOG(callbackRef != nullptr, "no callback reference");
+
+    napi_value jsCallback = nullptr;
+    napi_status status = napi_get_reference_value(env, callbackRef, &jsCallback);
+    CHECK_AND_RETURN_LOG(status == napi_ok && jsCallback != nullptr, "get reference value fail");
+
+    napi_value errorTypeVal = nullptr;
+    status = napi_create_string_utf8(env, errType.c_str(), NAPI_AUTO_LENGTH, &errorTypeVal);
+    CHECK_AND_RETURN_LOG(status == napi_ok && errorTypeVal != nullptr, "get error type value fail");
+
+    napi_value errorCodeVal = nullptr;
+    status = napi_create_string_utf8(env, errCode.c_str(), NAPI_AUTO_LENGTH, &errorCodeVal);
+    CHECK_AND_RETURN_LOG(status == napi_ok && errorCodeVal != nullptr, "get error code value fail");
+
+    napi_value args[1] = { nullptr };
+    status = napi_create_error(env, errorCodeVal, errorTypeVal, &args[0]);
+    CHECK_AND_RETURN_LOG(status == napi_ok && args[0] != nullptr, "create error callback fail");
+
+    const size_t argCount = 1;
+    napi_value result = nullptr;
+    status = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+    CHECK_AND_RETURN_LOG(status == napi_ok, "call error callback fail");
+}
+
+void AudioManagerNapi::SaveCallbackReference(napi_env env, AudioManagerNapi &managerNapi,
+    const std::string &callbackName, napi_value callback) const
+{
+    napi_ref *ref = nullptr;
+    if (callbackName == DEVICE_CHANGE_CALLBACK_NAME) {
+        ref = &(managerNapi.deviceChangeCallback_);
+    } else if (callbackName == ERROR_CALLBACK_NAME) {
+        ref = &(managerNapi.errorCallback_);
+    } else if (callbackName == INTERRUPT_CALLBACK_NAME) {
+        ref = &(managerNapi.interruptCallback_);
+    } else {
+        MEDIA_ERR_LOG("unknown callback: %{public}s", callbackName.c_str());
+        return;
+    }
+
+    if (*ref != nullptr) {
+        uint32_t thisRefCount = 0;
+        napi_reference_unref(env, *ref, &thisRefCount);
+        *ref = nullptr; // JS clears the callback after each on.
+    }
+
+    const int32_t refCount = 1;
+    napi_status status = napi_create_reference(env, callback, refCount, ref);
+    CHECK_AND_RETURN_LOG(status == napi_ok, "creating reference for callback fail")
+}
+
+napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
+{
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    static const size_t MIN_REQUIRED_ARG_COUNT = 2;
+    size_t argCount = MIN_REQUIRED_ARG_COUNT;
+    napi_value args[MIN_REQUIRED_ARG_COUNT] = { nullptr, nullptr };
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
+    if (status != napi_ok || jsThis == nullptr || args[0] == nullptr || args[1] == nullptr) {
+        HiLog::Error(LABEL, "On fail to napi_get_cb_info");
+        return undefinedResult;
+    }
+
+    AudioManagerNapi *managerNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&managerNapi));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && managerNapi != nullptr, undefinedResult, "get audiomanager napi error");
+
+    napi_valuetype valueType0 = napi_undefined;
+    napi_valuetype valueType1 = napi_undefined;
+    if (napi_typeof(env, args[0], &valueType0) != napi_ok || valueType0 != napi_string ||
+        napi_typeof(env, args[1], &valueType1) != napi_ok || valueType1 != napi_function) {
+        SendErrorCallback(env, managerNapi->errorCallback_, "invalid arguments type", CALLBACK_ERROR_TYPE_ON); // TODO seems wrong. if this error occured when onerror is called and noreference is saved
+        return undefinedResult;
+    }
+
+    std::string callbackName = GetStringArgument(env, args[0]);
+    MEDIA_DEBUG_LOG("callbackName: %{public}s", callbackName.c_str());
+    managerNapi->SaveCallbackReference(env, *managerNapi, callbackName, args[1]);
+    return undefinedResult;
 }
 
 static napi_value Init(napi_env env, napi_value exports)

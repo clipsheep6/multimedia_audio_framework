@@ -140,5 +140,26 @@ void AudioManagerProxy::SetAudioParameter(const std::string key, const std::stri
         return;
     }
 }
+
+int32_t AudioManagerProxy::SetAudioManagerCallback(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("SetAudioManagerCallback: object is null");
+        return ERR_NULL_OBJECT;
+    }
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(SET_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("set callback failed, error: %{public}d", error);
+        return error;
+    }
+    int32_t result = reply.ReadInt32();
+
+    return result;
+}
 } // namespace AudioStandard
 } // namespace OHOS

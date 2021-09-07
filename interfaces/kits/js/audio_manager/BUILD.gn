@@ -33,11 +33,14 @@ ohos_copy("audio_declaration") {
 ohos_shared_library("audio") {
     include_dirs = [
         "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
+        "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/include",
+        "//third_party/libuv/include",
     ]
 
     sources = [
        "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_manager_napi.cpp",
-       "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_device_descriptor_napi.cpp"
+       "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_device_descriptor_napi.cpp",
+       "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_manager_callback_napi.cpp",
     ]
 
     deps = [

@@ -33,6 +33,7 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(AudioDeviceDescriptor::DeviceFlag deviceFlag) override;
     const std::string GetAudioParameter(const std::string key) override;
     void SetAudioParameter(const std::string key, const std::string value) override;
+    int32_t SetAudioManagerCallback(const sptr<IRemoteObject> &object) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

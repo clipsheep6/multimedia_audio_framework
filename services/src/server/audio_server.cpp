@@ -14,10 +14,13 @@
  */
 
 #include "audio_capturer_source.h"
+#include "audio_manager_listener_proxy.h"
 #include "audio_server.h"
+#include "i_standard_audio_manager_listener.h"
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
+#include "audio_errors.h"
 
 #define PA
 #ifdef PA
@@ -100,6 +103,7 @@ const std::string AudioServer::GetAudioParameter(const std::string key)
 int32_t AudioServer::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
 {
     MEDIA_DEBUG_LOG("GetMaxVolume server");
+    // OnError(AUDIO_MANAGER_ERROR, ASERR_UNKNOWN); TODO remove this. used for testing
     return MAX_VOLUME;
 }
 
@@ -164,5 +168,65 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(AudioDeviceDesc
     audioDeviceDescriptor_.push_back(audioDescriptor);
     return audioDeviceDescriptor_;
 }
+
+int32_t AudioServer::SetAudioManagerCallback(const sptr<IRemoteObject> &object)
+{
+    /* std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (status_ == PLAYER_STATE_ERROR) {
+        MEDIA_LOGE("Can not SetPlayerCallback, currentState is PLAYER_STATE_ERROR");
+        return MSERR_INVALID_OPERATION;
+    }
+
+    if (status_ == PLAYER_IDLE || status_ == PLAYER_STOPPED) {
+        MEDIA_LOGE("Can not SetPlayerCallback, currentState is %{public}d", status_);
+        return MSERR_INVALID_OPERATION;
+    }
+    {
+        std::lock_guard<std::mutex> lockCb(mutexCb_);
+        playerCb_ = callback;
+    } */
+
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "set listener object is nullptr");
+
+    sptr<IStandardAudioManagerListener> listener = iface_cast<IStandardAudioManagerListener>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "failed to convert IStandardAudioManagerListener");
+
+    std::shared_ptr<AudioManagerCallback> callback = std::make_shared<AudioManagerListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "failed to new AudioManagerListenerCallback");
+
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    audioManagerCb_ = callback; // TODO check if mutex is needed as mentioned above in player
+
+    return 0;
+}
+
+void AudioServer::OnError(AudioManagerErrorType errorType, int32_t errorCode)
+{
+    // std::lock_guard<std::mutex> lockCb(mutexCb_); // TODO check if mutex is needed as in player
+    if (audioManagerCb_ != nullptr) {
+        audioManagerCb_->OnError(errorType, errorCode);
+    }
+}
+
+void AudioServer::OnInfo(AudioManagerInfoType type, int32_t extra)
+{
+    // std::lock_guard<std::mutex> lockCb(mutexCb_); // TODO check if mutex is needed as  in player
+
+    if (type == 0) { // TODO
+        // status_ = static_cast<DeviceStates>(extra);
+        MEDIA_INFO_LOG("Callback Device change");
+    }
+
+    if (audioManagerCb_ != nullptr) {
+        audioManagerCb_->OnInfo(type, extra);
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

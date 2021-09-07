@@ -50,6 +50,11 @@ public:
 
     static napi_value Init(napi_env env, napi_value exports);
 
+    napi_ref errorCallback_ = nullptr;  // error
+    napi_ref deviceChangeCallback_ = nullptr;
+    napi_ref interruptCallback_ = nullptr;
+
+
 private:
     static void Destructor(napi_env env, void* nativeObject, void* finalize_hint);
     static napi_value Construct(napi_env env, napi_callback_info info);
@@ -71,7 +76,11 @@ private:
     static napi_value GetAudioParameter(napi_env env, napi_callback_info info);
     static napi_value SetMicrophoneMute(napi_env env, napi_callback_info info);
     static napi_value IsMicrophoneMute(napi_env env, napi_callback_info info);
-
+    static napi_value On(napi_env env, napi_callback_info info);
+    static void SendErrorCallback(napi_env env, napi_ref &callbackRef,
+                                  const std::string &errCode, const std::string &errType);
+    void SaveCallbackReference(napi_env env, AudioManagerNapi &managerNapi,
+                               const std::string &callbackName, napi_value callback) const;
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static napi_value CreateAudioVolumeTypeObject(napi_env env);
     static napi_value CreateDeviceFlagObject(napi_env env);
@@ -87,6 +96,7 @@ private:
     static napi_ref audioRingModeRef_;
 
     AudioSystemManager *audioMngr_;
+    std::shared_ptr<AudioManagerCallback> callbackAudioMngr_ = nullptr;
     napi_env env_;
     napi_ref wrapper_;
 };
