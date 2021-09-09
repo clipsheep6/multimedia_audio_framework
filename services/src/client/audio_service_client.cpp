@@ -17,6 +17,8 @@
 #include "media_log.h"
 #include "securec.h"
 
+#include "unistd.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -313,9 +315,15 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
     pa_context_set_state_callback(context, PAContextStateCb, mainLoop);
 
+    int ret = setenv("PULSE_RUNTIME_PATH", "/data/data/.pulse_dir/runtime", 1);
+    MEDIA_INFO_LOG("set env PULSE_RUNTIME_DIR: %{public}d", ret);
+
+    ret = setenv("PULSE_STATE_PATH", "/data/data/.pulse_dir/state", 1);
+    MEDIA_INFO_LOG("set env PULSE_STATE_PATH: %{public}d", ret);
+
     if (pa_context_connect(context, NULL, PA_CONTEXT_NOFAIL, NULL) < 0) {
         error = pa_context_errno(context);
-        MEDIA_ERR_LOG("context connect error: %{public}d", error);
+        MEDIA_ERR_LOG("context connect error: %{public}s", pa_strerror(error));
         ResetPAAudioClient();
         return AUDIO_CLIENT_INIT_ERR;
     }
@@ -339,7 +347,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
         if (!PA_CONTEXT_IS_GOOD(state)) {
             error = pa_context_errno(context);
-            MEDIA_ERR_LOG("context bad state error: %{public}d", error);
+            MEDIA_ERR_LOG("context bad state error: %{public}s", pa_strerror(error));
             pa_threaded_mainloop_unlock(mainLoop);
             ResetPAAudioClient();
             return AUDIO_CLIENT_INIT_ERR;
