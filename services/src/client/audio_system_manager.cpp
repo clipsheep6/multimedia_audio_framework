@@ -14,6 +14,7 @@
  */
 
 #include "audio_errors.h"
+#include "audio_manager_listener_stub.h"
 #include "audio_manager_proxy.h"
 #include "audio_policy_manager.h"
 #include "audio_stream.h"
@@ -26,6 +27,27 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 static sptr<IStandardAudioService> g_sProxy = nullptr;
+static sptr<AudioManagerListenerStub> listenerStub_ = nullptr;
+
+const std::map<AudioManagerErrorType, std::string> AUDIO_MANAGER_ERRTYPE_INFOS = {
+    {AUDIO_MANAGER_ERROR, "internal audio manager error"},
+    {AUDIO_MANAGER_ERROR_UNKNOWN, "unknown audio manager error"},
+    {AUDIO_MANAGER_ERROR_SERVICE_DIED, "audio manager service died"},
+    {AUDIO_MANAGER_ERROR_EXTEND_START, "audio manager extend start error type"},
+};
+
+std::string AudioManagerErrorTypeToString(AudioManagerErrorType type)
+{
+    if (AUDIO_MANAGER_ERRTYPE_INFOS.count(type) != 0) {
+        return AUDIO_MANAGER_ERRTYPE_INFOS.at(type);
+    }
+
+    if (type > AUDIO_MANAGER_ERROR_EXTEND_START) {
+        return "extend error type:" + std::to_string(static_cast<int32_t>(type - AUDIO_MANAGER_ERROR_EXTEND_START));
+    }
+
+    return "invalid error type:" + std::to_string(static_cast<int32_t>(type));
+}
 
 AudioSystemManager::AudioSystemManager()
 {
@@ -250,6 +272,26 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(AudioDev
     const
 {
     return g_sProxy->GetDevices(deviceFlag);
+}
+
+int32_t AudioSystemManager::SetAudioManagerCallback(const std::shared_ptr<AudioManagerCallback> &callback)
+{
+    callback_ = callback;
+
+    listenerStub_ = new(std::nothrow) AudioManagerListenerStub();
+    if (listenerStub_ == nullptr || g_sProxy == nullptr) {
+        MEDIA_ERR_LOG("object null");
+        return ERROR;
+    }
+    listenerStub_->SetCallback(callback);
+
+    sptr<IRemoteObject> object = listenerStub_->AsObject();
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("listener object is nullptr..");
+        return ERROR;
+    }
+
+    return g_sProxy->SetAudioManagerCallback(object);
 }
 
 /**

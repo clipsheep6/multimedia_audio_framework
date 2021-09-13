@@ -38,6 +38,9 @@
 #define AUDIO_ERRORS_H
 
 #include <cstdint>
+#include <string>
+
+#include "errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -114,6 +117,24 @@ const int32_t  ERR_INVALID_INDEX = BASE_AUDIO_ERR_OFFSET - 17;
 
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
+
+using ASErrCode = ErrCode;
+// bit 28~21 is subsys, bit 20~16 is Module. bit 15~0 is code
+// constexpr ASErrCode AS_MODULE = 0X01000;
+// constexpr ASErrCode AS_ERR_OFFSET = ErrCodeOffset(SUBSYS_MULTIMEDIA, AS_MODULE);
+constexpr ASErrCode AS_ERR_OFFSET = BASE_AUDIO_ERR_OFFSET;
+
+enum AudioServiceErrCode : ErrCode {
+    ASERR_OK                = ERR_OK,
+    ASERR_NO_MEMORY         = AS_ERR_OFFSET + ENOMEM, // no memory
+    ASERR_INVALID_OPERATION = AS_ERR_OFFSET + ENOSYS, // opertation not be permitted
+    ASERR_INVALID_VAL       = AS_ERR_OFFSET + EINVAL, // invalid argument
+    ASERR_UNKNOWN           = AS_ERR_OFFSET + 0x200,  // unkown error.
+    ASERR_SERVICE_DIED,                               // audio service died
+    ASERR_EXTEND_START      = AS_ERR_OFFSET + 0xF000, // extend err start.
+};
+
+__attribute__((visibility("default"))) std::string ASErrorToString(AudioServiceErrCode code);
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_ERRORS_H

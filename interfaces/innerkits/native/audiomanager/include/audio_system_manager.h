@@ -94,6 +94,47 @@ enum DeviceType {
     static AudioDeviceDescriptor* Unmarshalling(Parcel &parcel);
 };
 
+enum AudioManagerErrorType : int32_t {
+    /* Valid error, error code reference defined in audio_errors.h */
+    AUDIO_MANAGER_ERROR,
+    /* Unknown error */
+    AUDIO_MANAGER_ERROR_UNKNOWN,
+    /* the service process is dead. */
+    AUDIO_MANAGER_ERROR_SERVICE_DIED,
+     /** extend error type start,The extension error type agreed upon by the plug-in and
+         the application will be transparently transmitted by the service. */
+    AUDIO_MANAGER_ERROR_EXTEND_START = 0X10000,
+};
+
+enum AudioManagerInfoType : int32_t {
+    /* return the message when interrupt requested. */
+    INFO_TYPE_INTERRUPT = 1,
+    /* return the message when device changed. */
+    INFO_TYPE_DEVICE_CHANGE
+};
+
+class AudioManagerCallback {
+public:
+    virtual ~AudioManagerCallback() = default;
+    /**
+     * Called when an error occurred.
+     *
+     * @param errorType Error type. For details, see {@link AudioManagerErrorType}.
+     * @param errorCode Error code.
+     */
+    virtual void OnError(AudioManagerErrorType errorType, int32_t errorCode) = 0;
+
+    /**
+     * Called when a audiomanager message or alarm is received.
+     *
+     * @param type Indicates the information type. For details, see {@link AudioManagerInfoType}.
+     * @param extra Indicates other information.
+     */
+    virtual void OnInfo(AudioManagerInfoType type, int32_t extra) = 0;
+};
+
+// class AudioManagerListenerStub;
+
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
  *        Provides a series of client/interfaces for audio management
@@ -162,6 +203,7 @@ enum AudioVolumeType {
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
     bool SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;
+    int32_t SetAudioManagerCallback(const std::shared_ptr<AudioManagerCallback> &callback);
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
@@ -169,7 +211,10 @@ private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
+    std::shared_ptr<AudioManagerCallback> callback_ = nullptr;
 };
+
+__attribute__((visibility("default"))) std::string AudioManagerErrorTypeToString(AudioManagerErrorType type);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_SYSTEM_MANAGER_H

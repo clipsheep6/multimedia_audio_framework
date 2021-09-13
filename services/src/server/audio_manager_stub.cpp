@@ -96,6 +96,17 @@ int AudioManagerStub::OnRemoteRequest(
             reply.WriteBool(isMute);
             return MEDIA_OK;
         }
+        case SET_CALLBACK: {
+            MEDIA_DEBUG_LOG("SET_CALLBACK AudioManagerStub");
+            sptr<IRemoteObject> object = data.ReadRemoteObject();
+            if (object == nullptr) {
+               MEDIA_ERR_LOG("AudioManagerStub: AudioManagerCallback obj is null");
+               return MEDIA_INVALID_PARAM;
+            }
+            int32_t result = SetAudioManagerCallback(object);
+            reply.WriteInt32(result);
+            return MEDIA_OK;
+        }
         default: {
             MEDIA_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

@@ -238,6 +238,18 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_64000,
     SAMPLE_RATE_96000
 };
+
+    enum InterruptType {
+        INTERRUPT_HINT_DUCK = 0,
+        INTERRUPT_HINT_NONE = 1,
+        INTERRUPT_HINT_PAUSE = 2,
+        INTERRUPT_HINT_RESUME = 3,
+        INTERRUPT_HINT_STOP = 4,
+        INTERRUPT_HINT_UNDUCK = 5,
+        INTERRUPT_TYPE_BEGIN = 6,
+        INTERRUPT_TYPE_END = 7,
+    };
+
 typedef uint32_t AudioIOHandle;
 } // namespace AudioStandard
 } // namespace OHOS

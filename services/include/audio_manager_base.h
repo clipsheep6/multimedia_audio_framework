@@ -79,14 +79,23 @@ public:
      */
     virtual const std::string GetAudioParameter(const std::string key) = 0;
 
-    enum {
+    /**
+    * Function to set audio manager callback.
+    *
+    * @return Returns {@link SUCCESS} if the audiomanagercallback is set; returns an error code defined
+    * in {@link audio_errors.h} otherwise.
+    */
+    virtual int32_t SetAudioManagerCallback(const sptr<IRemoteObject> &object) = 0;
+
+    enum AudioManagerMsg{
         GET_MAX_VOLUME = 0,
-        GET_MIN_VOLUME = 1,
-        GET_DEVICES = 2,
-        GET_AUDIO_PARAMETER = 3,
-        SET_AUDIO_PARAMETER = 4,
-        SET_MICROPHONE_MUTE = 5,
-        IS_MICROPHONE_MUTE = 6
+        GET_MIN_VOLUME,
+        GET_DEVICES,
+        GET_AUDIO_PARAMETER,
+        SET_AUDIO_PARAMETER,
+        SET_MICROPHONE_MUTE,
+        IS_MICROPHONE_MUTE,
+        SET_CALLBACK,
     };
 
 public:
