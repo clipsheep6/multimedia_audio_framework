@@ -130,7 +130,11 @@ ohos_shared_library("pulsecommon") {
   part_name = "multimedia_audio_standard"
 }
 ohos_prebuilt_etc("pa_daemon_config") {
-  source = "$pulseaudio_dir/conf/daemon.conf"
+  if (device_name == "rk3566" || device_name == "rk3568") {
+    source = "$pulseaudio_dir/conf/rk3568/daemon.conf"
+  } else {
+    source = "$pulseaudio_dir/conf/daemon.conf"
+  }
 
   subsystem_name = "multimedia"
   module_install_dir = "etc/pulse"
