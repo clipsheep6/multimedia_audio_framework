@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
-#include "audio_manager_napi.h"
+#include "audio_capturer_napi.h"
 #include "audio_device_descriptor_napi.h"
+#include "audio_manager_napi.h"
+#include "audio_parameters_napi.h"
 #include "hilog/log.h"
 
 using namespace std;
@@ -175,13 +177,19 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = AudioManagerNapi::RINGTONE; i <= AudioManagerNapi::MEDIA; i++) {
+        for (int i = AudioManagerNapi::RINGTONE; i <= AudioManagerNapi::VOICE_ASSISTANT; i++) {
             switch (i) {
                 case AudioManagerNapi::RINGTONE:
                     propName = "RINGTONE";
                     break;
                 case AudioManagerNapi::MEDIA:
                     propName = "MEDIA";
+                    break;
+                case AudioManagerNapi::VOICE_CALL:
+                    propName = "VOICE_CALL";
+                    break;
+                case AudioManagerNapi::VOICE_ASSISTANT:
+                    propName = "VOICE_ASSISTANT";
                     break;
                 default:
                     HiLog::Error(LABEL, "Invalid prop!");
@@ -1662,6 +1670,9 @@ static napi_value Init(napi_env env, napi_value exports)
 {
     AudioManagerNapi::Init(env, exports);
     AudioDeviceDescriptorNapi::Init(env, exports);
+    AudioCapturerNapi::Init(env, exports);
+    AudioParametersNapi::Init(env, exports);
+
     return exports;
 }
 

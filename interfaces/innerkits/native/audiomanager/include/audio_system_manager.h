@@ -125,47 +125,63 @@ enum DeviceType {
 
 class AudioSystemManager {
 public:
-enum AudioVolumeType {
+    enum AudioVolumeType {
         /**
-         * Indicates audio streams of voices in calls.
+         * Indicates audio streams default.
          */
-        STREAM_VOICE_CALL = 1,
+        STREAM_DEFAULT = -1,
         /**
          * Indicates audio streams for system sounds.
          */
-        STREAM_SYSTEM = 2,
-        /**
-         * Indicates audio streams for ringtones.
-         */
-        STREAM_RING = 3,
+        STREAM_SYSTEM = 0,
         /**
          * Indicates audio streams for music playback.
          */
-        STREAM_MUSIC = 4,
+        STREAM_MUSIC = 1,
+        /**
+         * Indicates audio streams for ringtones.
+         */
+        STREAM_RING = 2,
+        /**
+         * Indicates audio streams media.
+         */
+        STREAM_MEDIA = 3,
+        /**
+         * Indicates audio streams of voices in calls.
+         */
+        STREAM_VOICE_CALL = 4,
+        /**
+         * Indicates Audio streams for voice assistant
+         */
+        VOICE_ASSISTANT = 5,
         /**
          * Indicates audio streams for alarms.
          */
-        STREAM_ALARM = 5,
+        STREAM_ALARM = 6,
         /**
          * Indicates audio streams for notifications.
          */
-        STREAM_NOTIFICATION = 6,
+        STREAM_NOTIFICATION = 7,
         /**
          * Indicates audio streams for voice calls routed through a connected Bluetooth device.
          */
-        STREAM_BLUETOOTH_SCO = 7,
+        STREAM_BLUETOOTH_SCO = 8,
+        /**
+         * Indicates audio streams for enforced audible.
+         */
+        STREAM_ENFORCED_AUDIBLE = 9,
         /**
          * Indicates audio streams for dual-tone multi-frequency (DTMF) tones.
          */
-        STREAM_DTMF = 8,
+        STREAM_DTMF = 10,
         /**
          * Indicates audio streams exclusively transmitted through the speaker (text-to-speech) of a device.
          */
-        STREAM_TTS =  9,
+        STREAM_TTS =  11,
         /**
          * Indicates audio streams used for prompts in terms of accessibility.
          */
-        STREAM_ACCESSIBILITY = 10
+        STREAM_ACCESSIBILITY = 12
     };
     static AudioSystemManager* GetInstance();
     static float MapVolumeToHDI(int32_t volume);
