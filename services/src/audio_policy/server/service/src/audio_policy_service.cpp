@@ -71,13 +71,13 @@ std::string AudioPolicyService::GetPortName(InternalDeviceType deviceType)
 {
     std::string portName = PORT_NONE;
     switch (deviceType) {
-        case InternalDeviceType::BLUETOOTH_SCO:
+        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
             portName = BLUEZ_SINK;
             break;
-        case InternalDeviceType::SPEAKER:
+        case InternalDeviceType::DEVICE_TYPE_SPEAKER:
             portName = HDI_SINK;
             break;
-        case InternalDeviceType::MIC:
+        case InternalDeviceType::DEVICE_TYPE_MIC:
             portName = HDI_SOURCE;
             break;
         default:
@@ -150,8 +150,8 @@ bool AudioPolicyService::IsDeviceActive(InternalDeviceType deviceType) const
     bool result = false;
 
     switch (deviceType) {
-        case InternalDeviceType::SPEAKER:
-        case InternalDeviceType::BLUETOOTH_SCO:
+        case InternalDeviceType::DEVICE_TYPE_SPEAKER:
+        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
             for (list<InternalDeviceType>::const_iterator iter = mActiveOutputDevices.begin();
                 iter != mActiveOutputDevices.end(); ++iter) {
                 if (*iter == deviceType) {
@@ -179,14 +179,14 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
 
 // Parser callbacks
 
-void AudioPolicyService::OnAudioPortAvailable(shared_ptr<AudioPortInfo> portInfo)
+void AudioPolicyService::OnAudioPortAvailable(unique_ptr<AudioPortInfo> portInfo)
 {
     AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(portInfo);
     mIOHandles[portInfo->name] = ioHandle;
     return;
 }
 
-void AudioPolicyService::OnAudioPortPinAvailable(shared_ptr<AudioPortPinInfo> portInfo)
+void AudioPolicyService::OnAudioPortPinAvailable(unique_ptr<AudioPortPinInfo> portInfo)
 {
     return;
 }
@@ -214,13 +214,13 @@ AudioIOHandle AudioPolicyService::GetAudioIOHandle(InternalDeviceType deviceType
 {
     AudioIOHandle ioHandle;
     switch (deviceType) {
-        case InternalDeviceType::SPEAKER:
+        case InternalDeviceType::DEVICE_TYPE_SPEAKER:
             ioHandle = mIOHandles[HDI_SINK];
             break;
-        case InternalDeviceType::BLUETOOTH_SCO:
+        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
             ioHandle = mIOHandles[BLUEZ_SINK];
             break;
-        case InternalDeviceType::MIC:
+        case InternalDeviceType::DEVICE_TYPE_MIC:
             ioHandle = mIOHandles[HDI_SOURCE];
             break;
         default:

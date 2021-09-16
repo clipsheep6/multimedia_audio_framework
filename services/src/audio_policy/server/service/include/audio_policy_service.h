@@ -64,9 +64,9 @@ public:
     AudioRingerMode GetRingerMode() const;
 
     // Parser callbacks
-    void OnAudioPortAvailable(std::shared_ptr<AudioPortInfo> portInfo);
+    void OnAudioPortAvailable(std::unique_ptr<AudioPortInfo> portInfo);
 
-    void OnAudioPortPinAvailable(std::shared_ptr<AudioPortPinInfo> portInfo);
+    void OnAudioPortPinAvailable(std::unique_ptr<AudioPortPinInfo> portInfo);
 
     void OnDefaultOutputPortPin(InternalDeviceType device);
 
@@ -86,10 +86,10 @@ private:
     std::list<InternalDeviceType>& GetActiveDevicesList(InternalDeviceType deviceType)
     {
         switch (deviceType) {
-            case InternalDeviceType::SPEAKER:
-            case InternalDeviceType::BLUETOOTH_SCO:
+            case InternalDeviceType::DEVICE_TYPE_SPEAKER:
+            case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
                 return mActiveOutputDevices;
-            case InternalDeviceType::MIC:
+            case InternalDeviceType::DEVICE_TYPE_MIC:
                 return mActiveInputDevices;
             default:
                 return mActiveOutputDevices; // Default case return Output device
