@@ -24,19 +24,19 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static AudioServiceAdapterCallback *mAudioServiceAdapterCallback;
+static std::unique_ptr<AudioServiceAdapterCallback> mAudioServiceAdapterCallback;
 
 AudioServiceAdapter::~AudioServiceAdapter() = default;
 PulseAudioServiceAdapterImpl::~PulseAudioServiceAdapterImpl() = default;
 
-std::unique_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(AudioServiceAdapterCallback *cb)
+std::unique_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(std::unique_ptr<AudioServiceAdapterCallback> cb)
 {
     return std::make_unique<PulseAudioServiceAdapterImpl>(cb);
 }
 
-PulseAudioServiceAdapterImpl::PulseAudioServiceAdapterImpl(AudioServiceAdapterCallback *cb)
+PulseAudioServiceAdapterImpl::PulseAudioServiceAdapterImpl(std::unique_ptr<AudioServiceAdapterCallback> &cb)
 {
-    mAudioServiceAdapterCallback = cb;
+    mAudioServiceAdapterCallback = std::move(cb);
 }
 
 bool PulseAudioServiceAdapterImpl::Connect()
@@ -88,7 +88,7 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
     userData->thiz = this;
 
     if (mContext != NULL) {
-        pa_context_disconnect (mContext);
+        pa_context_disconnect(mContext);
         pa_context_set_state_callback(mContext, NULL, NULL);
         pa_context_set_subscribe_callback(mContext, NULL, NULL);
         pa_context_unref(mContext);
@@ -124,13 +124,13 @@ Fail:
     return false;
 }
 
-int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(char *audioPortName, std::string moduleArgs)
+int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(std::string audioPortName, std::string moduleArgs)
 {
     std::unique_ptr<UserData> userData = std::make_unique<UserData>();
     userData->thiz = this;
 
     pa_threaded_mainloop_lock(mMainLoop);
-    pa_operation *operation = pa_context_load_module(mContext, audioPortName, moduleArgs.c_str(), PaModuleLoadCb,
+    pa_operation *operation = pa_context_load_module(mContext, audioPortName.c_str(), moduleArgs.c_str(), PaModuleLoadCb,
         reinterpret_cast<void*>(userData.get()));
     if (operation == NULL) {
         MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_load_module returned nullptr");
@@ -385,7 +385,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoMuteStatusCb(pa_context *c,
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
     if (eol < 0) {
-        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %s",
+        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %{public}s",
             pa_strerror(pa_context_errno(c)));
         return;
     }
@@ -423,7 +423,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoMuteCb(pa_context *c, const
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
     if (eol < 0) {
-        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %s",
+        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %{public}s",
             pa_strerror(pa_context_errno(c)));
         return;
     }
@@ -495,7 +495,7 @@ void PulseAudioServiceAdapterImpl::PaModuleLoadCb(pa_context *c, uint32_t idx, v
 {
     UserData *userData = reinterpret_cast<UserData*>(userdata);
     if (idx == PA_INVALID_INDEX) {
-        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Failure: %s", pa_strerror(pa_context_errno(c)));
+        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Failure: %{public}s", pa_strerror(pa_context_errno(c)));
         userData->idx = PA_INVALID_INDEX;
     } else {
         userData->idx = idx;
@@ -514,7 +514,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] GetSinkInputInfoVolumeCb");
     if (eol < 0) {
         delete userData;
-        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %s",
+        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %{public}s",
             pa_strerror(pa_context_errno(c)));
         return;
     }
@@ -566,7 +566,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoCorkStatusCb(pa_context *c,
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
     if (eol < 0) {
-        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %s",
+        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %{public}s",
             pa_strerror(pa_context_errno(c)));
         return;
     }
