@@ -19,7 +19,6 @@ config("audio_renderer_config") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiostream/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosession/include",

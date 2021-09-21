@@ -57,8 +57,19 @@ public:
 
     AudioRingerMode GetRingerMode() override;
 
+    int32_t SetAudioManagerCallback(const AudioStreamType streamType, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnSetAudioManagerCallback(const AudioStreamType streamType) override;
+    
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
+
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
+
 private:
     AudioPolicyService& mPolicyService;
+    std::mutex mutex_;
+    std::unordered_map<AudioStreamType, std::shared_ptr<AudioManagerCallback>> umPolicyListenerCbs_;
+    std::unordered_map<AudioStreamType, AudioInterrupt> umCurActiveInterrupts_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
