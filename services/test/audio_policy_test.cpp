@@ -62,6 +62,8 @@ static void PrintUsage(void)
     cout << "-R\n\tSets RingerMode" << endl << endl;
     cout << "-r\n\tGets RingerMode status" << endl << endl;
     cout << "-s\n\tGet Stream Status" << endl << endl;
+    cout << "-T\n\tSets Mute for speaker" << endl << endl;
+    cout << "-t\n\tGets Mute status for speaker" << endl << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
 }
@@ -163,6 +165,20 @@ static void HandleRingerMode(char option)
     }
 }
 
+static void HandleMasterMute(char option)
+{
+    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
+    if (option == 't') {
+        bool muteStatus = audioSystemMgr->GetMasterMute();
+        cout << "Is Speaker Mute : " << muteStatus << endl;
+    } else {
+        int mute = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
+        cout << "Set Speaker Mute : " << mute << endl;
+        int32_t result = audioSystemMgr->SetMasterMute((mute) ? true : false);
+        cout << "Set Speaker Mute Result: " << result << endl;
+    }
+}
+
 static void NoValueError()
 {
     char option[AudioPolicyTest::OPT_SHORT_LEN];
@@ -190,7 +206,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:d:s:vmru")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:d:s:T:vmrut")) != -1) {
         switch (opt) {
             case 'V':
             case 'v':
@@ -219,6 +235,10 @@ int main(int argc, char* argv[])
             case 'R':
             case 'r':
                 HandleRingerMode(opt);
+                break;
+            case 'T':
+            case 't':
+                HandleMasterMute(opt);
                 break;
             case ':':
                 NoValueError();

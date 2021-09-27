@@ -246,6 +246,16 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFl
     return g_sProxy->GetDevices(deviceFlag);
 }
 
+int32_t AudioSystemManager::SetMasterMute(bool isMute) const
+{
+    return g_sProxy->SetSpeakerMute(isMute);
+}
+
+bool AudioSystemManager::GetMasterMute() const
+{
+    return g_sProxy->IsSpeakerMute();
+}
+
 /**
  * @brief The AudioDeviceDescriptor provides
  *         different sets of audio devices and their roles

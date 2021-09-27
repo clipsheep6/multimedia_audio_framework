@@ -303,17 +303,24 @@ static int32_t PrepareDevice(const pa_sample_spec *ss)
         return -1;
     }
 
-    ret = AudioRendererSinkStart();
-    if (ret != 0) {
-        pa_log_error("audiorenderer control start failed!");
-        AudioRendererSinkDeInit();
-        return -1;
-    }
-
     ret = AudioRendererSinkSetVolume(MAX_SINK_VOLUME_LEVEL, MAX_SINK_VOLUME_LEVEL);
     if (ret != 0) {
         pa_log_error("audiorenderer set volume failed!");
         AudioRendererSinkStop();
+        AudioRendererSinkDeInit();
+        return -1;
+    }
+
+    bool muteState = AudioRendererSinkIsSpeakerMuteRequired();
+    ret = AudioRendererSinkSetSpeakerMute(muteState);
+    if (ret != 0) {
+        pa_log_error("audiorenderer set muteState: %d failed!", muteState);
+        return -1;
+    }
+
+    ret = AudioRendererSinkStart();
+    if (ret != 0) {
+        pa_log_error("audiorenderer control start failed!");
         AudioRendererSinkDeInit();
         return -1;
     }

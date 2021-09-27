@@ -34,6 +34,8 @@ int32_t AudioRendererSinkStop(void);
 int32_t AudioRendererRenderFrame(char *data, uint64_t len, uint64_t *writeLen);
 int32_t AudioRendererSinkSetVolume(float left, float right);
 int32_t AudioRendererSinkGetLatency(uint32_t *latency);
+bool AudioRendererSinkIsSpeakerMuteRequired(void);
+int32_t AudioRendererSinkSetSpeakerMute(bool);
 #ifdef __cplusplus
 }
 #endif

@@ -122,6 +122,8 @@ public:
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
     bool SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;
+    int32_t SetMasterMute(bool isMute) const;
+    bool GetMasterMute(void) const;
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
