@@ -295,6 +295,9 @@ private:
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
 
+    std::mutex readMutex;
+    std::condition_variable readCV;
+
     std::mutex mtx;
 
     AudioCache acache;
@@ -358,6 +361,8 @@ private:
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
 
+    static constexpr uint32_t READ_TIMEOUT_IN_SEC = 5;
+
     // Resets PA audio client and free up resources if any with this API
     void ResetPAAudioClient();
     // For setting some environment variables required while running from hap
@@ -367,7 +372,8 @@ private:
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
     static void PAStreamUnderFlowCb(pa_stream *stream, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
-    static void PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata);
+    static void PAStreamWriteRequestCb(pa_stream *stream, size_t length, void *userdata);
+    static void PAStreamReadRequestCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamCmdSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);
 
