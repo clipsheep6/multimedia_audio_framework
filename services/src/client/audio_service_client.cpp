@@ -131,10 +131,16 @@ void AudioServiceClient::PAStreamCmdSuccessCb(pa_stream *stream, int32_t success
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
-void AudioServiceClient::PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata)
+void AudioServiceClient::PAStreamWriteRequestCb(pa_stream *stream, size_t length, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
     pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
+void AudioServiceClient::PAStreamReadRequestCb(pa_stream *stream, size_t length, void *userdata)
+{
+    AudioServiceClient *asClient = (AudioServiceClient *)userdata;
+    (asClient->readCV).notify_one();
 }
 
 void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
@@ -514,8 +520,8 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     pa_proplist_free(propList);
     pa_stream_set_state_callback(paStream, PAStreamStateCb, (void *)this);
-    pa_stream_set_write_callback(paStream, PAStreamRequestCb, mainLoop);
-    pa_stream_set_read_callback(paStream, PAStreamRequestCb, mainLoop);
+    pa_stream_set_write_callback(paStream, PAStreamWriteRequestCb, mainLoop);
+    pa_stream_set_read_callback(paStream, PAStreamReadRequestCb, (void *)this);
     pa_stream_set_latency_update_callback(paStream, PAStreamLatencyUpdateCb, mainLoop);
     pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *)this);
 
@@ -632,29 +638,21 @@ int32_t AudioServiceClient::FlushStream()
     }
 
     streamCmdStatus = 0;
-    operation = pa_stream_flush(paStream, PAStreamCmdSuccessCb, (void *)this);
+    operation = pa_stream_flush(paStream, NULL, NULL);
     if (operation == NULL) {
         MEDIA_ERR_LOG("Stream Flush Operation Failed");
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
 
-    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        pa_threaded_mainloop_wait(mainLoop);
-    }
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mainLoop);
 
-    if (!streamCmdStatus) {
-        MEDIA_ERR_LOG("Stream Flush Failed");
-        return AUDIO_CLIENT_ERR;
-    } else {
-        MEDIA_INFO_LOG("Stream Flushed Successfully");
-        acache.readIndex = 0;
-        acache.writeIndex = 0;
-        acache.isFull = false;
-        return AUDIO_CLIENT_SUCCESS;
-    }
+    MEDIA_INFO_LOG("Stream Flushed Successfully");
+    acache.readIndex = 0;
+    acache.writeIndex = 0;
+    acache.isFull = false;
+    return AUDIO_CLIENT_SUCCESS;
 }
 
 int32_t AudioServiceClient::DrainStream()
@@ -895,34 +893,35 @@ int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, si
 
 int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
 {
+    lock_guard<mutex> lock(mtx);
     uint8_t *buffer = stream.buffer;
     size_t length = stream.bufferLen;
     size_t readSize = 0;
 
     CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
 
-    pa_threaded_mainloop_lock(mainLoop);
     while (length > 0) {
         while (!internalReadBuffer) {
             int retVal = pa_stream_peek(paStream, &internalReadBuffer, &internalRdBufLen);
             if (retVal < 0) {
                 MEDIA_ERR_LOG("pa_stream_peek failed, retVal: %{public}d", retVal);
-                pa_threaded_mainloop_unlock(mainLoop);
                 return AUDIO_CLIENT_READ_STREAM_ERR;
             }
 
             if (internalRdBufLen <= 0) {
-                if (isBlocking)
-                    pa_threaded_mainloop_wait(mainLoop);
-                else {
-                    pa_threaded_mainloop_unlock(mainLoop);
+                if (!isBlocking) {
                     return readSize;
+                }
+
+                std::unique_lock<std::mutex> lck(readMutex);
+                if (readCV.wait_for(lck, std::chrono::seconds(READ_TIMEOUT_IN_SEC)) == std::cv_status::timeout) {
+                    MEDIA_ERR_LOG("read timeout");
+                    return AUDIO_CLIENT_READ_STREAM_ERR;
                 }
             } else if (!internalReadBuffer) {
                 retVal = pa_stream_drop(paStream);
                 if (retVal < 0) {
                     MEDIA_ERR_LOG("pa_stream_drop failed, retVal: %{public}d", retVal);
-                    pa_threaded_mainloop_unlock(mainLoop);
                     return AUDIO_CLIENT_READ_STREAM_ERR;
                 }
             } else {
@@ -932,12 +931,10 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
         }
 
         if (UpdateReadBuffer(buffer, length, readSize) != 0) {
-            pa_threaded_mainloop_unlock(mainLoop);
             return AUDIO_CLIENT_READ_STREAM_ERR;
         }
         buffer = stream.buffer + readSize;
     }
-    pa_threaded_mainloop_unlock(mainLoop);
     return readSize;
 }
 
