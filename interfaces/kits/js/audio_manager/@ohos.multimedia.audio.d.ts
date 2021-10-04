@@ -181,7 +181,7 @@ declare namespace audio {
     SAMPLE_S24LE = 3,
     SAMPLE_S32LE = 4,
     INVALID_WIDTH = -1
-  };
+  }
 
   /**
    * Enumerates the audio channel.
@@ -189,7 +189,7 @@ declare namespace audio {
   enum AudioChannel {
     MONO = 1,
     STEREO
-  };
+  }
 
   /**
    * Enumerates the audio sampling rate.
@@ -206,7 +206,7 @@ declare namespace audio {
     SAMPLE_RATE_48000 = 48000,
     SAMPLE_RATE_64000 = 64000,
     SAMPLE_RATE_96000 = 96000
-  };
+  }
 
   /**
    * Enumerates the audio encoding type.
@@ -214,7 +214,7 @@ declare namespace audio {
   enum AudioEncodingType {
     ENCODING_PCM = 0,
     ENCODING_INVALID
-  };
+  }
 
   /**
    * Enumerates the audio content type.
@@ -235,6 +235,26 @@ declare namespace audio {
     STREAM_USAGE_MEDIA = 1,
     STREAM_USAGE_VOICE_COMMUNICATION = 2,
     STREAM_USAGE_NOTIFICATION_RINGTONE = 3,
+  }
+
+  enum InterruptType {
+    INTERRUPT_TYPE_BEGIN = 1,
+    INTERRUPT_TYPE_END = 2,
+  }
+
+  enum InterruptHint {
+    INTERRUPT_HINT_NONE = 0,
+    INTERRUPT_HINT_RESUME,
+    INTERRUPT_HINT_PAUSE,
+    INTERRUPT_HINT_STOP,
+    INTERRUPT_HINT_DUCK,
+    INTERRUPT_HINT_UNDUCK
+  }
+
+  enum InterruptActionType {
+    TYPE_ACTIVATED = 1,
+    TYPE_INTERRUPTED = 2,
+    TYPE_DEACTIVATED = 3
   }
 
   /**
@@ -435,6 +455,30 @@ declare namespace audio {
      * @devices
      */
     isDeviceActive(deviceType: ActiveDeviceType): Promise<boolean>;
+    /**
+     * Activates Audio interrupt
+     * @sysCap SystemCapability.Multimedia.Audio
+     * @devices
+     */
+    activateAudioInterrupt(interrupt: AudioInterrupt): boolean;
+    /**
+    * Deactivates Audio interrupt
+    * @sysCap SystemCapability.Multimedia.Audio
+    * @devices
+    */
+    deactivateAudioInterrupt(interrupt: AudioInterrupt): boolean;
+    /**
+    * Monitors audio interrupt
+    * @sysCap SystemCapability.Multimedia.Audio
+    * @devices
+    */
+    on(type: 'interrupt', volumeType: AudioVolumeType, callback: Callback<InterruptAction>): void;
+    /**
+     * Stops listening for audio interrupt
+     * @sysCap SystemCapability.Multimedia.Audio
+     * @devices
+     */
+    off(type: 'interrupt', volumeType: AudioVolumeType): void;
   }
 
   /**
@@ -455,6 +499,15 @@ declare namespace audio {
     readonly deviceType: DeviceType;
   }
 
+  interface InterruptAction {
+    actionType: InterruptActionType;
+    interruptType: InterruptType;
+    interruptHint: InterruptHint;
+  }
+
+  interface AudioInterrupt {
+    streamType: AudioVolumeType;
+  }
   /**
    * Provides functions for applications for audio playback.
    * @devices
@@ -463,68 +516,126 @@ declare namespace audio {
   interface AudioRenderer {
     /**
      * Sets audio render parameters.
-     * If set parameters is not called explicitly, then 16Khz sampling rate, mono channel and PCM_S16_LE format will be set by default.
+     * If set parameters is not called explicitly, then 16Khz sampling rate, mono channel and PCM_S16_LE format will
+     * be set by default. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    setParams(params: AudioParameters): void;
+    setParams(params: AudioParameters, callback: AsyncCallback<void>): void;
+    /**
+     * Sets audio render parameters.
+     * If set parameters is not called explicitly, then 16Khz sampling rate, mono channel and PCM_S16_LE format will
+     * be set by default. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setParams(params: AudioParameters): Promise<void>;
 
     /**
-     * Obtains audio render parameters.
+     * Obtains audio render parameters. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    getParams(): AudioParameters;
+    getParams(callback: AsyncCallback<AudioParameters>): void;
+    /**
+     * Obtains audio render parameters. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getParams(): Promise<AudioParameters>;
 
     /**
-     * Starts audio rendering.
+     * Starts audio rendering. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    start(): boolean;
+    start(callback: AsyncCallback<boolean>): void;
+    /**
+     * Starts audio rendering. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    start(): Promise<boolean>;
 
     /**
-     * Render audio data.
+     * Render audio data. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    write(buffer: ArrayBuffer): number;
+    write(buffer: ArrayBuffer, callback: AsyncCallback<number>): void;
+    /**
+     * Render audio data. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    write(buffer: ArrayBuffer): Promise<number>;
 
     /**
-     * Obtains the current timestamp.
+     * Obtains the current timestamp. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    getAudioTime(): number;
+    getAudioTime(callback: AsyncCallback<number>): void;
+    /**
+     * Obtains the current timestamp. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getAudioTime(): Promise<number>;
 
     /**
-     * Pauses audio rendering.
+     * Pauses audio rendering. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    pause(): boolean;
+    pause(callback: AsyncCallback<boolean>): void;
+    /**
+     * Pauses audio rendering. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    pause(): Promise<boolean>;
 
     /**
-     * Stops audio rendering.
+     * Stops audio rendering. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    stop(): boolean;
+    stop(callback: AsyncCallback<boolean>): void;
+    /**
+     * Stops audio rendering. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    stop(): Promise<boolean>;
 
     /**
-     * Releases resources.
+     * Releases resources. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    release(): boolean;
+    release(callback: AsyncCallback<boolean>): void;
+    /**
+     * Releases resources. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    release(): Promise<boolean>;
 
     /**
      * Obtains a reasonable minimum buffer size for renderer, however, the renderer can
-     * accept other read sizes as well.
+     * accept other read sizes as well. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    getBufferSize(): number;
+    getBufferSize(callback: AsyncCallback<number>): void;
+    /**
+     * Obtains a reasonable minimum buffer size for renderer, however, the renderer can
+     * accept other read sizes as well. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getBufferSize(): Promise<number>;
   }
 
   /**
@@ -535,61 +646,113 @@ declare namespace audio {
   interface AudioCapturer {
     /**
      * Sets audio capture parameters.
-     * If set parameters is not called explicitly, then 16Khz sampling rate, mono channel and PCM_S16_LE format will be set by default.
+     * If set parameters is not called explicitly, then 16Khz sampling rate, mono channel and PCM_S16_LE format will
+     * be set by default. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    setParams(params: AudioParameters): void;
+    setParams(params: AudioParameters, callback: AsyncCallback<void>): void;
+    /**
+     * Sets audio capture parameters.
+     * If set parameters is not called explicitly, then 16Khz sampling rate, mono channel and PCM_S16_LE format will
+     * be set by default. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setParams(params: AudioParameters): Promise<void>;
 
     /**
-     * Obtains audio capture parameters.
+     * Obtains audio capture parameters. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    getParams(): AudioParameters;
+    getParams(callback: AsyncCallback<AudioParameters>): void;
+    /**
+     * Obtains audio capture parameters. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getParams(): Promise<AudioParameters>;
 
     /**
-     * Starts audio capturing.
+     * Starts audio capturing. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    start(): boolean;
+    start(callback: AsyncCallback<boolean>): void;
+    /**
+     * Starts audio capturing. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    start(): Promise<boolean>;
 
     /**
-     * Capture audio data.
+     * Capture audio data. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    read(size: number, isBlockingRead: boolean): ArrayBuffer;
+    read(size: number, isBlockingRead: boolean, callback: AsyncCallback<ArrayBuffer>): void;
+    /**
+     * Capture audio data. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    read(size: number, isBlockingRead: boolean): Promise<ArrayBuffer>;
 
     /**
-     * Obtains the current timestamp.
+     * Obtains the current timestamp. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    getAudioTime(): number;
+    getAudioTime(callback: AsyncCallback<number>): void;
+    /**
+     * Obtains the current timestamp. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getAudioTime(): Promise<number>;
 
     /**
-     * Stops audio capturing.
+     * Stops audio capturing. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    stop(): boolean;
+    stop(callback: AsyncCallback<boolean>): void;
+    /**
+     * Stops audio capturing. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    stop(): Promise<boolean>;
 
     /**
-     * Releases a capture resources.
+     * Releases a capture resources. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    release(): boolean;
+    release(callback: AsyncCallback<boolean>): void;
+    /**
+     * Releases a capture resources. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    release(): Promise<boolean>;
 
     /**
      * Obtains a reasonable minimum buffer size for capturer, however, the capturer can
-     * accept other read sizes as well.
+     * accept other read sizes as well. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
      */
-    getBufferSize(): number;
+    getBufferSize(callback: AsyncCallback<number>): void;
+    /**
+     * Obtains a reasonable minimum buffer size for capturer, however, the capturer can
+     * accept other read sizes as well. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getBufferSize(): Promise<number>;
   }
 
   /**
