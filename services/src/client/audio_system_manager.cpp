@@ -230,6 +230,28 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
     return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
 }
 
+int32_t AudioSystemManager::SetAudioManagerCallback(const AudioStreamType streamType, const std::shared_ptr<AudioManagerCallback> &callback)
+{
+    callback_ = callback;
+
+    return AudioPolicyManager::GetInstance().SetAudioManagerCallback(streamType, callback);
+}
+
+int32_t AudioSystemManager::UnSetAudioManagerCallback(const AudioStreamType streamType) const
+{
+    return AudioPolicyManager::GetInstance().UnSetAudioManagerCallback(streamType);
+}
+
+int32_t AudioSystemManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
+{
+    return AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
+}
+
+int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
+{
+    return AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
+}
+
 int32_t AudioSystemManager::SetMicrophoneMute(bool isMute) const
 {
     return g_sProxy->SetMicrophoneMute(isMute);

@@ -62,9 +62,22 @@ static void PrintUsage(void)
     cout << "-R\n\tSets RingerMode" << endl << endl;
     cout << "-r\n\tGets RingerMode status" << endl << endl;
     cout << "-s\n\tGet Stream Status" << endl << endl;
+    cout << "-I\n\tActivate Audio Interrupt" << endl << endl;
+    cout << "-i\n\tDeactivate Audio Interrupt" << endl << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
 }
+
+class AudioPolicyManagerCallbackTest : public AudioManagerCallback {
+    void OnInterrupt(const InterruptAction &interruptAction) override
+    {
+        MEDIA_DEBUG_LOG("AudioPolicyManagerCallbackTest:  OnInterrupt");
+        MEDIA_DEBUG_LOG("AudioPolicyManagerCallbackTest: interruptAction.actionType: %{public}d", interruptAction.actionType);
+        MEDIA_DEBUG_LOG("AudioPolicyManagerCallbackTest: interruptAction.interruptType: %{public}d", interruptAction.interruptType);
+        MEDIA_DEBUG_LOG("AudioPolicyManagerCallbackTest: interruptAction.interruptHint: %{public}d", interruptAction.interruptHint);
+
+    }
+};
 
 static void HandleVolume(int streamType, char option)
 {
@@ -107,6 +120,39 @@ static void HandleMicMute(char option)
         cout << "Set Mic Mute : " << mute << endl;
         int32_t result = audioSystemMgr->SetMicrophoneMute((mute) ? true : false);
         cout << "Set Mic Mute Result: " << result << endl;
+    }
+}
+
+static void HandleInterrupt(char option)
+{
+    AudioInterrupt audioInterrupt{STREAM_USAGE_MEDIA, CONTENT_TYPE_MUSIC, STREAM_MUSIC, 1000};
+
+    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
+
+    std::shared_ptr<AudioManagerCallback> callbackAudioMngr_ = std::make_shared<AudioPolicyManagerCallbackTest>();
+    int32_t result = audioSystemMgr->SetAudioManagerCallback(audioInterrupt.streamType, callbackAudioMngr_);
+    cout << "SetAudioManagerCallback returned : " << result << endl;
+
+    if (option == 'I') {
+        MEDIA_DEBUG_LOG("AudioPolicyTest: HandleInterrupt: ActivateAudioInterrupt");
+        result = audioSystemMgr->ActivateAudioInterrupt(audioInterrupt);
+        cout << "ActivateAudioInterrupt returned : " << result << endl;
+        cout << "sleep for 10 secs before exit" << endl;
+        MEDIA_DEBUG_LOG("AudioPolicyTest : HandleInterrupt: ActivateAudioInterrupt complete");
+        MEDIA_DEBUG_LOG("AudioPolicyTest: HandleInterrupt:sleep for 10 secs before exit");
+        sleep(10);
+        MEDIA_DEBUG_LOG("AudioPolicyTest: HandleInterrupt:sleep 10 secs completed");
+    } else {
+        MEDIA_DEBUG_LOG("AudioPolicyTest: HandleInterrupt: DeactivateAudioInterrupt");
+        result = audioSystemMgr->DeactivateAudioInterrupt(audioInterrupt);
+        cout << "DeactivateAudioInterrupt returned: " << result << endl;
+        result = audioSystemMgr->UnSetAudioManagerCallback(audioInterrupt.streamType);
+        cout << "UnSetAudioManagerCallback returned: " << result << endl;
+        cout << "sleep for 10 secs before exit" << endl;
+        MEDIA_DEBUG_LOG("AudioPolicyTest : HandleInterrupt: DeactivateAudioInterrupt complete");
+        MEDIA_DEBUG_LOG("AudioPolicyTest: HandleInterrupt:sleep for 10 secs before exit");
+        sleep(10);
+        MEDIA_DEBUG_LOG("AudioPolicyTest: HandleInterrupt:sleep 10 secs completed");
     }
 }
 
@@ -190,7 +236,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:d:s:vmru")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:d:s:vmruIi")) != -1) {
         switch (opt) {
             case 'V':
             case 'v':
@@ -203,6 +249,10 @@ int main(int argc, char* argv[])
             case 'U':
             case 'u':
                 HandleMicMute(opt);
+                break;
+            case 'I':
+            case 'i':
+                HandleInterrupt(opt);
                 break;
             case 'S':
                 SetStreamType(streamType);

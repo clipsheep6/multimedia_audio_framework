@@ -37,6 +37,18 @@ public:
     static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 };
 
+class AudioManagerCallback {
+public:
+    virtual ~AudioManagerCallback() = default;
+    /**
+     * Called when an interrupt is received.
+     *
+     * @param interruptAction Indicates the InterruptAction information needed by client. 
+     * For details, see {@link InterruptAction}.
+     */
+    virtual void OnInterrupt(const InterruptAction &interruptAction) = 0;
+};
+
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
  *        Provides a series of client/interfaces for audio management
@@ -122,6 +134,11 @@ public:
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
     bool SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;
+    int32_t SetAudioManagerCallback(const AudioStreamType streamType,
+                                    const std::shared_ptr<AudioManagerCallback> &callback);
+    int32_t UnSetAudioManagerCallback(const AudioStreamType streamType) const;
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
@@ -129,6 +146,7 @@ private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
+    std::shared_ptr<AudioManagerCallback> callback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

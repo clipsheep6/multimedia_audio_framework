@@ -49,6 +49,15 @@ public:
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
     AudioRingerMode GetRingerMode();
+
+    int32_t SetAudioManagerCallback(const AudioStreamType streamType,
+                                    const std::shared_ptr<AudioManagerCallback> &callback);
+    
+    int32_t UnSetAudioManagerCallback(const AudioStreamType streamType);
+
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
+
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
 private:
     AudioPolicyManager()
     {
@@ -57,6 +66,7 @@ private:
     ~AudioPolicyManager() {}
 
     void Init();
+    std::shared_ptr<AudioManagerCallback> callback_ = nullptr;
 };
 } // namespce AudioStandard
 } // namespace OHOS
