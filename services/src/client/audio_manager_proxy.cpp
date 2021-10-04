@@ -141,5 +141,36 @@ void AudioManagerProxy::SetAudioParameter(const std::string key, const std::stri
         return;
     }
 }
+
+int32_t AudioManagerProxy::SetSpeakerMute(bool isMute)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteBool(isMute);
+    int32_t error = Remote()->SendRequest(SET_SPEAKER_MUTE, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("SetSpeakerMute failed, error: %d", error);
+        return error;
+    }
+    int32_t result = reply.ReadInt32();
+
+    return result;
+}
+
+bool AudioManagerProxy::IsSpeakerMute()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    int32_t error = Remote()->SendRequest(IS_SPEAKER_MUTE, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("IsSpeakerMute failed, error: %d", error);
+        return false;
+    }
+    bool isMute = reply.ReadBool();
+
+    return isMute;
+}
 } // namespace AudioStandard
 } // namespace OHOS

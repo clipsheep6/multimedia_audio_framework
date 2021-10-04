@@ -96,6 +96,20 @@ int AudioManagerStub::OnRemoteRequest(
             reply.WriteBool(isMute);
             return MEDIA_OK;
         }
+        case SET_SPEAKER_MUTE: {
+            MEDIA_DEBUG_LOG("SET_SPEAKER_MUTE AudioManagerStub");
+            bool isMute = data.ReadBool();
+            MEDIA_DEBUG_LOG("SET_SPEAKER_MUTE isMute value from client= %{public}d", isMute);
+            int32_t result = SetSpeakerMute(isMute);
+            reply.WriteInt32(result);
+            return MEDIA_OK;
+        }
+        case IS_SPEAKER_MUTE: {
+            MEDIA_DEBUG_LOG("IS_SPEAKER_MUTE AudioManagerStub");
+            bool isMute = IsSpeakerMute();
+            reply.WriteBool(isMute);
+            return MEDIA_OK;
+        }
         default: {
             MEDIA_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
