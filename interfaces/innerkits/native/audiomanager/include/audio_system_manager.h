@@ -139,6 +139,8 @@ public:
     int32_t UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const;
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
+    int32_t SetMasterMute(bool isMute) const;
+    bool GetMasterMute(void) const;
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();

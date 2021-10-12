@@ -43,6 +43,8 @@ public:
     static void *paDaemonThread(void *arg);
     void SetAudioParameter(const std::string key, const std::string value) override;
     const std::string GetAudioParameter(const std::string key) override;
+    int32_t SetSpeakerMute(bool isMute) override;
+    bool IsSpeakerMute() override;
 private:
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;

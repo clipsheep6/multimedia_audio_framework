@@ -82,6 +82,8 @@ private:
     static napi_value CreateInterruptActionTypeObject(napi_env env);
     static napi_value CreateInterruptHintObject(napi_env env);
     static napi_value CreateInterruptTypeObject(napi_env env);
+    static napi_value SetMasterMute(napi_env env, napi_callback_info info);
+    static napi_value GetMasterMute(napi_env env, napi_callback_info info);
 
     static napi_ref sConstructor_;
     static napi_ref audioVolumeTypeRef_;
