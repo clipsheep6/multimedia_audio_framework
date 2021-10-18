@@ -15,9 +15,9 @@
 
 #include <uv.h>
 
-#include "audio_manager_callback_napi.h"
 #include "audio_errors.h"
 #include "media_log.h"
+#include "audio_manager_callback_napi.h"
 
 namespace {
     const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
