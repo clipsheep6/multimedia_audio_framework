@@ -79,6 +79,21 @@ public:
      */
     virtual const std::string GetAudioParameter(const std::string key) = 0;
 
+    /**
+     * Sets speaker mute.
+     *
+     * @param isMute Mute true or false to be set.
+     * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
+     */
+    virtual int32_t SetSpeakerMute(bool isMute) = 0;
+
+     /**
+     * Gets Speaker Mute status.
+     *
+     * @return Returns true or false
+     */
+    virtual bool IsSpeakerMute() = 0;
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -86,7 +101,9 @@ public:
         GET_AUDIO_PARAMETER = 3,
         SET_AUDIO_PARAMETER = 4,
         SET_MICROPHONE_MUTE = 5,
-        IS_MICROPHONE_MUTE = 6
+        IS_MICROPHONE_MUTE = 6,
+        SET_SPEAKER_MUTE = 7,
+        IS_SPEAKER_MUTE = 8
     };
 
 public:

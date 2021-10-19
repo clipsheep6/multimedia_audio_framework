@@ -282,6 +282,16 @@ bool AudioSystemManager::IsMicrophoneMute() const
     return g_sProxy->IsMicrophoneMute();
 }
 
+int32_t AudioSystemManager::SetMasterMute(bool isMute) const
+{
+    return g_sProxy->SetSpeakerMute(isMute);
+}
+
+bool AudioSystemManager::GetMasterMute() const
+{
+    return g_sProxy->IsSpeakerMute();
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
     const
 {

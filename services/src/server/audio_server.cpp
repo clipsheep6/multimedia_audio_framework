@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
-#include "audio_capturer_source.h"
-#include "audio_server.h"
 #include "iservice_registry.h"
-#include "media_log.h"
 #include "system_ability_definition.h"
+#include "audio_server.h"
+#include "audio_capturer_source.h"
+#include "audio_renderer_sink.h"
+#include "media_log.h"
 
 #define PA
 #ifdef PA
@@ -134,6 +135,36 @@ bool AudioServer::IsMicrophoneMute()
 
     if (audioCapturerSourceInstance->GetMute(isMute)) {
         MEDIA_ERR_LOG("GetMute status in capturer returned Error !");
+    }
+
+    return isMute;
+}
+
+int32_t AudioServer::SetSpeakerMute(bool isMute)
+{
+    AudioRendererSink *audioAudioRendererSinkInstance = AudioRendererSink::GetInstance();
+
+    if (audioAudioRendererSinkInstance->rendererInited_ == false) {
+            MEDIA_INFO_LOG("Renderer is not initialized. Set the flag mute state flag");
+            AudioRendererSink::speakerMuteState_ = isMute;
+            return 0;
+    }
+
+    return audioAudioRendererSinkInstance->SetMute(isMute);
+}
+
+bool AudioServer::IsSpeakerMute()
+{
+    AudioRendererSink *audioAudioRendererSinkInstance = AudioRendererSink::GetInstance();
+    bool isMute = false;
+
+    if (audioAudioRendererSinkInstance->rendererInited_ == false) {
+        MEDIA_INFO_LOG("Renderer is not initialized. Get the mic mute state flag value!");
+        return AudioRendererSink::speakerMuteState_;
+    }
+
+    if (audioAudioRendererSinkInstance->GetMute(isMute)) {
+        MEDIA_ERR_LOG("GetMute status in renderer returned Error !");
     }
 
     return isMute;

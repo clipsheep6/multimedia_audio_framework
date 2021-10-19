@@ -39,6 +39,8 @@ const uint32_t PCM_16_BIT = 16;
 const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
 #endif // DUMPFILE
 
+bool AudioRendererSink::speakerMuteState_ = false;
+
 AudioRendererSink::AudioRendererSink()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr),
@@ -456,6 +458,41 @@ int32_t AudioRendererSink::Flush(void)
 
     return ERR_OPERATION_FAILED;
 }
+
+int32_t AudioRendererSink::SetMute(bool isMute)
+{
+    int32_t ret;
+    if (audioRender_ == nullptr) {
+        MEDIA_ERR_LOG("AudioRendererSink::SetMute failed audioRender_ handle is null!");
+        return ERR_INVALID_HANDLE;
+    }
+
+    ret = audioRender_->volume.SetMute(reinterpret_cast<AudioHandle>(audioRender_), isMute);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("AudioRendererSink::SetMute failed");
+        return ERR_OPERATION_FAILED;
+    }
+
+    speakerMuteState_ = isMute;
+    return SUCCESS;
+}
+
+int32_t AudioRendererSink::GetMute(bool &isMute)
+{
+    int32_t ret;
+    if (audioRender_ == nullptr) {
+        MEDIA_ERR_LOG("AudioRendererSink::GetMute failed audioRender_ handle is null!");
+        return ERR_INVALID_HANDLE;
+    }
+
+    ret = audioRender_->volume.GetMute(reinterpret_cast<AudioHandle>(audioRender_), &isMute);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("AudioRendererSink::GetMute failed");
+        return ERR_OPERATION_FAILED;
+    }
+
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -552,6 +589,24 @@ int32_t AudioRendererSinkGetLatency(uint32_t *latency)
     return ret;
 }
 
+bool AudioRendererSinkIsSpeakerMuteRequired(void)
+{
+    return AudioRendererSink::speakerMuteState_;
+}
+
+int32_t AudioRendererSinkSetSpeakerMute(bool isMute)
+{
+    int32_t ret;
+
+    if (!g_audioRendrSinkInstance->rendererInited_) {
+        MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first before speaker mute\n");
+        return ERR_DEVICE_INIT;
+    }
+
+    ret = g_audioRendrSinkInstance->SetMute(isMute);
+
+    return ret;
+}
 #ifdef __cplusplus
 }
 #endif

@@ -479,6 +479,30 @@ declare namespace audio {
      * @devices
      */
     off(type: 'interrupt', volumeType: AudioVolumeType): void;
+    /**
+     * Mute/Unmutes the speaker. This method uses an asynchronous callback to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setMasterMute(mute: boolean, callback: AsyncCallback<void>): void;
+    /**
+     * Mute/Unmutes the speaker. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setMasterMute(mute: boolean): Promise<void>;
+    /**
+     * Checks whether the speaker is muted. This method uses an asynchronous callback to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getMasterMute(callback: AsyncCallback<boolean>): void;
+    /**
+     * Checks whether the speaker is muted. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getMasterMute(): Promise<boolean>;
   }
 
   /**
