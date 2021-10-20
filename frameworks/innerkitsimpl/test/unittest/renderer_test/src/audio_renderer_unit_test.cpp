@@ -185,7 +185,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_007, TestSize.Level0)
 *             rendererParams.channelCount = STEREO;
 *             rendererParams.encodingType = ENCODING_PCM;
 */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_001, TestSize.Level0)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);

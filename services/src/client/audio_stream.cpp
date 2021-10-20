@@ -402,7 +402,7 @@ bool AudioStream::ReleaseAudioStream()
 
 int32_t AudioStream::SetVolume(float volume)
 {
-    return SetStreamVolume(volume);
+    return SetStreamVolume(1.0f);
 }
 
 float AudioStream::GetVolume()

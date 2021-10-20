@@ -808,7 +808,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_005, TestSize.Level1)
 * @tc.number: Audio_Capturer_Read_001
 * @tc.desc  : Test Read interface. Returns number of bytes read, if the read is successful.
 */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_001, TestSize.Level0)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
