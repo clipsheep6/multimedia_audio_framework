@@ -103,6 +103,13 @@ public:
     virtual int32_t GetParams(AudioRendererParams &params) const = 0;
 
     /**
+     * @brief Obtains output sampling rate.
+     *
+     * @return Returns the output sampling rate
+     */
+    virtual uint32_t GetOutputSamplingRate() const = 0;
+
+    /**
      * @brief Starts audio rendering.
      *
      * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.

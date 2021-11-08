@@ -68,6 +68,11 @@ int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
     return result;
 }
 
+uint32_t AudioRendererPrivate::GetOutputSamplingRate() const
+{
+    return audioRenderer->GetOutputSamplingRate();
+}
+
 bool AudioRendererPrivate::Start() const
 {
     return audioRenderer->StartAudioStream();

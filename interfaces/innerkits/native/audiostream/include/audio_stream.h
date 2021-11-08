@@ -56,6 +56,8 @@ public:
     int32_t SetAudioStreamInfo(const AudioStreamParams info);
     int32_t GetAudioStreamInfo(AudioStreamParams &info);
 
+    uint32_t GetOutputSamplingRate();
+
     uint32_t GetAudioSessionID();
     State GetState();
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);

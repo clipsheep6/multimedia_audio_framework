@@ -165,6 +165,11 @@ int32_t AudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     return SUCCESS;
 }
 
+uint32_t AudioStream::GetOutputSamplingRate()
+{
+    return GetSamplingRate();
+}
+
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info)
 {
     MEDIA_INFO_LOG("AudioStream: SetAudioParams");
