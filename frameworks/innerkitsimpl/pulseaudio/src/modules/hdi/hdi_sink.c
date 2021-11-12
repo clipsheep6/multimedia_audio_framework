@@ -260,6 +260,7 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
                 pa_log("Reinitializing HDI rendering device with rate: %d, channels: %d", u->ss.rate, u->ss.channels);
                 if (PrepareDevice(&u->ss) < 0) {
                     pa_log_error("HDI renderer reinitialization failed");
+                    pa_core_exit(u->core, true, 0);
                 } else {
                     u->isHDISinkInitialized = true;
                     pa_log("Successfully reinitialized HDI renderer");
