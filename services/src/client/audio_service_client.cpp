@@ -346,6 +346,7 @@ void AudioServiceClient::SetEnv()
 
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 {
+    MEDIA_INFO_LOG("Initialize in");
     int error = PA_ERR_INTERNAL;
     eAudioClientType = eClientType;
 
