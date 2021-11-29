@@ -64,6 +64,8 @@ public:
     int32_t GetLatency(uint64_t &latency);
     int32_t SetVolume(float volume);
     float GetVolume();
+    int32_t SetRenderRate(AudioRendererRate renderRate);
+    AudioRendererRate GetRenderRate();
 
     std::vector<AudioSampleFormat> GetSupportedFormats();
     std::vector<AudioChannel> GetSupportedChannels();

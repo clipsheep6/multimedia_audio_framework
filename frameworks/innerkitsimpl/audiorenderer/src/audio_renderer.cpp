@@ -128,6 +128,16 @@ float AudioRendererPrivate::GetVolume() const
     return audioRenderer->GetVolume();
 }
 
+int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
+{
+    return audioRenderer->SetRenderRate(renderRate);
+}
+
+AudioRendererRate AudioRendererPrivate::GetRenderRate() const
+{
+    return audioRenderer->GetRenderRate();
+}
+
 std::vector<AudioSampleFormat> AudioRenderer::GetSupportedFormats()
 {
     return AUDIO_SUPPORTED_FORMATS;
