@@ -51,6 +51,7 @@ State AudioStream::GetState()
 
 bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
+    MEDIA_INFO_LOG("GetAudioTime in");
     uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
         MEDIA_DEBUG_LOG("AudioStream: GetAudioTime in microseconds: %{public}" PRIu64, paTimeStamp);
