@@ -83,7 +83,8 @@ private:
     };
 
     AudioAdapterManager()
-        : mRingerMode(RINGER_MODE_NORMAL),
+        : mPrevRingerMode(RINGER_MODE_NORMAL),
+          mRingerMode(RINGER_MODE_NORMAL),
           mAudioPolicyKvStore(nullptr)
     {
         mVolumeMap[STREAM_MUSIC] = MAX_VOLUME;
@@ -102,10 +103,11 @@ private:
     bool LoadVolumeFromKvStore(AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     bool LoadRingerMode(void);
-    void WriteRingerModeToKvStore(AudioRingerMode ringerMode);
+    void WriteRingerModeToKvStore(std::string ringerModeKey, AudioRingerMode ringerMode);
 
     std::unique_ptr<AudioServiceAdapter> mAudioServiceAdapter;
     std::unordered_map<AudioStreamType, float> mVolumeMap;
+    AudioRingerMode mPrevRingerMode;
     AudioRingerMode mRingerMode;
     std::shared_ptr<SingleKvStore> mAudioPolicyKvStore;
     friend class PolicyCallbackImpl;
@@ -125,7 +127,9 @@ public:
 
     float OnGetVolumeCb(std::string streamType)
     {
-        if (audioAdapterManager_->mRingerMode != RINGER_MODE_NORMAL) {
+        if ((audioAdapterManager_->mRingerMode == RINGER_MODE_SILENT)
+            || ((audioAdapterManager_->mRingerMode == RINGER_MODE_VIBRATE)
+            && (audioAdapterManager_->mPrevRingerMode == RINGER_MODE_SILENT))) {
             if (!streamType.compare("ring")) {
                 return AudioAdapterManager::MIN_VOLUME;
             }
