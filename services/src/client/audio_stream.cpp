@@ -409,5 +409,15 @@ float AudioStream::GetVolume()
 {
     return GetStreamVolume();
 }
+
+int32_t AudioStream::SetRenderRate(AudioRendererRate renderRate)
+{
+    return SetStreamRenderRate(renderRate);
+}
+
+AudioRendererRate AudioStream::GetRenderRate()
+{
+    return GetStreamRenderRate();
+}
 }
 }

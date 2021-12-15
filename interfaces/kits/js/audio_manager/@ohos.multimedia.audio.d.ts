@@ -239,6 +239,15 @@ declare namespace audio {
     STREAM_USAGE_NOTIFICATION_RINGTONE = 3,
   }
 
+  /**
+   * Enumerates the audio render rate.
+   */
+  enum AudioRendererRate {
+    RENDER_RATE_NORMAL = 0,
+    RENDER_RATE_DOUBLE = 1,
+    RENDER_RATE_HALF = 2,
+  }
+
   enum InterruptType {
     INTERRUPT_TYPE_BEGIN = 1,
     INTERRUPT_TYPE_END = 2,
@@ -720,6 +729,32 @@ declare namespace audio {
      * @sysCap SystemCapability.Multimedia.Audio
      */
     getBufferSize(): Promise<number>;
+
+    /**
+     * Set the render rate. This method uses an asynchronous callback to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setRenderRate(rate: AudioRendererRate, callback: AsyncCallback<number>): void;
+    /**
+     * Set the render rate. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setRenderRate(rate: AudioRendererRate): Promise<number>;
+
+    /**
+     * Obtains the current render rate. This method uses an asynchronous callback to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getRenderRate(callback: AsyncCallback<AudioRendererRate>): void;
+    /**
+     * Obtains the current render rate. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getRenderRate(): Promise<AudioRendererRate>;
   }
 
   /**

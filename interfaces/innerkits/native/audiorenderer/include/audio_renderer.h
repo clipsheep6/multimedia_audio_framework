@@ -210,8 +210,24 @@ public:
      */
     virtual float GetVolume() const = 0;
 
-        /**
-     * @brief Obtains the foramts supported by renderer.
+    /**
+     * @brief Set the render rate
+     *
+     * @param renderRate The rate at which the stream needs to be rendered.
+     * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetRenderRate(AudioRendererRate renderRate) const = 0;
+
+    /**
+     * @brief Obtains the current render rate
+     *
+     * @return Returns current render rate
+     */
+    virtual AudioRendererRate GetRenderRate() const = 0;
+
+    /**
+     * @brief Obtains the formats supported by renderer.
      *
      * @return Returns vector with supported formats.
      */

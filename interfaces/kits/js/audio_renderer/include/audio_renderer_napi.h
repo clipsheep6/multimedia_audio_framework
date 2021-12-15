@@ -17,6 +17,7 @@
 #define AUDIO_RENDERER_NAPI_H_
 
 #include <iostream>
+#include <map>
 #include <queue>
 
 #include "audio_renderer.h"
@@ -26,6 +27,12 @@
 namespace OHOS {
 namespace AudioStandard {
 static const std::string AUDIO_RENDERER_NAPI_CLASS_NAME = "AudioRenderer";
+
+static const std::map<std::string, AudioRendererRate> rendererRateMap = {
+    {"RENDER_RATE_NORMAL", RENDER_RATE_NORMAL},
+    {"RENDER_RATE_DOUBLE", RENDER_RATE_DOUBLE},
+    {"RENDER_RATE_HALF", RENDER_RATE_HALF}
+};
 
 class AudioRendererNapi {
 public:
@@ -41,6 +48,7 @@ private:
         napi_ref callbackRef = nullptr;
         int32_t status;
         int32_t intValue;
+        int32_t audioRendererRate;
         bool isTrue;
         uint64_t time;
         size_t bufferLen;
@@ -61,6 +69,8 @@ private:
     static napi_value CreateAudioRenderer(napi_env env, napi_callback_info info);
     static napi_value SetParams(napi_env env, napi_callback_info info);
     static napi_value GetParams(napi_env env, napi_callback_info info);
+    static napi_value SetRenderRate(napi_env env, napi_callback_info info);
+    static napi_value GetRenderRate(napi_env env, napi_callback_info info);
     static napi_value Start(napi_env env, napi_callback_info info);
     static napi_value Write(napi_env env, napi_callback_info info);
     static napi_value GetAudioTime(napi_env env, napi_callback_info info);
@@ -82,6 +92,10 @@ private:
     static void StartAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void StopAsyncCallbackComplete(napi_env env, napi_status status, void *data);
 
+    static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
+    static napi_value CreateAudioRendererRateObject(napi_env env);
+
+    static napi_ref audioRendererRate_;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     int32_t SetAudioParameters(napi_env env, napi_value arg);

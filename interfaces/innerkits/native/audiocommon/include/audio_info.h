@@ -278,6 +278,15 @@ enum StreamUsage {
     STREAM_USAGE_VOICE_ASSISTANT = 4,
 };
 
+/**
+* Enumerates the renderer playback speed.
+*/
+enum AudioRendererRate {
+    RENDER_RATE_NORMAL = 0,
+    RENDER_RATE_DOUBLE = 1,
+    RENDER_RATE_HALF = 2,
+};
+
 enum InterruptType {
     INTERRUPT_TYPE_BEGIN = 1,
     INTERRUPT_TYPE_END = 2,

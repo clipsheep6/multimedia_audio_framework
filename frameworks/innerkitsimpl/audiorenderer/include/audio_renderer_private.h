@@ -39,6 +39,8 @@ public:
     int32_t GetBufferSize(size_t &bufferSize) const override;
     int32_t SetVolume(float volume) const override;
     float GetVolume() const override;
+    int32_t SetRenderRate(AudioRendererRate renderRate) const override;
+    AudioRendererRate GetRenderRate() const override;
 
     std::unique_ptr<AudioStream> audioRenderer;
 
