@@ -155,7 +155,7 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
     ```
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     ```
-#### Volume Control
+#### Volume Control:
 2. Use **GetMaxVolume** and  **GetMinVolume** APIs to query the Maximum & Minimum volume level allowed for the stream. Use this volume range to set the volume.
     ```
     AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_MUSIC;
@@ -181,7 +181,7 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
     int32_t result = audioSystemMgr->SetMicrophoneMute(true);
     bool isMicMute = audioSystemMgr->IsMicrophoneMute();
     ```
-#### Device control
+#### Device control:
 7. Use **GetDevices**, **deviceType_** and **deviceRole_** APIs to get audio I/O devices information. For DeviceFlag, DeviceType and DeviceRole enums refer [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/innerkits/native/audiocommon/include/audio_info.h).
     ```
     DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
@@ -198,6 +198,62 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
 9. Other useful APIs such as **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter** are also provided. Please refer [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/innerkits/native/audiomanager/include/audio_system_manager.h) for more details
+
+#### Audio Interrupt:
+Audio Interrupt works as explained below.
+
+(i) Assume music app is already running.
+
+Now, voice assistant app requests for audio interrupt **activation**.
+Audio manager upon acceptance of audio interrupt activation, will send following interrupt actions for both music and voice apps.
+- InterruptAction activated {TYPE_ACTIVATED, INTERRUPT_TYPE_BEGIN, INTERRUPT_HINT_NONE} will be sent to voice assistant app via registered callback
+- InterruptAction interrupted {TYPE_INTERRUPTED, INTERRUPT_TYPE_BEGIN, INTERRUPT_HINT_PAUSE} will be sent to music app via registered callback
+
+Now, voice assistant app requests for audio interrupt **deactivation**.
+
+Audio manager upon acceptance of audio interrupt deactivation, will send following interrupt actions for both music and voice apps.
+- InterruptAction deActivated {TYPE_DEACTIVATED, INTERRUPT_TYPE_END, INTERRUPT_HINT_NONE} will be sent to voice assistant app via registered callback
+- InterruptAction interrupted {TYPE_INTERRUPTED, INTERRUPT_TYPE_END, INTERRUPT_HINT_RESUME} will be sent to music app via registered callback
+
+(ii) Assume voice assistant app is already running.
+
+Now, music app requests for audio interrupt **activation**.
+Audio manager will **reject the request** since **priority stream voice assistant** is active.
+
+1.  Register the callback using **SetAudioManagerCallback** API
+    ```
+    class AudioInterruptCallbackTest : public AudioManagerCallback {
+        void OnInterrupt(const InterruptAction &interruptAction) override
+        {
+            cout << "OnInterrupt";
+            cout << interruptAction.actionType;
+            cout << interruptAction.interruptType;
+            cout << interruptAction.interruptHint;
+       }
+    };
+    std::shared_ptr<AudioManagerCallback> cbAudioMngr_ = std::make_shared<AudioInterruptCallbackTest>();
+    ret = audioSystemMgr_->SetAudioManagerCallback(streamType, cbAudioMngr_);
+    ```
+2.  Send activate interrupt request using **ActivateAudioInterrupt**
+    ```
+    AudioInterrupt audioInterrupt {STREAM_USAGE_MEDIA, CONTENT_TYPE_MUSIC, STREAM_MUSIC, 1000};
+    ret = audioSystemMgr_->ActivateAudioInterrupt(audioInterrupt);
+    if (ret) {
+        cout << "ActivateAudioInterrupt request rejected ";
+    } else {
+        cout << "ActivateAudioInterrupt success";
+    }
+    ```
+3.  To deactivate interrupt use **DeactivateAudioInterrupt**
+    ```
+    ret = audioSystemMgr_->DeactivateAudioInterrupt(audioInterrupt);
+    ```
+4. Finally must use **UnsetAudioManagerCallback** to deregister the callback which will avoid any undefined behaviour.
+    ```
+    ret = audioSystemMgr_->UnsetAudioManagerCallback(streamType);
+    ```
+To know how to audio playback with interrupt, you can refer [**audio_interrupt_test.cpp**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/services/services/test/audio_interrupt_test.cpp).
+Refer [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/innerkits/native/audiomanager/include/audio_system_manager.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/innerkits/native/audiocommon/include/audio_info.h) for more details.
 
 #### JavaScript Usage:
 JavaScript apps can use the APIs provided by audio manager to control the volume and the device.\
