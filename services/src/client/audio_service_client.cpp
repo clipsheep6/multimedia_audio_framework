@@ -236,6 +236,8 @@ AudioServiceClient::AudioServiceClient()
     volumeChannels = STEREO;
     streamInfoUpdated = false;
 
+    samplingRate = DEFAULT_SAMPLING_RATE;
+
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
 
     mAudioRendererCallbacks = NULL;
@@ -1076,7 +1078,27 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount)
 
 uint32_t AudioServiceClient::GetSamplingRate()
 {
-    return DEFAULT_SAMPLING_RATE;
+    if (context == NULL) {
+        MEDIA_ERR_LOG("context is null");
+        return DEFAULT_SAMPLING_RATE;
+    }
+
+    pa_threaded_mainloop_lock(mainLoop);
+
+    uint32_t idx = pa_stream_get_index(paStream);
+    pa_operation *operation = pa_context_get_sink_info_by_index(context, idx, AudioServiceClient::GetSamplingRateCb,
+        reinterpret_cast<void *>(this));
+    if (operation == NULL) {
+        MEDIA_ERR_LOG("pa_context_get_sink_input_info_list returned null");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return DEFAULT_SAMPLING_RATE;
+    }
+
+    pa_threaded_mainloop_accept(mainLoop);
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return samplingRate;
 }
 
 uint8_t AudioServiceClient::GetChannelCount()
@@ -1296,6 +1318,31 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     pa_operation_unref(pa_context_set_sink_input_volume(client.context, client.streamIndex, &cv, NULL, NULL));
 
     MEDIA_INFO_LOG("Applied volume : %{public}f, pa volume: %{public}d", vol, volume);
+}
+
+void AudioServiceClient::GetSamplingRateCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
+{
+    MEDIA_INFO_LOG("GetSamplingRateCb in");
+    AudioServiceClient *thiz = reinterpret_cast<AudioServiceClient *>(userdata);
+
+    if (eol < 0) {
+        MEDIA_ERR_LOG("Failed to get sink input information: %{public}s", pa_strerror(pa_context_errno(c)));
+        return;
+    }
+
+    if (eol) {
+        pa_threaded_mainloop_signal(thiz->mainLoop, 1);
+        return;
+    }
+
+    if (i->proplist == NULL) {
+        MEDIA_ERR_LOG("Invalid prop list for sink input (%{public}d).", i->index);
+        return;
+    }
+
+    thiz->samplingRate = i->sample_spec.rate;
+
+    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS

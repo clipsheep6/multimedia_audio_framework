@@ -326,6 +326,8 @@ private:
     uint32_t volumeChannels;
     bool streamInfoUpdated;
 
+    uint32_t samplingRate;
+
     // To be set while using audio stream
     // functionality for callbacks
     AudioRendererCallbacks *mAudioRendererCallbacks;
@@ -390,6 +392,7 @@ private:
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
+    static void GetSamplingRateCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
 };
 } // namespace AudioStandard

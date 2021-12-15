@@ -27,6 +27,7 @@ public:
     int32_t GetLatency(uint64_t &latency) const override;
     int32_t SetParams(const AudioRendererParams params) const  override;
     int32_t GetParams(AudioRendererParams &params) const override;
+    uint32_t GetOutputSamplingRate() const override;
     bool Start() const override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     RendererState GetStatus() const override;
