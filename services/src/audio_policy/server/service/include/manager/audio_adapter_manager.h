@@ -70,6 +70,10 @@ public:
 
     AudioRingerMode GetRingerMode(void);
 
+    int32_t SetAudioScene(AudioScene audioScene);
+
+    AudioScene GetAudioScene(void);
+
     virtual ~AudioAdapterManager() {}
 
 private:
@@ -107,6 +111,7 @@ private:
     std::unique_ptr<AudioServiceAdapter> mAudioServiceAdapter;
     std::unordered_map<AudioStreamType, float> mVolumeMap;
     AudioRingerMode mRingerMode;
+    AudioScene mAudioScene = AUDIO_SCENE_DEFAULT;
     std::shared_ptr<SingleKvStore> mAudioPolicyKvStore;
     friend class PolicyCallbackImpl;
 };

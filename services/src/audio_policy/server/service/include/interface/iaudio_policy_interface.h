@@ -52,6 +52,10 @@ public:
     virtual int32_t SetRingerMode(AudioRingerMode ringerMode) = 0;
 
     virtual AudioRingerMode GetRingerMode() = 0;
+
+    virtual int32_t SetAudioScene(AudioScene audioScene) = 0;
+
+    virtual AudioScene GetAudioScene() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
