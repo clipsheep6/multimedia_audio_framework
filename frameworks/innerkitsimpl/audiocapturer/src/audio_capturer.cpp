@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
-#include "audio_errors.h"
-#include "audio_capturer_private.h"
-#include "audio_stream.h"
 #include "audio_capturer.h"
+
+#include "audio_capturer_private.h"
+#include "audio_errors.h"
+#include "audio_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -26,6 +27,17 @@ AudioCapturerPrivate::~AudioCapturerPrivate() = default;
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType)
 {
     return std::make_unique<AudioCapturerPrivate>(audioStreamType);
+}
+
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &capturerOptions)
+{
+    AudioStreamType audioStreamType = STREAM_MUSIC;
+
+    if (capturerOptions.capturerInfo.sourceType == SOURCE_TYPE_VOICE_CALL) {
+        audioStreamType = STREAM_VOICE_CALL;
+    }
+
+    return Create(audioStreamType);
 }
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType)

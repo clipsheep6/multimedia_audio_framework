@@ -54,6 +54,8 @@ private:
         StreamUsage usage;
         DeviceRole deviceRole;
         DeviceType deviceType;
+        SourceType sourceType;
+        uint32_t capturerFlags;
         AudioCapturerNapi *objectInfo;
     };
 
@@ -62,6 +64,8 @@ private:
     static napi_value CreateAudioCapturer(napi_env env, napi_callback_info info);
     static napi_value SetParams(napi_env env, napi_callback_info info);
     static napi_value GetParams(napi_env env, napi_callback_info info);
+    static napi_value GetCapturerInfo(napi_env env, napi_callback_info info);
+    static napi_value GetStreamInfo(napi_env env, napi_callback_info info);
     static napi_value Start(napi_env env, napi_callback_info info);
     static napi_value Read(napi_env env, napi_callback_info info);
     static napi_value GetAudioTime(napi_env env, napi_callback_info info);
@@ -73,11 +77,17 @@ private:
                                       const napi_value &valueParam);
     static void SetFunctionAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void AudioParamsAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AudioCapturerInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void ReadAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetInt64ValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static napi_status CreateReadAsyncWork(const AudioCapturerAsyncContext &asyncContext);
+
+    static bool ParseCapturerOptions(napi_env env, napi_value root, AudioCapturerOptions *opts);
+    static bool ParseCapturerInfo(napi_env env, napi_value root, AudioCapturerInfo *rendererInfo);
+    static bool ParseStreamInfo(napi_env env, napi_value root, AudioStreamInfo* streamInfo);
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
@@ -88,6 +98,8 @@ private:
     StreamUsage streamUsage_;
     DeviceRole deviceRole_;
     DeviceType deviceType_;
+    SourceType sourceType_;
+    uint32_t capturerFlags_;
     napi_env env_;
     napi_ref wrapper_;
 };
