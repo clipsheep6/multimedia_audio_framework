@@ -70,6 +70,11 @@ public:
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType);
 
     /**
+     * @brief creater capturer instance.
+    */
+    static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &capturerOptions);
+
+    /**
      * @brief Obtains the number of frames required in the current condition, in bytes per sample.
      *
      * @param frameCount Indicates the pointer in which framecount will be written
