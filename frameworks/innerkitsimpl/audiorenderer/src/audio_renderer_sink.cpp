@@ -133,6 +133,31 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, const char *a
     return ERR_INVALID_INDEX;
 }
 
+#ifdef DEVICE_BALTIMORE
+static AudioCategoryHAL GetAudioCategoryHAL(AudioScene audioScene) {
+    AudioScene result;
+    switch(audioScene) {
+        case AUDIO_SCENE_DEFAULT:
+            result = AUDIO_IN_MEDIA;
+            break;
+        case AUDIO_SCENE_RINGING:
+            result = AUDIO_IN_RINGTONE;
+            break;
+        case AUDIO_SCENE_PHONE_CALL:
+            result = AUDIO_IN_CALL;
+            break;
+        case AUDIO_SCENE_VOICE_CHAT:
+            result = AUDIO_IN_COMMUNICATION;
+            break;
+        default:
+            result = AUDIO_IN_MEDIA;
+            break;
+    }
+
+    return result;
+}
+#endif
+
 int32_t AudioRendererSink::InitAudioManager()
 {
     MEDIA_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
@@ -342,6 +367,25 @@ int32_t AudioRendererSink::GetLatency(uint32_t *latency)
     } else {
         return ERR_OPERATION_FAILED;
     }
+}
+
+int32_t AudioRendererSink::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+{
+    if (audioRender_ == nullptr) {
+        MEDIA_ERR_LOG("AudioRendererSink: SetAudioScene failed audio render null");
+        return ERR_INVALID_HANDLE;
+    }
+#ifdef DEVICE_BALTIMORE
+    if (audioRender_->SetMode(audioRender_, GetAudioCategoryHAL(audioScene)) == 0) {
+        MEDIA_INFO_LOG("AudioRendererSink: Set audio mode SUCCESS");
+        return SUCCESS;
+    } else {
+        MEDIA_INFO_LOG("AudioRendererSink: Set audio mode FAILED");
+        return ERR_OPERATION_FAILED;
+    }
+#else
+    return SUCCESS;
+#endif
 }
 
 int32_t AudioRendererSink::Stop(void)

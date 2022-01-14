@@ -117,6 +117,18 @@ AudioRingerMode AudioAdapterManager::GetRingerMode()
     return mRingerMode;
 }
 
+int32_t AudioAdapterManager::SetAudioScene(AudioScene audioScene)
+{
+    mAudioScene = audioScene;
+
+    return SUCCESS;
+}
+
+AudioScene AudioAdapterManager::GetAudioScene()
+{
+    return mAudioScene;
+}
+
 AudioIOHandle AudioAdapterManager::OpenAudioPort(std::unique_ptr<AudioPortInfo> &audioPortInfo)
 {
     std::string moduleArgs = GetModuleArgs(audioPortInfo);

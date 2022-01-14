@@ -14,6 +14,8 @@
  */
 
 #include "audio_capturer_source.h"
+#include "audio_errors.h"
+#include "audio_renderer_sink.h"
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
@@ -25,6 +27,8 @@ extern "C" {
     extern int ohos_pa_main(int argc, char *argv[]);
 }
 #endif
+
+using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -136,6 +140,33 @@ bool AudioServer::IsMicrophoneMute()
     }
 
     return isMute;
+}
+
+int32_t AudioServer::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+{
+    int32_t ret = SUCCESS;
+
+    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+
+    if ((audioCapturerSourceInstance->capturerInited_ == false)
+        || (audioRendererSinkInstance->rendererInited_ == false)) {
+        MEDIA_INFO_LOG("Capturer/Renderer is not initialized, Set audio scene failed");
+        return ERR_OPERATION_FAILED;
+    }
+
+    if (!audioCapturerSourceInstance->SetAudioScene(activeDeviceList, audioScene)
+        && !audioRendererSinkInstance->SetAudioScene(activeDeviceList, audioScene)) {
+        MEDIA_INFO_LOG("SetAudioScene success");
+        mAudioScene = audioScene;
+    } else {
+        MEDIA_ERR_LOG("SetAudioScene failed, try to reset the modes for capturer/renderer");
+        audioCapturerSourceInstance->SetAudioScene(activeDeviceList, mAudioScene);
+        audioRendererSinkInstance->SetAudioScene(activeDeviceList, mAudioScene);
+        ret = ERR_OPERATION_FAILED;
+    }
+
+    return ret;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag deviceFlag)

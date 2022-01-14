@@ -121,6 +121,31 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, const char *a
     return ERR_INVALID_INDEX;
 }
 
+#ifdef DEVICE_BALTIMORE
+static AudioCategoryHAL GetAudioCategoryHAL(AudioScene audioScene) {
+    AudioScene result;
+    switch(audioScene) {
+        case AUDIO_SCENE_DEFAULT:
+            result = AUDIO_IN_MEDIA;
+            break;
+        case AUDIO_SCENE_RINGING:
+            result = AUDIO_IN_RINGTONE;
+            break;
+        case AUDIO_SCENE_PHONE_CALL:
+            result = AUDIO_IN_CALL;
+            break;
+        case AUDIO_SCENE_VOICE_CHAT:
+            result = AUDIO_IN_COMMUNICATION;
+            break;
+        default:
+            result = AUDIO_IN_MEDIA;
+            break;
+    }
+
+    return result;
+}
+#endif
+
 int32_t AudioCapturerSource::InitAudioManager()
 {
     MEDIA_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
@@ -336,6 +361,25 @@ int32_t AudioCapturerSource::GetMute(bool &isMute)
     }
 
     return SUCCESS;
+}
+
+int32_t AudioCapturerSource::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+{
+    if (audioCapture_ == nullptr) {
+        MEDIA_ERR_LOG("AudioCapturerSource::GetMute failed audioCapture_ handle is null!");
+        return ERR_INVALID_HANDLE;
+    }
+#ifdef DEVICE_BALTIMORE
+    if (audioCapture_->SetMode(audioCapture_, GetAudioCategoryHAL(audioScene)) == 0) {
+        MEDIA_INFO_LOG("AudioCapturerSource: Set audio mode SUCCESS");
+        return SUCCESS;
+    } else {
+        MEDIA_INFO_LOG("AudioCapturerSource: Set audio mode FAILED");
+        return ERR_OPERATION_FAILED;
+    }
+#else
+    return SUCCESS;
+#endif
 }
 
 int32_t AudioCapturerSource::Stop(void)

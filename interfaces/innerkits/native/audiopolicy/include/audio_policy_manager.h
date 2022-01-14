@@ -55,6 +55,10 @@ public:
 
     AudioRingerMode GetRingerMode();
 
+    int32_t SetAudioScene(AudioScene scene);
+
+    AudioScene GetAudioScene();
+
     int32_t SetAudioManagerCallback(const AudioStreamType streamType,
                                     const std::shared_ptr<AudioManagerCallback> &callback);
 

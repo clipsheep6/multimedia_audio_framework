@@ -57,6 +57,10 @@ public:
 
     AudioRingerMode GetRingerMode() override;
 
+    int32_t SetAudioScene(AudioScene audioScene) override;
+
+    AudioScene GetAudioScene() override;
+
     int32_t SetAudioManagerCallback(const AudioStreamType streamType, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioManagerCallback(const AudioStreamType streamType) override;

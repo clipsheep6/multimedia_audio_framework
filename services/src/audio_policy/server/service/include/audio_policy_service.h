@@ -63,6 +63,10 @@ public:
 
     AudioRingerMode GetRingerMode() const;
 
+    int32_t SetAudioScene(AudioScene audioScene);
+
+    AudioScene GetAudioScene() const;
+
     // Parser callbacks
     void OnAudioPortAvailable(std::unique_ptr<AudioPortInfo> portInfo);
 
@@ -102,6 +106,7 @@ private:
     std::list<InternalDeviceType> mActiveOutputDevices;
     std::list<InternalDeviceType> mActiveInputDevices;
     std::string GetPortName(InternalDeviceType deviceType);
+    AudioScene mAudioScene = AUDIO_SCENE_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS

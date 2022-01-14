@@ -171,7 +171,6 @@ private:
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
     AudioSystemManager::AudioVolumeType cbStreamType_ = AudioSystemManager::AudioVolumeType::STREAM_DEFAULT;
-    AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS
