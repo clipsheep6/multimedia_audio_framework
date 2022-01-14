@@ -177,6 +177,16 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
     return mAudioPolicyManager.GetRingerMode();
 }
 
+int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
+{
+    return mAudioPolicyManager.SetAudioScene(audioScene);
+}
+
+AudioScene AudioPolicyService::GetAudioScene() const
+{
+    return mAudioPolicyManager.GetAudioScene();
+}
+
 // Parser callbacks
 
 void AudioPolicyService::OnAudioPortAvailable(unique_ptr<AudioPortInfo> portInfo)

@@ -63,6 +63,10 @@ public:
 
     AudioRingerMode GetRingerMode() const;
 
+    int32_t SetAudioScene(AudioScene audioScene);
+
+    AudioScene GetAudioScene() const;
+
     // Parser callbacks
     void OnAudioPortAvailable(std::unique_ptr<AudioPortInfo> portInfo);
 
