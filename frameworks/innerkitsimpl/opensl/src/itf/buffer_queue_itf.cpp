@@ -1,6 +1,7 @@
 /* BufferQueue implementation */
 
 #include <OpenSLES.h>
+#include <itf_struct.h>
 
 SLresult BufferQueueEnqueue(SLBufferQueueItf self, const void *pBuffer, SLuint32 size)
 {
@@ -27,9 +28,15 @@ SLresult BufferQueueRegisterCallback(SLBufferQueueItf self,
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static const struct SLBufferQueueItf_ IBufferQueue_Itf = {
+static const struct SLBufferQueueItf_ IBufferQueueItf = {
     BufferQueueEnqueue,
     BufferQueueClear,
     BufferQueueGetState,
     BufferQueueRegisterCallback
 };
+
+void IBufferQueueInit(void *self)
+{
+    IBufferQueue *thiz = (IBufferQueue *) self;
+    thiz->mItf = &IBufferQueueItf;
+}

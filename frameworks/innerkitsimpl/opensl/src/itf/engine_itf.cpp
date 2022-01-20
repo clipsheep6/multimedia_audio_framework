@@ -3,6 +3,9 @@
 #include <OpenSLES.h>
 #include <class_struct.h>
 #include <itf_struct.h>
+#include <table_struct.h>
+#include <builder.h>
+#include <all_itf.h>
 
 static SLresult CreateLEDDevice(SLEngineItf self, SLObjectItf *pDevice, SLuint32 deviceID,
     SLuint32 numInterfaces, const SLInterfaceID *pInterfaceIds, const SLboolean *pInterfaceRequired)
@@ -24,9 +27,21 @@ static SLresult CreateAudioPlayer(SLEngineItf self, SLObjectItf *pPlayer,
     SLDataSource *pAudioSrc, SLDataSink *pAudioSnk, SLuint32 numInterfaces,
     const SLInterfaceID *pInterfaceIds, const SLboolean *pInterfaceRequired)
 {
+    // objectid -> objectclass;使用 objectid 映射 拿到对应 类对象
     ClassTable *audioPlayerClass = ObjectIdToClass(SL_OBJECTID_AUDIOPLAYER);
+    // 使用 类对象 构造 对象
     CAudioPlayer *thiz = (CAudioPlayer *) Construct(audioPlayerClass, self);
+    
+    //后续Ixx 的 初始化交给各Ixx 的 realize
+    IObjectInit(&thiz->mObject);
+    IPlayInit(&thiz->mPlay);
+    IVolumeInit(&thiz->mVolume);
+    IBufferQueueInit(&thiz->mBufferQueue);
+    
+    // 拿到 接口
     *pPlayer = &thiz->mObject.mItf;
+    // adapter侧同步创建
+    //CreateAudioPlayerAdapter(a, b, c)?
     // Not implemented
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
@@ -130,8 +145,7 @@ static SLresult IsExtensionSupported(SLEngineItf self,
     // Not implemented
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
- 
- 
+
 static const struct SLEngineItf_ EngineItf = {
     CreateLEDDevice,
     CreateVibraDevice,
@@ -149,3 +163,9 @@ static const struct SLEngineItf_ EngineItf = {
     QuerySupportedExtension,
     IsExtensionSupported
 };
+
+void IEngineInit(void *self)
+{
+    IEngine *thiz = (IEngine *) self;
+    thiz->mItf = &EngineItf;
+}
