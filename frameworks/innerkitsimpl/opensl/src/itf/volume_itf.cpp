@@ -1,4 +1,5 @@
 #include<OpenSLES.h>
+#include <itf_struct.h>
 
 static SLresult SetVolumeLevel(SLVolumeItf self, SLmillibel level) {
     return SL_RESULT_FEATURE_UNSUPPORTED;
@@ -47,3 +48,9 @@ static const struct SLVolumeItf_ VolumeItf = {
     SetStereoPosition,
     GetStereoPosition
 };
+
+void IVolumeInit(void *self)
+{
+    IVolume *thiz = (IVolume *) self;
+    thiz->mItf = &VolumeItf;
+}
