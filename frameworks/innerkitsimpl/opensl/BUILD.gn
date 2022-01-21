@@ -12,16 +12,21 @@ ohos_shared_library("opensles") {
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/itf/object_itf.cpp",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/itf/play_itf.cpp",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/itf/volume_itf.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/itf/",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/obj/object_itf.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/obj/play_itf.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/obj/volume_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/obj/audio_player_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/obj/engine_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/obj/output_mix_obj.cpp",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/builder.cpp",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/class_struct.cpp",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/mapper.cpp",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/OpenSLES_IID.c",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/sl_entry.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/table_struct",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/table_struct.cpp",
+  ]
+
+  cflags = [
+    "-Werror",
+    "-Wunused",
+    "-Wno-unused-parameter"
   ]
 
   subsystem_name = "multimedia"

@@ -1,10 +1,13 @@
-/* interface struct*/
-/*
-#ifndef ITF_STRUCT_H
-#define ITF_STRUCT_H
+#ifndef COMMON_H
+#define COMMON_H
 
 #include<OpenSLES.h>
+#include<OpenSLES_Platform.h>
 #include<table_struct.h>
+
+struct CEngine;
+
+// interface
 
 struct IObject {
     const struct SLObjectItf_ *mItf;
@@ -24,7 +27,7 @@ struct IPlay {
     SLuint32 mState;
 };
 
-struct IBufferQueue{
+struct IBufferQueue {
     const struct SLBufferQueueItf_ *mItf;
     IObject *mThis; // this 指针
 };
@@ -34,5 +37,19 @@ struct IVolume {
     IObject *mThis; // this 指针
 };
 
+// class
+
+struct CEngine {
+    IObject mObject;
+    IEngine mEngine;
+};
+
+struct CAudioPlayer {
+    IObject mObject;
+    IPlay mPlay;
+    IVolume mVolume;
+    IBufferQueue mBufferQueue;
+    SLuint32 mId;
+};
+
 #endif
-*/

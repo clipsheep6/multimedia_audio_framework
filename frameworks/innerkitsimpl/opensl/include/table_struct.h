@@ -1,14 +1,19 @@
+#ifndef TABLE_STRUCT_H
+#define TABLE_STRUCT_H
+
 #include<OpenSLES.h>
 #include<OpenSLES_Platform.h>
-#include<stddef.h>;
+#include<stddef.h>
 
-typedef struct {
+struct ClassTable {
     SLuint32 mInterfaceCount;
-    const char * const mName;
+    char * mName;
     SLuint32 mObjectId;
     size_t mSize;
-} ClassTable;
+};
 
-static const ClassTable EngineTab;
+extern ClassTable EngineTab;
 
-static const ClassTable AudioPlayerTab;
+extern ClassTable AudioPlayerTab;
+
+#endif

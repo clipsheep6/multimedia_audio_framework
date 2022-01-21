@@ -1,9 +1,8 @@
 /* Pbject implementation */
 
 #include<OpenSLES.h>
-#include<itf_struct.h>
+#include<common.h>
 #include<table_struct.h>
-#include <table_struct.h>
 
 static SLresult Realize(SLObjectItf self, SLboolean async) 
 {
@@ -101,5 +100,5 @@ void IObjectInit(void *self)
 
 void IObjectPublish(IObject *thiz)
 {
-    IEngine *thisEngine = &thiz->mEngine->mEngine;
+    //IEngine *thisEngine = &thiz->mEngine->mEngine;
 }

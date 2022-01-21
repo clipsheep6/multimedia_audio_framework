@@ -289,8 +289,6 @@ typedef struct SLDataLocator_OutputMix {
 	SLObjectItf		outputMix;
 } SLDataLocator_OutputMix;
 
-.
-
 /** BufferQueue-based data locator definition where locatorType must be SL_DATALOCATOR_BUFFERQUEUE*/
 typedef struct SLDataLocator_BufferQueue {
 	SLuint32	locatorType;

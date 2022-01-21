@@ -1,13 +1,32 @@
+/*
+#ifndef CLASS_STRUCT_H
+#define CLASS_STRUCT_H
+
 #include<OpenSLES.h>
+#include<OpenSLES_Platform.h>
+#include<stddef.h>
 
-typedef struct EngineClass {
+struct CEngine {
     IObject mObject;
-} CEngine;
+    IEngine mEngine;
+};
 
-typedef struct AudioPlayerClass {
+struct CAudioPlayer {
     IObject mObject;
-} CAudioPlayer;
+    IPlay mPlay;
+    IVolume mVolume;
+    IBufferQueue mBufferQueue;
+};
 
-ClassTable *ObjectIdToClass(SLuint32 objectId);
+//table -> class -> itf
 
-IObject *Construct(ClassTable classTable, SLEngineItf itf);
+//table 对于 类对象，用于construct()构造class
+
+//class 被construct()构造，持有ObjectItf
+
+// xx->mObject->mItf
+
+//itf 通过ObjectItf的getInterface方法获取，对外提供函数调用，对内调用adapter
+
+#endif
+*/
