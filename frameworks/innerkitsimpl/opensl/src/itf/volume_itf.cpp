@@ -1,5 +1,5 @@
 #include<OpenSLES.h>
-#include <itf_struct.h>
+#include<common.h>
 
 static SLresult SetVolumeLevel(SLVolumeItf self, SLmillibel level) {
     return SL_RESULT_FEATURE_UNSUPPORTED;

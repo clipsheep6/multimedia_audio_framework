@@ -1,8 +1,7 @@
 /* Engine implementation */
 
 #include <OpenSLES.h>
-#include <class_struct.h>
-#include <itf_struct.h>
+#include <common.h>
 #include <table_struct.h>
 #include <builder.h>
 #include <all_itf.h>
@@ -38,6 +37,8 @@ static SLresult CreateAudioPlayer(SLEngineItf self, SLObjectItf *pPlayer,
     IVolumeInit(&thiz->mVolume);
     IBufferQueueInit(&thiz->mBufferQueue);
     
+    // 用于标识 class，和 adapter 一一对应
+    thiz->mId = 0;
     // 拿到 接口
     *pPlayer = &thiz->mObject.mItf;
     // adapter侧同步创建
