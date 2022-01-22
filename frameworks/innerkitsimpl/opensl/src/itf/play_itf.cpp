@@ -1,56 +1,93 @@
+/* Play implementation */
+
 #include<OpenSLES.h>
 #include<common.h>
 
-static SLresult SetVolumeLevel(SLVolumeItf self, SLmillibel level) {
+static SLresult SetPlayState(SLPlayItf self, SLuint32 state)
+{
+    IPlay *thiz = (IPlay *)self;
+    thiz->mState = state;
+    //invoke adapter
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult GetVolumeLevel(SLVolumeItf self, SLmillibel *pLevel) {
+static SLresult GetPlayState(SLPlayItf self, SLuint32 *pState)
+{
+    IPlay *thiz = (IPlay *)self;
+    *pState = thiz->mState;
+    //invoke adapter
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult GetMaxVolumeLevel(SLVolumeItf self, SLmillibel *pMaxLevel) {
+static SLresult GetDuration(SLPlayItf self, SLmillisecond *pMsec)
+{
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult SetMute(SLVolumeItf self, SLboolean state) {
+static SLresult GetPosition(SLPlayItf self, SLmillisecond *pMsec)
+{
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult GetMute(SLVolumeItf self, SLboolean *pState) {
+static SLresult RegisterCallback(SLPlayItf self, slPlayCallback callback, void *pContext)
+{
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult EnableStereoPosition(SLVolumeItf self, SLboolean enable) {
+static SLresult SetCallbackEventsMask(SLPlayItf self, SLuint32 eventFlags)
+{
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult IsEnabledStereoPosition(SLVolumeItf self, SLboolean *pEnable) {
+
+static SLresult GetCallbackEventsMask(SLPlayItf self, SLuint32 *pEventFlags)
+{
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult SetStereoPosition(SLVolumeItf self, SLpermille stereoPosition) {
+static SLresult SetMarkerPosition(SLPlayItf self, SLmillisecond mSec)
+{
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult GetStereoPosition(SLVolumeItf self, SLpermille *pStereoPosition) {
+static SLresult ClearMarkerPosition(SLPlayItf self)
+{
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static const struct SLVolumeItf_ VolumeItf = {
-    SetVolumeLevel,
-    GetVolumeLevel,
-    GetMaxVolumeLevel,
-    SetMute,
-    GetMute,
-    EnableStereoPosition,
-    IsEnabledStereoPosition,
-    SetStereoPosition,
-    GetStereoPosition
+static SLresult GetMarkerPosition(SLPlayItf self, SLmillisecond *pMsec)
+{
+    return SL_RESULT_FEATURE_UNSUPPORTED;
+}
+
+static SLresult SetPositionUpdatePeriod(SLPlayItf self, SLmillisecond mSec)
+{
+    return SL_RESULT_FEATURE_UNSUPPORTED;
+}
+
+static SLresult GetPositionUpdatePeriod(SLPlayItf self, SLmillisecond *pMsec)
+{
+    return SL_RESULT_FEATURE_UNSUPPORTED;
+}
+
+static const struct SLPlayItf_ PlayItf = {
+    SetPlayState,
+    GetPlayState,
+    GetDuration,
+    GetPosition,
+    RegisterCallback,
+    SetCallbackEventsMask,
+    GetCallbackEventsMask,
+    SetMarkerPosition,
+    ClearMarkerPosition,
+    GetMarkerPosition,
+    SetPositionUpdatePeriod,
+    GetPositionUpdatePeriod
 };
 
-void IVolumeInit(void *self)
+void IPlayInit(void *self)
 {
-    IVolume *thiz = (IVolume *) self;
-    thiz->mItf = &VolumeItf;
+    IPlay *thiz = (IPlay *)self;
+    thiz->mItf = &PlayItf;
+    thiz->mState = SL_PLAYSTATE_STOPPED;
 }
