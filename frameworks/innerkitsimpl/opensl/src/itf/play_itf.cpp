@@ -2,20 +2,27 @@
 
 #include<OpenSLES.h>
 #include<common.h>
+#include<iostream>
 
 static SLresult SetPlayState(SLPlayItf self, SLuint32 state)
 {
+    std::cout << "SetPlayState in" << std::endl;
     IPlay *thiz = (IPlay *)self;
     thiz->mState = state;
     //invoke adapter
+    std::cout << "SetPlayState out" << std::endl;
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
 static SLresult GetPlayState(SLPlayItf self, SLuint32 *pState)
 {
-    IPlay *thiz = (IPlay *)self;
-    *pState = thiz->mState;
-    //invoke adapter
+    std::cout << "GetPlayState in" << std::endl;
+    //IPlay *thiz = (IPlay *)self;
+    CAudioPlayer *thiz = (CAudioPlayer *)self;
+    //SLuint32 id = thiz->mId;
+    *pState = thiz->mPlay.mState;
+    //invoke adapter(id, state);
+    std::cout << "GetPlayState out" << std::endl;
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 

@@ -3,6 +3,7 @@
 #include<OpenSLES.h>
 #include<common.h>
 #include<table_struct.h>
+#include<iostream>
 
 static SLresult Realize(SLObjectItf self, SLboolean async) 
 {
@@ -20,12 +21,14 @@ static SLresult GetState(SLObjectItf self, SLuint32 *state) {
 
 static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *interface)
 {
+    std::cout << "GetInterface in" << std::endl;
     // 后续下面这部分交给 mapper, IIdMapperingItf(iid, void *itf);
     
     //CEngine
     if (iid == SL_IID_ENGINE) {
         CEngine *cEngine = (CEngine *)self;
-        interface = &cEngine->mObject.mItf;
+        *(void **)interface = &cEngine->mEngine.mItf;
+        std::cout << "SL_IID_ENGINE" << std::endl;
     } else {
         // unsupport
     }
@@ -33,16 +36,21 @@ static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *in
     //CAudioPlayer
     if (iid == SL_IID_PLAY) {
         CAudioPlayer *cAudioPlayer = (CAudioPlayer *)self;
-        interface = &cAudioPlayer->mPlay.mItf;
+        *(void **)interface = &cAudioPlayer->mPlay.mItf;
+        std::cout << "SL_IID_PLAY" << std::endl;
     } else if (iid == SL_IID_VOLUME) {
         CAudioPlayer *cAudioPlayer = (CAudioPlayer *)self;
-        interface = &cAudioPlayer->mVolume.mItf;
+        *(void **)interface = &cAudioPlayer->mVolume.mItf;
+        std::cout << "SL_IID_VOLUME" << std::endl;
     } else if (iid == SL_IID_BUFFERQUEUE) {
         CAudioPlayer *cAudioPlayer = (CAudioPlayer *)self;
-        interface = &cAudioPlayer->mBufferQueue.mItf;
+        *(void **)interface = &cAudioPlayer->mBufferQueue.mItf;
+        std::cout << "SL_IID_BUFFERQUEUE" << std::endl;
     } else {
+        std::cout << "not supported" << std::endl;
         // unsupport
     }
+    std::cout << "GetInterface out" << std::endl;
     return SL_RESULT_SUCCESS;
     
     //根据 iid 把 itf 强转为指定 Cxx 类

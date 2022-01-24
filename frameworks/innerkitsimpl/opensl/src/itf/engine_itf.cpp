@@ -5,6 +5,7 @@
 #include <table_struct.h>
 #include <builder.h>
 #include <all_itf.h>
+#include<iostream>
 
 static SLresult CreateLEDDevice(SLEngineItf self, SLObjectItf *pDevice, SLuint32 deviceID,
     SLuint32 numInterfaces, const SLInterfaceID *pInterfaceIds, const SLboolean *pInterfaceRequired)
@@ -26,6 +27,7 @@ static SLresult CreateAudioPlayer(SLEngineItf self, SLObjectItf *pPlayer,
     SLDataSource *pAudioSrc, SLDataSink *pAudioSnk, SLuint32 numInterfaces,
     const SLInterfaceID *pInterfaceIds, const SLboolean *pInterfaceRequired)
 {
+    std::cout << "CreateAudioPlayer in" << std::endl;
     // objectid -> objectclass;使用 objectid 映射 拿到对应 类对象
     ClassTable *audioPlayerClass = ObjectIdToClass(SL_OBJECTID_AUDIOPLAYER);
     // 使用 类对象 构造 对象
@@ -44,6 +46,7 @@ static SLresult CreateAudioPlayer(SLEngineItf self, SLObjectItf *pPlayer,
     // adapter侧同步创建
     //CreateAudioPlayerAdapter(a, b, c)?
     // Not implemented
+    std::cout << "CreateAudioPlayer out" << std::endl;
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
  
@@ -86,7 +89,16 @@ static SLresult Create3DGroup(SLEngineItf self, SLObjectItf *pGroup, SLuint32 nu
 static SLresult CreateOutputMix(SLEngineItf self, SLObjectItf *pMix, SLuint32 numInterfaces,
     const SLInterfaceID *pInterfaceIds, const SLboolean *pInterfaceRequired)
 {
-    // Not implemented
+    std::cout << "CreateOutputMix in" << std::endl;
+    // objectid -> objectclass;使用 objectid 映射 拿到对应 类对象
+    ClassTable *outPutClass = ObjectIdToClass(SL_OBJECTID_OUTPUTMIX);
+    // 使用 类对象 构造 对象
+    COutputMix *thiz = (COutputMix *) Construct(outPutClass, self);
+    IObjectInit(&thiz->mObject);
+    // 拿到 接口
+    *pMix = &thiz->mObject.mItf;
+
+    std::cout << "CreateOutputMix out" << std::endl;
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
  
