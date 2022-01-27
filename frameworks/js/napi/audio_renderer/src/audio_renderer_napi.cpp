@@ -856,6 +856,11 @@ napi_value AudioRendererNapi::SetParams(napi_env env, napi_callback_info info)
                 rendererParams.channelCount = context->channelCount;
                 rendererParams.encodingType = context->encodingType;
                 context->status = context->objectInfo->audioRenderer_->SetParams(rendererParams);
+                // To be removed when new renderer d.ts changes merged.
+                if (context->objectInfo->callbackNapi_ == nullptr) {
+                    context->objectInfo->callbackNapi_ = std::make_shared<AudioRendererCallbackNapi>(env);
+                }
+                (void)context->objectInfo->audioRenderer_->SetRendererCallback(context->objectInfo->callbackNapi_);
             },
             SetFunctionAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
