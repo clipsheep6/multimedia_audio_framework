@@ -78,8 +78,6 @@ public:
 
     AudioStreamType GetStreamInFocus() override;
 
-    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
-
     int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object) override;
 
     void OnSessionRemoved(const uint32_t sessionID) override;

@@ -31,7 +31,7 @@ AudioPolicyManagerListenerProxy::~AudioPolicyManagerListenerProxy()
 }
 
 void AudioPolicyManagerListenerProxy::WriteInterruptEventParams(MessageParcel &data,
-                                                                const InterruptEventInternal &interruptEvent)
+                                                                const InterruptEvent &interruptEvent)
 {
     data.WriteInt32(static_cast<int32_t>(interruptEvent.eventType));
     data.WriteInt32(static_cast<int32_t>(interruptEvent.forceType));
@@ -39,7 +39,7 @@ void AudioPolicyManagerListenerProxy::WriteInterruptEventParams(MessageParcel &d
     data.WriteFloat(interruptEvent.duckVolume);
 }
 
-void AudioPolicyManagerListenerProxy::OnInterrupt(const InterruptEventInternal &interruptEvent)
+void AudioPolicyManagerListenerProxy::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -63,7 +63,7 @@ AudioPolicyManagerListenerCallback::~AudioPolicyManagerListenerCallback()
     MEDIA_DEBUG_LOG("AudioPolicyManagerListenerCallback: Instance destory");
 }
 
-void AudioPolicyManagerListenerCallback::OnInterrupt(const InterruptEventInternal &interruptEvent)
+void AudioPolicyManagerListenerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     if (listener_ != nullptr) {
         listener_->OnInterrupt(interruptEvent);

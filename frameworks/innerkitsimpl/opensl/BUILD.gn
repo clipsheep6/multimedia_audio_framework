@@ -1,0 +1,38 @@
+import("//build/ohos.gni")
+
+ohos_shared_library("opensles") {
+  include_dirs = [
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/include",
+  ]
+
+  sources = [
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/itf/all_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/itf/buffer_queue_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/itf/engine_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/itf/object_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/itf/play_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/itf/volume_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/obj/audio_player_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/obj/engine_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/obj/output_mix_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/builder.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/class_struct.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/mapper.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/OpenSLES_IID.c",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/sl_entry.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/opensles/src/util/table_struct.cpp",
+  ]
+
+  cflags = [
+    "-Werror",
+    "-Wunused",
+    "-Wno-unused-parameter"
+  ]
+
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_standard"
+}
+
+config("audio_external_library_config") {
+  include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include" ]
+}
