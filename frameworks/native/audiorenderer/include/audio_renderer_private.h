@@ -50,6 +50,14 @@ public:
     AudioRendererRate GetRenderRate() const override;
     int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) override;
 
+    int32_t SetRenderMode(AudioRenderMode renderMode) const override;
+    AudioRenderMode GetRenderMode() const override;
+    int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
+    int32_t GetBufferDesc(BufferDesc &bufDesc) const override;
+    int32_t Enqueue(const BufferDesc &bufDesc) const override;
+    int32_t Clear() const override;
+    int32_t GetBufQueueState(BufferQueueState &bufState) const override;
+
     std::shared_ptr<AudioStream> audioStream_;
     AudioRendererInfo rendererInfo_ = {};
 
@@ -70,13 +78,13 @@ public:
         const AudioInterrupt &audioInterrupt);
     virtual ~AudioInterruptCallbackImpl();
 
-    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
+    void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
-    void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
-    void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
-    bool HandleForceDucking(const InterruptEventInternal &interruptEvent);
+    void HandleAndNotifyForcedEvent(const InterruptEvent &interruptEvent);
+    void NotifyForcePausedToResume(const InterruptEvent &interruptEvent);
+    bool HandleForceDucking(const InterruptEvent &interruptEvent);
     std::shared_ptr<AudioStream> audioStream_;
     std::weak_ptr<AudioRendererCallback> callback_;
     std::shared_ptr<AudioRendererCallback> cb;

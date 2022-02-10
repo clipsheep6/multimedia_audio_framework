@@ -343,13 +343,7 @@ struct InterruptEvent {
      * but in share mode, only provide a hint for application to decide.
      */
     InterruptHint hintType;
-};
 
-// Used internally only by AudioFramework
-struct InterruptEventInternal {
-    InterruptType eventType;
-    InterruptForceType forceType;
-    InterruptHint hintType;
     float duckVolume;
 };
 
@@ -474,6 +468,21 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_96000
 };
 
+struct BufferDesc {
+    uint8_t* buffer;
+    size_t length;
+};
+
+struct BufferQueueState {
+    uint32_t numBuffers;
+    uint32_t currentIndex;
+};
+
+enum AudioRenderMode {
+    RENDER_MODE_NORMAL,
+    RENDER_MODE_CALLBACK
+};
+
 typedef uint32_t AudioIOHandle;
 
 static inline bool FLOAT_COMPARE_EQ(const float& x, const float& y)
@@ -482,7 +491,7 @@ static inline bool FLOAT_COMPARE_EQ(const float& x, const float& y)
 }
 
 // Below APIs are added to handle compilation error in call manager
-// Once call manager adapt to new interrupt APIs, this will be rmeoved
+// Once call manager adapt to new interrupt APIs, this will be removed
 enum InterruptActionType {
     TYPE_ACTIVATED = 1,
     TYPE_INTERRUPTED = 2,
