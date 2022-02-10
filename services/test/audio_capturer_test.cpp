@@ -13,12 +13,15 @@
  * limitations under the License.
  */
 
+#include <chrono>
+#include <string>
 #include <vector>
-#include <cinttypes>
+
 #include "audio_capturer.h"
 #include "media_log.h"
 
 using namespace std;
+using namespace std::chrono;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
 
@@ -26,7 +29,7 @@ namespace AudioTestConstants {
     constexpr int32_t SECOND_ARG_IDX = 2;
     constexpr int32_t THIRD_ARG_IDX = 3;
     constexpr int32_t PAUSE_BUFFER_POSITION = 128;
-    constexpr int32_t PAUSE_READ_TIME_SECONDS = 10;
+    constexpr int32_t PAUSE_READ_TIME_SECONDS = 2;
     constexpr int32_t SUCCESS = 0;
 }
 
@@ -60,15 +63,8 @@ public:
         }
     }
 
-    bool InitCapture(const unique_ptr<AudioCapturer> &audioCapturer, const AudioCapturerParams &capturerParams) const
+    bool InitCapture(const unique_ptr<AudioCapturer> &audioCapturer) const
     {
-        if (audioCapturer->SetParams(capturerParams) != AudioTestConstants::SUCCESS) {
-            MEDIA_ERR_LOG("Set audio stream parameters failed");
-            audioCapturer->Release();
-            return false;
-        }
-        MEDIA_INFO_LOG("Capture stream created");
-
         MEDIA_INFO_LOG("Starting Stream");
         if (!audioCapturer->Start()) {
             MEDIA_ERR_LOG("Start stream failed");
@@ -101,13 +97,18 @@ public:
             MEDIA_ERR_LOG("AudioCapturerTest: Failed to allocate buffer");
             return false;
         }
-
+        MEDIA_INFO_LOG("AudioPerf Capturer First Frame Read, BUFFER_LEN = %{public}zu", bufferLen);
         size_t size = 1;
         size_t numBuffersToCapture = 256;
         while (numBuffersToCapture) {
             size_t bytesRead = 0;
             while (bytesRead < bufferLen) {
+                auto start = high_resolution_clock::now();
                 int32_t len = audioCapturer->Read(*(buffer.get() + bytesRead), bufferLen - bytesRead, isBlocking);
+                auto stop = high_resolution_clock::now();
+                auto duration = duration_cast<microseconds>(stop - start);
+                MEDIA_INFO_LOG("AudioPerf Capturer Read in microseconds TimeTaken =%{public}lld",
+                    (long long)duration.count());
                 if (len >= 0) {
                     bytesRead += len;
                 } else {
@@ -136,33 +137,35 @@ public:
                     audioCapturer->Release();
                     break;
                 }
+                MEDIA_INFO_LOG("AudioPerf Capturer Read after stop and start");
             }
         }
 
         return true;
     }
 
-    bool TestRecording(int argc, char *argv[]) const
+    bool TestRecording(int32_t samplingRate, bool isBlocking, string filePath) const
     {
         MEDIA_INFO_LOG("TestCapture start ");
+        AudioCapturerOptions capturerOptions;
+        capturerOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(samplingRate);
+        capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+        capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+        capturerOptions.streamInfo.channels = AudioChannel::STEREO;
+        capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+        capturerOptions.capturerInfo.capturerFlags = 0;
 
-        unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(AudioStreamType::STREAM_MUSIC);
+        unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
 
         CheckSupportedParams();
 
-        AudioCapturerParams capturerParams;
-        capturerParams.audioSampleFormat = SAMPLE_S16LE;
-        capturerParams.samplingRate =  static_cast<AudioSamplingRate>(atoi(argv[AudioTestConstants::SECOND_ARG_IDX]));
-        capturerParams.audioChannel = AudioChannel::STEREO;
-        capturerParams.audioEncoding = ENCODING_PCM;
-        if (!InitCapture(audioCapturer, capturerParams)) {
+        if (!InitCapture(audioCapturer)) {
             MEDIA_ERR_LOG("Initialize capturer failed");
             return false;
         }
 
-        bool isBlocking = (atoi(argv[AudioTestConstants::THIRD_ARG_IDX]) == 1);
         MEDIA_INFO_LOG("Is blocking read: %{public}s", isBlocking ? "true" : "false");
-        FILE *pFile = fopen(argv[AudioTestConstants::SECOND_ARG_IDX - 1], "wb");
+        FILE *pFile = fopen(filePath.c_str(), "wb");
         if (pFile == nullptr) {
             MEDIA_INFO_LOG("AudioCapturerTest: Unable to open file");
             return false;
@@ -172,12 +175,6 @@ public:
             MEDIA_ERR_LOG("Start capturer failed");
             fclose(pFile);
             return false;
-        }
-
-        Timestamp timestamp;
-        if (audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
-            MEDIA_INFO_LOG("Timestamp seconds: %{public}" PRId64, timestamp.time.tv_sec);
-            MEDIA_INFO_LOG("Timestamp nanoseconds: %{public}ld", timestamp.time.tv_nsec);
         }
 
         fflush(pFile);
@@ -213,8 +210,12 @@ int main(int argc, char *argv[])
     MEDIA_INFO_LOG("argv[2]=%{public}s", argv[AudioTestConstants::SECOND_ARG_IDX]);
     MEDIA_INFO_LOG("argv[3]=%{public}s", argv[AudioTestConstants::THIRD_ARG_IDX]);
 
+    int32_t samplingRate = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
+    bool isBlocking = (atoi(argv[AudioTestConstants::THIRD_ARG_IDX]) == 1);
+    string filePath = argv[AudioTestConstants::SECOND_ARG_IDX - 1];
+
     AudioCapturerTest testObj;
-    bool ret = testObj.TestRecording(argc, argv);
+    bool ret = testObj.TestRecording(samplingRate, isBlocking, filePath);
 
     return ret;
 }

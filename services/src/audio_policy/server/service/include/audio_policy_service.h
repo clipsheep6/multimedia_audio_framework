@@ -61,7 +61,17 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
+    bool IsAudioInterruptEnabled() const;
+
+    auto& GetAudioFocusTable() const
+    {
+        return focusTable_;
+    }
     AudioRingerMode GetRingerMode() const;
+
+    int32_t SetAudioScene(AudioScene audioScene);
+
+    AudioScene GetAudioScene() const;
 
     // Parser callbacks
     void OnAudioPortAvailable(std::unique_ptr<AudioPortInfo> portInfo);
@@ -72,6 +82,9 @@ public:
 
     void OnDefaultInputPortPin(InternalDeviceType device);
 
+    void OnAudioInterruptEnable(bool enable);
+
+    int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 private:
 
     AudioPolicyService()
@@ -102,6 +115,9 @@ private:
     std::list<InternalDeviceType> mActiveOutputDevices;
     std::list<InternalDeviceType> mActiveInputDevices;
     std::string GetPortName(InternalDeviceType deviceType);
+    bool interruptEnabled_ = true;
+    AudioScene mAudioScene = AUDIO_SCENE_DEFAULT;
+    AudioFocusEntry focusTable_[MAX_NUM_STREAMS][MAX_NUM_STREAMS];
 };
 } // namespace AudioStandard
 } // namespace OHOS

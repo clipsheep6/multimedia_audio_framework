@@ -17,6 +17,7 @@
 #define AUDIO_RENDERER_NAPI_H_
 
 #include <iostream>
+#include <map>
 #include <queue>
 
 #include "audio_renderer.h"
@@ -27,10 +28,24 @@ namespace OHOS {
 namespace AudioStandard {
 static const std::string AUDIO_RENDERER_NAPI_CLASS_NAME = "AudioRenderer";
 
+static const std::map<std::string, AudioRendererRate> rendererRateMap = {
+    {"RENDER_RATE_NORMAL", RENDER_RATE_NORMAL},
+    {"RENDER_RATE_DOUBLE", RENDER_RATE_DOUBLE},
+    {"RENDER_RATE_HALF", RENDER_RATE_HALF}
+};
+
 class AudioRendererNapi {
 public:
     AudioRendererNapi();
     ~AudioRendererNapi();
+
+    enum AudioSampleFormat {
+        SAMPLE_FORMAT_INVALID = -1,
+        SAMPLE_FORMAT_U8 = 0,
+        SAMPLE_FORMAT_S16LE = 1,
+        SAMPLE_FORMAT_S24LE = 2,
+        SAMPLE_FORMAT_S32LE = 3
+    };
 
     static napi_value Init(napi_env env, napi_value exports);
 private:
@@ -41,6 +56,8 @@ private:
         napi_ref callbackRef = nullptr;
         int32_t status;
         int32_t intValue;
+        int32_t audioRendererRate;
+        int32_t rendererFlags;
         bool isTrue;
         uint64_t time;
         size_t bufferLen;
@@ -54,13 +71,14 @@ private:
         DeviceRole deviceRole;
         DeviceType deviceType;
         AudioRendererNapi *objectInfo;
+        AudioRendererOptions rendererOptions;
     };
 
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value CreateAudioRenderer(napi_env env, napi_callback_info info);
-    static napi_value SetParams(napi_env env, napi_callback_info info);
-    static napi_value GetParams(napi_env env, napi_callback_info info);
+    static napi_value SetRenderRate(napi_env env, napi_callback_info info);
+    static napi_value GetRenderRate(napi_env env, napi_callback_info info);
     static napi_value Start(napi_env env, napi_callback_info info);
     static napi_value Write(napi_env env, napi_callback_info info);
     static napi_value GetAudioTime(napi_env env, napi_callback_info info);
@@ -69,6 +87,15 @@ private:
     static napi_value Stop(napi_env env, napi_callback_info info);
     static napi_value Release(napi_env env, napi_callback_info info);
     static napi_value GetBufferSize(napi_env env, napi_callback_info info);
+    static napi_value GetState(napi_env env, napi_callback_info info);
+    static napi_value GetRendererInfo(napi_env env, napi_callback_info info);
+    static napi_value GetStreamInfo(napi_env env, napi_callback_info info);
+    static napi_value On(napi_env env, napi_callback_info info);
+    static napi_value CreateAudioRendererWrapper(napi_env env, std::unique_ptr<AudioRendererOptions> &renderOptions);
+
+    static bool ParseRendererOptions(napi_env env, napi_value root, AudioRendererOptions *opts);
+    static bool ParseRendererInfo(napi_env env, napi_value root, AudioRendererInfo *rendererInfo);
+    static bool ParseStreamInfo(napi_env env, napi_value root, AudioStreamInfo* streamInfo);
 
     static void CommonCallbackRoutine(napi_env env, AudioRendererAsyncContext* &asyncContext,
                                       const napi_value &valueParam);
@@ -81,22 +108,71 @@ private:
     static void PauseAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void StartAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void StopAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AudioRendererInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetRendererAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void VoidAsyncCallbackComplete(napi_env env, napi_status status, void *data);
 
+    static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
+    static napi_value CreateAudioRendererRateObject(napi_env env);
+    static napi_value CreateInterruptEventTypeObject(napi_env env);
+    static napi_value CreateInterruptForceTypeObject(napi_env env);
+    static napi_value CreateInterruptHintTypeObject(napi_env env);
+    static napi_value CreateAudioStateObject(napi_env env);
+    static napi_value CreateAudioSampleFormatObject(napi_env env);
+
+    static napi_ref audioRendererRate_;
+    static napi_ref interruptEventType_;
+    static napi_ref interruptForceType_;
+    static napi_ref interruptHintType_;
+    static napi_ref audioState_;
+    static napi_ref sampleFormat_;
+    static AudioRendererOptions sRendererOptions_;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
-
-    int32_t SetAudioParameters(napi_env env, napi_value arg);
+    static std::unique_ptr<AudioRendererOptions> sAudioRendererOptions_;
 
     std::unique_ptr<AudioRenderer> audioRenderer_;
     ContentType contentType_;
     StreamUsage streamUsage_;
     DeviceRole deviceRole_;
     DeviceType deviceType_;
+    int32_t rendererFlags_;
     napi_env env_;
     napi_ref wrapper_;
     std::queue<napi_async_work> writeRequestQ_;
     std::atomic<bool> scheduleFromApiCall_;
     std::atomic<bool> doNotScheduleWrite_;
     std::atomic<bool> isDrainWriteQInProgress_;
+    std::shared_ptr<AudioRendererCallback> callbackNapi_ = nullptr;
+};
+
+static const std::map<std::string, InterruptType> interruptEventTypeMap = {
+    {"INTERRUPT_TYPE_BEGIN", INTERRUPT_TYPE_BEGIN},
+    {"INTERRUPT_TYPE_END", INTERRUPT_TYPE_END}
+};
+
+static const std::map<std::string, InterruptForceType> interruptForceTypeMap = {
+    {"INTERRUPT_FORCE", INTERRUPT_FORCE},
+    {"INTERRUPT_SHARE", INTERRUPT_SHARE},
+};
+
+static const std::map<std::string, InterruptHint> interruptHintTypeMap = {
+    {"INTERRUPT_HINT_NONE", INTERRUPT_HINT_NONE},
+    {"INTERRUPT_HINT_PAUSE", INTERRUPT_HINT_PAUSE},
+    {"INTERRUPT_HINT_RESUME", INTERRUPT_HINT_RESUME},
+    {"INTERRUPT_HINT_STOP", INTERRUPT_HINT_STOP},
+    {"INTERRUPT_HINT_DUCK", INTERRUPT_HINT_DUCK},
+    {"INTERRUPT_HINT_UNDUCK", INTERRUPT_HINT_UNDUCK}
+};
+
+static const std::map<std::string, RendererState> audioStateMap = {
+    {"STATE_INVALID", RENDERER_INVALID},
+    {"STATE_NEW", RENDERER_NEW},
+    {"STATE_PREPARED", RENDERER_PREPARED},
+    {"STATE_RUNNING", RENDERER_RUNNING},
+    {"STATE_STOPPED", RENDERER_STOPPED},
+    {"STATE_RELEASED", RENDERER_RELEASED},
+    {"STATE_PAUSED", RENDERER_PAUSED}
 };
 }
 }

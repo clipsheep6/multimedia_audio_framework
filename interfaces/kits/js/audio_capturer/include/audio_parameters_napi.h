@@ -29,17 +29,9 @@ static const std::string AUDIO_PARAMETERS_NAPI_CLASS_NAME = "AudioParameters";
 
 static const std::int32_t REFERENCE_CREATION_COUNT = 1;
 
-static const std::map<std::string, AudioSampleFormat> sampleFormatMap = {
-    {"SAMPLE_U8", SAMPLE_U8},
-    {"SAMPLE_S16LE", SAMPLE_S16LE},
-    {"SAMPLE_S24LE", SAMPLE_S24LE},
-    {"SAMPLE_S32LE", SAMPLE_S32LE},
-    {"INVALID_WIDTH", INVALID_WIDTH}
-};
-
 static const std::map<std::string, AudioChannel> audioChannelMap = {
-    {"MONO", MONO},
-    {"STEREO", STEREO}
+    {"CHANNEL_1", MONO},
+    {"CHANNEL_2", STEREO}
 };
 
 static const std::map<std::string, AudioSamplingRate> samplingRateMap = {
@@ -57,9 +49,8 @@ static const std::map<std::string, AudioSamplingRate> samplingRateMap = {
 };
 
 static const std::map<std::string, AudioEncodingType> encodingTypeMap = {
-    {"ENCODING_PCM", ENCODING_PCM},
-    {"ENCODING_AAC", ENCODING_AAC},
-    {"ENCODING_INVALID", ENCODING_INVALID}
+    {"ENCODING_TYPE_INVALID", ENCODING_INVALID},
+    {"ENCODING_TYPE_RAW", ENCODING_PCM}
 };
 
 static const std::map<std::string, ContentType> contentTypeMap = {
@@ -67,7 +58,8 @@ static const std::map<std::string, ContentType> contentTypeMap = {
     {"CONTENT_TYPE_SPEECH", CONTENT_TYPE_SPEECH},
     {"CONTENT_TYPE_MUSIC", CONTENT_TYPE_MUSIC},
     {"CONTENT_TYPE_MOVIE", CONTENT_TYPE_MOVIE},
-    {"CONTENT_TYPE_SONIFICATION", CONTENT_TYPE_SONIFICATION}
+    {"CONTENT_TYPE_SONIFICATION", CONTENT_TYPE_SONIFICATION},
+    {"CONTENT_TYPE_RINGTONE", CONTENT_TYPE_RINGTONE}
 };
 
 static const std::map<std::string, StreamUsage> streamUsageMap = {
@@ -87,13 +79,18 @@ static const std::map<std::string, DeviceRole> deviceRoleMap = {
 static const std::map<std::string, DeviceType> deviceTypeMap = {
     {"NONE", DEVICE_TYPE_NONE},
     {"INVALID", DEVICE_TYPE_INVALID},
-    {"EARPIECE", DEVICE_TYPE_EARPIECE},
     {"SPEAKER", DEVICE_TYPE_SPEAKER},
     {"WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET},
     {"BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
     {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
     {"MIC", DEVICE_TYPE_MIC},
     {"MAX", DEVICE_TYPE_MAX},
+};
+
+static const std::map<std::string, SourceType> sourceTypeMap = {
+    {"SOURCE_TYPE_INVALID", SOURCE_TYPE_INVALID},
+    {"SOURCE_TYPE_MIC", SOURCE_TYPE_MIC},
+    {"SOURCE_TYPE_VOICE_CALL", SOURCE_TYPE_VOICE_CALL}
 };
 
 class AudioParametersNapi {
@@ -133,9 +130,9 @@ private:
     static napi_value CreateStreamUsageObject(napi_env env);
     static napi_value CreateDeviceRoleObject(napi_env env);
     static napi_value CreateDeviceTypeObject(napi_env env);
+    static napi_value CreateSourceTypeObject(napi_env env);
 
     static napi_ref sConstructor_;
-    static napi_ref sampleFormat_;
     static napi_ref audioChannel_;
     static napi_ref samplingRate_;
     static napi_ref encodingType_;
@@ -143,6 +140,7 @@ private:
     static napi_ref streamUsage_;
     static napi_ref deviceRole_;
     static napi_ref deviceType_;
+    static napi_ref sourceType_;
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 

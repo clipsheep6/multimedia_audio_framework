@@ -17,11 +17,14 @@
 #define AUDIO_SERVICE_CLIENT_H
 
 #include <algorithm>
+#include <array>
+// #include <condition_variable>
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <stdlib.h>
 #include <thread>
 #include <unistd.h>
@@ -31,6 +34,7 @@
 #include <audio_info.h>
 #include <audio_timer.h>
 
+#include "audio_renderer.h"
 #include "audio_system_manager.h"
 
 namespace OHOS {
@@ -113,6 +117,13 @@ public:
     int32_t CreateStream(AudioStreamParams audioParams, AudioStreamType audioType);
 
     /**
+     * @brief Obtains session ID .
+     *
+     * @return Returns unique session ID for the created session
+    */
+    int32_t GetSessionID(uint32_t &sessionID);
+
+    /**
     * Starts the stream created using CreateStream
     *
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
@@ -150,6 +161,14 @@ public:
     int32_t PauseStream();
 
     /**
+    * Update the stream type
+    *
+    * @param audioStreamType Audio stream type
+    * @return Returns {@code 0} if success; returns {@code -1} otherwise.
+    */
+    int32_t SetStreamType(AudioStreamType audioStreamType);
+
+    /**
     * Sets the volume of the stream associated with session ID
     *
     * @param sessionID indicates the ID for the active stream to be controlled
@@ -175,6 +194,17 @@ public:
     * @return returns size of audio data written in bytes.
     */
     size_t WriteStream(const StreamBuffer &stream, int32_t &pError);
+
+    /**
+    * Writes audio data of the stream created using CreateStream to active sink device
+......Used when render mode is RENDER_MODE_CALLBACK
+    *
+    * @param buffer contains audio data to write
+    * @param bufferSize indicates the size of audio data in bytes to write from the buffer
+    * @param pError indicates pointer to error which will be filled in case of internal errors
+    * @return returns size of audio data written in bytes.
+    */
+    size_t WriteStreamInCb(const StreamBuffer &stream, int32_t &pError);
 
     /**
     * Reads audio data of the stream created using CreateStream from active source device
@@ -293,6 +323,48 @@ public:
      */
     float GetStreamVolume();
 
+    /**
+     * @brief Set the render rate
+     *
+     * @param renderRate The rate at which the stream needs to be rendered.
+     * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetStreamRenderRate(AudioRendererRate renderRate);
+
+    /**
+     * @brief Obtains the current render rate
+     *
+     * @return Returns current render rate
+     */
+    AudioRendererRate GetStreamRenderRate();
+
+    /**
+     * @brief Sets the render mode. By default the mode is RENDER_MODE_NORMAL.
+     * This API is needs to be used only if RENDER_MODE_CALLBACK is required.
+     *
+     * * @param renderMode The mode of render.
+     * @return  Returns {@link SUCCESS} if render mode is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAudioRenderMode(AudioRenderMode renderMode);
+
+    /**
+     * @brief Obtains the render mode.
+     *
+     * @return  Returns current render mode.
+     */
+    AudioRenderMode GetAudioRenderMode();
+
+    /**
+     * @brief Registers the renderer write callback listener.
+     * This API should only be used if RENDER_MODE_CALLBACK is needed.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SaveWriteCallback(const std::weak_ptr<AudioRendererWriteCallback> &callback);
+
     // Audio timer callback
     virtual void OnTimeOut();
 
@@ -325,6 +397,10 @@ private:
     uint32_t streamIndex;
     uint32_t volumeChannels;
     bool streamInfoUpdated;
+
+    AudioRendererRate renderRate;
+    AudioRenderMode renderMode_;
+    std::weak_ptr<AudioRendererWriteCallback> writeCallback_;
 
     // To be set while using audio stream
     // functionality for callbacks
@@ -384,6 +460,7 @@ private:
     static void PAStreamUnderFlowCb(pa_stream *stream, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
     static void PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata);
+    static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamCmdSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamDrainSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);

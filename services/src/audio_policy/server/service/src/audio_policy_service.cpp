@@ -14,12 +14,19 @@
  */
 
 #include "audio_errors.h"
+#include "audio_focus_parser.h"
+#include "audio_manager_base.h"
+#include "iservice_registry.h"
 #include "media_log.h"
+#include "system_ability_definition.h"
+
 #include "audio_policy_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+static sptr<IStandardAudioService> g_sProxy = nullptr;
+
 bool AudioPolicyService::Init(void)
 {
     mAudioPolicyManager.Init();
@@ -32,6 +39,34 @@ bool AudioPolicyService::Init(void)
         return false;
     }
 
+    std::unique_ptr<AudioFocusParser> audioFocusParser;
+    audioFocusParser = make_unique<AudioFocusParser>();
+    std::string AUDIO_FOCUS_CONFIG_FILE = "/etc/audio/audio_interrupt_policy_config.xml";
+
+    if (audioFocusParser->LoadConfig(focusTable_[0][0])) {
+        MEDIA_ERR_LOG("Audio Interrupt Load Configuration failed");
+        return false;
+    }
+
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (samgr == nullptr) {
+        MEDIA_ERR_LOG("[Policy Service] Get samgr failed");
+        return false;
+    }
+
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    if (object == nullptr) {
+        MEDIA_DEBUG_LOG("[Policy Service] audio service remote object is NULL.");
+        return false;
+    }
+    g_sProxy = iface_cast<IStandardAudioService>(object);
+    if (g_sProxy == nullptr) {
+        MEDIA_DEBUG_LOG("[Policy Service] init g_sProxy is NULL.");
+        return false;
+    } else {
+        MEDIA_DEBUG_LOG("[Policy Service] init g_sProxy is assigned.");
+    }
+
     return true;
 }
 
@@ -40,6 +75,11 @@ void AudioPolicyService::Deinit(void)
     mAudioPolicyManager.CloseAudioPort(mIOHandles[HDI_SINK]);
     mAudioPolicyManager.CloseAudioPort(mIOHandles[HDI_SOURCE]);
     return;
+}
+
+int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callback)
+{
+    return mAudioPolicyManager.SetAudioSessionCallback(callback);
 }
 
 int32_t AudioPolicyService::SetStreamVolume(AudioStreamType streamType, float volume) const
@@ -177,6 +217,27 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
     return mAudioPolicyManager.GetRingerMode();
 }
 
+int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
+{
+    list<InternalDeviceType> activeDeviceList;
+    activeDeviceList.insert(activeDeviceList.end(), mActiveInputDevices.begin(), mActiveInputDevices.end());
+    activeDeviceList.insert(activeDeviceList.end(), mActiveOutputDevices.begin(), mActiveOutputDevices.end());
+
+    int32_t result = g_sProxy->SetAudioScene(activeDeviceList, audioScene);
+    MEDIA_INFO_LOG("SetAudioScene return value from audio HAL: %{public}d", result);
+    // As Audio HAL is stubbed now, we set and return
+    mAudioScene = audioScene;
+    MEDIA_INFO_LOG("AudioScene is set as: %{public}d", audioScene);
+
+    return SUCCESS;
+}
+
+AudioScene AudioPolicyService::GetAudioScene() const
+{
+    MEDIA_INFO_LOG("GetAudioScene return value: %{public}d", mAudioScene);
+    return mAudioScene;
+}
+
 // Parser callbacks
 
 void AudioPolicyService::OnAudioPortAvailable(unique_ptr<AudioPortInfo> portInfo)
@@ -207,6 +268,16 @@ void AudioPolicyService::OnDefaultInputPortPin(InternalDeviceType deviceType)
     mAudioPolicyManager.SetDeviceActive(ioHandle, deviceType, HDI_SOURCE, true);
     mActiveInputDevices.push_front(deviceType);
     return;
+}
+
+bool AudioPolicyService::IsAudioInterruptEnabled() const
+{
+    return interruptEnabled_;
+}
+
+void AudioPolicyService::OnAudioInterruptEnable(bool enable)
+{
+    interruptEnabled_ = enable;
 }
 
 // private methods
