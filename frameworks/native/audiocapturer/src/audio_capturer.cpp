@@ -18,6 +18,7 @@
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
 #include "audio_stream.h"
+#include "media_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -147,6 +148,15 @@ bool AudioCapturerPrivate::Release() const
 int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const
 {
     return audioCapturer->GetBufferSize(bufferSize);
+}
+
+int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
+{
+    if (bufferDuration < MINIMUM_BUFFER_SIZE_MSEC || bufferDuration > MAXIMUM_BUFFER_SIZE_MSEC){
+        MEDIA_ERR_LOG("Error: Please set the buffer duration between 5ms ~ 93ms");
+        return ERR_INVALID_PARAM;
+    }
+    return audioCapturer->SetBufferSizeInMsec(bufferDuration);
 }
 
 std::vector<AudioSampleFormat> AudioCapturer::GetSupportedFormats()

@@ -324,6 +324,8 @@ public:
      */
     AudioRendererRate GetStreamRenderRate();
 
+    int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec);
+
     // Audio timer callback
     virtual void OnTimeOut();
 
@@ -341,6 +343,7 @@ private:
     const void *internalReadBuffer;
     size_t internalRdBufLen;
     size_t internalRdBufIndex;
+    size_t setBufferSize = MINIMUM_BUFFER_SIZE;
     int32_t streamCmdStatus;
     int32_t streamDrainStatus;
     int32_t streamFlushStatus;

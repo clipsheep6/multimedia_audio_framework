@@ -49,6 +49,7 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate) const override;
     AudioRendererRate GetRenderRate() const override;
     int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) override;
+    int32_t SetBufferDuration(uint64_t bufferDuration) const override;
 
     std::shared_ptr<AudioStream> audioStream_;
     AudioRendererInfo rendererInfo_ = {};

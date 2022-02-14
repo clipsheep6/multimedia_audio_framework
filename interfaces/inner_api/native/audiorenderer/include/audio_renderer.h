@@ -295,8 +295,17 @@ public:
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
-
     virtual int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) = 0;
+
+    /**
+     * @brief set the buffer duration for renderer, minimum buffer duration is 5msec
+     *         maximum is 93msec
+     *
+     * @param bufferDuration  Indicates a buffer duration to be set for renderer
+     * @return Returns {@link SUCCESS} if bufferDuration is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetBufferDuration(uint64_t bufferDuration) const = 0;
 
     /**
      * @brief Obtains the formats supported by renderer.
