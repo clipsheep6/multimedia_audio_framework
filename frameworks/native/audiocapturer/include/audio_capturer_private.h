@@ -36,6 +36,7 @@ public:
     bool Flush() const override;
     bool Release() const override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
+    int32_t SetBufferDuration(uint64_t bufferDuration) const override;
 
     std::unique_ptr<AudioStream> audioCapturer;
     AudioCapturerInfo capturerInfo_ = {};

@@ -26,6 +26,7 @@ namespace AudioTestConstants {
     constexpr int32_t ARGS_INDEX_THREE = 3;
     constexpr int32_t ARGS_INDEX_TWO = 2;
     constexpr int32_t ARGS_COUNT_THREE = 3;
+    constexpr int32_t ARGS_COUNT_FOUR = 4;
     constexpr int32_t SUCCESS = 0;
     constexpr int32_t STOP_BUFFER_POSITION = 700000;
     constexpr int32_t PAUSE_BUFFER_POSITION = 1400000;
@@ -218,10 +219,13 @@ public:
 
         ContentType contentType = ContentType::CONTENT_TYPE_MUSIC;
         StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-
+        int32_t bufferMsec = 0;
         if (argc > AudioTestConstants::ARGS_COUNT_THREE) {
             contentType = static_cast<ContentType>(strtol(argv[AudioTestConstants::ARGS_INDEX_TWO], NULL, numBase));
             streamUsage = static_cast<StreamUsage>(strtol(argv[AudioTestConstants::ARGS_INDEX_THREE], NULL, numBase));
+        }
+        if (argc > AudioTestConstants::ARGS_COUNT_FOUR) {
+            bufferMsec = strtol(argv[AudioTestConstants::ARGS_COUNT_FOUR], NULL, numBase);
         }
 
         AudioRendererOptions rendererOptions = {};
@@ -236,6 +240,11 @@ public:
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
 
         CheckSupportedParams();
+        MEDIA_ERR_LOG("AudioRendererTest: buffermsec = %{public}d", bufferMsec);
+        int32_t ret = audioRenderer->SetBufferDuration(bufferMsec);
+        if (ret) {
+            MEDIA_ERR_LOG("Failed to set buffer duration");
+        }
 
         if (!InitRender(audioRenderer)) {
             MEDIA_ERR_LOG("AudioRendererTest: Init render failed");
