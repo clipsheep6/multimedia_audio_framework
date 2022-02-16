@@ -62,8 +62,8 @@ AudioStreamParams AudioServiceClient::ConvertFromPAAudioParams(pa_sample_spec pa
 {
     AudioStreamParams audioParams;
 
-    audioParams.channels = paSampleSpec.channels;
     audioParams.samplingRate = paSampleSpec.rate;
+    audioParams.channels = paSampleSpec.channels;
     audioParams.encoding = ENCODING_PCM;
 
     switch (paSampleSpec.format) {

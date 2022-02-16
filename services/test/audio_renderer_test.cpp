@@ -87,12 +87,6 @@ public:
         for (auto i = supportedEncodingTypes.begin(); i != supportedEncodingTypes.end(); ++i) {
             MEDIA_INFO_LOG("AudioRendererTest: encoding type %{public}d", *i);
         }
-
-        vector<AudioSamplingRate> supportedSamplingRates = AudioRenderer::GetSupportedSamplingRates();
-        MEDIA_INFO_LOG("AudioRendererTest: Supported sampling rates:");
-        for (auto i = supportedSamplingRates.begin(); i != supportedSamplingRates.end(); ++i) {
-            MEDIA_INFO_LOG("AudioRendererTest: sampling rate %{public}d", *i);
-        }
     }
 
     void GetRendererStreamInfo(const unique_ptr<AudioRenderer> &audioRenderer) const
