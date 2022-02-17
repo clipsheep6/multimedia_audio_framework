@@ -1,0 +1,69 @@
+import("//build/ohos.gni")
+
+pulseaudio_dir = "//third_party/pulseaudio"
+opensles_dir = "//third_party/openSLES"
+
+config("audio_renderer_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiostream/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_standard/services/include",
+    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/test",
+    "//utils/native/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+ohos_shared_library("opensles") {
+  include_dirs = [
+    "$opensles_dir/api/1.0.1",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/andiorenderer/include/",
+    
+  ]
+
+  configs = [
+    ":audio_renderer_config", 
+  ]
+
+  sources = [
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/adapter/audioplayer_adapter.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/openharmony_buffer_queue_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/engine_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/object_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/play_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/volume_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/engine_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/audioplayer_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/output_mix_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/util/OpenSLES_OpenHarmony_IID.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/util/builder.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/util/table_struct.cpp",
+    "$opensles_dir/api/1.0.1/OpenSLES_IID.c",
+  ]
+
+  cflags = [
+    "-Werror",
+  ]
+
+  deps = [
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_renderer",
+    "//foundation/multimedia/audio_standard:libsl"
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_standard"
+}
