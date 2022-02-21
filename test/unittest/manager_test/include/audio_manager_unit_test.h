@@ -12,25 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_CAPTURER_UNIT_TEST_H
-#define AUDIO_CAPTURER_UNIT_TEST_H
+#ifndef AUDIO_MANAGER_UNIT_TEST_H
+#define AUDIO_MANAGER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
-#include "audio_capturer.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class CapturerPositionCallbackTest : public CapturerPositionCallback {
-public:
-    void OnMarkReached(const int64_t &framePosition) override {}
-};
-
-class CapturerPeriodPositionCallbackTest : public CapturerPeriodPositionCallback {
-public:
-    void OnPeriodReached(const int64_t &frameNumber) override {}
-};
-
-class AudioCapturerUnitTest : public testing::Test {
+class AudioManagerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -40,12 +29,8 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
-    // Init Capturer
-    static int32_t InitializeCapturer(std::unique_ptr<AudioCapturer> &audioCapturer);
-    // Init Capturer Options
-    static void InitializeCapturerOptions(AudioCapturerOptions &capturerOptions);
 };
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_CAPTURER_UNIT_TEST_H
+#endif // AUDIO_MANAGER_UNIT_TEST_H
