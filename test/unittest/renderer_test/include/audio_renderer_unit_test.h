@@ -26,6 +26,16 @@ public:
     void OnStateChange(const RendererState state) override {}
 };
 
+class RendererPositionCallbackTest : public RendererPositionCallback {
+public:
+    void OnMarkReached(const int64_t &framePosition) override {}
+};
+
+class RendererPeriodPositionCallbackTest : public RendererPeriodPositionCallback {
+public:
+    void OnPeriodReached(const int64_t &frameNumber) override {}
+};
+
 class AudioRendererUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
@@ -38,6 +48,8 @@ public:
     void TearDown(void);
     // Init Renderer
     static int32_t InitializeRenderer(std::unique_ptr<AudioRenderer> &audioRenderer);
+    // Init Renderer Options
+    static void InitializeRendererOptions(AudioRendererOptions &rendererOptions);
 };
 } // namespace AudioStandard
 } // namespace OHOS
