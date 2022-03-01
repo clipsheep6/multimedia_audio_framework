@@ -80,7 +80,7 @@ private:
 
     int32_t routeHandle_ = -1;
 
-    struct AudioProxyManager *audioManager_;
+    struct AudioManager *audioManager_;
     struct AudioAdapter *audioAdapter_;
     struct AudioCapture *audioCapture_;
     struct AudioPort audioPort;
