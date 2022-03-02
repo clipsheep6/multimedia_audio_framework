@@ -22,6 +22,16 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+#ifdef DEVICE_BALTIMORE
+    const std::string AUDIO_HDI_SERVICE_NAME = "audio_adapter_service";
+    DeviceClass EVENT_CLASS = DEVICE_CLASS_AUDIO;
+#else
+    const std::string AUDIO_HDI_SERVICE_NAME = "audio_hdi_service";
+    DeviceClass EVENT_CLASS = DEVICE_CLASS_DEFAULT;
+#endif
+}
+
 static DeviceType GetDeviceTypeByName(std::string deviceName)
 {
     DeviceType deviceType = DEVICE_TYPE_INVALID;
@@ -43,6 +53,13 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener,
 {
     MEDIA_DEBUG_LOG("[DeviceStatusListener] OnServiceStatusReceived in");
     MEDIA_DEBUG_LOG("[DeviceStatusListener]: service name: %{public}s", serviceStatus->serviceName);
+
+    if (!AUDIO_HDI_SERVICE_NAME.compare(std::string(serviceStatus->serviceName))) {
+        if (serviceStatus->status == SERVIE_STATUS_START) {
+            DeviceStatusListener *deviceStatusListener = reinterpret_cast<DeviceStatusListener *>(listener->priv);
+            deviceStatusListener->deviceObserver_.OnServiceConnected();
+        }
+    }
 
     DeviceType deviceType = GetDeviceTypeByName(serviceStatus->info);
     if (deviceType != DEVICE_TYPE_INVALID) {
@@ -74,8 +91,7 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener(void *privData)
     listener_ = HdiServiceStatusListenerNewInstance();
     listener_->callback = OnServiceStatusReceived;
     listener_->priv = (void *)this;
-    int32_t status = hdiServiceManager_->RegisterServiceStatusListener(hdiServiceManager_, listener_,
-                                                                       DEVICE_CLASS_DEFAULT);
+    int32_t status = hdiServiceManager_->RegisterServiceStatusListener(hdiServiceManager_, listener_, EVENT_CLASS);
     if (status != HDF_SUCCESS) {
         MEDIA_ERR_LOG("[DeviceStatusListener]: Register service status listener failed");
         return ERR_OPERATION_FAILED;

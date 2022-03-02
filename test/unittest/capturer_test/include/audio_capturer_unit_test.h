@@ -30,6 +30,11 @@ public:
     void OnPeriodReached(const int64_t &frameNumber) override {}
 };
 
+class AudioCapturerCallbackTest : public AudioCapturerCallback {
+public:
+    void OnStateChange(const CapturerState state) override {}
+};
+
 class AudioCapturerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
@@ -42,6 +47,8 @@ public:
     void TearDown(void);
     // Init Capturer
     static int32_t InitializeCapturer(std::unique_ptr<AudioCapturer> &audioCapturer);
+    // Init Capturer Options
+    static void InitializeCapturerOptions(AudioCapturerOptions &capturerOptions);
 };
 } // namespace AudioStandard
 } // namespace OHOS
