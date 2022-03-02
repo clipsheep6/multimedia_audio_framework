@@ -143,7 +143,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
    }
    ```
 
-8. 在音频中断的情况下，应用程序可能会遇到写入失败。不知道已经被中断的应用可以在进一步写入音频数据之前使用GetStatus API检查渲染器状态。中断感知应用将通过AudioRenderCallback获得更多信息。
+8. 在音频中断的情况下，应用程序可能会遇到写入失败。不感知、不处理中断的应用程序在写入音频数据之前使用GetStatus API检查播放器状态。中断感知应用将通过AudioRenderCallback获得更多信息。
 
    ```
    while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
