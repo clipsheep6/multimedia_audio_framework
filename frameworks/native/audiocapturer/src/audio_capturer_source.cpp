@@ -184,7 +184,7 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
     }
 
     // Get qualified sound card and port
-    string adapterNameCase = "internal";
+    string adapterNameCase = "primary1";
     index = SwitchAdapterCapture(descs, adapterNameCase, PORT_IN, audioPort, size);
     if (index < 0) {
         MEDIA_ERR_LOG("Switch Adapter Fail");

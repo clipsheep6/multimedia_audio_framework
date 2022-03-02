@@ -18,22 +18,22 @@
         <modules>
             <module name="Speaker" lib="libmodule-hdi-sink.z.so" role="sink" channels="2" rate="44100"  buffer_size="4096">
                 <Ports>
-                    <Port adapter_name="internal" id="0" channels="2" rate="44100" buffer_size="4096"/>
+                    <Port adapter_name="primary" id="0" channels="2" rate="44100" buffer_size="4096"/>
                 </Ports>
             </module>
             <module name="Built_in_mic" lib="libmodule-hdi-source.z.so" role="source" channels="2" rate="44100" buffer_size="8192">
                 <Ports>
-                    <Port adapter_name="internal" id="0" channels="2" rate="44100" buffer_size="8192"/>
+                    <Port adapter_name="primary" id="0" channels="2" rate="44100" buffer_size="8192"/>
                 </Ports>
             </module>
             <module name="fifo_output" lib="libmodule-pipe-sink.z.so" role="sink" file="/data/data/.pulse_dir/pipe_sink.pcm">
                 <Ports>
-                    <Port adapter_name="internal" id="0"/>
+                    <Port adapter_name="primary" id="0"/>
                 </Ports>
             </module>
             <module name="fifo_input" lib="libmodule-pipe-source.z.so" role="source" file="/data/data/.pulse_dir/pipe_source.pcm">
                 <Ports>
-                    <Port adapter_name="internal" id="0"/>
+                    <Port adapter_name="primary" id="0"/>
                 </Ports>
             </module>
         </modules>
