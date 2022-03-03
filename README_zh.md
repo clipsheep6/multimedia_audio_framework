@@ -87,7 +87,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 
 3. （可选）使用 audioRenderer->GetRendererInfo(AudioRendererInfo &) 和 audioRenderer->GetStreamInfo(AudioStreamInfo &) 来获取当前的音频播放器配置信息。
 
-4. 监听音频中断事件，需要使用audioRenderer->SetRenderCallback注册到RenderCallbacks。
+4. 监听音频中断及状态改变事件，需要使用audioRenderer->SetRenderCallback注册到RenderCallbacks。
 
    ```
    class AudioRendererCallbackImpl : public AudioRendererCallback {
@@ -113,7 +113,22 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
                }
            }
        }
-   }
+       void OnStateChange(const RendererState state) override
+          {
+              switch (state) {
+                  case RENDERER_PREPARED:
+                      // Renderer prepared
+                  case RENDERER_RUNNING:
+                      // Renderer in running state
+                  case RENDERER_STOPPED:
+                      // Renderer stopped
+                  case RENDERER_RELEASED:
+                      // Renderer released
+                  case RENDERER_PAUSED:
+                      // Renderer paused
+              }
+          }
+      }
    
    std::shared_ptr<AudioRendererCallback> audioRendererCB = std::make_shared<AudioRendererCallbackImpl>();
    audioRenderer->SetRendererCallback(audioRendererCB);
@@ -121,17 +136,47 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 
    实现 AudioRendererCallback 类，重写 OnInterrupt 方法并使用 SetRendererCallback 接口注册此实例，通过SetRendererCallback实例注册，应用程序将接收中断事件。
 
-   这包含了有关音频框架采取的音频中断强制操作的信息，以及是否要由应用来处理的操作。 有关详细信息，请参阅 audio_renderer.h 和 audio_info.h。
+   这包含了有关音频框架采取的音频中断强制操作的信息，以及是否要由应用来处理的操作。 有关详细信息，请参阅 audio_renderer.h 和 audio_info.h。        
 
-5. AudioRenderer 实例调用 audioRenderer->**Start**() 函数来启动播放任务。
+   同样，可以通过重写 **AudioRendererCallback** 类中的 **OnStateChange** 函数来接收播放器状态更改回调。 有关播放器状态列表，请参阅 **audio_renderer.h**。
 
-6. 使用 **GetBufferSize** 接口获取要写入的缓冲区长度。
+5. 为了获取帧标记位置/或帧周期位置的回调，可通过audioRenderer->**SetRendererPositionCallback** 或 audioRenderer->**SetRendererPeriodPositionCallback** 函数在音频播放器中注册相应的回调。
+
+   ```
+   class RendererPositionCallbackImpl : public RendererPositionCallback {
+       void OnMarkReached(const int64_t &framePosition) override
+       {
+           // frame mark reached
+           // framePosition is the frame mark number 
+       }
+   }
+   
+   std::shared_ptr<RendererPositionCallback> framePositionCB = std::make_shared<RendererPositionCallbackImpl>();
+   //markPosition is the frame mark number for which callback is requested.
+   audioRenderer->SetRendererPositionCallback(markPosition, framePositionCB); 
+   
+   class RendererPeriodPositionCallbackImpl : public RendererPeriodPositionCallback {
+       void OnPeriodReached(const int64_t &frameNumber) override
+       {
+           // frame period reached
+           // frameNumber is the frame period number 
+       }
+   }
+   
+   std::shared_ptr<RendererPeriodPositionCallback> periodPositionCB = std::make_shared<RendererPeriodPositionCallbackImpl>();
+   //framePeriodNumber is the frame period number for which callback is requested.
+   audioRenderer->SetRendererPeriodPositionCallback(framePeriodNumber, periodPositionCB); 
+   ```
+
+6. AudioRenderer 实例调用 audioRenderer->**Start**() 函数来启动播放任务。
+
+7. 使用 **GetBufferSize** 接口获取要写入的缓冲区长度。
 
    ```
    audioRenderer->GetBufferSize(bufferLen);
    ```
 
-7. 从源（例如音频文件）读取要播放的音频数据并将其传输到字节流中。重复调用Write函数写入渲染数据。
+8. 从源（例如音频文件）读取要播放的音频数据并将其传输到字节流中。重复调用Write函数写入渲染数据。
 
    ```
    bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
@@ -143,7 +188,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
    }
    ```
 
-8. 在音频中断的情况下，应用程序可能会遇到写入失败。不感知、不处理中断的应用程序在写入音频数据之前使用GetStatus API检查播放器状态。中断感知应用将通过AudioRenderCallback获得更多信息。
+9. 在音频中断的情况下，应用程序可能会遇到写入失败。不感知、不处理中断的应用程序在写入音频数据之前使用GetStatus API检查播放器状态。中断感知应用将通过AudioRenderCallback获得更多信息。
 
    ```
    while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
@@ -160,13 +205,13 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
    }
    ```
 
-9. 调用audioRenderer->**Drain**()来清空播放流。
+10. 调用audioRenderer->**Drain**()来清空播放流。
 
-10. 调用audioRenderer->**Stop**()来停止输出。
+11. 调用audioRenderer->**Stop**()来停止输出。
 
-11. 播放任务完成后，调用AudioRenderer实例的audioRenderer->**Release**()函数来释放资源。
+12. 播放任务完成后，调用AudioRenderer实例的audioRenderer->**Release**()函数来释放资源。
 
-12. 使用 audioRenderer->**SetVolume(float)** 和 audioRenderer->**GetVolume()** 来设置和获取当前音频流音量, 可选范围为 0.0 到 1.0。
+13. 使用 audioRenderer->**SetVolume(float)** 和 audioRenderer->**GetVolume()** 来设置和获取当前音频流音量, 可选范围为 0.0 到 1.0。
 
 提供上述基本音频播放使用范例。
 
@@ -194,15 +239,68 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 
 3.  （可选）使用audioCapturer->GetCapturerInfo（AudioCapturerInfo&）和audioCapturer->GetStreamInfo（AudioStreamInfo&）来获取当前的录制器的配置信息。
 
-4. AudioCapturer 实例调用 AudioCapturer->**Start**() 函数来启动录音任务。
+4. 通过重写 **AudioCapturerCallback** 类中的 **OnStateChange** 函数，并使用 audioCapturer->**SetCapturerCallback** 方法 注册回调实例来接收录制器状态更改回调。
 
-5. 使用 **GetBufferSize** 接口获取要写入的缓冲区长度。
+   ```
+   class AudioCapturerCallbackImpl : public AudioCapturerCallback {
+       void OnStateChange(const CapturerState state) override
+       {
+           switch (state) {
+               case CAPTURER_PREPARED:
+                   // Capturer prepared
+               case CAPTURER_RUNNING:
+                   // Capturer in running state
+               case CAPTURER_STOPPED:
+                   // Capturer stopped
+               case CAPTURER_RELEASED:
+                   // Capturer released
+           }
+       }
+   }
+   
+   std::shared_ptr<AudioCapturerCallback> audioCapturerCB = std::make_shared<AudioCapturerCallbackImpl>();
+   audioCapturer->SetCapturerCallback(audioCapturerCB);
+   ```
+
+5. 为了获得帧标记位置/或帧周期位置的回调，可通过 audioCapturer->**SetCapturerPositionCallback** 或 audioCapturer->**SetCapturerPeriodPositionCallback** 函数在音频录制器中注册相应的回调。
+
+   ```
+   class CapturerPositionCallbackImpl : public CapturerPositionCallback {
+       void OnMarkReached(const int64_t &framePosition) override
+       {
+           // frame mark reached
+           // framePosition is the frame mark number 
+       }
+   }
+   
+   std::shared_ptr<CapturerPositionCallback> framePositionCB = std::make_shared<CapturerPositionCallbackImpl>();
+   //markPosition is the frame mark number for which callback is requested.
+   audioCapturer->SetCapturerPositionCallback(markPosition, framePositionCB); 
+   
+   class CapturerPeriodPositionCallbackImpl : public CapturerPeriodPositionCallback {
+       void OnPeriodReached(const int64_t &frameNumber) override
+       {
+           // frame period reached
+           // frameNumber is the frame period number 
+       }
+   }
+   
+   std::shared_ptr<CapturerPeriodPositionCallback> periodPositionCB = std::make_shared<CapturerPeriodPositionCallbackImpl>();
+   //framePeriodNumber is the frame period number for which callback is requested.
+   audioCapturer->SetCapturerPeriodPositionCallback(framePeriodNumber, periodPositionCB); 
+   ```
+
+   如需取消回调，请调用相应的 audioCapturer->**UnsetCapturerPositionCallback** 或 audioCapturer->**UnsetCapturerPeriodPositionCallback** 方法。
+
+6. AudioCapturer 实例调用 AudioCapturer->**Start**() 函数来启动录音任务。
+
+7. 使用 **GetBufferSize** 接口获取要写入的缓冲区长度。
 
    ```
    audioCapturer->GetBufferSize(bufferLen);
    ```
 
-6. 读取录制的音频数据并将其转换为字节流。重复调用read函数读取数据直到主动停止。
+8. 读取录制的音频数据并将其转换为字节流。重复调用read函数读取数据直到主动停止。
 
    ```
    // set isBlocking = true/false for blocking/non-blocking read
@@ -218,11 +316,11 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
    }
    ```
 
-7. （可选）audioCapturer->**Flush**() 来清空流缓冲区数据。
+9. （可选）audioCapturer->**Flush**() 来清空流缓冲区数据。
 
-8. AudioCapturer 实例调用 audioCapturer->**Stop**() 函数停止录音。
+10. AudioCapturer 实例调用 audioCapturer->**Stop**() 函数停止录音。
 
-9. 录音任务完成后，调用 AudioCapturer 实例的 audioCapturer->**Release**() 函数释放资源。
+11. 录音任务完成后，调用 AudioCapturer 实例的 audioCapturer->**Release**() 函数释放资源。
 
 提供上述基本音频录制使用范例。更多API请参考[**audio_capturer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocapturer/include/audio_capturer.h)和[**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)。
 
@@ -262,12 +360,12 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 #### 设备控制
 7. 使用 **GetDevices**, **deviceType_** 和 **deviceRole_** 接口来获取音频输入输出设备信息。 参考 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) 内定义的DeviceFlag, DeviceType 和 DeviceRole 枚举。
     ```
-    DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
-    vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors
-        = audioSystemMgr->GetDevices(deviceFlag);
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = audioDeviceDescriptors[0];
-    cout << audioDeviceDescriptor->deviceType_;
-    cout << audioDeviceDescriptor->deviceRole_;
+    DeviceFlag deviceFlag = ALL_DEVICES_FLAG;
+    vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = audioSystemMgr->GetDevices(deviceFlag);
+    for (auto &audioDeviceDescriptor : audioDeviceDescriptors) {
+        cout << audioDeviceDescriptor->deviceType_ << endl;
+        cout << audioDeviceDescriptor->deviceRole_ << endl;
+    }
     ```
     
 8. 使用 **SetDeviceActive** 和 **IsDeviceActive** 接口去激活/去激活音频设备和获取音频设备激活状态。
@@ -277,23 +375,49 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
     
-9. 提供其他用途的接口如 **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter**, 详细请参考 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h)
+9. 使用 **SetDeviceChangeCallback** 方法注册设备更改事件。 当设备连接/断开连接时，客户端将收到回调。         
 
-10. 应用可使用AudioManagerAPI:：On注册系统音量的变化。当应用程序注册到volume change event（音量更改事件）时，每当音量发生更改时，应用程序都会收到以下参数的通知：volumeType：更新的 AudioVolumeType。 volume：当前音量级别设置。 updateUi : 是否需要显示音量变化细节。 （如果通过音量键上/下更新音量，我们将 updateUi 标志设置为 true，在其他情况下 updateUi 设置为 false）。
+     **OnDeviceChange** 函数被调用时，客户端将收到 **DeviceChangeAction** 对象，该对象将包含以下参数：           
+
+     *type* : **DeviceChangeType** 指定设备是连接还是断开。   
+     *deviceDescriptors* : **AudioDeviceDescriptor** 对象的数组，它指定设备的类型及其角色（输入/输出设备）。     
 
      ```
-     const audioManager = audio.getAudioManager();
-     
-     export default {
-          onCreate() {
-              audioManager.on('volumeChange', (volumeChange) ==> {
-                  console.info('volumeType = '+volumeChange.volumeType);
-                  console.info('volume = '+volumeChange.volume);
-                  console.info('updateUi = '+volumeChange.updateUi);
+     class DeviceChangeCallback : public AudioManagerDeviceChangeCallback {
+      public:
+          DeviceChangeCallback = default;
+          ~DeviceChangeCallback = default;
+          void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override
+          {
+              cout << deviceChangeAction.type << endl;
+              for (auto &audioDeviceDescriptor : deviceChangeAction.deviceDescriptors) {
+                  cout << audioDeviceDescriptor->deviceType_ << endl;
+                  cout << audioDeviceDescriptor->deviceRole_ << endl;
               }
           }
-     }
+      };
+     
+      auto callback = std::make_shared<DeviceChangeCallback>();
+      audioSystemMgr->SetDeviceChangeCallback(callback);
      ```
+
+10. 提供其他用途的接口如 **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter**, 详细请参考 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h)
+
+11. 应用可使用AudioManagerAPI:：On注册系统音量的变化。当应用程序注册到volume change event（音量更改事件）时，每当音量发生更改时，应用程序都会收到以下参数的通知：volumeType：更新的 AudioVolumeType。 volume：当前音量级别设置。 updateUi : 是否需要显示音量变化细节。 （如果通过音量键上/下更新音量，我们将 updateUi 标志设置为 true，在其他情况下 updateUi 设置为 false）。
+
+       ```
+       const audioManager = audio.getAudioManager();
+       
+       export default {
+            onCreate() {
+                audioManager.on('volumeChange', (volumeChange) ==> {
+                    console.info('volumeType = '+volumeChange.volumeType);
+                    console.info('volume = '+volumeChange.volume);
+                    console.info('updateUi = '+volumeChange.updateUi);
+                }
+            }
+       }
+       ```
 
 #### JavaScript 用法:
 JavaScript应用可以使用系统提供的音频管理接口，来控制音量和设备。
