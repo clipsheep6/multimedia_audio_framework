@@ -420,6 +420,9 @@ napi_value AudioManagerNapi::CreateDeviceTypeObject(napi_env env)
                 case DEVICE_TYPE_MIC:
                     propName = "MIC";
                     break;
+                case DEVICE_TYPE_USB_HEADSET:
+                    propName = "USB_HEADSET";
+                    break;
                 default:
                     HiLog::Error(LABEL, "CreateDeviceTypeObject: No prob with this value try next value!");
                     continue;
@@ -608,6 +611,7 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
         if (managerNapi != nullptr) {
             managerNapi->env_ = env;
             managerNapi->audioMngr_ = AudioSystemManager::GetInstance();
+            managerNapi->cachedClientId = getpid();
 
             if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
                 managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
@@ -621,13 +625,14 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
             }
 
             managerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
-            ret = managerNapi->audioMngr_->RegisterVolumeKeyEventNapiCallback(managerNapi->volumeKeyEventCallbackNapi_);
+            ret = managerNapi->audioMngr_->RegisterVolumeKeyEventCallback(managerNapi->cachedClientId,
+                                                                          managerNapi->volumeKeyEventCallbackNapi_);
             if (ret) {
-                MEDIA_ERR_LOG("AudioManagerNapi: RegisterVolumeKeyEventNapiCallback Failed");
+                MEDIA_ERR_LOG("AudioManagerNapi: RegisterVolumeKeyEventCallback Failed");
             } else {
-                MEDIA_DEBUG_LOG("AudioManagerNapi: RegisterVolumeKeyEventNapiCallback Success");
+                MEDIA_DEBUG_LOG("AudioManagerNapi: RegisterVolumeKeyEventCallback Success");
             }
-            managerNapi->cachedClientId = getpid();
+
             status = napi_wrap(env, jsThis, static_cast<void*>(managerNapi.get()),
                                AudioManagerNapi::Destructor, nullptr, &(managerNapi->wrapper_));
             if (status == napi_ok) {

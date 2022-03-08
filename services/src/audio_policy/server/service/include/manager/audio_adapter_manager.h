@@ -73,6 +73,8 @@ public:
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
+    int32_t SuspendAudioDevice(std::string &name, bool isSuspend);
+
     virtual ~AudioAdapterManager() {}
 
 private:

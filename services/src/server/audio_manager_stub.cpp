@@ -25,6 +25,9 @@ int AudioManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     MEDIA_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);
+    if (data.ReadInterfaceToken() != GetDescriptor()) {
+        return -1;
+    }
     if (!IsPermissionValid()) {
         MEDIA_ERR_LOG("caller app not acquired audio permission");
         return MEDIA_PERMISSION_DENIED;
@@ -99,13 +102,9 @@ int AudioManagerStub::OnRemoteRequest(
         }
         case UPDATE_ROUTE_REQ: {
             MEDIA_DEBUG_LOG("UPDATE_ROUTE_REQ AudioManagerStub");
-            int32_t ret = UpdateAudioRoute();
-            reply.WriteInt32(ret);
-            return MEDIA_OK;
-        }
-        case RELEASE_ROUTE_REQ: {
-            MEDIA_DEBUG_LOG("RELEASE_ROUTE_REQ AudioManagerStub");
-            int32_t ret = ReleaseAudioRoute();
+            DeviceType type = static_cast<DeviceType>(data.ReadInt32());
+            DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
+            int32_t ret = UpdateActiveDeviceRoute(type, flag);
             reply.WriteInt32(ret);
             return MEDIA_OK;
         }
