@@ -18,7 +18,6 @@ The **audio\_standard** repository is used to implement audio-related features, 
 ![](figures/en-us_image_0000001152315135.png)
 
 ### Basic Concepts<a name="basic-concepts"></a>
-
 -   **Sampling**
 
 Sampling is a process to obtain discrete-time signals by extracting samples from analog signals in a continuous time domain at a specific interval.
