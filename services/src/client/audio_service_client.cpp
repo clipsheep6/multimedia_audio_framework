@@ -1607,6 +1607,12 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     lock_guard<mutex> lock(ctrlMutex);
     MEDIA_INFO_LOG("SetVolume volume: %{public}f", volume);
 
+    if ((mStreamType == STREAM_RING)
+        && mAudioSystemMgr->IsStreamActive(AudioSystemManager::AudioVolumeType::STREAM_RING)) {
+        MEDIA_ERR_LOG("Instance set volume not supported for stream type STREAM_RING");
+        return AUDIO_CLIENT_ERR;
+    }
+
     if (context == NULL) {
         MEDIA_ERR_LOG("context is null");
         return AUDIO_CLIENT_ERR;
@@ -1705,7 +1711,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     float vol = systemVolume * client.mVolumeFactor;
 
     AudioRingerMode ringerMode = client.mAudioSystemMgr->GetRingerMode();
-    if ((client.mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
+    if ((client.mStreamType == STREAM_RING) && (ringerMode == RINGER_MODE_SILENT)) {
         vol = MIN_STREAM_VOLUME_LEVEL;
     }
 
