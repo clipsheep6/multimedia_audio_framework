@@ -90,6 +90,7 @@ ohos_prebuilt_etc("audio_policy.rc") {
 
 config("audio_policy_public_config") {
   include_dirs = [
+    "//drivers/peripheral/audio/interfaces/include",
     "//foundation/multimedia/audio_standard/services/include",
     "//foundation/multimedia/audio_standard/services/include/client",
     "//foundation/distributedschedule/safwk/services/safwk/include",
