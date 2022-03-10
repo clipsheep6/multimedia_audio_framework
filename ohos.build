@@ -1,7 +1,7 @@
 {
   "subsystem": "multimedia",
   "parts": {
-    "multimedia_audio_standard": {
+    "multimedia_audio_ssdfdsfsdtandard": {
       "variants": [
         "phone"
       ],
