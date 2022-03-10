@@ -78,6 +78,7 @@ int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
 
 bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
+    MEDIA_INFO_LOG("GetAudioTime in");
     uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
         timestamp.time.tv_sec = static_cast<time_t>((paTimeStamp - resetTimestamp_) / TIME_CONVERSION_US_S);
