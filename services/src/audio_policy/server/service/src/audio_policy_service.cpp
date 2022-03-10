@@ -48,6 +48,26 @@ bool AudioPolicyService::Init(void)
         return false;
     }
 
+    if (mDeviceStatusListener->RegisterDeviceStatusListener(nullptr)) {
+        MEDIA_ERR_LOG("[Policy Service] Register for device status events failed");
+        return false;
+    }
+
+    return true;
+}
+
+void AudioPolicyService::InitKVStore()
+{
+    mAudioPolicyManager.InitKVStore();
+}
+
+bool AudioPolicyService::ConnectServiceAdapter()
+{
+    if (!mAudioPolicyManager.ConnectServiceAdapter()) {
+        MEDIA_ERR_LOG("AudioPolicyService::ConnectServiceAdapter  Error in connecting to audio service adapter");
+        return false;
+    }
+
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr == nullptr) {
         MEDIA_ERR_LOG("[Policy Service] Get samgr failed");
@@ -59,16 +79,10 @@ bool AudioPolicyService::Init(void)
         MEDIA_DEBUG_LOG("[Policy Service] audio service remote object is NULL.");
         return false;
     }
+
     g_sProxy = iface_cast<IStandardAudioService>(object);
     if (g_sProxy == nullptr) {
         MEDIA_DEBUG_LOG("[Policy Service] init g_sProxy is NULL.");
-        return false;
-    } else {
-        MEDIA_DEBUG_LOG("[Policy Service] init g_sProxy is assigned.");
-    }
-
-    if (mDeviceStatusListener->RegisterDeviceStatusListener(nullptr)) {
-        MEDIA_ERR_LOG("[Policy Service] Register for device status events failed");
         return false;
     }
 
@@ -155,7 +169,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
     MEDIA_INFO_LOG("GetDevices mActiveDevices size = [%{public}zu]", mActiveDevices.size());
     for (auto &device : mActiveDevices) {
         if (device->deviceRole_ == role) {
-            auto devDesc = new(std::nothrow) AudioDeviceDescriptor(device->deviceType_, device->deviceRole_);
+            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(device->deviceType_,
+                                                                                          device->deviceRole_);
             deviceList.push_back(devDesc);
         }
     }
@@ -212,7 +227,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
         return ERROR;
     }
 
-    auto audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceType, role);
+    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceType, role);
 
     // If a device is made active, bring it to the top
     if (updateActiveDevices) {
@@ -259,6 +274,10 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
 
 int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 {
+    if (g_sProxy == nullptr) {
+        MEDIA_DEBUG_LOG("AudioPolicyService::SetAudioScene g_sProxy is nullptr");
+        return ERR_OPERATION_FAILED;
+    }
     list<InternalDeviceType> activeDeviceList;
 
     for (const sptr<AudioDeviceDescriptor> &devDesc : mActiveDevices) {
@@ -303,7 +322,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
     // fill device change action for callback
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
-    auto audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType, role);
+    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType, role);
     deviceChangeDescriptor.push_back(audioDescriptor);
 
     auto isPresent = [&devType, &role] (const sptr<AudioDeviceDescriptor> &descriptor) {
@@ -342,7 +361,8 @@ void AudioPolicyService::OnServiceConnected()
                 mAudioPolicyManager.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
 
                 // add new device into active device list
-                auto audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType, GetDeviceRole(moduleInfo.role));
+                sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
+                    GetDeviceRole(moduleInfo.role));
                 mActiveDevices.insert(mActiveDevices.begin(), audioDescriptor);
             }
 

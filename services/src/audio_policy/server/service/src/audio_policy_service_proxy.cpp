@@ -52,6 +52,10 @@ int32_t AudioPolicyServiceProxy::SetAudioScene(list<DeviceType> &activeDeviceLis
     MessageParcel reply;
     MessageOption option;
 
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
+        return -1;
+    }
     int32_t size = activeDeviceList.size();
     MEDIA_DEBUG_LOG("[AudioPolicyServiceProxy] Size of active device list %{public}d", size);
     data.WriteInt32(size);
@@ -79,6 +83,10 @@ int32_t AudioPolicyServiceProxy::UpdateAudioRoute()
     MessageParcel reply;
     MessageOption option;
 
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
+        return -1;
+    }
     data.WriteInt32(0);
 
     auto error = Remote()->SendRequest(UPDATE_ROUTE_REQ, data, reply, option);
@@ -99,6 +107,10 @@ int32_t AudioPolicyServiceProxy::ReleaseAudioRoute()
     MessageParcel reply;
     MessageOption option;
 
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
+        return -1;
+    }
     data.WriteInt32(0);
 
     auto error = Remote()->SendRequest(RELEASE_ROUTE_REQ, data, reply, option);
@@ -112,15 +124,25 @@ int32_t AudioPolicyServiceProxy::ReleaseAudioRoute()
     return result;
 }
 
+const char *AudioPolicyServiceProxy::RetrieveCookie(int32_t &size)
+{
+    return nullptr;
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServiceProxy::GetDevices(DeviceFlag deviceFlag)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
+        return deviceInfo;
+    }
     data.WriteInt32(static_cast<int32_t>(deviceFlag));
 
     int32_t error = Remote()->SendRequest(GET_DEVICES, data, reply, option);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
     if (error != ERR_NONE) {
         MEDIA_ERR_LOG("Get devices failed, error: %d", error);
         return deviceInfo;

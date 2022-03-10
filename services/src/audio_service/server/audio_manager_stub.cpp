@@ -25,6 +25,10 @@ int AudioManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     MEDIA_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);
+    if (data.ReadInterfaceToken() != GetDescriptor()) {
+        MEDIA_ERR_LOG("AudioManagerStub: ReadInterfaceToken failed");
+        return -1;
+    }
     if (!IsPermissionValid()) {
         MEDIA_ERR_LOG("caller app not acquired audio permission");
         return MEDIA_PERMISSION_DENIED;
@@ -68,6 +72,18 @@ int AudioManagerStub::OnRemoteRequest(
             MEDIA_DEBUG_LOG("GET_AUDIO_PARAMETER key received from client= %{public}s", key.c_str());
             const std::string value = GetAudioParameter(key);
             reply.WriteString(value);
+            return MEDIA_OK;
+        }
+        case RETRIEVE_COOKIE: {
+            MEDIA_DEBUG_LOG("RETRIEVE_COOKIE AudioManagerStub");
+            int32_t size = 0;
+            const char *cookieInfo = RetrieveCookie(size);
+            reply.WriteInt32(size);
+            if (size > 0) {
+                MEDIA_DEBUG_LOG("cookie received from server");
+                reply.WriteRawData(static_cast<const void *>(cookieInfo), size);
+            }
+
             return MEDIA_OK;
         }
         case SET_MICROPHONE_MUTE: {
