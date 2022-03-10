@@ -133,7 +133,7 @@ void AudioPolicyServer::AudioServerDied(pid_t pid)
 void AudioPolicyServer::SubscribeKeyEvents()
 {
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    std::set<int32_t> preKeys;
+    std::vector<int32_t> preKeys;
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption_down = std::make_shared<OHOS::MMI::KeyOption>();
     keyOption_down->SetPreKeys(preKeys);
     keyOption_down->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
@@ -844,10 +844,10 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     }
 
     // Get Input & Output Devices
-    
+
     DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = GetDevices(deviceFlag);
-    
+
     for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
         AudioDeviceDescriptor audioDeviceDescriptor = **it;
         DevicesInfo deviceInfo;
@@ -858,7 +858,7 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
 
     deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
     audioDeviceDescriptors = GetDevices(deviceFlag);
-    
+
     for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
         AudioDeviceDescriptor audioDeviceDescriptor = **it;
         DevicesInfo deviceInfo;
