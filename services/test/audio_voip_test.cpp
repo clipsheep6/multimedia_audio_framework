@@ -232,7 +232,14 @@ public:
         }
 
         bool isBlocking = true;
-        FILE *pFile = fopen(capturePath, "wb");
+
+        char filePath[PATH_MAX + 1] = {0x00};
+        if ((strlen(capturePath) > PATH_MAX) || (realpath(capturePath, filePath) == nullptr)) {
+            MEDIA_INFO_LOG("AudioVoIPTest: Invalid file path");
+            return false;
+        }
+
+        FILE *pFile = fopen(filePath, "wb");
         if (pFile == nullptr) {
             MEDIA_INFO_LOG("AudioVoIPTest: Unable to open file");
             return false;
