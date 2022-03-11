@@ -66,9 +66,9 @@ static void NativeDeviceChangeActionToJsObj(const napi_env& env, napi_value& jsO
 
     napi_value ddWrapper = nullptr;
     napi_value jsArray;
-    int32_t size = deviceChangeAction.deviceDescriptors.size();
+    size_t size = deviceChangeAction.deviceDescriptors.size();
     napi_create_array_with_length(env, size, &jsArray);
-    for (int i = 0; i < size; i += 1) {
+    for (size_t i = 0; i < size; i += 1) {
         AudioDeviceDescriptor *curDeviceDescriptor = deviceChangeAction.deviceDescriptors[i];
         ddWrapper = AudioDeviceDescriptorNapi::CreateAudioDeviceDescriptorWrapper(env, curDeviceDescriptor);
         napi_set_element(env, jsArray, i, ddWrapper);

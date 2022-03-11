@@ -1793,12 +1793,12 @@ static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, vo
     napi_value result[ARGS_TWO] = {0};
     napi_value ddWrapper = nullptr;
     napi_value retVal;
-    int32_t size = asyncContext->deviceDescriptors.size();
+    size_t size = asyncContext->deviceDescriptors.size();
     HiLog::Info(LABEL, "number of devices = %{public}d", size);
 
     napi_create_array_with_length(env, size, &result[PARAM1]);
 
-    for (int i = 0; i < size; i += 1) {
+    for (size_t i = 0; i < size; i += 1) {
         AudioDeviceDescriptor *curDeviceDescriptor = asyncContext->deviceDescriptors[i];
         ddWrapper = AudioDeviceDescriptorNapi::CreateAudioDeviceDescriptorWrapper(env, curDeviceDescriptor);
         napi_set_element(env, result[PARAM1], i, ddWrapper);

@@ -173,16 +173,22 @@ public:
         return true;
     }
 
-    bool TestRecording(int32_t samplingRate, bool isBlocking, string filePath) const
+    void InitializeCapturerOptions(AudioCapturerOptions &capturerOptions, int32_t samplingRate) const
     {
-        MEDIA_INFO_LOG("TestCapture start ");
-        AudioCapturerOptions capturerOptions;
         capturerOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(samplingRate);
         capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
         capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
         capturerOptions.streamInfo.channels = AudioChannel::STEREO;
         capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
         capturerOptions.capturerInfo.capturerFlags = 0;
+        return;
+    }
+
+    bool TestRecording(int32_t samplingRate, bool isBlocking, string filePath) const
+    {
+        MEDIA_INFO_LOG("TestCapture start ");
+        AudioCapturerOptions capturerOptions;
+        InitializeCapturerOptions(capturerOptions, samplingRate);
 
         unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
 
@@ -207,6 +213,13 @@ public:
         }
 
         MEDIA_INFO_LOG("Is blocking read: %{public}s", isBlocking ? "true" : "false");
+
+        char path[PATH_MAX + 1] = {0x00};
+        if ((filePath.length() > PATH_MAX) || (realpath(filePath.c_str(), path) == nullptr)) {
+            MEDIA_ERR_LOG("AudioCapturerTest: Invalid input file path");
+            return false;
+        }
+
         FILE *pFile = fopen(filePath.c_str(), "wb");
         if (pFile == nullptr) {
             MEDIA_INFO_LOG("AudioCapturerTest: Unable to open file");
