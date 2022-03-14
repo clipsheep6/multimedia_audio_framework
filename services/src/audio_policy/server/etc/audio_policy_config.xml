@@ -34,6 +34,7 @@
             <module name="fifo_input" lib="libmodule-pipe-source.z.so" role="source" file="/data/data/.pulse_dir/pipe_source.pcm">
                 <Ports>
                     <Port adapter_name="primary" id="0"/>
+
                 </Ports>
             </module>
         </modules>
@@ -42,7 +43,7 @@
         <modules>
             <module name="Bt_Speaker" lib="libmodule-hdi-sink.z.so" role="sink" channels="2" rate="48000" buffer_size="3840">
                 <Ports>
-                    <Port adapter_name="bt_a2dp" id="0" channels="2" rate="48000" buffer_size="3840"/>
+                    <Port adapter_name="bt_a2dp" id="0" channels="2" rate="48000" buffer_size="3840"/
                 </Ports>
             </module>
         </modules>
