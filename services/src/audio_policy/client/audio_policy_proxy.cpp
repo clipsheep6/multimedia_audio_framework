@@ -88,6 +88,7 @@ AudioRingerMode AudioPolicyProxy::GetRingerMode()
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return RINGER_MODE_NORMAL;
     }
     int32_t error = Remote()->SendRequest(GET_RINGER_MODE, data, reply, option);
     if (error != ERR_NONE) {
@@ -124,6 +125,7 @@ AudioScene AudioPolicyProxy::GetAudioScene()
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return AUDIO_SCENE_DEFAULT;
     }
     int32_t error = Remote()->SendRequest(GET_AUDIO_SCENE, data, reply, option);
     if (error != ERR_NONE) {
@@ -179,12 +181,13 @@ bool AudioPolicyProxy::GetStreamMute(AudioStreamType streamType)
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return false;
     }
     data.WriteInt32(static_cast<int32_t>(streamType));
     int32_t error = Remote()->SendRequest(GET_STREAM_MUTE, data, reply, option);
     if (error != ERR_NONE) {
         MEDIA_ERR_LOG("get mute failed, error: %d", error);
-        return error;
+        return false;
     }
     return reply.ReadBool();
 }
@@ -197,6 +200,7 @@ bool AudioPolicyProxy::IsStreamActive(AudioStreamType streamType)
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return false;
     }
     data.WriteInt32(static_cast<int32_t>(streamType));
     int32_t error = Remote()->SendRequest(IS_STREAM_ACTIVE, data, reply, option);
@@ -212,13 +216,14 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return deviceInfo;
     }
     data.WriteInt32(static_cast<int32_t>(deviceFlag));
     int32_t error = Remote()->SendRequest(GET_DEVICES, data, reply, option);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
     if (error != ERR_NONE) {
         MEDIA_ERR_LOG("Get devices failed, error: %d", error);
         return deviceInfo;
@@ -260,6 +265,7 @@ bool AudioPolicyProxy::IsDeviceActive(InternalDeviceType deviceType)
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return false;
     }
     data.WriteInt32(static_cast<int32_t>(deviceType));
     int32_t error = Remote()->SendRequest(IS_DEVICE_ACTIVE, data, reply, option);
@@ -432,6 +438,7 @@ AudioStreamType AudioPolicyProxy::GetStreamInFocus()
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return STREAM_DEFAULT;
     }
     int32_t error = Remote()->SendRequest(GET_STREAM_IN_FOCUS, data, reply, option);
     if (error != ERR_NONE) {
@@ -459,7 +466,7 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -473,10 +480,33 @@ int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const sptr<IRemoteObject> &o
         MEDIA_ERR_LOG("VolumeKeyEventCallback object is null");
         return ERR_NULL_OBJECT;
     }
+
+    data.WriteInt32(clientPid);
     data.WriteRemoteObject(object);
     int result = Remote()->SendRequest(SET_VOLUME_KEY_EVENT_CALLBACK, data, reply, option);
     if (result != ERR_NONE) {
         MEDIA_ERR_LOG("SetAudioVolumeKeyEventCallback failed, result: %{public}d", result);
+        return result;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(clientPid);
+    int result = Remote()->SendRequest(UNSET_VOLUME_KEY_EVENT_CALLBACK, data, reply, option);
+    if (result != ERR_NONE) {
+        MEDIA_ERR_LOG("UnsetVolumeKeyEventCallback failed, result: %{public}d", result);
         return result;
     }
 

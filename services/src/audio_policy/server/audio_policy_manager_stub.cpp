@@ -112,7 +112,7 @@ void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParc
     int deviceFlag = data.ReadInt32();
     DeviceFlag deviceFlagConfig = static_cast<DeviceFlag>(deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevices(deviceFlagConfig);
-    int32_t size = devices.size();
+    int32_t size = static_cast<int32_t>(devices.size());
     MEDIA_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
@@ -220,12 +220,20 @@ void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &reply)
 
 void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
+    int32_t clientPid =  data.ReadInt32();
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
     if (remoteObject == nullptr) {
         MEDIA_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
         return;
     }
-    int ret = SetVolumeKeyEventCallback(remoteObject);
+    int ret = SetVolumeKeyEventCallback(clientPid, remoteObject);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientPid = data.ReadInt32();
+    int ret = UnsetVolumeKeyEventCallback(clientPid);
     reply.WriteInt32(ret);
 }
 
@@ -233,6 +241,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
+        MEDIA_ERR_LOG("AudioPolicyManagerStub: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {
@@ -312,12 +321,17 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             SetVolumeKeyEventCallbackInternal(data, reply);
             break;
 
+        case UNSET_VOLUME_KEY_EVENT_CALLBACK:
+            UnsetVolumeKeyEventCallbackInternal(data, reply);
+            break;
+
         case GET_STREAM_IN_FOCUS:
             GetStreamInFocusInternal(reply);
             break;
 
         case GET_SESSION_INFO_IN_FOCUS:
             GetSessionInfoInFocusInternal(reply);
+            break;
 
         case GET_DEVICES:
             GetDevicesInternal(data, reply);

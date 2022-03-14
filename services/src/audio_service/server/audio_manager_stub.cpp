@@ -26,6 +26,7 @@ int AudioManagerStub::OnRemoteRequest(
 {
     MEDIA_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);
     if (data.ReadInterfaceToken() != GetDescriptor()) {
+        MEDIA_ERR_LOG("AudioManagerStub: ReadInterfaceToken failed");
         return -1;
     }
     if (!IsPermissionValid()) {
@@ -73,6 +74,18 @@ int AudioManagerStub::OnRemoteRequest(
             reply.WriteString(value);
             return MEDIA_OK;
         }
+        case RETRIEVE_COOKIE: {
+            MEDIA_DEBUG_LOG("RETRIEVE_COOKIE AudioManagerStub");
+            int32_t size = 0;
+            const char *cookieInfo = RetrieveCookie(size);
+            reply.WriteInt32(size);
+            if (size > 0) {
+                MEDIA_DEBUG_LOG("cookie received from server");
+                reply.WriteRawData(static_cast<const void *>(cookieInfo), size);
+            }
+
+            return MEDIA_OK;
+        }
         case SET_MICROPHONE_MUTE: {
             MEDIA_DEBUG_LOG("SET_MICROPHONE_MUTE AudioManagerStub");
             bool isMute = data.ReadBool();
@@ -102,13 +115,9 @@ int AudioManagerStub::OnRemoteRequest(
         }
         case UPDATE_ROUTE_REQ: {
             MEDIA_DEBUG_LOG("UPDATE_ROUTE_REQ AudioManagerStub");
-            int32_t ret = UpdateAudioRoute();
-            reply.WriteInt32(ret);
-            return MEDIA_OK;
-        }
-        case RELEASE_ROUTE_REQ: {
-            MEDIA_DEBUG_LOG("RELEASE_ROUTE_REQ AudioManagerStub");
-            int32_t ret = ReleaseAudioRoute();
+            DeviceType type = static_cast<DeviceType>(data.ReadInt32());
+            DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
+            int32_t ret = UpdateActiveDeviceRoute(type, flag);
             reply.WriteInt32(ret);
             return MEDIA_OK;
         }

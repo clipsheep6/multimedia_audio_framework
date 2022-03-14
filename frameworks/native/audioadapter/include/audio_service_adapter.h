@@ -66,7 +66,7 @@ public:
      * @return Returns module index if module loaded sucessfully; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
-    virtual int32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) = 0;
+    virtual uint32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) = 0;
 
     /**
      * @brief closes/unloads the audio modules loaded.
@@ -114,6 +114,15 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t SetMute(AudioStreamType streamType, bool mute) = 0;
+
+    /**
+     * @brief suspends the current active device
+     *
+     * @param audioPortName Name of the default audio sink to be suspended
+     * @return Returns {@link SUCCESS} if suspend is success; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) = 0;
 
     /**
      * @brief returns if given streamType is set to mute
