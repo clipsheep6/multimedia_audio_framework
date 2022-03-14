@@ -49,9 +49,9 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
         MEDIA_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
     }
 
-    interruptPriorityMap_[STREAM_VOICE_CALL] = 3;
-    interruptPriorityMap_[STREAM_RING] = 2;
-    interruptPriorityMap_[STREAM_MUSIC] = 1;
+    interruptPriorityMap_[STREAM_VOICE_CALL] = THIRD_PRIORITY;
+    interruptPriorityMap_[STREAM_RING] = SECOND_PRIORITY;
+    interruptPriorityMap_[STREAM_MUSIC] = FIRST_PRIORITY;
 }
 
 void AudioPolicyServer::OnDump()
@@ -114,6 +114,7 @@ void AudioPolicyServer::RegisterAudioServerDeathRecipient()
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
     if (deathRecipient_ != nullptr) {
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain system ability manager");
         sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
         deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::AudioServerDied, this, std::placeholders::_1));
         bool result = object->AddDeathRecipient(deathRecipient_);
@@ -125,20 +126,22 @@ void AudioPolicyServer::RegisterAudioServerDeathRecipient()
 
 void AudioPolicyServer::AudioServerDied(pid_t pid)
 {
-    MEDIA_INFO_LOG("Audio server died: restart policy server");
-    MEDIA_INFO_LOG("AudioPolicyServer: Kill pid:%{public}d", pid);
+    MEDIA_INFO_LOG("Audio server died: restart policy server. Kill pid:%{public}d", pid);
     kill(pid, SIGKILL);
 }
 
 void AudioPolicyServer::SubscribeKeyEvents()
 {
     MMI::InputManager *im = MMI::InputManager::GetInstance();
+    CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
+
     std::set<int32_t> preKeys;
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption_down = std::make_shared<OHOS::MMI::KeyOption>();
+    CHECK_AND_RETURN_LOG(keyOption_down != nullptr, "Invalid key option");
     keyOption_down->SetPreKeys(preKeys);
     keyOption_down->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
     keyOption_down->SetFinalKeyDown(true);
-    keyOption_down->SetFinalKeyDownDuration(0);
+    keyOption_down->SetFinalKeyDownDuration(VOLUME_KEY_DURATION);
     im->SubscribeKeyEvent(keyOption_down, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
         std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
         AudioStreamType streamInFocus = GetStreamInFocus();
@@ -844,27 +847,18 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     }
 
     // Get Input & Output Devices
-
-    DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = GetDevices(deviceFlag);
-
-    for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
-        AudioDeviceDescriptor audioDeviceDescriptor = **it;
-        DevicesInfo deviceInfo;
-        deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
-        deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
-        policyData.inputDevices.push_back(deviceInfo);
-    }
-
-    deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
-    audioDeviceDescriptors = GetDevices(deviceFlag);
-
-    for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
-        AudioDeviceDescriptor audioDeviceDescriptor = **it;
-        DevicesInfo deviceInfo;
-        deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
-        deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
-        policyData.outputDevices.push_back(deviceInfo);
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = GetDevices(DeviceFlag::ALL_DEVICES_FLAG);
+    for (const auto &device : audioDeviceDescriptors) {
+        if (device != nullptr) {
+            DevicesInfo deviceInfo = {};
+            deviceInfo.deviceType = device->deviceType_;
+            deviceInfo.deviceRole = device->deviceRole_;
+            if (deviceInfo.deviceRole == DeviceRole::OUTPUT_DEVICE) {
+                policyData.outputDevices.push_back(deviceInfo);
+            } else if (deviceInfo.deviceRole == DeviceRole::INPUT_DEVICE) {
+                policyData.inputDevices.push_back(deviceInfo);
+            }
+        }
     }
 }
 
