@@ -51,8 +51,6 @@ void XMLParser::Destroy()
     if (mDoc != NULL) {
         xmlFreeDoc(mDoc);
     }
-
-    return;
 }
 
 bool XMLParser::ParseInternal(xmlNode &node)
@@ -131,7 +129,7 @@ void XMLParser::ParseModules(xmlNode &node, std::string &className)
 
 void XMLParser::ParsePorts(xmlNode &node, AudioModuleInfo &moduleInfo)
 {
-    xmlNode *portsNode = NULL;
+    xmlNode *portsNode = nullptr;
     portsNode = node.xmlChildrenNode;
 
     while (portsNode != NULL) {
