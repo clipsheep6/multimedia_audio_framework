@@ -336,8 +336,13 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
         MEDIA_DEBUG_LOG("AudioPolicyService::SetAudioScene g_sProxy is nullptr");
         return ERR_OPERATION_FAILED;
     }
+    list<InternalDeviceType> activeDeviceList;
 
-    int32_t result = g_sProxy->SetAudioScene(audioScene);
+    for (const sptr<AudioDeviceDescriptor> &devDesc : mConnectedDevices) {
+        activeDeviceList.push_front(devDesc->deviceType_);
+    }
+
+    int32_t result = g_sProxy->SetAudioScene(activeDeviceList, audioScene);
     MEDIA_INFO_LOG("SetAudioScene return value from audio HAL: %{public}d", result);
     // As Audio HAL is stubbed now, we set and return
     mAudioScene = audioScene;

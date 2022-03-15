@@ -45,7 +45,7 @@ bool AudioPolicyServiceProxy::IsMicrophoneMute()
     return false;
 }
 
-int32_t AudioPolicyServiceProxy::SetAudioScene(AudioScene audioScene)
+int32_t AudioPolicyServiceProxy::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
 {
     MEDIA_DEBUG_LOG("[AudioPolicyServiceProxy] SetAudioScene %{public}d", audioScene);
     MessageParcel data;
@@ -55,6 +55,12 @@ int32_t AudioPolicyServiceProxy::SetAudioScene(AudioScene audioScene)
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
         return -1;
+    }
+    uint32_t size = activeDeviceList.size();
+    MEDIA_DEBUG_LOG("[AudioPolicyServiceProxy] Size of active device list %{public}d", size);
+    data.WriteInt32(static_cast<int32_t>(size));
+    for (auto i = activeDeviceList.begin(); i != activeDeviceList.end(); ++i) {
+        data.WriteInt32(static_cast<int32_t>(*i));
     }
 
     data.WriteInt32(static_cast<int32_t>(audioScene));
