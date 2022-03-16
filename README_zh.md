@@ -329,7 +329,9 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     ```
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     ```
-#### 音量控制
+
+**音量控制**
+
 2. 使用 **GetMaxVolume** 和  **GetMinVolume** 接口去查询音频流支持的最大和最小音量等级，在此范围内设置音量。
     ```
     AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_MUSIC;
@@ -356,7 +358,9 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     int32_t result = audioSystemMgr->SetMicrophoneMute(true);
     bool isMicMute = audioSystemMgr->IsMicrophoneMute();
     ```
-#### 设备控制
+
+**设备控制**
+
 7. 使用 **GetDevices**, **deviceType_** 和 **deviceRole_** 接口来获取音频输入输出设备信息。 参考 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) 内定义的DeviceFlag, DeviceType 和 DeviceRole 枚举。
     ```
     DeviceFlag deviceFlag = ALL_DEVICES_FLAG;
@@ -446,7 +450,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
        }
     ```
 
-#### 音频场景
+**音频场景**
 
 12. 使用 **SetAudioScene** 和 **getAudioScene** API 分别更改和检查音频策略.
 
