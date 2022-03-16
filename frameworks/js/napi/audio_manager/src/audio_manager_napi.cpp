@@ -420,6 +420,9 @@ napi_value AudioManagerNapi::CreateDeviceTypeObject(napi_env env)
                 case DEVICE_TYPE_MIC:
                     propName = "MIC";
                     break;
+                case DEVICE_TYPE_USB_HEADSET:
+                    propName = "USB_HEADSET";
+                    break;
                 default:
                     HiLog::Error(LABEL, "CreateDeviceTypeObject: No prob with this value try next value!");
                     continue;
@@ -1793,15 +1796,17 @@ static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, vo
     napi_value result[ARGS_TWO] = {0};
     napi_value ddWrapper = nullptr;
     napi_value retVal;
-    int32_t size = asyncContext->deviceDescriptors.size();
+    size_t size = asyncContext->deviceDescriptors.size();
     HiLog::Info(LABEL, "number of devices = %{public}d", size);
 
     napi_create_array_with_length(env, size, &result[PARAM1]);
 
-    for (int i = 0; i < size; i += 1) {
-        AudioDeviceDescriptor *curDeviceDescriptor = asyncContext->deviceDescriptors[i];
-        ddWrapper = AudioDeviceDescriptorNapi::CreateAudioDeviceDescriptorWrapper(env, curDeviceDescriptor);
-        napi_set_element(env, result[PARAM1], i, ddWrapper);
+    for (size_t i = 0; i < size; i ++) {
+        ddWrapper = AudioDeviceDescriptorNapi::CreateAudioDeviceDescriptorWrapper(env,
+            asyncContext->deviceDescriptors[i]);
+        if (ddWrapper != nullptr) {
+            napi_set_element(env, result[PARAM1], i, ddWrapper);
+        }
     }
 
     napi_get_undefined(env, &result[PARAM0]);

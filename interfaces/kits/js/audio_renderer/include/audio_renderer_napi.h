@@ -61,6 +61,8 @@ private:
         bool isTrue;
         uint64_t time;
         size_t bufferLen;
+        size_t bufferSize;
+        size_t totalBytesWritten;
         void *data;
         AudioSampleFormat sampleFormat;
         AudioSamplingRate samplingRate;
@@ -103,6 +105,7 @@ private:
     static void SetFunctionAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void AudioParamsAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetBufferSizeAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetInt64ValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void WriteAsyncCallbackComplete(napi_env env, napi_status status, void *data);
@@ -122,8 +125,7 @@ private:
                                                const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value RegisterPeriodPositionCallback(napi_env env, napi_value* argv,
                                                      const std::string& cbName, AudioRendererNapi *rendererNapi);
-    static napi_value UnregisterCallback(napi_env env, napi_value jsThis,
-                                         napi_value* argv, const std::string& cbName);
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
 
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static napi_value CreateAudioRendererRateObject(napi_env env);

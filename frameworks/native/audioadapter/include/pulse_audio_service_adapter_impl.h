@@ -29,12 +29,13 @@ public:
     ~PulseAudioServiceAdapterImpl();
 
     bool Connect() override;
-    int32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) override;
+    uint32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
     int32_t SetDefaultSink(std::string name) override;
     int32_t SetDefaultSource(std::string name) override;
     int32_t SetVolume(AudioStreamType streamType, float volume) override;
     int32_t SetMute(AudioStreamType streamType, bool mute) override;
+    int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
     bool IsMute(AudioStreamType streamType) override;
     bool IsStreamActive(AudioStreamType streamType) override;
     void Disconnect() override;

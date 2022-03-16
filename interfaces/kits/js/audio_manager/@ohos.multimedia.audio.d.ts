@@ -200,6 +200,11 @@ declare namespace audio {
      * @since 7
      */
     MIC = 15,
+    /**
+     * USB audio headset.
+     * @since 7
+     */
+    USB_HEADSET = 22
   }
 
   /**
@@ -366,7 +371,7 @@ declare namespace audio {
      * Notification or ringtone usage.
      * @since 7
      */
-    STREAM_USAGE_NOTIFICATION_RINGTONE = 3
+    STREAM_USAGE_NOTIFICATION_RINGTONE = 6
   }
 
   /**

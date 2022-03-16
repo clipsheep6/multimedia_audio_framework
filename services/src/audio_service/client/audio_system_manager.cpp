@@ -155,6 +155,11 @@ void AudioSystemManager::SetAudioParameter(const std::string key, const std::str
     g_sProxy->SetAudioParameter(key, value);
 }
 
+const char *AudioSystemManager::RetrieveCookie(int32_t &size) const
+{
+    return g_sProxy->RetrieveCookie(size);
+}
+
 int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
 {
     /* Validate and return INVALID_PARAMS error */
@@ -166,6 +171,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
@@ -185,6 +191,7 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
@@ -229,6 +236,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
@@ -249,6 +257,7 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;

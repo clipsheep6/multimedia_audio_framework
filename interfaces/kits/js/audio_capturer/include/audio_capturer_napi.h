@@ -53,6 +53,7 @@ private:
         uint32_t userSize;
         uint8_t *buffer = nullptr;
         size_t bytesRead;
+        size_t bufferSize;
         bool isBlocking;
         bool isTrue;
         AudioSampleFormat audioSampleFormat;
@@ -64,7 +65,7 @@ private:
         DeviceRole deviceRole;
         DeviceType deviceType;
         SourceType sourceType;
-        uint32_t capturerFlags;
+        int32_t capturerFlags;
         AudioCapturerNapi *objectInfo;
         AudioCapturerOptions capturerOptions;
     };
@@ -93,6 +94,7 @@ private:
     static void AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void ReadAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetBufferSizeAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetInt64ValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void VoidAsyncCallbackComplete(napi_env env, napi_status status, void *data);
@@ -111,8 +113,7 @@ private:
                                                const std::string& cbName, AudioCapturerNapi *capturerNapi);
     static napi_value RegisterPeriodPositionCallback(napi_env env, napi_value* argv,
                                                      const std::string& cbName, AudioCapturerNapi *capturerNapi);
-    static napi_value UnregisterCallback(napi_env env, napi_value jsThis,
-                                         napi_value* argv, const std::string& cbName);
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioCapturerOptions> sAudioCapturerOptions_;
@@ -124,7 +125,7 @@ private:
     DeviceRole deviceRole_;
     DeviceType deviceType_;
     SourceType sourceType_;
-    uint32_t capturerFlags_;
+    int32_t capturerFlags_;
     napi_env env_;
     napi_ref wrapper_;
     std::shared_ptr<CapturerPositionCallback> positionCBNapi_ = nullptr;

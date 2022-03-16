@@ -504,6 +504,8 @@ private:
     bool isContextConnected;
     bool isStreamConnected;
 
+    std::string appCookiePath = "";
+
     float mVolumeFactor;
     AudioStreamType mStreamType;
     AudioSystemManager *mAudioSystemMgr;
@@ -517,18 +519,18 @@ private:
     AudioRenderMode renderMode_;
     std::weak_ptr<AudioRendererWriteCallback> writeCallback_;
 
-    int32_t mFrameSize = 0;
+    uint32_t mFrameSize = 0;
     bool mMarkReached = false;
-    int64_t mFrameMarkPosition = 0;
-    int64_t mFramePeriodNumber = 0;
+    uint64_t mFrameMarkPosition = 0;
+    uint64_t mFramePeriodNumber = 0;
 
-    int64_t mTotalBytesWritten = 0;
-    int64_t mFramePeriodWritten = 0;
+    uint64_t mTotalBytesWritten = 0;
+    uint64_t mFramePeriodWritten = 0;
     std::shared_ptr<RendererPositionCallback> mRenderPositionCb;
     std::shared_ptr<RendererPeriodPositionCallback> mRenderPeriodPositionCb;
 
-    int64_t mTotalBytesRead = 0;
-    int64_t mFramePeriodRead = 0;
+    uint64_t mTotalBytesRead = 0;
+    uint64_t mFramePeriodRead = 0;
     std::shared_ptr<CapturerPositionCallback> mCapturePositionCb;
     std::shared_ptr<CapturerPeriodPositionCallback> mCapturePeriodPositionCb;
 
@@ -592,7 +594,6 @@ private:
     // Resets PA audio client and free up resources if any with this API
     void ResetPAAudioClient();
     // For setting some environment variables required while running from hap
-    void SetEnv();
     int32_t CorkStream();
 
     // Callbacks to be implemented

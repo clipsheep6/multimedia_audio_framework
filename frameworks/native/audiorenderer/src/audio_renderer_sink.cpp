@@ -407,6 +407,10 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
             sink.ext.device.type = PIN_OUT_HEADSET;
             sink.ext.device.desc = "pin_out_headset";
             break;
+        case DEVICE_TYPE_USB_HEADSET:
+            sink.ext.device.type = PIN_OUT_USB_EXT;
+            sink.ext.device.desc = "pin_out_usb_ext";
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
@@ -454,7 +458,7 @@ int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene)
 {
     MEDIA_INFO_LOG("AudioRendererSink::SetAudioScene in");
     if (audioRender_ == nullptr) {

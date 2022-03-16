@@ -128,7 +128,7 @@ Fail:
     return false;
 }
 
-int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
+uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
 {
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
@@ -149,6 +149,11 @@ int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
+    if (userData->idx == PA_INVALID_INDEX) {
+        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] OpenAudioPort returned invalid index");
+        return ERR_OPERATION_FAILED;
+    }
+
     return userData->idx;
 }
 
@@ -165,6 +170,25 @@ int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
 
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
+    return SUCCESS;
+}
+
+int32_t PulseAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, bool isSuspend)
+{
+    MEDIA_INFO_LOG("SuspendAudioDevice: [%{public}s] : [%{public}d]", audioPortName.c_str(), isSuspend);
+    pa_threaded_mainloop_lock(mMainLoop);
+
+    auto suspendFlag = isSuspend ? 1 : 0;
+    pa_operation *operation = pa_context_suspend_sink_by_name(mContext, audioPortName.c_str(), suspendFlag, NULL, NULL);
+    if (operation == NULL) {
+        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_suspend_sink_by_name failed!");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return ERR_OPERATION_FAILED;
+    }
+
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+
     return SUCCESS;
 }
 
@@ -567,7 +591,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     float vol = volumeCb * volumeFactor;
 
     pa_cvolume cv = i->volume;
-    int32_t volume = pa_sw_volume_from_linear(vol);
+    uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
     pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, NULL, NULL));
 

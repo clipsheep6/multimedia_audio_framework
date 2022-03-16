@@ -141,7 +141,7 @@ public:
     bool TestPauseStop(const unique_ptr<AudioRenderer> &audioRenderer, bool &pauseTested, bool &stopTested,
                        FILE &wavFile) const
     {
-        uint64_t currFilePos = ftell(&wavFile);
+        int64_t currFilePos = ftell(&wavFile);
         if (!stopTested && (currFilePos > STOP_BUFFER_POSITION) && audioRenderer->Stop()) {
             stopTested = true;
             sleep(STOP_RENDER_TIME_SECONDS);
@@ -286,6 +286,7 @@ public:
 
         if (audioRenderer == nullptr) {
             MEDIA_ERR_LOG("AudioRendererTest: Create failed");
+            fclose(wavFile);
             return false;
         }
 
@@ -294,6 +295,7 @@ public:
         ret = audioRenderer->SetRendererCallback(cb1);
         if (ret) {
             MEDIA_ERR_LOG("AudioRendererTest: SetRendererCallback failed %{public}d", ret);
+            fclose(wavFile);
             return false;
         }
 

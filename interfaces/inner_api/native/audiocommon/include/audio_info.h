@@ -105,6 +105,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_MIC = 15,
     /**
+     * Indicates a microphone built in a device.
+     */
+    DEVICE_TYPE_USB_HEADSET = 22,
+    /**
      * Indicates device type max count.
      */
     DEVICE_TYPE_MAX
@@ -279,8 +283,8 @@ enum StreamUsage {
     STREAM_USAGE_UNKNOWN = 0,
     STREAM_USAGE_MEDIA = 1,
     STREAM_USAGE_VOICE_COMMUNICATION = 2,
-    STREAM_USAGE_NOTIFICATION_RINGTONE = 3,
-    STREAM_USAGE_VOICE_ASSISTANT = 4
+    STREAM_USAGE_VOICE_ASSISTANT = 4,
+    STREAM_USAGE_NOTIFICATION_RINGTONE = 6
 };
 
 /**
