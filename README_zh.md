@@ -432,7 +432,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 
 11. 应用可使用AudioManagerAPI:：On注册系统音量的变化。当应用程序注册到volume change event（音量更改事件）时，每当音量发生更改时，应用程序都会收到以下参数的通知：volumeType：更新的 AudioVolumeType。 volume：当前音量级别设置。 updateUi : 是否需要显示音量变化细节。 （如果通过音量键上/下更新音量，我们将 updateUi 标志设置为 true，在其他情况下 updateUi 设置为 false）。
 
-       ```
+    ```
        const audioManager = audio.getAudioManager();
        
        export default {
@@ -444,7 +444,18 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
                 }
             }
        }
-       ```
+    ```
+
+#### 音频场景
+
+12. 使用 **SetAudioScene** 和 **getAudioScene** API 分别更改和检查音频策略.
+
+    ```
+    int32_t result = audioSystemMgr->SetAudioScene(AUDIO_SCENE_PHONE_CALL);
+    AudioScene audioScene = audioSystemMgr->GetAudioScene();
+    ```
+
+    请参考 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) 中的 **AudioScene**支持的音频场景。
 
 **JavaScript 用法:**
 
