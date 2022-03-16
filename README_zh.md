@@ -2,13 +2,12 @@
 
 -   [简介](#section119mcpsimp)
     -   [基本概念](#section122mcpsimp)
-
 -   [目录](#section179mcpsimp)
 -   [使用说明](#section112738505318)
     -   [音频播放](#section1147510562812)
     -   [音频录制](#section295162052813)
     -   [音频管理](#section645572311287)
-
+-   [支持的设备](#supported-devices)
 -   [相关仓](#section340mcpsimp)
 
 ## 简介<a name="section119mcpsimp"></a>
@@ -375,7 +374,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
     
-9. 使用 **SetDeviceChangeCallback** 方法注册设备更改事件。 当设备连接/断开连接时，客户端将收到回调。         
+9. 使用 **SetDeviceChangeCallback** 方法注册设备更改事件。 当设备连接/断开连接时，客户端将收到回调。当前音频子系统支持为 WIRED_HEADSET、USB_HEADSET 和 BLUETOOTH_A2DP 设备发送设备更改事件。         
 
      **OnDeviceChange** 函数被调用时，客户端将收到 **DeviceChangeAction** 对象，该对象将包含以下参数：           
 
@@ -383,7 +382,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
      *deviceDescriptors* : **AudioDeviceDescriptor** 对象的数组，它指定设备的类型及其角色（输入/输出设备）。     
 
      ```
-     class DeviceChangeCallback : public AudioManagerDeviceChangeCallback {
+      class DeviceChangeCallback : public AudioManagerDeviceChangeCallback {
       public:
           DeviceChangeCallback = default;
           ~DeviceChangeCallback = default;
@@ -391,8 +390,36 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
           {
               cout << deviceChangeAction.type << endl;
               for (auto &audioDeviceDescriptor : deviceChangeAction.deviceDescriptors) {
-                  cout << audioDeviceDescriptor->deviceType_ << endl;
-                  cout << audioDeviceDescriptor->deviceRole_ << endl;
+                  switch (audioDeviceDescriptor->deviceType_) {
+                      case DEVICE_TYPE_WIRED_HEADSET: {
+                          if (deviceChangeAction.type == CONNECT) {
+                              cout << wired headset connected << endl;
+                          } else {
+                              cout << wired headset disconnected << endl;
+                          }
+                          break;
+                      }
+                      case DEVICE_TYPE_USB_HEADSET:{
+                          if (deviceChangeAction.type == CONNECT) {
+                              cout << usb headset connected << endl;
+                          } else {
+                              cout << usb headset disconnected << endl;
+                          }
+                          break;
+                      }
+                      case DEVICE_TYPE_BLUETOOTH_A2DP:{
+                          if (deviceChangeAction.type == CONNECT) {
+                              cout << Bluetooth device connected << endl;
+                          } else {
+                              cout << Bluetooth device disconnected << endl;
+                          }
+                          break;
+                      }
+                      default: {
+                          cout << "Unsupported device" << endl;
+                          break;
+                      }
+                  }
               }
           }
       };
@@ -401,7 +428,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
       audioSystemMgr->SetDeviceChangeCallback(callback);
      ```
 
-10. 提供其他用途的接口如 **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter**, 详细请参考 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h)
+10. 提供其他用途的接口如 **IsStreamActive**, **SetAudioParameter**, **GetAudioParameter**, 详细请参考 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h)
 
 11. 应用可使用AudioManagerAPI:：On注册系统音量的变化。当应用程序注册到volume change event（音量更改事件）时，每当音量发生更改时，应用程序都会收到以下参数的通知：volumeType：更新的 AudioVolumeType。 volume：当前音量级别设置。 updateUi : 是否需要显示音量变化细节。 （如果通过音量键上/下更新音量，我们将 updateUi 标志设置为 true，在其他情况下 updateUi 设置为 false）。
 
@@ -419,7 +446,8 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
        }
        ```
 
-#### JavaScript 用法:
+**JavaScript 用法:**
+
 JavaScript应用可以使用系统提供的音频管理接口，来控制音量和设备。
 请参考 [**音频管理.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/js-reference/音频管理.md) 来获取音量和设备管理相关JavaScript接口的用法。
 
@@ -468,6 +496,19 @@ JavaScript应用可以使用系统提供的音频管理接口，来控制音量�
 7. 使用 GetRingtoneState 来设置铃声播放状态： RingtoneState
 
 8. 使用 GetAudioRendererInfo 获取 AudioRendererInfo 以获取媒体类型和流的使用类型。
+
+## 支持的设备<a name="supported-devices"></a>
+
+目前音频子系统支持的以下设备类型列表：
+
+1. **USB Type-C 耳机**\
+   数字耳机，包括DAC(数字到模拟转换器)和放大器作为耳机的一部分。  
+2. **有线耳机**\
+   模拟耳机，不包含任何DAC内部。 它可以有3.5毫米插孔或c型插孔不需要DAC。  
+3. **蓝牙耳机**\
+   蓝牙A2DP耳机(高级音频分发配置文件)，用于无线流音频。  
+4. **内部扬声器和麦克风**\
+   支持内置扬声器和麦克风，分别用作播放和录制的默认设备。
 
 ## 相关仓<a name="section340mcpsimp"></a>
 
