@@ -291,12 +291,17 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     int32_t result = SUCCESS;
 
     if (!active) {
-        deviceType = FetchHighPriorityDevice();
+        CHECK_AND_RETURN_RET_LOG(deviceType == mCurrentActiveDevice, SUCCESS, "This device is not active");
+        if (mConnectedDevices.size() == mDefaultDeviceCount && deviceType == DEVICE_TYPE_SPEAKER) {
+            deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+        } else {
+            deviceType = FetchHighPriorityDevice();
+        }
     }
 
     if (deviceType == mCurrentActiveDevice) {
-        MEDIA_ERR_LOG("Device already activated %{public}d", mCurrentActiveDevice);
-        return ERR_INVALID_OPERATION;
+        MEDIA_ERR_LOG("Device already activated %{public}d. No need to activate again", mCurrentActiveDevice);
+        return SUCCESS;
     }
 
     if (deviceType == DEVICE_TYPE_SPEAKER) {
@@ -465,12 +470,13 @@ void AudioPolicyService::OnServiceConnected()
                     MEDIA_ERR_LOG("Activating device failed %{public}d", devType);
                     break;
                 }
-                // add new device into active device list
-                sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
-                    GetDeviceRole(moduleInfo.role));
-                mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
             }
 
+            // add new device into active device list
+            sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
+                GetDeviceRole(moduleInfo.role));
+            mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
+            mDefaultDeviceCount++;
             mIOHandles[moduleInfo.name] = ioHandle;
         }
     }
@@ -533,12 +539,16 @@ AudioIOHandle AudioPolicyService::GetAudioIOHandle(InternalDeviceType deviceType
 
 InternalDeviceType AudioPolicyService::GetDeviceType(const std::string &deviceName)
 {
-    if (deviceName == "Speaker")
-        return InternalDeviceType::DEVICE_TYPE_SPEAKER;
-    if (deviceName == "Built_in_mic")
-        return InternalDeviceType::DEVICE_TYPE_MIC;
+    InternalDeviceType devType = InternalDeviceType::DEVICE_TYPE_NONE;
+    if (deviceName == "Speaker") {
+        devType = InternalDeviceType::DEVICE_TYPE_SPEAKER;
+    } else if (deviceName == "Built_in_mic") {
+        devType = InternalDeviceType::DEVICE_TYPE_MIC;
+    } else if (deviceName == "fifo_output" || deviceName == "fifo_input") {
+        devType = DEVICE_TYPE_BLUETOOTH_SCO;
+    }
 
-    return InternalDeviceType::DEVICE_TYPE_NONE;
+    return devType;
 }
 
 void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
