@@ -38,6 +38,7 @@ public:
 
 private:
     std::string testCaseName_;
+    static constexpr int32_t WAIT_TIME = 15;
 };
 } // namespace AudioStandard
 } // namespace OHOS

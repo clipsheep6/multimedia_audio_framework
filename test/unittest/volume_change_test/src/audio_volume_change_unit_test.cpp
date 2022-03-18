@@ -31,7 +31,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "VolumeChangeGtest"};
-    AudioSystemManager *g_audioManagerInstance = nullptr;
 
     int32_t g_streamType(0);
     int32_t g_volumeLevel(0);
@@ -58,22 +57,18 @@ void ApplicationCallback::OnVolumeKeyEvent(AudioStreamType streamType, int32_t v
 void AudioVolumeChangeUnitTest::WaitForCallback()
 {
     std::unique_lock<std::mutex> lock(g_mutex);
-    g_condVar.wait_until(lock, std::chrono::system_clock::now() + std::chrono::minutes(1),
+    g_condVar.wait_until(lock, std::chrono::system_clock::now() + std::chrono::seconds(WAIT_TIME),
         []() { return g_isCallbackReceived == true; });
 }
 
 void AudioVolumeChangeUnitTest::SetUpTestCase(void)
 {
-    g_audioManagerInstance = AudioSystemManager::GetInstance();
-    if (g_audioManagerInstance == nullptr) {
-        HiLog::Error(LABEL, "AudioSystemManager instance not available");
-        return;
-    }
+    HiLog::Error(LABEL, "VolumeChange Gtest SetUpTestCase");
 }
 
 void AudioVolumeChangeUnitTest::TearDownTestCase(void)
 {
-    g_audioManagerInstance = nullptr;
+    HiLog::Error(LABEL, "VolumeChange Gtest TearDownTestCase");
 }
 
 // SetUp:Execute before each test case
@@ -102,8 +97,9 @@ HWTEST(AudioVolumeChangeUnitTest,  volumeChange_test_001, TestSize.Level1)
     g_callbackName = testCaseName;
     bool isUpdateUi = false;
     auto appCallback = make_shared<ApplicationCallback>(testCaseName);
-    callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventCallback(getpid(), appCallback);
-    result = g_audioManagerInstance->SetVolume(volumeType, volume);
+    callBackSetResult = AudioSystemManager::GetInstance()->RegisterVolumeKeyEventCallback(getpid(), appCallback);
+    AudioVolumeChangeUnitTest::WaitForCallback();
+    result = AudioSystemManager::GetInstance()->SetVolume(volumeType, volume);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(callBackSetResult, SUCCESS);
     if (result == SUCCESS) {
@@ -114,6 +110,7 @@ HWTEST(AudioVolumeChangeUnitTest,  volumeChange_test_001, TestSize.Level1)
         EXPECT_EQ(isUpdateUi, g_isUpdateUi);
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
     }
+    AudioSystemManager::GetInstance()->UnregisterVolumeKeyEventCallback(getpid());
 }
 
 /*
@@ -137,8 +134,9 @@ HWTEST(AudioVolumeChangeUnitTest,  volumeChange_test_002, TestSize.Level1)
     g_callbackName = testCaseName;
     bool isUpdateUi = false;
     auto appCallback = make_shared<ApplicationCallback>(testCaseName);
-    callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventCallback(getpid(), appCallback);
-    result = g_audioManagerInstance->SetVolume(volumeType, volume);
+    callBackSetResult = AudioSystemManager::GetInstance()->RegisterVolumeKeyEventCallback(getpid(), appCallback);
+    AudioVolumeChangeUnitTest::WaitForCallback();
+    result = AudioSystemManager::GetInstance()->SetVolume(volumeType, volume);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(callBackSetResult, SUCCESS);
     if (result == SUCCESS) {
@@ -149,6 +147,7 @@ HWTEST(AudioVolumeChangeUnitTest,  volumeChange_test_002, TestSize.Level1)
         EXPECT_EQ(isUpdateUi, g_isUpdateUi);
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
     }
+    AudioSystemManager::GetInstance()->UnregisterVolumeKeyEventCallback(getpid());
 }
 
 /*
@@ -172,8 +171,9 @@ HWTEST(AudioVolumeChangeUnitTest,  volumeChange_test_003, TestSize.Level1)
     g_callbackName = testCaseName;
     bool isUpdateUi = false;
     auto appCallback = make_shared<ApplicationCallback>(testCaseName);
-    callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventCallback(getpid(), appCallback);
-    result = g_audioManagerInstance->SetVolume(volumeType, volume);
+    callBackSetResult = AudioSystemManager::GetInstance()->RegisterVolumeKeyEventCallback(getpid(), appCallback);
+    AudioVolumeChangeUnitTest::WaitForCallback();
+    result = AudioSystemManager::GetInstance()->SetVolume(volumeType, volume);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(callBackSetResult, SUCCESS);
     if (result == SUCCESS) {
@@ -184,6 +184,7 @@ HWTEST(AudioVolumeChangeUnitTest,  volumeChange_test_003, TestSize.Level1)
         EXPECT_EQ(isUpdateUi, g_isUpdateUi);
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
     }
+    AudioSystemManager::GetInstance()->UnregisterVolumeKeyEventCallback(getpid());
 }
 } // namespace AudioStandard
 } // namespace OHOS
