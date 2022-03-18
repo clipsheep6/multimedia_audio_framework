@@ -7,7 +7,7 @@
 #include <map>
 #include <audio_capturer.h>
 #include <audio_system_manager.h>
-#include <writecallback_adapter.h>
+#include <readorwritecallback_adapter.h>
 
 namespace OHOS {
 namespace AudioStandard {

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef WRITECALLBACK_ADAPTER_H
-#define WRITECALLBACK_ADAPTER_H
+#ifndef READORWRITECALLBACK_ADAPTER_H
+#define READORWRITECALLBACK_ADAPTER_H
 
 #include <OpenSLES.h>
 #include <OpenSLES_Platform.h>

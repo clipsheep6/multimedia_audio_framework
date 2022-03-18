@@ -22,7 +22,7 @@
 #include <map>
 #include <audio_renderer.h>
 #include <audio_system_manager.h>
-#include <writecallback_adapter.h>
+#include <readorwritecallback_adapter.h>
 
 namespace OHOS {
 namespace AudioStandard {
