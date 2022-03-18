@@ -56,7 +56,9 @@ enum CapturerState {
     /** Capturer Stopped state */
     CAPTURER_STOPPED,
     /** Capturer Released state */
-    CAPTURER_RELEASED
+    CAPTURER_RELEASED,
+    /** Capturer Paused state */
+    CAPTURER_PAUSED
 };
 
 class AudioCapturerCallback {
@@ -93,6 +95,18 @@ public:
      * @param frameCount requested frame frame count for callback.
      */
     virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
+};
+
+class AudioCapturerReadCallback {
+public:
+    virtual ~AudioCapturerReadCallback() = default;
+
+    /**
+     * Called when buffer to be enqueued.
+     *
+     * @param length Indicates requested buffer length.
+     */
+    virtual void OnReadData(size_t length) = 0;
 };
 
 /**
@@ -208,6 +222,8 @@ public:
      */
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
+    virtual bool Pause() const = 0;
+
     /**
      * @brief Stops audio capturing.
      *
@@ -314,6 +330,14 @@ public:
      * @return vector with capturer supported SupportedSamplingRates.
      */
     static std::vector<AudioSamplingRate> GetSupportedSamplingRates();
+
+    virtual int32_t SetCaptureMode(AudioCaptureMode renderMode) const = 0;
+    virtual AudioCaptureMode GetCaptureMode() const = 0;
+    virtual int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) = 0;
+    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
+    virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
+    virtual int32_t Clear() const = 0;
+    virtual int32_t GetBufQueueState(BufferQueueState &bufState) const = 0;
 
     virtual ~AudioCapturer();
 };
