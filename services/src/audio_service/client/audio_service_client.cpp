@@ -33,7 +33,12 @@ namespace AudioStandard {
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 
+#ifdef PRODUCT_M40
+const uint64_t LATENCY_IN_MSEC = 45UL;
+#else
 const uint64_t LATENCY_IN_MSEC = 50UL;
+#endif
+const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_FACTOR = 5;
@@ -404,6 +409,7 @@ AudioServiceClient::AudioServiceClient()
     acache.totalCacheSize = 0;
     acache.buffer = NULL;
 
+    setBufferSize = 0;
     PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
 }
 
@@ -481,6 +487,7 @@ void AudioServiceClient::ResetPAAudioClient()
     acache.isFull = false;
     acache.totalCacheSize = 0;
 
+    setBufferSize = 0;
     PAStreamCorkSuccessCb = NULL;
 }
 
@@ -1394,7 +1401,11 @@ int32_t AudioServiceClient::GetMinimumBufferSize(size_t &minBufferSize)
         if (renderMode_ == RENDER_MODE_CALLBACK) {
             minBufferSize = (size_t)bufferAttr->minreq;
         } else {
-            minBufferSize = setBufferSize;
+            if (setBufferSize) {
+                minBufferSize = setBufferSize;
+            } else {
+                minBufferSize = (size_t)bufferAttr->minreq;
+            }
         }
     }
 
@@ -1421,7 +1432,11 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount)
         if (renderMode_ == RENDER_MODE_CALLBACK) {
             minBufferSize = (size_t)bufferAttr->minreq;
         } else {
-            minBufferSize = setBufferSize;
+            if (setBufferSize) {
+                minBufferSize = setBufferSize;
+            } else {
+                minBufferSize = (size_t)bufferAttr->minreq;
+            }
         }
     }
 
