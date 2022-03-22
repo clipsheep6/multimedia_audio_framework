@@ -314,11 +314,11 @@ int32_t AudioCapturerSource::SetMute(bool isMute)
 
     ret = audioCapture_->volume.SetMute((AudioHandle)audioCapture_, isMute);
     if (ret != 0) {
-        MEDIA_ERR_LOG("AudioCapturerSource::SetMute failed");
-        return ERR_OPERATION_FAILED;
+        MEDIA_ERR_LOG("AudioCapturerSource::SetMute failed from hdi");
     }
 
     micMuteState_ = isMute;
+
     return SUCCESS;
 }
 
@@ -330,11 +330,13 @@ int32_t AudioCapturerSource::GetMute(bool &isMute)
         return ERR_INVALID_HANDLE;
     }
 
-    ret = audioCapture_->volume.GetMute((AudioHandle)audioCapture_, &isMute);
+    bool isHdiMute = false;
+    ret = audioCapture_->volume.GetMute((AudioHandle)audioCapture_, &isHdiMute);
     if (ret != 0) {
-        MEDIA_ERR_LOG("AudioCapturerSource::GetMute failed");
-        return ERR_OPERATION_FAILED;
+        MEDIA_ERR_LOG("AudioCapturerSource::GetMute failed from hdi");
     }
+
+    isMute = micMuteState_;
 
     return SUCCESS;
 }
@@ -433,6 +435,8 @@ int32_t AudioCapturerSource::OpenInput(DeviceType inputDevice)
 int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene)
 {
     MEDIA_INFO_LOG("AudioCapturerSource::SetAudioScene in");
+    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
+                             ERR_INVALID_PARAM, "invalid audioScene");
     if (audioCapture_ == nullptr) {
         MEDIA_ERR_LOG("AudioCapturerSource::SetAudioScene failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
