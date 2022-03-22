@@ -124,7 +124,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene)
         return false;
     }
 
-    return reply.ReadInt32();;
+    return reply.ReadInt32();
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFlag deviceFlag)

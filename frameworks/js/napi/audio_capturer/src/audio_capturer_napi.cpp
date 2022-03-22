@@ -280,6 +280,9 @@ napi_value AudioCapturerNapi::CreateAudioCapturer(napi_env env, napi_callback_in
         env, nullptr, resource,
         [](napi_env env, void *data) {
             auto context = static_cast<AudioCapturerAsyncContext *>(data);
+            if (context == nullptr) {
+                napi_throw_error(env, "error", "AudioCapturerAsyncContext of context is nullptr");
+            }
             context->status = SUCCESS;
         },
         GetCapturerAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
@@ -540,7 +543,9 @@ napi_value AudioCapturerNapi::GetCapturerInfo(napi_env env, napi_callback_info i
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
-                NAPI_ASSERT(env, context != nullptr, "context is nullptr");
+                if (context == nullptr) {
+                    napi_throw_error(env, "error", "AudioCapturerAsyncContext of context is nullptr");
+                }
                 AudioCapturerInfo capturerInfo = {};
                 context->status = context->objectInfo->audioCapturer_->GetCapturerInfo(capturerInfo);
                 if (context->status == SUCCESS) {
@@ -600,7 +605,9 @@ napi_value AudioCapturerNapi::GetStreamInfo(napi_env env, napi_callback_info inf
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
-                NAPI_ASSERT(env, context != nullptr, "context is nullptr");
+                if (context == nullptr) {
+                    napi_throw_error(env, "error", "AudioCapturerAsyncContext of context is nullptr");
+                }
                 AudioStreamInfo streamInfo;
                 context->status = context->objectInfo->audioCapturer_->GetStreamInfo(streamInfo);
                 if (context->status == SUCCESS) {
@@ -663,6 +670,9 @@ napi_value AudioCapturerNapi::Start(napi_env env, napi_callback_info info)
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
+                if (context == nullptr) {
+                    napi_throw_error(env, "error", "AudioCapturerAsyncContext of context is nullptr");
+                }
                 context->isTrue = context->objectInfo->audioCapturer_->Start();
                 context->status = SUCCESS;
             },
@@ -724,6 +734,9 @@ napi_value AudioCapturerNapi::Read(napi_env env, napi_callback_info info)
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
+                if (context == nullptr) {
+                    napi_throw_error(env, "error", "AudioCapturerAsyncContext of context is nullptr");
+                }
                 context->status = ERROR;
                 uint32_t userSize = context->userSize;
                 auto buffer = std::make_unique<uint8_t[]>(userSize);
@@ -804,6 +817,9 @@ napi_value AudioCapturerNapi::GetAudioTime(napi_env env, napi_callback_info info
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
+                if (context == nullptr) {
+                    napi_throw_error(env, "error", "AudioCapturerAsyncContext of context is nullptr");
+                }
                 context->status = ERROR;
                 Timestamp timestamp;
                 if (context->objectInfo->audioCapturer_->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
@@ -865,6 +881,9 @@ napi_value AudioCapturerNapi::Stop(napi_env env, napi_callback_info info)
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
+                if (context == nullptr) {
+                    napi_throw_error(env, "error", "AudioCapturerAsyncContext of context is nullptr");
+                }
                 context->isTrue = context->objectInfo->audioCapturer_->Stop();
                 context->status = SUCCESS;
             },
@@ -921,6 +940,9 @@ napi_value AudioCapturerNapi::Release(napi_env env, napi_callback_info info)
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
+                if (context == nullptr) {
+                    napi_throw_error(env, "error", "AudioCapturerAsyncContext of context is nullptr");
+                }
                 context->isTrue = context->objectInfo->audioCapturer_->Release();
                 context->status = SUCCESS;
             },
@@ -1154,6 +1176,9 @@ napi_value AudioCapturerNapi::GetBufferSize(napi_env env, napi_callback_info inf
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
+                if (context == nullptr) {
+                    napi_throw_error(env, "error", "AudioCapturerAsyncContext of context is nullptr");
+                }
                 size_t bufferSize;
                 context->status = context->objectInfo->audioCapturer_->GetBufferSize(bufferSize);
                 if (context->status == SUCCESS) {

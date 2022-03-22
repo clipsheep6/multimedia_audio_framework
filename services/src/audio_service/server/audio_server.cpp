@@ -99,7 +99,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
 
     if (AudioServer::audioParameters.count(key)) {
         return AudioServer::audioParameters[key];
-    } 
+    }
 
     return "";
 }

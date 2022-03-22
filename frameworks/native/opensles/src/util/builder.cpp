@@ -37,8 +37,7 @@ ClassTable *ObjectIdToClass(SLuint32 objectId)
 {
     ClassTable *classTable = nullptr;
 
-    switch (objectId)
-    {
+    switch (objectId) {
         case SL_OBJECTID_ENGINE:
             classTable = (ClassTable *) &EngineTab;
             break;
