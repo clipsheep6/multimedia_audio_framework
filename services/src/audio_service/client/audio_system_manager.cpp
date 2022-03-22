@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_system_manager.h"
 
 #include "audio_errors.h"
 #include "audio_manager_proxy.h"
@@ -22,8 +23,6 @@
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
-
-#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

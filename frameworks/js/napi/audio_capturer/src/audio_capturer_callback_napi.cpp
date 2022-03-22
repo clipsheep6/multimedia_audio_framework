@@ -82,6 +82,7 @@ void AudioCapturerCallbackNapi::OnJsCallbackStateChange(std::unique_ptr<AudioCap
     if (jsCb.get() == nullptr) {
         MEDIA_ERR_LOG("AudioCapturerCallbackNapi: OnJsCallbackStateChange: jsCb.get() is null");
         delete work;
+        work = nullptr;
         return;
     }
 
@@ -115,10 +116,15 @@ void AudioCapturerCallbackNapi::OnJsCallbackStateChange(std::unique_ptr<AudioCap
         } while (0);
         delete event;
         delete work;
+        work = nullptr;
+        event = nullptr;
     });
     if (ret != 0) {
         MEDIA_ERR_LOG("Failed to execute libuv work queue");
-        delete work;
+        if (work != nullptr) {
+            delete work;
+            work = nullptr;
+        }
     } else {
         jsCb.release();
     }

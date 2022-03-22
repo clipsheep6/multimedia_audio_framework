@@ -75,7 +75,9 @@ void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &d
     data.WriteInt32(static_cast<int32_t>(size));
 
     for (size_t i = 0; i < size; i++) {
-        devices[i]->Marshalling(data);
+        if (devices[i] != nullptr) {
+            devices[i]->Marshalling(data);
+        }
     }
 
     int error = Remote()->SendRequest(ON_DEVICE_CHANGED, data, reply, option);

@@ -43,8 +43,7 @@ int32_t AudioManagerProxy::GetMaxVolume(AudioSystemManager::AudioVolumeType volu
         return error;
     }
 
-    int32_t volume = reply.ReadInt32();
-    return volume;
+    return reply.ReadInt32();
 }
 
 int32_t AudioManagerProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
@@ -65,8 +64,7 @@ int32_t AudioManagerProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volu
         return error;
     }
 
-    float volume = reply.ReadInt32();
-    return volume;
+    return reply.ReadInt32();
 }
 
 int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)
@@ -86,8 +84,7 @@ int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)
         return error;
     }
 
-    int32_t result = reply.ReadInt32();
-    return result;
+    return reply.ReadInt32();
 }
 
 bool AudioManagerProxy::IsMicrophoneMute()
@@ -105,8 +102,7 @@ bool AudioManagerProxy::IsMicrophoneMute()
         return false;
     }
 
-    bool isMute = reply.ReadBool();
-    return isMute;
+    return reply.ReadBool();
 }
 
 int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene)
@@ -128,8 +124,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene)
         return false;
     }
 
-    int32_t result = reply.ReadInt32();
-    return result;
+    return reply.ReadInt32();;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFlag deviceFlag)
@@ -156,8 +151,7 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string &key)
         return value;
     }
 
-    const std::string value = reply.ReadString();
-    return value;
+    return reply.ReadString();
 }
 
 void AudioManagerProxy::SetAudioParameter(const std::string &key, const std::string &value)

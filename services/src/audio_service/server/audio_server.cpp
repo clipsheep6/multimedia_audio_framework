@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_server.h"
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
@@ -19,7 +20,6 @@
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
-#include "audio_server.h"
 
 #include <fstream>
 #include <sstream>
@@ -78,6 +78,7 @@ void AudioServer::OnStart()
         MEDIA_ERR_LOG("pthread_create failed %d", ret);
     }
     MEDIA_INFO_LOG("Created paDaemonThread\n");
+    pthread_join(m_paDaemonThread, nullptr);
 #endif
 }
 
@@ -98,10 +99,9 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
 
     if (AudioServer::audioParameters.count(key)) {
         return AudioServer::audioParameters[key];
-    } else {
-        const std::string value = "";
-        return value;
-    }
+    } 
+
+    return "";
 }
 
 const char *AudioServer::RetrieveCookie(int32_t &size)
@@ -141,10 +141,15 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
 
+    if (audioCapturerSourceInstance == nullptr) {
+        MEDIA_INFO_LOG("audioCapturerSourceInstance is not initialized.Value is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
     if (!audioCapturerSourceInstance->capturerInited_) {
-            MEDIA_INFO_LOG("Capturer is not initialized. Set the flag mute state flag");
-            AudioCapturerSource::micMuteState_ = isMute;
-            return 0;
+        MEDIA_INFO_LOG("Capturer is not initialized. Set the flag mute state flag");
+        AudioCapturerSource::micMuteState_ = isMute;
+        return 0;
     }
 
     return audioCapturerSourceInstance->SetMute(isMute);
@@ -154,6 +159,11 @@ bool AudioServer::IsMicrophoneMute()
 {
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     bool isMute = false;
+
+    if (audioCapturerSourceInstance == nullptr) {
+        MEDIA_INFO_LOG("audioCapturerSourceInstance is not initialized.Value is nullptr");
+        return AudioCapturerSource::micMuteState_;
+    }
 
     if (!audioCapturerSourceInstance->capturerInited_) {
         MEDIA_INFO_LOG("Capturer is not initialized. Get the mic mute state flag value!");
@@ -171,6 +181,16 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene)
 {
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+
+    if (audioCapturerSourceInstance == nullptr) {
+        MEDIA_INFO_LOG("audioCapturerSourceInstance is not initialized.Value is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (audioRendererSinkInstance == nullptr) {
+        MEDIA_INFO_LOG("audioRendererSinkInstance is not initialized.Value is nullptr");
+        return ERR_INVALID_PARAM;
+    }
 
     if (!audioCapturerSourceInstance->capturerInited_) {
         MEDIA_WARNING_LOG("Capturer is not initialized.");
@@ -192,6 +212,16 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
     MEDIA_INFO_LOG("[%{public}s]", __func__);
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+
+    if (audioCapturerSourceInstance == nullptr) {
+        MEDIA_INFO_LOG("audioCapturerSourceInstance is not initialized.Value is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (audioRendererSinkInstance == nullptr) {
+        MEDIA_INFO_LOG("audioRendererSinkInstance is not initialized.Value is nullptr");
+        return ERR_INVALID_PARAM;
+    }
 
     switch (flag) {
         case DeviceFlag::INPUT_DEVICES_FLAG: {

@@ -73,6 +73,7 @@ void AudioCapturerNapi::Destructor(napi_env env, void *nativeObject, void *final
     if (nativeObject != nullptr) {
         auto obj = static_cast<AudioCapturerNapi *>(nativeObject);
         delete obj;
+        obj = nullptr;
     }
 }
 
@@ -511,7 +512,7 @@ napi_value AudioCapturerNapi::GetCapturerInfo(napi_env env, napi_callback_info i
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
-    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
+    NAPI_ASSERT(env, asyncContext != nullptr, "asyncContext no memory");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -539,6 +540,7 @@ napi_value AudioCapturerNapi::GetCapturerInfo(napi_env env, napi_callback_info i
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
+                NAPI_ASSERT(env, context != nullptr, "context is nullptr");
                 AudioCapturerInfo capturerInfo = {};
                 context->status = context->objectInfo->audioCapturer_->GetCapturerInfo(capturerInfo);
                 if (context->status == SUCCESS) {
@@ -571,6 +573,7 @@ napi_value AudioCapturerNapi::GetStreamInfo(napi_env env, napi_callback_info inf
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
+    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -597,7 +600,7 @@ napi_value AudioCapturerNapi::GetStreamInfo(napi_env env, napi_callback_info inf
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
-
+                NAPI_ASSERT(env, context != nullptr, "context is nullptr");
                 AudioStreamInfo streamInfo;
                 context->status = context->objectInfo->audioCapturer_->GetStreamInfo(streamInfo);
                 if (context->status == SUCCESS) {
@@ -633,7 +636,6 @@ napi_value AudioCapturerNapi::Start(napi_env env, napi_callback_info info)
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
     NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
-
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -690,7 +692,7 @@ napi_value AudioCapturerNapi::Read(napi_env env, napi_callback_info info)
     NAPI_ASSERT(env, argc >= ARGS_TWO, "requires 2 parameters minimum");
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
-
+    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -774,7 +776,7 @@ napi_value AudioCapturerNapi::GetAudioTime(napi_env env, napi_callback_info info
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
-
+    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -835,7 +837,7 @@ napi_value AudioCapturerNapi::Stop(napi_env env, napi_callback_info info)
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
-
+    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -891,7 +893,7 @@ napi_value AudioCapturerNapi::Release(napi_env env, napi_callback_info info)
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
-
+    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -1124,7 +1126,7 @@ napi_value AudioCapturerNapi::GetBufferSize(napi_env env, napi_callback_info inf
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
-
+    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {

@@ -12,10 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "xml_parser.h"
 
 #include "media_log.h"
-
-#include "xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,11 +37,7 @@ bool XMLParser::Parse()
         return false;
     }
 
-    if (!ParseInternal(*root)) {
-        return false;
-    }
-
-    return true;
+    return ParseInternal(*root);
 }
 
 void XMLParser::Destroy()

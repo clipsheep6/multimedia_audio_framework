@@ -12,14 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_renderer.h"
 
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer_private.h"
 #include "audio_stream.h"
 #include "media_log.h"
-
-#include "audio_renderer.h"
 
 namespace OHOS {
 namespace AudioStandard {

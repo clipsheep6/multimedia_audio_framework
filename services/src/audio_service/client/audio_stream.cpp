@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_stream.h"
 
 #include <chrono>
 #include <thread>
@@ -20,8 +21,6 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "media_log.h"
-
-#include "audio_stream.h"
 
 using namespace std;
 
@@ -163,9 +162,9 @@ int32_t AudioStream::GetLatency(uint64_t &latency) const
 {
     if (GetAudioLatency(latency) != SUCCESS) {
         return ERR_OPERATION_FAILED;
-    } else {
-        return SUCCESS;
-    }
+    } 
+      
+    return SUCCESS;
 }
 
 vector<AudioSampleFormat> AudioStream::GetSupportedFormats() const
@@ -609,9 +608,6 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
         freeBufferQ_.pop();
     } else {
         bufDesc.buffer = nullptr;
-    }
-
-    if (bufDesc.buffer == nullptr) {
         MEDIA_INFO_LOG("AudioStream::GetBufferDesc freeBufferQ_.empty()");
         return ERR_OPERATION_FAILED;
     }
