@@ -107,6 +107,7 @@ void AudioRendererCallbackNapi::OnJsCallbackInterrupt(std::unique_ptr<AudioRende
         // Js Thread
         AudioRendererJsCallback *event = reinterpret_cast<AudioRendererJsCallback *>(work->data);
         std::string request = event->callbackName;
+        CHECK_AND_RETURN_LOG(event->callback != nullptr, "callback is empty");
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
         MEDIA_DEBUG_LOG("AudioRendererCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
