@@ -43,7 +43,7 @@ AudioSystemManager::~AudioSystemManager()
     }
 
     if (volumeChangeClientPid_ != -1) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::~AudioSystemManager UnregisterVolumeKeyEventCallback");
+        MEDIA_ERR_LOG("AudioSystemManager::~AudioSystemManager UnregisterVolumeKeyEventCallback");
         (void)UnregisterVolumeKeyEventCallback(volumeChangeClientPid_);
     }
 }
@@ -64,11 +64,11 @@ void AudioSystemManager::init()
 
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     if (object == nullptr) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::object is NULL.");
+        MEDIA_ERR_LOG("AudioSystemManager::object is NULL.");
     }
     g_sProxy = iface_cast<IStandardAudioService>(object);
     if (g_sProxy == nullptr) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::init g_sProxy is NULL.");
+        MEDIA_ERR_LOG("AudioSystemManager::init g_sProxy is NULL.");
     } else {
         MEDIA_DEBUG_LOG("AudioSystemManager::init g_sProxy is assigned.");
     }
@@ -272,7 +272,7 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
 
 int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
-    MEDIA_ERR_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    MEDIA_DEBUG_LOG("Entered AudioSystemManager::%{public}s", __func__);
     if (callback == nullptr) {
         MEDIA_ERR_LOG("SetDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
@@ -333,7 +333,7 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
     MEDIA_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback");
     int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(clientPid);
     if (!ret) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback success");
+        MEDIA_ERR_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback success");
         volumeChangeClientPid_ = -1;
     }
 

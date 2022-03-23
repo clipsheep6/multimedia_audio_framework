@@ -223,7 +223,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 
 #### JavaScript 用法:
 JavaScript应用可以使用系统提供的音频管理接口，来控制音量和设备。\
-请参考 [**音频管理.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/js-reference/音频管理.md) 来获取音量和设备管理相关JavaScript接口的用法。
+请阅读音频管理源码,来获取音量和设备管理相关JavaScript接口的用法。
 
 ## 相关仓<a name="section340mcpsimp"></a>
 

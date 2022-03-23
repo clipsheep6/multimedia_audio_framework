@@ -340,7 +340,7 @@ static int32_t PrepareDevice(struct Userdata *u)
     enum AudioFormat format = ConvertToHDIAudioFormat(u->ss.format);
     sample_attrs.format = format;
     sample_attrs.sampleFmt = format;
-    MEDIA_ERR_LOG("audiorenderer format: %d", sample_attrs.format);
+    MEDIA_INFO_LOG("audiorenderer format: %d", sample_attrs.format);
 
     sample_attrs.sampleRate = u->ss.rate;
     sample_attrs.channel = u->ss.channels;

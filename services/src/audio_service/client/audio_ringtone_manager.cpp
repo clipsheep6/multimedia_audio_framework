@@ -380,37 +380,38 @@ void RingtonePlayerCallback::OnError(PlayerErrorType errorType, int32_t errorCod
 
 void RingtonePlayerCallback::OnInfo(PlayerOnInfoType type, int32_t extra, const Format &infoBody)
 {
-    if (type == INFO_TYPE_STATE_CHANGE) {
-        state_ = static_cast<PlayerStates>(extra);
-
-        switch (state_) {
-            case PLAYER_STATE_ERROR:
-                ringtoneState_ = STATE_INVALID;
-                break;
-            case PLAYER_IDLE:
-            case PLAYER_INITIALIZED:
-            case PLAYER_PREPARING:
-                ringtoneState_ = STATE_NEW;
-                break;
-            case PLAYER_PREPARED:
-                ringtoneState_ = STATE_PREPARED;
-                break;
-            case PLAYER_STARTED:
-                ringtoneState_ = STATE_RUNNING;
-                break;
-            case PLAYER_PAUSED:
-                ringtoneState_ = STATE_PAUSED;
-                break;
-            case PLAYER_STOPPED:
-            case PLAYER_PLAYBACK_COMPLETE:
-                ringtoneState_ = STATE_STOPPED;
-                break;
-            default:
-                break;
-        }
-
-        ringtonePlayer_.SetPlayerState(ringtoneState_);
+    if (type != INFO_TYPE_STATE_CHANGE) {
+        return;
     }
+    
+    state_ = static_cast<PlayerStates>(extra);
+    switch (state_) {
+        case PLAYER_STATE_ERROR:
+            ringtoneState_ = STATE_INVALID;
+            break;
+        case PLAYER_IDLE:
+        case PLAYER_INITIALIZED:
+        case PLAYER_PREPARING:
+            ringtoneState_ = STATE_NEW;
+            break;
+        case PLAYER_PREPARED:
+            ringtoneState_ = STATE_PREPARED;
+            break;
+        case PLAYER_STARTED:
+            ringtoneState_ = STATE_RUNNING;
+            break;
+        case PLAYER_PAUSED:
+            ringtoneState_ = STATE_PAUSED;
+            break;
+        case PLAYER_STOPPED:
+        case PLAYER_PLAYBACK_COMPLETE:
+            ringtoneState_ = STATE_STOPPED;
+            break;
+        default:
+            break;
+    }
+
+    ringtonePlayer_.SetPlayerState(ringtoneState_);
 }
 } // AudioStandard
 } // OHOS

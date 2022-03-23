@@ -187,7 +187,7 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
     }
     
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    MEDIA_ERR_LOG("AudioRendererSink Create render format: %{public}d", param.format);
+    MEDIA_INFO_LOG("AudioRendererSink Create render format: %{public}d", param.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
     deviceDesc.pins = PIN_OUT_SPEAKER;
