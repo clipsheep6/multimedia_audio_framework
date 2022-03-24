@@ -65,3 +65,24 @@ ohos_executable("audio_opensles_test") {
   part_name = "multimedia_audio_standard"
   subsystem_name = "multimedia"
 }
+
+ohos_executable("audio_opensles_audiocapture_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_opensles_test.cpp" ]
+
+  configs = [
+    ":audio_opensles_config",
+    ":audio_renderer_config",
+  ]
+
+  deps = [
+    "//foundation/multimedia/audio_standard:libsl",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}

@@ -100,6 +100,11 @@ AudioStream::~AudioStream()
         writeThread_->join();
     }
 
+    isReadyToRead_ = false;
+    if (readThread_ && readThread_->joinable()) {
+        readThread_->join();
+    }
+
     if (state_ != RELEASED && state_ != NEW) {
         ReleaseAudioStream();
     }

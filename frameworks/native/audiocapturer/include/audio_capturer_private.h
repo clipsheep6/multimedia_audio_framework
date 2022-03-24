@@ -33,7 +33,7 @@ public:
     int32_t  Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const override;
     CapturerState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
-     bool Pause() const override;
+    bool Pause() const override;
     bool Stop() const override;
     bool Flush() const override;
     bool Release() const override;

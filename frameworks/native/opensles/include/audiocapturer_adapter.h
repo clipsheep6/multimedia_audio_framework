@@ -32,7 +32,7 @@ public:
 private:
     AudioCapturerAdapter();
     ~AudioCapturerAdapter();
-    const float MAGNIFICATION = 2000;
+    // const float MAGNIFICATION = 2000;
     std::map<SLuint32, AudioCapturer*> captureMap_;
     std::shared_ptr<ReadOrWriteCallbackAdapter> callbackPtr_;
     std::map<SLuint32, std::shared_ptr<ReadOrWriteCallbackAdapter>> callbackMap_;

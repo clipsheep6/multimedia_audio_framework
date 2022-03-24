@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class ReadOrWriteCallbackAdapter : public AudioRendererWriteCallback, public AudioCaptureReadCallback {
+class ReadOrWriteCallbackAdapter : public AudioRendererWriteCallback, public AudioCapturerReadCallback {
 public:
     ReadOrWriteCallbackAdapter (SlOHBufferQueueCallback callback, SLOHBufferQueueItf itf, void *pContext);
     ~ReadOrWriteCallbackAdapter();

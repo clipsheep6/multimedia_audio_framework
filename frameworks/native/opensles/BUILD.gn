@@ -43,6 +43,7 @@ ohos_shared_library("opensles") {
     "$opensles_dir/api/1.0.1",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/andiorenderer/include/",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/andiocapturer/include/",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/andiomanager/include/",
   ]
 
@@ -74,6 +75,7 @@ ohos_shared_library("opensles") {
     "//foundation/multimedia/audio_standard:libsl",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_renderer",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

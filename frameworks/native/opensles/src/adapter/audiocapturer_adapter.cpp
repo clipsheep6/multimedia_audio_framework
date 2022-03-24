@@ -19,7 +19,7 @@ AudioCapturerAdapter* AudioCapturerAdapter::GetInstance()
 AudioCapturer *AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id)
 {
     MEDIA_INFO_LOG("AudioCapturerAdapter::GetAudioCapturerById: %{public}lu", id);
-    return captureMap_.find(id)->second();
+    return captureMap_.find(id)->second;
 }
 
 void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
@@ -36,7 +36,7 @@ SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSou
     AudioCapturerParams capturerParams;
     ConvertPcmFormat(pcmFormat, &capturerParams);
     streamType = AudioStreamType::STREAM_MUSIC;
-    unique_ptr<AudioRenderer> capturerHolder = AudioCapturer::Create(streamType);
+    unique_ptr<AudioCapturer> capturerHolder = AudioCapturer::Create(streamType);
     capturerHolder->SetParams(capturerParams);
     AudioCapturer *capturer = capturerHolder.release();
     MEDIA_INFO_LOG("AudioPlayerAdapter::CreateAudioPlayer ID: %{public}lu", id);
@@ -137,7 +137,7 @@ SLresult AudioCapturerAdapter::RegisterCallbackAdapter(SLOHBufferQueueItf itf,
     IOHBufferQueue *thiz = (IOHBufferQueue *)itf;
     AudioCapturer *audioCapturer = GetAudioCapturerById(thiz->mId);
     callbackPtr_ = make_shared<ReadOrWriteCallbackAdapter>(callback, itf, pContext);
-    audioCapturer->SetCaptureReadCallback(static_pointer_cast<AudioCapturerReadCallback>(callbackPtr_));
+    audioCapturer->SetCapturerReadCallback(static_pointer_cast<AudioCapturerReadCallback>(callbackPtr_));
     callbackMap_.insert(make_pair(thiz->mId, callbackPtr_));
     return SL_RESULT_SUCCESS;
 }
@@ -148,7 +148,7 @@ void AudioCapturerAdapter::ConvertPcmFormat(SLDataFormat_PCM *slFormat, AudioCap
     AudioSamplingRate sampleRate = SlToOhosSamplingRate(slFormat);
     AudioChannel channelCount = SlToOhosChannel(slFormat);
     capturerParams->audioSampleFormat = sampleFormat;
-    capturerParams->AudioSamplingRate = sampleRate;
+    capturerParams->samplingRate = sampleRate;
     capturerParams->audioChannel = channelCount;
     capturerParams->audioEncoding = ENCODING_PCM;
 }

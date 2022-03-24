@@ -23,6 +23,6 @@ SLresult AudioRecorderDestroy(void *self)
         return SL_RESULT_PARAMETER_INVALID;
     }
     CAudioRecorder *cAudioRecorder = (CAudioRecorder *)self;
-    AudioAdapter::GetInstance()->EraseAudioCapturerById(cAudioRecorder->mId);
+    AudioCapturerAdapter::GetInstance()->EraseAudioCapturerById(cAudioRecorder->mId);
     return SL_RESULT_SUCCESS;
 }

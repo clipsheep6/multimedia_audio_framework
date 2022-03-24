@@ -20,6 +20,7 @@
 #include <OpenSLES_OpenHarmony.h>
 #include <OpenSLES_Platform.h>
 #include <audioplayer_adapter.h>
+#include<audiocapturer_adapter.h>
 #include <iostream>
 #include <cstdlib>
 #include <stddef.h>
@@ -120,9 +121,13 @@ void IPlayInit(void *self, SLuint32 id);
 
 void IVolumeInit(void *self, SLuint32 id);
 
+void IRecordInit(void *self, SLuint32 id);
+
 SLresult EngineDestory(void* self);
 
 SLresult AudioPlayerDestroy(void* self);
 
 SLresult OutputMixDestroy(void* self);
+
+SLresult AudioRecorderDestroy(void *self);
 #endif

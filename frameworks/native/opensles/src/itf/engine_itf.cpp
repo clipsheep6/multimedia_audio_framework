@@ -46,7 +46,7 @@ static SLresult CreateAudioPlayer(
     if (thiz == nullptr) {
         return SL_RESULT_PARAMETER_INVALID;
     }
-    thiz->mId = audioplayerId;
+    thiz->mId = audioPlayerId;
     IObjectInit(&thiz->mObject);
     IPlayInit(&thiz->mPlay, audioPlayerId);
     IVolumeInit(&thiz->mVolume, audioPlayerId);
@@ -66,7 +66,7 @@ static SLresult CreateAudioRecorder(
         return SL_RESULT_PARAMETER_INVALID;
     }
     ClassTable *audioRecorderClass = ObjectIdToClass(SL_OBJECTID_AUDIORECORDER);
-    CAudioRecorder *thiz = (CAudioRecorder) Construct(audioRecorderClass, self);
+    CAudioRecorder *thiz = (CAudioRecorder *) Construct(audioRecorderClass, self);
     thiz->mId = audioRecorderId;
     IObjectInit(&thiz->mObject);
     IRecordInit(&thiz->mRecord, audioRecorderId);

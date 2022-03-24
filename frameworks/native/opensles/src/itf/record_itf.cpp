@@ -8,7 +8,7 @@ static SLresult SetRecordState(SLRecordItf self, SLuint32 state)
         return SL_RESULT_PARAMETER_INVALID;
     }
     IRecord *thiz = (IRecord *)self;
-    AudioCapturerAdapter::GetInstance()->SetCapturerStateAdapter(thiz->mId, state);
+    AudioCapturerAdapter::GetInstance()->SetCaptureStateAdapter(thiz->mId, state);
     return SL_RESULT_SUCCESS;
 }
 
@@ -18,7 +18,7 @@ static SLresult GetRecordState(SLRecordItf self, SLuint32 *pState)
         return SL_RESULT_PARAMETER_INVALID;
     }
     IRecord *thiz = (IRecord *)self;
-    AudioCapturerAdapter::GetInstance()->GetCapturerStateAdapter(thiz->mId, state);
+    AudioCapturerAdapter::GetInstance()->GetCaptureStateAdapter(thiz->mId, pState);
     return SL_RESULT_SUCCESS;
 }
 
