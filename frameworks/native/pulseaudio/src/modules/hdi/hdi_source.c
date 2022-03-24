@@ -200,9 +200,9 @@ static void thread_func(void *userdata)
 
     pa_assert(u);
 
-    if (u->core->realtime_scheduling)
+    if (u->core->realtime_scheduling) {
         pa_thread_make_realtime(u->core->realtime_priority);
-
+    }
     pa_thread_mq_install(&u->thread_mq);
     u->timestamp = pa_rtclock_now();
     MEDIA_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);

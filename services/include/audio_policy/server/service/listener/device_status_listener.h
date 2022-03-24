@@ -26,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 class DeviceStatusListener {
 public:
-    DeviceStatusListener(IDeviceStatusObserver &observer);
+    explicit DeviceStatusListener(IDeviceStatusObserver &observer);
     ~DeviceStatusListener();
 
     int32_t RegisterDeviceStatusListener(void *privData);

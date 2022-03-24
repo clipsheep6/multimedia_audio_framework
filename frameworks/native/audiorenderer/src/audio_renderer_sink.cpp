@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_renderer_sink.h"
 
 #include <cstring>
 #include <dlfcn.h>
@@ -20,7 +21,6 @@
 
 #include "audio_errors.h"
 #include "media_log.h"
-#include "audio_renderer_sink.h"
 
 using namespace std;
 
@@ -174,15 +174,20 @@ uint32_t PcmFormatToBits(enum AudioFormat format)
 
 int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
 {
-    int32_t ret;
+    int32_t ret = 0;
     struct AudioSampleAttributes param;
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
     param.format = attr_.format;
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
+    if (param.frameSize == 0) {
+        MEDIA_ERR_LOG("AudioRendererSink Create render frameSize value is 0");
+        return ERR_INVALID_OPERATION;
+    }
+    
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    MEDIA_ERR_LOG("AudioRendererSink Create render format: %{public}d", param.format);
+    MEDIA_INFO_LOG("AudioRendererSink Create render format: %{public}d", param.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
     deviceDesc.pins = PIN_OUT_SPEAKER;
@@ -618,13 +623,15 @@ AudioRendererSink *g_audioRendrSinkInstance = AudioRendererSink::GetInstance();
 
 int32_t AudioRendererSinkInit(AudioSinkAttr *attr)
 {
-    int32_t ret;
-
+    if (g_audioRendrSinkInstance == nullptr) {
+        MEDIA_ERR_LOG("AudioRendererSink::nullptr failed!");
+        return ERR_INVALID_OPERATION;
+    }
+    
     if (g_audioRendrSinkInstance->rendererInited_)
         return SUCCESS;
 
-    ret = g_audioRendrSinkInstance->Init(*attr);
-    return ret;
+    return g_audioRendrSinkInstance->Init(*attr);
 }
 
 void AudioRendererSinkDeInit()
@@ -635,58 +642,44 @@ void AudioRendererSinkDeInit()
 
 int32_t AudioRendererSinkStop()
 {
-    int32_t ret;
-
     if (!g_audioRendrSinkInstance->rendererInited_)
         return SUCCESS;
 
-    ret = g_audioRendrSinkInstance->Stop();
-    return ret;
+    return g_audioRendrSinkInstance->Stop();
 }
 
 int32_t AudioRendererSinkStart()
 {
-    int32_t ret;
-
     if (!g_audioRendrSinkInstance->rendererInited_) {
         MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_audioRendrSinkInstance->Start();
-    return ret;
+    return g_audioRendrSinkInstance->Start();
 }
 
 int32_t AudioRendererRenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    int32_t ret;
-
     if (!g_audioRendrSinkInstance->rendererInited_) {
         MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_audioRendrSinkInstance->RenderFrame(data, len, writeLen);
-    return ret;
+    return g_audioRendrSinkInstance->RenderFrame(data, len, writeLen);
 }
 
 int32_t AudioRendererSinkSetVolume(float left, float right)
 {
-    int32_t ret;
-
     if (!g_audioRendrSinkInstance->rendererInited_) {
         MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_audioRendrSinkInstance->SetVolume(left, right);
-    return ret;
+    return g_audioRendrSinkInstance->SetVolume(left, right);
 }
 
 int32_t AudioRendererSinkGetLatency(uint32_t *latency)
 {
-    int32_t ret;
-
     if (!g_audioRendrSinkInstance->rendererInited_) {
         MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
@@ -697,8 +690,7 @@ int32_t AudioRendererSinkGetLatency(uint32_t *latency)
         return ERR_INVALID_PARAM;
     }
 
-    ret = g_audioRendrSinkInstance->GetLatency(latency);
-    return ret;
+    return g_audioRendrSinkInstance->GetLatency(latency);
 }
 #ifdef __cplusplus
 }

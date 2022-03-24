@@ -238,26 +238,24 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                           pa_memchunk *chunk)
 {
     struct Userdata *u = PA_SINK(o)->userdata;
-    switch (code) {
-        case PA_SINK_MESSAGE_GET_LATENCY: {
-            uint64_t latency;
-            uint32_t hdiLatency;
 
-            // Tries to fetch latency from HDI else will make an estimate based
-            // on samples to be rendered based on the timestamp and current time
-            if (u->sinkAdapter->RendererSinkGetLatency(&hdiLatency) == 0) {
-                latency = (PA_USEC_PER_MSEC * hdiLatency);
-            } else {
-                pa_usec_t now = pa_rtclock_now();
-                latency = (now - u->timestamp);
-            }
+    if (code == PA_SINK_MESSAGE_GET_LATENCY) {
+        uint64_t latency;
+        uint32_t hdiLatency;
 
-            *((uint64_t *)data) = latency;
-            return 0;
+        // Tries to fetch latency from HDI else will make an estimate based
+        // on samples to be rendered based on the timestamp and current time
+        if (u->sinkAdapter->RendererSinkGetLatency(&hdiLatency) == 0) {
+            latency = (PA_USEC_PER_MSEC * hdiLatency);
+        } else {
+            pa_usec_t now = pa_rtclock_now();
+            latency = (now - u->timestamp);
         }
-        default:
-            break;
+
+        *((uint64_t *)data) = latency;
+        return 0;
     }
+    
     return pa_sink_process_msg(o, code, data, offset, chunk);
 }
 
@@ -342,7 +340,7 @@ static int32_t PrepareDevice(struct Userdata *u)
     enum AudioFormat format = ConvertToHDIAudioFormat(u->ss.format);
     sample_attrs.format = format;
     sample_attrs.sampleFmt = format;
-    MEDIA_ERR_LOG("audiorenderer format: %d", sample_attrs.format);
+    MEDIA_INFO_LOG("audiorenderer format: %d", sample_attrs.format);
 
     sample_attrs.sampleRate = u->ss.rate;
     sample_attrs.channel = u->ss.channels;

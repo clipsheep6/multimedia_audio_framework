@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_policy_service.h"
 
 #include "audio_errors.h"
 #include "audio_focus_parser.h"
@@ -20,8 +21,6 @@
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
-
-#include "audio_policy_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -110,7 +109,6 @@ void AudioPolicyService::Deinit(void)
 
     mIOHandles.clear();
     mDeviceStatusListener->UnRegisterDeviceStatusListener();
-    return;
 }
 
 int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callback)

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_policy_manager.h"
 
 #include "audio_errors.h"
 #include "audio_policy_proxy.h"
@@ -19,7 +20,6 @@
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
-#include "audio_policy_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -161,7 +161,7 @@ int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
 
 int32_t AudioPolicyManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
-    MEDIA_ERR_LOG("Entered %{public}s", __func__);
+    MEDIA_INFO_LOG("Entered %{public}s", __func__);
     if (callback == nullptr) {
         MEDIA_ERR_LOG("AudioPolicyManager: callback is nullptr");
         return ERR_INVALID_PARAM;

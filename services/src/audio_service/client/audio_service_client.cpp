@@ -632,7 +632,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
 const std::string AudioServiceClient::GetStreamName(AudioStreamType audioType)
 {
-    std::string name;
+    std::string name = "";
     switch (audioType) {
         case STREAM_VOICE_ASSISTANT:
             name = "voice_assistant";
@@ -671,13 +671,13 @@ const std::string AudioServiceClient::GetStreamName(AudioStreamType audioType)
             name = "unknown";
     }
 
-    const std::string streamName = name;
-    return streamName;
+    return name;
 }
 
 int32_t AudioServiceClient::ConnectStreamToPA()
 {
-    int error, result;
+    int error = PA_ERR_INTERNAL;
+    int result = 0;
 
     if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_ERR) < 0) {
         return AUDIO_CLIENT_ERR;
@@ -765,7 +765,7 @@ int32_t AudioServiceClient::InitializeAudioCache()
 
 int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStreamType audioType)
 {
-    int error;
+    int error = PA_ERR_INTERNAL;
     if (CheckReturnIfinvalid(mainLoop && context, AUDIO_CLIENT_ERR) < 0) {
         return AUDIO_CLIENT_ERR;
     }
@@ -858,7 +858,7 @@ int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
 
 int32_t AudioServiceClient::StartStream()
 {
-    int error;
+    int error = PA_ERR_INTERNAL;
 
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
@@ -963,7 +963,7 @@ int32_t AudioServiceClient::CorkStream()
 
 int32_t AudioServiceClient::FlushStream()
 {
-    int error;
+    int error = 0;
 
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
@@ -1010,7 +1010,7 @@ int32_t AudioServiceClient::FlushStream()
 
 int32_t AudioServiceClient::DrainStream()
 {
-    uint32_t error;
+    uint32_t error = 0;
 
     if (eAudioClientType != AUDIO_SERVICE_CLIENT_PLAYBACK) {
         MEDIA_ERR_LOG("Drain is not supported");

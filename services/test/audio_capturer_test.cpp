@@ -259,7 +259,6 @@ int main(int argc, char *argv[])
         bufferMsec = strtol(argv[AudioTestConstants::FOURTH_ARG_IDX], nullptr, AudioTestConstants::NUM_BASE);
     }
     AudioCapturerTest testObj;
-    bool ret = testObj.TestRecording(samplingRate, isBlocking, filePath);
-
-    return ret;
+    
+    return testObj.TestRecording(samplingRate, isBlocking, filePath);
 }

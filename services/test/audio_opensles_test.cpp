@@ -275,7 +275,6 @@ static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pConte
         fread(buffer, 1, size, wavFile);
         (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
     }
-    return;
 }
 
 static void PlayerStart (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile)
@@ -289,13 +288,11 @@ static void PlayerStart (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf, F
         fread(buffer, 1, pSize, wavFile);
         (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
     }
-    return;
 }
 
 static void PlayerStop (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf)
 {
     MEDIA_INFO_LOG("PlayerStop");
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_STOPPED);
-    return;
 }
 
