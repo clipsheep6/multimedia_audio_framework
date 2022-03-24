@@ -97,7 +97,6 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener(void *privData)
 
     privData_ = privData;
     listener_ = HdiServiceStatusListenerNewInstance();
-    
     if (listener_ == nullptr) {
         MEDIA_ERR_LOG("[DeviceStatusListener]: Get listener_  manager failed , Values is nullptr");
         return ERR_OPERATION_FAILED;
