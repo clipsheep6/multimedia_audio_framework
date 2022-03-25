@@ -47,6 +47,7 @@ void RingtoneOptionsNapi::Destructor(napi_env env, void *nativeObject, void *fin
     if (nativeObject != nullptr) {
         auto obj = static_cast<RingtoneOptionsNapi *>(nativeObject);
         delete obj;
+        obj = nullptr;
     }
 }
 
@@ -251,5 +252,5 @@ napi_value RingtoneOptionsNapi::SetLoop(napi_env env, napi_callback_info info)
 
     return jsResult;
 }
-}
-}
+}  // namespace AudioStandard
+}  // namespace OHOS

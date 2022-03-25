@@ -150,7 +150,7 @@ const std::string AudioSystemManager::GetAudioParameter(const std::string key) c
     return g_sProxy->GetAudioParameter(key);
 }
 
-void AudioSystemManager::SetAudioParameter(const std::string key, const std::string value) const
+void AudioSystemManager::SetAudioParameter(const std::string &key, const std::string &value) const
 {
     g_sProxy->SetAudioParameter(key, value);
 }
@@ -273,7 +273,7 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
 
 int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
-    MEDIA_ERR_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    MEDIA_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
     if (callback == nullptr) {
         MEDIA_ERR_LOG("SetDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
@@ -341,8 +341,8 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
     return ret;
 }
 
-// Below stub implemention is added to handle compilation error in call manager
-// Once call manager adapt to new interrupt implementation, this will be rmeoved
+// Below stub implementation is added to handle compilation error in call manager
+// Once call manager adapt to new interrupt implementation, this will be removed
 int32_t AudioSystemManager::SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
                                                     const std::shared_ptr<AudioManagerCallback> &callback)
 {

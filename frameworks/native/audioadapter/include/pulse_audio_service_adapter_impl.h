@@ -16,6 +16,7 @@
 #ifndef ST_PULSEAUDIO_AUDIO_SERVICE_ADAPTER_H
 #define ST_PULSEAUDIO_AUDIO_SERVICE_ADAPTER_H
 #include <unordered_map>
+#include <mutex>
 
 #include <pulse/pulseaudio.h>
 
@@ -25,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 class PulseAudioServiceAdapterImpl : public AudioServiceAdapter {
 public:
-    PulseAudioServiceAdapterImpl(std::unique_ptr<AudioServiceAdapterCallback> &cb);
+    explicit PulseAudioServiceAdapterImpl(std::unique_ptr<AudioServiceAdapterCallback> &cb);
     ~PulseAudioServiceAdapterImpl();
 
     bool Connect() override;
@@ -66,6 +67,7 @@ private:
     pa_context *mContext = NULL;
     pa_threaded_mainloop *mMainLoop = NULL;
     static std::unordered_map<uint32_t, uint32_t> sinkIndexSessionIDMap;
+    std::mutex mMutex;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

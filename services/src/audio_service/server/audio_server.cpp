@@ -86,21 +86,20 @@ void AudioServer::OnStop()
     MEDIA_DEBUG_LOG("AudioService OnStop");
 }
 
-void AudioServer::SetAudioParameter(const std::string key, const std::string value)
+void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
     MEDIA_DEBUG_LOG("server: set audio parameter");
     AudioServer::audioParameters[key] = value;
 }
 
-const std::string AudioServer::GetAudioParameter(const std::string key)
+const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
     MEDIA_DEBUG_LOG("server: get audio parameter");
 
     if (AudioServer::audioParameters.count(key)) {
         return AudioServer::audioParameters[key];
     } else {
-        const std::string value = "";
-        return value;
+        return "";
     }
 }
 
@@ -109,19 +108,25 @@ const char *AudioServer::RetrieveCookie(int32_t &size)
     char *cookieInfo = nullptr;
     size = 0;
     std::ifstream cookieFile(DEFAULT_COOKIE_PATH, std::ifstream::binary);
-    if (cookieFile) {
-        cookieFile.seekg (0, cookieFile.end);
-        size = cookieFile.tellg();
-        cookieFile.seekg (0, cookieFile.beg);
-
-        if ((size > 0) && (size < PATH_MAX)) {
-            cookieInfo = (char *)malloc(size * sizeof(char));
-            MEDIA_DEBUG_LOG("Reading: %{public}d characters...", size);
-            cookieFile.read(cookieInfo, size);
-        }
-        cookieFile.close();
+    if (!cookieFile) {
+        return cookieInfo;
     }
 
+    cookieFile.seekg (0, cookieFile.end);
+    size = cookieFile.tellg();
+    cookieFile.seekg (0, cookieFile.beg);
+
+    if ((size > 0) && (size < PATH_MAX)) {
+        cookieInfo = (char *)malloc(size * sizeof(char));
+        if (cookieInfo == nullptr) {
+            MEDIA_ERR_LOG("AudioServer::RetrieveCookie: No memory");
+            cookieFile.close();
+            return cookieInfo;
+        }
+        MEDIA_DEBUG_LOG("Reading: %{public}d characters...", size);
+        cookieFile.read(cookieInfo, size);
+    }
+    cookieFile.close();
     return cookieInfo;
 }
 
@@ -141,7 +146,7 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
 
-    if (audioCapturerSourceInstance->capturerInited_ == false) {
+    if (!audioCapturerSourceInstance->capturerInited_) {
             MEDIA_INFO_LOG("Capturer is not initialized. Set the flag mute state flag");
             AudioCapturerSource::micMuteState_ = isMute;
             return 0;
@@ -155,7 +160,7 @@ bool AudioServer::IsMicrophoneMute()
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     bool isMute = false;
 
-    if (audioCapturerSourceInstance->capturerInited_ == false) {
+    if (!audioCapturerSourceInstance->capturerInited_) {
         MEDIA_INFO_LOG("Capturer is not initialized. Get the mic mute state flag value!");
         return AudioCapturerSource::micMuteState_;
     }
@@ -172,13 +177,13 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene)
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
 
-    if (audioCapturerSourceInstance->capturerInited_ == false) {
+    if (!audioCapturerSourceInstance->capturerInited_) {
         MEDIA_WARNING_LOG("Capturer is not initialized.");
     } else {
         audioCapturerSourceInstance->SetAudioScene(audioScene);
     }
 
-    if (audioRendererSinkInstance->rendererInited_ == false) {
+    if (!audioRendererSinkInstance->rendererInited_) {
         MEDIA_WARNING_LOG("Renderer is not initialized.");
     } else {
         audioRendererSinkInstance->SetAudioScene(audioScene);

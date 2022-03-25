@@ -97,6 +97,7 @@ static void userdata_free(struct Userdata *u)
 static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk)
 {
     struct Userdata *u = PA_SOURCE(o)->userdata;
+    pa_assert(u);
 
     switch (code) {
         case PA_SOURCE_MESSAGE_GET_LATENCY: {
@@ -330,7 +331,7 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sampl
     return 0;
 }
 
-#ifndef DEVICE_RK3568
+#ifndef PRODUCT_RK3568
 static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
 {
     enum AudioFormat hdiAudioFormat;
@@ -376,7 +377,7 @@ static bool GetEndianInfo(pa_sample_format_t format)
 
     return isBigEndian;
 }
-#endif // #ifndef DEVICE_RK3568
+#endif // #ifndef PRODUCT_RK3568
 
 pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
 {
@@ -413,7 +414,7 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     u->buffer_size = DEFAULT_BUFFER_SIZE;
     u->attrs.sampleRate = ss.rate;
 // The values for rk are hardcoded due to config mismatch in hdi. To be removed once hdi issue is fixed.
-#ifdef DEVICE_RK3568
+#ifdef PRODUCT_RK3568
     int32_t channelCount = 2;
     u->attrs.channel = channelCount;
     u->attrs.format = AUDIO_FORMAT_PCM_16_BIT;
@@ -439,19 +440,16 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    thread_name = pa_sprintf_malloc("hdi-source-record");
+    thread_name = "hdi-source-record";
     if (!(u->thread = pa_thread_new(thread_name, thread_func, u))) {
         MEDIA_INFO_LOG("Failed to create hdi-source-record thread!");
         goto fail;
     }
 
-    pa_xfree(thread_name);
-    thread_name = NULL;
     pa_source_put(u->source);
     return u->source;
 
 fail:
-    pa_xfree(thread_name);
 
     if (u->IsCapturerStarted) {
         pa_capturer_exit();

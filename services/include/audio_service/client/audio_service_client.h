@@ -156,7 +156,7 @@ public:
      *
      * @return Returns unique session ID for the created session
     */
-    int32_t GetSessionID(uint32_t &sessionID);
+    int32_t GetSessionID(uint32_t &sessionID) const;
 
     /**
     * Starts the stream created using CreateStream
@@ -266,7 +266,7 @@ public:
     * @param timeStamp will be filled up with current timestamp
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetCurrentTimeStamp(uint64_t &timeStamp);
+    int32_t GetCurrentTimeStamp(uint64_t &timeStamp) const;
 
     /**
     * Provides the current latency for playback/record stream created using CreateStream
@@ -274,7 +274,7 @@ public:
     * @param latency will be filled up with the current latency in microseconds
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetAudioLatency(uint64_t &latency);
+    int32_t GetAudioLatency(uint64_t &latency) const;
 
     /**
     * Provides the playback/record stream parameters created using CreateStream
@@ -282,7 +282,7 @@ public:
     * @param audioParams will be filled up with stream audio parameters
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetAudioStreamParams(AudioStreamParams &audioParams);
+    int32_t GetAudioStreamParams(AudioStreamParams &audioParams) const;
 
     /**
     * Provides the minimum buffer size required for this audio stream
@@ -290,7 +290,7 @@ public:
     * @param minBufferSize will be set to minimum buffer size in bytes
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetMinimumBufferSize(size_t &minBufferSize);
+    int32_t GetMinimumBufferSize(size_t &minBufferSize) const;
 
     /**
     * Provides the minimum frame count required for this audio stream
@@ -298,7 +298,7 @@ public:
     * @param frameCount will be set to minimum number of frames
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetMinimumFrameCount(uint32_t &frameCount);
+    int32_t GetMinimumFrameCount(uint32_t &frameCount) const;
 
     /**
     * Provides the sampling rate for the active audio stream
@@ -306,7 +306,7 @@ public:
     *
     * @return Returns sampling rate in Hz
     */
-    uint32_t GetSamplingRate();
+    uint32_t GetSamplingRate() const;
 
     /**
     * Provides the channel count for the active audio stream
@@ -314,7 +314,7 @@ public:
     *
     * @return Returns number of channels
     */
-    uint8_t GetChannelCount();
+    uint8_t GetChannelCount() const;
 
     /**
     * Provides the sample size for the active audio stream
@@ -322,7 +322,7 @@ public:
     *
     * @return Returns sample size in number of bits
     */
-    uint8_t GetSampleSize();
+    uint8_t GetSampleSize() const;
 
     // Device volume & route handling APIs
 
@@ -503,7 +503,7 @@ private:
     const void *internalReadBuffer;
     size_t internalRdBufLen;
     size_t internalRdBufIndex;
-    size_t setBufferSize = MINIMUM_BUFFER_SIZE;
+    size_t setBufferSize;
     int32_t streamCmdStatus;
     int32_t streamDrainStatus;
     int32_t streamFlushStatus;

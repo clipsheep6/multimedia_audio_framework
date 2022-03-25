@@ -65,7 +65,7 @@ int32_t AudioManagerProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volu
         return error;
     }
 
-    float volume = reply.ReadInt32();
+    int32_t volume = reply.ReadInt32();
     return volume;
 }
 
@@ -138,7 +138,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFla
     return deviceInfo;
 }
 
-const std::string AudioManagerProxy::GetAudioParameter(const std::string key)
+const std::string AudioManagerProxy::GetAudioParameter(const std::string &key)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -160,7 +160,7 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string key)
     return value;
 }
 
-void AudioManagerProxy::SetAudioParameter(const std::string key, const std::string value)
+void AudioManagerProxy::SetAudioParameter(const std::string &key, const std::string &value)
 {
     MessageParcel data;
     MessageParcel reply;

@@ -33,6 +33,11 @@ bool AudioAdapterManager::ConnectServiceAdapter()
     std::unique_ptr<AudioAdapterManager> audioAdapterManager(this);
     std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(audioAdapterManager);
     mAudioServiceAdapter = AudioServiceAdapter::CreateAudioAdapter(std::move(policyCallbackImpl));
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] Error in audio adapter initialization");
+        return false;
+    }
+
     bool result = mAudioServiceAdapter->Connect();
     if (!result) {
         MEDIA_ERR_LOG("[AudioAdapterManager] Error in connecting audio adapter");
@@ -53,6 +58,11 @@ void AudioAdapterManager::InitKVStore()
 
 void AudioAdapterManager::Deinit(void)
 {
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return;
+    }
+
     return  mAudioServiceAdapter->Disconnect();
 }
 
@@ -69,6 +79,11 @@ int32_t AudioAdapterManager::SetAudioSessionCallback(AudioSessionCallback *callb
 
 int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float volume)
 {
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+
     // Incase if KvStore didnot connect during  bootup
     if (mAudioPolicyKvStore == nullptr) {
         bool isFirstBoot = false;
@@ -91,30 +106,52 @@ float AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
-    bool result =  mAudioServiceAdapter->SetMute(streamType, mute);
-    return result;
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+ 
+    return mAudioServiceAdapter->SetMute(streamType, mute);
 }
 
-bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
+bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType) const
 {
-    bool result =  mAudioServiceAdapter->IsMute(streamType);
-    return result;
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return false;
+    }
+
+    return mAudioServiceAdapter->IsMute(streamType);
 }
 
 bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
 {
-    bool result = mAudioServiceAdapter->IsStreamActive(streamType);
-    return result;
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return false;
+    }
+
+    return mAudioServiceAdapter->IsStreamActive(streamType);
 }
 
 int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSuspend)
 {
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+
     return mAudioServiceAdapter->SuspendAudioDevice(portName, isSuspend);
 }
 
 int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
     std::string name, bool active)
 {
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
@@ -148,7 +185,7 @@ int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
     return SUCCESS;
 }
 
-AudioRingerMode AudioAdapterManager::GetRingerMode()
+AudioRingerMode AudioAdapterManager::GetRingerMode() const
 {
     return mRingerMode;
 }
@@ -161,13 +198,9 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
         if (!audioModuleInfo.fileName.empty() && access(audioModuleInfo.fileName.c_str(), F_OK) == 0) {
             int32_t ret = std::remove(audioModuleInfo.fileName.c_str());
             if (ret) {
-                MEDIA_ERR_LOG("[AudioAdapterManager] Error Removing file: %{public}s Failed! ret val: %{public}d",
-                    audioModuleInfo.fileName.c_str(), ret);
+                MEDIA_ERR_LOG("Removing pipe file failed!. Ret val: %{public}d", ret);
                 return ERR_OPERATION_FAILED;
             }
-        } else {
-            MEDIA_ERR_LOG("[AudioAdapterManager] Error audioModuleInfo.fileName is null! or file not exists");
-            return ERR_OPERATION_FAILED;
         }
     }
 
@@ -206,7 +239,7 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 }
 
 // Private Members
-std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModuleInfo)
+std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const
 {
     std::string args;
 
@@ -378,7 +411,6 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     } else {
         LoadVolumeMap();
     }
-    return;
 }
 
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
