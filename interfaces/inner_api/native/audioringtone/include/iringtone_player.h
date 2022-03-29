@@ -46,7 +46,7 @@ public:
     virtual ~IRingtonePlayer() = default;
 
     /**
-     * @brief Returns the current ringtone state
+     * @brief Returns the current ringtone state.
      *
      * @return Returns the current state of ringtone player.
      * @since 1.0
@@ -55,10 +55,10 @@ public:
     virtual RingtoneState GetRingtoneState() = 0;
 
     /**
-     * @brief Configure the ringtone player before playing any audio
+     * @brief Configures the ringtone player before playing any audio.
      *
-     * @param volume Configures the volume at which the ringtone has to be played
-     * @param loop Boolean parameter indicating whether to enable or disable looping
+     * @param volume Volume for playing the ringtone.
+     * @param loop Boolean parameter indicating whether to enable or disable looping.
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
      * retuns an error code defined in {@link media_errors.h} otherwise.
      * @since 1.0
@@ -67,7 +67,7 @@ public:
     virtual int32_t Configure(const float &volume, const bool &loop) = 0;
 
     /**
-     * @brief Start playing ringtone
+     * @brief Starts playing ringtone.
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
      * retuns an error code defined in {@link media_errors.h} otherwise.
@@ -77,7 +77,7 @@ public:
     virtual int32_t Start() = 0;
 
     /**
-     * @brief Stop playing ringtone
+     * @brief Stop playing ringtone.
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
      * retuns an error code defined in {@link media_errors.h} otherwise.
@@ -87,7 +87,7 @@ public:
     virtual int32_t Stop() = 0;
 
     /**
-     * @brief Returns the audio contetnt type and stream uage details to the clients
+     * @brief Gets the audio content type and stream uage details.
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
      * retuns an error code defined in {@link media_errors.h} otherwise.
@@ -97,9 +97,9 @@ public:
     virtual int32_t GetAudioRendererInfo(AudioStandard::AudioRendererInfo &rendererInfo) const = 0;
 
     /**
-     * @brief Returns the title of the uri set.
+     * @brief Gets the title of the URI set.
      *
-     * @return Returns title as string if the title is obtained successfully from media library.
+     * @return Returns title as string if the title is obtained successfully from media library;
      * retuns an empty string otherwise.
      * @since 1.0
      * @version 1.0
@@ -107,7 +107,7 @@ public:
     virtual std::string GetTitle() = 0;
 
     /**
-     * @brief Releases the ringtone client resources
+     * @brief Releases the ringtone client resources.
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
      * retuns an error code defined in {@link media_errors.h} otherwise.

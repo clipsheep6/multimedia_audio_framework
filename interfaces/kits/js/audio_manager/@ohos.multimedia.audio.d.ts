@@ -64,7 +64,7 @@ declare namespace audio {
      */
     STATE_INVALID = -1,
     /**
-     * Create New instance state.
+     * Creating instance state.
      * @since 8
      */
     STATE_NEW,
@@ -537,7 +537,7 @@ declare namespace audio {
   }
 
   /**
-   * Interrupt force type.
+   * Enumerates in interrupt force types.
    * @since 8
    * @syscap SystemCapability.Multimedia.Audio
    */
@@ -913,19 +913,19 @@ declare namespace audio {
    */
   interface VolumeEvent {
     /**
-     * volumeType of current stream
+     * volume type of the audio stream
      * @since 8
      * @syscap SystemCapability.Multimedia.Audio
      */
     volumeType: AudioVolumeType;
     /**
-     * volume level
+     * Volume level of the audio stream
      * @since 8
      * @syscap SystemCapability.Multimedia.Audio
      */
     volume: number;
     /**
-     * updateUi show volume change in Ui
+     * Shows volume changes in the UI
      * @since 8
      * @syscap SystemCapability.Multimedia.Audio
      */
@@ -946,7 +946,7 @@ declare namespace audio {
     type: DeviceChangeType;
 
     /**
-     * Device information.
+     * Gets device descriptors.
      * @since 7
      * @syscap SystemCapability.Multimedia.Audio
      */
