@@ -252,11 +252,13 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                 pa_usec_t now = pa_rtclock_now();
                 latency = (now - u->timestamp);
             }
-        *((uint64_t *)data) = latency;
-        return 0;
+
+            *((uint64_t *)data) = latency;
+            return 0;
         }
+        default:
+            break;
     }
-    
     return pa_sink_process_msg(o, code, data, offset, chunk);
 }
 
