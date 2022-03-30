@@ -254,6 +254,7 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
             }
         *((uint64_t *)data) = latency;
         return 0;
+        }
     }
     
     return pa_sink_process_msg(o, code, data, offset, chunk);
