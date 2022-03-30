@@ -64,7 +64,8 @@ int32_t AudioManagerProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volu
         return error;
     }
 
-    return reply.ReadInt32();
+    int32_t volume = reply.ReadInt32();
+    return volume;
 }
 
 int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)

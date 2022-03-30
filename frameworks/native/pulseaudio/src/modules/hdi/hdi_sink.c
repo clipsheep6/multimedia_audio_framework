@@ -238,20 +238,20 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                           pa_memchunk *chunk)
 {
     struct Userdata *u = PA_SINK(o)->userdata;
+    pa_assert(u);
+    switch (code) {
+        case PA_SINK_MESSAGE_GET_LATENCY: {
+            uint64_t latency;
+            uint32_t hdiLatency;
 
-    if (code == PA_SINK_MESSAGE_GET_LATENCY) {
-        uint64_t latency;
-        uint32_t hdiLatency;
-
-        // Tries to fetch latency from HDI else will make an estimate based
-        // on samples to be rendered based on the timestamp and current time
-        if (u->sinkAdapter->RendererSinkGetLatency(&hdiLatency) == 0) {
-            latency = (PA_USEC_PER_MSEC * hdiLatency);
-        } else {
-            pa_usec_t now = pa_rtclock_now();
-            latency = (now - u->timestamp);
-        }
-
+            // Tries to fetch latency from HDI else will make an estimate based
+            // on samples to be rendered based on the timestamp and current time
+            if (u->sinkAdapter->RendererSinkGetLatency(&hdiLatency) == 0) {
+                latency = (PA_USEC_PER_MSEC * hdiLatency);
+            } else {
+                pa_usec_t now = pa_rtclock_now();
+                latency = (now - u->timestamp);
+            }
         *((uint64_t *)data) = latency;
         return 0;
     }
@@ -418,6 +418,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     pa_assert(ma);
 
     u = pa_xnew0(struct Userdata, 1);
+    pa_assert(u);
     u->core = m->core;
     u->module = m;
 

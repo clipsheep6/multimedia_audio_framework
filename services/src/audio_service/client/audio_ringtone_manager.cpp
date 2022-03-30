@@ -187,6 +187,7 @@ void RingtonePlayer::InitialisePlayer()
 int32_t RingtonePlayer::PrepareRingtonePlayer(bool isReInitNeeded)
 {
     MEDIA_INFO_LOG("RingtonePlayer::%{public}s", __func__);
+    CHECK_AND_RETURN_RET_LOG(player_ != nullptr, ERR_INVALID_PARAM, "Ringtone player instance is null");
 
     // fetch uri from kvstore
     auto kvstoreUri = audioRingtoneMgr_.GetSystemRingtoneUri(context_, type_);
@@ -299,6 +300,8 @@ RingtoneState RingtonePlayer::GetRingtoneState()
 
 void RingtonePlayer::SetPlayerState(RingtoneState ringtoneState)
 {
+    CHECK_AND_RETURN_LOG(player_ != nullptr, "Ringtone player instance is null");
+
     if (ringtoneState_ != RingtoneState::STATE_RELEASED) {
         ringtoneState_ = ringtoneState;
     }
@@ -354,7 +357,7 @@ std::string RingtonePlayer::GetTitle()
 
     shared_ptr<AbsSharedResultSet> resultSet = nullptr;
     resultSet = helper->Query(mediaLibUri, columns, predicates);
-    CHECK_AND_RETURN_RET_LOG(resultSet != nullptr, "", "Unable to fetch details for path %{public}s", uri.c_str());
+    CHECK_AND_RETURN_RET_LOG(resultSet != nullptr, "", "Unable to fetch details from path %s", uri.c_str());
 
     int ret = resultSet->GoToFirstRow();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Failed to obtain the record");
@@ -413,5 +416,5 @@ void RingtonePlayerCallback::OnInfo(PlayerOnInfoType type, int32_t extra, const 
 
     ringtonePlayer_.SetPlayerState(ringtoneState_);
 }
-} // AudioStandard
-} // OHOS
+} // namesapce AudioStandard
+} // namespace OHOS

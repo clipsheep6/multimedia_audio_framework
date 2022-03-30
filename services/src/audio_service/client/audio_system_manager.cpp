@@ -64,7 +64,8 @@ void AudioSystemManager::init()
 
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     if (object == nullptr) {
-        MEDIA_ERR_LOG("AudioSystemManager::object is NULL.");
+        MEDIA_DEBUG_LOG("AudioSystemManager::object is NULL.");
+        return;
     }
     g_sProxy = iface_cast<IStandardAudioService>(object);
     if (g_sProxy == nullptr) {
@@ -272,7 +273,7 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
 
 int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
-    MEDIA_DEBUG_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    MEDIA_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
     if (callback == nullptr) {
         MEDIA_ERR_LOG("SetDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;

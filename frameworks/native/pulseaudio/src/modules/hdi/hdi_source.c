@@ -97,6 +97,7 @@ static void userdata_free(struct Userdata *u)
 static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk)
 {
     struct Userdata *u = PA_SOURCE(o)->userdata;
+    pa_assert(u);
 
     switch (code) {
         case PA_SOURCE_MESSAGE_GET_LATENCY: {
@@ -210,7 +211,7 @@ static void thread_func(void *userdata)
     while (true) {
         int ret = 0;
 
-        if (PA_SOURCE_IS_RUNNING(u->source->thread_info.state) && u->IsCapturerStarted) {
+        if (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->IsCapturerStarted) {
             pa_memchunk chunk;
             pa_usec_t now;
 

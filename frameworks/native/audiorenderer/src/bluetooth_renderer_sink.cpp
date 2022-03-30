@@ -94,7 +94,7 @@ void BluetoothRendererSink::DeInit()
 #endif // BT_DUMPFILE
 }
 
-int32_t InitAttrs(struct AudioSampleAttributes &attrs)
+void InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
     attrs.format = AUDIO_FORMAT_PCM_16_BIT;
@@ -109,8 +109,6 @@ int32_t InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (attrs.frameSize);
     attrs.stopThreshold = INT_32_MAX;
     attrs.silenceThreshold = 0;
-
-    return SUCCESS;
 }
 
 static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapterNameCase,

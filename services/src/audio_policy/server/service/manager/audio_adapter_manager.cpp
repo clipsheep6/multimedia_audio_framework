@@ -36,6 +36,11 @@ bool AudioAdapterManager::ConnectServiceAdapter()
     }
     std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(audioAdapterManager);
     mAudioServiceAdapter = AudioServiceAdapter::CreateAudioAdapter(std::move(policyCallbackImpl));
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] Error in audio adapter initialization");
+        return false;
+    }
+
     bool result = mAudioServiceAdapter->Connect();
     if (!result) {
         MEDIA_ERR_LOG("[AudioAdapterManager] Error in connecting audio adapter");
@@ -55,7 +60,12 @@ void AudioAdapterManager::InitKVStore()
 
 void AudioAdapterManager::Deinit(void)
 {
-    mAudioServiceAdapter->Disconnect();
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return;
+    }
+
+    return mAudioServiceAdapter->Disconnect();
 }
 
 int32_t AudioAdapterManager::SetAudioSessionCallback(AudioSessionCallback *callback)
@@ -71,6 +81,11 @@ int32_t AudioAdapterManager::SetAudioSessionCallback(AudioSessionCallback *callb
 
 int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float volume)
 {
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+
     // Incase if KvStore didnot connect during  bootup
     if (mAudioPolicyKvStore == nullptr) {
         bool isFirstBoot = false;
@@ -93,27 +108,52 @@ float AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+ 
     return mAudioServiceAdapter->SetMute(streamType, mute);
 }
 
 bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType) const
 {
-    return  mAudioServiceAdapter->IsMute(streamType);
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return false;
+    }
+
+    return mAudioServiceAdapter->IsMute(streamType);
 }
 
 bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
 {
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return false;
+    }
+
     return mAudioServiceAdapter->IsStreamActive(streamType);
 }
 
 int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSuspend)
 {
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+
     return mAudioServiceAdapter->SuspendAudioDevice(portName, isSuspend);
 }
 
 int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
     std::string name, bool active)
 {
+    if (!mAudioServiceAdapter) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
