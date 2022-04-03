@@ -501,6 +501,7 @@ AudioServiceClient::~AudioServiceClient()
 
 void AudioServiceClient::SetEnv()
 {
+#ifndef PRODUCT_M40
     MEDIA_INFO_LOG("SetEnv called");
     int ret = 0;
     const char *env_home_pa = getenv("HOME");
@@ -520,6 +521,7 @@ void AudioServiceClient::SetEnv()
         ret = setenv("PULSE_STATE_PATH", PA_STATE_DIR, 1);
         MEDIA_INFO_LOG("set env PULSE_STATE_PATH: %{public}d", ret);
     }
+#endif
 }
 
 static std::string GetClientBundle(int uid)

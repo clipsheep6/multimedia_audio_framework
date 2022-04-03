@@ -31,8 +31,11 @@ config("pulsecommon_config") {
     "$pulseaudio_build_path/include",
     "$libsndfile_dir/include",
     "$pulseaudio_dir/src/pulse",
-    "//base/startup/init_lite/interfaces/innerkits/include",
   ]
+
+  if ("${product_name}" != "m40") {
+    include_dirs += [ "//base/startup/init_lite/interfaces/innerkits/include" ]
+  }
 
   cflags = [
     "-Wall",
@@ -106,7 +109,6 @@ ohos_source_set("pulsecommon_sources") {
     "$pulseaudio_dir/src/pulsecore/shm.c",
     "$pulseaudio_dir/src/pulsecore/sndfile-util.c",
     "$pulseaudio_dir/src/pulsecore/socket-client.c",
-    "$pulseaudio_dir/src/pulsecore/ohos_socket-server.c",
     "$pulseaudio_dir/src/pulsecore/socket-util.c",
     "$pulseaudio_dir/src/pulsecore/srbchannel.c",
     "$pulseaudio_dir/src/pulsecore/strbuf.c",
@@ -117,6 +119,12 @@ ohos_source_set("pulsecommon_sources") {
     "$pulseaudio_dir/src/pulsecore/tokenizer.c",
     "$pulseaudio_dir/src/pulsecore/usergroup.c",
   ]
+
+  if ("${product_name}" == "m40") {
+    sources += [ "$pulseaudio_dir/src/pulsecore/socket-server.c" ]
+  } else {
+    sources += [ "$pulseaudio_dir/src/pulsecore/ohos_socket-server.c" ]
+  }
 
   configs = [ ":pulsecommon_config" ]
 
@@ -130,7 +138,9 @@ ohos_shared_library("pulsecommon") {
     "$libsndfile_build_path:sndfile",
   ]
 
-  external_deps = [ "init:libbegetutil" ]
+  if ("${product_name}" != "m40") {
+    external_deps = [ "init:libbegetutil" ]
+  }
 
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_standard"
@@ -144,14 +154,22 @@ ohos_prebuilt_etc("pa_daemon_config") {
 }
 
 ohos_prebuilt_etc("pa_default_config") {
-  source = "$pulseaudio_dir/conf/default.pa"
+  if ("${product_name}" == "m40") {
+    source = "$pulseaudio_dir/conf/m40/default.pa"
+  } else {
+    source = "$pulseaudio_dir/conf/default.pa"
+  }
   subsystem_name = "multimedia"
   module_install_dir = "etc/pulse"
   part_name = "multimedia_audio_standard"
 }
 
 ohos_prebuilt_etc("pa_client_config") {
-  source = "$pulseaudio_dir/conf/client.conf"
+  if ("${product_name}" == "m40") {
+    source = "$pulseaudio_dir/conf/m40/client.conf"
+  } else {
+    source = "$pulseaudio_dir/conf/client.conf"
+  }
   subsystem_name = "multimedia"
   module_install_dir = "etc/pulse"
   part_name = "multimedia_audio_standard"
