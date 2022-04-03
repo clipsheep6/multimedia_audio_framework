@@ -20,7 +20,11 @@ AUDIO_POLICY_SERVER_DIR =
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server"
 
 ohos_prebuilt_etc("pulseaudio.rc") {
-  source = "etc/pulseaudio.cfg"
+  if ("${product_name}" == "m40") {
+    source = "etc/m40/pulseaudio.cfg"
+  } else {
+    source = "etc/pulseaudio.cfg"
+  }
   relative_install_dir = "init"
   part_name = "multimedia_audio_standard"
   subsystem_name = "multimedia"
