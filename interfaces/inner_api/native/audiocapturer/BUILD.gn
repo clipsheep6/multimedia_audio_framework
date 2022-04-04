@@ -16,7 +16,10 @@ import("//build/ohos.gni")
 pulseaudio_dir = "//third_party/pulseaudio"
 
 group("audio_capturer_test_packages") {
-  deps = [ ":audio_capturer_test" ]
+  deps = [
+    ":audio_capture_mode_callback_test",
+    ":audio_capturer_test",
+  ]
 }
 
 config("audio_capturer_config") {
@@ -67,6 +70,21 @@ ohos_executable("audio_capturer_test") {
   configs = [ ":audio_capturer_config" ]
 
   deps = [ "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_capture_mode_callback_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_capture_mode_callback_test.cpp" ]
+
+  configs = [ ":audio_capturer_config" ]
+
+  deps = [ ":audio_capturer" ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 

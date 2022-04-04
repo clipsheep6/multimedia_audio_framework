@@ -48,6 +48,14 @@ public:
     std::shared_ptr<AudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
 
+    int32_t SetCaptureMode(AudioCaptureMode renderMode) const override;
+    AudioCaptureMode GetCaptureMode() const override;
+    int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
+    int32_t GetBufferDesc(BufferDesc &bufDesc) const override;
+    int32_t Enqueue(const BufferDesc &bufDesc) const override;
+    int32_t Clear() const override;
+    int32_t GetBufQueueState(BufferQueueState &bufState) const override;
+
     explicit AudioCapturerPrivate(AudioStreamType audioStreamType);
     virtual ~AudioCapturerPrivate();
 private:

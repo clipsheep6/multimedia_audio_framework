@@ -479,6 +479,12 @@ public:
      */
     int32_t SaveWriteCallback(const std::weak_ptr<AudioRendererWriteCallback> &callback);
 
+    int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);
+
+    AudioCaptureMode GetAudioCaptureMode();
+
+    int32_t SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback);
+
     // Audio timer callback
     virtual void OnTimeOut();
 
@@ -517,7 +523,9 @@ private:
 
     AudioRendererRate renderRate;
     AudioRenderMode renderMode_;
+    AudioCaptureMode captureMode_;
     std::weak_ptr<AudioRendererWriteCallback> writeCallback_;
+    std::weak_ptr<AudioCapturerReadCallback> readCallback_;
 
     uint32_t mFrameSize = 0;
     bool mMarkReached = false;
