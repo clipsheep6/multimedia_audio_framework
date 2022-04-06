@@ -23,6 +23,7 @@
 #include "audio_renderer_napi.h"
 #include "audio_ringermode_callback_napi.h"
 #include "audio_manager_callback_napi.h"
+#include "audio_manager_interrupt_callback_napi.h"
 #include "audio_volume_key_event_napi.h"
 
 #include "hilog/log.h"
@@ -38,6 +39,7 @@ using OHOS::HiviewDFX::HiLogLabel;
 namespace {
     const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
     const std::string VOLUME_CHANGE_CALLBACK_NAME = "volumeChange";
+    const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
 }
 
 namespace OHOS {
@@ -51,6 +53,8 @@ napi_ref AudioManagerNapi::activeDeviceTypeRef_ = nullptr;
 napi_ref AudioManagerNapi::audioRingModeRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceChangeType_ = nullptr;
 napi_ref AudioManagerNapi::interruptActionType_ = nullptr;
+napi_ref AudioManagerNapi::interruptHint_ = nullptr;
+napi_ref AudioManagerNapi::interruptType_ = nullptr;
 napi_ref AudioManagerNapi::audioScene_ = nullptr;
 
 #define GET_PARAMS(env, info, num) \
@@ -229,6 +233,37 @@ napi_value AudioManagerNapi::CreateDeviceChangeTypeObject(napi_env env)
     return result;
 }
 
+napi_value AudioManagerNapi::CreateInterruptTypeObject(napi_env env)
+{
+    napi_value result = nullptr;
+    napi_status status;
+    std::string propName;
+    int32_t refCount = 1;
+
+    status = napi_create_object(env, &result);
+    if (status == napi_ok) {
+        for (auto &iter: interruptTypeMap) {
+            propName = iter.first;
+            status = AddNamedProperty(env, result, propName, iter.second);
+            if (status != napi_ok) {
+                HiLog::Error(LABEL, "Failed to add named prop in CreateInterruptTypeObject!");
+                break;
+            }
+            propName.clear();
+        }
+        if (status == napi_ok) {
+            status = napi_create_reference(env, result, refCount, &interruptType_);
+            if (status == napi_ok) {
+                return result;
+            }
+        }
+    }
+    HiLog::Error(LABEL, "CreateInterruptTypeObject is Failed!");
+    napi_get_undefined(env, &result);
+
+    return result;
+}
+
 napi_value AudioManagerNapi::CreateInterruptActionTypeObject(napi_env env)
 {
     napi_value result = nullptr;
@@ -255,6 +290,37 @@ napi_value AudioManagerNapi::CreateInterruptActionTypeObject(napi_env env)
         }
     }
     HiLog::Error(LABEL, "CreateInterruptActionTypeObject is Failed!");
+    napi_get_undefined(env, &result);
+
+    return result;
+}
+
+napi_value AudioManagerNapi::CreateInterruptHintObject(napi_env env)
+{
+    napi_value result = nullptr;
+    napi_status status;
+    std::string propName;
+    int32_t refCount = 1;
+
+    status = napi_create_object(env, &result);
+    if (status == napi_ok) {
+        for (auto &iter: interruptHintMap) {
+            propName = iter.first;
+            status = AddNamedProperty(env, result, propName, iter.second);
+            if (status != napi_ok) {
+                HiLog::Error(LABEL, "Failed to add named prop in CreateInterruptTypeObject!");
+                break;
+            }
+            propName.clear();
+        }
+        if (status == napi_ok) {
+            status = napi_create_reference(env, result, refCount, &interruptHint_);
+            if (status == napi_ok) {
+                return result;
+            }
+        }
+    }
+    HiLog::Error(LABEL, "CreateInterruptHintObject is Failed!");
     napi_get_undefined(env, &result);
 
     return result;
@@ -604,7 +670,9 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioRingMode", CreateAudioRingModeObject(env)),
         DECLARE_NAPI_PROPERTY("AudioScene", CreateAudioSceneObject(env)),
         DECLARE_NAPI_PROPERTY("DeviceChangeType", CreateDeviceChangeTypeObject(env)),
-        DECLARE_NAPI_PROPERTY("InterruptActionType", CreateInterruptActionTypeObject(env))
+        DECLARE_NAPI_PROPERTY("InterruptActionType", CreateInterruptActionTypeObject(env)),
+        DECLARE_NAPI_PROPERTY("InterruptHint", CreateInterruptHintObject(env)),
+        DECLARE_NAPI_PROPERTY("InterruptType", CreateInterruptTypeObject(env))
     };
 
     status = napi_define_class(env, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -1934,6 +2002,35 @@ napi_value UndefinedNapiValue(const napi_env& env)
     return result;
 }
 
+napi_value JsObjectToInt(const napi_env& env, const napi_value& object, std::string fieldStr, int32_t& fieldRef)
+{
+    bool hasProperty = false;
+    NAPI_CALL(env, napi_has_named_property(env, object, fieldStr.c_str(), &hasProperty));
+    if (hasProperty) {
+        napi_value field;
+        napi_valuetype valueType;
+
+        napi_get_named_property(env, object, fieldStr.c_str(), &field);
+        NAPI_CALL(env, napi_typeof(env, field, &valueType));
+        NAPI_ASSERT(env, valueType == napi_number, "Wrong argument type. Number expected.");
+        napi_get_value_int32(env, field, &fieldRef);
+    } else {
+        MEDIA_ERR_LOG("audio manager napi js to int no property: %{public}s", fieldStr.c_str());
+    }
+
+    return UndefinedNapiValue(env);
+}
+static void JsObjToAudioInterrupt(const napi_env& env, const napi_value& object, AudioInterrupt& audioInterrupt)
+{
+    int32_t propValue = -1;
+
+    //JsObjectToInt(env, object, "streamType", static_cast<int32_t>(audioInterrupt.streamType));
+    JsObjectToInt(env, object, "contentType", propValue);
+    audioInterrupt.streamUsage = static_cast<StreamUsage>(propValue);
+    JsObjectToInt(env, object, "streamUsage", propValue);
+    audioInterrupt.contentType = static_cast<ContentType>(propValue);
+}
+
 napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
 {
     napi_value undefinedResult = nullptr;
@@ -1956,6 +2053,10 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
     MEDIA_DEBUG_LOG("AudioManagerNapi::On callbackName: %{public}s", callbackName.c_str());
 
+    AudioManagerNapi *managerNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&managerNapi));
+    NAPI_ASSERT(env, status == napi_ok && managerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
+    NAPI_ASSERT(env, managerNapi->audioMngr_ != nullptr, "audio system manager instance is null.");
     napi_valuetype handler = napi_undefined;
     if (argCount == minArgCount) {
         napi_valuetype handler = napi_undefined;
@@ -1968,20 +2069,32 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
         napi_typeof(env, args[PARAM1], &paramArg1);
         if (!callbackName.compare(INTERRUPT_CALLBACK_NAME)) {
             if (paramArg1 != napi_object) {
-                MEDIA_ERR_LOG("AudioManagerNapi::On Type mismatch for param 2!!");
+                MEDIA_ERR_LOG("AudioManagerNapi::On Type mismatch for parameter 2!!");
                 return undefinedResult;
             }
             if (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function) {
-                MEDIA_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 2");
+                MEDIA_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 3!!");
                 return undefinedResult;
             }
         }
-    }
 
-    AudioManagerNapi *managerNapi = nullptr;
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&managerNapi));
-    NAPI_ASSERT(env, status == napi_ok && managerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
-    NAPI_ASSERT(env, managerNapi->audioMngr_ != nullptr, "audio system manager instance is null.");
+        AudioInterrupt audioInterrupt;
+        JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
+        if (managerNapi->interruptCallbackNapi_ == nullptr) {
+            managerNapi->interruptCallbackNapi_ = std::make_shared<AudioManagerInterruptCallbackNapi>(env);
+            int32_t ret = managerNapi->audioMngr_->SetAudioManagerInterruptCallback(
+                managerNapi->cachedClientId, audioInterrupt, managerNapi->interruptCallbackNapi_);
+            if (ret) {
+                MEDIA_ERR_LOG("AudioManagerNapi: SetAudioManagerInterruptCallback Failed");
+                return undefinedResult;
+            } else {
+                MEDIA_DEBUG_LOG("AudioManagerNapi: SetAudioManagerInterruptCallback Success");
+            }
+        }
+        std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
+        std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
+        cb->SaveCallbackReference(callbackName, args[PARAM2]);
+    }
 
     if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
         if (managerNapi->ringerModecallbackNapi_ == nullptr) {
@@ -2039,18 +2152,33 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
     if (!callbackName.compare(INTERRUPT_CALLBACK_NAME) && argCount > ARGS_ONE) {
         napi_valuetype paramArg1 = napi_undefined;
         if (napi_typeof(env, args[PARAM1], &paramArg1) != napi_ok || paramArg1 != napi_object) {
-            MEDIA_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 2");
+            MEDIA_ERR_LOG("AudioManagerNapi::Off type mismatch for parameter 2");
             return undefinedResult;
         }
         if (argCount == ARGS_THREE) {
             if (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function) {
-                MEDIA_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 3");
+                MEDIA_ERR_LOG("AudioManagerNapi::Off type mismatch for parameter 3");
                 return undefinedResult;
             }
         }
+        AudioManagerNapi *managerNapi = nullptr;
+        status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&managerNapi));
+        NAPI_ASSERT(env, status == napi_ok && managerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
+        NAPI_ASSERT(env, managerNapi->audioMngr_ != nullptr, "audio system manager instance is null.");
+
+        AudioInterrupt audioInterrupt;
+        JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
+        int32_t ret = managerNapi->audioMngr_->UnSetAudioManagerInterruptCallback(
+            managerNapi->cachedClientId, audioInterrupt);
+        if (ret) {
+            MEDIA_ERR_LOG("AudioManagerNapi: UnSetAudioManagerInterruptCallback Failed");
+            return undefinedResult;
+        } else {
+            MEDIA_DEBUG_LOG("AudioManagerNapi: UnSetAudioManagerInterruptCallback Success");
+        }
     } else if (argCount == ARGS_TWO) {
         if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
-            MEDIA_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 2");
+            MEDIA_ERR_LOG("AudioManagerNapi::Off type mismatch for parameter 2");
             return undefinedResult;
         }
     }

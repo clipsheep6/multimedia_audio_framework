@@ -197,6 +197,9 @@ public:
     int32_t UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const;
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
+    int32_t SetAudioManagerInterruptCallback(int32_t clientId, const AudioInterrupt &audioInterrupt,
+        const std::shared_ptr<AudioManagerCallback> &callback);
+    int32_t UnSetAudioManagerInterruptCallback(int32_t clientId, const AudioInterrupt &audioInterrupt);
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
