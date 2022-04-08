@@ -265,7 +265,7 @@ static void OpenSlTestConcurrent()
     PlayerStart(playItf2, bufferQueueItf2, wavFile2_);
 }
 
-static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
+static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
 {
     FILE *wavFile = (FILE *)pContext;
     if (!feof(wavFile)) {
@@ -278,7 +278,7 @@ static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pConte
     return;
 }
 
-static void PlayerStart (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile)
+static void PlayerStart(SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile)
 {
     MEDIA_INFO_LOG("PlayerStart");
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
@@ -292,7 +292,7 @@ static void PlayerStart (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf, F
     return;
 }
 
-static void PlayerStop (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf)
+static void PlayerStop(SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf)
 {
     MEDIA_INFO_LOG("PlayerStop");
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_STOPPED);
