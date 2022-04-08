@@ -43,6 +43,7 @@ ohos_shared_library("opensles") {
     "$opensles_dir/api/1.0.1",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/andiorenderer/include/",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/andiocapturer/include/",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/andiomanager/include/",
   ]
 
@@ -50,13 +51,16 @@ ohos_shared_library("opensles") {
 
   sources = [
     "$opensles_dir/api/1.0.1/OpenSLES_IID.c",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/adapter/audiocapturer_adapter.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/adapter/audioplayer_adapter.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/adapter/writecallback_adapter.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/adapter/readorwritecallback_adapter.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/engine_itf.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/object_itf.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/openharmony_buffer_queue_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/record_itf.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/play_itf.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/volume_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/audiocapturer_obj.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/audioplayer_obj.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/engine_obj.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/output_mix_obj.cpp",
@@ -69,6 +73,7 @@ ohos_shared_library("opensles") {
 
   deps = [
     "//foundation/multimedia/audio_standard:libsl",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_renderer",
   ]

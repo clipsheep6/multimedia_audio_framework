@@ -29,3 +29,7 @@ ClassTable OutputMixTab = {
     SL_OBJECTID_OUTPUTMIX,
     sizeof(CAudioPlayer),
 };
+ClassTable AudioRecorderTab = {
+    SL_OBJECTID_AUDIORECORDER,
+    sizeof(CAudioRecorder),
+};

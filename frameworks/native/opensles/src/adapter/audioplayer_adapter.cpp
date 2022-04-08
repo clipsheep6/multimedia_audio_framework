@@ -155,7 +155,7 @@ SLresult AudioPlayerAdapter::GetStateAdapter(SLuint32 id, SLOHBufferQueueState *
     BufferQueueState queueState = {0, 0};
     audioRenderer->GetBufQueueState(queueState);
     state->count = queueState.numBuffers;
-    state->playIndex = queueState.currentIndex;
+    state->Index = queueState.currentIndex;
     return SL_RESULT_SUCCESS;
 }
 
@@ -174,7 +174,7 @@ SLresult AudioPlayerAdapter::RegisterCallbackAdapter
 {
     IOHBufferQueue *thiz = (IOHBufferQueue *)itf;
     AudioRenderer *audioRenderer = GetAudioRenderById(thiz->mId);
-    callbackPtr_ = make_shared<WriteCallbackAdapter>(callback, itf, pContext);
+    callbackPtr_ = make_shared<ReadOrWriteCallbackAdapter>(callback, itf, pContext);
     audioRenderer->SetRendererWriteCallback(static_pointer_cast<AudioRendererWriteCallback>(callbackPtr_));
     callbackMap_.insert(make_pair(thiz->mId, callbackPtr_));
     return SL_RESULT_SUCCESS;
