@@ -32,14 +32,15 @@ void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
 SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSource *dataSource,
     SLDataSink *dataSink, AudioStreamType streamType)
 {
-    SLDataFormat_PCM *pcmFormat = (SLDataFormat_PCM *)dataSource->pFormat;
+    MEDIA_INFO_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter .");
+    SLDataFormat_PCM *pcmFormat = (SLDataFormat_PCM *)dataSink->pFormat;
     AudioCapturerParams capturerParams;
     ConvertPcmFormat(pcmFormat, &capturerParams);
     streamType = AudioStreamType::STREAM_MUSIC;
     unique_ptr<AudioCapturer> capturerHolder = AudioCapturer::Create(streamType);
     capturerHolder->SetParams(capturerParams);
     AudioCapturer *capturer = capturerHolder.release();
-    MEDIA_INFO_LOG("AudioPlayerAdapter::CreateAudioPlayer ID: %{public}lu", id);
+    MEDIA_INFO_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter ID: %{public}lu", id);
     capturer->SetCaptureMode(CAPTURE_MODE_CALLBACK);
     captureMap_.insert(make_pair(id, capturer));
     return SL_RESULT_SUCCESS;

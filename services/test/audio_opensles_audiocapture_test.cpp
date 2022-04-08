@@ -25,19 +25,15 @@ SLObjectItf pcmCapturerObject = nullptr;
 
 int main(int argc, char *argv[])
 {
+    MEDIA_INFO_LOG("opensl es capture test in");
     if (argc != 2) {
         return -1;
     }
     
-    char *outputPath = argv[1];
-    char path[PATH_MAX + 1] = {0x00};
-    if ((strlen(outputPath) > PATH_MAX) || (realpath(outputPath, path) == nullptr)) {
-        MEDIA_ERR_LOG("Invalid path.");
-        return -1;
-    }
-    wavFile_ = fopen(path, "wb+");
+    string filePath = argv[1];
+    wavFile_ = fopen(filePath.c_str(), "wb+");
     if (wavFile_ == nullptr) {
-        MEDIA_ERR_LOG("AudioCaptureTest: create record file failed.");
+        MEDIA_INFO_LOG("OpenSLES record: Unable to open file");
         return -1;
     }
     
@@ -91,8 +87,8 @@ static void OpenSLCaptureTest()
             &format_pcm                      //输出数据格式
     };
 
-    result = (*engineItf)->CreateAudioPlayer(
-        engineItf, &pcmCapturerObject, &audioSource, &audioSink, 3, nullptr, nullptr);
+    result = (*engineItf)->CreateAudioRecorder(engineItf, &pcmCapturerObject,
+        &audioSource, &audioSink, 3, nullptr, nullptr);
     (*pcmCapturerObject)->Realize(pcmCapturerObject, SL_BOOLEAN_FALSE);
     
     (*pcmCapturerObject)->GetInterface(pcmCapturerObject, SL_IID_RECORD, &recordItf);
