@@ -53,10 +53,11 @@ int AudioVolumeKeyEventCallbackStub::OnRemoteRequest(
 
 void AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
 {
-    MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent");
     std::shared_ptr<VolumeKeyEventCallback> cb = callback_.lock();
     if (cb != nullptr) {
-        MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NOT NULL");
+        MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent volume[%{public}d] UI[%{public}s]",
+                        volumeLevel,
+                        (isUpdateUi ? "true" : "false"));
         cb->OnVolumeKeyEvent(streamType, volumeLevel, isUpdateUi);
     } else {
         MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NULL");
