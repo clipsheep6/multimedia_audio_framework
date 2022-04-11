@@ -105,8 +105,8 @@ static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
         SLuint8 *buffer = nullptr;
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
-        (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         fwrite(buffer, 1, pSize, wavFile);
+        (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
     }
     return;
 }
@@ -119,8 +119,8 @@ static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueIt
         SLuint8* buffer = nullptr;
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
-        (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
         fwrite(buffer, 1, pSize, wavFile);
+        (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
     }
     return;
 }
