@@ -63,7 +63,7 @@ class AudioCapturerCallback {
 public:
     virtual ~AudioCapturerCallback() = default;
     /**
-    * Called when renderer state is updated.
+    * Called when capturer state is updated.
      *
      * @param state Indicates updated state of the capturer.
      * For details, refer enum CapturerState.
@@ -93,6 +93,17 @@ public:
      * @param frameCount requested frame frame count for callback.
      */
     virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
+};
+
+class AudioCapturerReadCallback {
+public:
+    virtual ~AudioCapturerReadCallback() = default;
+
+    /**
+     * Called when recorded data is ready to be read.
+     *
+     */
+    virtual void OnReadData() = 0;
 };
 
 /**
@@ -314,6 +325,72 @@ public:
      * @return vector with capturer supported SupportedSamplingRates.
      */
     static std::vector<AudioSamplingRate> GetSupportedSamplingRates();
+
+    /**
+     * @brief Sets the capture mode. By default the mode is CAPTURE_MODE_NORMAL.
+     * This API is needs to be used only if CAPTURE_MODE_CALLBACK is required.
+     *
+     * * @param captureMode The mode of capture.
+     * @return  Returns {@link SUCCESS} if capture mode is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetCaptureMode(AudioCaptureMode captureMode) const = 0;
+
+    /**
+     * @brief Obtains the capture mode.
+     *
+     * @return  Returns current capture mode.
+     */
+    virtual AudioCaptureMode GetCaptureMode() const = 0;
+
+    /**
+     * @brief Registers the capturer read callback listener.
+     * This API should only be used if CAPTURE_MODE_CALLBACK is needed.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) = 0;
+
+    /**
+     * @brief Gets the BufferDesc to read the data.
+     * This API should only be used if CAPTURE_MODE_CALLBACK is needed.
+     *
+     * @param bufDesc Indicates the buffer descriptor from which data will be read.
+     * refer BufferQueueState in audio_info.h.
+     * @return Returns {@link SUCCESS} if bufDesc is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
+
+    /**
+     * @brief Enqueues used buffer to the bufferQueue for recording new data.
+     * This API should only be used if CAPTURE_MODE_CALLBACK is needed.
+     *
+     * @return Returns {@link SUCCESS} if bufDesc is successfully enqueued; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
+
+    /**
+     * @brief Clears the bufferQueue.
+     * This API should only be used if CAPTURE_MODE_CALLBACK is needed.
+     *
+     * @return Returns {@link SUCCESS} if successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t Clear() const = 0;
+
+    /**
+     * @brief Obtains the current state of bufferQueue.
+     * This API should only be used if CAPTURE_MODE_CALLBACK is needed.
+     *
+     * @param bufDesc Indicates the bufState reference in which state will be obtained.
+     * refer BufferQueueState in audio_info.h.
+     * @return Returns {@link SUCCESS} if bufState is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t GetBufQueueState(BufferQueueState &bufState) const = 0;
 
     virtual ~AudioCapturer();
 };
