@@ -92,9 +92,6 @@ SLresult AudioCapturerAdapter::GetCaptureStateAdapter(SLuint32 id, SLuint32 *sta
     return SL_RESULT_SUCCESS;
 }
 
-// SLresult SetVolumeLevelAdapter(SLuint32 id, SLmillibel level);
-// SLresult GetVolumeLevelAdapter(SLuint32 id, SLmillibel *level);
-// SLresult GetMaxVolumeLevelAdapter(SLuint32 id, SLmillibel *level);
 SLresult AudioCapturerAdapter::EnqueueAdapter(SLuint32 id, const void *buffer, SLuint32 size)
 {
     AudioCapturer *audioCapturer = GetAudioCapturerById(id);

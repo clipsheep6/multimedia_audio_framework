@@ -24,7 +24,7 @@ SLresult Enqueue(SLOHBufferQueueItf self, const void *buffer, SLuint32 size)
     }
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
     if (thiz->mIid == SL_IID_PLAY) {
-    AudioPlayerAdapter::GetInstance()->EnqueueAdapter(thiz->mId, buffer, size);
+        AudioPlayerAdapter::GetInstance()->EnqueueAdapter(thiz->mId, buffer, size);
     } else if (thiz->mIid == SL_IID_RECORD) {
         AudioCapturerAdapter::GetInstance()->EnqueueAdapter(thiz->mId, buffer, size);
     }
@@ -39,7 +39,7 @@ SLresult Clear(SLOHBufferQueueItf self)
     }
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
     if (thiz->mIid == SL_IID_PLAY) {
-    AudioPlayerAdapter::GetInstance()->ClearAdapter(thiz->mId);
+        AudioPlayerAdapter::GetInstance()->ClearAdapter(thiz->mId);
     } else if (thiz->mIid == SL_IID_RECORD) {
         AudioCapturerAdapter::GetInstance()->ClearAdapter(thiz->mId);
     }
@@ -54,7 +54,7 @@ SLresult GetState(SLOHBufferQueueItf self, SLOHBufferQueueState *state)
     }
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
     if (thiz->mIid == SL_IID_PLAY) {
-    AudioPlayerAdapter::GetInstance()->GetStateAdapter(thiz->mId, state);
+        AudioPlayerAdapter::GetInstance()->GetStateAdapter(thiz->mId, state);
     } else if (thiz->mIid == SL_IID_RECORD) {
         AudioCapturerAdapter::GetInstance()->GetStateAdapter(thiz->mId, state);
     }
@@ -69,7 +69,7 @@ SLresult GetBuffer(SLOHBufferQueueItf self, SLuint8 **buffer, SLuint32 &size)
     }
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
     if (thiz->mIid == SL_IID_PLAY) {
-    AudioPlayerAdapter::GetInstance()->GetBufferAdapter(thiz->mId, buffer, size);
+        AudioPlayerAdapter::GetInstance()->GetBufferAdapter(thiz->mId, buffer, size);
     } else if (thiz->mIid == SL_IID_RECORD) {
         AudioCapturerAdapter::GetInstance()->GetBufferAdapter(thiz->mId, buffer, size);
     }    
@@ -84,7 +84,7 @@ SLresult RegisterCallback(SLOHBufferQueueItf self,
     }
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
     if (thiz->mIid == SL_IID_PLAY) {
-    AudioPlayerAdapter::GetInstance()->RegisterCallbackAdapter(self, callback, pContext);
+        AudioPlayerAdapter::GetInstance()->RegisterCallbackAdapter(self, callback, pContext);
     } else if (thiz->mIid == SL_IID_RECORD) {
         AudioCapturerAdapter::GetInstance()->RegisterCallbackAdapter(self, callback, pContext);
     } 
@@ -106,7 +106,7 @@ void IOHBufferQueueInit(void *self, const SLInterfaceID iid, SLuint32 id)
     thiz->mIid = iid;
     thiz->mId = id;
     if (thiz->mIid == SL_IID_PLAY) {
-    thiz->mState = SL_PLAYSTATE_STOPPED;
+        thiz->mState = SL_PLAYSTATE_STOPPED;
     } else if (thiz->mIid == SL_IID_RECORD) {
         thiz->mState = SL_RECORDSTATE_STOPPED;
     }

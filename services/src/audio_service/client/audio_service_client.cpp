@@ -468,6 +468,7 @@ AudioServiceClient::AudioServiceClient()
     renderMode_ = RENDER_MODE_NORMAL;
 
     captureMode_ = CAPTURE_MODE_NORMAL;
+
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
 
     mFrameSize = 0;
@@ -1391,6 +1392,7 @@ size_t AudioServiceClient::ReadStreamInCb(const StreamBuffer &stream, int32_t &p
     pError = error;
     return (stream.bufferLen - length);  // TODO:
 }
+
 size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pError)
 {
     lock_guard<mutex> lock(dataMutex);

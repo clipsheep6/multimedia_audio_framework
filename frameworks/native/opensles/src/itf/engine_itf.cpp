@@ -55,6 +55,7 @@ static SLresult CreateAudioPlayer(
     AudioPlayerAdapter::GetInstance()->
         CreateAudioPlayerAdapter(audioPlayerId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);
     audioPlayerId++;
+
     return SL_RESULT_SUCCESS;
 }
  
@@ -75,6 +76,7 @@ static SLresult CreateAudioRecorder(
     AudioCapturerAdapter::GetInstance()->
         CreateAudioCapturerAdapter(audioRecorderId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);  // TODO:
     audioRecorderId++;
+
     return SL_RESULT_SUCCESS;
 }
 

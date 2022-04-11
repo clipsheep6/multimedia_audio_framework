@@ -96,9 +96,16 @@ public:
      */
     virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
 };
+
 class AudioCapturerReadCallback {
 public:
     virtual ~AudioCapturerReadCallback() = default;
+
+    /**
+     * Called when buffer to be enqueued.
+     *
+     * @param length Indicates requested buffer length.
+     */
     virtual void OnReadData(size_t length) = 0;
 };
 
@@ -388,6 +395,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t GetBufQueueState(BufferQueueState &bufState) const = 0;
+
     virtual ~AudioCapturer();
 };
 }  // namespace AudioStandard

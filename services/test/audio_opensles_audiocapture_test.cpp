@@ -42,7 +42,6 @@ int main(int argc, char *argv[])
     CaptureStop(recordItf, bufferQueueItf);
     (*pcmCapturerObject)->Destroy(pcmCapturerObject);
     fclose(wavFile_);
-
 }
 
 static void OpenSLCaptureTest()
@@ -55,24 +54,23 @@ static void OpenSLCaptureTest()
     result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
     result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineItf);
 
-    //设置IO设备（麦克风）
     SLDataLocator_IODevice io_device = {
             SL_DATALOCATOR_IODEVICE,        
             SL_IODEVICE_AUDIOINPUT,         
             SL_DEFAULTDEVICEID_AUDIOINPUT,   
             NULL                             
     };
+
     SLDataSource audioSource = {
             &io_device,                      
             NULL                            
     };
 
-    //设置输出buffer队列
     SLDataLocator_BufferQueue buffer_queue = {
             SL_DATALOCATOR_BUFFERQUEUE,    
             3                              
     };
-    //设置输出数据的格式
+
     SLDataFormat_PCM format_pcm = {
             SL_DATAFORMAT_PCM,                             
             OHOS::AudioStandard::AudioChannel::MONO,                            
@@ -83,8 +81,8 @@ static void OpenSLCaptureTest()
             0
     };
     SLDataSink audioSink = {
-            &buffer_queue,                   //SLDataFormat_PCM配置输出
-            &format_pcm                      //输出数据格式
+            &buffer_queue,
+            &format_pcm
     };
 
     result = (*engineItf)->CreateAudioRecorder(engineItf, &pcmCapturerObject,

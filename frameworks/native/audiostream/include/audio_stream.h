@@ -55,7 +55,6 @@ public:
     int32_t SetCaptureMode(AudioCaptureMode captureMode);
     AudioCaptureMode GetCaptureMode();
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback);
-
     int32_t GetBufferDesc(BufferDesc &bufDesc);
     int32_t Enqueue(const BufferDesc &bufDesc);
     int32_t Clear();

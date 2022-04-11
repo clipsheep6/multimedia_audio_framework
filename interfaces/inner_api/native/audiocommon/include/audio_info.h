@@ -501,6 +501,7 @@ enum AudioCaptureMode {
     CAPTURE_MODE_NORMAL,
     CAPTURE_MODE_CALLBACK
 };
+
 typedef uint32_t AudioIOHandle;
 
 static inline bool FLOAT_COMPARE_EQ(const float& x, const float& y)

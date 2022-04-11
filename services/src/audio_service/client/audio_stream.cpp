@@ -99,9 +99,11 @@ AudioStream::~AudioStream()
 {
     isReadyToWrite_ = false;
     isReadyToRead_ = false;
+
     if (writeThread_ && writeThread_->joinable()) {
         writeThread_->join();
     }
+
     if (readThread_ && readThread_->joinable()) {
         readThread_->join();
     }
@@ -602,6 +604,7 @@ AudioRenderMode AudioStream::GetRenderMode()
 {
     return GetAudioRenderMode();
 }
+
 int32_t AudioStream::SetCaptureMode(AudioCaptureMode captureMode)
 {
     int32_t ret = SetAudioCaptureMode(captureMode);
@@ -664,6 +667,7 @@ int32_t AudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapturer
         MEDIA_ERR_LOG("AudioStream::SetCapturerReadCallback: failed.");
         return ERR_INVALID_PARAM;
     }
+
     return SUCCESS;
 }
 

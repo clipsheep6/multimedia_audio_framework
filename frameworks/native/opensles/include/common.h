@@ -55,6 +55,7 @@ struct IRecord {
     SLuint32 mState;
     SLuint8 mId;
 };
+
 struct IOHBufferQueue {
     const struct SLOHBufferQueueItf_ *mItf;
     SLuint32 mState;
@@ -88,6 +89,7 @@ struct CAudioRecorder {
     IOHBufferQueue mBufferQueue;
     SLuint32 mId;
 };
+
 struct COutputMix {
     IObject mObject;
 };
@@ -102,6 +104,7 @@ extern ClassTable EngineTab;
 extern ClassTable AudioPlayerTab;
 
 extern ClassTable AudioRecorderTab;
+
 extern ClassTable OutputMixTab;
 
 ClassTable *ObjectIdToClass(SLuint32 objectId);
@@ -119,10 +122,12 @@ void IPlayInit(void *self, SLuint32 id);
 void IVolumeInit(void *self, SLuint32 id);
 
 void IRecordInit(void *self, SLuint32 id);
+
 SLresult EngineDestory(void* self);
 
 SLresult AudioPlayerDestroy(void* self);
 
 SLresult OutputMixDestroy(void* self);
+
 SLresult AudioRecorderDestroy(void *self);
 #endif

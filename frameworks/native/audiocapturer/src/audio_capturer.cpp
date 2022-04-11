@@ -210,6 +210,7 @@ bool AudioCapturerPrivate::Pause() const
 {
     return audioStream_->PauseAudioStream();
 }
+
 bool AudioCapturerPrivate::Stop() const
 {
     return audioStream_->StopAudioStream();
