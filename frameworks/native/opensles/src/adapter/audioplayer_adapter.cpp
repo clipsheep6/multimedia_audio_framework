@@ -42,7 +42,6 @@ void AudioPlayerAdapter::EraseAudioRenderById(SLuint32 id)
     MEDIA_INFO_LOG("AudioPlayerAdapter::EraseAudioRenderById: %{public}lu", id);
     renderMap_.erase(id);
     callbackMap_.erase(id);
-    return;
 }
 
 SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "audio_policy_server.h"
+
 #include <csignal>
 #include <memory>
 #include <vector>
@@ -34,7 +36,6 @@
 #include "system_ability_definition.h"
 
 #include "audio_service_dump.h"
-#include "audio_policy_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -71,13 +72,11 @@ void AudioPolicyServer::OnStart()
 
     mPolicyService.Init();
     RegisterAudioServerDeathRecipient();
-    return;
 }
 
 void AudioPolicyServer::OnStop()
 {
     mPolicyService.Deinit();
-    return;
 }
 
 void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -206,7 +205,6 @@ void AudioPolicyServer::ConnectServiceAdapter()
 {
     if (!mPolicyService.ConnectServiceAdapter()) {
         MEDIA_ERR_LOG("AudioPolicyServer::ConnectServiceAdapter Error in connecting to audio service adapter");
-        return;
     }
 }
 

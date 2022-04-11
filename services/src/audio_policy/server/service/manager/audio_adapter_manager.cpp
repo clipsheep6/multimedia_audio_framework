@@ -12,14 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_adapter_manager.h"
 
 #include <memory>
 #include <unistd.h>
 
 #include "audio_errors.h"
 #include "media_log.h"
-
-#include "audio_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,6 +30,10 @@ bool AudioAdapterManager::Init()
 bool AudioAdapterManager::ConnectServiceAdapter()
 {
     std::unique_ptr<AudioAdapterManager> audioAdapterManager(this);
+    if (audioAdapterManager == nullptr) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] Error in audioAdapterManager is nullptr");
+        return false;
+    }
     std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(audioAdapterManager);
     mAudioServiceAdapter = AudioServiceAdapter::CreateAudioAdapter(std::move(policyCallbackImpl));
     if (!mAudioServiceAdapter) {
@@ -47,7 +50,6 @@ bool AudioAdapterManager::ConnectServiceAdapter()
     return true;
 }
 
-
 void AudioAdapterManager::InitKVStore()
 {
     bool isFirstBoot = false;
@@ -63,7 +65,7 @@ void AudioAdapterManager::Deinit(void)
         return;
     }
 
-    return  mAudioServiceAdapter->Disconnect();
+    return mAudioServiceAdapter->Disconnect();
 }
 
 int32_t AudioAdapterManager::SetAudioSessionCallback(AudioSessionCallback *callback)
@@ -520,8 +522,6 @@ void AudioAdapterManager::WriteVolumeToKvStore(AudioStreamType streamType, float
         MEDIA_ERR_LOG("[AudioAdapterManager] volume %{public}f for %{public}s failed to update in kvStore!", volume,
             GetStreamNameByStreamType(streamType).c_str());
     }
-
-    return;
 }
 
 void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
@@ -538,8 +538,6 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
     } else {
         MEDIA_ERR_LOG("[AudioAdapterManager] Writing RingerMode:%d to kvStore failed!", ringerMode);
     }
-
-    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS

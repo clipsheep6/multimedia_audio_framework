@@ -309,7 +309,5 @@ int main(int argc, char *argv[])
         audioInterruptTest->SaveStreamInfo(contentType, streamUsage);
     }
 
-    int32_t ret = audioInterruptTest->TestPlayback();
-
-    return ret;
+    return audioInterruptTest->TestPlayback();
 }

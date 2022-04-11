@@ -353,7 +353,6 @@ int main(int argc, char *argv[])
     MEDIA_INFO_LOG("file path argv[1]=%{public}s", argv[1]);
 
     AudioRendererTest testObj;
-    bool ret = testObj.TestPlayback(argc, argv);
 
-    return ret;
+    return testObj.TestPlayback(argc, argv);
 }

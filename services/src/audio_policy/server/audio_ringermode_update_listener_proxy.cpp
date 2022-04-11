@@ -50,7 +50,7 @@ void AudioRingerModeUpdateListenerProxy::OnRingerModeUpdated(const AudioRingerMo
 AudioRingerModeListenerCallback::AudioRingerModeListenerCallback(
     const sptr<IStandardRingerModeUpdateListener> &listener) : listener_(listener)
 {
-        MEDIA_DEBUG_LOG("AudioRingerModeListenerCallback: Instance create");
+    MEDIA_DEBUG_LOG("AudioRingerModeListenerCallback: Instance create");
 }
 
 AudioRingerModeListenerCallback::~AudioRingerModeListenerCallback()

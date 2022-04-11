@@ -36,13 +36,21 @@ SLresult SLAPIENTRY slCreateEngine(SLObjectItf *pEngine, SLuint32 numOptions,
 ClassTable *ObjectIdToClass(SLuint32 objectId)
 {
     ClassTable *classTable = nullptr;
-    if (objectId == SL_OBJECTID_ENGINE) {
-        classTable = (ClassTable *) &EngineTab;
-    } else if (objectId == SL_OBJECTID_AUDIOPLAYER) {
-        classTable = (ClassTable *) &AudioPlayerTab;
-    } else if (objectId == SL_OBJECTID_OUTPUTMIX) {
-        classTable = (ClassTable *) &OutputMixTab;
+
+    switch (objectId) {
+        case SL_OBJECTID_ENGINE:
+            classTable = (ClassTable *) &EngineTab;
+            break;
+        case SL_OBJECTID_AUDIOPLAYER:
+            classTable = (ClassTable *) &AudioPlayerTab;
+            break;
+        case SL_OBJECTID_OUTPUTMIX:
+            classTable = (ClassTable *) &OutputMixTab;
+            break;
+        default:
+            break;
     }
+
     return classTable;
 }
 

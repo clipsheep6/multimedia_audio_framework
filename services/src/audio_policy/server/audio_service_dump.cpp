@@ -199,8 +199,7 @@ const std::string AudioServiceDump::GetStreamName(AudioStreamType audioType)
             name = "UNKNOWN";
     }
 
-    const string streamName = name;
-    return streamName;
+    return name;
 }
 
 const std::string AudioServiceDump::GetStreamUsgaeName(StreamUsage streamUsage)
@@ -223,8 +222,7 @@ const std::string AudioServiceDump::GetStreamUsgaeName(StreamUsage streamUsage)
             usage = "STREAM_USAGE_UNKNOWN";
     }
 
-    const string streamUsageName = usage;
-    return streamUsageName;
+    return usage;
 }
 
 const std::string AudioServiceDump::GetContentTypeName(ContentType contentType)
@@ -250,8 +248,7 @@ const std::string AudioServiceDump::GetContentTypeName(ContentType contentType)
             content = "UNKNOWN";
     }
 
-    const string contentTypeName = content;
-    return contentTypeName;
+    return content;
 }
 
 const std::string AudioServiceDump::GetDeviceTypeName(DeviceType deviceType)
@@ -283,8 +280,7 @@ const std::string AudioServiceDump::GetDeviceTypeName(DeviceType deviceType)
             device = "UNKNOWN";
     }
 
-    const string deviceTypeName = device;
-    return deviceTypeName;
+    return device;
 }
 
 void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
@@ -588,7 +584,7 @@ void AudioServiceDump::PASinkInputInfoCallback(pa_context *c, const pa_sink_inpu
     sinkInputInfo.sampleSpec = i->sample_spec;
     sinkInputInfo.corked = i->corked;
 
-    if (i->proplist !=nullptr) {
+    if (i->proplist != nullptr) {
         const char *applicationname = pa_proplist_gets(i->proplist, "application.name");
         const char *processid = pa_proplist_gets(i->proplist, "application.process.id");
         const char *user = pa_proplist_gets(i->proplist, "application.process.user");

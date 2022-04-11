@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_system_manager.h"
 
 #include "audio_errors.h"
 #include "audio_manager_proxy.h"
@@ -22,8 +23,6 @@
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
-
-#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,7 +43,7 @@ AudioSystemManager::~AudioSystemManager()
     }
 
     if (volumeChangeClientPid_ != -1) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::~AudioSystemManager UnregisterVolumeKeyEventCallback");
+        MEDIA_ERR_LOG("AudioSystemManager::~AudioSystemManager UnregisterVolumeKeyEventCallback");
         (void)UnregisterVolumeKeyEventCallback(volumeChangeClientPid_);
     }
 }
@@ -70,7 +69,7 @@ void AudioSystemManager::init()
     }
     g_sProxy = iface_cast<IStandardAudioService>(object);
     if (g_sProxy == nullptr) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::init g_sProxy is NULL.");
+        MEDIA_ERR_LOG("AudioSystemManager::init g_sProxy is NULL.");
     } else {
         MEDIA_DEBUG_LOG("AudioSystemManager::init g_sProxy is assigned.");
     }
@@ -335,7 +334,7 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
     MEDIA_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback");
     int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(clientPid);
     if (!ret) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback success");
+        MEDIA_ERR_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback success");
         volumeChangeClientPid_ = -1;
     }
 

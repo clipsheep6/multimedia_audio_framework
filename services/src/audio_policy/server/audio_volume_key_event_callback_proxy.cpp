@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "media_log.h"
 #include "audio_volume_key_event_callback_proxy.h"
+#include "media_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

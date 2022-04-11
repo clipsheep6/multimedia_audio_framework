@@ -386,8 +386,8 @@ void RingtonePlayerCallback::OnInfo(PlayerOnInfoType type, int32_t extra, const 
     if (type != INFO_TYPE_STATE_CHANGE) {
         return;
     }
+    
     state_ = static_cast<PlayerStates>(extra);
-
     switch (state_) {
         case PLAYER_STATE_ERROR:
             ringtoneState_ = STATE_INVALID;
@@ -413,6 +413,7 @@ void RingtonePlayerCallback::OnInfo(PlayerOnInfoType type, int32_t extra, const 
         default:
             break;
     }
+
     ringtonePlayer_.SetPlayerState(ringtoneState_);
 }
 } // namesapce AudioStandard

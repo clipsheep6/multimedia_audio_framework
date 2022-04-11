@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_capturer_source.h"
 
 #include <cstring>
 #include <dlfcn.h>
@@ -19,7 +20,6 @@
 
 #include "audio_errors.h"
 #include "media_log.h"
-#include "audio_capturer_source.h"
 
 using namespace std;
 

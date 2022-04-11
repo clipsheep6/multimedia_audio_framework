@@ -66,7 +66,7 @@ public:
      * Called when an interrupt is received.
      *
      * @param interruptEvent Indicates the InterruptEvent information needed by client.
-     * For details, refer InterruptEvent struct in audio_info.h
+     * For details, refer InterruptEvent struct in audio_info.h.
      */
     virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
 
@@ -121,20 +121,20 @@ public:
 class AudioRenderer {
 public:
     /**
-     * @brief creater renderer instance.
+     * @brief Creates an AudioRenderer instance.
      *
      * @param audioStreamType The audio streamtype to be created.
      * refer AudioStreamType in audio_info.h.
-     * @return Returns unique pointer to the AudioRenderer object
+     * @return Returns unique pointer to the AudioRenderer object.
     */
     static std::unique_ptr<AudioRenderer> Create(AudioStreamType audioStreamType);
 
     /**
-     * @brief creater renderer instance.
+     * @brief Creates an AudioRenderer instance.
      *
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
      * refer AudioRendererOptions in audio_info.h.
-     * @return Returns unique pointer to the AudioRenderer object
+     * @return Returns unique pointer to the AudioRenderer object.
     */
     static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &rendererOptions);
 
@@ -245,14 +245,14 @@ public:
     virtual int32_t GetLatency(uint64_t &latency) const = 0;
 
     /**
-     * @brief drain renderer buffer.
+     * @brief Drains the renderer buffer.
      *
      * @return Returns <b>true</b> if the buffer is successfully drained; returns <b>false</b> otherwise.
      */
     virtual bool Drain() const = 0;
 
     /**
-     * @brief flush renderer stream.
+     * @brief Flushes renderer stream.
      *
      * @return Returns <b>true</b> if the object is successfully flushed; returns <b>false</b> otherwise.
      */
@@ -292,32 +292,32 @@ public:
     /**
      * @brief Obtains the number of frames required in the current condition, in bytes per sample.
      *
-     * @param frameCount Indicates the reference variable in which framecount will be written
+     * @param frameCount Indicates the reference variable in which framecount will be written.
      * @return Returns {@link SUCCESS} if frameCount is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t GetFrameCount(uint32_t &frameCount) const = 0;
 
     /**
-     * @brief Set audio renderer descriptors
+     * @brief Sets audio renderer descriptors.
      *
-     * @param audioRendererDesc Audio renderer descriptor
-     * @return Returns {@link SUCCESS} if attribute is successfully set; returns an error code
+     * @param audioRendererDesc Audio renderer descriptor.
+     * @return Returns {@link SUCCESS} if renderer descriptor is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) const = 0;
 
     /**
-     * @brief Update the stream type
+     * @brief Updates the stream type.
      *
-     * @param audioStreamType Audio stream type
+     * @param audioStreamType Audio stream type.
      * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t SetStreamType(AudioStreamType audioStreamType) const = 0;
 
     /**
-     * @brief Set the track volume
+     * @brief Sets the track volume.
      *
      * @param volume The volume to be set for the current track.
      * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
@@ -326,14 +326,14 @@ public:
     virtual int32_t SetVolume(float volume) const = 0;
 
     /**
-     * @brief Obtains the current track volume
+     * @brief Obtains the current track volume.
      *
-     * @return Returns current track volume
+     * @return Returns current track volume.
      */
     virtual float GetVolume() const = 0;
 
     /**
-     * @brief Set the render rate
+     * @brief Sets the render rate
      *
      * @param renderRate The rate at which the stream needs to be rendered.
      * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
@@ -342,14 +342,14 @@ public:
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) const = 0;
 
     /**
-     * @brief Obtains the current render rate
+     * @brief Obtains the current render rate.
      *
-     * @return Returns current render rate
+     * @return Returns current render rate.
      */
     virtual AudioRendererRate GetRenderRate() const = 0;
 
     /**
-     * @brief Registers the renderer position callback listener
+     * @brief Registers the renderer position callback listener.
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -358,13 +358,13 @@ public:
         const std::shared_ptr<RendererPositionCallback> &callback) = 0;
 
     /**
-     * @brief Unregisters the renderer position callback listener
+     * @brief Unregisters the renderer position callback listener.
      *
      */
     virtual void UnsetRendererPositionCallback() = 0;
 
     /**
-     * @brief Registers the renderer period position callback listener
+     * @brief Registers the renderer period position callback listener.
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -373,16 +373,16 @@ public:
         const std::shared_ptr<RendererPeriodPositionCallback> &callback) = 0;
 
     /**
-     * @brief Unregisters the renderer period position callback listener
+     * @brief Unregisters the renderer period position callback listener.
      *
      */
     virtual void UnsetRendererPeriodPositionCallback() = 0;
 
     /**
-     * @brief set the buffer duration for renderer, minimum buffer duration is 5msec
-     *         maximum is 20msec
+     * @brief Sets the buffer duration for renderer. The minimum value is 5 ms,
+     *         and the maximum value is 20 ms.
      *
-     * @param bufferDuration  Indicates a buffer duration to be set for renderer
+     * @param bufferDuration Indicates a buffer duration to be set for renderer.
      * @return Returns {@link SUCCESS} if bufferDuration is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
@@ -421,7 +421,7 @@ public:
      * This API is needs to be used only if RENDER_MODE_CALLBACK is required.
      *
      * * @param renderMode The mode of render.
-     * @return  Returns {@link SUCCESS} if render mode is successfully set; returns an error code
+     * @return Returns {@link SUCCESS} if render mode is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t SetRenderMode(AudioRenderMode renderMode) const = 0;
@@ -429,7 +429,7 @@ public:
     /**
      * @brief Obtains the render mode.
      *
-     * @return  Returns current render mode.
+     * @return Returns current render mode.
      */
     virtual AudioRenderMode GetRenderMode() const = 0;
 
