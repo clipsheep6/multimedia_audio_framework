@@ -368,5 +368,20 @@ int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
     MEDIA_DEBUG_LOG("AudioSystemManager DeactivateAudioInterrupt stub implementation");
     return SUCCESS;
 }
+
+int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const int32_t clientId,
+        const AudioInterrupt &audioInterrupt, const std::shared_ptr<AudioManagerCallback> &callback)
+{
+    MEDIA_DEBUG_LOG("AudioSystemManager ActivateAudioInterrupt stub implementation");
+    return SUCCESS;
+    //return AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(audioInterrupt, callback);
+}
+
+int32_t AudioSystemManager::UnSetAudioManagerInterruptCallback(const int32_t clientId, 
+        const AudioInterrupt &audioInterrupt)
+{
+    MEDIA_DEBUG_LOG("AudioSystemManager UnSetAudioManagerInterruptCallback stub implementation");
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
