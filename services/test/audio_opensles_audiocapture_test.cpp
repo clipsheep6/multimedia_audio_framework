@@ -49,40 +49,40 @@ static void OpenSLCaptureTest()
     MEDIA_ERR_LOG("OpenSLCaptureTest");
     engineObject = nullptr;
     SLEngineItf engineItf = nullptr;
-    SLresult result;
-    result = slCreateEngine(&engineObject, 0, nullptr, 0, nullptr, nullptr);
+
+    SLresult result = slCreateEngine(&engineObject, 0, nullptr, 0, nullptr, nullptr);
     result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
     result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineItf);
 
     SLDataLocator_IODevice io_device = {
-            SL_DATALOCATOR_IODEVICE,        
-            SL_IODEVICE_AUDIOINPUT,         
-            SL_DEFAULTDEVICEID_AUDIOINPUT,   
-            NULL                             
+        SL_DATALOCATOR_IODEVICE,
+        SL_IODEVICE_AUDIOINPUT,
+        SL_DEFAULTDEVICEID_AUDIOINPUT,
+        NULL
     };
 
     SLDataSource audioSource = {
-            &io_device,                      
-            NULL                            
+        &io_device,
+        NULL
     };
 
     SLDataLocator_BufferQueue buffer_queue = {
-            SL_DATALOCATOR_BUFFERQUEUE,    
-            3                              
+        SL_DATALOCATOR_BUFFERQUEUE,
+        3
     };
 
     SLDataFormat_PCM format_pcm = {
-            SL_DATAFORMAT_PCM,                             
-            OHOS::AudioStandard::AudioChannel::MONO,                            
-            OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_44100,          
-            OHOS::AudioStandard::AudioSampleFormat::SAMPLE_S16LE,               
-            0,                 
-            0,
-            0
+        SL_DATAFORMAT_PCM,
+        OHOS::AudioStandard::AudioChannel::MONO,
+        OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_44100,
+        OHOS::AudioStandard::AudioSampleFormat::SAMPLE_S16LE,
+        0,
+        0,
+        0
     };
     SLDataSink audioSink = {
-            &buffer_queue,
-            &format_pcm
+        &buffer_queue,
+        &format_pcm
     };
 
     result = (*engineItf)->CreateAudioRecorder(engineItf, &pcmCapturerObject,

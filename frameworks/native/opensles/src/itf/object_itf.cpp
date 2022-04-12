@@ -63,10 +63,10 @@ static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *in
         IObject *iObject = (IObject *)self;
         if (iObject->mClass->mObjectId == SL_OBJECTID_AUDIOPLAYER) {
             CAudioPlayer *cAudioPlayer = (CAudioPlayer *)iObject;
-        *(void **)interface = (void *)&(cAudioPlayer->mBufferQueue.mItf);
+            *(void **)interface = (void *)&(cAudioPlayer->mBufferQueue.mItf);
         } else if (iObject->mClass->mObjectId == SL_OBJECTID_AUDIORECORDER) {
             CAudioRecorder *cAudioRecorder = (CAudioRecorder *)iObject;
-            *(void **)interface = (void *)&(cAudioRecorder->mBufferQueue.mItf);    
+            *(void **)interface = (void *)&(cAudioRecorder->mBufferQueue.mItf);
         } else {
             return SL_RESULT_FEATURE_UNSUPPORTED;
         }

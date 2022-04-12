@@ -58,7 +58,7 @@ static SLresult CreateAudioPlayer(
 
     return SL_RESULT_SUCCESS;
 }
- 
+
 static SLresult CreateAudioRecorder(
     SLEngineItf self, SLObjectItf *pRecorder, SLDataSource *pAudioSrc, SLDataSink *pAudioSnk, SLuint32 numInterfaces,
     const SLInterfaceID *pInterfaceIds, const SLboolean *pInterfaceRequired)
