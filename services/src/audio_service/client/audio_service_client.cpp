@@ -1237,7 +1237,7 @@ int32_t AudioServiceClient::PaReadStream(const uint8_t *buffer, size_t &length)
             readableSize = length;
         }
 
-        readableSize = AlignToAudioFrameSize(readableSize, sampleSpec);  // TODO:
+        readableSize = AlignToAudioFrameSize(readableSize, sampleSpec);
         if (readableSize == 0) {
             MEDIA_ERR_LOG("Align to frame size failed");
             error = AUDIO_CLIENT_READ_STREAM_ERR;
@@ -1256,11 +1256,12 @@ int32_t AudioServiceClient::PaReadStream(const uint8_t *buffer, size_t &length)
         buffer = buffer + readableSize;
         length -= readableSize;
 
-       // HandleRenderPositionCallbacks(readableSize); //TODO:
+       // HandleRenderPositionCallbacks(readableSize);
     }
 
     return error;
 }
+
 void AudioServiceClient::HandleRenderPositionCallbacks(size_t bytesWritten)
 {
     mTotalBytesWritten += bytesWritten;
@@ -1390,7 +1391,7 @@ size_t AudioServiceClient::ReadStreamInCb(const StreamBuffer &stream, int32_t &p
     error = PaReadStream(buffer, length);
     pa_threaded_mainloop_unlock(mainLoop);
     pError = error;
-    return (stream.bufferLen - length);  // TODO:
+    return (stream.bufferLen - length);
 }
 
 size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pError)

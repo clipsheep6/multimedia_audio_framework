@@ -725,6 +725,7 @@ int32_t AudioStream::Enqueue(const BufferDesc &bufDesc)
         MEDIA_ERR_LOG("AudioStream::Enqueue: failed. bufDesc.buffer == nullptr.");
         return ERR_INVALID_PARAM;
     }
+
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         filledBufferQ_.emplace(bufDesc);
     }

@@ -252,6 +252,7 @@ public:
     int32_t ReadStream(StreamBuffer &stream, bool isBlocking);
 
     size_t ReadStreamInCb(const StreamBuffer &stream, int32_t &pError);
+
     /**
     * Release the resources allocated using CreateStream
     *

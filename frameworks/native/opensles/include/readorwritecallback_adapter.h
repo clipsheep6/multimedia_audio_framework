@@ -34,8 +34,8 @@ public:
 private:
     SlOHBufferQueueCallback callback_;
     SLOHBufferQueueItf itf_;
-    void *context_;    
+    void *context_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // AUDIO_RENDERER_SINK_H
+#endif // READORWRITECALLBACK_ADAPTER_H

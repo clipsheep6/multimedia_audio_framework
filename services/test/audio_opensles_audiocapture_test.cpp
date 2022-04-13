@@ -9,6 +9,8 @@
 
 using namespace std;
 
+#define PARAMETERS 2
+
 static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size);
 
 static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile);
@@ -26,7 +28,8 @@ SLObjectItf pcmCapturerObject = nullptr;
 int main(int argc, char *argv[])
 {
     MEDIA_INFO_LOG("opensl es capture test in");
-    if (argc != 2) {
+    if (argc != PARAMETERS) {
+        MEDIA_ERR_LOG("Incorrect number of parameters.");
         return -1;
     }
     
@@ -36,12 +39,13 @@ int main(int argc, char *argv[])
         MEDIA_INFO_LOG("OpenSLES record: Unable to open file");
         return -1;
     }
-    
+
     OpenSLCaptureTest();
     fflush(wavFile_);
     CaptureStop(recordItf, bufferQueueItf);
     (*pcmCapturerObject)->Destroy(pcmCapturerObject);
     fclose(wavFile_);
+    wavFile_ = nullptr;
 }
 
 static void OpenSLCaptureTest()

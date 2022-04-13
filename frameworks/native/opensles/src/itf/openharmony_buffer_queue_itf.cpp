@@ -72,12 +72,11 @@ SLresult GetBuffer(SLOHBufferQueueItf self, SLuint8 **buffer, SLuint32 &size)
         AudioPlayerAdapter::GetInstance()->GetBufferAdapter(thiz->mId, buffer, size);
     } else if (thiz->mIid == SL_IID_RECORD) {
         AudioCapturerAdapter::GetInstance()->GetBufferAdapter(thiz->mId, buffer, size);
-    }    
+    }
     return SL_RESULT_SUCCESS;
 }
 
-SLresult RegisterCallback(SLOHBufferQueueItf self,
-    SlOHBufferQueueCallback callback, void *pContext)
+SLresult RegisterCallback(SLOHBufferQueueItf self, SlOHBufferQueueCallback callback, void *pContext)
 {
     if (self == nullptr || callback == nullptr) {
         return SL_RESULT_PARAMETER_INVALID;
@@ -87,7 +86,7 @@ SLresult RegisterCallback(SLOHBufferQueueItf self,
         AudioPlayerAdapter::GetInstance()->RegisterCallbackAdapter(self, callback, pContext);
     } else if (thiz->mIid == SL_IID_RECORD) {
         AudioCapturerAdapter::GetInstance()->RegisterCallbackAdapter(self, callback, pContext);
-    } 
+    }
     return SL_RESULT_SUCCESS;
 }
 

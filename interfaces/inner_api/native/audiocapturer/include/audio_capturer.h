@@ -223,6 +223,7 @@ public:
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
     virtual bool Pause() const = 0;
+
     /**
      * @brief Stops audio capturing.
      *

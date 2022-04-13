@@ -74,7 +74,7 @@ static SLresult CreateAudioRecorder(
     IOHBufferQueueInit(&thiz->mBufferQueue, SL_IID_RECORD, audioRecorderId);
     *pRecorder = &thiz->mObject.mItf;
     AudioCapturerAdapter::GetInstance()->
-        CreateAudioCapturerAdapter(audioRecorderId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);  // TODO:
+        CreateAudioCapturerAdapter(audioRecorderId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);
     audioRecorderId++;
 
     return SL_RESULT_SUCCESS;
