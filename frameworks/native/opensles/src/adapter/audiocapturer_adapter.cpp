@@ -55,8 +55,8 @@ SLresult AudioCapturerAdapter::SetCaptureStateAdapter(SLuint32 id, SLuint32 stat
         case SL_RECORDSTATE_RECORDING:
             reseult = audioCapturer->Start();
             break;
-        case SL_RECORDSTATE_PAUSED:                            // 新增case
-            reseult = audioCapturer->Pause();  
+        case SL_RECORDSTATE_PAUSED:
+            reseult = audioCapturer->Pause();
             break;
         case SL_RECORDSTATE_STOPPED: {
             reseult = audioCapturer->Clear();

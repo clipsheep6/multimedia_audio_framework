@@ -731,6 +731,7 @@ int32_t AudioStream::Enqueue(const BufferDesc &bufDesc)
     }
 
     if (captureMode_ == CAPTURE_MODE_CALLBACK) {
+        MEDIA_ERR_LOG("AudioStream::Enqueue: freeBuffer length: %{public}zu.", bufDesc.bufLength);
         freeBufferQ_.emplace(bufDesc);
     }
 

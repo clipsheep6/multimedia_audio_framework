@@ -34,13 +34,16 @@ int main(int argc, char *argv[])
     }
     
     string filePath = argv[1];
-    wavFile_ = fopen(filePath.c_str(), "wb+");
+    wavFile_ = fopen(filePath.c_str(), "wb");
     if (wavFile_ == nullptr) {
         MEDIA_INFO_LOG("OpenSLES record: Unable to open file");
         return -1;
     }
 
     OpenSLCaptureTest();
+    while (wavFile_ != nullptr) {
+        sleep(1);
+    }
     fflush(wavFile_);
     CaptureStop(recordItf, bufferQueueItf);
     (*pcmCapturerObject)->Destroy(pcmCapturerObject);
@@ -104,26 +107,37 @@ static void OpenSLCaptureTest()
 
 static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
 {
+    MEDIA_INFO_LOG("BuqqerQueueCallback");
     FILE *wavFile = (FILE *)pContext;
     if (wavFile != nullptr) {
         SLuint8 *buffer = nullptr;
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
-        fwrite(buffer, 1, pSize, wavFile);
+        if ((buffer != nullptr) && (pSize > 0)) {
+            fwrite(buffer, 1, pSize, wavFile);
+            MEDIA_INFO_LOG("BuqqerQueueCallback, equeue buffer length, pSize:%{public}lu, size: %{public}lu ",
+                           pSize,  size);
+        }
         (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
     }
+
     return;
 }
 
 static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile)
 {
-    MEDIA_INFO_LOG("RecordStart");
+    MEDIA_INFO_LOG("CaptureStart");
     (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
     if (wavFile != nullptr) {
         SLuint8* buffer = nullptr;
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
-        fwrite(buffer, 1, pSize, wavFile);
+        if ((buffer != nullptr) && (pSize > 0)) {
+            fwrite(buffer, 1, pSize, wavFile);
+            MEDIA_INFO_LOG("CaptureStart, enqueue buffer length: %{public}lu", pSize);
+        } else {
+            MEDIA_INFO_LOG("buffer is null.");
+        }
         (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
     }
     return;

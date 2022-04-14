@@ -1255,8 +1255,6 @@ int32_t AudioServiceClient::PaReadStream(const uint8_t *buffer, size_t &length)
                        readableSize, length, error);
         buffer = buffer + readableSize;
         length -= readableSize;
-
-       // HandleRenderPositionCallbacks(readableSize);
     }
 
     return error;
