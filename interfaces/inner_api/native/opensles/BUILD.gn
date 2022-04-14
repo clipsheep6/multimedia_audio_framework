@@ -68,10 +68,10 @@ ohos_executable("audio_opensles_test") {
   subsystem_name = "multimedia"
 }
 
-ohos_executable("audio_opensles_audiocapture_test") {
+ohos_executable("audio_opensles_capture_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_opensles_audiocapture_test.cpp" ]
+  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_opensles_capture_test.cpp" ]
 
   configs = [
     ":audio_opensles_config",

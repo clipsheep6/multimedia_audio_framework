@@ -286,10 +286,8 @@ AudioRenderMode AudioServiceClient::GetAudioRenderMode()
 
 int32_t AudioServiceClient::SetAudioCaptureMode(AudioCaptureMode captureMode)
 {
-    MEDIA_DEBUG_LOG("AudioServiceClient::SetAudioCaptureMode begin");
+    AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioCaptureMode.");
     captureMode_ = captureMode;
-
-    MEDIA_DEBUG_LOG("AudioServiceClient::SetAudioCaptureMode end");
     
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -313,7 +311,7 @@ int32_t AudioServiceClient::SaveWriteCallback(const std::weak_ptr<AudioRendererW
 int32_t AudioServiceClient::SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback)
 {
     if (callback.lock() == nullptr) {
-        MEDIA_ERR_LOG("AudioServiceClient::SaveReadCallback callback == nullptr");
+        AUDIO_ERR_LOG("AudioServiceClient::SaveReadCallback callback == nullptr");
         return AUDIO_CLIENT_INIT_ERR;
     }
     readCallback_ = callback;
@@ -351,9 +349,9 @@ void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void 
 
 void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
 {
-    MEDIA_INFO_LOG("AudioServiceClient::PAStreamReadCb Inside PA read callback");
+    AUDIO_INFO_LOG("AudioServiceClient::PAStreamReadCb Inside PA read callback");
     if (!userdata) {
-        MEDIA_ERR_LOG("AudioServiceClient::PAStreamReadCb: userdata is null");
+        AUDIO_ERR_LOG("AudioServiceClient::PAStreamReadCb: userdata is null");
         return;
     }
     auto asClient = static_cast<AudioServiceClient *>(userdata);
@@ -368,11 +366,11 @@ void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *
     if (cb != nullptr) {
         size_t requestSize;
         asClient->GetMinimumBufferSize(requestSize);
-        MEDIA_INFO_LOG("AudioServiceClient::PAStreamReadCb: cb != nullptr firing OnReadData");
-        MEDIA_INFO_LOG("AudioServiceClient::OnReadData requestSize : %{public}zu", requestSize);
+        AUDIO_INFO_LOG("AudioServiceClient::PAStreamReadCb: cb != nullptr firing OnReadData");
+        AUDIO_INFO_LOG("AudioServiceClient::OnReadData requestSize : %{public}zu", requestSize);
         cb->OnReadData(requestSize);
     } else {
-        MEDIA_ERR_LOG("AudioServiceClient::PAStreamReadCb: cb == nullptr not firing OnReadData");
+        AUDIO_ERR_LOG("AudioServiceClient::PAStreamReadCb: cb == nullptr not firing OnReadData");
     }
 }
 
@@ -1231,7 +1229,7 @@ int32_t AudioServiceClient::PaReadStream(const uint8_t *buffer, size_t &length)
             pa_threaded_mainloop_wait(mainLoop);
         }
 
-        MEDIA_INFO_LOG("Read stream: readtable size = %{public}zu, length = %{public}zu",
+        AUDIO_INFO_LOG("Read stream: readtable size = %{public}zu, length = %{public}zu",
                        readableSize, length);
         if (readableSize > length) {
             readableSize = length;
@@ -1239,19 +1237,19 @@ int32_t AudioServiceClient::PaReadStream(const uint8_t *buffer, size_t &length)
 
         readableSize = AlignToAudioFrameSize(readableSize, sampleSpec);
         if (readableSize == 0) {
-            MEDIA_ERR_LOG("Align to frame size failed");
+            AUDIO_ERR_LOG("Align to frame size failed");
             error = AUDIO_CLIENT_READ_STREAM_ERR;
             break;
         }
 
         error = pa_stream_peek(paStream, (const void **)&buffer, &readableSize);
         if (error < 0) {
-            MEDIA_ERR_LOG("read stream failed");
+            AUDIO_ERR_LOG("read stream failed");
             error = AUDIO_CLIENT_READ_STREAM_ERR;
             break;
         }
 
-        MEDIA_INFO_LOG("Readtable size: %{public}zu, bytes to write: %{public}zu, return val: %{public}d",
+        AUDIO_INFO_LOG("Readtable size: %{public}zu, bytes to write: %{public}zu, return val: %{public}d",
                        readableSize, length, error);
         buffer = buffer + readableSize;
         length -= readableSize;

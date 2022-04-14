@@ -2,7 +2,7 @@
 #include <OpenSLES_OpenHarmony.h>
 #include <OpenSLES_Platform.h>
 #include "audio_info.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include <iostream>
 #include "pcm2wav.h"
 #include <unistd.h>
@@ -27,16 +27,16 @@ SLObjectItf pcmCapturerObject = nullptr;
 
 int main(int argc, char *argv[])
 {
-    MEDIA_INFO_LOG("opensl es capture test in");
+    AUDIO_INFO_LOG("opensl es capture test in");
     if (argc != PARAMETERS) {
-        MEDIA_ERR_LOG("Incorrect number of parameters.");
+        AUDIO_ERR_LOG("Incorrect number of parameters.");
         return -1;
     }
     
     string filePath = argv[1];
     wavFile_ = fopen(filePath.c_str(), "wb");
     if (wavFile_ == nullptr) {
-        MEDIA_INFO_LOG("OpenSLES record: Unable to open file");
+        AUDIO_INFO_LOG("OpenSLES record: Unable to open file");
         return -1;
     }
 
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 
 static void OpenSLCaptureTest()
 {
-    MEDIA_ERR_LOG("OpenSLCaptureTest");
+    AUDIO_ERR_LOG("OpenSLCaptureTest");
     engineObject = nullptr;
     SLEngineItf engineItf = nullptr;
 
@@ -107,7 +107,7 @@ static void OpenSLCaptureTest()
 
 static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
 {
-    MEDIA_INFO_LOG("BuqqerQueueCallback");
+    AUDIO_INFO_LOG("BuqqerQueueCallback");
     FILE *wavFile = (FILE *)pContext;
     if (wavFile != nullptr) {
         SLuint8 *buffer = nullptr;
@@ -115,7 +115,7 @@ static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
         if ((buffer != nullptr) && (pSize > 0)) {
             fwrite(buffer, 1, pSize, wavFile);
-            MEDIA_INFO_LOG("BuqqerQueueCallback, equeue buffer length, pSize:%{public}lu, size: %{public}lu ",
+            AUDIO_INFO_LOG("BuqqerQueueCallback, equeue buffer length, pSize:%{public}lu, size: %{public}lu ",
                            pSize,  size);
         }
         (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
@@ -126,7 +126,7 @@ static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
 
 static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile)
 {
-    MEDIA_INFO_LOG("CaptureStart");
+    AUDIO_INFO_LOG("CaptureStart");
     (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
     if (wavFile != nullptr) {
         SLuint8* buffer = nullptr;
@@ -134,9 +134,9 @@ static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueIt
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
         if ((buffer != nullptr) && (pSize > 0)) {
             fwrite(buffer, 1, pSize, wavFile);
-            MEDIA_INFO_LOG("CaptureStart, enqueue buffer length: %{public}lu", pSize);
+            AUDIO_INFO_LOG("CaptureStart, enqueue buffer length: %{public}lu", pSize);
         } else {
-            MEDIA_INFO_LOG("buffer is null.");
+            AUDIO_INFO_LOG("buffer is null.");
         }
         (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
     }
@@ -145,7 +145,7 @@ static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueIt
 
 static void CaptureStop(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf)
 {
-    MEDIA_INFO_LOG("CaptureStop");
+    AUDIO_INFO_LOG("CaptureStop");
     (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_STOPPED);
     return;
 }

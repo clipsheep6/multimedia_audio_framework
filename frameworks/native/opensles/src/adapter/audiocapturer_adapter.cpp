@@ -18,13 +18,13 @@ AudioCapturerAdapter* AudioCapturerAdapter::GetInstance()
 
 AudioCapturer *AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id)
 {
-    MEDIA_INFO_LOG("AudioCapturerAdapter::GetAudioCapturerById: %{public}lu", id);
+    AUDIO_INFO_LOG("AudioCapturerAdapter::GetAudioCapturerById: %{public}lu", id);
     return captureMap_.find(id)->second;
 }
 
 void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
 {
-    MEDIA_INFO_LOG("AudioCapturerAdapter::EraseAudioCapturerById: %{public}lu", id);
+    AUDIO_INFO_LOG("AudioCapturerAdapter::EraseAudioCapturerById: %{public}lu", id);
     captureMap_.erase(id);
     callbackMap_.erase(id);
 }
@@ -32,7 +32,7 @@ void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
 SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSource *dataSource,
     SLDataSink *dataSink, AudioStreamType streamType)
 {
-    MEDIA_INFO_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter .");
+    AUDIO_INFO_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter .");
     SLDataFormat_PCM *pcmFormat = (SLDataFormat_PCM *)dataSink->pFormat;
     AudioCapturerParams capturerParams;
     ConvertPcmFormat(pcmFormat, &capturerParams);
@@ -40,7 +40,7 @@ SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSou
     unique_ptr<AudioCapturer> capturerHolder = AudioCapturer::Create(streamType);
     capturerHolder->SetParams(capturerParams);
     AudioCapturer *capturer = capturerHolder.release();
-    MEDIA_INFO_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter ID: %{public}lu", id);
+    AUDIO_INFO_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter ID: %{public}lu", id);
     capturer->SetCaptureMode(CAPTURE_MODE_CALLBACK);
     captureMap_.insert(make_pair(id, capturer));
     return SL_RESULT_SUCCESS;
@@ -65,7 +65,7 @@ SLresult AudioCapturerAdapter::SetCaptureStateAdapter(SLuint32 id, SLuint32 stat
             break;
         }
         default:
-            MEDIA_ERR_LOG("AudioPlayerAdapter::play state not supported ");
+            AUDIO_ERR_LOG("AudioPlayerAdapter::play state not supported ");
             break;
     }
     return slResult;
@@ -240,7 +240,7 @@ AudioChannel AudioCapturerAdapter::SlToOhosChannel(SLDataFormat_PCM *pcmFormat)
             break;
         default:
             channelCount = MONO;
-            MEDIA_ERR_LOG("AudioPlayerAdapter::channel count not supported ");
+            AUDIO_ERR_LOG("AudioPlayerAdapter::channel count not supported ");
     }
     return channelCount;
 }
