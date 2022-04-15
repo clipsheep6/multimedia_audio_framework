@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <OpenSLES.h>
 #include <OpenSLES_OpenHarmony.h>
 #include <OpenSLES_Platform.h>
@@ -9,8 +24,6 @@
 
 using namespace std;
 
-#define PARAMETERS 2
-
 static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size);
 
 static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile);
@@ -19,6 +32,7 @@ static void CaptureStop(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf
 
 static void OpenSLCaptureTest();
 
+const int PARAMETERS = 2;
 FILE *wavFile_ = nullptr;
 SLObjectItf engineObject = nullptr;
 SLRecordItf  recordItf;
@@ -113,14 +127,14 @@ static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
         SLuint8 *buffer = nullptr;
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
+        AUDIO_INFO_LOG("BuqqerQueueCallback, enqueue buffer is null: %{public}d", (buffer != nullptr) ? 1 : 0);
+        AUDIO_INFO_LOG("BuqqerQueueCallback, equeue buffer length, pSize:%{public}lu, size: %{public}lu ",
+                        pSize,  size);
         if ((buffer != nullptr) && (pSize > 0)) {
             fwrite(buffer, 1, pSize, wavFile);
-            AUDIO_INFO_LOG("BuqqerQueueCallback, equeue buffer length, pSize:%{public}lu, size: %{public}lu ",
-                           pSize,  size);
+            (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         }
-        (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
     }
-
     return;
 }
 
@@ -132,14 +146,17 @@ static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueIt
         SLuint8* buffer = nullptr;
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
+        AUDIO_INFO_LOG("CaptureStart, enqueue buffer is null: %{public}d", (buffer != nullptr) ? 1 : 0);
+        AUDIO_INFO_LOG("CaptureStart, enqueue buffer length: %{public}lu", pSize);
         if ((buffer != nullptr) && (pSize > 0)) {
             fwrite(buffer, 1, pSize, wavFile);
             AUDIO_INFO_LOG("CaptureStart, enqueue buffer length: %{public}lu", pSize);
+            (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
         } else {
             AUDIO_INFO_LOG("buffer is null.");
         }
-        (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
     }
+
     return;
 }
 
