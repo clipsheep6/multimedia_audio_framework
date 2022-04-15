@@ -113,7 +113,7 @@ SLresult AudioCapturerAdapter::EnqueueAdapter(SLuint32 id, const void *buffer, S
     BufferDesc bufDesc = {};
     bufDesc.buffer = (uint8_t*) buffer;
     bufDesc.bufLength = size;
-    AUDIO_INFO_LOG("AudioCapturerAdapter::EnqueueAdapter bufferlength: %{public}lu", bufDesc.bufLength);
+    AUDIO_INFO_LOG("AudioCapturerAdapter::EnqueueAdapter bufferlength: %{public}zu", bufDesc.bufLength);
     audioCapturer->Enqueue(bufDesc);
     return SL_RESULT_SUCCESS;
 }
