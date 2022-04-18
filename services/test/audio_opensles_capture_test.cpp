@@ -107,7 +107,7 @@ static void OpenSLCaptureTest()
     };
 
     result = (*engineItf)->CreateAudioRecorder(engineItf, &pcmCapturerObject,
-        &audioSource, &audioSink, 3, nullptr, nullptr);
+        &audioSource, &audioSink, 0, nullptr, nullptr);
     (*pcmCapturerObject)->Realize(pcmCapturerObject, SL_BOOLEAN_FALSE);
     
     (*pcmCapturerObject)->GetInterface(pcmCapturerObject, SL_IID_RECORD, &recordItf);
@@ -128,11 +128,13 @@ static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
         if (buffer != nullptr) {
-            AUDIO_INFO_LOG("BuqqerQueueCallback, length, pSize:%{public}lu, size: %{public}lu ", pSize,  size);
+            AUDIO_INFO_LOG("BuqqerQueueCallback, length, pSize:%{public}lu, size: %{public}lu.",
+                           pSize, size);
             fwrite(buffer, 1, pSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         } else {
-             AUDIO_INFO_LOG("BuqqerQueueCallback, buffer is null or buffer length is 0. pSize:%{public}lu, size: %{public}lu ",  pSize,  size);
+            AUDIO_INFO_LOG("BuqqerQueueCallback, buffer is null or pSize: %{public}lu, size: %{public}lu.",
+                           pSize, size);
         }
     }
 
@@ -148,11 +150,11 @@ static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueIt
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
         if (buffer != nullptr) {
-            AUDIO_INFO_LOG("CaptureStart, enqueue buffer length: %{public}lu", pSize);
+            AUDIO_INFO_LOG("CaptureStart, enqueue buffer length: %{public}lu.", pSize);
             fwrite(buffer, 1, pSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
         } else {
-            AUDIO_INFO_LOG("BuqqerQueueCallback, buffer is null or buffer length is 0. pSize:%{public}lu,",  pSize);
+            AUDIO_INFO_LOG("BuqqerQueueCallback, buffer is null or pSize: %{public}lu.", pSize);
         }
     }
 
