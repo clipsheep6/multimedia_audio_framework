@@ -688,9 +688,6 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
             freeBufferQ_.pop();
         } else {
             bufDesc.buffer = nullptr;
-        }
-
-        if (bufDesc.buffer == nullptr) {
             AUDIO_INFO_LOG("AudioStream::GetBufferDesc freeBufferQ_.empty()");
             return ERR_OPERATION_FAILED;
         }
@@ -704,8 +701,6 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
             filledBufferQ_.pop();
         } else {
             bufDesc.buffer = nullptr;
-        }
-        if (bufDesc.buffer == nullptr) {
             AUDIO_INFO_LOG("AudioStream::GetBufferDesc filledBufferQ_.empty()");
             return ERR_OPERATION_FAILED;
         }

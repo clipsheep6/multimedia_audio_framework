@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
+#include <iostream>
+#include <unistd.h>
 #include <OpenSLES.h>
 #include <OpenSLES_OpenHarmony.h>
 #include <OpenSLES_Platform.h>
 #include "audio_info.h"
 #include "audio_log.h"
-#include <iostream>
 #include "pcm2wav.h"
-#include <unistd.h>
 
 using namespace std;
 
@@ -127,14 +127,15 @@ static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
         SLuint8 *buffer = nullptr;
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
-        AUDIO_INFO_LOG("BuqqerQueueCallback, enqueue buffer is null: %{public}d", (buffer != nullptr) ? 1 : 0);
-        AUDIO_INFO_LOG("BuqqerQueueCallback, equeue buffer length, pSize:%{public}lu, size: %{public}lu ",
-                        pSize,  size);
-        if ((buffer != nullptr) && (pSize > 0)) {
+        if (buffer != nullptr) {
+            AUDIO_INFO_LOG("BuqqerQueueCallback, length, pSize:%{public}lu, size: %{public}lu ", pSize,  size);
             fwrite(buffer, 1, pSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
+        } else {
+             AUDIO_INFO_LOG("BuqqerQueueCallback, buffer is null or buffer length is 0. pSize:%{public}lu, size: %{public}lu ",  pSize,  size);
         }
     }
+
     return;
 }
 
@@ -146,14 +147,12 @@ static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueIt
         SLuint8* buffer = nullptr;
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
-        AUDIO_INFO_LOG("CaptureStart, enqueue buffer is null: %{public}d", (buffer != nullptr) ? 1 : 0);
-        AUDIO_INFO_LOG("CaptureStart, enqueue buffer length: %{public}lu", pSize);
-        if ((buffer != nullptr) && (pSize > 0)) {
-            fwrite(buffer, 1, pSize, wavFile);
+        if (buffer != nullptr) {
             AUDIO_INFO_LOG("CaptureStart, enqueue buffer length: %{public}lu", pSize);
+            fwrite(buffer, 1, pSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
         } else {
-            AUDIO_INFO_LOG("buffer is null.");
+            AUDIO_INFO_LOG("BuqqerQueueCallback, buffer is null or buffer length is 0. pSize:%{public}lu,",  pSize);
         }
     }
 
