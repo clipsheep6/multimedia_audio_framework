@@ -480,6 +480,9 @@ public:
      */
     int32_t SaveWriteCallback(const std::weak_ptr<AudioRendererWriteCallback> &callback);
 
+    int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);  // new function
+    int32_t SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback);
+    AudioCaptureMode GetAudioCaptureMode(); // new function
     /**
      * @brief Set the ability context to access the application resources
      *
@@ -528,6 +531,8 @@ private:
     AudioRendererRate renderRate;
     AudioRenderMode renderMode_;
     std::weak_ptr<AudioRendererWriteCallback> writeCallback_;
+    AudioCaptureMode captureMode_;
+    std::weak_ptr<AudioCapturerReadCallback> readCallback_;
 
     uint32_t mFrameSize = 0;
     bool mMarkReached = false;

@@ -38,7 +38,7 @@ typedef void (SLAPIENTRY *SlOHBufferQueueCallback)(
 
 typedef struct SLOHBufferQueueState_ {
     SLuint32    count;
-    SLuint32    playIndex;
+    SLuint32    Index;
 } SLOHBufferQueueState;
 
 
