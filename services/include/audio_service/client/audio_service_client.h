@@ -482,6 +482,9 @@ public:
     int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);
     int32_t SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback);
     AudioCaptureMode GetAudioCaptureMode();
+
+    void RequestMoreData();
+
     /**
      * @brief Set the applicationcache path to access the application resources
      *

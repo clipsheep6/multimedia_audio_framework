@@ -34,7 +34,7 @@ AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 #ifdef __aarch64__
 const uint64_t LATENCY_IN_MSEC = 90UL;
 #else
-const uint64_t LATENCY_IN_MSEC = 45UL;
+const uint64_t LATENCY_IN_MSEC = 35UL;
 #endif
 #else
 const uint64_t LATENCY_IN_MSEC = 50UL;
@@ -44,7 +44,6 @@ const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_FACTOR = 5;
 const uint32_t T_LENGTH_FACTOR = 4;
-const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 
 const string PATH_SEPARATOR = "/";
 const string COOKIE_FILE_NAME = "cookie";
@@ -255,26 +254,6 @@ int32_t AudioServiceClient::SetAudioRenderMode(AudioRenderMode renderMode)
     if (renderMode_ != RENDER_MODE_CALLBACK) {
         return AUDIO_CLIENT_SUCCESS;
     }
-
-    if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_ERR) < 0) {
-        return AUDIO_CLIENT_ERR;
-    }
-
-    pa_threaded_mainloop_lock(mainLoop);
-    pa_buffer_attr bufferAttr;
-    bufferAttr.fragsize = static_cast<uint32_t>(-1);
-    bufferAttr.prebuf = AlignToAudioFrameSize(pa_usec_to_bytes(MIN_BUF_DURATION_IN_USEC, &sampleSpec), sampleSpec);
-    bufferAttr.maxlength = static_cast<uint32_t>(-1);
-    bufferAttr.tlength = static_cast<uint32_t>(-1);
-    bufferAttr.minreq = bufferAttr.prebuf;
-    pa_operation *operation = pa_stream_set_buffer_attr(paStream, &bufferAttr,
-        PAStreamSetBufAttrSuccessCb, (void *)this);
-        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        pa_threaded_mainloop_wait(mainLoop);
-    }
-    pa_operation_unref(operation);
-    pa_threaded_mainloop_unlock(mainLoop);
-
     AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioRenderMode end");
 
     return AUDIO_CLIENT_SUCCESS;
@@ -372,6 +351,20 @@ void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *
         cb->OnReadData(requestSize);
     } else {
         AUDIO_ERR_LOG("AudioServiceClient::PAStreamReadCb: cb == nullptr not firing OnReadData");
+    }
+}
+
+void AudioServiceClient::RequestMoreData()
+{
+    std::shared_ptr<AudioRendererWriteCallback> cb = writeCallback_.lock();
+    if (cb != nullptr) {
+        size_t requestSize;
+        GetMinimumBufferSize(requestSize);
+        AUDIO_INFO_LOG("AudioServiceClient::RequestMoreData: cb != nullptr firing OnWriteData");
+        AUDIO_INFO_LOG("AudioServiceClient::RequestMoreData requestSize : %{public}zu", requestSize);
+        cb->OnWriteData(requestSize);
+    } else {
+        AUDIO_ERR_LOG("AudioServiceClient::RequestMoreData: cb == nullptr not firing OnWriteData");
     }
 }
 

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <pthread.h>
 
 #include <chrono>
 #include <thread>
@@ -32,7 +33,6 @@ const unsigned long long TIME_CONVERSION_NS_US = 1000ULL; /* ns to us */
 const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t READ_WRITE_WAIT_TIME_IN_US = 500;
-constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_US = 500;
 constexpr int32_t CB_READ_BUFFERS_WAIT_IN_US = 500;
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::streamTypeMap_ = AudioStream::CreateStreamMap();
@@ -768,6 +768,13 @@ void AudioStream::WriteBuffers()
     size_t bytesWritten;
     int32_t writeError;
 
+    struct sched_param param = {};
+    pthread_attr_t attr;
+    pthread_attr_getschedparam(&attr, &param);
+    param.sched_priority = 19;
+    pthread_setschedparam(pthread_self(), SCHED_RR, &param);
+    AUDIO_INFO_LOG("sched_priority:%{public}d", param.sched_priority);
+
     while (isReadyToWrite_) {
         while (!filledBufferQ_.empty()) {
             if (state_ != RUNNING) {
@@ -792,7 +799,7 @@ void AudioStream::WriteBuffers()
                 filledBufferQ_.pop();
             }
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(CB_WRITE_BUFFERS_WAIT_IN_US));
+        RequestMoreData();
     }
     AUDIO_INFO_LOG("AudioStream::WriteBuffers thread end");
 }
