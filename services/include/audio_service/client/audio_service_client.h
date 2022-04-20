@@ -36,6 +36,7 @@
 #include "audio_capturer.h"
 #include "audio_renderer.h"
 #include "audio_system_manager.h"
+#include "context.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -482,6 +483,13 @@ public:
     int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);  // new function
     int32_t SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback);
     AudioCaptureMode GetAudioCaptureMode(); // new function
+    /**
+     * @brief Set the ability context to access the application resources
+     *
+     * @return none
+     */
+    void SetAbilityContext(const std::shared_ptr<AbilityRuntime::Context> context);
+
     // Audio timer callback
     virtual void OnTimeOut();
 
@@ -494,6 +502,8 @@ private:
 
     std::mutex dataMutex;
     std::mutex ctrlMutex;
+
+    std::shared_ptr<AbilityRuntime::Context> abilityContext_;
 
     AudioCache acache;
     const void *internalReadBuffer;

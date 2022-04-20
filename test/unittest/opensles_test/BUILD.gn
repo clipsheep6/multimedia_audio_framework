@@ -50,7 +50,10 @@ config("audio_opensles_config") {
 
 ohos_unittest("audio_opensles_unit_test") {
   module_out_path = module_output_path
-  include_dirs = [ "./include" ]
+  include_dirs = [
+    "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy/include",
+    "./include",
+  ]
 
   configs = [
     ":audio_opensles_config",
@@ -59,7 +62,10 @@ ohos_unittest("audio_opensles_unit_test") {
 
   sources = [ "src/audio_opensles_unit_test.cpp" ]
 
-  deps = [ "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles" ]
+  deps = [
+    "//foundation/aafwk/standard/frameworks/kits/ability/native:abilitykit_native",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles",
+  ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
