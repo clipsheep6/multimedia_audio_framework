@@ -19,7 +19,6 @@
 #include <memory>
 
 #include "audio_info.h"
-#include "foundation/aafwk/standard/frameworks/kits/appkit/native/ability_runtime/context/context.h"
 #include "timestamp.h"
 
 namespace OHOS {
@@ -142,12 +141,12 @@ public:
     /**
      * @brief creater renderer instance.
      *
-     * @param context Ability context pointer
+     * @param cachePath Application cache path
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
      * refer AudioRendererOptions in audio_info.h.
      * @return Returns unique pointer to the AudioRenderer object
     */
-    static std::unique_ptr<AudioRenderer> Create(const std::shared_ptr<AbilityRuntime::Context> context,
+    static std::unique_ptr<AudioRenderer> Create(const std::string cachePath,
         const AudioRendererOptions &rendererOptions);
 
     /**
@@ -497,12 +496,12 @@ public:
     virtual int32_t GetBufQueueState(BufferQueueState &bufState) const = 0;
 
     /**
-     * @brief Set the ability context to access the application resources
+     * @brief Set the application cache apth to access the application resources
      *
-     * @param context Indicates the ability context pointer.
+     * @param cachePath Indicates application cache path.
      * @return none
      */
-    virtual void SetAbilityContext(const std::shared_ptr<AbilityRuntime::Context> context) = 0;
+    virtual void SetApplicationCachePath(const std::string cachePath) = 0;
 
     virtual ~AudioRenderer();
 };
