@@ -38,6 +38,8 @@
 #include "audio_system_manager.h"
 #include "context.h"
 
+#define CLIENT_DUMPFILE
+
 namespace OHOS {
 namespace AudioStandard {
 enum ASClientType {
@@ -623,6 +625,10 @@ private:
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
+
+#ifdef CLIENT_DUMPFILE
+    FILE *pfd;
+#endif // CLIENT_DUMPFILE
 };
 } // namespace AudioStandard
 } // namespace OHOS
