@@ -1218,46 +1218,6 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
     return error;
 }
 
-int32_t AudioServiceClient::PaReadStream(const uint8_t *buffer, size_t &length)
-{
-    int error = 0;
-
-    while (length > 0) {
-        size_t readableSize;
-
-        while (!(readableSize = pa_stream_readable_size(paStream))) {
-            pa_threaded_mainloop_wait(mainLoop);
-        }
-
-        AUDIO_INFO_LOG("Read stream: readtable size = %{public}zu, length = %{public}zu",
-                       readableSize, length);
-        if (readableSize > length) {
-            readableSize = length;
-        }
-
-        readableSize = AlignToAudioFrameSize(readableSize, sampleSpec);
-        if (readableSize == 0) {
-            AUDIO_ERR_LOG("Align to frame size failed");
-            error = AUDIO_CLIENT_READ_STREAM_ERR;
-            break;
-        }
-
-        error = pa_stream_peek(paStream, (const void **)&buffer, &readableSize);
-        if (error < 0) {
-            AUDIO_ERR_LOG("read stream failed");
-            error = AUDIO_CLIENT_READ_STREAM_ERR;
-            break;
-        }
-
-        AUDIO_INFO_LOG("Readtable size: %{public}zu, bytes to write: %{public}zu, return val: %{public}d",
-                       readableSize, length, error);
-        buffer = buffer + readableSize;
-        length -= readableSize;
-    }
-
-    return error;
-}
-
 void AudioServiceClient::HandleRenderPositionCallbacks(size_t bytesWritten)
 {
     mTotalBytesWritten += bytesWritten;
@@ -1371,20 +1331,6 @@ size_t AudioServiceClient::WriteStreamInCb(const StreamBuffer &stream, int32_t &
     const uint8_t *buffer = stream.buffer;
     size_t length = stream.bufferLen;
     error = PaWriteStream(buffer, length);
-    pa_threaded_mainloop_unlock(mainLoop);
-    pError = error;
-    return (stream.bufferLen - length);
-}
-
-size_t AudioServiceClient::ReadStreamInCb(const StreamBuffer &stream, int32_t &pError)
-{
-    lock_guard<mutex> lock(dataMutex);
-    int error = 0;
-    pa_threaded_mainloop_lock(mainLoop);
-
-    const uint8_t *buffer = stream.buffer;
-    size_t length = stream.bufferLen;
-    error = PaReadStream(buffer, length);
     pa_threaded_mainloop_unlock(mainLoop);
     pError = error;
     return (stream.bufferLen - length);

@@ -251,8 +251,6 @@ public:
     */
     int32_t ReadStream(StreamBuffer &stream, bool isBlocking);
 
-    size_t ReadStreamInCb(const StreamBuffer &stream, int32_t &pError);
-
     /**
     * Release the resources allocated using CreateStream
     *
@@ -571,7 +569,6 @@ private:
 
     int32_t UpdateReadBuffer(uint8_t *buffer, size_t &length, size_t &readSize);
     int32_t PaWriteStream(const uint8_t *buffer, size_t &length);
-    int32_t PaReadStream(const uint8_t *buffer, size_t &length);
     void HandleRenderPositionCallbacks(size_t bytesWritten);
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
