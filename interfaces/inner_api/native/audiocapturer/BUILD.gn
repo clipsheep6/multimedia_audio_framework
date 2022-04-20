@@ -21,6 +21,9 @@ group("audio_capturer_test_packages") {
 
 config("audio_capturer_config") {
   include_dirs = [
+    "//base/global/resmgr_standard/interfaces/innerkits/include",
+    "//foundation/aafwk/standard/frameworks/kits/appkit/native/ability_runtime/context",
+    "//foundation/appexecfwk/standard/interfaces/innerkits/appexecfwk_base/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiosession/include",
@@ -66,7 +69,10 @@ ohos_executable("audio_capturer_test") {
 
   configs = [ ":audio_capturer_config" ]
 
-  deps = [ "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer" ]
+  deps = [
+    "//foundation/aafwk/standard/frameworks/kits/ability/native:abilitykit_native",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer",
+  ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 

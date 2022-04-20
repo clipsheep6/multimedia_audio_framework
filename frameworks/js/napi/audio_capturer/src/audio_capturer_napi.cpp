@@ -199,6 +199,24 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
+shared_ptr<AbilityRuntime::Context> AudioCapturerNapi::GetAbilityContext(napi_env env)
+{
+    HiLog::Info(LABEL, "Getting context with FA model");
+    auto ability = OHOS::AbilityRuntime::GetCurrentAbility(env);
+    if (ability == nullptr) {
+        HiLog::Error(LABEL, "Failed to obtain ability in FA mode");
+        return nullptr;
+    }
+
+    auto faContext = ability->GetAbilityContext();
+    if (faContext == nullptr) {
+        HiLog::Error(LABEL, "GetAbilityContext returned null in FA model");
+        return nullptr;
+    }
+
+    return faContext;
+}
+
 napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -212,8 +230,9 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     capturerNapi->env_ = env;
     capturerNapi->sourceType_ = sAudioCapturerOptions_->capturerInfo.sourceType;
     capturerNapi->capturerFlags_ = sAudioCapturerOptions_->capturerInfo.capturerFlags;
+    capturerNapi->abilityContext_ = GetAbilityContext(env);
 
-    capturerNapi->audioCapturer_ = AudioCapturer::Create(*sAudioCapturerOptions_);
+    capturerNapi->audioCapturer_ = AudioCapturer::Create(capturerNapi->abilityContext_, *sAudioCapturerOptions_);
     CHECK_AND_RETURN_RET_LOG(capturerNapi->audioCapturer_ != nullptr, result, "Capturer Create failed");
 
     if (capturerNapi->callbackNapi_ == nullptr) {

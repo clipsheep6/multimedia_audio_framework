@@ -273,6 +273,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_008, TestSize.Level0)
     audioRenderer->Release();
 }
 
+#if 0
 /**
 * @tc.name  : Test Create API via legal input.
 * @tc.number: Audio_Renderer_Create_009
@@ -301,6 +302,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_009, TestSize.Level1)
     EXPECT_NE(nullptr, audioRenderer);
     audioRenderer->Release();
 }
+#endif
 
 /**
 * @tc.name  : Test Create API via legal input.

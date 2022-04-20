@@ -22,6 +22,8 @@
 #include "audio_capturer.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "napi_base_context.h"
+#include "ability.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -115,6 +117,8 @@ private:
                                                      const std::string& cbName, AudioCapturerNapi *capturerNapi);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
 
+    static std::shared_ptr<AbilityRuntime::Context> GetAbilityContext(napi_env env);
+
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioCapturerOptions> sAudioCapturerOptions_;
     static AudioCapturerOptions sCapturerOptions_;
@@ -126,6 +130,7 @@ private:
     DeviceType deviceType_;
     SourceType sourceType_;
     int32_t capturerFlags_;
+    std::shared_ptr<AbilityRuntime::Context> abilityContext_;
     napi_env env_;
     napi_ref wrapper_;
     std::shared_ptr<CapturerPositionCallback> positionCBNapi_ = nullptr;

@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "audio_info.h"
+#include "context.h"
 #include "timestamp.h"
 
 namespace OHOS {
@@ -109,6 +110,17 @@ public:
      * @brief creater capturer instance.
     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &capturerOptions);
+
+    /**
+     * @brief creater capturer instance.
+     *
+     * @param context Ability context pointer
+     * @param capturerOptions The audio capturer configuration to be used while creating capturer instance.
+     * refer AudioCapturerOptions in audio_info.h.
+     * @return Returns unique pointer to the AudioCapturer object
+    */
+    static std::unique_ptr<AudioCapturer> Create(const std::shared_ptr<AbilityRuntime::Context> context,
+        const AudioCapturerOptions &capturerOptions);
 
     /**
      * @brief Sets audio capture parameters.
@@ -286,6 +298,14 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t SetBufferDuration(uint64_t bufferDuration) const = 0;
+
+    /**
+     * @brief Set the ability context to access the application resources
+     *
+     * @param context Indicates the ability context pointer.
+     * @return none
+     */
+    virtual void SetAbilityContext(const std::shared_ptr<AbilityRuntime::Context> context) = 0;
 
     /**
      * @brief Obtains the capturer supported formats.
