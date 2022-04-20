@@ -44,6 +44,7 @@ public:
         const std::shared_ptr<CapturerPeriodPositionCallback> &callback) override;
     void UnsetCapturerPeriodPositionCallback() override;
     int32_t SetBufferDuration(uint64_t bufferDuration) const override;
+    void SetAbilityContext(const std::shared_ptr<AbilityRuntime::Context> context) override;
 
     std::shared_ptr<AudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};

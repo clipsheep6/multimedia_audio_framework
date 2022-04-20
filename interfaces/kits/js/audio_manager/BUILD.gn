@@ -29,6 +29,7 @@ ohos_copy("audio_declaration") {
 ohos_shared_library("audio") {
   include_dirs = [
     "//foundation/aafwk/standard/frameworks/kits/ability/native/include",
+    "//foundation/aafwk/standard/frameworks/kits/appkit/native/ability_runtime/context",
     "//foundation/ace/napi/interfaces/kits",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
     "//foundation/multimedia/audio_standard/frameworks/js/napi/audio_capturer/include",
