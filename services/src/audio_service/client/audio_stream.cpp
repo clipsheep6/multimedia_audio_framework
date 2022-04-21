@@ -39,43 +39,46 @@ const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::streamTy
 map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::CreateStreamMap()
 {
     map<pair<ContentType, StreamUsage>, AudioStreamType> streamMap;
-
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_UNKNOWN)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ALARM)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_MUSIC;
-
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_UNKNOWN)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_MEDIA)] = STREAM_VOICE_ASSISTANT;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_CALL;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_ALARM)] = STREAM_VOICE_ASSISTANT;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_MUSIC;
-
-    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_UNKNOWN)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ALARM)] = STREAM_VOICE_ASSISTANT;
-    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
-
-    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_UNKNOWN)] = STREAM_MEDIA;
-    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_MEDIA)] = STREAM_MEDIA;
-    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_ALARM)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_MUSIC;
-
-    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_UNKNOWN)] = STREAM_NOTIFICATION;
-    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_MEDIA)] = STREAM_NOTIFICATION;
-    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_ALARM)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_MUSIC;
-
-    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_UNKNOWN)] = STREAM_RING;
-    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_MEDIA)] = STREAM_RING;
-    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_ALARM)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
-
+    std::vector<ContentType> ContentTypes = {
+        ContentType::CONTENT_TYPE_UNKNOWN,
+        ContentType::CONTENT_TYPE_SPEECH,
+        ContentType::CONTENT_TYPE_MUSIC,
+        ContentType::CONTENT_TYPE_MOVIE,
+        ContentType::CONTENT_TYPE_SONIFICATION,
+        ContentType::CONTENT_TYPE_RINGTONE
+    };
+    for (auto contentType : ContentTypes) {
+        streamMap[make_pair(contentType, STREAM_USAGE_UNKNOWN)] = AudioStreamType::STREAM_DEFAULT;
+    }
+    streamMap[make_pair(ContentType::CONTENT_TYPE_SONIFICATION, STREAM_USAGE_UNKNOWN)] = AudioStreamType::STREAM_TTS;
+    for (auto contentType : ContentTypes) {
+        streamMap[make_pair(contentType, STREAM_USAGE_VOICE_COMMUNICATION)] = AudioStreamType::STREAM_VOICE_CALL;
+    }
+    for (auto contentType : ContentTypes) {
+        streamMap[make_pair(contentType, STREAM_USAGE_ASSISTANCE_SONIFICATION)] = AudioStreamType::STREAM_SYSTEM;
+    }
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ASSISTANCE_SONIFICATION)] = AudioStreamType::STREAM_SYSTEM_ENFORCED;
+    for (auto contentType : ContentTypes) {
+        streamMap[make_pair(contentType, STREAM_USAGE_NOTIFICATION_RINGTONE)] = AudioStreamType::STREAM_RING;
+    }
+    for (auto contentType : ContentTypes) {
+        streamMap[make_pair(contentType, STREAM_USAGE_MEDIA)] = AudioStreamType::STREAM_MUSIC;
+    }
+    for (auto contentType : ContentTypes) {
+        streamMap[make_pair(contentType, STREAM_USAGE_ALARM)] = AudioStreamType::STREAM_ALARM;
+    }
+    for (auto contentType : ContentTypes) {
+        streamMap[make_pair(contentType, STREAM_USAGE_NOTIFICATION)] = AudioStreamType::STREAM_NOTIFICATION;
+    }
+    for (auto contentType : ContentTypes) {
+        streamMap[make_pair(contentType, STREAM_USAGE_VOICE_COMMUNICATION)] = AudioStreamType::STREAM_BLUETOOTH_SCO;
+    }
+    for (auto contentType : ContentTypes) {
+        streamMap[make_pair(contentType, STREAM_USAGE_VOICE_COMMUNICATION_SIGNALLING)] = AudioStreamType::STREAM_DTMF;
+    }
+    for (auto contentType : ContentTypes) {
+        streamMap[make_pair(contentType, STREAM_USAGE_ASSISTANCE_ACCESSIBILITY)] = AudioStreamType::STREAM_ACCESSIBILITY;
+    }
     return streamMap;
 }
 
