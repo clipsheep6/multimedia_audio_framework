@@ -20,7 +20,6 @@
 #include <OpenSLES_Platform.h>
 #include "audio_info.h"
 #include "audio_log.h"
-#include "pcm2wav.h"
 
 using namespace std;
 

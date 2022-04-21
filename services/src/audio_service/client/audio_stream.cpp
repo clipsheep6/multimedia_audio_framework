@@ -722,12 +722,12 @@ int32_t AudioStream::Enqueue(const BufferDesc &bufDesc)
     }
 
     if (renderMode_ == RENDER_MODE_CALLBACK) {
-        AUDIO_ERR_LOG("AudioStream::Enqueue: filledBuffer length: %{public}zu.", bufDesc.bufLength);
+        AUDIO_INFO_LOG("AudioStream::Enqueue: filledBuffer length: %{public}zu.", bufDesc.bufLength);
         filledBufferQ_.emplace(bufDesc);
     }
 
     if (captureMode_ == CAPTURE_MODE_CALLBACK) {
-        AUDIO_ERR_LOG("AudioStream::Enqueue: freeBuffer length: %{public}zu.", bufDesc.bufLength);
+        AUDIO_INFO_LOG("AudioStream::Enqueue: freeBuffer length: %{public}zu.", bufDesc.bufLength);
         freeBufferQ_.emplace(bufDesc);
     }
 

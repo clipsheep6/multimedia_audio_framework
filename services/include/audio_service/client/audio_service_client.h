@@ -479,10 +479,9 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     int32_t SaveWriteCallback(const std::weak_ptr<AudioRendererWriteCallback> &callback);
-
-    int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);  // new function
+    int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);
     int32_t SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback);
-    AudioCaptureMode GetAudioCaptureMode(); // new function
+    AudioCaptureMode GetAudioCaptureMode();
     /**
      * @brief Set the ability context to access the application resources
      *

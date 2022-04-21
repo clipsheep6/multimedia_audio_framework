@@ -83,6 +83,7 @@ SLresult AudioCapturerAdapter::SetCaptureStateAdapter(SLuint32 id, SLuint32 stat
             AUDIO_ERR_LOG("AudioPlayerAdapter::play state not supported ");
             break;
     }
+    slResult = reseult ? SL_RESULT_SUCCESS : SL_RESULT_RESOURCE_ERROR;
     return slResult;
 }
 
@@ -238,8 +239,10 @@ AudioSamplingRate AudioCapturerAdapter::SlToOhosSamplingRate(SLDataFormat_PCM *p
         case SL_SAMPLINGRATE_192:
             sampleRate = SAMPLE_RATE_44100;
             break;
-        default:
+        default: {
+            AUDIO_ERR_LOG("AudioCapturerAdapter::SlToOhosSamplingRate mismatch, use default.");
             sampleRate = SAMPLE_RATE_44100;
+        }
     }
     return sampleRate;
 }

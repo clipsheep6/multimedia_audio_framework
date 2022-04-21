@@ -45,7 +45,7 @@ public:
         const std::shared_ptr<CapturerPeriodPositionCallback> &callback) override;
     void UnsetCapturerPeriodPositionCallback() override;
     int32_t SetBufferDuration(uint64_t bufferDuration) const override;
-    int32_t SetCaptureMode(AudioCaptureMode renderMode)const override; // new function
+    int32_t SetCaptureMode(AudioCaptureMode renderMode)const override;
     AudioCaptureMode GetCaptureMode()const override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc)const override;

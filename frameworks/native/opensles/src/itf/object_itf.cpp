@@ -71,7 +71,7 @@ static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *in
             return SL_RESULT_FEATURE_UNSUPPORTED;
         }
         return SL_RESULT_SUCCESS;
-    } else if (iid == SL_IID_RECORD) {  // record interface
+    } else if (iid == SL_IID_RECORD) {
         CAudioRecorder *cAudioRecorder = (CAudioRecorder *)self;
         *(void **)interface = (void *)&(cAudioRecorder->mRecord.mItf);
         return SL_RESULT_SUCCESS;
@@ -124,7 +124,7 @@ void Destroy(SLObjectItf self)
         case SL_OBJECTID_OUTPUTMIX:
             OutputMixDestroy((void *)self);
             break;
-        case SL_OBJECTID_AUDIORECORDER:  // record destroy
+        case SL_OBJECTID_AUDIORECORDER:
             AudioRecorderDestroy((void *)self);
             break;
         default:
