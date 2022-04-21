@@ -11,12 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
+import("//build/test.gni")
 
+module_output_path = "audio_standard/audio_opensles"
 pulseaudio_dir = "//third_party/pulseaudio"
 opensles_dir = "//third_party/openSLES"
 
-config("audio_operation_config") {
+config("audio_capture_config") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
@@ -47,44 +48,18 @@ config("audio_opensles_config") {
   ]
 }
 
-ohos_executable("audio_opensles_test") {
-  install_enable = false
-
-  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_opensles_test.cpp" ]
-
-  configs = [
-    ":audio_opensles_config",
-    ":audio_operation_config",
-  ]
-
-  deps = [
-    "//foundation/multimedia/audio_standard:libsl",
-    "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles",
-  ]
-
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-
-  part_name = "multimedia_audio_standard"
-  subsystem_name = "multimedia"
-}
-
-ohos_executable("audio_opensles_capture_test") {
-  install_enable = false
-
-  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_opensles_capture_test.cpp" ]
+ohos_unittest("audio_opensles_capture_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [ "./include" ]
 
   configs = [
     ":audio_opensles_config",
-    ":audio_operation_config",
+    ":audio_capture_config",
   ]
 
-  deps = [
-    "//foundation/multimedia/audio_standard:libsl",
-    "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles",
-  ]
+  sources = [ "src/audio_opensles_capture_unit_test.cpp" ]
+
+  deps = [ "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles" ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-
-  part_name = "multimedia_audio_standard"
-  subsystem_name = "multimedia"
 }
