@@ -57,7 +57,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::CreateStreamMa
     for (auto contentType : ContentTypes) {
         streamMap[make_pair(contentType, STREAM_USAGE_ASSISTANCE_SONIFICATION)] = AudioStreamType::STREAM_SYSTEM;
     }
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ASSISTANCE_SONIFICATION)] = AudioStreamType::STREAM_SYSTEM_ENFORCED;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ASSISTANCE_SONIFICATION)] =
+        AudioStreamType::STREAM_SYSTEM_ENFORCED;
     for (auto contentType : ContentTypes) {
         streamMap[make_pair(contentType, STREAM_USAGE_NOTIFICATION_RINGTONE)] = AudioStreamType::STREAM_RING;
     }
@@ -77,7 +78,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::CreateStreamMa
         streamMap[make_pair(contentType, STREAM_USAGE_VOICE_COMMUNICATION_SIGNALLING)] = AudioStreamType::STREAM_DTMF;
     }
     for (auto contentType : ContentTypes) {
-        streamMap[make_pair(contentType, STREAM_USAGE_ASSISTANCE_ACCESSIBILITY)] = AudioStreamType::STREAM_ACCESSIBILITY;
+        streamMap[make_pair(contentType, STREAM_USAGE_ASSISTANCE_ACCESSIBILITY)] =
+            AudioStreamType::STREAM_ACCESSIBILITY;
     }
     return streamMap;
 }
