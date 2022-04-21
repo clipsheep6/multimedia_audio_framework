@@ -159,7 +159,7 @@ public:
         /**
          * Indicates audio streams for enforced audible.
          */
-        STREAM_ENFORCED_AUDIBLE = 9,
+        STREAM_SYSTEM_ENFORCED = 9,
         /**
          * Indicates audio streams for dual-tone multi-frequency (DTMF) tones.
          */

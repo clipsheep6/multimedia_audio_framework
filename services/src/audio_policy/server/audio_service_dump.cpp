@@ -216,8 +216,8 @@ const std::string AudioServiceDump::GetStreamUsgaeName(StreamUsage streamUsage)
         case STREAM_USAGE_NOTIFICATION_RINGTONE:
             usage = "NOTIFICATION_RINGTONE";
             break;
-        case STREAM_USAGE_VOICE_ASSISTANT:
-            usage = "VOICE_ASSISTANT";
+        case STREAM_USAGE_ALARM:
+            usage = "ALARM";
             break;
         default:
             usage = "STREAM_USAGE_UNKNOWN";
