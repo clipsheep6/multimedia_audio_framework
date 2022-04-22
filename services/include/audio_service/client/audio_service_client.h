@@ -36,7 +36,6 @@
 #include "audio_capturer.h"
 #include "audio_renderer.h"
 #include "audio_system_manager.h"
-#include "context.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -483,11 +482,11 @@ public:
     int32_t SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback);
     AudioCaptureMode GetAudioCaptureMode();
     /**
-     * @brief Set the ability context to access the application resources
+     * @brief Set the applicationcache path to access the application resources
      *
      * @return none
      */
-    void SetAbilityContext(const std::shared_ptr<AbilityRuntime::Context> context);
+    void SetApplicationCachePath(const std::string cachePath);
 
     // Audio timer callback
     virtual void OnTimeOut();
@@ -502,8 +501,6 @@ private:
     std::mutex dataMutex;
     std::mutex ctrlMutex;
 
-    std::shared_ptr<AbilityRuntime::Context> abilityContext_;
-
     AudioCache acache;
     const void *internalReadBuffer;
     size_t internalRdBufLen;
@@ -517,6 +514,7 @@ private:
     bool isStreamConnected;
 
     std::string appCookiePath = "";
+    std::string cachePath_ = "";
 
     float mVolumeFactor;
     AudioStreamType mStreamType;

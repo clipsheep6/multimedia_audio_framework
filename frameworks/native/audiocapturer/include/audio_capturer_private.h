@@ -52,6 +52,7 @@ public:
     int32_t Enqueue(const BufferDesc &bufDesc)const override;
     int32_t Clear()const override;
     int32_t GetBufQueueState(BufferQueueState &bufState)const override;
+    void SetApplicationCachePath(const std::string cachePath) override;
 
     std::shared_ptr<AudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
