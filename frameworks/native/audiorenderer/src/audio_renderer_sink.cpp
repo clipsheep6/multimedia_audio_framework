@@ -262,6 +262,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
     if (pfd == nullptr) {
         AUDIO_ERR_LOG("Error opening pcm test file!");
     }
+    AUDIO_ERR_LOG("DUMPFILE Enabled");
 #endif // DUMPFILE
 
     return SUCCESS;
