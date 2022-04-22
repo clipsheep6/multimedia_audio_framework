@@ -370,7 +370,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_011, TestSize.Level1)
 *             rendererOptions.streamInfo.format = SAMPLE_S16LE;
 *             rendererOptions.streamInfo.channels = MONO;
 *             rendererOptions.rendererInfo.contentType = CONTENT_TYPE_SONIFICATION;
-*             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_VOICE_ASSISTANT;
+*             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_ALARM;
 *             rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
 */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_012, TestSize.Level1)
@@ -381,7 +381,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_012, TestSize.Level1)
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ALARM;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
@@ -428,7 +428,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_013, TestSize.Level1)
 *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
 *             rendererOptions.streamInfo.channels = MONO;
 *             rendererOptions.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-*             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_VOICE_ASSISTANT;
+*             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_ALARM;
 *             rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
 */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_014, TestSize.Level1)
@@ -439,7 +439,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_014, TestSize.Level1)
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ALARM;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
