@@ -613,7 +613,6 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
         }
 
         appCookiePath = abilityContext_->GetCacheDir() + PATH_SEPARATOR + COOKIE_FILE_NAME;
-        AUDIO_DEBUG_LOG("cookie file path: %{public}s", appCookiePath.c_str());
 
         ofstream cookieCache(appCookiePath.c_str(), std::ofstream::binary);
         cookieCache.write(cookieData, size);
