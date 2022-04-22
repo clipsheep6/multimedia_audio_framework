@@ -22,7 +22,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
 class AudioOpenslesCaptureUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases

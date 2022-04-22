@@ -318,6 +318,5 @@ HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_CreateAudioRecorder_001,
     int64_t expectTime = 1000000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

@@ -90,7 +90,7 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode) : eStream
                                                                          renderMode_(RENDER_MODE_NORMAL),
                                                                          captureMode_(CAPTURE_MODE_NORMAL),
                                                                          isReadyToWrite_(false),
-																		 isReadyToRead_(false)
+                                                                         isReadyToRead_(false)
                                                                          isFirstRead_(false)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor");
