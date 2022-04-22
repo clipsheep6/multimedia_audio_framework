@@ -155,7 +155,7 @@ SLresult AudioPlayerAdapter::GetStateAdapter(SLuint32 id, SLOHBufferQueueState *
     BufferQueueState queueState = {0, 0};
     audioRenderer->GetBufQueueState(queueState);
     state->count = queueState.numBuffers;
-    state->Index = queueState.currentIndex;
+    state->index = queueState.currentIndex;
     return SL_RESULT_SUCCESS;
 }
 
