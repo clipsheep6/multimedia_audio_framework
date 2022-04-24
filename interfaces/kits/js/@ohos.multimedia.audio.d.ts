@@ -1094,6 +1094,9 @@ declare namespace audio {
     setRenderRate(rate: AudioRendererRate, callback: AsyncCallback<void>): void;
     setRenderRate(rate: AudioRendererRate): Promise<void>;
 
+    setAudioFocus(audioFocus: AudioFocus, callback: AsyncCallback<void>): void;
+    setAudioFocus(audioFocus: AudioFocus): Promise<void>;
+
     /**
      * Gets audio renderer rate.
      * @return Current audio renderer rate.
@@ -1110,6 +1113,9 @@ declare namespace audio {
      * @since 8
      */
     on(type: "interrupt", callback: Callback<InterruptEvent>): void;
+
+    on(type: "focusChange", callback: Callback<FocusEvent>): void;
+
     /**
      * Unsubscribes mark reach event callback.
      * @since 8

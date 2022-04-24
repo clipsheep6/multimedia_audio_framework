@@ -178,6 +178,8 @@ public:
      */
     virtual int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) = 0;
 
+    virtual int32_t SetAudioFocus(const AudioFocus);
+
     /**
      * @brief Obtains audio renderer parameters.
      *
