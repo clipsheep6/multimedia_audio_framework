@@ -108,6 +108,13 @@ public:
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
 };
 
+class AudioFocusChangeCallback {
+public:
+    virtual ~AudioFocusChangeCallback() = default;
+
+    virtual void OnFocusChange(FocusEvent focusEvent) = 0;
+}
+
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
  *        Provides a series of client/interfaces for audio management

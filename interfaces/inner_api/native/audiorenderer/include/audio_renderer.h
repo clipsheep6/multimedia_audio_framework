@@ -180,6 +180,8 @@ public:
 
     virtual int32_t SetAudioFocus(const AudioFocus);
 
+    virtual int32_t SetAudioFocusChangeCallback(AudioFocusChangeCallback callback);
+
     /**
      * @brief Obtains audio renderer parameters.
      *
