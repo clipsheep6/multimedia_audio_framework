@@ -239,7 +239,6 @@ struct AudioFocus {
     int sessionId;
     FocusUsage focusUsage;
     FocusContent focusContent;
-    FocusType focusType;
 };
 
 
