@@ -115,6 +115,13 @@ public:
     virtual void OnWriteData(size_t length) = 0;
 };
 
+class AudioFocusChangeCallback {
+public:
+    virtual ~AudioFocusChangeCallback() = default;
+
+    virtual void OnFocusChange(FocusEvent focusEvent) = 0;
+}
+
 /**
  * @brief Provides functions for applications to implement audio rendering.
  */

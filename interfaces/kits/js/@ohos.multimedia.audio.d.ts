@@ -948,6 +948,50 @@ declare namespace audio {
     hintType: InterruptHint;
   }
 
+  enum FocusUsage {
+    STREAM_USAGE_UNKNOWN = 0,
+    STREAM_USAGE_MEDIA = 1,
+    STREAM_USAGE_VOICE_COMMUNICATION = 2,
+    STREAM_USAGE_VOICE_COMMUNICATION_SIGNALLING = 3,
+    STREAM_USAGE_ALARM = 4,
+    STREAM_USAGE_NOTIFICATION = 5,
+    STREAM_USAGE_NOTIFICATION_RINGTONE = 6,
+    STREAM_USAGE_NOTIFICATION_EVENT = 7,
+    STREAM_USAGE_ASSISTANCE_ACCESSIBILITY = 8,
+    STREAM_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE = 9,
+    STREAM_USAGE_ASSISTANCE_SONIFICATION = 10,
+    STREAM_USAGE_GAME = 11,
+    STREAM_USAGE_VIRTUAL_SOURCE = 12,
+    STREAM_USAGE_ASSISTANT = 13,
+    STREAM_USAGE_TTS = 14,
+    STREAM_USAGE_ULTRASOUND = 15,
+  }
+
+  enum FocusContent {
+    CONTENT_TYPE_UNKNOWN = 0,
+    CONTENT_TYPE_SPEECH = 1,
+    CONTENT_TYPE_MUSIC = 2,
+    CONTENT_TYPE_MOVIE = 3,
+    CONTENT_TYPE_SONIFICATION = 4,
+    CONTENT_TYPE_RINGTONE = 5
+  }
+
+  enum FocusEvent {
+    PAUSE = 0,
+    STOP = 1,
+    DUCK = 2,
+    RESUME = 3,
+    FORCE_PAUSE = 4,
+    FORCE_STOP = 5,
+    FORCE_DUCK = 6
+  }
+
+  interface AudioFocus {
+    readonly sessionId : number,
+    focusUsage : FocusUsage,
+    focusContent : FocusContent,
+  }
+
   /**
    * Provides functions for applications for audio playback.
    */

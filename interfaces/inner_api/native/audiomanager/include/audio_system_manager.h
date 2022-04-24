@@ -217,6 +217,7 @@ public:
     int32_t UnsetAudioManagerInterruptCallback();
     int32_t RequestAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
+    AudioFocus CreateAudioFocus(const FocusUsage focusUsage, const FocusContent);
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
