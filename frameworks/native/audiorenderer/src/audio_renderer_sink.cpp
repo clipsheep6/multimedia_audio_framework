@@ -603,6 +603,21 @@ int32_t AudioRendererSink::Flush(void)
 
     return ERR_OPERATION_FAILED;
 }
+
+void AudioRendererSink::SetAudioParameter(const std::string &key, const std::string &value)
+{
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("No audioAdapter when SetAudioParameter");
+        return;
+    }
+
+    int32_t ret = audioAdapter_->SetAudioParameter(audioAdapter_, key, value);
+    if (!ret) {
+        AUDIO_ERR_LOG("audioAdapter SetAudioParameter failed");
+    }
+
+    return;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

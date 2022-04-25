@@ -48,6 +48,7 @@ public:
     int32_t GetLatency(uint32_t *latency);
     int32_t SetAudioScene(AudioScene audioScene);
     int32_t OpenOutput(DeviceType deviceType);
+    void SetAudioParameter(const std::string &key, const std::string &value);
     static AudioRendererSink *GetInstance(void);
     bool rendererInited_;
 private:

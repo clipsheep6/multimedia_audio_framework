@@ -90,6 +90,13 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
 {
     AUDIO_DEBUG_LOG("server: set audio parameter");
     AudioServer::audioParameters[key] = value;
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+
+    if (!audioRendererSinkInstance->rendererInited_) {
+        AUDIO_WARNING_LOG("Renderer is not initialized.");
+    } else {
+        audioRendererSinkInstance->SetAudioParameter(key, value);
+    }
 }
 
 const std::string AudioServer::GetAudioParameter(const std::string &key)
