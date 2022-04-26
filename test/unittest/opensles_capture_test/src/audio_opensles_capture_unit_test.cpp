@@ -161,13 +161,13 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_001, TestSize.Level0
     }
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetPlayState_002, TestSize.Level0)
+HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetRecordState_002, TestSize.Level0)
 {
     SLresult result = (*captureItf_)->SetRecordState(captureItf_, SL_RECORDSTATE_PAUSED);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetPlayState_003, TestSize.Level0)
+HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetRecordState_003, TestSize.Level0)
 {
     SLresult result = (*captureItf_)->SetRecordState(captureItf_, SL_RECORDSTATE_STOPPED);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
