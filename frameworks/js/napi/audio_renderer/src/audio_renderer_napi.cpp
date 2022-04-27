@@ -124,6 +124,9 @@ static AudioSampleFormat GetNativeAudioSampleFormat(int32_t napiSampleFormat)
         case AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S32LE:
             format = SAMPLE_S32LE;
             break;
+        case AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_F32LE:
+            format = SAMPLE_F32LE;
+            break;
         default:
             format = INVALID_WIDTH;
             HiLog::Error(LABEL, "Unknown sample format requested by JS, Set it to default INVALID_WIDTH!");
@@ -150,6 +153,9 @@ static AudioRendererNapi::AudioSampleFormat GetJsAudioSampleFormat(int32_t nativ
         case SAMPLE_S32LE:
             format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S32LE;
             break;
+        case SAMPLE_F32LE:
+            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_F32LE;
+            break;
         default:
             format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_INVALID;
             HiLog::Error(LABEL, "Unknown sample format returned from native, Set it to default SAMPLE_FORMAT_INVALID!");
@@ -167,7 +173,7 @@ napi_value AudioRendererNapi::CreateAudioSampleFormatObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = AudioRendererNapi::SAMPLE_FORMAT_INVALID; i <= AudioRendererNapi::SAMPLE_FORMAT_S32LE; i++) {
+        for (int i = AudioRendererNapi::SAMPLE_FORMAT_INVALID; i <= AudioRendererNapi::SAMPLE_FORMAT_F32LE; i++) {
             switch (i) {
                 case AudioRendererNapi::SAMPLE_FORMAT_INVALID:
                     propName = "SAMPLE_FORMAT_INVALID";
@@ -183,6 +189,9 @@ napi_value AudioRendererNapi::CreateAudioSampleFormatObject(napi_env env)
                     break;
                 case AudioRendererNapi::SAMPLE_FORMAT_S32LE:
                     propName = "SAMPLE_FORMAT_S32LE";
+                    break;
+                case AudioRendererNapi::SAMPLE_FORMAT_F32LE:
+                    propName = "SAMPLE_FORMAT_F32LE";
                     break;
                 default:
                     HiLog::Error(LABEL, "CreateAudioSampleFormatObject: No prop with this value try next value!");

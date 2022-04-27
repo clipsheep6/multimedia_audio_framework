@@ -198,7 +198,7 @@ enum AudioSampleFormat {
     SAMPLE_S16LE = 16,
     SAMPLE_S24LE = 24,
     SAMPLE_S32LE = 32,
-    SAMPLE_F32LE = 32,
+    SAMPLE_F32LE = -32,
     INVALID_WIDTH = -1
 };
 
@@ -457,7 +457,8 @@ const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
     SAMPLE_U8,
     SAMPLE_S16LE,
     SAMPLE_S24LE,
-    SAMPLE_S32LE
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
 };
 
 const std::vector<AudioChannel> AUDIO_SUPPORTED_CHANNELS {

@@ -94,6 +94,9 @@ AudioStreamParams AudioServiceClient::ConvertFromPAAudioParams(pa_sample_spec pa
         case PA_SAMPLE_S32LE:
             audioParams.format = SAMPLE_S32LE;
             break;
+        case PA_SAMPLE_FLOAT32LE:
+            audioParams.format = SAMPLE_F32LE;
+            break;
         default:
             audioParams.format = INVALID_WIDTH;
             break;
@@ -121,6 +124,9 @@ pa_sample_spec AudioServiceClient::ConvertToPAAudioParams(AudioStreamParams audi
             break;
         case SAMPLE_S32LE:
             paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_S32LE;
+            break;
+        case SAMPLE_F32LE:
+            paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_FLOAT32LE;
             break;
         default:
             paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_INVALID;
