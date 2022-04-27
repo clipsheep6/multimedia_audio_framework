@@ -95,6 +95,9 @@ static AudioSampleFormat GetNativeAudioSampleFormat(int32_t napiSampleFormat)
         case AudioCapturerNapi::SAMPLE_FORMAT_S32LE:
             format = SAMPLE_S32LE;
             break;
+        case AudioCapturerNapi::SAMPLE_FORMAT_F32LE:
+            format = SAMPLE_F32LE;
+            break;
         default:
             format = INVALID_WIDTH;
             HiLog::Error(LABEL, "Unknown sample format requested by JS, Set it to default INVALID_WIDTH!");
@@ -120,6 +123,9 @@ static AudioCapturerNapi::AudioSampleFormat GetJsAudioSampleFormat(int32_t nativ
             break;
         case SAMPLE_S32LE:
             format = AudioCapturerNapi::AudioSampleFormat::SAMPLE_FORMAT_S32LE;
+            break;
+        case SAMPLE_F32LE:
+            format = AudioCapturerNapi::AudioSampleFormat::SAMPLE_FORMAT_F32LE;
             break;
         default:
             format = AudioCapturerNapi::AudioSampleFormat::SAMPLE_FORMAT_INVALID;
