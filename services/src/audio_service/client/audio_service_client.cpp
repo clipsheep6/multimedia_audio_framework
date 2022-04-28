@@ -45,6 +45,10 @@ const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const string PATH_SEPARATOR = "/";
 const string COOKIE_FILE_NAME = "cookie";
 
+#ifdef CLIENT_DUMPFILE
+const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test_client.pcm";
+#endif // CLIENT_DUMPFILE
+
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
 {
     do {
@@ -501,6 +505,10 @@ AudioServiceClient::AudioServiceClient()
 
     setBufferSize = 0;
     PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
+
+#ifdef CLIENT_DUMPFILE
+    pfd = nullptr;
+#endif // CLIENT_DUMPFILE
 }
 
 void AudioServiceClient::ResetPAAudioClient()
@@ -579,6 +587,13 @@ void AudioServiceClient::ResetPAAudioClient()
 
     setBufferSize = 0;
     PAStreamCorkSuccessCb = nullptr;
+
+#ifdef CLIENT_DUMPFILE
+    if (pfd) {
+        fclose(pfd);
+        pfd = nullptr;
+    }
+#endif // CLIENT_DUMPFILE
 }
 
 AudioServiceClient::~AudioServiceClient()
@@ -705,6 +720,13 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     }
 
     pa_threaded_mainloop_unlock(mainLoop);
+#ifdef CLIENT_DUMPFILE
+    pfd = fopen(g_audioOutTestFilePath, "wb+");
+    if (pfd == nullptr) {
+        AUDIO_ERR_LOG("Error opening pcm test file!");
+    }
+    AUDIO_INFO_LOG("CLIENT_DUMPFILE Success opening pcm test file!");
+#endif // CLIENT_DUMPFILE
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -1181,6 +1203,12 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
             error = AUDIO_CLIENT_WRITE_STREAM_ERR;
             break;
         }
+#ifdef CLIENT_DUMPFILE
+        size_t writeResult = fwrite((void*)buffer, 1, writableSize, pfd);
+        if (writeResult != writableSize) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+#endif // CLIENT_DUMPFILE
 
         AUDIO_INFO_LOG("Writable size: %{public}zu, bytes to write: %{public}zu, return val: %{public}d",
                        writableSize, length, error);
