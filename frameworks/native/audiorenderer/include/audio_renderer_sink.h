@@ -22,6 +22,11 @@
 #include <cstdio>
 #include <list>
 
+#ifndef DUMPFILE
+#define DUMPFILE
+#endif
+
+
 namespace OHOS {
 namespace AudioStandard {
 typedef struct {

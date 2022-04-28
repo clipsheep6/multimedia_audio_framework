@@ -37,6 +37,11 @@
 #include "audio_renderer.h"
 #include "audio_system_manager.h"
 
+
+#ifndef CLIENT_DUMPFILE
+#define CLIENT_DUMPFILE
+#endif
+
 namespace OHOS {
 namespace AudioStandard {
 enum ASClientType {
@@ -548,6 +553,10 @@ private:
     std::weak_ptr<AudioStreamCallback> streamCallback_;
     State state_;
     pa_stream_success_cb_t PAStreamCorkSuccessCb;
+
+    #ifdef CLIENT_DUMPFILE
+    FILE *pfd;
+    #endif // CLIENT_DUMPFILE
 
     // To be set while using audio stream
     // functionality for callbacks
