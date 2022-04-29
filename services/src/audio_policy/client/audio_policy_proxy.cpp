@@ -659,5 +659,23 @@ bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName,
 
     return reply.ReadBool();
 }
+
+int32_t AudioPolicyProxy::GetAudioLatencyFromXml()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: GetAudioLatencyFromXml WriteInterfaceToken failed");
+        return -1;
+    }
+    int32_t error = Remote()->SendRequest(GET_AUDIO_LATENCY, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetAudioLatencyFromXml, error: %d", error);
+    }
+
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS
