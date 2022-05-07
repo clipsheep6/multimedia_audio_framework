@@ -29,13 +29,13 @@ using namespace std;
 
 static void CaptureOption(char option);
 
-static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size);
+static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size);
 
 static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile);
 
 static void CaptureStop(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf);
 
-static void OpenSLCaptureTest();
+static void OpenSLESCaptureTest();
 
 const int PARAMETERS = 4;
 FILE *wavFile_ = nullptr;
@@ -48,7 +48,7 @@ struct timespec tv2 = {0};
 
 int main(int argc, char *argv[])
 {
-    AUDIO_INFO_LOG("opensl es capture test in");
+    AUDIO_INFO_LOG("OpenSLES capture test in");
     if (argc > PARAMETERS) {
         AUDIO_ERR_LOG("Incorrect number of parameters.");
         return -1;
@@ -58,11 +58,11 @@ int main(int argc, char *argv[])
     string filePath = "/data/test.pcm";
     wavFile_ = fopen(filePath.c_str(), "wb");
     if (wavFile_ == nullptr) {
-        AUDIO_INFO_LOG("OpenSLES record: Unable to open file");
+        AUDIO_INFO_LOG("OpenSLES capture: Unable to open file");
         return -1;
     }
 
-    OpenSLCaptureTest();
+    OpenSLESCaptureTest();
     while ((opt = getopt(argc, argv, "a:b")) != -1) {
         switch (opt) {
             case 'a':
@@ -96,9 +96,9 @@ static void CaptureOption(char option)
     }
 }
 
-static void OpenSLCaptureTest()
+static void OpenSLESCaptureTest()
 {
-    AUDIO_INFO_LOG("OpenSLCaptureTest");
+    AUDIO_INFO_LOG("OpenSLESCaptureTest");
     engineObject = nullptr;
     SLEngineItf engineItf = nullptr;
 
@@ -143,26 +143,26 @@ static void OpenSLCaptureTest()
     
     (*pcmCapturerObject)->GetInterface(pcmCapturerObject, SL_IID_RECORD, &recordItf);
     (*pcmCapturerObject)->GetInterface(pcmCapturerObject, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf);
-    (*bufferQueueItf)->RegisterCallback(bufferQueueItf, BuqqerQueueCallback, wavFile_);
+    (*bufferQueueItf)->RegisterCallback(bufferQueueItf, BufferQueueCallback, wavFile_);
 
     return;
 }
 
-static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
+static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
 {
-    AUDIO_INFO_LOG("BuqqerQueueCallback");
+    AUDIO_INFO_LOG("BufferQueueCallback");
     FILE *wavFile = (FILE *)pContext;
     if (wavFile != nullptr) {
         SLuint8 *buffer = nullptr;
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
         if (buffer != nullptr) {
-            AUDIO_INFO_LOG("BuqqerQueueCallback, length, pSize:%{public}lu, size: %{public}lu.",
+            AUDIO_INFO_LOG("BufferQueueCallback, length, pSize:%{public}lu, size: %{public}lu.",
                            pSize, size);
             fwrite(buffer, 1, pSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         } else {
-            AUDIO_INFO_LOG("BuqqerQueueCallback, buffer is null or pSize: %{public}lu, size: %{public}lu.",
+            AUDIO_INFO_LOG("BufferQueueCallback, buffer is null or pSize: %{public}lu, size: %{public}lu.",
                            pSize, size);
         }
     }
@@ -183,7 +183,7 @@ static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueIt
             fwrite(buffer, 1, pSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
         } else {
-            AUDIO_INFO_LOG("BuqqerQueueCallback, buffer is null or pSize: %{public}lu.", pSize);
+            AUDIO_INFO_LOG("CaptureStart, buffer is null or pSize: %{public}lu.", pSize);
         }
     }
 
