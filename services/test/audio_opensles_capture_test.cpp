@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <securec.h>
 #include <iostream>
 #include <unistd.h>
 #include <OpenSLES.h>
@@ -23,6 +27,8 @@
 
 using namespace std;
 
+static void CaptureOption(char option);
+
 static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size);
 
 static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile);
@@ -31,22 +37,25 @@ static void CaptureStop(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf
 
 static void OpenSLCaptureTest();
 
-const int PARAMETERS = 2;
+const int PARAMETERS = 4;
 FILE *wavFile_ = nullptr;
 SLObjectItf engineObject = nullptr;
 SLRecordItf  recordItf;
 SLOHBufferQueueItf bufferQueueItf;
 SLObjectItf pcmCapturerObject = nullptr;
+struct timespec tv1 = {0};
+struct timespec tv2 = {0};
 
 int main(int argc, char *argv[])
 {
     AUDIO_INFO_LOG("opensl es capture test in");
-    if (argc != PARAMETERS) {
+    if (argc > PARAMETERS) {
         AUDIO_ERR_LOG("Incorrect number of parameters.");
         return -1;
     }
     
-    string filePath = argv[1];
+    int opt = 0;
+    string filePath = "/data/test.pcm";
     wavFile_ = fopen(filePath.c_str(), "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("OpenSLES record: Unable to open file");
@@ -54,19 +63,43 @@ int main(int argc, char *argv[])
     }
 
     OpenSLCaptureTest();
-    while (wavFile_ != nullptr) {
-        sleep(1);
+    while ((opt = getopt(argc, argv, "a:b")) != -1) {
+        switch (opt) {
+            case 'a':
+                CaptureOption(opt);
+                break;
+            case 'b':
+            default:
+                fflush(wavFile_);
+                CaptureStop(recordItf, bufferQueueItf);
+                (*pcmCapturerObject)->Destroy(pcmCapturerObject);
+                fclose(wavFile_);
+                wavFile_ = nullptr;
+                break;
+        }
     }
-    fflush(wavFile_);
-    CaptureStop(recordItf, bufferQueueItf);
-    (*pcmCapturerObject)->Destroy(pcmCapturerObject);
-    fclose(wavFile_);
-    wavFile_ = nullptr;
+}
+
+static void CaptureOption(char option)
+{
+    AUDIO_INFO_LOG("CaptureOption func");
+    int64_t usecTimes = 1000000000;
+    unsigned long long totalTime = strtoull(optarg, nullptr, 10);
+    AUDIO_INFO_LOG("CaptureOption total time: %{public}llu", totalTime);
+    totalTime *= usecTimes;
+    clock_gettime(CLOCK_REALTIME, &tv1);
+
+    CaptureStart(recordItf, bufferQueueItf, wavFile_);
+    clock_gettime(CLOCK_REALTIME, &tv2);
+    while (((tv2.tv_sec * usecTimes + tv2.tv_nsec) - (tv1.tv_sec * usecTimes + tv1.tv_nsec)) < totalTime) {
+        sleep(1);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+    }
 }
 
 static void OpenSLCaptureTest()
 {
-    AUDIO_ERR_LOG("OpenSLCaptureTest");
+    AUDIO_INFO_LOG("OpenSLCaptureTest");
     engineObject = nullptr;
     SLEngineItf engineItf = nullptr;
 
@@ -112,8 +145,6 @@ static void OpenSLCaptureTest()
     (*pcmCapturerObject)->GetInterface(pcmCapturerObject, SL_IID_RECORD, &recordItf);
     (*pcmCapturerObject)->GetInterface(pcmCapturerObject, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf);
     (*bufferQueueItf)->RegisterCallback(bufferQueueItf, BuqqerQueueCallback, wavFile_);
-    
-    CaptureStart(recordItf, bufferQueueItf, wavFile_);
 
     return;
 }
