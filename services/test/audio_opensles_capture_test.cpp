@@ -87,7 +87,7 @@ static void CaptureOption(void)
 {
     AUDIO_INFO_LOG("Enter CaptureOption.");
     uint64_t totalTime = strtoull(optarg, nullptr, 10);
-    AUDIO_INFO_LOG("CaptureOption time: %{public}llu", totalTime);
+    AUDIO_INFO_LOG("CaptureOption time: %{public}lu", totalTime);
     CaptureStart(recordItf, bufferQueueItf, wavFile_);
     OperationTime(totalTime);
 }
@@ -190,7 +190,7 @@ static void CapturePause(SLRecordItf recordItf)
 {
     AUDIO_INFO_LOG("Enter CapturePause");
     uint64_t totalTime = strtoull(optarg, nullptr, 10);
-    AUDIO_INFO_LOG("CapturePause time: %{public}llu", totalTime);
+    AUDIO_INFO_LOG("CapturePause time: %{public}lu", totalTime);
     (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_PAUSED);
     OperationTime(totalTime);
 
