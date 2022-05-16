@@ -128,7 +128,7 @@ int32_t AudioCapturerSource::InitAudioManager()
 {
     AUDIO_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
 
-    audioManager_ = GetAudioManagerFuncs();
+    audioManager_ = GetAudioProxyManagerFuncs();
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
