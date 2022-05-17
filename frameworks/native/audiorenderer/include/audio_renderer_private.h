@@ -67,7 +67,7 @@ public:
 
     AudioRendererInfo rendererInfo_ = {};
 
-    explicit AudioRendererPrivate(AudioStreamType audioStreamType);
+    AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo);
     ~AudioRendererPrivate();
 
 private:
@@ -77,6 +77,7 @@ private:
     AudioInterrupt audioInterrupt_ =
         {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
     uint32_t sessionID_ = INVALID_SESSION_ID;
+    AppInfo appInfo_;
 };
 
 class AudioInterruptCallbackImpl : public AudioInterruptCallback {

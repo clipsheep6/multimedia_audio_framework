@@ -58,6 +58,13 @@ private:
     void SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void VerifyClientPermissionInternal(MessageParcel &data, MessageParcel &reply);
+    void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+    void RegisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
+    void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS
