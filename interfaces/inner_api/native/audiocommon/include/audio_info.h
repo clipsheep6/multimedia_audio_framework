@@ -149,6 +149,17 @@ enum DeviceType {
     DEVICE_TYPE_MAX
 };
 
+enum ConnectType {
+    /**
+     * Group connect type of local device
+     */
+    CONNECT_TYPE_LOCAL = 0,
+    /**
+     * Group connect type of distributed device
+     */
+    CONNECT_TYPE_DISTRIBUTED
+};
+
 enum ActiveDeviceType {
     ACTIVE_DEVICE_TYPE_NONE = -1,
     SPEAKER = 2,
@@ -709,6 +720,17 @@ enum AudioPin {
     AUDIO_PIN_IN_LINEIN = 134217732,
     AUDIO_PIN_IN_USB_EXT = 134217736,
     AUDIO_PIN_IN_DAUDIO_DEFAULT = 134217744,
+};
+
+struct DStatusInfo {
+    char networkId[30];
+    AudioPin hdiPin = AUDIO_PIN_NONE;
+    int32_t mappingVolumeId = 0;
+    int32_t mappingInterruptId = 0;
+    bool isConnected =false;
+    std::string macAddress;
+    AudioStreamInfo streamInfo = {};
+    ConnectType connectType = CONNECT_TYPE_LOCAL;
 };
 } // namespace AudioStandard
 } // namespace OHOS
