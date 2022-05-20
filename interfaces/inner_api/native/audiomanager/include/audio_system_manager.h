@@ -20,6 +20,7 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <memory>
 
 #include "parcel.h"
 #include "audio_info.h"
@@ -108,6 +109,40 @@ public:
      * For details, refer RingerMode enum in audio_info.h
      */
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
+};
+
+class AudioRendererStateChangeCallback {
+public:
+    virtual ~AudioRendererStateChangeCallback() = default;
+    /**
+     * Called when the renderer state changes
+     *
+     * @param rendererChangeInfo Contains the renderer state information.
+     */
+    virtual void OnRendererStateChange(
+        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
+};
+
+class AudioCapturerStateChangeCallback {
+public:
+    virtual ~AudioCapturerStateChangeCallback() = default;
+    /**
+     * Called when the capturer state changes
+     *
+     * @param capturerChangeInfo Contains the renderer state information.
+     */
+    virtual void OnCapturerStateChange(
+        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
+};
+
+class AudioClientTracker {
+public:
+    virtual ~AudioClientTracker() = default;
+
+    /**
+     * Called to init the tracker.
+     */
+    virtual void OnInit() = 0;
 };
 
 /**
@@ -201,7 +236,6 @@ public:
     const std::string GetAudioParameter(const std::string key);
     void SetAudioParameter(const std::string &key, const std::string &value);
     const char *RetrieveCookie(int32_t &size);
-    uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole);
     int32_t SetDeviceActive(ActiveDeviceType deviceType, bool flag) const;
     bool IsDeviceActive(ActiveDeviceType deviceType) const;
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
@@ -229,10 +263,19 @@ public:
     int32_t UnsetAudioManagerInterruptCallback();
     int32_t RequestAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
+
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-    int32_t RequestIndependentInterrupt(FocusType focusType);
-    int32_t AbandonIndependentInterrupt(FocusType focusType);
     int32_t GetAudioLatencyFromXml() const;
+
+    int32_t RegisterAudioRendererEventListener(const int32_t clientUID,
+                                              const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
+    int32_t UnregisterAudioRendererEventListener(const int32_t clientUID);
+    int32_t RegisterAudioCapturerEventListener(const int32_t clientUID,
+                                              const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
+    int32_t UnregisterAudioCapturerEventListener(const int32_t clientUID);
+    int32_t GetCurrentRendererChangeInfos(std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+    int32_t GetCurrentCapturerChangeInfos(std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();

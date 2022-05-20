@@ -99,8 +99,8 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
     attrs.format = AUDIO_FORMAT_PCM_16_BIT;
-    attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
+    attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
     attrs.type = AUDIO_IN_MEDIA;
@@ -193,7 +193,7 @@ uint32_t PcmFormatToBits(AudioFormat format)
 
 int32_t BluetoothRendererSink::CreateRender(struct AudioPort &renderPort)
 {
-    AUDIO_DEBUG_LOG("Create render in");
+    AUDIO_INFO_LOG("Create render in");
     int32_t ret;
     struct AudioSampleAttributes param;
     InitAttrs(param);
@@ -202,7 +202,7 @@ int32_t BluetoothRendererSink::CreateRender(struct AudioPort &renderPort)
     param.format = attr_.format;
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    AUDIO_DEBUG_LOG("BluetoothRendererSink Create render format: %{public}d", param.format);
+    AUDIO_INFO_LOG("BluetoothRendererSink Create render format: %{public}d", param.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
     deviceDesc.pins = PIN_OUT_SPEAKER;
@@ -213,14 +213,14 @@ int32_t BluetoothRendererSink::CreateRender(struct AudioPort &renderPort)
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
         return ERR_NOT_STARTED;
     }
-    AUDIO_DEBUG_LOG("create render done");
+    AUDIO_INFO_LOG("create render done");
 
     return 0;
 }
 
-int32_t BluetoothRendererSink::Init(const BluetoothSinkAttr &attr)
+int32_t BluetoothRendererSink::Init(AudioSinkAttr &attr)
 {
-    AUDIO_DEBUG_LOG("BluetoothRendererSink Init: %{public}d", attr_.format);
+    AUDIO_INFO_LOG("BluetoothRendererSink::Init");
     attr_ = attr;
 
     string adapterNameCase = "bt_a2dp";  // Set sound card information
@@ -392,12 +392,6 @@ int32_t BluetoothRendererSink::GetLatency(uint32_t *latency)
     }
 }
 
-uint64_t BluetoothRendererSink::GetTransactionId()
-{
-    AUDIO_INFO_LOG("BluetoothRendererSink::GetTransactionId in");
-    return reinterpret_cast<uint64_t>(audioRender_);
-}
-
 int32_t BluetoothRendererSink::Stop(void)
 {
     AUDIO_INFO_LOG("BluetoothRendererSink::Stop in");
@@ -525,7 +519,7 @@ using namespace OHOS::AudioStandard;
 
 BluetoothRendererSink *g_bluetoothRendrSinkInstance = BluetoothRendererSink::GetInstance();
 
-int32_t BluetoothRendererSinkInit(BluetoothSinkAttr *attr)
+int32_t BluetoothRendererSinkInit(AudioSinkAttr *attr)
 {
     int32_t ret;
 

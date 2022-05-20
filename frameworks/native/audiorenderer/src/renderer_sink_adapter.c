@@ -56,13 +56,7 @@ static int32_t RendererSinkInitInner(const SinkAttr *attr)
         return AudioRendererSinkInit((AudioSinkAttr *)attr);
     } else if (g_deviceClass == CLASS_TYPE_A2DP) {
         AUDIO_INFO_LOG("%{public}s: CLASS_TYPE_A2DP", __func__);
-        BluetoothSinkAttr bluetoothSinkAttr;
-        bluetoothSinkAttr.format = attr->format;
-        bluetoothSinkAttr.sampleFmt = attr->sampleFmt;
-        bluetoothSinkAttr.sampleRate = attr->sampleRate;
-        bluetoothSinkAttr.channel = attr->channel;
-        bluetoothSinkAttr.volume = attr->volume;
-        return BluetoothRendererSinkInit(&bluetoothSinkAttr);
+        return BluetoothRendererSinkInit((BluetoothSinkAttr *)attr);
     } else if (g_deviceClass == CLASS_TYPE_FILE) {
         AUDIO_INFO_LOG("%{public}s: CLASS_TYPE_FILE", __func__);
         return AudioRendererFileSinkInit(attr->filePath);

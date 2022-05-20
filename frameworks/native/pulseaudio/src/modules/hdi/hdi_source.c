@@ -125,7 +125,8 @@ static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t off
 static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t newState,
     pa_suspend_cause_t newSuspendCause)
 {
-    AUDIO_INFO_LOG("Capturer current state: %{public}d new state: %{public}d", s->thread_info.state, newState);
+    AUDIO_INFO_LOG("source_set_state_in_io_thread_cb: s->thread_info.state: %{public}d newState: %{public}d",
+        s->thread_info.state, newState);
     struct Userdata *u = NULL;
     pa_assert(s);
     pa_assert_se(u = s->userdata);
@@ -234,20 +235,20 @@ static void thread_func(void *userdata)
                 }
 
                 u->timestamp += pa_bytes_to_usec(chunk.length, &u->source->sample_spec);
-                AUDIO_DEBUG_LOG("HDI Source: new u->timestamp : %{public}" PRIu64, u->timestamp);
+                AUDIO_INFO_LOG("HDI Source: new u->timestamp : %{public}" PRIu64, u->timestamp);
             }
 
             pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + u->block_usec);
         } else {
             pa_rtpoll_set_timer_disabled(u->rtpoll);
-            AUDIO_DEBUG_LOG("HDI Source: pa_rtpoll_set_timer_disabled done ");
+            AUDIO_INFO_LOG("HDI Source: pa_rtpoll_set_timer_disabled done ");
         }
 
         /* Hmm, nothing to do. Let's sleep */
         if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
             /* If this was no regular exit from the loop we have to continue
             * processing messages until we received PA_MESSAGE_SHUTDOWN */
-            AUDIO_ERR_LOG("HDI Source: pa_rtpoll_run ret:%{public}d failed", ret);
+            AUDIO_INFO_LOG("HDI Source: pa_rtpoll_run ret:%{public}d failed", ret);
             pa_asyncmsgq_post(u->thread_mq.outq, PA_MSGOBJECT(u->core), PA_CORE_MESSAGE_UNLOAD_MODULE, u->module,
                 0, NULL, NULL);
             pa_asyncmsgq_wait_for(u->thread_mq.inq, PA_MESSAGE_SHUTDOWN);
@@ -312,7 +313,7 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sampl
     pa_proplist_setf(data.proplist, PA_PROP_DEVICE_BUFFERING_BUFFER_SIZE, "%lu", (unsigned long)u->buffer_size);
 
     if (pa_modargs_get_proplist(ma, "source_properties", data.proplist, PA_UPDATE_REPLACE) < 0) {
-        AUDIO_ERR_LOG("Invalid properties");
+        AUDIO_INFO_LOG("Invalid properties");
         pa_source_new_data_done(&data);
         return -1;
     }
@@ -321,7 +322,7 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sampl
     pa_source_new_data_done(&data);
 
     if (!u->source) {
-        AUDIO_ERR_LOG("Failed to create source object");
+        AUDIO_INFO_LOG("Failed to create source object");
         return -1;
     }
 
@@ -339,6 +340,7 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sampl
     return 0;
 }
 
+#ifndef PRODUCT_RK3568
 static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
 {
     enum AudioFormat hdiAudioFormat;
@@ -384,6 +386,7 @@ static bool GetEndianInfo(pa_sample_format_t format)
 
     return isBigEndian;
 }
+#endif // #ifndef PRODUCT_RK3568
 
 pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
 {
@@ -401,7 +404,7 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
 
     /* Override with modargs if provided */
     if (pa_modargs_get_sample_spec_and_channel_map(ma, &ss, &map, PA_CHANNEL_MAP_DEFAULT) < 0) {
-        AUDIO_ERR_LOG("Failed to parse sample specification and channel map");
+        AUDIO_INFO_LOG("Failed to parse sample specification and channel map");
         return NULL;
     }
 
@@ -413,7 +416,7 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     u->rtpoll = pa_rtpoll_new();
 
     if (pa_thread_mq_init(&u->thread_mq, m->core->mainloop, u->rtpoll) < 0) {
-        AUDIO_ERR_LOG("pa_thread_mq_init() failed.");
+        AUDIO_INFO_LOG("pa_thread_mq_init() failed.");
         goto fail;
     }
 
@@ -426,16 +429,24 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     u->buffer_size = DEFAULT_BUFFER_SIZE;
     u->attrs.sampleRate = ss.rate;
     u->attrs.filePath = pa_modargs_get_value(ma, "file_path", "");
+   // The values for rk are hardcoded due to config mismatch in hdi. To be removed once hdi issue is fixed.
     if (pa_modargs_get_value_u32(ma, "open_mic_speaker", &u->open_mic_speaker) < 0) {
         AUDIO_ERR_LOG("Failed to parse open_mic_speaker argument");
         goto fail;
     }
+#ifdef PRODUCT_RK3568
+    int32_t channelCount = 2;
+    u->attrs.channel = channelCount;
+    u->attrs.format = AUDIO_FORMAT_PCM_16_BIT;
+    u->attrs.isBigEndian = false;
+#else
     u->attrs.channel = ss.channels;
     u->attrs.format = ConvertToHDIAudioFormat(ss.format);
     u->attrs.isBigEndian = GetEndianInfo(ss.format);
+#endif
     u->attrs.adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
 
-    AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
+    AUDIO_INFO_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
         "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
 
     ret = pa_set_source_properties(m, ma, &ss, &map, u);
@@ -453,7 +464,7 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
 
     thread_name = "hdi-source-record";
     if (!(u->thread = pa_thread_new(thread_name, thread_func, u))) {
-        AUDIO_ERR_LOG("Failed to create hdi-source-record thread!");
+        AUDIO_INFO_LOG("Failed to create hdi-source-record thread!");
         goto fail;
     }
 

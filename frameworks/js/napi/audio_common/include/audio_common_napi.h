@@ -23,7 +23,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
-    const std::string INDEPENDENTINTERRUPT_CALLBACK_NAME = "independentInterrupt";
     const std::string STATE_CHANGE_CALLBACK_NAME = "stateChange";
 }
 

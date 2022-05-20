@@ -77,6 +77,7 @@ group("audio_policy_service_packages") {
     ":audio_dump",
     ":audio_interrupt_policy_config",
     ":audio_policy.rc",
+    ":audio_policy_config",
     ":audio_policy_service",
   ]
 }
@@ -139,6 +140,10 @@ config("audio_policy_public_config") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
 
+  if ("${product_name}" == "m40") {
+    cflags += [ "-DPRODUCT_M40" ]
+  }
+
   ldflags = [ "-Wl" ]
 }
 
@@ -164,17 +169,22 @@ ohos_shared_library("audio_policy_service") {
   install_enable = true
   sources = [
     "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_device_descriptor.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_capturer_state_change_listener_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_manager_listener_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_manager_stub.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_server.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_renderer_state_change_listener_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_ringermode_update_listener_proxy.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_stream_collector.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_stream_event_dispatcher.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_volume_key_event_callback_proxy.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_client_tracker_callback_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/audio_policy_service.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/config/audio_focus_parser.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/config/xml_parser.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/listener/device_status_listener.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/manager/audio_adapter_manager.cpp",
-    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/audio_policy_service_proxy.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/audio_policy_service_proxy.cpp"
   ]
 
   public_configs = [ ":audio_policy_public_config" ]
@@ -197,7 +207,6 @@ ohos_shared_library("audio_policy_service") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
     "input:libmmi-client",
     "ipc:ipc_core",
@@ -205,6 +214,30 @@ ohos_shared_library("audio_policy_service") {
     "samgr_standard:samgr_proxy",
   ]
   subsystem_name = "multimedia"
+  part_name = "multimedia_audio_standard"
+}
+
+ohos_prebuilt_etc("audio_policy_config") {
+  if ("${product_name}" == "rk3566" || "${product_name}" == "rk3568") {
+    if (target_cpu == "arm64") {
+      source =
+          "$AUDIO_POLICY_SERVER_DIR/etc/rk3568/arm64/audio_policy_config.xml"
+    } else {
+      source = "$AUDIO_POLICY_SERVER_DIR/etc/rk3568/arm/audio_policy_config.xml"
+    }
+  } else if ("${product_name}" == "m40") {
+    if (target_cpu == "arm64") {
+      source = "$AUDIO_POLICY_SERVER_DIR/etc/m40/arm64/audio_policy_config.xml"
+    } else {
+      source = "$AUDIO_POLICY_SERVER_DIR/etc/m40/arm/audio_policy_config.xml"
+    }
+  } else {
+    source = "$AUDIO_POLICY_SERVER_DIR/etc/audio_policy_config.xml"
+  }
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  install_images = [ chipset_base_dir ]
   part_name = "multimedia_audio_standard"
 }
 

@@ -191,23 +191,7 @@ enum AudioStreamType {
     /**
      * Indicates audio streams used for prompts in terms of accessibility.
      */
-    STREAM_ACCESSIBILITY = 12,
-    /**
-     * Indicates special scene used for recording.
-     */
-    STREAM_RECORDING = 13
-};
-
-enum FocusType {
-    /**
-     * Recording type.
-     */
-    FOCUS_TYPE_RECORDING = 0,
-};
-
-enum InterruptMode {
-    SHARE_MODE = 0,
-    INDEPENDENT_MODE = 1
+    STREAM_ACCESSIBILITY = 12
 };
 
 enum AudioEncodingType {
@@ -560,16 +544,6 @@ enum AudioCaptureMode {
     CAPTURE_MODE_CALLBACK
 };
 
-struct SinkInput {
-    int32_t streamId;
-    AudioStreamType streamType;
-};
-
-struct SourceOutput {
-    int32_t streamId;
-    AudioStreamType streamType;
-};
-
 typedef uint32_t AudioIOHandle;
 
 static inline bool FLOAT_COMPARE_EQ(const float& x, const float& y)
@@ -594,6 +568,70 @@ struct InterruptAction {
 enum AudioServiceIndex {
     HDI_SERVICE_INDEX = 0,
     AUDIO_SERVICE_INDEX
+};
+
+/**
+ * @brief Enumerates the rendering states of the current device.
+ */
+enum RendererState {
+    /** INVALID state */
+    RENDERER_INVALID = -1,
+    /** Create New Renderer instance */
+    RENDERER_NEW,
+    /** Reneder Prepared state */
+    RENDERER_PREPARED,
+    /** Rendere Running state */
+    RENDERER_RUNNING,
+    /** Renderer Stopped state */
+    RENDERER_STOPPED,
+    /** Renderer Released state */
+    RENDERER_RELEASED,
+    /** Renderer Paused state */
+    RENDERER_PAUSED
+};
+
+/**
+ * @brief Enumerates the capturing states of the current device.
+ */
+enum CapturerState {
+    /** Capturer INVALID state */
+    CAPTURER_INVALID = -1,
+    /** Create new capturer instance */
+    CAPTURER_NEW,
+    /** Capturer Prepared state */
+    CAPTURER_PREPARED,
+    /** Capturer Running state */
+    CAPTURER_RUNNING,
+    /** Capturer Stopped state */
+    CAPTURER_STOPPED,
+    /** Capturer Released state */
+    CAPTURER_RELEASED,
+    /** Capturer Paused state */
+    CAPTURER_PAUSED
+};
+
+enum AudioMode {
+    AUDIO_MODE_PLAYBACK,
+    AUDIO_MODE_RECORD
+};
+
+struct AudioRendererChangeInfo {
+    int32_t clientUID;
+    int32_t sessionId;
+    AudioRendererInfo rendererInfo;
+    RendererState rendererState;
+};
+
+struct AudioCapturerChangeInfo {
+    int32_t clientUID;
+    int32_t sessionId;
+    AudioCapturerInfo capturerInfo;
+    CapturerState capturerState;
+};
+
+struct AudioStreamChangeInfo {
+    AudioRendererChangeInfo audioRendererChangeInfo;
+    AudioCapturerChangeInfo audioCapturerChangeInfo;
 };
 } // namespace AudioStandard
 } // namespace OHOS

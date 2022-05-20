@@ -95,8 +95,16 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
-    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD);
     appInfo_ = appInfo;
+    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD, appInfo_.appUid);
+    if (audioStream_) {
+        AUDIO_DEBUG_LOG("AudioCapturerPrivate::Audio stream created");
+        //audioStream_->SetCapturerInfo(capturerInfo_);
+    }
+    capturerProxyObj_ = std::make_shared<AudioCapturerProxyObj>();
+    if (!capturerProxyObj_) {
+        AUDIO_ERR_LOG("AudioCapturerProxyObj Memory Allocation Failed !!");
+    }
 }
 
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
@@ -110,6 +118,12 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params) const
         AUDIO_ERR_LOG("MICROPHONE permission denied for %{public}d", appInfo_.appTokenId);
         return ERR_PERMISSION_DENIED;
     }
+    const AudioCapturer *capturer = this;
+    capturerProxyObj_->SaveCapturerObj(capturer);
+
+    //call again in setparams as it can be updated after setting first time
+    audioStream_->SetCapturerInfo(capturerInfo_, capturerProxyObj_);
+
 
     AudioStreamParams audioStreamParams;
     audioStreamParams.format = params.audioSampleFormat;
