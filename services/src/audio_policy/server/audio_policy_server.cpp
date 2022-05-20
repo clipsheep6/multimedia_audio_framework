@@ -46,7 +46,8 @@ REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-      mPolicyService(AudioPolicyService::GetAudioPolicyService())
+      mPolicyService(AudioPolicyService::GetAudioPolicyService()),
+      mStreamCollector(AudioStreamCollector::GetAudioStreamCollector())
 {
     if (mPolicyService.SetAudioSessionCallback(this)) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
@@ -1091,5 +1092,54 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
 
     return write(fd, dumpString.c_str(), dumpString.size());
 }
+
+int32_t AudioPolicyServer::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
+{
+    return mStreamCollector.RegisterAudioRendererEventListener(clientUID, object);
+}
+
+int32_t AudioPolicyServer::UnregisterAudioRendererEventListener(int32_t clientUID)
+{
+    return mStreamCollector.UnregisterAudioRendererEventListener(clientUID);
+}
+
+int32_t AudioPolicyServer::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
+{
+    return mStreamCollector.RegisterAudioCapturerEventListener(clientUID, object);
+}
+
+int32_t AudioPolicyServer::UnregisterAudioCapturerEventListener(int32_t clientUID)
+{
+    return mStreamCollector.UnregisterAudioCapturerEventListener(clientUID);
+}
+
+int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+{
+    return mStreamCollector.RegisterTracker(mode, streamChangeInfo);
+}
+
+int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+{
+    return mStreamCollector.UpdateTracker(mode, streamChangeInfo);
+}
+
+
+//int32_t AudioPolicyServer::RegisterTracker_Internal(AudioMode &mode , AudioStreamChangeInfo &streamChangeInfo)
+//{
+    //int32_t clientUID = streamChangeInfo.clientUID;
+    //int32_t state = streamChangeInfo.state;
+
+    //new AudioStreamCollector().RegisterTracker(mode, clientUID, state, streamChangeInfo);
+    //return SUCCESS; // to return dummy value for build
+//}
+
+//int32_t AudioPolicyServer::UpdateTracker_Internal(AudioMode &mode , AudioStreamChangeInfo &streamChangeInfo)
+//{
+    //int32_t clientUID = streamChangeInfo.clientUID;
+    //int32_t state = streamChangeInfo.state;
+
+    //new AudioStreamCollector().UpdateTracker(mode, clientUID, state, streamChangeInfo);
+    //return SUCCESS; // to return dummy value for build
+//}
 } // namespace AudioStandard
 } // namespace OHOS
