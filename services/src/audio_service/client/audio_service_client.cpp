@@ -31,7 +31,11 @@ AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 
 #ifdef PRODUCT_M40
-const uint64_t LATENCY_IN_MSEC = 45UL;
+#ifdef __aarch64__
+const uint64_t LATENCY_IN_MSEC = 140UL;
+#else
+const uint64_t LATENCY_IN_MSEC = 70UL;
+#endif
 #else
 const uint64_t LATENCY_IN_MSEC = 50UL;
 #endif
