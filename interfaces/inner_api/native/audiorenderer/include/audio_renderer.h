@@ -115,6 +115,13 @@ public:
     virtual void OnWriteData(size_t length) = 0;
 };
 
+class AudioFocusChangeCallback {
+public:
+    virtual ~AudioFocusChangeCallback() = default;
+
+    virtual void OnFocusChange(FocusEvent focusEvent) = 0;
+}
+
 /**
  * @brief Provides functions for applications to implement audio rendering.
  */
@@ -170,6 +177,10 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) = 0;
+
+    virtual int32_t SetAudioFocus(const AudioFocus);
+
+    virtual int32_t SetAudioFocusChangeCallback(AudioFocusChangeCallback callback);
 
     /**
      * @brief Obtains audio renderer parameters.

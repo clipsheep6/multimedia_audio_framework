@@ -185,6 +185,68 @@ enum AudioStreamType {
     STREAM_ACCESSIBILITY = 12
 };
 
+enum FocusType {
+    DEFAULT = -1,
+    VOICE_CALL = 0,
+    MUSIC = 1,
+    RING = 2,
+    MEDIA = 3,
+    VOICE_ASSISTANT = 4,
+    SYSTEM = 5,
+    ALARM = 6,
+    NOTIFICATION = 7,
+    BLUETOOTH_SCO = 8,
+    SYSTEM_ENFORCED = 9,
+    DTMF = 10,
+    TTS =  11,
+    ACCESSIBILITY = 12
+};
+
+enum FocusUsage {
+    UNKNOWN = 0,
+    MEDIA = 1,
+    COMMUNICATION = 2,
+    VOICE_COMMUNICATION_SIGNALLING = 3,
+    ALARM = 4,
+    NOTIFICATION = 5,
+    NOTIFICATION_RINGTONE = 6,
+    NOTIFICATION_EVENT = 7,
+    ASSISTANCE_ACCESSIBILITY = 8,
+    ASSISTANCE_NAVIGATION_GUIDANCE = 9,
+    ASSISTANCE_SONIFICATION = 10,
+    GAME = 11,
+    VIRTUAL_SOURCE = 12,
+    ASSISTANT = 13,
+    TTS = 14,
+    ULTRASOUND = 15,
+}
+
+enum FocusContent {
+    UNKNOWN = 0,
+    SPEECH = 1,
+    MUSIC = 2,
+    MOVIE = 3,
+    SONIFICATION = 4,
+    RINGTONE = 5
+}
+
+enum FocusEvent {
+    PAUSE = 0,
+    STOP = 1,
+    DUCK = 2,
+    RESUME = 3,
+    FORCE_PAUSE = 4,
+    FORCE_STOP = 5,
+    FORCE_DUCK = 6
+}
+
+struct AudioFocus {
+    int sessionId;
+    FocusUsage focusUsage;
+    FocusContent focusContent;
+};
+
+
 enum AudioEncodingType {
     ENCODING_PCM = 0,
     ENCODING_INVALID = -1
