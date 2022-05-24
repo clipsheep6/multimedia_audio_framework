@@ -24,6 +24,9 @@
 using namespace std;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
+namespace {
+constexpr int32_t EOF_CHECK_DELAY_IN_US = 500;
+}
 
 class AudioRenderModeCallbackTest : public AudioRendererWriteCallback,
     public enable_shared_from_this<AudioRenderModeCallbackTest> {
@@ -32,7 +35,22 @@ public:
     {
         AUDIO_INFO_LOG("RenderCallbackTest: OnWriteData is called");
         reqBufLen_ = length;
-        isEnqueue_ = true;
+        size_t reqLen = reqBufLen_;
+        bufDesc_.buffer = nullptr;
+        audioRenderer_->GetBufferDesc(bufDesc_);
+        if (bufDesc_.buffer == nullptr) {
+            return;
+        }
+        // requested len in callback will never be greater than allocated buf length
+        // This is just a fail-safe
+        if (reqLen > bufDesc_.bufLength) {
+            bufDesc_.dataLength = bufDesc_.bufLength;
+        } else {
+        bufDesc_.dataLength = reqLen;
+        }
+
+        fread(bufDesc_.buffer, 1, bufDesc_.dataLength, wavFile_);
+        audioRenderer_->Enqueue(bufDesc_);
     }
 
     bool InitRender()
@@ -89,8 +107,9 @@ public:
             return -1;
         }
 
-        enqueueThread_ = make_unique<thread>(&AudioRenderModeCallbackTest::EnqueueBuffer, this);
-        enqueueThread_ ->join();
+        while (!feof(wavFile_)) {
+            std::this_thread::sleep_for(std::chrono::microseconds(EOF_CHECK_DELAY_IN_US));
+        }
 
         audioRenderer_->Clear();
         audioRenderer_->Stop();
@@ -109,45 +128,11 @@ public:
             AUDIO_INFO_LOG("RenderCallbackTest: fclose(wavFile_) success");
         }
         wavFile_ = nullptr;
-
-        if (enqueueThread_ && enqueueThread_->joinable()) {
-            enqueueThread_->join();
-            enqueueThread_ = nullptr;
-        }
     }
 
     FILE *wavFile_ = nullptr;
 private:
-    void EnqueueBuffer()
-    {
-        AUDIO_INFO_LOG("RenderCallbackTest: EnqueueBuffer thread");
-        while (!feof(wavFile_)) {
-            if (isEnqueue_) {
-                // Requested length received in callback
-                size_t reqLen = reqBufLen_;
-                bufDesc_.buffer = nullptr;
-                audioRenderer_->GetBufferDesc(bufDesc_);
-                if (bufDesc_.buffer == nullptr) {
-                    continue;
-                }
-                // requested len in callback will never be greater than allocated buf length
-                // This is just a fail-safe
-                if (reqLen > bufDesc_.bufLength) {
-                    bufDesc_.dataLength = bufDesc_.bufLength;
-                } else {
-                    bufDesc_.dataLength = reqLen;
-                }
-
-                fread(bufDesc_.buffer, 1, bufDesc_.dataLength, wavFile_);
-                audioRenderer_->Enqueue(bufDesc_);
-                isEnqueue_ = false;
-            }
-        }
-    }
-
     unique_ptr<AudioRenderer> audioRenderer_ = nullptr;
-    unique_ptr<thread> enqueueThread_ = nullptr;
-    bool isEnqueue_ = true;
     BufferDesc bufDesc_ {};
     size_t reqBufLen_;
 };

@@ -21,7 +21,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr int32_t MAX_NUM_BUFFERS = 3;
+static constexpr int32_t MAX_NUM_BUFFERS = 2;
 
 enum AudioMode {
     AUDIO_MODE_PLAYBACK,
