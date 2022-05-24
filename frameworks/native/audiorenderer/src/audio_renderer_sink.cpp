@@ -94,6 +94,7 @@ void AudioRendererSink::DeInit()
 
 void InitAttrs(struct AudioSampleAttributes &attrs)
 {
+    attrs.channelCount = AUDIO_CHANNELCOUNT;
     /* Initialization of audio parameters for playback */
 #ifdef PRODUCT_M40
     attrs.format = AUDIO_FORMAT_PCM_32_BIT;
@@ -102,7 +103,6 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.format = AUDIO_FORMAT_PCM_16_BIT;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
 #endif
-    attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
     attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;

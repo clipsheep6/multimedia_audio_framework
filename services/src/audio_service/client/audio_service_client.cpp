@@ -890,6 +890,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     if (!(paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, nullptr, propList))) {
         error = pa_context_errno(context);
+        AUDIO_ERR_LOG("create stream Failed, error: %{public}d", error);
         pa_proplist_free(propList);
         pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioClient();
@@ -1061,8 +1062,6 @@ int32_t AudioServiceClient::CorkStream()
 
 int32_t AudioServiceClient::FlushStream()
 {
-    int error;
-
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
@@ -1074,7 +1073,7 @@ int32_t AudioServiceClient::FlushStream()
 
     pa_stream_state_t state = pa_stream_get_state(paStream);
     if (state != PA_STREAM_READY) {
-        error = pa_context_errno(context);
+        int error = pa_context_errno(context);
         pa_threaded_mainloop_unlock(mainLoop);
         AUDIO_ERR_LOG("Stream Flush Failed, error: %{public}d", error);
         return AUDIO_CLIENT_ERR;

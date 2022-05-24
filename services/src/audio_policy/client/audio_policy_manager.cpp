@@ -168,14 +168,18 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId,
         return ERR_INVALID_PARAM;
     }
 
-    auto deviceChangeCbStub = new(std::nothrow) AudioPolicyManagerListenerStub();
-    if (deviceChangeCbStub == nullptr || g_sProxy == nullptr) {
+    if (g_sProxy == nullptr) {
         AUDIO_ERR_LOG("SetDeviceChangeCallback: object null");
         return ERROR;
     }
 
-    deviceChangeCbStub->SetDeviceChangeCallback(callback);
+    auto deviceChangeCbStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+    if (deviceChangeCbStub == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManager: deviceChangeCbStub is null");
+        return ERROR;
+    }
 
+    deviceChangeCbStub->SetDeviceChangeCallback(callback);
     sptr<IRemoteObject> object = deviceChangeCbStub->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManager: listenerStub->AsObject is nullptr..");
