@@ -146,7 +146,7 @@ int32_t AudioRendererSink::InitAudioManager()
 {
     AUDIO_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
 
-    audioManager_ = GetAudioProxyManagerFuncs();
+    audioManager_ = GetAudioManagerFuncs();
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
@@ -198,11 +198,7 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
 int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
 {
     attr_ = attr;
-#ifdef PRODUCT_M40
-    string adapterNameCase = "internal";  // Set sound card information
-#else
     string adapterNameCase = "primary";  // Set sound card information
-#endif
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
     if (InitAudioManager() != 0) {

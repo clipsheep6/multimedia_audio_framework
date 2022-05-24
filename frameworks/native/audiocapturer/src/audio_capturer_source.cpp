@@ -128,7 +128,7 @@ int32_t AudioCapturerSource::InitAudioManager()
 {
     AUDIO_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
 
-    audioManager_ = GetAudioProxyManagerFuncs();
+    audioManager_ = GetAudioManagerFuncs();
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
@@ -186,7 +186,7 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
 
     // Get qualified sound card and port
 #ifdef PRODUCT_M40
-    string adapterNameCase = "internal";
+    string adapterNameCase = "primary";
 #else
     string adapterNameCase = "primary1";
 #endif
