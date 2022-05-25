@@ -613,5 +613,14 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
 
     return;
 }
+
+void AudioSystemManager::SetBtHfpActive(boolean active) const
+{
+    CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "SetBtHfpActive::Audio service unavailable");
+    string key = "hfp_enable";
+    string value = active ? "true" : "false";
+    g_sProxy->SetAudioParameter(key, value);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
