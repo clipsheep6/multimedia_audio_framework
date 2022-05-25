@@ -613,5 +613,23 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
 
     return;
 }
+
+int32_t AudioSystemManager::requestIndependentInterrupt(FocusType focusType)
+{
+    AudioInterrupt audioInterrupt;
+    uint32_t clientID = GetCallingPid();
+    audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
+    audioInterrupt.sessionID = clientID;
+    return AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
+}
+
+int32_t AudioSystemManager::abandonIndependentInterrupt(FocusType focusType)
+{
+    AudioInterrupt audioInterrupt;
+    uint32_t clientID = GetCallingPid();
+    audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
+    audioInterrupt.sessionID = clientID;
+    return AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
+}
 } // namespace AudioStandard
 } // namespace OHOS
