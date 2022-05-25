@@ -297,6 +297,11 @@ void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data,
     bool ret = VerifyClientPermission(permissionName, appTokenId);
     reply.WriteBool(ret);
 }
+void AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int ret = GetAudioLatencyFromXml();
+    reply.WriteInt32(ret);
+}
 
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
@@ -420,6 +425,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case QUERY_PERMISSION:
             VerifyClientPermissionInternal(data, reply);
+            break;
+
+        case GET_AUDIO_LATENCY:
+            GetAudioLatencyFromXmlInternal(data, reply);
             break;
 
         default:

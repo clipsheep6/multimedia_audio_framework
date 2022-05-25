@@ -37,6 +37,10 @@ PA_MODULE_USAGE(
         "channels=<number of channels> "
         "channel_map=<channel map> "
         "buffer_size=<custom buffer size>"
+        "adapter_name=<primary>"
+        "fixed_latency=<latency measure>"
+        "render_in_idle_state<renderer state>"
+        "open_mic_speaker<open mic and speaker>"
         );
 
 static const char * const VALID_MODARGS[] = {
@@ -48,6 +52,10 @@ static const char * const VALID_MODARGS[] = {
     "channels",
     "channel_map",
     "buffer_size",
+    "adapter_name",
+    "fixed_latency",
+    "render_in_idle_state",
+    "open_mic_speaker",
     NULL
 };
 

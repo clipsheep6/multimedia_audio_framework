@@ -325,5 +325,10 @@ bool AudioPolicyManager::VerifyClientPermission(const std::string &permissionNam
 {
     return g_sProxy->VerifyClientPermission(permissionName, appTokenId);
 }
+
+int32_t AudioPolicyManager::GetAudioLatencyFromXml()
+{
+    return g_sProxy->GetAudioLatencyFromXml();
+}
 } // namespace AudioStandard
 } // namespace OHOS

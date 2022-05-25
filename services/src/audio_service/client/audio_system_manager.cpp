@@ -613,5 +613,10 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
 
     return;
 }
+
+int32_t AudioSystemManager::GetAudioLatencyFromXml() const
+{
+    return AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
+}
 } // namespace AudioStandard
 } // namespace OHOS
