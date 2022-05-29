@@ -58,6 +58,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 
     clientOnFocus_ = 0;
     focussedAudioInterruptInfo_ = nullptr;
+    AUDIO_INFO_LOG("AudioPolicyServer::AudioPolicyServer");
 }
 
 void AudioPolicyServer::OnDump()
