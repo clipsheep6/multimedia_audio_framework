@@ -1710,7 +1710,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
     pa_usec_t paLatency;
     pa_usec_t cacheLatency;
     int32_t retVal = AUDIO_CLIENT_SUCCESS;
-    int negative;
+    int negative = 0;
 
     // Get PA latency
     pa_threaded_mainloop_lock(mainLoop);
