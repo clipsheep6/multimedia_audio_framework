@@ -58,6 +58,7 @@ private:
     void SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void VerifyClientPermissionInternal(MessageParcel &data, MessageParcel &reply);
+<<<<<<< HEAD
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void RegisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void UnregisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply);
@@ -65,6 +66,10 @@ private:
     void UnregisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
+=======
+    void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
 };
 } // namespace AudioStandard
 } // namespace OHOS

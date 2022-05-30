@@ -107,6 +107,7 @@ public:
 
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) override;
 
+<<<<<<< HEAD
     int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
 
     int32_t UnregisterAudioRendererEventListener(int32_t clientUID) override;
@@ -119,6 +120,11 @@ public:
 
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) override;
 
+=======
+    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
+
+    int32_t GetAudioLatencyFromXml() override;
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

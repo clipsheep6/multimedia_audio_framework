@@ -57,12 +57,12 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     const std::string cachePath, const AppInfo &appInfo)
 {
     auto sourceType = capturerOptions.capturerInfo.sourceType;
-    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_VOICE_CALL) {
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_VOICE_COMMUNICATION) {
         return nullptr;
     }
 
     AudioStreamType audioStreamType = STREAM_MUSIC;
-    if (sourceType == SOURCE_TYPE_VOICE_CALL) {
+    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         audioStreamType = STREAM_VOICE_CALL;
     }
 
@@ -311,7 +311,7 @@ std::vector<AudioSampleFormat> AudioCapturer::GetSupportedFormats()
 
 std::vector<AudioChannel> AudioCapturer::GetSupportedChannels()
 {
-    return AUDIO_SUPPORTED_CHANNELS;
+    return CAPTURER_SUPPORTED_CHANNELS;
 }
 
 std::vector<AudioEncodingType> AudioCapturer::GetSupportedEncodingTypes()

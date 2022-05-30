@@ -680,12 +680,19 @@ bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName,
     return reply.ReadBool();
 }
 
+<<<<<<< HEAD
 int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clientUID, const sptr<IRemoteObject> &object)
 {
+=======
+int32_t AudioPolicyProxy::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
+{
+    AUDIO_ERR_LOG("ReconfigureAudioChannel proxy %{public}d, %{public}d", count, deviceType);
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
+<<<<<<< HEAD
     AUDIO_INFO_LOG("AudioPolicyProxy::RegisterAudioRendererEventListener");
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterAudioRendererEventListener: WriteInterfaceToken failed");
@@ -801,17 +808,36 @@ int32_t AudioPolicyProxy::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("RegisterTracker event failed , error: %d", error);
         return -1;
+=======
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("ReconfigureAudioChannel: WriteInterfaceToken failed");
+        return IPC_PROXY_ERR;
+    }
+
+    data.WriteUint32(count);
+    data.WriteInt32(deviceType);
+
+    int result = Remote()->SendRequest(RECONFIGURE_CHANNEL, data, reply, option);
+    if (result != ERR_NONE) {
+        AUDIO_ERR_LOG("ReconfigureAudioChannel failed, result: %{public}d", result);
+        return ERR_TRANSACTION_FAILED;
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
     }
 
     return reply.ReadInt32();
 }
 
+<<<<<<< HEAD
 int32_t AudioPolicyProxy::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+=======
+int32_t AudioPolicyProxy::GetAudioLatencyFromXml()
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
+<<<<<<< HEAD
     AUDIO_INFO_LOG("AudioPolicyProxy::UpdateTracker");
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -827,6 +853,17 @@ int32_t AudioPolicyProxy::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("UpdateTracker event failed , error: %d", error);
         return -1;
+=======
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: GetAudioLatencyFromXml WriteInterfaceToken failed");
+        return IPC_PROXY_ERR;
+    }
+
+    int32_t error = Remote()->SendRequest(GET_AUDIO_LATENCY, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetAudioLatencyFromXml, error: %d", error);
+        return ERR_TRANSACTION_FAILED;
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
     }
 
     return reply.ReadInt32();

@@ -460,7 +460,7 @@ int32_t AudioPolicyServer::RequestAudioFocus(const uint32_t clientID, const Audi
 {
     AUDIO_DEBUG_LOG("AudioPolicyServer: RequestAudioFocus in");
     if (clientOnFocus_ == clientID) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer: client already has focus..");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: client already has focus");
         NotifyFocusGranted(clientID, audioInterrupt);
         return SUCCESS;
     }
@@ -1014,6 +1014,17 @@ bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName
     return true;
 }
 
+int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
+{
+    // Only root users should have access to this api
+    if (ROOT_UID != IPCSkeleton::GetCallingUid()) {
+        AUDIO_INFO_LOG("Unautorized user. Cannot modify channel");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    return mPolicyService.ReconfigureAudioChannel(count, deviceType);
+}
+
 float AudioPolicyServer::MapVolumeToHDI(int32_t volume)
 {
     float value = (float)volume / MAX_VOLUME_LEVEL;
@@ -1093,6 +1104,7 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
+<<<<<<< HEAD
 int32_t AudioPolicyServer::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
 {
     return mStreamCollector.RegisterAudioRendererEventListener(clientUID, object);
@@ -1141,5 +1153,11 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
     //new AudioStreamCollector().UpdateTracker(mode, clientUID, state, streamChangeInfo);
     //return SUCCESS; // to return dummy value for build
 //}
+=======
+int32_t AudioPolicyServer::GetAudioLatencyFromXml()
+{
+    return mPolicyService.GetAudioLatencyFromXml();
+}
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
 } // namespace AudioStandard
 } // namespace OHOS

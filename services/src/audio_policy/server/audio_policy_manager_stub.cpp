@@ -318,6 +318,7 @@ void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data,
     reply.WriteBool(ret);
 }
 
+<<<<<<< HEAD
 void AudioPolicyManagerStub::RegisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientUID =  data.ReadInt32();
@@ -387,6 +388,19 @@ void AudioPolicyManagerStub::UpdateTrackerInternal(MessageParcel &data, MessageP
     AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
     ReadStreamChangeInfo(data, mode, streamChangeInfo);
     int ret = RegisterTracker(mode, streamChangeInfo);
+=======
+void AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int ret = GetAudioLatencyFromXml();
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t count = data.ReadUint32();
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    int32_t ret = ReconfigureAudioChannel(count, deviceType);
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
     reply.WriteInt32(ret);
 }
 
@@ -514,6 +528,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             VerifyClientPermissionInternal(data, reply);
             break;
 
+<<<<<<< HEAD
         case REGISTER_PLAYBACK_EVENT:
             RegisterAudioRendererEventListenerInternal(data, reply);
             break;
@@ -536,6 +551,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case UPDATE_TRACKER:
             UpdateTrackerInternal(data, reply);
+=======
+        case RECONFIGURE_CHANNEL:
+            ReconfigureAudioChannelInternal(data, reply);
+            break;
+
+        case GET_AUDIO_LATENCY:
+            GetAudioLatencyFromXmlInternal(data, reply);
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
             break;
 
         default:

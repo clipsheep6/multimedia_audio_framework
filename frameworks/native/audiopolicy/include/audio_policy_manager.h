@@ -109,6 +109,7 @@ public:
 
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId);
 
+<<<<<<< HEAD
     int32_t RegisterAudioRendererEventListener(const int32_t clientUID, 
                                               const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
@@ -123,6 +124,11 @@ public:
 
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
 
+=======
+    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
+
+    int32_t GetAudioLatencyFromXml();
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
 private:
     AudioPolicyManager()
     {
