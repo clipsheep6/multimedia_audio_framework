@@ -23,10 +23,12 @@
 #include "audio_policy_manager_stub.h"
 #include "audio_policy_service.h"
 #include "audio_session_callback.h"
+#include "audio_stream_collector.h"
 #include "i_audio_volume_key_event_callback.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
 #include "audio_service_dump.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -104,6 +106,19 @@ public:
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) override;
+
+    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterAudioRendererEventListener(int32_t clientUID) override;
+
+    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterAudioCapturerEventListener(int32_t clientUID) override;
+
+    int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) override;
+
+    int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -129,6 +144,7 @@ private:
     static int32_t ConvertVolumeToInt(float volume);
 
     AudioPolicyService& mPolicyService;
+    AudioStreamCollector& mStreamCollector;
     std::unordered_map<int32_t, std::shared_ptr<VolumeKeyEventCallback>> volumeChangeCbsMap_;
     std::mutex ringerModeMutex_;
     std::mutex interruptMutex_;

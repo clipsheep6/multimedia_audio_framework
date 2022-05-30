@@ -48,6 +48,26 @@ void AudioPolicyProxy::ReadAudioInterruptParams(MessageParcel &reply, AudioInter
     audioInterrupt.sessionID = reply.ReadUint32();
 }
 
+void AudioPolicyProxy::WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode, const AudioStreamChangeInfo &streamChangeInfo)
+{
+    if (mode == AUDIO_MODE_PLAYBACK)
+    {
+        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.sessionId);
+        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.rendererState);
+        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.clientUID);
+        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType);
+        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
+        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.rendererInfo.rendererFlags);
+        return;
+    }
+    // mode == AUDIO_MODE_RECORDING
+    data.WriteInt32(streamChangeInfo.audioCapturerChangeInfo.sessionId);
+    data.WriteInt32(streamChangeInfo.audioCapturerChangeInfo.capturerState);
+    data.WriteInt32(streamChangeInfo.audioCapturerChangeInfo.clientUID);
+    data.WriteInt32(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
+    data.WriteInt32(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.capturerFlags);
+}
+
 int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume)
 {
     MessageParcel data;
@@ -658,6 +678,158 @@ bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName,
     }
 
     return reply.ReadBool();
+}
+
+int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clientUID, const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AUDIO_INFO_LOG("AudioPolicyProxy::RegisterAudioRendererEventListener");
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("RegisterAudioRendererEventListener: WriteInterfaceToken failed");
+        return -1;
+    }
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterAudioRendererEventListener Event object is null");
+        return ERR_NULL_OBJECT;
+    }
+
+    data.WriteInt32(clientUID);
+    data.WriteRemoteObject(object);
+    int32_t error = Remote() ->SendRequest(REGISTER_PLAYBACK_EVENT, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RegisterAudioRendererEventListener register playback event faild , error: %d", error);
+        return -1;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnregisterAudioRendererEventListener(const int32_t clientUID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AUDIO_INFO_LOG("AudioPolicyProxy::UnregisterAudioRendererEventListener");
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("UnregisterAudioRendererEventListener WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(clientUID);
+    int32_t error = Remote() ->SendRequest(UNREGISTER_PLAYBACK_EVENT, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UnregisterAudioRendererEventListener unregister playback event failed , error: %d", error);
+        return -1;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clientUID, const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AUDIO_INFO_LOG("AudioPolicyProxy::RegisterAudioCapturerEventListener");
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("RegisterAudioCapturerEventListener:: WriteInterfaceToken failed");
+        return -1;
+    }
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterAudioCapturerEventListener Event object is null");
+        return ERR_NULL_OBJECT;
+    }
+
+    data.WriteInt32(clientUID);
+    data.WriteRemoteObject(object);
+    int32_t error = Remote() ->SendRequest(REGISTER_RECORDING_EVENT, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RegisterAudioCapturerEventListener recording event faild , error: %d", error);
+        return -1;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnregisterAudioCapturerEventListener(const int32_t clientUID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AUDIO_INFO_LOG("AudioPolicyProxy::UnregisterAudioCapturerEventListener");
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy:: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(clientUID);
+    int32_t error = Remote() ->SendRequest(UNREGISTER_RECORDING_EVENT, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UnregisterAudioCapturerEventListener recording event faild , error: %d", error);
+        return -1;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AUDIO_INFO_LOG("AudioPolicyProxy::RegisterTracker");
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("RegisterTracker WriteInterfaceToken failed");
+        return -1;
+    }
+
+    //streamChangeInfo.Serialize(data, mode);
+    data.WriteUint32(mode);
+    WriteStreamChangeInfo(data, mode, streamChangeInfo);
+
+    int32_t error = Remote()->SendRequest(REGISTER_TRACKER, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RegisterTracker event failed , error: %d", error);
+        return -1;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AUDIO_INFO_LOG("AudioPolicyProxy::UpdateTracker");
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("UpdateTracker: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    //streamChangeInfo.Serialize(data, mode);
+    data.WriteUint32(mode);
+    WriteStreamChangeInfo(data, mode, streamChangeInfo);
+
+    int32_t error = Remote()->SendRequest(UPDATE_TRACKER, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UpdateTracker event failed , error: %d", error);
+        return -1;
+    }
+
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

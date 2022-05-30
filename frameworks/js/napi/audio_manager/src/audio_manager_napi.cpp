@@ -16,11 +16,13 @@
 #include "audio_manager_napi.h"
 
 #include "audio_capturer_napi.h"
+#include "audio_capturer_state_callback_napi.h"
 #include "audio_common_napi.h"
 #include "audio_errors.h"
 #include "audio_parameters_napi.h"
 #include "audio_renderer_info_napi.h"
 #include "audio_renderer_napi.h"
+#include "audio_renderer_state_callback_napi.h"
 #include "audio_ringermode_callback_napi.h"
 #include "audio_manager_callback_napi.h"
 #include "audio_manager_interrupt_callback_napi.h"
@@ -40,6 +42,8 @@ namespace {
     const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
     const std::string VOLUME_CHANGE_CALLBACK_NAME = "volumeChange";
     const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
+    const std::string RENDERERCHANGE_CALLBACK_NAME = "audioRendererChange";
+    const std::string CAPTURERCHANGE_CALLBACK_NAME = "audioCapturerChange";
 }
 
 namespace OHOS {
@@ -2160,7 +2164,48 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
         std::static_pointer_cast<AudioManagerCallbackNapi>(managerNapi->deviceChangeCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
         AUDIO_INFO_LOG("AudioManagerNapi::On SetDeviceChangeCallback is successful");
+    } else if (!callbackName.compare(RENDERERCHANGE_CALLBACK_NAME)) {
+        if (!managerNapi->rendererStateChangeCallbackNapi_) {
+            managerNapi->rendererStateChangeCallbackNapi_ = std::make_shared<AudioRendererStateCallbackNapi>(env);
+            if (!managerNapi->rendererStateChangeCallbackNapi_) {
+                AUDIO_ERR_LOG("AudioManagerNapi: Memory Allocation Failed !!");
+                return undefinedResult;
+            }
+            
+            int32_t ret = managerNapi->audioMngr_->RegisterAudioRendererEventListener(managerNapi->cachedClientId, managerNapi->rendererStateChangeCallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioManagerNapi: Registering of Renderer State Change Callback Failed");
+                return undefinedResult;
+            }
+        }
+
+        std::shared_ptr<AudioRendererStateCallbackNapi> cb =
+        std::static_pointer_cast<AudioRendererStateCallbackNapi>(managerNapi->rendererStateChangeCallbackNapi_);
+        cb->SaveCallbackReference(args[PARAM1]);
+
+        AUDIO_INFO_LOG("AudioManagerNapi::OnRendererStateChangeCallback is successful");
+    } else if (!callbackName.compare(CAPTURERCHANGE_CALLBACK_NAME)) {
+        if (!managerNapi->capturerStateChangeCallbackNapi_) {
+            managerNapi->capturerStateChangeCallbackNapi_ = std::make_shared<AudioCapturerStateCallbackNapi>(env);
+            if (!managerNapi->capturerStateChangeCallbackNapi_) {
+                AUDIO_ERR_LOG("AudioManagerNapi: Memory Allocation Failed !!");
+                return undefinedResult;
+            }
+            
+            int32_t ret = managerNapi->audioMngr_->RegisterAudioCapturerEventListener(managerNapi->cachedClientId, managerNapi->capturerStateChangeCallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioManagerNapi: Registering of Capturer State Change Callback Failed");
+                return undefinedResult;
+            }
+        }
+
+        std::shared_ptr<AudioCapturerStateCallbackNapi> cb =
+        std::static_pointer_cast<AudioCapturerStateCallbackNapi>(managerNapi->capturerStateChangeCallbackNapi_);
+        cb->SaveCallbackReference(args[PARAM1]);
+
+        AUDIO_INFO_LOG("AudioManagerNapi::OnCapturerStateChangeCallback is successful");
     }
+
     return undefinedResult;
 }
 
@@ -2232,6 +2277,27 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
             managerNapi->deviceChangeCallbackNapi_ = nullptr;
         }
         AUDIO_INFO_LOG("AudioManagerNapi::Off UnsetDeviceChangeCallback Success");
+    } else if (!callbackName.compare(RENDERERCHANGE_CALLBACK_NAME)) {
+        int32_t ret = managerNapi->audioMngr_->UnregisterAudioRendererEventListener(managerNapi->cachedClientId);
+        if (ret) {
+            AUDIO_ERR_LOG("AudioManagerNapi:UnRegistering of Renderer State Change Callback Failed");
+            return undefinedResult;
+        }
+        if (managerNapi->rendererStateChangeCallbackNapi_ != nullptr) {
+            managerNapi->rendererStateChangeCallbackNapi_.reset();
+            managerNapi->rendererStateChangeCallbackNapi_ = nullptr;
+        }
+    } else if (!callbackName.compare(CAPTURERCHANGE_CALLBACK_NAME)) {
+        int32_t ret = managerNapi->audioMngr_->UnregisterAudioCapturerEventListener(managerNapi->cachedClientId);
+        if (ret) {
+            AUDIO_ERR_LOG("AudioManagerNapi:UnRegistering of capturer State Change Callback Failed");
+            return undefinedResult;
+        }
+        if (managerNapi->capturerStateChangeCallbackNapi_ != nullptr) {
+            managerNapi->capturerStateChangeCallbackNapi_.reset();
+            managerNapi->capturerStateChangeCallbackNapi_ = nullptr;
+        }
+        AUDIO_INFO_LOG("AudioManagerNapi:UnRegistering of capturer State Change Callback successful");
     }
     return undefinedResult;
 }
