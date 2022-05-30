@@ -84,6 +84,12 @@ void AudioRendererSink::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
+#ifdef AUDIO_USER_MODE
+    if (dlHandle_ != nullptr) {
+        dlclose(dlHandle_);
+        dlHandle_ = nullptr;
+    }
+#endif
 #ifdef DUMPFILE
     if (pfd) {
         fclose(pfd);
@@ -97,7 +103,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     /* Initialization of audio parameters for playback */
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
-    attrs.interleaved = 0;
+    attrs.interleaved = true;
     attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
@@ -116,7 +122,7 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
 
     for (int32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
-        if (desc == nullptr) {
+        if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
         if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
@@ -136,9 +142,26 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
 
 int32_t AudioRendererSink::InitAudioManager()
 {
-    AUDIO_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
+#ifdef AUDIO_USER_MODE
+    AUDIO_INFO_LOG("AudioCapturerSource: Initialize audio manager");
+    const char *libPath = "/vendor/lib/libhdi_audio.z.so";
+    struct AudioManager *(*getAudioManager)() = nullptr;
 
+    dlHandle_ = dlopen(libPath, RTLD_LAZY);
+    if (dlHandle_ == nullptr) {
+        AUDIO_ERR_LOG("dlopen %{public}s faild", libPath);
+        return ERR_INVALID_HANDLE;
+    }
+    getAudioManager = (struct AudioManager *(*)())(dlsym(dlHandle_, "GetAudioManagerFuncs"));
+    if (getAudioManager == nullptr) {
+        AUDIO_ERR_LOG("dlsym GetAudioManagerFuncs faild");
+        return ERR_INVALID_HANDLE;
+    }
+    audioManager_ = getAudioManager();
+#else
+    AUDIO_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
     audioManager_ = GetAudioManagerFuncs();
+#endif
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }

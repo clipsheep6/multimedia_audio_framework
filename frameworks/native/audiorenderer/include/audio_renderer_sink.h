@@ -68,6 +68,9 @@ private:
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;
     struct AudioPort audioPort_;
+#ifdef AUDIO_USER_MODE
+    void *dlHandle_ = nullptr; /* save the handle that returned by dlopen libhdi_audio.z.so */
+#endif
 
     int32_t CreateRender(struct AudioPort &renderPort);
     int32_t InitAudioManager();

@@ -95,9 +95,15 @@ bool AudioPolicyService::ConnectServiceAdapter()
         return false;
     }
 
+#ifdef AUDIO_USER_MODE /* no audio hdf server */
+    if (serviceFlag_.count() != MIN_SERVICE_COUNT - 1) {
+        OnServiceConnected(AudioServiceIndex::AUDIO_SERVICE_INDEX);
+    }
+#else
     if (serviceFlag_.count() != MIN_SERVICE_COUNT) {
         OnServiceConnected(AudioServiceIndex::AUDIO_SERVICE_INDEX);
     }
+#endif
 
     return true;
 }
@@ -623,10 +629,17 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 
     // If audio service or hdi service is not ready, donot load default modules
     serviceFlag_.set(serviceIndex, true);
+#ifdef AUDIO_USER_MODE /* no audio hdf server */
+    if (serviceIndex != AUDIO_SERVICE_INDEX) {
+        AUDIO_INFO_LOG("[module_load]::hdi service not up. Cannot load default module now");
+        return;
+    }
+#else
     if (serviceFlag_.count() != MIN_SERVICE_COUNT) {
         AUDIO_INFO_LOG("[module_load]::hdi service or audio service not up. Cannot load default module now");
         return;
     }
+#endif
 
     int32_t result = ERROR;
     AUDIO_INFO_LOG("[module_load]::HDI and AUDIO SERVICE is READY. Loading default modules");

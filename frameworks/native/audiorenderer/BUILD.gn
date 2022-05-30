@@ -48,11 +48,16 @@ ohos_shared_library("audio_renderer_sink") {
     "//utils/native/base:utils",
   ]
 
-  if ("${product_name}" == "m40") {
-    deps += [ "//drivers/peripheral/adapter/audio/interfaces:hdi_audio_client" ]
+  if (!defined(enable_audio_user_mode) || enable_audio_user_mode == false) {
+    if ("${product_name}" == "m40") {
+      deps +=
+          [ "//drivers/peripheral/adapter/audio/interfaces:hdi_audio_client" ]
+    } else {
+      deps +=
+          [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
+    }
   } else {
-    deps +=
-        [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
+    cflags += [ "-DAUDIO_USER_MODE" ]
   }
 
   part_name = "multimedia_audio_standard"

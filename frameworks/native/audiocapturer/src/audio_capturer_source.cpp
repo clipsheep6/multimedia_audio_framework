@@ -69,6 +69,12 @@ void AudioCapturerSource::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
+#ifdef AUDIO_USER_MODE
+    if (dlHandle_ != nullptr) {
+        dlclose(dlHandle_);
+        dlHandle_ = nullptr;
+    }
+#endif
 #ifdef CAPTURE_DUMP
     if (pfd) {
         fclose(pfd);
@@ -83,7 +89,7 @@ void InitAttrsCapture(struct AudioSampleAttributes &attrs)
     attrs.format = AUDIO_FORMAT_PCM_16_BIT;
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
-    attrs.interleaved = 0;
+    attrs.interleaved = true;
     attrs.streamId = INTERNAL_INPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
@@ -125,9 +131,26 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, int32_t size,
 
 int32_t AudioCapturerSource::InitAudioManager()
 {
-    AUDIO_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
+#ifdef AUDIO_USER_MODE
+    AUDIO_INFO_LOG("AudioCapturerSource: Initialize audio manager");
+    const char *libPath = "/vendor/lib/libhdi_audio.z.so";
+    struct AudioManager *(*getAudioManager)() = nullptr;
 
+    dlHandle_ = dlopen(libPath, RTLD_LAZY);
+    if (dlHandle_ == nullptr) {
+        AUDIO_ERR_LOG("dlopen %{public}s faild", libPath);
+        return ERR_INVALID_HANDLE;
+    }
+    getAudioManager = (struct AudioManager *(*)())(dlsym(dlHandle_, "GetAudioManagerFuncs"));
+    if (getAudioManager == nullptr) {
+        AUDIO_ERR_LOG("dlsym GetAudioManagerFuncs faild");
+        return ERR_INVALID_HANDLE;
+    }
+    audioManager_ = getAudioManager();
+#else
+    AUDIO_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
     audioManager_ = GetAudioManagerFuncs();
+#endif
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
