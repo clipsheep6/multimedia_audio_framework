@@ -33,6 +33,7 @@ static void OpenSlTest();
 
 static void OpenSlTestConcurrent();
 
+const SLuint32 number = 3;
 FILE *wavFile_ = nullptr;
 FILE *wavFile1_ = nullptr;
 FILE *wavFile2_ = nullptr;
@@ -178,7 +179,7 @@ static void OpenSlTest()
         0
     };
     SLDataSource slSource = {&slBufferQueue, &pcmFormat};
-    (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject, &slSource, &slSink, 3, nullptr, nullptr);
+    (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject, &slSource, &slSink, number, nullptr, nullptr);
     (*pcmPlayerObject)->Realize(pcmPlayerObject, SL_BOOLEAN_FALSE);
 
     (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_PLAY, &playItf);
@@ -233,10 +234,10 @@ static void OpenSlTestConcurrent()
     SLDataSource slSource1 = {&slBufferQueue, &pcmFormat1};
     SLDataSource slSource2 = {&slBufferQueue, &pcmFormat2};
 
-    (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject1, &slSource1, &slSink, 3, nullptr, nullptr);
+    (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject1, &slSource1, &slSink, number, nullptr, nullptr);
     (*pcmPlayerObject1)->Realize(pcmPlayerObject1, SL_BOOLEAN_FALSE);
 
-    (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject2, &slSource2, &slSink, 3, nullptr, nullptr);
+    (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject2, &slSource2, &slSink, number, nullptr, nullptr);
     (*pcmPlayerObject2)->Realize(pcmPlayerObject2, SL_BOOLEAN_FALSE);
 
     (*pcmPlayerObject1)->GetInterface(pcmPlayerObject1, SL_IID_PLAY, &playItf1);

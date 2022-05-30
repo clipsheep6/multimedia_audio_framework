@@ -1711,18 +1711,16 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
     pa_usec_t cacheLatency;
     int32_t retVal = AUDIO_CLIENT_SUCCESS;
     int negative;
-    bool getPALatency = false;
 
     // Get PA latency
     pa_threaded_mainloop_lock(mainLoop);
-    while (!getPALatency) {
+    while (true) {
         if (pa_stream_get_latency(paStream, &paLatency, &negative) >= 0) {
             if (negative) {
                 latency = 0;
                 retVal = AUDIO_CLIENT_ERR;
                 return retVal;
             }
-            getPALatency = true;
             break;
         }
         AUDIO_INFO_LOG("waiting for audio latency information");
