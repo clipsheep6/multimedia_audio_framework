@@ -636,9 +636,44 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
     return;
 }
 
+<<<<<<< HEAD
+int32_t AudioSystemManager::RegisterAudioRendererEventListener(const int32_t clientUID,
+    const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("AudioSystemManager:: RegisterAudioRendererEventListener client id: %{public}d", clientUID);
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("AudioSystemManager::callback is null");
+        return ERR_INVALID_PARAM;
+    }
+    return AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientUID, callback);
+}
+
+int32_t AudioSystemManager::UnregisterAudioRendererEventListener(const int32_t clientUID)
+{
+    AUDIO_INFO_LOG("AudioSystemManager:: UnregisterAudioRendererEventListener client id: %{public}d", clientUID);
+    return AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientUID);
+}
+
+int32_t AudioSystemManager::RegisterAudioCapturerEventListener(const int32_t clientUID,
+    const std::shared_ptr<AudioCapturerStateChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("AudioSystemManager:: RegisterAudioCapturerEventListener client id: %{public}d", clientUID);
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("AudioSystemManager::callback is null");
+        return ERR_INVALID_PARAM;
+    }
+    return AudioPolicyManager::GetInstance().RegisterAudioCapturerEventListener(clientUID, callback);
+}
+
+int32_t AudioSystemManager::UnregisterAudioCapturerEventListener(const int32_t clientUID)
+{
+    AUDIO_INFO_LOG("AudioSystemManager:: UnregisterAudioCapturerEventListener client id: %{public}d", clientUID);
+    return AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientUID);
+=======
 int32_t AudioSystemManager::GetAudioLatencyFromXml() const
 {
     return AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
 }
 } // namespace AudioStandard
 } // namespace OHOS

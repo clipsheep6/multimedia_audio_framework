@@ -20,6 +20,7 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <memory>
 
 #include "parcel.h"
 #include "audio_info.h"
@@ -108,6 +109,30 @@ public:
      * For details, refer RingerMode enum in audio_info.h
      */
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
+};
+
+class AudioRendererStateChangeCallback {
+public:
+    virtual ~AudioRendererStateChangeCallback() = default;
+    /**
+     * Called when the renderer state changes
+     *
+     * @param rendererChangeInfo Contains the renderer state information.
+     */
+    //virtual void OnRendererStateChange(const AudioRendererChangeInfo &rendererChangeInfo) = 0;
+    virtual void OnRendererStateChange(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
+};
+
+class AudioCapturerStateChangeCallback {
+public:
+    virtual ~AudioCapturerStateChangeCallback() = default;
+    /**
+     * Called when the capturer state changes
+     *
+     * @param capturerChangeInfo Contains the renderer state information.
+     */
+    //virtual void OnCapturerStateChange(const AudioCapturerChangeInfo &capturerChangeInfo) = 0;
+    virtual void OnCapturerStateChange(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
 };
 
 /**
@@ -228,8 +253,17 @@ public:
     int32_t UnsetAudioManagerInterruptCallback();
     int32_t RequestAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
+<<<<<<< HEAD
+    int32_t RegisterAudioRendererEventListener(const int32_t clientUID,
+                                              const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
+    int32_t UnregisterAudioRendererEventListener(const int32_t clientUID);
+    int32_t RegisterAudioCapturerEventListener(const int32_t clientUID,
+                                              const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
+    int32_t UnregisterAudioCapturerEventListener(const int32_t clientUID);
+=======
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
     int32_t GetAudioLatencyFromXml() const;
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();

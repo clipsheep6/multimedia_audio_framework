@@ -45,6 +45,26 @@ void AudioPolicyManagerStub::WriteAudioInteruptParams(MessageParcel &reply, cons
     reply.WriteUint32(audioInterrupt.sessionID);
 }
 
+void AudioPolicyManagerStub::ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+{
+    if (mode == AUDIO_MODE_PLAYBACK)
+    {
+        streamChangeInfo.audioRendererChangeInfo.sessionId = data.ReadInt32();        
+        streamChangeInfo.audioRendererChangeInfo.rendererState = static_cast<RendererState>(data.ReadInt32());
+        streamChangeInfo.audioRendererChangeInfo.clientUID = data.ReadInt32();
+        streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType = static_cast<ContentType>(data.ReadInt32());
+        streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+        streamChangeInfo.audioRendererChangeInfo.rendererInfo.rendererFlags = data.ReadInt32();
+        return;
+    }
+    // mode == AUDIO_MODE_RECORDING
+    streamChangeInfo.audioCapturerChangeInfo.sessionId = data.ReadInt32();
+    streamChangeInfo.audioCapturerChangeInfo.capturerState = static_cast<CapturerState>(data.ReadInt32());
+    streamChangeInfo.audioCapturerChangeInfo.clientUID = data.ReadInt32();
+    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = static_cast<SourceType>(data.ReadInt32());
+    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.capturerFlags = data.ReadInt32();
+}
+
 void AudioPolicyManagerStub::SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
@@ -298,6 +318,77 @@ void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data,
     reply.WriteBool(ret);
 }
 
+<<<<<<< HEAD
+void AudioPolicyManagerStub::RegisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientUID =  data.ReadInt32();
+    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioRendererStateCallback obj is null");
+        return;
+    }
+    int ret = RegisterAudioRendererEventListener(clientUID, remoteObject);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::UnregisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientUID = data.ReadInt32();
+    int ret = UnregisterAudioRendererEventListener(clientUID);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::RegisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientUID =  data.ReadInt32();
+    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioCapturerStateCallback obj is null");
+        return;
+    }
+    int ret = RegisterAudioCapturerEventListener(clientUID, remoteObject);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::UnregisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientUID = data.ReadInt32();
+    int ret = UnregisterAudioCapturerEventListener(clientUID);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: RegisterTracker obj is null");
+        return;
+    }
+
+    AudioStreamChangeInfo streamChangeInfo = {};
+    
+    //streamChangeInfo.Deserialize(data, mode);
+    //RegisterTracker_Internal(mode, streamChangeInfo);
+    AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
+    ReadStreamChangeInfo(data, mode, streamChangeInfo);
+    int ret = RegisterTracker(mode, streamChangeInfo);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: UpdateTracker obj is null");
+        return;
+    }
+    //streamChangeInfo.Deserialize(data, mode);
+    //UpdateTracker_Internal(mode, streamChangeInfo);
+    AudioStreamChangeInfo streamChangeInfo = {};
+    AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
+    ReadStreamChangeInfo(data, mode, streamChangeInfo);
+    int ret = RegisterTracker(mode, streamChangeInfo);
+=======
 void AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply)
 {
     int ret = GetAudioLatencyFromXml();
@@ -309,6 +400,7 @@ void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data
     uint32_t count = data.ReadUint32();
     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
     int32_t ret = ReconfigureAudioChannel(count, deviceType);
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
     reply.WriteInt32(ret);
 }
 
@@ -436,12 +528,37 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             VerifyClientPermissionInternal(data, reply);
             break;
 
+<<<<<<< HEAD
+        case REGISTER_PLAYBACK_EVENT:
+            RegisterAudioRendererEventListenerInternal(data, reply);
+            break;
+
+        case UNREGISTER_PLAYBACK_EVENT:
+            UnregisterAudioRendererEventListenerInternal(data, reply);
+            break;
+        
+        case REGISTER_RECORDING_EVENT:
+            RegisterAudioCapturerEventListenerInternal(data, reply);
+            break;
+
+        case UNREGISTER_RECORDING_EVENT:
+            UnregisterAudioCapturerEventListenerInternal(data, reply);
+            break;
+        
+        case REGISTER_TRACKER:
+            RegisterTrackerInternal(data, reply);
+            break;
+
+        case UPDATE_TRACKER:
+            UpdateTrackerInternal(data, reply);
+=======
         case RECONFIGURE_CHANNEL:
             ReconfigureAudioChannelInternal(data, reply);
             break;
 
         case GET_AUDIO_LATENCY:
             GetAudioLatencyFromXmlInternal(data, reply);
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
             break;
 
         default:

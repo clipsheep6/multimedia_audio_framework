@@ -18,6 +18,7 @@
 
 #include "iremote_proxy.h"
 #include "audio_policy_base.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -84,14 +85,30 @@ public:
 
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) override;
 
+<<<<<<< HEAD
+    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterAudioRendererEventListener(int32_t clientUID) override;
+
+    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterAudioCapturerEventListener(int32_t clientUID) override;
+
+    int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) override;
+
+    int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) override;
+=======
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
     int32_t GetAudioLatencyFromXml() override;
+>>>>>>> 129e01d78cf8fcefe99a0e11743f989f485d4eb9
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);
     void WriteAudioManagerInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);
     void ReadAudioInterruptParams(MessageParcel &reply, AudioInterrupt &audioInterrupt);
+    void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
+        const AudioStreamChangeInfo &streamChangeInfo);
 };
 } // namespace AudioStandard
 } // namespace OHOS

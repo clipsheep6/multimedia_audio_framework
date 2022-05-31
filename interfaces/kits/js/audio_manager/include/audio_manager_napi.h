@@ -106,6 +106,8 @@ private:
     std::shared_ptr<AudioManagerCallback> interruptCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioRendererStateChangeCallback> rendererStateChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioCapturerStateChangeCallback> capturerStateChangeCallbackNapi_ = nullptr;
     napi_env env_;
     napi_ref wrapper_;
 };

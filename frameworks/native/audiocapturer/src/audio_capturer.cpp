@@ -95,8 +95,8 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
-    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD);
     appInfo_ = appInfo;
+    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD, appInfo_.appUid);
 }
 
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
@@ -110,6 +110,14 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params) const
         AUDIO_ERR_LOG("MICROPHONE permission denied for %{public}d", appInfo_.appTokenId);
         return ERR_PERMISSION_DENIED;
     }
+
+    uint32_t sessionID = 0;
+    if (audioStream_->GetAudioSessionID(sessionID) != 0) {
+        AUDIO_ERR_LOG("AudioCapturerPrivate::GetAudioSessionID Failed");
+        return ERR_INVALID_INDEX;
+    }
+
+    audioStream_->SetCapturerInfo(capturerInfo_);
 
     AudioStreamParams audioStreamParams;
     audioStreamParams.format = params.audioSampleFormat;
