@@ -238,6 +238,17 @@ void AudioServiceClient::PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t 
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
+int32_t AudioServiceClient::GetBufferDescr(BufferDesc &bufDesc) {
+    int err;
+    GetMinimumBufferSize(bufDesc.bufLength);
+    if ((err = pa_stream_begin_write(paStream, (void **)&bufDesc.buffer, &bufDesc.bufLength)) != 0) {
+        AUDIO_ERR_LOG("AudioServiceClient::GetBufferDescr pa_stream_begin_write err: % {public}d", err);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 int32_t AudioServiceClient::SetAudioRenderMode(AudioRenderMode renderMode)
 {
     AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioRenderMode begin");

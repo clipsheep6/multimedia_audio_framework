@@ -602,23 +602,6 @@ int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
     }
     renderMode_ = renderMode;
 
-    for (int32_t i = 0; i < MAX_NUM_BUFFERS; ++i) {
-        size_t length;
-        GetMinimumBufferSize(length);
-        AUDIO_INFO_LOG("AudioServiceClient:: GetMinimumBufferSize: %{public}zu", length);
-
-        bufferPool_[i] = std::make_unique<uint8_t[]>(length);
-        if (bufferPool_[i] == nullptr) {
-            AUDIO_INFO_LOG("AudioServiceClient::GetBufferDescriptor bufferPool_[i]==nullptr. Allocate memory failed.");
-            return ERR_OPERATION_FAILED;
-        }
-
-        BufferDesc bufDesc {};
-        bufDesc.buffer = bufferPool_[i].get();
-        bufDesc.bufLength = length;
-        freeBufferQ_.emplace(bufDesc);
-    }
-
     return SUCCESS;
 }
 
@@ -700,22 +683,16 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
         return ERR_INCORRECT_MODE;
     }
 
-    AUDIO_INFO_LOG("AudioStream::freeBufferQ_ count %{public}zu", freeBufferQ_.size());
     AUDIO_INFO_LOG("AudioStream::filledBufferQ_ count %{public}zu", filledBufferQ_.size());
 
     if (renderMode_ == RENDER_MODE_CALLBACK) {
-        if (!freeBufferQ_.empty()) {
-            bufDesc.buffer = freeBufferQ_.front().buffer;
-            bufDesc.bufLength = freeBufferQ_.front().bufLength;
-            freeBufferQ_.pop();
-        } else {
-            bufDesc.buffer = nullptr;
-            AUDIO_INFO_LOG("AudioStream::GetBufferDesc freeBufferQ_.empty()");
+        if (GetBufferDescr(bufDesc)) {
             return ERR_OPERATION_FAILED;
         }
     }
 
     if (captureMode_ == CAPTURE_MODE_CALLBACK) {
+        AUDIO_INFO_LOG("AudioStream::freeBufferQ_ count %{public}zu", freeBufferQ_.size());
         if (!filledBufferQ_.empty()) {
             bufDesc.buffer = filledBufferQ_.front().buffer;
             bufDesc.bufLength = filledBufferQ_.front().bufLength;
@@ -764,7 +741,9 @@ int32_t AudioStream::Clear()
     }
 
     while (!filledBufferQ_.empty()) {
-        freeBufferQ_.emplace(filledBufferQ_.front());
+        if (captureMode_ == CAPTURE_MODE_CALLBACK) {
+            freeBufferQ_.emplace(filledBufferQ_.front());
+        }
         filledBufferQ_.pop();
     }
 
@@ -798,7 +777,6 @@ void AudioStream::WriteBuffers()
                 AUDIO_ERR_LOG("AudioStream::WriteStreamInCb fail, writeError:%{public}d", writeError);
             } else {
                 AUDIO_INFO_LOG("AudioStream::WriteBuffers WriteStream, bytesWritten:%{public}zu", bytesWritten);
-                freeBufferQ_.emplace(filledBufferQ_.front());
                 filledBufferQ_.pop();
             }
         }
