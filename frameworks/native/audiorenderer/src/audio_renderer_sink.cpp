@@ -96,6 +96,13 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
     attrs.channelCount = AUDIO_CHANNELCOUNT;
+#ifdef PRODUCT_M40
+    attrs.format = AUDIO_FORMAT_PCM_32_BIT;
+    attrs.frameSize = PCM_32_BIT * attrs.channelCount / PCM_8_BIT;
+#else
+    attrs.format = AUDIO_FORMAT_PCM_16_BIT;
+    attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
+#endif
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
     attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;

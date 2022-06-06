@@ -83,6 +83,7 @@ SLresult AudioPlayerAdapter::SetPlayStateAdapter(SLuint32 id, SLuint32 state)
             AUDIO_ERR_LOG("AudioPlayerAdapter::play state not supported ");
             break;
     }
+    slResult = reseult ? SL_RESULT_SUCCESS : SL_RESULT_RESOURCE_ERROR;
     return slResult;
 }
 
