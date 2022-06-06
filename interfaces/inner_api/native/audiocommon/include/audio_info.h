@@ -191,7 +191,23 @@ enum AudioStreamType {
     /**
      * Indicates audio streams used for prompts in terms of accessibility.
      */
-    STREAM_ACCESSIBILITY = 12
+    STREAM_ACCESSIBILITY = 12,
+    /**
+     * Indicates special scene used for recording.
+     */
+    STREAM_RECORDING = 13
+};
+
+enum FocusType {
+    /**
+     * Recording type.
+     */
+    FOCUS_TYPE_RECORDING = 0,
+};
+
+enum InterruptMode {
+    SHARE_MODE = 0,
+    INDEPENDENT_MODE = 1
 };
 
 enum AudioEncodingType {
@@ -314,7 +330,7 @@ enum StreamUsage {
 enum SourceType {
     SOURCE_TYPE_INVALID = -1,
     SOURCE_TYPE_MIC,
-    SOURCE_TYPE_VOICE_CALL
+    SOURCE_TYPE_VOICE_COMMUNICATION = 7
 };
 
 /**
@@ -542,6 +558,16 @@ enum AudioRenderMode {
 enum AudioCaptureMode {
     CAPTURE_MODE_NORMAL,
     CAPTURE_MODE_CALLBACK
+};
+
+struct SinkInput {
+    int32_t streamId;
+    AudioStreamType streamType;
+};
+
+struct SourceOutput {
+    int32_t streamId;
+    AudioStreamType streamType;
 };
 
 typedef uint32_t AudioIOHandle;

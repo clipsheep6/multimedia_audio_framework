@@ -198,9 +198,10 @@ public:
     int32_t SetMicrophoneMute(bool isMute);
     bool IsMicrophoneMute(void);
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
-    const std::string GetAudioParameter(const std::string key) const;
-    void SetAudioParameter(const std::string &key, const std::string &value) const;
-    const char *RetrieveCookie(int32_t &size) const;
+    const std::string GetAudioParameter(const std::string key);
+    void SetAudioParameter(const std::string &key, const std::string &value);
+    const char *RetrieveCookie(int32_t &size);
+    uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole);
     int32_t SetDeviceActive(ActiveDeviceType deviceType, bool flag) const;
     bool IsDeviceActive(ActiveDeviceType deviceType) const;
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
@@ -229,6 +230,8 @@ public:
     int32_t RequestAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
+    int32_t RequestIndependentInterrupt(FocusType focusType);
+    int32_t AbandonIndependentInterrupt(FocusType focusType);
     int32_t GetAudioLatencyFromXml() const;
 private:
     AudioSystemManager();

@@ -185,6 +185,7 @@ bool AudioSystemManager::IsDeviceActive(ActiveDeviceType deviceType) const
     switch (deviceType) {
         case SPEAKER:
         case BLUETOOTH_SCO:
+        case FILE_SINK_DEVICE:
             break;
         default:
             AUDIO_ERR_LOG("IsDeviceActive device=%{public}d not supported", deviceType);
@@ -212,22 +213,39 @@ bool AudioSystemManager::IsStreamActive(AudioSystemManager::AudioVolumeType volu
     return AudioPolicyManager::GetInstance().IsStreamActive(StreamVolType);
 }
 
-const std::string AudioSystemManager::GetAudioParameter(const std::string key) const
+const std::string AudioSystemManager::GetAudioParameter(const std::string key)
 {
-    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, "", "GetAudioParameter::Audio service unavailable");
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, "", "GetAudioParameter::Audio service unavailable");
+    }
+
     return g_sProxy->GetAudioParameter(key);
 }
 
-void AudioSystemManager::SetAudioParameter(const std::string &key, const std::string &value) const
+void AudioSystemManager::SetAudioParameter(const std::string &key, const std::string &value)
 {
-    CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "SetAudioParameter::Audio service unavailable");
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "SetAudioParameter::Audio service unavailable");
+    }
+
     g_sProxy->SetAudioParameter(key, value);
 }
 
-const char *AudioSystemManager::RetrieveCookie(int32_t &size) const
+const char *AudioSystemManager::RetrieveCookie(int32_t &size)
 {
-    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, nullptr, "RetrieveCookie::Audio service unavailable");
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, nullptr, "RetrieveCookie::Audio service unavailable");
+    }
+
     return g_sProxy->RetrieveCookie(size);
+}
+
+uint64_t AudioSystemManager::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
+{
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, 0, "GetTransactionId::Audio service unavailable");
+    }
+    return g_sProxy->GetTransactionId(deviceType, deviceRole);
 }
 
 int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
@@ -576,7 +594,7 @@ int32_t AudioSystemManager::RequestAudioFocus(const AudioInterrupt &audioInterru
                              && audioInterrupt.streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
                              ERR_INVALID_PARAM, "Invalid stream usage");
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamType >= AudioStreamType::STREAM_VOICE_CALL
-                             && audioInterrupt.streamType <= AudioStreamType::STREAM_ACCESSIBILITY,
+                             && audioInterrupt.streamType <= AudioStreamType::STREAM_RECORDING,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().RequestAudioFocus(clientID, audioInterrupt);
 }
@@ -592,7 +610,7 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
                              && audioInterrupt.streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
                              ERR_INVALID_PARAM, "Invalid stream usage");
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamType >= AudioStreamType::STREAM_VOICE_CALL
-                             && audioInterrupt.streamType <= AudioStreamType::STREAM_ACCESSIBILITY,
+                             && audioInterrupt.streamType <= AudioStreamType::STREAM_RECORDING,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().AbandonAudioFocus(clientID, audioInterrupt);
 }
@@ -634,6 +652,29 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
     }
 
     return;
+}
+
+int32_t AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
+{
+    AUDIO_INFO_LOG("AudioSystemManager: requestIndependentInterrupt : foncusType");
+    AudioInterrupt audioInterrupt;
+    uint32_t clientID = GetCallingPid();
+    audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
+    audioInterrupt.sessionID = clientID;
+    int32_t result = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
+    AUDIO_INFO_LOG("AudioSystemManager: requestIndependentInterrupt : reuslt -> %{public}d", result);
+    return result;
+}
+int32_t AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
+{
+    AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : foncusType");
+    AudioInterrupt audioInterrupt;
+    uint32_t clientID = GetCallingPid();
+    audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
+    audioInterrupt.sessionID = clientID;
+    int32_t result = AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
+    AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : reuslt -> %{public}d", result);
+    return result;
 }
 
 int32_t AudioSystemManager::GetAudioLatencyFromXml() const
