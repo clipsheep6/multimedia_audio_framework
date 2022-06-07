@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//drivers/adapter/uhdf2/uhdf.gni")
+import("//vendor/${product_company}/${product_name}/hals/audio/product.gni")
 
 AUDIO_POLICY_SERVER_DIR =
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server"
@@ -183,6 +184,11 @@ ohos_shared_library("audio_policy_service") {
   ]
 
   public_configs = [ ":audio_policy_public_config" ]
+  if (!defined(enable_audio_user_mode) || enable_audio_user_mode == false) {
+    cflags = []
+  } else {
+    cflags = [ "-DAUDIO_USER_MODE" ]
+  }
 
   deps = [
     "$hdf_uhdf_path/hdi:libhdi",
@@ -227,6 +233,8 @@ ohos_prebuilt_etc("audio_policy_config") {
     } else {
       source = "$AUDIO_POLICY_SERVER_DIR/etc/m40/arm/audio_policy_config.xml"
     }
+  } else if ("${product_name}" == "hispark_phoenix") {
+    source = "$AUDIO_POLICY_SERVER_DIR/etc/hi3751v350/audio_policy_config.xml"
   } else {
     source = "$AUDIO_POLICY_SERVER_DIR/etc/audio_policy_config.xml"
   }
