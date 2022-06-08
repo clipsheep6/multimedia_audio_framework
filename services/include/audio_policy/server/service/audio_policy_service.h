@@ -22,7 +22,7 @@
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "parser_factory.h"
-
+#include "audio_tone_parser.h"
 #include <bitset>
 #include <list>
 #include <string>
@@ -82,6 +82,10 @@ public:
     void OnAudioInterruptEnable(bool enable);
 
     void OnUpdateRouteSupport(bool isSupported);
+
+    std::vector<int32_t> GetSupportedTones();
+
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
 
     void OnDeviceStatusUpdated(DeviceType deviceType, bool connected, void *privData,
         const std::string &macAddress, const AudioStreamInfo &streamInfo);
@@ -145,6 +149,7 @@ private:
     DeviceType mCurrentActiveDevice = DEVICE_TYPE_NONE;
     IAudioPolicyInterface& mAudioPolicyManager;
     Parser& mConfigParser;
+    std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
     std::unique_ptr<DeviceStatusListener> mDeviceStatusListener;
     std::vector<sptr<AudioDeviceDescriptor>> mConnectedDevices;
     std::unordered_map<std::string, AudioStreamInfo> connectedBTDeviceMap_;
