@@ -140,7 +140,6 @@ private:
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     uint64_t audioLatencyInMsec_ = 50;
-    int32_t mDefaultDeviceCount = 0;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     DeviceType mCurrentActiveDevice = DEVICE_TYPE_NONE;
     IAudioPolicyInterface& mAudioPolicyManager;

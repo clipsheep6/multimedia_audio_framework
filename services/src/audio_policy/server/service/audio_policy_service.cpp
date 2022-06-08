@@ -348,11 +348,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
 
     if (!active) {
         CHECK_AND_RETURN_RET_LOG(deviceType == mCurrentActiveDevice, SUCCESS, "This device is not active");
-        if (mConnectedDevices.size() == mDefaultDeviceCount && deviceType == DEVICE_TYPE_SPEAKER) {
-            deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-        } else {
-            deviceType = FetchHighPriorityDevice();
-        }
+        deviceType = FetchHighPriorityDevice();
     }
 
     if (deviceType == mCurrentActiveDevice) {
@@ -363,7 +359,6 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     if (deviceType == DEVICE_TYPE_SPEAKER) {
         result = ActivateNewDevice(DEVICE_TYPE_SPEAKER);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Failed for speaker %{public}d", result);
-
         result = ActivateNewDevice(DEVICE_TYPE_MIC);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Failed for MIC %{public}d", result);
     } else if (deviceType == DEVICE_TYPE_FILE_SINK) {
@@ -645,16 +640,11 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
                         AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
                         continue;
                     }
-                } else if (devType == DEVICE_TYPE_FILE_SOURCE || devType == DEVICE_TYPE_FILE_SINK) {
-                    // in case of file sink and source, no need to fill connected device list
-                    continue;
+                    // add new device into active device list
+                    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
+                        GetDeviceRole(moduleInfo.role));
+                    mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
                 }
-
-                // add new device into active device list
-                sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
-                    GetDeviceRole(moduleInfo.role));
-                mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
-                mDefaultDeviceCount++;
             }
         }
     }
