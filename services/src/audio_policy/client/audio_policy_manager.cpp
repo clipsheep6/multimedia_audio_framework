@@ -476,5 +476,9 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
 
     return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
+//VolumeGroupInfo AudioPolicyManager::GetVolumeGroupById(int32_t groupId)
+//{
+//    return g_sProxy->GetVolumeGroupById(groupId);
+//}
 } // namespace AudioStandard
 } // namespace OHOS

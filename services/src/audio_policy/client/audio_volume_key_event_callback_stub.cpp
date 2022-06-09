@@ -63,6 +63,19 @@ void AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent(AudioStreamType streamTyp
     }
 }
 
+void AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent(VolumeEvent volumeEvent)
+{
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent");
+    std::shared_ptr<VolumeKeyEventCallback> cb = callback_.lock();
+    if (cb != nullptr) {
+        AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NOT NULL");
+        cb->OnVolumeKeyEvent(volumeEvent);
+    }
+    else {
+        AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NULL");
+    }
+}
+
 void AudioVolumeKeyEventCallbackStub::SetOnVolumeKeyEventCallback(
     const std::weak_ptr<VolumeKeyEventCallback> &callback)
 {

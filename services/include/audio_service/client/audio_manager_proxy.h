@@ -26,17 +26,23 @@ class AudioManagerProxy : public IRemoteProxy<IStandardAudioService> {
 public:
     explicit AudioManagerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioManagerProxy() = default;
-    int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) override;
-    int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) override;
+    int32_t GetMaxVolume(AudioVolumeType volumeType) override;
+    int32_t GetMinVolume(AudioVolumeType volumeType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
     const std::string GetAudioParameter(const std::string &key) override;
+    const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
+        const std::string& condition) override;
     void SetAudioParameter(const std::string &key, const std::string &value) override;
+    void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
+        const std::string& value) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
     const char *RetrieveCookie(int32_t &size) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
+    void NotifyDeviceInfo(std::string networkId, bool connected) override;
+    int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

@@ -153,6 +153,9 @@ public:
     void UpdateInterruptGroupInfo(sptr<InterruptGroupInfo>& info, DStatusInfo& statusInfo);
 
     std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+
+    void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
+
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),
