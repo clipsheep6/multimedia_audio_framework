@@ -23,6 +23,7 @@
 #include "remote_audio_renderer_sink.h"
 
 #define DUMPFILE
+//#define DISTRIBUTED_AUDIO
 
 using namespace std;
 
@@ -41,6 +42,10 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+#ifdef DISTRIBUTED_AUDIO
+const uint32_t PARAM_VALUE_LENTH = 3;
+#endif
+
 }
 
 std::map<std::string, RemoteAudioRendererSink *> RemoteAudioRendererSink::allsinks;
@@ -77,6 +82,55 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *device
         allsinks[deviceName] = audioRenderer_;
     }
     return audioRenderer_;
+}
+
+void RemoteAudioRendererSink::RegisterParameterCallback(ISinkParameterCallback* callback)
+{
+    AUDIO_INFO_LOG("RemoteAudioRendererSink: register params callback");
+    callback_ = callback;
+#ifdef DISTRIBUTED_AUDIO
+    // register to adapter
+    ParamCallback adapterCallback = &RemoteAudioRendererSink::ParamEventCallback;
+    audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
+#endif
+}
+
+void RemoteAudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
+    const std::string& value)
+{
+ #ifdef DISTRIBUTED_AUDIO
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::SetParameter: key %{public}d, condition: %{public}s, value: %{public}s", key,
+        condition.c_str(), value.c_str());
+    enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
+    if (ret == ERROR) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::SetAudioParameter failed");
+    }
+#endif
+}
+
+std::string RemoteAudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+{
+#ifdef DISTRIBUTED_AUDIO
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::GetParameter: key %{public}d, condition: %{public}s", key, condition.c_str());
+    enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    char value[PARAM_VALUE_LENTH];
+    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
+    if (ret == ERROR) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::GetAudioParameter failed");
+        return value;
+    }
+    return value;
+#else
+    return "";
+#endif
+}
+
+int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const char* condition, const char* value,
+    void* reserved, void* cookie)
+{
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::ParamEventCallback: key:%d, condition:%s, value:%s", key, condition, value);
+    return 0;
 }
 
 void RemoteAudioRendererSink::DeInit()

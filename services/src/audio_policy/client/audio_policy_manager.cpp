@@ -481,5 +481,10 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
 
     return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
+
+std::vector<sptr<VolumeGroupInfo>> AudioPolicyManager::GetVolumeGroupInfos()
+{
+    return g_sProxy->GetVolumeGroupInfos();
+}
 } // namespace AudioStandard
 } // namespace OHOS
