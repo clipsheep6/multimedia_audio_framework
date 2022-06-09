@@ -27,8 +27,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
-using namespace std;
 sptr<IStandardAudioService> g_sProxy = nullptr;
+using namespace std;
+
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
 
@@ -258,73 +259,24 @@ uint64_t AudioSystemManager::GetTransactionId(DeviceType deviceType, DeviceRole 
     return g_sProxy->GetTransactionId(deviceType, deviceRole);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume) const
+int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 {
-    AUDIO_DEBUG_LOG("AudioSystemManager SetVolume volumeType=%{public}d ", volumeType);
-
-    /* Validate and return INVALID_PARAMS error */
-    if ((volume < MIN_VOLUME_LEVEL) || (volume > MAX_VOLUME_LEVEL)) {
-        AUDIO_ERR_LOG("Invalid Volume Input!");
-        return ERR_INVALID_PARAM;
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(LOCAL_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("SetVolume find group manager failed");
+        return ERROR;
     }
-
-    switch (volumeType) {
-        case STREAM_MUSIC:
-        case STREAM_RING:
-        case STREAM_NOTIFICATION:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-        case STREAM_ALL:
-            break;
-        default:
-            AUDIO_ERR_LOG("SetVolume volumeType=%{public}d not supported", volumeType);
-            return ERR_NOT_SUPPORTED;
-    }
-
-    /* Call Audio Policy SetStreamVolume */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeToHdi = MapVolumeToHDI(volume);
-
-    if (volumeType == STREAM_ALL) {
-        for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
-            StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
-            AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
-            if (setResult != SUCCESS) {
-                return setResult;
-            }
-        }
-        return SUCCESS;
-    }
-
-    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+    return groupManager->SetVolume(volumeType, volume);
 }
 
-int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
+int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType)
 {
-    switch (volumeType) {
-        case STREAM_MUSIC:
-        case STREAM_RING:
-        case STREAM_NOTIFICATION:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-        case STREAM_ALL:
-            break;
-        default:
-            AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
-            return (float)ERR_NOT_SUPPORTED;
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(LOCAL_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("SetVolume find group manager failed");
+        return ERROR;
     }
-
-    if (volumeType == STREAM_ALL) {
-        volumeType = STREAM_MUSIC;
-        AUDIO_DEBUG_LOG("GetVolume of STREAM_ALL for volumeType=%{public}d ", volumeType);
-    }
-
-    /* Call Audio Policy SetStreamMute */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeFromHdi = AudioPolicyManager::GetInstance().GetStreamVolume(StreamVolType);
-
-    return MapVolumeFromHDI(volumeFromHdi);
+    return groupManager->GetVolume(volumeType);
 }
 
 int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -359,24 +311,22 @@ int32_t AudioSystemManager::MapVolumeFromHDI(float volume)
 
 int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
 {
-    if (!IsAlived()) {
-        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMaxVolume service unavailable");
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(LOCAL_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("SetVolume find group manager failed");
+        return ERROR;
     }
-    if (volumeType == STREAM_ALL) {
-        volumeType = STREAM_MUSIC;
-    }
-    return g_sProxy->GetMaxVolume(volumeType);
+    return groupManager->GetMaxVolume(volumeType);
 }
 
 int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
 {
-    if (!IsAlived()) {
-        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMinVolume service unavailable");
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(LOCAL_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("SetVolume find group manager failed");
+        return ERROR;
     }
-    if (volumeType == STREAM_ALL) {
-        volumeType = STREAM_MUSIC;
-    }
-    return g_sProxy->GetMinVolume(volumeType);
+    return groupManager->GetMinVolume(volumeType);
 }
 
 int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
@@ -714,6 +664,33 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
 int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
     return AudioPolicyManager::GetInstance().ReconfigureAudioChannel(count, deviceType);
+}
+
+std::vector<sptr<VolumeGroupInfo>> AudioSystemManager::GetVolumeGroups(std::string networkId)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = {};
+    infos = AudioPolicyManager::GetInstance().GetVolumeGroupInfos();
+
+    auto filter = [&networkId](const sptr<VolumeGroupInfo>& info) {
+        return networkId != info->networkId_;
+        };
+    infos.erase(std::remove_if(infos.begin(), infos.end(), filter), infos.end());
+    return infos;
+}
+
+std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
+{
+    std::vector<std::shared_ptr<AudioGroupManager>>::iterator iter = groupManagerMap_.begin();
+    while (iter != groupManagerMap_.end()) {
+        if ((*iter)->GetGroupId() == groupId)
+            return *iter;
+        else
+            iter++;
+    }
+
+    std::shared_ptr<AudioGroupManager> groupManager = std::make_shared<AudioGroupManager>(groupId);
+    groupManagerMap_.push_back(groupManager);
+    return groupManager;
 }
 
 AudioManagerInterruptCallbackImpl::AudioManagerInterruptCallbackImpl()

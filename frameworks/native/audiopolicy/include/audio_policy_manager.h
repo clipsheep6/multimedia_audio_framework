@@ -148,6 +148,8 @@ public:
 
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 private:
     AudioPolicyManager()
     {

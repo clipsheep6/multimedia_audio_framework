@@ -20,6 +20,7 @@
 #include "audio_log.h"
 #include "hisysevent.h"
 #include "system_ability_definition.h"
+#include "audio_manager_listener_stub.h"
 
 #include "audio_policy_service.h"
 
@@ -78,6 +79,7 @@ void AudioPolicyService::InitKVStore()
 
 bool AudioPolicyService::ConnectServiceAdapter()
 {
+    AUDIO_INFO_LOG("zhanhang ConnectServiceAdapter start init audio server");
     if (!mAudioPolicyManager.ConnectServiceAdapter()) {
         AUDIO_ERR_LOG("AudioPolicyService::ConnectServiceAdapter  Error in connecting to audio service adapter");
         return false;
@@ -104,7 +106,7 @@ bool AudioPolicyService::ConnectServiceAdapter()
     if (serviceFlag_.count() != MIN_SERVICE_COUNT) {
         OnServiceConnected(AudioServiceIndex::AUDIO_SERVICE_INDEX);
     }
-
+    AUDIO_INFO_LOG("zhanhang audio server init done");
     return true;
 }
 
@@ -920,6 +922,10 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
         UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
     }
 
+    if (g_sProxy != nullptr) {
+        g_sProxy->NotifyDeviceInfo(statusInfo.networkId, statusInfo.isConnected);
+    }
+
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
     AUDIO_INFO_LOG("device list size = [%{public}zu]", mConnectedDevices.size());
 }
@@ -1624,16 +1630,40 @@ DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)
     return DeviceType::DEVICE_TYPE_DEFAULT;
 }
 
-std::unordered_map<int32_t, sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
+std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
 {
-    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> volumeGroupInfos = {};
+    std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
 
     for (auto& v : mVolumeGroups) {
         sptr<VolumeGroupInfo> info = new(std::nothrow) VolumeGroupInfo(v->volumeGroupId_, v->mappingId_, v->groupName_,
             v->networkId_, v->connectType_);
-        volumeGroupInfos.insert(std::pair(v->volumeGroupId_, info));
+        volumeGroupInfos.push_back(info);
     }
     return volumeGroupInfos;
+}
+ 
+void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
+{
+    AUDIO_INFO_LOG("zhanhang Enter  AudioPolicyService::SetParameterCallback");
+    auto parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
+     if (parameterChangeCbStub == nullptr) {
+        AUDIO_ERR_LOG("SetDeviceChangeCallback: parameterChangeCbStub null");
+        return;
+    }
+    if (g_sProxy == nullptr) {
+        AUDIO_ERR_LOG("SetDeviceChangeCallback: g_sProxy null");
+        return;
+    }
+    parameterChangeCbStub->SetParameterCallback(callback);
+
+    sptr<IRemoteObject> object = parameterChangeCbStub->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyService: listenerStub->AsObject is nullptr..");
+        delete parameterChangeCbStub;
+        return;
+    }
+    AUDIO_INFO_LOG("AudioPolicyService: SetParameterCallback call SetParameterCallback.");
+    g_sProxy->SetParameterCallback(object);
 }
 } // namespace AudioStandard
 } // namespace OHOS

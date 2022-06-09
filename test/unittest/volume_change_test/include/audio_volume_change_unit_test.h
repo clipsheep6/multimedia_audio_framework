@@ -36,6 +36,8 @@ public:
 
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
 
+    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+
 private:
     std::string testCaseName_;
 };
