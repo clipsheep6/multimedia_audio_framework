@@ -63,6 +63,7 @@ enum ClassType {
     TYPE_A2DP,
     TYPE_USB,
     TYPE_FILE_IO,
+    TYPE_REMOTE_AUDIO,
     TYPE_INVALID
 };
 
@@ -86,6 +87,7 @@ public:
     std::string renderInIdleState;
     std::string OpenMicSpeaker;
     std::string fileName;
+    std::string networkId;
     std::list<AudioModuleInfo> ports;
 };
 } // namespace AudioStandard
