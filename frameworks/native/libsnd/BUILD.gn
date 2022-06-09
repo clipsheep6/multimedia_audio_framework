@@ -136,7 +136,8 @@ ohos_source_set("sndfile_sources") {
 
 ohos_shared_library("sndfile") {
   deps = [ ":sndfile_sources" ]
-
+  install_images = [ system_base_dir ]
+  relative_install_dir = "platformsdk"
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_standard"
 }
