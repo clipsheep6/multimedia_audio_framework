@@ -568,6 +568,27 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }
 
+void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply)
+{
+    AUDIO_DEBUG_LOG("GetVolumeGroupInfoInternal change info internal entered");
+ 
+  //  int32_t groupId = data.ReadInt32();
+//    sptr<VolumeGroupInfo> groupInfo;
+   // std::unordered_map<int32_t, sptr<VolumeGroupInfo>> groupInfoMap = GetVolumeGroupInfos();
+  //  if (ret != SUCCESS) {
+ //       AUDIO_ERR_LOG("AudioPolicyManagerStub:GetVolumeGroupInfo Error!!");
+ //       return;
+  //  }
+
+ //   reply.WriteInt32(groupInfo->volumeGroupId_);
+  //  reply.WriteInt32(groupInfo->mappingId_);
+  //  reply.WriteString(groupInfo->groupName_);
+  //  reply.WriteString(groupInfo->networkId_);
+  //  reply.WriteInt32(groupInfo->connectType_);
+ 
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -751,6 +772,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             GetCapturerChangeInfosInternal(data, reply);
             break;
 
+        case GET_VOLUME_GROUP_INFO:
+            GetVolumeGroupInfoInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

@@ -471,5 +471,17 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
 
     return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
+
+int32_t AudioPolicyManager::GetVolumeGroupInfo(int32_t groupId, sptr<VolumeGroupInfo>& info)
+{
+     std::unordered_map<int32_t, sptr<VolumeGroupInfo>> infos = g_sProxy->GetVolumeGroupInfos();
+     auto iter = infos.find(groupId);
+     if (iter == infos.end()) {
+         AUDIO_ERR_LOG("Has no group for id %d", groupId);
+         return ERROR;
+     }
+     info = iter->second;
+     return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

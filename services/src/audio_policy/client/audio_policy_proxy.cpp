@@ -1126,5 +1126,28 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
 
     return SUCCESS;
 }
+
+std::unordered_map<int32_t, sptr<VolumeGroupInfo>> AudioPolicyProxy::GetVolumeGroupInfos()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> volumeMap;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: GetVolumeGroupById WriteInterfaceToken failed");
+        // return IPC_PROXY_ERR;
+    }
+
+    int32_t error = Remote()->SendRequest(GET_VOLUME_GROUP_INFO, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetVolumeGroupInfo, error: %d", error);
+        // return ERR_TRANSACTION_FAILED;
+    }
+
+    //zhanhang todo
+    return volumeMap;
+}
 } // namespace AudioStandard
 } // namespace OHOS

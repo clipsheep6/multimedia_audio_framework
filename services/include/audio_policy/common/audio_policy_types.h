@@ -65,6 +65,7 @@ enum AudioPolicyCommand {
     UPDATE_TRACKER,
     GET_RENDERER_CHANGE_INFOS,
     GET_CAPTURER_CHANGE_INFOS,
+    GET_VOLUME_GROUP_INFO,
 };
 } // namespace AudioStandard
 } // namespace OHOS
