@@ -1125,5 +1125,25 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
 
     return SUCCESS;
 }
+//VolumeGroupInfo AudioPolicyProxy::GetVolumeGroupById(int32_t groupId)
+//{
+//    MessageParcel data;
+//    MessageParcel reply;
+//    MessageOption option;
+//
+//    if (!data.WriteInterfaceToken(GetDescriptor())) {
+//        AUDIO_ERR_LOG("AudioPolicyProxy: GetVolumeGroupById WriteInterfaceToken failed");
+//        return IPC_PROXY_ERR;
+//    }
+//
+//    data.WriteInt32(groupId);
+//
+//    int32_t error = Remote()->SendRequest(GET_VOLUMEGROUP_BY_ID, data, reply, option);
+//    if (error != ERR_NONE) {
+//        AUDIO_ERR_LOG("GetAudioLatencyFromXml, error: %d", error);
+//        return ERR_TRANSACTION_FAILED;
+//    }
+//    return static_cast<VolumeGroupInfo>(reply.ReadInt32());
+//}
 } // namespace AudioStandard
 } // namespace OHOS

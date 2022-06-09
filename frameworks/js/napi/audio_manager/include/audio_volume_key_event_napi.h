@@ -51,6 +51,7 @@ public:
      * @param isUpdateUi whether to update volume level in UI.
     **/
     void OnVolumeKeyEvent(AudioStreamType streamType, int volumeLevel, bool isUpdateUi) override;
+    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void SaveCallbackReference(const std::string &callbackName, napi_value callback);
 
 private:

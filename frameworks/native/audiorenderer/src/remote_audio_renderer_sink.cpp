@@ -79,6 +79,32 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *device
     return audioRenderer_;
 }
 
+void RemoteAudioRendererSink::RegisterParameterCallback(ISinkParameterCallback* callback)
+{
+    callback_ = callback;
+}
+
+void RemoteAudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
+    const std::string& value)
+{
+    // TODO
+    //intt32_t ret = audioAdapter_->SetAudioParameters(NuLL/*AudioHandle*/, keyValueList);
+    //if (ret == 0) {
+    //    success
+    //}
+}
+
+std::string RemoteAudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+{
+
+    // TODO
+    //intt32_t ret = audioAdapter_->GetExtraParams(NuLL/*AudioHandle*/, keyValueList);
+    //if (ret == 0) {
+    //    return keyValueList;
+    //}
+    return "";
+}
+
 void RemoteAudioRendererSink::DeInit()
 {
     started_ = false;

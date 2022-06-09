@@ -36,6 +36,8 @@ public:
 
     void OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi) override;
 
+    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+
 private:
     std::string testCaseName_;
 };

@@ -56,6 +56,24 @@ void AudioVolumeKeyEventNapi::OnVolumeKeyEvent(AudioStreamType streamType, int32
     return OnJsCallbackVolumeEvent(cb);
 }
 
+void AudioVolumeKeyEventNapi::OnVolumeKeyEvent(VolumeEvent volumeEvent)
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+	AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi: OnVolumeKeyEvent is called volumeLevel=%{public}d", volumeEvent.volume);
+	AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi: isUpdateUi is called isUpdateUi=%{public}d", volumeEvent.updateUi);
+	if (audioVolumeKeyEventJsCallback_ == nullptr) {
+		AUDIO_DEBUG_LOG("AudioManagerCallbackNapi:No JS callback registered return");
+		return;
+	}
+	std::unique_ptr<AudioVolumeKeyEventJsCallback> cb = std::make_unique<AudioVolumeKeyEventJsCallback>();
+	CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
+	cb->callback = audioVolumeKeyEventJsCallback_;
+	cb->callbackName = VOLUME_KEY_EVENT_CALLBACK_NAME;
+	cb->volumeEvent = volumeEvent;
+
+	return OnJsCallbackVolumeEvent(cb);
+}
+
 void AudioVolumeKeyEventNapi::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);

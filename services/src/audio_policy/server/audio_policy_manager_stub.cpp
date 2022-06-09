@@ -751,6 +751,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             GetCapturerChangeInfosInternal(data, reply);
             break;
 
+        //case GET_VOLUMEGROUP_BY_ID:
+        //    GetVolumeGroupByIdInternal(data, reply);
+        //    break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
