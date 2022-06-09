@@ -12,33 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef ST_AUDIO_SINK_CALLBACK_H
+#define ST_AUDIO_SINK_CALLBACK_H
 
-#ifndef AUDIO_VOLUME_CHANGE_UNIT_TEST_H
-#define AUDIO_VOLUME_CHANGE_UNIT_TEST_H
-
-#include "gtest/gtest.h"
-#include "audio_system_manager.h"
-
+#include "audio_info.h"
 namespace OHOS {
 namespace AudioStandard {
-class AudioVolumeChangeUnitTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
-    void SetUp();
-    void TearDown();
-    static void WaitForCallback();
-};
-class ApplicationCallback : public VolumeKeyEventCallback {
-public:
-    explicit ApplicationCallback(const std::string &testCaseName);
-    ~ApplicationCallback() = default;
-
-    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
-
-private:
-    std::string testCaseName_;
+class ISinkParameterCallback {
+    virtual void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
+        const std::string value) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_VOLUME_CHANGE_UNIT_TEST_H
+#endif // ST_AUDIO_SINK_CALLBACK_H

@@ -73,10 +73,13 @@ void AudioPolicyServer::OnStart()
     }
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
+    AUDIO_INFO_LOG("zhanhang ADD AUDIO_DISTRIBUTED_SERVICE_ID");
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
 
     mPolicyService.Init();
+
     RegisterAudioServerDeathRecipient();
+
     return;
 }
 
@@ -88,6 +91,7 @@ void AudioPolicyServer::OnStop()
 
 void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
+    AUDIO_INFO_LOG("zhanhang AudioPolicyServer::OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
     AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
     switch (systemAbilityId) {
         case MULTIMODAL_INPUT_SERVICE_ID:
@@ -101,6 +105,10 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case AUDIO_DISTRIBUTED_SERVICE_ID:
             AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility ConnectServiceAdapter");
             ConnectServiceAdapter();
+            //TODO
+            AUDIO_INFO_LOG("zhanhang ConnectServiceAdapter");
+            remoteParameterCallback_ = std::make_shared<RemoteParameterCallback>(this);
+            mPolicyService.SetParameterCallback(remoteParameterCallback_);
             break;
         default:
             AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -1207,16 +1215,13 @@ void AudioPolicyServer::GetDeviceInfo(PolicyData& policyData)
 void AudioPolicyServer::GetGroupInfo(PolicyData& policyData)
 {
    // Get group info
-    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> groupInfos = GetVolumeGroupInfos();
-    for (auto kv : groupInfos) {
-        sptr<VolumeGroupInfo> volumeGroupInfo = kv.second;
-        if (volumeGroupInfo != nullptr) {
-            GroupInfo info;
-            info.groupId = volumeGroupInfo->volumeGroupId_;
-            info.groupName = volumeGroupInfo->groupName_;
-            info.type = volumeGroupInfo->connectType_;
-            policyData.groupInfos.push_back(info);
-        }
+    std::vector<sptr<VolumeGroupInfo>> groupInfos = GetVolumeGroupInfos();
+    for (auto volumeGroupInfo : groupInfos) {
+        GroupInfo info;
+        info.groupId = volumeGroupInfo->volumeGroupId_;
+        info.groupName = volumeGroupInfo->groupName_;
+        info.type = volumeGroupInfo->connectType_;
+        policyData.groupInfos.push_back(info);
     }
 }
 
@@ -1372,7 +1377,6 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
     mPolicyService.RegisteredStreamListenerClientDied(pid);
 }
 
-
 int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
@@ -1399,9 +1403,39 @@ int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     return mPolicyService.UpdateStreamState(clientUid, setStateEvent);
 }
 
-std::unordered_map<int32_t, sptr<VolumeGroupInfo>> AudioPolicyServer::GetVolumeGroupInfos()
+std::vector<sptr<VolumeGroupInfo>> AudioPolicyServer::GetVolumeGroupInfos()
 {
     return  mPolicyService.GetVolumeGroupInfos();
+}
+
+AudioPolicyServer::RemoteParameterCallback::RemoteParameterCallback(sptr<AudioPolicyServer> server)
+{
+    server_ = server;
+}
+
+void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const AudioParamKey key,
+    const std::string& condition, const std::string& value)
+{
+    AUDIO_INFO_LOG("zhanhang AudioPolicyServer::OnAudioParameterChange KEY :%{public}d ,value: %{public}s ",
+        key, value.c_str());
+    if (key == AudioParamKey::VOLUME) {
+        VolumeEvent volumeEvent;
+        volumeEvent.networkId = "xxx";
+        volumeEvent.updateUi = false;
+        volumeEvent.volume = 1;
+        volumeEvent.volumeGroupId = 0;
+
+        for (auto it = server_->volumeChangeCbsMap_.begin(); it != server_->volumeChangeCbsMap_.end(); ++it) {
+            std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+            if (volumeChangeCb == nullptr) {
+                AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+                continue;
+            }
+
+            AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+            volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
