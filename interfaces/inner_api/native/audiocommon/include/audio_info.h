@@ -224,11 +224,11 @@ enum AudioRingerMode {
 
 // format
 enum AudioSampleFormat {
-    SAMPLE_U8 = 8,
-    SAMPLE_S16LE = 16,
-    SAMPLE_S24LE = 24,
-    SAMPLE_S32LE = 32,
-    SAMPLE_F32LE = 32,
+    SAMPLE_U8 = 0,
+    SAMPLE_S16LE = 1,
+    SAMPLE_S24LE = 2,
+    SAMPLE_S32LE = 3,
+    SAMPLE_F32LE = 4,
     INVALID_WIDTH = -1
 };
 
@@ -558,16 +558,6 @@ enum AudioRenderMode {
 enum AudioCaptureMode {
     CAPTURE_MODE_NORMAL,
     CAPTURE_MODE_CALLBACK
-};
-
-struct SinkInput {
-    int32_t streamId;
-    AudioStreamType streamType;
-};
-
-struct SourceOutput {
-    int32_t streamId;
-    AudioStreamType streamType;
 };
 
 typedef uint32_t AudioIOHandle;

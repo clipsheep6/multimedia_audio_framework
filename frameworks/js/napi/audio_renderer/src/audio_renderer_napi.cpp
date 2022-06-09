@@ -125,58 +125,6 @@ static AudioStandard::InterruptMode  GetNativeInterruptMode(int32_t interruptMod
     return result;
 }
 
-static AudioSampleFormat GetNativeAudioSampleFormat(int32_t napiSampleFormat)
-{
-    AudioSampleFormat format = INVALID_WIDTH;
-
-    switch (napiSampleFormat) {
-        case AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_U8:
-            format = SAMPLE_U8;
-            break;
-        case AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S16LE:
-            format = SAMPLE_S16LE;
-            break;
-        case AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S24LE:
-            format = SAMPLE_S24LE;
-            break;
-        case AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S32LE:
-            format = SAMPLE_S32LE;
-            break;
-        default:
-            format = INVALID_WIDTH;
-            HiLog::Error(LABEL, "Unknown sample format requested by JS, Set it to default INVALID_WIDTH!");
-            break;
-    }
-
-    return format;
-}
-
-static AudioRendererNapi::AudioSampleFormat GetJsAudioSampleFormat(int32_t nativeSampleFormat)
-{
-    AudioRendererNapi::AudioSampleFormat format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_INVALID;
-
-    switch (nativeSampleFormat) {
-        case SAMPLE_U8:
-            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_U8;
-            break;
-        case SAMPLE_S16LE:
-            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S16LE;
-            break;
-        case SAMPLE_S24LE:
-            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S24LE;
-            break;
-        case SAMPLE_S32LE:
-            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S32LE;
-            break;
-        default:
-            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_INVALID;
-            HiLog::Error(LABEL, "Unknown sample format returned from native, Set it to default SAMPLE_FORMAT_INVALID!");
-            break;
-    }
-
-    return format;
-}
-
 napi_value AudioRendererNapi::CreateAudioSampleFormatObject(napi_env env)
 {
     napi_value result = nullptr;
@@ -1676,7 +1624,7 @@ napi_value AudioRendererNapi::GetStreamInfo(napi_env env, napi_callback_info inf
                 AudioStreamInfo streamInfo;
                 context->status = context->objectInfo->audioRenderer_->GetStreamInfo(streamInfo);
                 if (context->status == SUCCESS) {
-                    context->sampleFormat = GetJsAudioSampleFormat(streamInfo.format);
+                    context->sampleFormat = static_cast<AudioSampleFormat>(streamInfo.format);
                     context->samplingRate = streamInfo.samplingRate;
                     context->channelCount = streamInfo.channels;
                     context->encodingType = streamInfo.encoding;
@@ -1968,7 +1916,7 @@ bool AudioRendererNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
 
     if (napi_get_named_property(env, root, "sampleFormat", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
-        streamInfo->format = GetNativeAudioSampleFormat(intValue);
+        streamInfo->format = static_cast<OHOS::AudioStandard::AudioSampleFormat>(intValue);
     }
 
     if (napi_get_named_property(env, root, "encodingType", &tempValue) == napi_ok) {
@@ -2008,59 +1956,54 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
-    
+
     GET_PARAMS(env, info, ARGS_TWO);
     NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
-    
+
     unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
     CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioRendererAsyncContext object creation failed");
 
-    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-            if (i == PARAM0 && valueType == napi_number) {
-                napi_get_value_int32(env, argv[i], &asyncContext->interruptMode);
-            } else if (i == PARAM1 && valueType == napi_function) {
-                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                break;
-            } else {
-                NAPI_ASSERT(env, false, "type mismatch");
-            }
-        }
-
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+        if (i == PARAM0 && valueType == napi_number) {
+            napi_get_value_int32(env, argv[i], &asyncContext->interruptMode);
+        } else if (i == PARAM1 && valueType == napi_function) {
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            break;
         } else {
-            napi_get_undefined(env, &result);
-        }
-
-        napi_value resource = nullptr;
-        napi_create_string_utf8(env, "SetInterruptMode", NAPI_AUTO_LENGTH, &resource);
-
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioRendererAsyncContext*>(data);
-                AudioStandard::InterruptMode interruptMode_ = GetNativeInterruptMode(context->interruptMode);
-                context->objectInfo->audioRenderer_->SetInterruptMode(interruptMode_);
-                context->status = SUCCESS;
-                context->intValue = SUCCESS;
-            },
-            GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
+            NAPI_ASSERT(env, false, "type mismatch");
         }
     }
 
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "SetInterruptMode", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioRendererAsyncContext*>(data);
+            context->objectInfo->audioRenderer_->SetInterruptMode(GetNativeInterruptMode(context->interruptMode));
+            context->status = SUCCESS;
+            context->intValue = SUCCESS;
+        },
+        GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        status = napi_queue_async_work(env, asyncContext->work);
+        if (status == napi_ok) {
+            asyncContext.release();
+        } else {
+            result = nullptr;
+        }
+    }
     return result;
 }
 } // namespace AudioStandard
