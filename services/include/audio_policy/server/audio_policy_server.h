@@ -153,7 +153,18 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid);
 
-    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
+
+    class RemoteParameterCallback : public AudioParameterCallback {
+    public:
+        RemoteParameterCallback(sptr<AudioPolicyServer> server);
+        // AudioParameterCallback
+        void OnAudioParameterChange(const AudioParamKey key, const std::string& condition, const std::string& value)
+            override;
+    private:
+        sptr<AudioPolicyServer> server_;
+    };
+    std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
