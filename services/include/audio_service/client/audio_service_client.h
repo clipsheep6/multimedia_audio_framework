@@ -534,7 +534,6 @@ private:
 
     pa_cvolume cvolume;
     uint32_t streamIndex;
-    uint32_t sessionID;
     uint32_t volumeChannels;
     bool streamInfoUpdated;
 
@@ -591,8 +590,6 @@ private:
     int32_t PaWriteStream(const uint8_t *buffer, size_t &length);
     void HandleRenderPositionCallbacks(size_t bytesWritten);
     void HandleCapturePositionCallbacks(size_t bytesRead);
-
-    void WriteStateChangedSysEvents();
 
     // Error code used
     static const int32_t AUDIO_CLIENT_SUCCESS = 0;

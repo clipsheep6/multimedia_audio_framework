@@ -19,7 +19,6 @@
 
 #include "iservice_registry.h"
 #include "audio_log.h"
-#include "hisysevent.h"
 #include "securec.h"
 #include "system_ability_definition.h"
 #include "unistd.h"
@@ -30,6 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
+const uint64_t LATENCY_IN_MSEC = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
@@ -147,7 +147,6 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
     asClient->state_ = RUNNING;
-    asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(asClient->state_);
@@ -167,7 +166,6 @@ void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t succes
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
     asClient->state_ = STOPPED;
-    asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(asClient->state_);
@@ -187,7 +185,6 @@ void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t succe
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
     asClient->state_ = PAUSED;
-    asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(asClient->state_);
@@ -316,7 +313,7 @@ int32_t AudioServiceClient::SaveReadCallback(const std::weak_ptr<AudioCapturerRe
 
 void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata)
 {
-    AUDIO_DEBUG_LOG("AudioServiceClient::Inside PA write callback");
+    AUDIO_INFO_LOG("AudioServiceClient::Inside PA write callback");
     if (!userdata) {
         AUDIO_ERR_LOG("AudioServiceClient::PAStreamWriteCb: userdata is null");
         return;
@@ -344,7 +341,7 @@ void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void 
 
 void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
 {
-    AUDIO_DEBUG_LOG("AudioServiceClient::PAStreamReadCb Inside PA read callback");
+    AUDIO_INFO_LOG("AudioServiceClient::PAStreamReadCb Inside PA read callback");
     if (!userdata) {
         AUDIO_ERR_LOG("AudioServiceClient::PAStreamReadCb: userdata is null");
         return;
@@ -453,7 +450,6 @@ AudioServiceClient::AudioServiceClient()
     mAudioSystemMgr = nullptr;
 
     streamIndex = 0;
-    sessionID = 0;
     volumeChannels = STEREO;
     streamInfoUpdated = false;
 
@@ -770,22 +766,23 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_ERR) < 0) {
         return AUDIO_CLIENT_ERR;
     }
-    uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
+
     pa_threaded_mainloop_lock(mainLoop);
 
     pa_buffer_attr bufferAttr;
     bufferAttr.fragsize = static_cast<uint32_t>(-1);
 
-    bufferAttr.prebuf = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC, &sampleSpec);
-    bufferAttr.maxlength = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC * MAX_LENGTH_FACTOR, &sampleSpec);
-    bufferAttr.tlength = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC * T_LENGTH_FACTOR, &sampleSpec);
-    bufferAttr.minreq = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC, &sampleSpec);
+    bufferAttr.prebuf = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
+    bufferAttr.maxlength = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC * MAX_LENGTH_FACTOR, &sampleSpec);
+    bufferAttr.tlength = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC * T_LENGTH_FACTOR, &sampleSpec);
+    bufferAttr.minreq = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK)
         result = pa_stream_connect_playback(paStream, nullptr, &bufferAttr,
                                             (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY
                                             | PA_STREAM_INTERPOLATE_TIMING
                                             | PA_STREAM_START_CORKED
+                                            | PA_STREAM_AUTO_TIMING_UPDATE
                                             | PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
     else
         result = pa_stream_connect_record(paStream, nullptr, nullptr,
@@ -912,7 +909,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     if (!paStream) {
         error = pa_context_errno(context);
-        AUDIO_ERR_LOG("create stream Failed, error: %{public}d", error);
         pa_proplist_free(propList);
         pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioClient();
@@ -950,7 +946,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     }
 
     state_ = PREPARED;
-    WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(state_);
@@ -1086,6 +1081,8 @@ int32_t AudioServiceClient::CorkStream()
 
 int32_t AudioServiceClient::FlushStream()
 {
+    int error;
+
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
@@ -1097,7 +1094,7 @@ int32_t AudioServiceClient::FlushStream()
 
     pa_stream_state_t state = pa_stream_get_state(paStream);
     if (state != PA_STREAM_READY) {
-        int error = pa_context_errno(context);
+        error = pa_context_errno(context);
         pa_threaded_mainloop_unlock(mainLoop);
         AUDIO_ERR_LOG("Stream Flush Failed, error: %{public}d", error);
         return AUDIO_CLIENT_ERR;
@@ -1198,7 +1195,8 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
             pa_threaded_mainloop_wait(mainLoop);
         }
 
-        AUDIO_DEBUG_LOG("Write stream: writable size = %{public}zu, length = %{public}zu", writableSize, length);
+        AUDIO_INFO_LOG("Write stream: writable size = %{public}zu, length = %{public}zu",
+                       writableSize, length);
         if (writableSize > length) {
             writableSize = length;
         }
@@ -1218,8 +1216,8 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
             break;
         }
 
-        AUDIO_DEBUG_LOG("Writable size: %{public}zu, bytes to write: %{public}zu, return val: %{public}d",
-                        writableSize, length, error);
+        AUDIO_INFO_LOG("Writable size: %{public}zu, bytes to write: %{public}zu, return val: %{public}d",
+                       writableSize, length, error);
         buffer = buffer + writableSize;
         length -= writableSize;
 
@@ -1401,7 +1399,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
             StreamBuffer str;
             str.buffer = stream.buffer + cachedLen;
             str.bufferLen = stream.bufferLen - cachedLen;
-            AUDIO_DEBUG_LOG("writing pending data to audio cache: %{public}d", str.bufferLen);
+            AUDIO_INFO_LOG("writing pending data to audio cache: %{public}d", str.bufferLen);
             cachedLen += WriteToAudioCache(str);
         }
     }
@@ -1531,7 +1529,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                 }
             } else {
                 internalRdBufIndex = 0;
-                AUDIO_DEBUG_LOG("buffer size from PA: %{public}zu", internalRdBufLen);
+                AUDIO_INFO_LOG("buffer size from PA: %{public}zu", internalRdBufLen);
             }
         }
 
@@ -1549,9 +1547,8 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
 
 int32_t AudioServiceClient::ReleaseStream()
 {
-    state_ = RELEASED;
-    WriteStateChangedSysEvents();
     ResetPAAudioClient();
+    state_ = RELEASED;
 
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
@@ -1714,25 +1711,19 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
     pa_usec_t paLatency;
     pa_usec_t cacheLatency;
     int32_t retVal = AUDIO_CLIENT_SUCCESS;
-    int negative = 0;
+    int negative;
+    bool getPALatency = false;
 
     // Get PA latency
     pa_threaded_mainloop_lock(mainLoop);
-
-    pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
-    if (operation != nullptr) {
-        pa_operation_unref(operation);
-    } else {
-        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-    }
-
-    while (true) {
+    while (!getPALatency) {
         if (pa_stream_get_latency(paStream, &paLatency, &negative) >= 0) {
             if (negative) {
                 latency = 0;
                 retVal = AUDIO_CLIENT_ERR;
                 return retVal;
             }
+            getPALatency = true;
             break;
         }
         AUDIO_INFO_LOG("waiting for audio latency information");
@@ -1973,17 +1964,8 @@ void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_i
         return;
     }
 
-    uint32_t sessionID = 0;
-    const char *sessionCStr = pa_proplist_gets(info->proplist, "stream.sessionID");
-    if (sessionCStr != nullptr) {
-        std::stringstream sessionStr;
-        sessionStr << sessionCStr;
-        sessionStr >> sessionID;
-    }
-
     thiz->cvolume = info->volume;
     thiz->streamIndex = info->index;
-    thiz->sessionID = sessionID;
     thiz->volumeChannels = info->channel_map.channels;
     thiz->streamInfoUpdated = true;
 
@@ -2010,11 +1992,6 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     pa_operation_unref(pa_context_set_sink_input_volume(client.context, client.streamIndex, &cv, nullptr, nullptr));
 
     AUDIO_INFO_LOG("Applied volume : %{public}f, pa volume: %{public}d", vol, volume);
-    HiviewDFX::HiSysEvent::Write("AUDIO", "AUDIO_VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", 1,
-        "STREAMID", client.sessionID,
-        "STREAMTYPE", client.mStreamType,
-        "VOLUME", vol);
 }
 
 int32_t AudioServiceClient::SetStreamRenderRate(AudioRendererRate audioRendererRate)
@@ -2064,35 +2041,6 @@ void AudioServiceClient::SaveStreamCallback(const std::weak_ptr<AudioStreamCallb
     if (streamCb != nullptr) {
         streamCb->OnStateChange(state_);
     }
-}
-
-void AudioServiceClient::WriteStateChangedSysEvents()
-{
-    uint32_t sessionID = 0;
-    uint64_t transactionId = 0;
-    int32_t callingPid = getpid();
-    int32_t callingUid = getuid();
-
-    bool isOutput = true;
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        transactionId = mAudioSystemMgr->GetTransactionId(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    } else {
-        transactionId = mAudioSystemMgr->GetTransactionId(DEVICE_TYPE_MIC, INPUT_DEVICE);
-        isOutput = false;
-    }
-
-    GetSessionID(sessionID);
-
-    HiviewDFX::HiSysEvent::Write("AUDIO", "AUDIO_STREAM_CHANGE",
-        HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", isOutput ? 1 : 0,
-        "STREAMID", sessionID,
-        "UID", callingUid,
-        "PID", callingPid,
-        "TRANSACTIONID", transactionId,
-        "STREAMTYPE", mStreamType,
-        "STATE", state_,
-        "DEVICETYPE", DEVICE_TYPE_INVALID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

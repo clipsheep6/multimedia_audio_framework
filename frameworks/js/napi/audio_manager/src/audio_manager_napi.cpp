@@ -16,11 +16,13 @@
 #include "audio_manager_napi.h"
 
 #include "audio_capturer_napi.h"
+#include "audio_capturer_state_callback_napi.h"
 #include "audio_common_napi.h"
 #include "audio_errors.h"
 #include "audio_parameters_napi.h"
 #include "audio_renderer_info_napi.h"
 #include "audio_renderer_napi.h"
+#include "audio_renderer_state_callback_napi.h"
 #include "audio_ringermode_callback_napi.h"
 #include "audio_manager_callback_napi.h"
 #include "audio_manager_interrupt_callback_napi.h"
@@ -40,6 +42,8 @@ namespace {
     const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
     const std::string VOLUME_CHANGE_CALLBACK_NAME = "volumeChange";
     const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
+    const std::string RENDERERCHANGE_CALLBACK_NAME = "audioRendererChange";
+    const std::string CAPTURERCHANGE_CALLBACK_NAME = "audioCapturerChange";
 }
 
 namespace OHOS {
@@ -56,8 +60,6 @@ napi_ref AudioManagerNapi::interruptActionType_ = nullptr;
 napi_ref AudioManagerNapi::interruptHint_ = nullptr;
 napi_ref AudioManagerNapi::interruptType_ = nullptr;
 napi_ref AudioManagerNapi::audioScene_ = nullptr;
-napi_ref AudioManagerNapi::interruptMode_ = nullptr;
-napi_ref AudioManagerNapi::focusType_ = nullptr;
 
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
@@ -79,7 +81,6 @@ struct AudioManagerAsyncContext {
     int32_t deviceFlag;
     int32_t intValue;
     int32_t status;
-    int32_t focusType;
     bool isMute;
     bool isActive;
     bool isTrue;
@@ -87,6 +88,8 @@ struct AudioManagerAsyncContext {
     string valueStr;
     AudioManagerNapi *objectInfo;
     vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
 };
 
 namespace {
@@ -146,21 +149,6 @@ static AudioSystemManager::AudioVolumeType GetNativeAudioVolumeType(int32_t volu
             break;
     }
 
-    return result;
-}
-
-static AudioStandard::FocusType GetNativeFocusType(int32_t focusType)
-{
-    AudioStandard::FocusType result = AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
-    switch (focusType) {
-        case AudioManagerNapi::FocusType::FOCUS_TYPE_RECORDING:
-            result =  AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
-            break;
-        default:
-            HiLog::Error(LABEL, "Unknown focusType type, Set it to default FOCUS_TYPE_RECORDING!");
-            break;
-    }
-    
     return result;
 }
 
@@ -654,37 +642,6 @@ napi_value AudioManagerNapi::CreateAudioRingModeObject(napi_env env)
     return result;
 }
 
-template<typename T> napi_value AudioManagerNapi::CreatePropertyBase(napi_env env, T& t_map, napi_ref ref)
-{
-    napi_value result = nullptr;
-    napi_status status;
-    std::string propName;
-    int32_t refCount = 1;
-
-    status = napi_create_object(env, &result);
-    if (status == napi_ok) {
-        for (auto &iter: t_map) {
-            propName = iter.first;
-            status = AddNamedProperty(env, result, propName, iter.second);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop in CreatePropertyBase!");
-                break;
-            }
-            propName.clear();
-        }
-        if (status == napi_ok) {
-            status = napi_create_reference(env, result, refCount, &ref);
-            if (status == napi_ok) {
-                return result;
-            }
-        }
-    }
-    HiLog::Error(LABEL, "CreatePropertyBase is Failed!");
-    napi_get_undefined(env, &result);
-
-    return result;
-}
-
 napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
 {
     napi_status status;
@@ -713,8 +670,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAudioScene", GetAudioScene),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
-        DECLARE_NAPI_FUNCTION("requestIndependentInterrupt", RequestIndependentInterrupt),
-        DECLARE_NAPI_FUNCTION("abandonIndependentInterrupt", AbandonIndependentInterrupt),
+        DECLARE_NAPI_FUNCTION("getCurrentAudioRendererInfos", GetCurrentAudioRendererInfos),
+        DECLARE_NAPI_FUNCTION("getCurrentAudioCapturerInfos", GetCurrentAudioCapturerInfos)
     };
 
     napi_property_descriptor static_prop[] = {
@@ -729,9 +686,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("DeviceChangeType", CreateDeviceChangeTypeObject(env)),
         DECLARE_NAPI_PROPERTY("InterruptActionType", CreateInterruptActionTypeObject(env)),
         DECLARE_NAPI_PROPERTY("InterruptHint", CreateInterruptHintObject(env)),
-        DECLARE_NAPI_PROPERTY("InterruptType", CreateInterruptTypeObject(env)),
-        DECLARE_NAPI_PROPERTY("InterruptMode", CreatePropertyBase(env, interruptModeMap, interruptMode_)),
-        DECLARE_NAPI_PROPERTY("FocusType", CreatePropertyBase(env, focusTypeMap, focusType_))
+        DECLARE_NAPI_PROPERTY("InterruptType", CreateInterruptTypeObject(env))
     };
 
     status = napi_define_class(env, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -920,126 +875,6 @@ static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, v
     } else {
         HiLog::Error(LABEL, "ERROR: AudioManagerAsyncContext* is Null!");
     }
-}
-
-napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_callback_info info)
-{
-    AUDIO_INFO_LOG("AudioManagerNapi: RequestIndependentInterrupt");
-    napi_status status;
-    const int32_t refCount = 1;
-    napi_value result = nullptr;
-
-    GET_PARAMS(env, info, ARGS_TWO);
-    NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
-
-    unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
-    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-
-            if (i == PARAM0 && valueType == napi_number) {
-                napi_get_value_int32(env, argv[i], &asyncContext->focusType);
-            } else if (i == PARAM2 && valueType == napi_function) {
-                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                break;
-            } else {
-                NAPI_ASSERT(env, false, "type mismatch");
-            }
-        }
-
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
-        } else {
-            napi_get_undefined(env, &result);
-        }
-
-        napi_value resource = nullptr;
-        napi_create_string_utf8(env, "RequestIndependentInterrupt", NAPI_AUTO_LENGTH, &resource);
-
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioManagerAsyncContext*>(data);
-                AudioStandard::FocusType focusType_ = GetNativeFocusType(context->focusType);
-                context->intValue =
-                    context->objectInfo->audioMngr_->RequestIndependentInterrupt(focusType_);
-                context->status = SUCCESS;
-            },
-            GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        }
-    }
-    return result;
-}
-
-napi_value AudioManagerNapi::AbandonIndependentInterrupt(napi_env env, napi_callback_info info)
-{
-    AUDIO_INFO_LOG("AudioManagerNapi: AbandonIndependentInterrupt");
-    napi_status status;
-    const int32_t refCount = 1;
-    napi_value result = nullptr;
-
-    GET_PARAMS(env, info, ARGS_TWO);
-    NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
-
-    unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
-    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-            if (i == PARAM0 && valueType == napi_number) {
-                napi_get_value_int32(env, argv[i], &asyncContext->focusType);
-            } else if (i == PARAM1 && valueType == napi_function) {
-                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                break;
-            } else {
-                NAPI_ASSERT(env, false, "type mismatch");
-            }
-        }
-
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
-        } else {
-            napi_get_undefined(env, &result);
-        }
-
-        napi_value resource = nullptr;
-        napi_create_string_utf8(env, "AbandonIndependentInterrupt", NAPI_AUTO_LENGTH, &resource);
-
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioManagerAsyncContext*>(data);
-                AudioStandard::FocusType focusType_ = GetNativeFocusType(context->focusType);
-                context->intValue =
-                    context->objectInfo->audioMngr_->AbandonIndependentInterrupt(focusType_);
-                context->status = SUCCESS;
-            },
-            GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        }
-    }
-
-    return result;
 }
 
 napi_value AudioManagerNapi::SetMicrophoneMute(napi_env env, napi_callback_info info)
@@ -2067,6 +1902,104 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
+static void GetCurrentRendererChangeInfosCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    AUDIO_DEBUG_LOG("AudioManagerNapi::GetCurrentRendererChangeInfosCallbackComplete entered");
+    auto asyncContext = static_cast<AudioManagerAsyncContext*>(data);
+    napi_value result[ARGS_TWO] = {0};
+    napi_value jsChangeInfoObj = nullptr;
+    napi_value jsRenInfoObj = nullptr;
+    napi_value retVal;
+
+    size_t size = asyncContext->audioRendererChangeInfos.size();
+    int32_t position = 0;
+
+    napi_create_array_with_length(env, size, &result[PARAM1]);
+    for (const unique_ptr<AudioRendererChangeInfo> &changeInfo: asyncContext->audioRendererChangeInfos) {
+        if (!changeInfo) {
+            AUDIO_ERR_LOG("AudioManagerNapi:AudioRendererChangeInfo Null, something wrong!!");
+            continue;
+        }
+
+        napi_create_object(env, &jsChangeInfoObj);
+        SetValueInt32(env, "sessionId", changeInfo->sessionId, jsChangeInfoObj);
+        SetValueInt32(env, "rendererState", static_cast<int32_t>(changeInfo->rendererState), jsChangeInfoObj);
+        SetValueInt32(env, "clientUID", changeInfo->clientUID, jsChangeInfoObj);
+
+        napi_create_object(env, &jsRenInfoObj);
+        SetValueInt32(env, "contentType", static_cast<int32_t>(changeInfo->rendererInfo.contentType), jsRenInfoObj);
+        SetValueInt32(env, "streamUsage", static_cast<int32_t>(changeInfo->rendererInfo.streamUsage), jsRenInfoObj);
+        SetValueInt32(env, "rendererFlags", changeInfo->rendererInfo.rendererFlags, jsRenInfoObj);
+        napi_set_named_property(env, jsChangeInfoObj, "rendererInfo", jsRenInfoObj);
+
+        napi_set_element(env, result[PARAM1], position, jsChangeInfoObj);
+        position++;
+    }
+
+    napi_get_undefined(env, &result[PARAM0]);
+
+    if (asyncContext->deferred) {
+        napi_resolve_deferred(env, asyncContext->deferred, result[PARAM1]);
+    } else {
+        napi_value callback = nullptr;
+        napi_get_reference_value(env, asyncContext->callbackRef, &callback);
+        napi_call_function(env, nullptr, callback, ARGS_TWO, result, &retVal);
+        napi_delete_reference(env, asyncContext->callbackRef);
+    }
+    napi_delete_async_work(env, asyncContext->work);
+
+    delete asyncContext;
+}
+
+static void GetCurrentCapturerChangeInfosCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    AUDIO_DEBUG_LOG("AudioManagerNapi::GetCurrentCapturerChangeInfosCallbackComplete entered");
+    auto asyncContext = static_cast<AudioManagerAsyncContext*>(data);
+    napi_value result[ARGS_TWO] = {0};
+    napi_value jsChangeInfoObj = nullptr;
+    napi_value jsCapInfoObj = nullptr;
+    napi_value retVal;
+
+    //vector<unique_ptr<AudioCapturerChangeInfo>> changeInfos = asyncContext->audioCapturerChangeInfos;
+    size_t size = asyncContext->audioCapturerChangeInfos.size();
+    int32_t position = 0;
+
+    napi_create_array_with_length(env, size, &result[PARAM1]);
+    for (const unique_ptr<AudioCapturerChangeInfo> &changeInfo: asyncContext->audioCapturerChangeInfos) {
+        if (!changeInfo) {
+            AUDIO_ERR_LOG("AudioManagerNapi:AudioCapturerChangeInfo Null, something wrong!!");
+            continue;
+        }
+
+        napi_create_object(env, &jsChangeInfoObj);
+        SetValueInt32(env, "sessionId", changeInfo->sessionId, jsChangeInfoObj);
+        SetValueInt32(env, "capturerState", static_cast<int32_t>(changeInfo->capturerState), jsChangeInfoObj);
+        SetValueInt32(env, "clientUID", changeInfo->clientUID, jsChangeInfoObj);
+
+        napi_create_object(env, &jsCapInfoObj);
+        SetValueInt32(env, "sourceType", static_cast<int32_t>(changeInfo->capturerInfo.sourceType), jsCapInfoObj);
+        SetValueInt32(env, "capturerFlags", changeInfo->capturerInfo.capturerFlags, jsCapInfoObj);
+        napi_set_named_property(env, jsChangeInfoObj, "capturerInfo", jsCapInfoObj);
+
+        napi_set_element(env, result[PARAM1], position, jsChangeInfoObj);
+        position++;
+    }
+
+    napi_get_undefined(env, &result[PARAM0]);
+
+    if (asyncContext->deferred) {
+        napi_resolve_deferred(env, asyncContext->deferred, result[PARAM1]);
+    } else {
+        napi_value callback = nullptr;
+        napi_get_reference_value(env, asyncContext->callbackRef, &callback);
+        napi_call_function(env, nullptr, callback, ARGS_TWO, result, &retVal);
+        napi_delete_reference(env, asyncContext->callbackRef);
+    }
+    napi_delete_async_work(env, asyncContext->work);
+
+    delete asyncContext;
+}
+
 static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
     auto asyncContext = static_cast<AudioManagerAsyncContext*>(data);
@@ -2333,7 +2266,50 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
         std::static_pointer_cast<AudioManagerCallbackNapi>(managerNapi->deviceChangeCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
         AUDIO_INFO_LOG("AudioManagerNapi::On SetDeviceChangeCallback is successful");
+    } else if (!callbackName.compare(RENDERERCHANGE_CALLBACK_NAME)) {
+        if (!managerNapi->rendererStateChangeCallbackNapi_) {
+            managerNapi->rendererStateChangeCallbackNapi_ = std::make_shared<AudioRendererStateCallbackNapi>(env);
+            if (!managerNapi->rendererStateChangeCallbackNapi_) {
+                AUDIO_ERR_LOG("AudioManagerNapi: Memory Allocation Failed !!");
+                return undefinedResult;
+            }
+            
+            int32_t ret = managerNapi->audioMngr_->RegisterAudioRendererEventListener(managerNapi->cachedClientId,
+                managerNapi->rendererStateChangeCallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioManagerNapi: Registering of Renderer State Change Callback Failed");
+                return undefinedResult;
+            }
+        }
+
+        std::shared_ptr<AudioRendererStateCallbackNapi> cb =
+        std::static_pointer_cast<AudioRendererStateCallbackNapi>(managerNapi->rendererStateChangeCallbackNapi_);
+        cb->SaveCallbackReference(args[PARAM1]);
+
+        AUDIO_INFO_LOG("AudioManagerNapi::OnRendererStateChangeCallback is successful");
+    } else if (!callbackName.compare(CAPTURERCHANGE_CALLBACK_NAME)) {
+        if (!managerNapi->capturerStateChangeCallbackNapi_) {
+            managerNapi->capturerStateChangeCallbackNapi_ = std::make_shared<AudioCapturerStateCallbackNapi>(env);
+            if (!managerNapi->capturerStateChangeCallbackNapi_) {
+                AUDIO_ERR_LOG("AudioManagerNapi: Memory Allocation Failed !!");
+                return undefinedResult;
+            }
+            
+            int32_t ret = managerNapi->audioMngr_->RegisterAudioCapturerEventListener(managerNapi->cachedClientId,
+                managerNapi->capturerStateChangeCallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioManagerNapi: Registering of Capturer State Change Callback Failed");
+                return undefinedResult;
+            }
+        }
+
+        std::shared_ptr<AudioCapturerStateCallbackNapi> cb =
+        std::static_pointer_cast<AudioCapturerStateCallbackNapi>(managerNapi->capturerStateChangeCallbackNapi_);
+        cb->SaveCallbackReference(args[PARAM1]);
+
+        AUDIO_INFO_LOG("AudioManagerNapi::OnCapturerStateChangeCallback is successful");
     }
+
     return undefinedResult;
 }
 
@@ -2405,8 +2381,152 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
             managerNapi->deviceChangeCallbackNapi_ = nullptr;
         }
         AUDIO_INFO_LOG("AudioManagerNapi::Off UnsetDeviceChangeCallback Success");
+    } else if (!callbackName.compare(RENDERERCHANGE_CALLBACK_NAME)) {
+        int32_t ret = managerNapi->audioMngr_->UnregisterAudioRendererEventListener(managerNapi->cachedClientId);
+        if (ret) {
+            AUDIO_ERR_LOG("AudioManagerNapi:UnRegistering of Renderer State Change Callback Failed");
+            return undefinedResult;
+        }
+        if (managerNapi->rendererStateChangeCallbackNapi_ != nullptr) {
+            managerNapi->rendererStateChangeCallbackNapi_.reset();
+            managerNapi->rendererStateChangeCallbackNapi_ = nullptr;
+        }
+        AUDIO_INFO_LOG("AudioManagerNapi:UnRegistering of renderer State Change Callback successful");
+    } else if (!callbackName.compare(CAPTURERCHANGE_CALLBACK_NAME)) {
+        int32_t ret = managerNapi->audioMngr_->UnregisterAudioCapturerEventListener(managerNapi->cachedClientId);
+        if (ret) {
+            AUDIO_ERR_LOG("AudioManagerNapi:UnRegistering of capturer State Change Callback Failed");
+            return undefinedResult;
+        }
+        if (managerNapi->capturerStateChangeCallbackNapi_ != nullptr) {
+            managerNapi->capturerStateChangeCallbackNapi_.reset();
+            managerNapi->capturerStateChangeCallbackNapi_ = nullptr;
+        }
+        AUDIO_INFO_LOG("AudioManagerNapi:UnRegistering of capturer State Change Callback successful");
     }
     return undefinedResult;
+}
+
+napi_value AudioManagerNapi::GetCurrentAudioRendererInfos(napi_env env, napi_callback_info info)
+{
+    AUDIO_DEBUG_LOG("AudioManagerNapi::GetCurrentAudioRendererInfos entered");
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
+    if (!asyncContext) {
+        AUDIO_ERR_LOG("AudioManagerNapi:Audio manager async context failed");
+        return result;
+    }
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        for (size_t i = PARAM0; i < argc; i++) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[i], &valueType);
+
+             if (i == PARAM0 && valueType == napi_function) {
+                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+                break;
+            } else {
+                NAPI_ASSERT(env, false, "type mismatch");
+            }
+        }
+
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
+        } else {
+            napi_get_undefined(env, &result);
+        }
+
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "getCurrentAudioRendererInfos", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioManagerAsyncContext*>(data);
+                context->objectInfo->audioMngr_->GetCurrentRendererChangeInfos(context->audioRendererChangeInfos);
+                context->status = 0;
+            },
+            GetCurrentRendererChangeInfosCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
+            result = nullptr;
+        } else {
+            status = napi_queue_async_work(env, asyncContext->work);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
+        }
+    }
+
+    return result;
+}
+
+napi_value AudioManagerNapi::GetCurrentAudioCapturerInfos(napi_env env, napi_callback_info info)
+{
+    AUDIO_DEBUG_LOG("AudioManagerNapi::GetCurrentAudioCapturerInfos entered");
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
+    if (!asyncContext) {
+        AUDIO_ERR_LOG("AudioManagerNapi:Audio manager async context failed");
+        return result;
+    }
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        for (size_t i = PARAM0; i < argc; i++) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[i], &valueType);
+
+             if (i == PARAM0 && valueType == napi_function) {
+                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+                break;
+            } else {
+                NAPI_ASSERT(env, false, "type mismatch");
+            }
+        }
+
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
+        } else {
+            napi_get_undefined(env, &result);
+        }
+
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "getCurrentAudioCapturerInfos", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioManagerAsyncContext*>(data);
+                context->objectInfo->audioMngr_->GetCurrentCapturerChangeInfos(context->audioCapturerChangeInfos);
+                context->status = 0;
+            },
+            GetCurrentCapturerChangeInfosCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
+            result = nullptr;
+        } else {
+            status = napi_queue_async_work(env, asyncContext->work);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
+        }
+    }
+
+    return result;
 }
 
 static napi_value Init(napi_env env, napi_value exports)
