@@ -29,7 +29,7 @@ static napi_value Create(napi_env env, napi_callback_info info)
     napi_typeof(env, args[0], &valuetype);
     int value0;
     napi_get_value_int32(env, args[0], &value0);
-    if (value0 > 5) {
+    if (value0 > 5) { // 5 is the test value
         OH_LOG_Print(LOG_APP, LOG_INFO, 0, "[HiLog]", "Your digit is bigger than 5");
     } else {
         OH_LOG_Print(LOG_APP, LOG_INFO, 0, "[HiLog]", "Your digit is smaller than 6");
@@ -53,7 +53,9 @@ EXTERN_C_START
 static napi_value Init(napi_env env, napi_value exports)
 {
     // The first para is the method name of JS call, the third para is the method name of cpp method.
-    napi_property_descriptor desc[] = { { "create", nullptr, Create, nullptr, nullptr, nullptr, napi_default, nullptr }, };
+    napi_property_descriptor desc[] = {
+        { "create", nullptr, Create, nullptr, nullptr, nullptr, napi_default, nullptr }, 
+    };
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
 }
