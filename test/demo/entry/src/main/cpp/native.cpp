@@ -54,7 +54,7 @@ static napi_value Init(napi_env env, napi_value exports)
 {
     // The first para is the method name of JS call, the third para is the method name of cpp method.
     napi_property_descriptor desc[] = {
-        { "create", nullptr, Create, nullptr, nullptr, nullptr, napi_default, nullptr }, 
+        {"create", nullptr, Create, nullptr, nullptr, nullptr, napi_default, nullptr}, 
     };
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
