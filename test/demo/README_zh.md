@@ -16,4 +16,4 @@
   一个调用了AudioRenderer和AudioManager接口的播放器。
 
 - ### JS调用Native API（js-native-api）
-  JS调用Native API的示例。（以OpenSL ES为例）
+  JS调用Native API的示例。（以OpenSL ES和HiLog为例）
