@@ -634,7 +634,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     mTotalBytesRead = 0;
     mFramePeriodRead = 0;
 
-    SetEnv();
+    //SetEnv();
 
     mAudioSystemMgr = AudioSystemManager::GetInstance();
 
