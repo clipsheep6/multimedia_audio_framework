@@ -21,6 +21,7 @@
 #include "audio_parameters_napi.h"
 #include "audio_renderer_info_napi.h"
 #include "audio_renderer_napi.h"
+#include "toneplayer_napi.h"
 #include "audio_ringermode_callback_napi.h"
 #include "audio_manager_callback_napi.h"
 #include "audio_manager_interrupt_callback_napi.h"
@@ -2414,6 +2415,7 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioManagerNapi::Init(env, exports);
     AudioCapturerNapi::Init(env, exports);
     AudioRendererNapi::Init(env, exports);
+    TonePlayerNapi::Init(env, exports);
     AudioParametersNapi::Init(env, exports);
     RingtonePlayerNapi::Init(env, exports);
     SystemSoundManagerNapi::Init(env, exports);

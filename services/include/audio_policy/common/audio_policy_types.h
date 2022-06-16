@@ -51,7 +51,9 @@ enum AudioPolicyCommand {
     UNSET_DEVICE_CHANGE_CALLBACK,
     QUERY_PERMISSION,
     RECONFIGURE_CHANNEL,
-    GET_AUDIO_LATENCY
+    GET_AUDIO_LATENCY,
+    GET_TONEINFO,
+    GET_SUPPORTED_TONES
 };
 } // namespace AudioStandard
 } // namespace OHOS
