@@ -63,7 +63,7 @@ private:
     float leftVolume_;
     float rightVolume_;
     int32_t routeHandle_ = -1;
-    uint32_t openSpeaker_;
+    int32_t openSpeaker_;
     std::string adapterNameCase_;
     struct AudioManager *audioManager_;
     struct AudioAdapter *audioAdapter_;

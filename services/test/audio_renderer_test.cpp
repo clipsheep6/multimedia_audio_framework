@@ -34,11 +34,6 @@ namespace {
     constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
     constexpr int32_t STOP_RENDER_TIME_SECONDS = 1;
     constexpr float TRACK_VOLUME = 0.2f;
-    
-    constexpr int32_t SAMPLE_FORMAT_U8 = 8;
-    constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
-    constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
-    constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
 }
 
 class AudioRendererCallbackTestImpl : public AudioRendererCallback {
@@ -243,22 +238,6 @@ public:
 
         return true;
     }
-    
-    AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat) const
-    {
-        switch (wavSampleFormat) {
-            case SAMPLE_FORMAT_U8:
-                return AudioSampleFormat::SAMPLE_U8;
-            case SAMPLE_FORMAT_S16LE:
-                return AudioSampleFormat::SAMPLE_S16LE;
-            case SAMPLE_FORMAT_S24LE:
-                return AudioSampleFormat::SAMPLE_S24LE;
-            case SAMPLE_FORMAT_S32LE:
-                return AudioSampleFormat::SAMPLE_S32LE;
-            default:
-                return AudioSampleFormat::INVALID_WIDTH;
-        }
-    }
 
     bool TestPlayback(int argc, char *argv[]) const
     {
@@ -297,7 +276,7 @@ public:
         AudioRendererOptions rendererOptions = {};
         rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
         rendererOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
-        rendererOptions.streamInfo.format = GetSampleFormat(wavHeader.bitsPerSample);
+        rendererOptions.streamInfo.format = static_cast<AudioSampleFormat>(wavHeader.bitsPerSample);
         rendererOptions.streamInfo.channels = static_cast<AudioChannel>(wavHeader.NumOfChan);
         rendererOptions.rendererInfo.contentType = contentType;
         rendererOptions.rendererInfo.streamUsage = streamUsage;

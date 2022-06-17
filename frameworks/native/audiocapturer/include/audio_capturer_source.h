@@ -84,7 +84,7 @@ private:
     float rightVolume_;
 
     int32_t routeHandle_ = -1;
-    uint32_t openMic_;
+    int32_t openMic_;
     std::string adapterNameCase_;
     struct AudioManager *audioManager_;
     struct AudioAdapter *audioAdapter_;

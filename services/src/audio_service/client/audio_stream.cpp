@@ -80,20 +80,23 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::CreateStreamMa
     return streamMap;
 }
 
-AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode) : eStreamType_(eStreamType),
-                                                                         eMode_(eMode),
-                                                                         state_(NEW),
-                                                                         isReadInProgress_(false),
-                                                                         isWriteInProgress_(false),
-                                                                         resetTime_(false),
-                                                                         resetTimestamp_(0),
-                                                                         renderMode_(RENDER_MODE_NORMAL),
-                                                                         captureMode_(CAPTURE_MODE_NORMAL),
-                                                                         isReadyToWrite_(false),
-                                                                         isReadyToRead_(false),
-                                                                         isFirstRead_(false)
+AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid)
+    : eStreamType_(eStreamType),
+      eMode_(eMode),
+      state_(NEW),
+      isReadInProgress_(false),
+      isWriteInProgress_(false),
+      resetTime_(false),
+      resetTimestamp_(0),
+      renderMode_(RENDER_MODE_NORMAL),
+      captureMode_(CAPTURE_MODE_NORMAL),
+      isReadyToWrite_(false),
+      isReadyToRead_(false),
+      isFirstRead_(false)
 {
-    AUDIO_DEBUG_LOG("AudioStream ctor");
+    AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
+    audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
+    AUDIO_DEBUG_LOG("AudioStreamTracker created");
 }
 
 AudioStream::~AudioStream()
@@ -112,6 +115,34 @@ AudioStream::~AudioStream()
     if (state_ != RELEASED && state_ != NEW) {
         ReleaseAudioStream();
     }
+
+    if (audioStreamTracker_) {
+        AUDIO_DEBUG_LOG("AudioStream:~AudioStream:Calling update tracker");
+        AudioRendererInfo rendererInfo = {};
+        AudioCapturerInfo capturerInfo = {};
+        state_ = RELEASED;
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo, capturerInfo);
+    }
+}
+
+void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo,
+    const std::shared_ptr<AudioClientTracker> &rendererProxyObj)
+{
+    rendererInfo_ = rendererInfo;
+
+    if (audioStreamTracker_) {
+        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, rendererProxyObj);
+    }
+}
+
+void AudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo,
+    const std::shared_ptr<AudioClientTracker> &capturerProxyObj)
+{
+    capturerInfo_ = capturerInfo;
+
+    if (audioStreamTracker_) {
+        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, capturerProxyObj);
+    }
 }
 
 State AudioStream::GetState()
@@ -119,7 +150,7 @@ State AudioStream::GetState()
     return state_;
 }
 
-int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID) const
+int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
 {
     if ((state_ == RELEASED) || (state_ == NEW)) {
         return ERR_ILLEGAL_STATE;
@@ -128,6 +159,8 @@ int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID) const
     if (GetSessionID(sessionID) != 0) {
         return ERR_INVALID_INDEX;
     }
+
+    sessionId_ = sessionID;
 
     return SUCCESS;
 }
@@ -229,7 +262,8 @@ bool IsEncodingTypeValid(uint8_t encodingType)
     bool isValidEncodingType
             = (find(AUDIO_SUPPORTED_ENCODING_TYPES.begin(), AUDIO_SUPPORTED_ENCODING_TYPES.end(), encodingType)
                != AUDIO_SUPPORTED_ENCODING_TYPES.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsEncodingTypeValid: %{public}s", isValidEncodingType ? "true" : "false");
+    AUDIO_DEBUG_LOG("AudioStream: IsEncodingTypeValid: %{public}s",
+                    isValidEncodingType ? "true" : "false");
     return isValidEncodingType;
 }
 
@@ -238,7 +272,8 @@ bool IsSamplingRateValid(uint32_t samplingRate)
     bool isValidSamplingRate
             = (find(AUDIO_SUPPORTED_SAMPLING_RATES.begin(), AUDIO_SUPPORTED_SAMPLING_RATES.end(), samplingRate)
                != AUDIO_SUPPORTED_SAMPLING_RATES.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsSamplingRateValid: %{public}s", isValidSamplingRate ? "true" : "false");
+    AUDIO_DEBUG_LOG("AudioStream: IsSamplingRateValid: %{public}s",
+                    isValidSamplingRate ? "true" : "false");
     return isValidSamplingRate;
 }
 
@@ -274,7 +309,6 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info)
         StopAudioStream();
         ReleaseAudioStream();
     }
-
     int32_t ret = 0;
     switch (eMode_) {
         case AUDIO_MODE_PLAYBACK:
@@ -296,19 +330,23 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info)
         default:
             return ERR_INVALID_OPERATION;
     }
-
+    
     if (ret) {
         AUDIO_DEBUG_LOG("AudioStream: Error initializing!");
         return ret;
     }
-
     if (CreateStream(info, eStreamType_) != SUCCESS) {
         AUDIO_ERR_LOG("AudioStream:Create stream failed");
         return ERROR;
     }
-
     state_ = PREPARED;
     AUDIO_INFO_LOG("AudioStream:Set stream Info SUCCESS");
+
+    if (audioStreamTracker_) {
+        (void)GetSessionID(sessionId_);
+        AUDIO_DEBUG_LOG("AudioStream:Calling update tracker, sessionid = %{public}d", sessionId_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+    }
     return SUCCESS;
 }
 
@@ -342,6 +380,11 @@ bool AudioStream::StartAudioStream()
     isFirstRead_ = true;
     state_ = RUNNING;
     AUDIO_INFO_LOG("StartAudioStream SUCCESS");
+
+    if (audioStreamTracker_) {
+        AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+    }
     return true;
 }
 
@@ -441,6 +484,10 @@ bool AudioStream::PauseAudioStream()
 
     AUDIO_INFO_LOG("PauseAudioStream SUCCESS");
 
+    if (audioStreamTracker_) {
+        AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+    }
     return true;
 }
 
@@ -483,6 +530,10 @@ bool AudioStream::StopAudioStream()
 
     AUDIO_INFO_LOG("StopAudioStream SUCCESS");
 
+    if (audioStreamTracker_) {
+        AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+    }
     return true;
 }
 
@@ -535,6 +586,10 @@ bool AudioStream::ReleaseAudioStream()
     state_ = RELEASED;
     AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS");
 
+    if (audioStreamTracker_) {
+        AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+    }
     return true;
 }
 

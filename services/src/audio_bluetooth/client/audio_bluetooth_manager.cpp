@@ -19,6 +19,7 @@
 #include "audio_info.h"
 #include "bluetooth_a2dp_src_observer.h"
 #include "bluetooth_def.h"
+#include "bluetooth_host.h"
 #include "bluetooth_types.h"
 #include "bt_def.h"
 #include "i_bluetooth_a2dp_src.h"
@@ -128,6 +129,10 @@ static void AudioOnConnectionChanged(const RawAddress &device, int state)
 
         g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, true, nullptr, device.GetAddress(),
             audioStreamInfo);
+
+    std::string btName = BluetoothHost::GetDefaultHost().GetRemoteDevice(device.GetAddress(),
+        BT_TRANSPORT_BREDR).GetDeviceName();
+        AUDIO_ERR_LOG("AudioOnConnectionChanged: Device name: %{public}s", btName.c_str());
     } else if (state == STATE_TURN_OFF) {
         g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, false, nullptr, device.GetAddress(),
             audioStreamInfo);

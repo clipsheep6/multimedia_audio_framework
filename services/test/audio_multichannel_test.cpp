@@ -29,11 +29,6 @@ namespace {
     constexpr uint8_t CHANNEL_INDEX = 2;
     constexpr uint8_t SLEEP_TIME = 2;
     constexpr uint8_t MAX_FRAME_COUNT = 10;
-    
-    constexpr int32_t SAMPLE_FORMAT_U8 = 8;
-    constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
-    constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
-    constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
 } // namespace
 
 static bool InitClient(std::unique_ptr<AudioServiceClient> &client, uint32_t samplingRate, uint32_t channelCount)
@@ -85,28 +80,7 @@ int32_t StartRecording(char *recPath, int samplingRate, size_t frames, uint32_t 
         return AUDIO_ERR;
     }
 
-    char realPath[PATH_MAX + 1] = {0x00};
-    std::string sourceFilePath(recPath);
-    std::string rootPath;
-    std::string fileName;
-
-    auto pos = sourceFilePath.rfind("/");
-    if (pos!= std::string::npos) {
-        rootPath = sourceFilePath.substr(0, pos);
-        fileName = sourceFilePath.substr(pos);
-    }
-
-    if ((strlen(sourceFilePath.c_str()) >= PATH_MAX) || (realpath(rootPath.c_str(), realPath) == nullptr)) {
-        AUDIO_ERR_LOG("StartRecording:: Invalid path errno = %{public}d", errno);
-        return AUDIO_ERR;
-    }
-
-    std::string verifiedPath(realPath);
-    FILE *pFile = fopen(verifiedPath.append(fileName).c_str(), "wb");
-    if (pFile == nullptr) {
-        AUDIO_ERR_LOG("StartRecording:: Failed to open file errno = %{public}d", errno);
-        return AUDIO_ERR;
-    }
+    FILE *pFile = fopen(recPath, "wb");
 
     size_t size = 1;
     size_t numBuffersToCapture = frames * 1024;
@@ -210,22 +184,6 @@ int32_t StartPlayback(std::unique_ptr<AudioServiceClient> &client, FILE *wavFile
     return 0;
 }
 
-AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
-{
-    switch (wavSampleFormat) {
-        case SAMPLE_FORMAT_U8:
-            return AudioSampleFormat::SAMPLE_U8;
-        case SAMPLE_FORMAT_S16LE:
-            return AudioSampleFormat::SAMPLE_S16LE;
-        case SAMPLE_FORMAT_S24LE:
-            return AudioSampleFormat::SAMPLE_S24LE;
-        case SAMPLE_FORMAT_S32LE:
-            return AudioSampleFormat::SAMPLE_S32LE;
-        default:
-            return AudioSampleFormat::INVALID_WIDTH;
-    }
-}
-
 int32_t StartRendererPlayback(char *inputPath)
 {
     AUDIO_INFO_LOG("================PLAYBACK STARTED==================");
@@ -246,7 +204,7 @@ int32_t StartRendererPlayback(char *inputPath)
     float volume = 1.0f;
     (void)fread(&wavHeader, 1, headerSize, wavFile);
     AudioStreamParams audioParams;
-    audioParams.format = GetSampleFormat(wavHeader.bitsPerSample);
+    audioParams.format = wavHeader.bitsPerSample;
     audioParams.samplingRate = wavHeader.SamplesPerSec;
     audioParams.channels = wavHeader.NumOfChan;
 
@@ -342,7 +300,7 @@ int main(int argc, char* argv[])
                 break;
             default:
                 cout << "Unsuported option. Exiting!!!" << endl;
-                exit(0);
+                abort();
                 break;
         }
     }
