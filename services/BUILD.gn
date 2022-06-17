@@ -78,6 +78,7 @@ group("audio_policy_service_packages") {
     ":audio_interrupt_policy_config",
     ":audio_policy.rc",
     ":audio_policy_service",
+    ":audio_tone_dtmf_config",
   ]
 }
 
@@ -171,6 +172,7 @@ ohos_shared_library("audio_policy_service") {
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_volume_key_event_callback_proxy.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/service/audio_policy_service.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/service/config/audio_focus_parser.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_policy/server/service/config/audio_tone_parser.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/service/config/xml_parser.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/service/listener/device_status_listener.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/service/manager/audio_adapter_manager.cpp",
@@ -210,6 +212,14 @@ ohos_shared_library("audio_policy_service") {
 
 ohos_prebuilt_etc("audio_interrupt_policy_config") {
   source = "$AUDIO_POLICY_SERVER_DIR/etc/audio_interrupt_policy_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  install_images = [ chipset_base_dir ]
+  part_name = "multimedia_audio_framework"
+}
+ohos_prebuilt_etc("audio_tone_dtmf_config") {
+  source = "$AUDIO_POLICY_SERVER_DIR/etc/audio_tone_dtmf_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"

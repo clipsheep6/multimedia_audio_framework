@@ -18,6 +18,8 @@ pulseaudio_dir = "//third_party/pulseaudio"
 config("audio_renderer_config") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/toneplayer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
@@ -87,7 +89,20 @@ ohos_executable("audio_render_mode_callback_test") {
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
+ohos_executable("audio_tonegenerator_test") {
+  install_enable = false
 
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_tonegenerator_test.cpp" ]
+
+  configs = [ ":audio_renderer_config" ]
+
+  deps = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer:audio_toneplayer" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
 ohos_executable("audio_voip_test") {
   install_enable = false
 

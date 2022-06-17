@@ -46,6 +46,10 @@ public:
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
+    virtual std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) = 0;
+
+    virtual std::vector<int32_t> GetSupportedTones() = 0;
+
     virtual int32_t SetRingerMode(AudioRingerMode ringMode) = 0;
 
     virtual AudioRingerMode GetRingerMode() = 0;
