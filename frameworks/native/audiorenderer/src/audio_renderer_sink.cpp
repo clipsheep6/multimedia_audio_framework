@@ -47,8 +47,7 @@ const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
 
 AudioRendererSink::AudioRendererSink()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-      rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0), audioManager_(nullptr), audioAdapter_(nullptr),
-      audioRender_(nullptr)
+      rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr)
 {
     attr_ = {};
 #ifdef DUMPFILE
@@ -225,6 +224,9 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
         AUDIO_ERR_LOG("Load audio device failed");
         return ERR_NOT_STARTED;
     }
+
+    AudioPortCapability audioPortCapability;
+    audioAdapter_->GetPortCapability(audioAdapter_, &audioPort_, &audioPortCapability);
 
     // Initialization port information, can fill through mode and other parameters
     ret = audioAdapter_->InitAllPorts(audioAdapter_);
@@ -464,9 +466,7 @@ int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene)
             return ERR_OPERATION_FAILED;
         }
 
-        AUDIO_INFO_LOG("AudioRendererSink::SelectScene start");
         ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
-        AUDIO_INFO_LOG("AudioRendererSink::SelectScene over");
         if (ret < 0) {
             AUDIO_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
             return ERR_OPERATION_FAILED;

@@ -29,11 +29,6 @@ namespace AudioTestConstants {
     constexpr int32_t ARGS_INDEX_CAPTURER_TEST_PATH = 2;
     constexpr int32_t ARGS_COUNT_THREE = 3;
     constexpr int32_t SUCCESS = 0;
-    
-    constexpr int32_t SAMPLE_FORMAT_U8 = 8;
-    constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
-    constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
-    constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
 }
 
 class AudioVoIPTest {
@@ -102,22 +97,6 @@ public:
 
         return true;
     }
-	
-    AudioSampleFormat GetSampleFormat (int32_t wavSampleFormat) const
-    {
-        switch (wavSampleFormat) {
-            case AudioTestConstants::SAMPLE_FORMAT_U8:
-                return AudioSampleFormat::SAMPLE_U8;
-            case AudioTestConstants::SAMPLE_FORMAT_S16LE:
-                return AudioSampleFormat::SAMPLE_S16LE;
-            case AudioTestConstants::SAMPLE_FORMAT_S24LE:
-                return AudioSampleFormat::SAMPLE_S24LE;
-            case AudioTestConstants::SAMPLE_FORMAT_S32LE:
-                return AudioSampleFormat::SAMPLE_S32LE;
-            default:
-                return AudioSampleFormat::INVALID_WIDTH;
-        }
-    }
 
     bool TestPlayback(char *inputPath) const
     {
@@ -143,7 +122,7 @@ public:
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(streamType);
 
         AudioRendererParams rendererParams;
-        rendererParams.sampleFormat = GetSampleFormat(wavHeader.bitsPerSample);
+        rendererParams.sampleFormat = static_cast<AudioSampleFormat>(wavHeader.bitsPerSample);
         rendererParams.sampleRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
         rendererParams.channelCount = static_cast<AudioChannel>(wavHeader.NumOfChan);
         rendererParams.encodingType = static_cast<AudioEncodingType>(ENCODING_PCM);

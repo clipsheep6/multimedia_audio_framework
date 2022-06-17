@@ -16,7 +16,6 @@
 #include "audio_renderer_file_sink.h"
 
 #include <cerrno>
-#include <cstring>
 #include <dlfcn.h>
 #include <iostream>
 #include <string>
@@ -40,6 +39,7 @@ AudioRendererFileSink::~AudioRendererFileSink()
 
 AudioRendererFileSink *AudioRendererFileSink::GetInstance()
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     static AudioRendererFileSink audioRenderer;
 
     return &audioRenderer;
@@ -47,6 +47,7 @@ AudioRendererFileSink *AudioRendererFileSink::GetInstance()
 
 void AudioRendererFileSink::DeInit()
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     if (filePtr_ != nullptr) {
         fclose(filePtr_);
         filePtr_ = nullptr;
@@ -55,10 +56,12 @@ void AudioRendererFileSink::DeInit()
 
 void InitAttrs(struct AudioSampleAttributes &attrs)
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
 }
 
 int32_t AudioRendererFileSink::Init(const char *filePath)
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink Init");
     filePath_.assign(filePath);
 
     return SUCCESS;
@@ -66,6 +69,7 @@ int32_t AudioRendererFileSink::Init(const char *filePath)
 
 int32_t AudioRendererFileSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     if (filePtr_ == nullptr) {
         AUDIO_ERR_LOG("Invalid file ptr");
         return ERROR;
@@ -83,25 +87,13 @@ int32_t AudioRendererFileSink::RenderFrame(char &data, uint64_t len, uint64_t &w
 
 int32_t AudioRendererFileSink::Start(void)
 {
-    char realPath[PATH_MAX + 1] = {0x00};
-    std::string rootPath;
-    std::string fileName;
-
-    auto pos = filePath_.rfind("/");
-    if (pos!= std::string::npos) {
-        rootPath = filePath_.substr(0, pos);
-        fileName = filePath_.substr(pos);
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s file path %{public}s", __func__, filePath_.c_str());
+    if (filePtr_ == nullptr) {
+        filePtr_ = fopen(filePath_.c_str(), "wb+");
     }
 
     if (filePtr_ == nullptr) {
-        if ((filePath_.length() >= PATH_MAX) || (realpath(rootPath.c_str(), realPath) == nullptr)) {
-            AUDIO_ERR_LOG("AudioRendererFileSink:: Invalid path  errno = %{public}d", errno);
-            return ERROR;
-        }
-
-        std::string verifiedPath(realPath);
-        filePtr_ = fopen(verifiedPath.append(fileName).c_str(), "wb+");
-        CHECK_AND_RETURN_RET_LOG(filePtr_ != nullptr, ERROR, "Failed to open file, errno = %{public}d", errno);
+        AUDIO_ERR_LOG("Failed to open file, errno = %{public}d", errno);
     }
 
     return SUCCESS;
@@ -109,6 +101,7 @@ int32_t AudioRendererFileSink::Start(void)
 
 int32_t AudioRendererFileSink::Stop(void)
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     if (filePtr_ != nullptr) {
         fclose(filePtr_);
         filePtr_ = nullptr;
@@ -119,31 +112,43 @@ int32_t AudioRendererFileSink::Stop(void)
 
 int32_t AudioRendererFileSink::Pause(void)
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     return SUCCESS;
 }
 
 int32_t AudioRendererFileSink::Resume(void)
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     return SUCCESS;
 }
 
 int32_t AudioRendererFileSink::Reset(void)
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     return SUCCESS;
 }
 
 int32_t AudioRendererFileSink::Flush(void)
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     return SUCCESS;
 }
 
 int32_t AudioRendererFileSink::SetVolume(float left, float right)
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     return ERR_NOT_SUPPORTED;
 }
 
 int32_t AudioRendererFileSink::GetLatency(uint32_t *latency)
 {
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t AudioRendererFileSink::GetTransactionId(uint64_t *transactionId)
+{
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     return ERR_NOT_SUPPORTED;
 }
 

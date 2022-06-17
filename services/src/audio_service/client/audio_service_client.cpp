@@ -588,23 +588,12 @@ void AudioServiceClient::SetEnv()
 {
     AUDIO_INFO_LOG("SetEnv called");
     int ret = 0;
-    const char *env_home_pa = getenv("HOME");
-    if (!env_home_pa) {
         ret = setenv("HOME", PA_HOME_DIR, 1);
         AUDIO_INFO_LOG("set env HOME: %{public}d", ret);
-    }
-
-    const char *env_runtime_pa = getenv("PULSE_RUNTIME_PATH");
-    if (!env_runtime_pa) {
         ret = setenv("PULSE_RUNTIME_PATH", PA_RUNTIME_DIR, 1);
         AUDIO_INFO_LOG("set env PULSE_RUNTIME_DIR: %{public}d", ret);
-    }
-
-    const char *env_state_pa = getenv("PULSE_STATE_PATH");
-    if (!env_state_pa) {
         ret = setenv("PULSE_STATE_PATH", PA_STATE_DIR, 1);
         AUDIO_INFO_LOG("set env PULSE_STATE_PATH: %{public}d", ret);
-    }
 }
 
 void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
@@ -1692,38 +1681,24 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp) const
         return AUDIO_CLIENT_PA_ERR;
     }
 
+    int32_t retVal = AUDIO_CLIENT_SUCCESS;
+
     pa_threaded_mainloop_lock(mainLoop);
-
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
-        if (operation != nullptr) {
-            while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-                pa_threaded_mainloop_wait(mainLoop);
-            }
-            pa_operation_unref(operation);
-        } else {
-            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-        }
-    }
-
     const pa_timing_info *info = pa_stream_get_timing_info(paStream);
     if (info == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_get_timing_info failed");
-        return AUDIO_CLIENT_ERR;
-    }
-
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        timeStamp = pa_bytes_to_usec(info->write_index, &sampleSpec);
-    } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
-        if (pa_stream_get_time(paStream, &timeStamp)) {
-            AUDIO_ERR_LOG("AudioServiceClient::GetCurrentTimeStamp failed for AUDIO_SERVICE_CLIENT_RECORD");
-            return AUDIO_CLIENT_ERR;
+        retVal = AUDIO_CLIENT_ERR;
+    } else {
+        if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
+            timeStamp = pa_bytes_to_usec(info->write_index, &sampleSpec);
+        } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
+            if (pa_stream_get_time(paStream, &timeStamp)) {
+                AUDIO_ERR_LOG("AudioServiceClient::GetCurrentTimeStamp failed for AUDIO_SERVICE_CLIENT_RECORD");
+            }
         }
     }
-
     pa_threaded_mainloop_unlock(mainLoop);
 
-    return AUDIO_CLIENT_SUCCESS;
+    return retVal;
 }
 
 int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const

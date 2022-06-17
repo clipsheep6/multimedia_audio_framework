@@ -32,8 +32,7 @@ bool AudioCapturerSource::micMuteState_ = false;
 
 AudioCapturerSource::AudioCapturerSource()
     : capturerInited_(false), started_(false), paused_(false), leftVolume_(MAX_VOLUME_LEVEL),
-      rightVolume_(MAX_VOLUME_LEVEL), openMic_(0), audioManager_(nullptr), audioAdapter_(nullptr),
-      audioCapture_(nullptr)
+      rightVolume_(MAX_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr)
 {
     attr_ = {};
 #ifdef CAPTURE_DUMP
@@ -175,12 +174,14 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
         AUDIO_ERR_LOG("Init audio manager Fail");
         return ERR_INVALID_HANDLE;
     }
+
     ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
     // adapters is 0~3
     if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret != 0) {
         AUDIO_ERR_LOG("Get adapters Fail");
         return ERR_NOT_STARTED;
     }
+
     // Get qualified sound card and port
     adapterNameCase_ = attr_.adapterName;
     openMic_ = attr_.open_mic_speaker;
@@ -189,6 +190,7 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
         AUDIO_ERR_LOG("Switch Adapter Capture Fail");
         return ERR_NOT_STARTED;
     }
+
     struct AudioAdapterDescriptor *desc = &descs[index];
     if (audioManager_->LoadAdapter(audioManager_, desc, &audioAdapter_) != 0) {
         AUDIO_ERR_LOG("Load Adapter Fail");
@@ -205,6 +207,7 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
         AUDIO_ERR_LOG("InitAllPorts failed");
         return ERR_DEVICE_INIT;
     }
+
     if (CreateCapture(audioPort) != 0) {
         AUDIO_ERR_LOG("Create capture failed");
         return ERR_NOT_STARTED;
@@ -446,9 +449,7 @@ int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene)
             return ERR_OPERATION_FAILED;
         }
 
-        AUDIO_INFO_LOG("AudioCapturerSource::SelectScene start");
         ret = audioCapture_->scene.SelectScene((AudioHandle)audioCapture_, &scene);
-        AUDIO_INFO_LOG("AudioCapturerSource::SelectScene over");
         if (ret < 0) {
             AUDIO_ERR_LOG("AudioCapturerSource: Select scene FAILED: %{public}d", ret);
             return ERR_OPERATION_FAILED;
