@@ -452,7 +452,7 @@ AudioServiceClient::AudioServiceClient()
     mStreamType = STREAM_MUSIC;
     mAudioSystemMgr = nullptr;
 
-    streamIndex = 0;
+    streamIndex = 1;
     sessionID = 0;
     volumeChannels = STEREO;
     streamInfoUpdated = false;
