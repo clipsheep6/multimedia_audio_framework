@@ -34,7 +34,7 @@ namespace {
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
-    const int32_t RENDERER_FLAG = 0;
+    const int32_t RENDERER_FLAG = 1;
     // Writing only 500 buffers of data for test
     const int32_t WRITE_BUFFERS_COUNT = 500;
     constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
