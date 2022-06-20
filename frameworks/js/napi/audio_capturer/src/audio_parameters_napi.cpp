@@ -14,7 +14,9 @@
  */
 
 #include "audio_parameters_napi.h"
+#include "audio_log.h"
 #include "hilog/log.h"
+#include "audio_common_napi.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
@@ -514,7 +516,7 @@ napi_value AudioParametersNapi::SetAudioChannel(napi_env env, napi_callback_info
 
     status = napi_get_value_int32(env, args[0], &audioChannel);
     if (status == napi_ok) {
-        audioParametersNapi->audioParameters_->channels = static_cast<AudioChannel>(audioChannel);
+        audioParametersNapi->audioParameters_->channels = AudioCommonNapi::ConvertChannelToNative(audioChannel);
     }
 
     return jsResult;

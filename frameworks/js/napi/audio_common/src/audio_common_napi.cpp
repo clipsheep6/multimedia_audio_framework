@@ -36,5 +36,31 @@ std::string AudioCommonNapi::GetStringArgument(napi_env env, napi_value value)
     }
     return strValue;
 }
+
+int32_t AudioCommonNapi::ConvertChannelToJs(AudioChannel channels)
+{
+    switch (channels) {
+        case MONO:
+            return AudioCommonNapi::AudioChannelMask::CHANNEL_1;
+        case STEREO:
+            return (AudioCommonNapi::AudioChannelMask::CHANNEL_1 | AudioCommonNapi::AudioChannelMask::CHANNEL_2);
+        default:
+            AUDIO_ERR_LOG("ConvertChannelToJs failed");
+            return AudioCommonNapi::AudioChannelMask::CHANNEL_1;
+    }
+}
+
+AudioChannel AudioCommonNapi::ConvertChannelToNative(int32_t channels)
+{
+    switch (channels) {
+        case AudioCommonNapi::AudioChannelMask::CHANNEL_1:
+            return MONO;
+        case (AudioCommonNapi::AudioChannelMask::CHANNEL_1 | AudioCommonNapi::AudioChannelMask::CHANNEL_2):
+            return STEREO;
+        default:
+            AUDIO_ERR_LOG("ConvertChannelToNative failed");
+            return MONO;
+    }
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
