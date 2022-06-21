@@ -51,7 +51,7 @@ public:
     int32_t GetLatency(uint32_t *latency);
     int32_t SetAudioScene(AudioScene audioScene);
     int32_t OpenOutput(DeviceType deviceType);
-    uint64_t GetTransactionId();
+    int32_t GetTransactionId(uint64_t *transactionId);
     static AudioRendererSink *GetInstance(void);
     bool rendererInited_;
 private:
@@ -63,7 +63,7 @@ private:
     float leftVolume_;
     float rightVolume_;
     int32_t routeHandle_ = -1;
-    int32_t openSpeaker_;
+    uint32_t openSpeaker_;
     std::string adapterNameCase_;
     struct AudioManager *audioManager_;
     struct AudioAdapter *audioAdapter_;

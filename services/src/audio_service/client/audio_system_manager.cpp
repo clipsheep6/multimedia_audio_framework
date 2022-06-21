@@ -196,6 +196,16 @@ bool AudioSystemManager::IsDeviceActive(ActiveDeviceType deviceType) const
     return (AudioPolicyManager::GetInstance().IsDeviceActive(static_cast<InternalDeviceType>(deviceType)));
 }
 
+DeviceType AudioSystemManager::GetActiveOutputDevice()
+{
+    return AudioPolicyManager::GetInstance().GetActiveOutputDevice();
+}
+
+DeviceType AudioSystemManager::GetActiveInputDevice()
+{
+    return AudioPolicyManager::GetInstance().GetActiveInputDevice();
+}
+
 bool AudioSystemManager::IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const
 {
     switch (volumeType) {
@@ -654,7 +664,7 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
     return;
 }
 
-int32_t AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
+bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
 {
     AUDIO_INFO_LOG("AudioSystemManager: requestIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;
@@ -663,9 +673,9 @@ int32_t AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
     audioInterrupt.sessionID = clientID;
     int32_t result = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
     AUDIO_INFO_LOG("AudioSystemManager: requestIndependentInterrupt : reuslt -> %{public}d", result);
-    return result;
+    return (result == SUCCESS) ? true:false;
 }
-int32_t AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
+bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
 {
     AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;
@@ -674,7 +684,7 @@ int32_t AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     audioInterrupt.sessionID = clientID;
     int32_t result = AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
     AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : reuslt -> %{public}d", result);
-    return result;
+    return (result == SUCCESS) ? true:false;
 }
 
 int32_t AudioSystemManager::GetAudioLatencyFromXml() const

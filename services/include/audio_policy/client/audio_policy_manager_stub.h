@@ -36,6 +36,8 @@ private:
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
+    void GetActiveOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void GetActiveInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
@@ -60,6 +62,15 @@ private:
     void VerifyClientPermissionInternal(MessageParcel &data, MessageParcel &reply);
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
+    void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+    void RegisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
+    void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
+    void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
+    void GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

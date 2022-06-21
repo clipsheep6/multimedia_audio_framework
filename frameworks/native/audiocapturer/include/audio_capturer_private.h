@@ -16,15 +16,15 @@
 #ifndef AUDIO_CAPTURER_PRIVATE_H
 #define AUDIO_CAPTURER_PRIVATE_H
 
-#include "audio_capturer.h"
 #include "audio_stream.h"
+#include "audio_capturer_proxy_obj.h"
 
 namespace OHOS {
 namespace AudioStandard {
 class AudioCapturerPrivate : public AudioCapturer {
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
-    int32_t SetParams(const AudioCapturerParams params) const override;
+    int32_t SetParams(const AudioCapturerParams params) override;
     int32_t SetCapturerCallback(const std::shared_ptr<AudioCapturerCallback> &callback) override;
     int32_t GetParams(AudioCapturerParams &params) const override;
     int32_t GetCapturerInfo(AudioCapturerInfo &capturerInfo) const override;
@@ -61,7 +61,8 @@ public:
     virtual ~AudioCapturerPrivate();
 private:
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
-    AppInfo appInfo_;
+    AppInfo appInfo_ = {};
+    std::shared_ptr<AudioCapturerProxyObj> capturerProxyObj_;
 };
 
 class AudioStreamCallbackCapturer : public AudioStreamCallback {

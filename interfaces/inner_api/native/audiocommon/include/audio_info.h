@@ -224,11 +224,11 @@ enum AudioRingerMode {
 
 // format
 enum AudioSampleFormat {
-    SAMPLE_U8 = 8,
-    SAMPLE_S16LE = 16,
-    SAMPLE_S24LE = 24,
-    SAMPLE_S32LE = 32,
-    SAMPLE_F32LE = 32,
+    SAMPLE_U8 = 0,
+    SAMPLE_S16LE = 1,
+    SAMPLE_S24LE = 2,
+    SAMPLE_S32LE = 3,
+    SAMPLE_F32LE = 4,
     INVALID_WIDTH = -1
 };
 
@@ -491,6 +491,7 @@ struct AudioCapturerOptions {
 struct AppInfo {
     int32_t appUid { 0 };
     uint32_t appTokenId { 0 };
+    int32_t appPid { 0 };
 };
 
 // Supported audio parameters for both renderer and capturer
@@ -594,6 +595,70 @@ struct InterruptAction {
 enum AudioServiceIndex {
     HDI_SERVICE_INDEX = 0,
     AUDIO_SERVICE_INDEX
+};
+
+/**
+ * @brief Enumerates the rendering states of the current device.
+ */
+enum RendererState {
+    /** INVALID state */
+    RENDERER_INVALID = -1,
+    /** Create New Renderer instance */
+    RENDERER_NEW,
+    /** Reneder Prepared state */
+    RENDERER_PREPARED,
+    /** Rendere Running state */
+    RENDERER_RUNNING,
+    /** Renderer Stopped state */
+    RENDERER_STOPPED,
+    /** Renderer Released state */
+    RENDERER_RELEASED,
+    /** Renderer Paused state */
+    RENDERER_PAUSED
+};
+
+/**
+ * @brief Enumerates the capturing states of the current device.
+ */
+enum CapturerState {
+    /** Capturer INVALID state */
+    CAPTURER_INVALID = -1,
+    /** Create new capturer instance */
+    CAPTURER_NEW,
+    /** Capturer Prepared state */
+    CAPTURER_PREPARED,
+    /** Capturer Running state */
+    CAPTURER_RUNNING,
+    /** Capturer Stopped state */
+    CAPTURER_STOPPED,
+    /** Capturer Released state */
+    CAPTURER_RELEASED,
+    /** Capturer Paused state */
+    CAPTURER_PAUSED
+};
+
+enum AudioMode {
+    AUDIO_MODE_PLAYBACK,
+    AUDIO_MODE_RECORD
+};
+
+struct AudioRendererChangeInfo {
+    int32_t clientUID;
+    int32_t sessionId;
+    AudioRendererInfo rendererInfo;
+    RendererState rendererState;
+};
+
+struct AudioCapturerChangeInfo {
+    int32_t clientUID;
+    int32_t sessionId;
+    AudioCapturerInfo capturerInfo;
+    CapturerState capturerState;
+};
+
+struct AudioStreamChangeInfo {
+    AudioRendererChangeInfo audioRendererChangeInfo;
+    AudioCapturerChangeInfo audioCapturerChangeInfo;
 };
 } // namespace AudioStandard
 } // namespace OHOS

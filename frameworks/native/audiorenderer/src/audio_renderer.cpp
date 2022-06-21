@@ -36,16 +36,36 @@ AudioRendererPrivate::~AudioRendererPrivate()
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStreamType)
 {
-    return std::make_unique<AudioRendererPrivate>(audioStreamType);
+    AppInfo appInfo = {};
+    return Create(audioStreamType, appInfo);
+}
+
+std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
+{
+    return std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo);
 }
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions)
 {
-    return Create("", rendererOptions);
+    AppInfo appInfo = {};
+    return Create("", rendererOptions, appInfo);
+}
+
+std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions,
+    const AppInfo &appInfo)
+{
+    return Create("", rendererOptions, appInfo);
 }
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath,
     const AudioRendererOptions &rendererOptions)
+{
+    AppInfo appInfo = {};
+    return Create(cachePath, rendererOptions, appInfo);
+}
+
+std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath,
+    const AudioRendererOptions &rendererOptions, const AppInfo &appInfo)
 {
     ContentType contentType = rendererOptions.rendererInfo.contentType;
     CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_UNKNOWN && contentType <= CONTENT_TYPE_RINGTONE, nullptr,
@@ -56,7 +76,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
                              nullptr, "Invalid stream usage");
 
     AudioStreamType audioStreamType = AudioStream::GetStreamType(contentType, streamUsage);
-    auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType);
+    auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
     if (!cachePath.empty()) {
         AUDIO_DEBUG_LOG("Set application cache path");
@@ -82,9 +102,22 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return audioRenderer;
 }
 
-AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType)
+AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
-    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_PLAYBACK);
+    appInfo_ = appInfo;
+    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_PLAYBACK, appInfo_.appUid);
+    if (audioStream_) {
+        AUDIO_DEBUG_LOG("AudioRendererPrivate::Audio stream created");
+        // Initializing with default values
+        rendererInfo_.contentType = CONTENT_TYPE_MUSIC;
+        rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    }
+
+    rendererProxyObj_ = std::make_shared<AudioRendererProxyObj>();
+    if (!rendererProxyObj_) {
+        AUDIO_ERR_LOG("AudioRendererProxyObj Memory Allocation Failed !!");
+    }
+
     audioInterrupt_.streamType = audioStreamType;
     if (AudioRendererPrivate::sharedInterrupts_.find(getpid()) == AudioRendererPrivate::sharedInterrupts_.end()) {
         std::map<AudioStreamType, AudioInterrupt> interrupts;
@@ -129,12 +162,25 @@ int32_t AudioRendererPrivate::GetLatency(uint64_t &latency) const
 int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 {
     AudioStreamParams audioStreamParams;
+    AudioRenderer *renderer = this;
+    rendererProxyObj_->SaveRendererObj(renderer);
+    audioStream_->SetRendererInfo(rendererInfo_);
+
     audioStreamParams.format = params.sampleFormat;
     audioStreamParams.samplingRate = params.sampleRate;
     audioStreamParams.channels = params.channelCount;
     audioStreamParams.encoding = params.encodingType;
 
-    int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams);
+    if (!(appInfo_.appPid)) {
+        appInfo_.appPid = getpid();
+    }
+
+    if (!(appInfo_.appUid)) {
+        appInfo_.appUid = getuid();
+    }
+    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
+
+    int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
 
     AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Success");
     if (ret) {
@@ -276,6 +322,8 @@ bool AudioRendererPrivate::Start()
         AUDIO_ERR_LOG("AudioRendererPrivate::Start() Illegal state:%{public}u, Start failed", state);
         return false;
     }
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::mode_::%{public}d", mode_);
+    
     AudioInterrupt audioInterrupt;
     switch (mode_) {
         case InterruptMode::SHARE_MODE:
@@ -287,12 +335,15 @@ bool AudioRendererPrivate::Start()
         default:
             break;
     }
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::streamType::%{public}d", audioInterrupt.streamType);
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::contentType::%{public}d", audioInterrupt.contentType);
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::sessionID::%{public}d", audioInterrupt.sessionID);
 
-    if (audioInterrupt_.streamType == STREAM_DEFAULT || audioInterrupt_.sessionID == INVALID_SESSION_ID) {
+    if (audioInterrupt.streamType == STREAM_DEFAULT || audioInterrupt.sessionID == INVALID_SESSION_ID) {
         return false;
     }
 
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioRendererPrivate::ActivateAudioInterrupt Failed");
         return false;

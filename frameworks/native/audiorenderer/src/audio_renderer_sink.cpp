@@ -47,7 +47,8 @@ const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
 
 AudioRendererSink::AudioRendererSink()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-      rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr)
+      rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0), audioManager_(nullptr), audioAdapter_(nullptr),
+      audioRender_(nullptr)
 {
     attr_ = {};
 #ifdef DUMPFILE
@@ -476,10 +477,22 @@ int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene)
     return SUCCESS;
 }
 
-uint64_t AudioRendererSink::GetTransactionId()
+int32_t AudioRendererSink::GetTransactionId(uint64_t *transactionId)
 {
     AUDIO_INFO_LOG("AudioRendererSink::GetTransactionId in");
-    return reinterpret_cast<uint64_t>(audioRender_);
+
+    if (audioRender_ == nullptr) {
+        AUDIO_ERR_LOG("AudioRendererSink: GetTransactionId failed audio render null");
+        return ERR_INVALID_HANDLE;
+    }
+
+    if (!transactionId) {
+        AUDIO_ERR_LOG("AudioRendererSink: GetTransactionId failed transactionId null");
+        return ERR_INVALID_PARAM;
+    }
+
+    *transactionId = reinterpret_cast<uint64_t>(audioRender_);
+    return SUCCESS;
 }
 
 int32_t AudioRendererSink::Stop(void)
@@ -707,6 +720,21 @@ int32_t AudioRendererSinkGetLatency(uint32_t *latency)
 
     ret = g_audioRendrSinkInstance->GetLatency(latency);
     return ret;
+}
+
+int32_t AudioRendererSinkGetTransactionId(uint64_t *transactionId)
+{
+    if (!g_audioRendrSinkInstance->rendererInited_) {
+        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first");
+        return ERR_NOT_STARTED;
+    }
+
+    if (!transactionId) {
+        AUDIO_ERR_LOG("AudioRendererSinkGetTransactionId failed transacion id null");
+        return ERR_INVALID_PARAM;
+    }
+
+    return g_audioRendrSinkInstance->GetTransactionId(transactionId);
 }
 #ifdef __cplusplus
 }

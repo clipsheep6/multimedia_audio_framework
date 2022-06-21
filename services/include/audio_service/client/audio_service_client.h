@@ -499,6 +499,8 @@ public:
     // Audio timer callback
     virtual void OnTimeOut();
 
+    void SetClientID(int32_t clientPid, int32_t clientUid);
+
 private:
     pa_threaded_mainloop *mainLoop;
     pa_mainloop_api *api;
@@ -525,10 +527,14 @@ private:
     bool isContextConnected;
     bool isStreamConnected;
 
+    int32_t clientPid_ = 0;
+    int32_t clientUid_ = 0;
+
     std::string appCookiePath = "";
     std::string cachePath_ = "";
 
     float mVolumeFactor;
+    bool mUnMute_;
     AudioStreamType mStreamType;
     AudioSystemManager *mAudioSystemMgr;
 
