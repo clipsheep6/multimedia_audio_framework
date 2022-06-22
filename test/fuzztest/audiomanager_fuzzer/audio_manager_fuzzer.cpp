@@ -14,7 +14,6 @@
  */
 
 #include <iostream>
-
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_system_manager.h"
