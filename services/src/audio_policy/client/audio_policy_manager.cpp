@@ -466,5 +466,12 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
 
     return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
+
+bool AudioPolicyManager::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::IsAudioRendererLowLatencySupported");
+
+    return g_sProxy->IsAudioRendererLowLatencySupported(audioStreamInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

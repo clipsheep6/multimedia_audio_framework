@@ -128,6 +128,8 @@ private:
                                                const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value RegisterPeriodPositionCallback(napi_env env, napi_value* argv,
                                                      const std::string& cbName, AudioRendererNapi *rendererNapi);
+    static napi_value RegisterDataRequestCallback(napi_env env, napi_value* argv,
+                                                     const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
 
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
@@ -162,6 +164,7 @@ private:
     std::shared_ptr<AudioRendererCallback> callbackNapi_ = nullptr;
     std::shared_ptr<RendererPositionCallback> positionCBNapi_ = nullptr;
     std::shared_ptr<RendererPeriodPositionCallback> periodPositionCBNapi_ = nullptr;
+    std::shared_ptr<AudioRendererWriteCallback> dataRequestCBNapi_ = nullptr;
 };
 
 static const std::map<std::string, InterruptType> interruptEventTypeMap = {
