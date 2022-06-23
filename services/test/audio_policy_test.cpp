@@ -201,12 +201,12 @@ static void CallSelectInputDevice(char option,std::vector<sptr<AudioDeviceDescri
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     if (option == 'i')
     {
-        int result = audioSystemMgr->SelectIntputDevice(audioDeviceDescriptorsVector);
+        int result = audioSystemMgr->SelectInputDevice(audioDeviceDescriptorsVector);
         cout << "SelectInputDevice Result: " << result << endl;
     }
     else
     {
-        int result = audioSystemMgr->SelectIntputDevice(audioCapturerFilter,audioDeviceDescriptorsVector);
+        int result = audioSystemMgr->SelectInputDevice(audioCapturerFilter,audioDeviceDescriptorsVector);
         cout << "SelectInputDevice by filter Result: " << result << endl;
     }
 }

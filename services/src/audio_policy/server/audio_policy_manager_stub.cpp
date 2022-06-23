@@ -228,7 +228,7 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
     reply.WriteInt32(ret);
 }
 
-void AudioPolicyManagerStub::SelectIntputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioCapturerFilter> audioCapturerFilter = AudioCapturerFilter::Unmarshalling(data);
     if (audioCapturerFilter == nullptr) {
@@ -239,7 +239,7 @@ void AudioPolicyManagerStub::SelectIntputDeviceInternal(MessageParcel &data, Mes
     int validSize = 10; // Use this value temporarily.
     int size = data.ReadInt32();
     if (size <=0 || size > validSize) {
-        AUDIO_ERR_LOG("SelectIntputDevice get invalid device size.");
+        AUDIO_ERR_LOG("SelectInputDevice get invalid device size.");
         return;
     }
     std::vector<sptr<AudioDeviceDescriptor>> targetInputDevice;
@@ -252,7 +252,7 @@ void AudioPolicyManagerStub::SelectIntputDeviceInternal(MessageParcel &data, Mes
         targetInputDevice.push_back(audioDeviceDescriptor);
     }
 
-    int32_t ret = SelectIntputDevice(audioCapturerFilter, targetInputDevice);
+    int32_t ret = SelectInputDevice(audioCapturerFilter, targetInputDevice);
     reply.WriteInt32(ret);
 }
 
@@ -725,7 +725,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             break;
 
         case SELECT_INPUT_DEVICE:
-            SelectIntputDeviceInternal(data, reply);
+            SelectInputDeviceInternal(data, reply);
             break;
 
         case RECONFIGURE_CHANNEL:
