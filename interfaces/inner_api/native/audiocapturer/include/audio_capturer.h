@@ -24,7 +24,7 @@
 namespace OHOS {
 namespace AudioStandard {
 /**
- * @brief Defines information about audio capturer parameters
+ * @brief Defines information about audio capturer parameters.
  */
 struct AudioCapturerParams {
     /** Audio source type */
@@ -37,7 +37,7 @@ struct AudioCapturerParams {
     AudioChannel audioChannel = MONO;
     /** Audio stream type */
     AudioStreamType streamType = STREAM_MEDIA;
-    /** audioSampleFormat */
+    /** Audio sample format */
     AudioSampleFormat audioSampleFormat = SAMPLE_S16LE;
 };
 
@@ -72,7 +72,7 @@ public:
     /**
      * Called when the requested frame count is read.
      *
-     * @param frameCount requested frame frame count for callback.
+     * @param frameCount requested frame count for callback.
      */
     virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
 };
@@ -99,7 +99,7 @@ public:
      *
      * @param options The audio capturer configuration to be used while creating capturer instance.
      * refer AudioCapturerOptions in audio_info.h.
-     * @return Returns unique pointer to the AudioCapturer object
+     * @return Returns unique pointer to the AudioCapturer object.
     */
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType);
 
@@ -108,8 +108,8 @@ public:
      *
      * @param options The audio capturer configuration to be used while creating capturer instance.
      * refer AudioCapturerOptions in audio_info.h.
-     * @param appInfo Originating application's uid and token id can be passed here
-     * @return Returns unique pointer to the AudioCapturer object
+     * @param appInfo Originating application's uid and token id can be passed here.
+     * @return Returns unique pointer to the AudioCapturer object.
     */
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType, const AppInfo &appInfo);
 
@@ -118,7 +118,7 @@ public:
      *
      * @param options The audio capturer configuration to be used while creating capturer instance.
      * refer AudioCapturerOptions in audio_info.h.
-     * @return Returns unique pointer to the AudioCapturer object
+     * @return Returns unique pointer to the AudioCapturer object.
     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options);
 
@@ -127,8 +127,8 @@ public:
      *
      * @param options The audio capturer configuration to be used while creating capturer instance.
      * refer AudioCapturerOptions in audio_info.h.
-     * @param appInfo Originating application's uid and token id can be passed here
-     * @return Returns unique pointer to the AudioCapturer object
+     * @param appInfo Originating application's uid and token id can be passed here.
+     * @return Returns unique pointer to the AudioCapturer object.
     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const AppInfo &appInfo);
 
@@ -137,8 +137,8 @@ public:
      *
      * @param options The audio capturer configuration to be used while creating capturer instance.
      * refer AudioCapturerOptions in audio_info.h.
-     * @param cachePath Application cache path
-     * @return Returns unique pointer to the AudioCapturer object
+     * @param cachePath Application cache path.
+     * @return Returns unique pointer to the AudioCapturer object.
     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath);
 
@@ -148,8 +148,8 @@ public:
      * @param capturerOptions The audio capturer configuration to be used while creating capturer instance.
      * refer AudioCapturerOptions in audio_info.h.
      * @param cachePath Application cache path
-     * @param appInfo Originating application's uid and token id can be passed here
-     * @return Returns unique pointer to the AudioCapturer object
+     * @param appInfo Originating application's uid and token id can be passed here.
+     * @return Returns unique pointer to the AudioCapturer object.
     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath,
         const AppInfo &appInfo);
@@ -181,7 +181,7 @@ public:
      *
      * This function can be called after {@link SetParams} is successful.
      *
-     * @param params Indicates information about audio capturer parameters.For details,see
+     * @param params Indicates information about audio capturer parameters. For details, see
      * {@link AudioCapturerParams}.
      * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -193,7 +193,7 @@ public:
      *
      * This function can be called after {@link SetParams} is successful.
      *
-     * @param capturerInfo Indicates information about audio capturer information.For details,see
+     * @param capturerInfo Indicates information about audio capturer information. For details, see
      * {@link AudioCapturerInfo}.
      * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -205,7 +205,7 @@ public:
      *
      * This function can be called after {@link Create} is successful.
      *
-     * @param streamInfo Indicates information about audio stream information.For details,see
+     * @param streamInfo Indicates information about audio stream information. For details, see
      * {@link AudioStreamInfo}.
      * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -293,7 +293,7 @@ public:
 
     virtual int32_t GetFrameCount(uint32_t &frameCount) const = 0;
     /**
-     * @brief Registers the capturer position callback listener
+     * @brief Registers the capturer position callback listener.
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -303,13 +303,13 @@ public:
         const std::shared_ptr<CapturerPositionCallback> &callback) = 0;
 
     /**
-     * @brief Unregisters the capturer position callback listener
+     * @brief Unregisters the capturer position callback listener.
      *
      */
     virtual void UnsetCapturerPositionCallback() = 0;
 
     /**
-     * @brief Registers the capturer period position callback listener
+     * @brief Registers the capturer period position callback listener.
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -318,23 +318,23 @@ public:
         const std::shared_ptr<CapturerPeriodPositionCallback> &callback) = 0;
 
     /**
-     * @brief Unregisters the capturer period position callback listener
+     * @brief Unregisters the capturer period position callback listener.
      *
      */
     virtual void UnsetCapturerPeriodPositionCallback() = 0;
 
     /**
      * @brief set the buffer duration for capturer, minimum buffer duration is 5msec
-     *         maximum is 20msec
+     *         maximum is 20msec.
      *
-     * @param bufferDuration  Indicates a buffer duration to be set for capturer
+     * @param bufferDuration Indicates a buffer duration to be set for capturer.
      * @return Returns {@link SUCCESS} if bufferDuration is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t SetBufferDuration(uint64_t bufferDuration) const = 0;
 
     /**
-     * @brief Set the application cache path to access the application resources
+     * @brief Set the application cache path to access the application resources.
      *
      * @param cachePath Indicates application cache path.
      * @return none

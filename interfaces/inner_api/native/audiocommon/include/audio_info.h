@@ -86,7 +86,7 @@ enum DeviceType {
      */
     DEVICE_TYPE_NONE = -1,
     /**
-     * Indicates invalid device
+     * Indicates invalid device.
      */
     DEVICE_TYPE_INVALID = 0,
     /**
@@ -114,11 +114,11 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_HEADSET = 22,
     /**
-     * Indicates a debug sink device
+     * Indicates a debug sink device.
      */
     DEVICE_TYPE_FILE_SINK = 50,
     /**
-     * Indicates a debug source device
+     * Indicates a debug source device.
      */
     DEVICE_TYPE_FILE_SOURCE = 51,
     /**
@@ -157,7 +157,7 @@ enum AudioStreamType {
      */
     STREAM_MEDIA = 3,
     /**
-     * Indicates Audio streams for voice assistant
+     * Indicates Audio streams for voice assistant.
      */
     STREAM_VOICE_ASSISTANT = 4,
     /**
