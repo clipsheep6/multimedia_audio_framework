@@ -1120,8 +1120,9 @@ int32_t AudioPolicyServer::GetAudioLatencyFromXml()
 
 int32_t AudioPolicyServer::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
 {
-    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
-    return mStreamCollector.RegisterAudioRendererEventListener(clientUID, object);
+    sptr<AudioServerDeathRecipient> deathRecipient = nullptr;
+    RegisterClientDeathRecipient(object, LISTENER_CLIENT, deathRecipient);
+    return mStreamCollector.RegisterAudioRendererEventListener(clientUID, object, deathRecipient);
 }
 
 int32_t AudioPolicyServer::UnregisterAudioRendererEventListener(int32_t clientUID)
@@ -1131,8 +1132,9 @@ int32_t AudioPolicyServer::UnregisterAudioRendererEventListener(int32_t clientUI
 
 int32_t AudioPolicyServer::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
 {
-    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
-    return mStreamCollector.RegisterAudioCapturerEventListener(clientUID, object);
+    sptr<AudioServerDeathRecipient> deathRecipient = nullptr;
+    RegisterClientDeathRecipient(object, LISTENER_CLIENT, deathRecipient);
+    return mStreamCollector.RegisterAudioCapturerEventListener(clientUID, object, deathRecipient);
 }
 
 int32_t AudioPolicyServer::UnregisterAudioCapturerEventListener(int32_t clientUID)
@@ -1157,8 +1159,9 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
     }
-    RegisterClientDeathRecipient(object, TRACKER_CLIENT);
-    return mStreamCollector.RegisterTracker(mode, streamChangeInfo, object);
+    sptr<AudioServerDeathRecipient> deathRecipient = nullptr;
+    RegisterClientDeathRecipient(object, TRACKER_CLIENT, deathRecipient);
+    return mStreamCollector.RegisterTracker(mode, streamChangeInfo, object, deathRecipient);
 }
 
 int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
@@ -1192,23 +1195,30 @@ int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
     return mStreamCollector.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
-void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id)
+void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id,
+    sptr<AudioServerDeathRecipient> &deathRecipient)
 {
     AUDIO_INFO_LOG("Register clients death recipient");
     CHECK_AND_RETURN_LOG(object != nullptr, "Client proxy obj NULL!!");
-
-    // Deliberately casting UID to pid_t
-    pid_t uid = static_cast<pid_t>(IPCSkeleton::GetCallingUid());
-    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(uid);
-    if (deathRecipient_ != nullptr) {
+    
+    pid_t uid = 0;
+    if (id == TRACKER_CLIENT) {
+        // Deliberately casting UID to pid_t
+        uid = static_cast<pid_t>(IPCSkeleton::GetCallingUid());
+    } else {
+        uid = IPCSkeleton::GetCallingPid();
+    }
+    
+    deathRecipient = new(std::nothrow) AudioServerDeathRecipient(uid);
+    if (deathRecipient != nullptr) {
         if (id == TRACKER_CLIENT) {
-            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredTrackerClientDied,
+            deathRecipient->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredTrackerClientDied,
                 this, std::placeholders::_1));
         } else {
-            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredStreamListenerClientDied,
+            deathRecipient->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredStreamListenerClientDied,
                 this, std::placeholders::_1));
         }
-        bool result = object->AddDeathRecipient(deathRecipient_);
+        bool result = object->AddDeathRecipient(deathRecipient);
         if (!result) {
             AUDIO_ERR_LOG("failed to add deathRecipient");
         }

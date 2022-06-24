@@ -38,7 +38,8 @@ AudioStreamCollector::~AudioStreamCollector()
     AUDIO_INFO_LOG("AudioStreamCollector::~AudioStreamCollector()");
 }
 
-int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
+int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+    sptr<AudioServerDeathRecipient> &deathRecipient)
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioRendererEventListener client id %{public}d done", clientUID);
     std::lock_guard<std::mutex> lock(rendererStateChangeEventMutex_);
@@ -55,6 +56,27 @@ int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientU
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioStreamCollector: failed to  create cb obj");
 
     mDispatcherService.addRendererListener(clientUID, callback);
+    
+    AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioRendererEventListener-Adding death recipient to map");
+    rendererlistenerDR_[clientUID] = make_pair(object, deathRecipient);
+
+    return SUCCESS;
+}
+
+int32_t ClearListenerDeathRecipient(int32_t clientUID,
+    unordered_map<int32_t, pair<sptr<IRemoteObject>, sptr<AudioServerDeathRecipient>>> &listenerDR)
+{
+    pair<sptr<IRemoteObject>, sptr<AudioServerDeathRecipient>> pairDR = listenerDR[clientUID];
+    bool result = (pairDR.first)->RemoveDeathRecipient(pairDR.second);
+    if (!result) {
+        AUDIO_ERR_LOG("failed to remove listener deathRecipient");
+    }
+
+    if (listenerDR.erase(clientUID)) {
+        AUDIO_DEBUG_LOG("AudioStreamCollector::listenerDR_.erase success %{public}d", clientUID);
+    }
+    AUDIO_INFO_LOG("AudioStreamCollector::listenerDR_.erase failed %{public}d", clientUID);
+
     return SUCCESS;
 }
 
@@ -62,10 +84,12 @@ int32_t AudioStreamCollector::UnregisterAudioRendererEventListener(int32_t clien
 {
     AUDIO_INFO_LOG("AudioStreamCollector::UnregisterAudioRendererEventListener()");
     mDispatcherService.removeRendererListener(clientUID);
+    ClearListenerDeathRecipient(clientUID, rendererlistenerDR_);
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
+int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+    sptr<AudioServerDeathRecipient> &deathRecipient)
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioCapturerEventListener for client id %{public}d done", clientUID);
     std::lock_guard<std::mutex> lock(capturerStateChangeEventMutex_);
@@ -82,6 +106,8 @@ int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientU
         "AudioStreamCollector: failed to create capturer cb obj");
 
     mDispatcherService.addCapturerListener(clientUID, callback);
+    AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioCapturerEventListener-Adding death recipient to map");
+    capturerlistenerDR_[clientUID] = make_pair(object, deathRecipient);
     return SUCCESS;
 }
 
@@ -89,6 +115,8 @@ int32_t AudioStreamCollector::UnregisterAudioCapturerEventListener(int32_t clien
 {
     AUDIO_INFO_LOG("AudioStreamCollector: UnregisterAudioCapturerEventListener client id %{public}d done", clientUID);
     mDispatcherService.removeCapturerListener(clientUID);
+    ClearListenerDeathRecipient(clientUID, capturerlistenerDR_);
+
     return SUCCESS;
 }
 
@@ -147,7 +175,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
 }
 
 int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
-    const sptr<IRemoteObject> &object)
+    const sptr<IRemoteObject> &object, sptr<AudioServerDeathRecipient> &deathRecipient)
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterTracker mode %{public}d", mode);
 
@@ -170,6 +198,7 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
         ERR_INVALID_PARAM, "AudioStreamCollector: failed to create tracker cb obj");
     clientTracker_[clientUID] = callback;
+    trackerDR_[clientUID] = make_pair(object, deathRecipient);
 
     return SUCCESS;
 }
@@ -371,36 +400,42 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
 
 void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
 {
-    AUDIO_DEBUG_LOG("TrackerClientDied:client %{public}d Died", uid);
+    AUDIO_INFO_LOG("TrackerClientDied:client %{public}d Died", uid);
 
-    // Send the release state event notification for all stream of died client to registered app
-    for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        AudioRendererChangeInfo audioRendererChangeInfo = **it;
-        if (audioRendererChangeInfo.clientUID == uid) {
-            AUDIO_DEBUG_LOG("TrackerClientDied:client %{public}d session %{public}d Renderer Release",
-                uid, audioRendererChangeInfo.sessionId);
-            audioRendererChangeInfo.rendererState = RENDERER_RELEASED;
-            mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
-                audioRendererChangeInfos_);
-            rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID, audioRendererChangeInfo.sessionId));
-            audioRendererChangeInfos_.erase(it);
+    // Send the release state event notification for all streams of died client to registered app
+    uint32_t activeStreams = audioRendererChangeInfos_.size();
+    for (uint32_t i = 0; i < activeStreams; i++) {
+        const auto &audioRendererChangeInfo = audioRendererChangeInfos_.at(i);
+        if (audioRendererChangeInfo != nullptr) {
+            if (audioRendererChangeInfo->clientUID == uid) {
+                audioRendererChangeInfo->rendererState = RENDERER_RELEASED;
+                mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
+                    audioRendererChangeInfos_);
+                rendererStatequeue_.erase(make_pair(audioRendererChangeInfo->clientUID,
+                    audioRendererChangeInfo->sessionId));
+                audioRendererChangeInfos_.erase(audioRendererChangeInfos_.begin() + i);
+            }
         }
     }
 
-    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        AudioCapturerChangeInfo audioCapturerChangeInfo = **it;
-        if (audioCapturerChangeInfo.clientUID == uid) {
-            AUDIO_DEBUG_LOG("TrackerClientDied:client %{public}d session %{public}d Capturer Release",
-                uid, audioCapturerChangeInfo.sessionId);
-            audioCapturerChangeInfo.capturerState = CAPTURER_RELEASED;
-            mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
-                audioCapturerChangeInfos_);
-            capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo.clientUID, audioCapturerChangeInfo.sessionId));
-            audioCapturerChangeInfos_.erase(it);
+    activeStreams = audioCapturerChangeInfos_.size();
+    for (uint32_t i = 0; i < activeStreams; i++) {
+        const auto &audioCapturerChangeInfo = audioCapturerChangeInfos_.at(i);
+        if (audioCapturerChangeInfo != nullptr) {
+            if (audioCapturerChangeInfo->clientUID == uid) {
+                audioCapturerChangeInfo->capturerState = CAPTURER_RELEASED;
+                mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
+                    audioCapturerChangeInfos_);
+                capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo->clientUID,
+                    audioCapturerChangeInfo->sessionId));
+                audioCapturerChangeInfos_.erase(audioCapturerChangeInfos_.begin() + i);
+            }
         }
     }
+
     if (clientTracker_.erase(uid)) {
         AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d done", uid);
+        ClearListenerDeathRecipient(uid, rendererlistenerDR_);
         return;
     }
     AUDIO_INFO_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d not present", uid);
@@ -411,6 +446,8 @@ void AudioStreamCollector::RegisteredStreamListenerClientDied(int32_t uid)
     AUDIO_INFO_LOG("AudioStreamCollector::StreamListenerClientDied:client %{public}d", uid);
     mDispatcherService.removeRendererListener(uid);
     mDispatcherService.removeCapturerListener(uid);
+    ClearListenerDeathRecipient(uid, rendererlistenerDR_);
+    ClearListenerDeathRecipient(uid, capturerlistenerDR_);
 }
 } // namespace AudioStandard
 } // namespace OHOS
