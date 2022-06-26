@@ -344,6 +344,16 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
     return ret;
 }
 
+std::shared_ptr<ToneInfo> AudioPolicyServer::GetToneConfig(int32_t ltonetype)
+{
+    return mPolicyService.GetToneConfig(ltonetype);
+}
+
+std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
+{
+    return mPolicyService.GetSupportedTones();
+}
+
 AudioRingerMode AudioPolicyServer::GetRingerMode()
 {
     return mPolicyService.GetRingerMode();

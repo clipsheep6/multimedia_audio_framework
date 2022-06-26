@@ -18,6 +18,7 @@ group("audio_packages") {
     "interfaces/inner_api/native/audiocapturer:audio_capturer",
     "interfaces/inner_api/native/audiomanager:audio_client",
     "interfaces/inner_api/native/audiorenderer:audio_renderer",
+    "interfaces/inner_api/native/toneplayer:audio_toneplayer",
     "services:audio_service",
   ]
 }
