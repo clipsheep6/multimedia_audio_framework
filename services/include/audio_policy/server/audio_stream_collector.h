@@ -18,6 +18,7 @@
 
 #include "audio_info.h"
 #include "audio_stream_event_dispatcher.h"
+#include "audio_server_death_recipient.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,12 +32,14 @@ public:
 
     AudioStreamCollector();
     ~AudioStreamCollector();
-    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object);
+    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+        sptr<AudioServerDeathRecipient> &deathRecipient);
     int32_t UnregisterAudioRendererEventListener(int32_t clientUID);
-    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object);
+    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+        sptr<AudioServerDeathRecipient> &deathRecipient);
     int32_t UnregisterAudioCapturerEventListener(int32_t clientUID);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
-        const sptr<IRemoteObject> &object);
+        const sptr<IRemoteObject> &object, sptr<AudioServerDeathRecipient> &deathRecipient);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     int32_t GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
@@ -52,6 +55,10 @@ private:
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos_;
     std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos_;
     std::unordered_map<int32_t, std::shared_ptr<AudioClientTracker>> clientTracker_;
+    std::unordered_map<int32_t, std::pair<sptr<IRemoteObject>, sptr<AudioServerDeathRecipient>>> trackerDR_;
+    std::unordered_map<int32_t, std::pair<sptr<IRemoteObject>, sptr<AudioServerDeathRecipient>>> rendererlistenerDR_;
+    std::unordered_map<int32_t, std::pair<sptr<IRemoteObject>, sptr<AudioServerDeathRecipient>>> capturerlistenerDR_;
+
     int32_t AddRendererStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t AddCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo);

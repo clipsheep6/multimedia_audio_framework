@@ -140,7 +140,7 @@ public:
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
-    void RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id);
+    void RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id, sptr<AudioServerDeathRecipient> &deathRecipient);
 
     void RegisteredTrackerClientDied(int pid);
 
