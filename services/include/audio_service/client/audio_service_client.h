@@ -537,6 +537,7 @@ private:
     bool mUnMute_;
     AudioStreamType mStreamType;
     AudioSystemManager *mAudioSystemMgr;
+    AudioPolicyManager *mAudioPolicyManager;
 
     pa_cvolume cvolume;
     uint32_t streamIndex;
