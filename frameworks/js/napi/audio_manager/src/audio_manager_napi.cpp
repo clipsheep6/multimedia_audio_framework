@@ -2334,7 +2334,6 @@ static void SelectOutputDeviceAsyncCallbackComplete(napi_env env, napi_status st
 
 napi_value AudioManagerNapi::SelectOutputDevice(napi_env env, napi_callback_info info)
 {
-    AUDIO_ERR_LOG("Test:--------AudioManagerNapi::SelectOutputDevice");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -2392,7 +2391,6 @@ napi_value AudioManagerNapi::SelectOutputDevice(napi_env env, napi_callback_info
 
 napi_value AudioManagerNapi::SelectOutputDeviceByFilter(napi_env env, napi_callback_info info)
 {
-    AUDIO_ERR_LOG("Test:--------AudioManagerNapi::SelectOutputDeviceByFilter");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -2483,7 +2481,6 @@ static void SelectInputDeviceAsyncCallbackComplete(napi_env env, napi_status sta
 
 napi_value AudioManagerNapi::SelectInputDevice(napi_env env, napi_callback_info info)
 {
-    AUDIO_ERR_LOG("Test:--------AudioManagerNapi::SelectInputDevice");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -2542,7 +2539,6 @@ napi_value AudioManagerNapi::SelectInputDevice(napi_env env, napi_callback_info 
 
 napi_value AudioManagerNapi::SelectInputDeviceByFilter(napi_env env, napi_callback_info info)
 {
-    AUDIO_ERR_LOG("Test:--------AudioManagerNapi::SelectInputDeviceByFilter");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
