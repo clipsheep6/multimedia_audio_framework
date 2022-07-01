@@ -451,7 +451,8 @@ AudioServiceClient::AudioServiceClient()
     mVolumeFactor = 1.0f;
     mUnMute_ = false;
     mStreamType = STREAM_MUSIC;
-    mAudioSystemMgr = nullptr;
+    mAudioSystemMgr = AudioSystemManager::GetInstance();
+    mAudioPolicyManager = &AudioPolicyManager::GetInstance();
 
     streamIndex = 0;
     sessionID = 0;
@@ -645,7 +646,13 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
     SetEnv();
 
-    mAudioSystemMgr = AudioSystemManager::GetInstance();
+    if (mAudioSystemMgr == nullptr) {
+        mAudioSystemMgr = AudioSystemManager::GetInstance();
+    }
+
+    if(mAudioPolicyManager == nullptr) {
+       mAudioPolicyManager = &AudioPolicyManager::GetInstance();
+    }
 
     mainLoop = pa_threaded_mainloop_new();
     if (mainLoop == nullptr)
@@ -779,7 +786,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_ERR) < 0) {
         return AUDIO_CLIENT_ERR;
     }
-    uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
+    uint64_t latency_in_msec = mAudioPolicyManager->GetAudioLatencyFromXml();
     pa_threaded_mainloop_lock(mainLoop);
 
     pa_buffer_attr bufferAttr;
@@ -810,7 +817,19 @@ int32_t AudioServiceClient::ConnectStreamToPA()
         ResetPAAudioClient();
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
+    pa_threaded_mainloop_unlock(mainLoop)
+    return AUDIO_CLIENT_SUCCESS
+}
 
+int32_t AudioServiceClient::InitializeAudioCache()
+{
+    AUDIO_INFO_LOG("Initializing internal audio cache");
+
+    if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        return AUDIO_CLIENT_PA_ERR;
+    }
+    int error;
+    pa_threaded_mainloop_lock(mainLoop);
     while (true) {
         pa_stream_state_t state = pa_stream_get_state(paStream);
         if (state == PA_STREAM_READY)
@@ -826,19 +845,8 @@ int32_t AudioServiceClient::ConnectStreamToPA()
 
         pa_threaded_mainloop_wait(mainLoop);
     }
-
     isStreamConnected = true;
     pa_threaded_mainloop_unlock(mainLoop);
-    return AUDIO_CLIENT_SUCCESS;
-}
-
-int32_t AudioServiceClient::InitializeAudioCache()
-{
-    AUDIO_INFO_LOG("Initializing internal audio cache");
-
-    if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_PA_ERR) < 0) {
-        return AUDIO_CLIENT_PA_ERR;
-    }
 
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream);
     if (bufferAttr == nullptr) {
