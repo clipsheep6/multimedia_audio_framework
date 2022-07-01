@@ -88,6 +88,7 @@ public:
     std::string OpenMicSpeaker;
     std::string fileName;
     std::string networkId;
+    std::string deviceType;
     std::list<AudioModuleInfo> ports;
 };
 } // namespace AudioStandard
