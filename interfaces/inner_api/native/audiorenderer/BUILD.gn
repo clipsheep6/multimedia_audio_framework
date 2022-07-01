@@ -18,6 +18,8 @@ pulseaudio_dir = "//third_party/pulseaudio"
 config("audio_renderer_config") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/toneplayer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",

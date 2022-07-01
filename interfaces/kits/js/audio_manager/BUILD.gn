@@ -42,9 +42,11 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_capturer/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_renderer/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/ringtone_manager/include",
+    "//foundation/multimedia/audio_framework/interfaces/kits/js/toneplayer/include",
     "//foundation/multimedia/audio_framework/frameworks/inner_api/audiosoundmanager/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include",
     "//third_party/libuv/include",
   ]
 
@@ -71,6 +73,7 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_framework/frameworks/js/napi/ringtone_manager/src/ringtone_options_napi.cpp",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/ringtone_manager/src/ringtone_player_napi.cpp",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/ringtone_manager/src/system_sound_manager_napi.cpp",
+    "//foundation/multimedia/audio_framework/frameworks/js/napi/toneplayer/src/toneplayer_napi.cpp"
   ]
 
   deps = [
@@ -82,6 +85,7 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_renderer",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone:audio_ringtone_client",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer:audio_toneplayer",
     "//utils/native/base:utils",
   ]
 
