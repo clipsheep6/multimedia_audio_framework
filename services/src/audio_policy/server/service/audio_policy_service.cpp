@@ -216,15 +216,15 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<uint32_t> sinkIn
     }
 
     DeviceType localDeviceType = localDeviceDescriptor->deviceType_;
-    if (localDeviceType != mCurrentActiveDevice) {
+    if (localDeviceType != mCurrentActiveDevice_) {
         AUDIO_WARNING_LOG("MoveToLocalOutputDevice: device[%{public}d] not active, use device[%{public}d] instead.",
                             static_cast<int32_t>(localDeviceType),
-                            static_cast<int32_t>(mCurrentActiveDevice));
+                            static_cast<int32_t>(mCurrentActiveDevice_));
     }
 
     // start move.
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
-    std::string sinkName = GetPortName(mCurrentActiveDevice);
+    std::string sinkName = GetPortName(mCurrentActiveDevice_);
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
         if (mAudioPolicyManager.MoveSinkInputByIndexOrName(sinkInputIds[i], sinkId, sinkName) != SUCCESS) {
             AUDIO_DEBUG_LOG("move [%{public}d] to local failed", sinkInputIds[i]);

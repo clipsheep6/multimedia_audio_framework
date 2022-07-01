@@ -107,7 +107,7 @@ static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     while (true) {
         uint64_t writeLen = 0;
 
-        int32_t ret = u->sinkAdapter->RendererRenderFrame((char *)p + index, (uint64_t)length, &writeLen);
+        int32_t ret = u->sinkAdapter->RendererRenderFrame(u->sinkAdapter->wapper, (char *)p + index, (uint64_t)length, &writeLen);
         if (writeLen > length) {
             AUDIO_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
@@ -646,7 +646,9 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     AUDIO_DEBUG_LOG("Load sink adapter");
-    int32_t ret = LoadSinkAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS), &u->sinkAdapter);
+    int32_t ret = LoadSinkAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
+                                  pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID),
+                                  &u->sinkAdapter);
     if (ret) {
         AUDIO_ERR_LOG("Load adapter failed");
         goto fail;
