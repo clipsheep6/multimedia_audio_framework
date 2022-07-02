@@ -177,6 +177,7 @@ public:
     };
     std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
 
+    uint32_t GetSessionId(const std::string networkId);
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

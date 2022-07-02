@@ -1418,6 +1418,10 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const Au
 {
     AUDIO_INFO_LOG("zhanhang AudioPolicyServer::OnAudioParameterChange KEY :%{public}d ,value: %{public}s ",
         key, value.c_str());
+    if (server_ == nullptr) {
+        AUDIO_ERR_LOG("server_ is nullptr");
+        return;
+    }
     if (key == AudioParamKey::VOLUME) {
         VolumeEvent volumeEvent;
         volumeEvent.networkId = "xxx";
@@ -1436,6 +1440,28 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const Au
             volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
         }
     }
+
+    if (key == AudioParamKey::INTERRUPT) {
+        InterruptEventInternal interruptEvent{ INTERRUPT_TYPE_BEGIN, InterruptForceType::INTERRUPT_FORCE, InterruptHint::INTERRUPT_HINT_DUCK, /*duckVolume*/0.2 };
+
+        // 1 get sessionId from networkId
+        uint32_t sessionId = server_->GetSessionId("networkId");
+
+        std::shared_ptr<AudioInterruptCallback> policyListenerCb = nullptr;
+
+        policyListenerCb = server_->policyListenerCbsMap_[sessionId];
+
+        if (policyListenerCb == nullptr) {
+            AUDIO_WARNING_LOG("AudioPolicyServer: policyListenerCb is null so ignoring to apply focus policy");
+            return;
+        }
+        policyListenerCb->OnInterrupt(interruptEvent);
+    }
+}
+
+uint32_t AudioPolicyServer::GetSessionId(const std::string networkId)
+{
+    return mPolicyService.GetSessionId(networkId);
 }
 } // namespace AudioStandard
 } // namespace OHOS
