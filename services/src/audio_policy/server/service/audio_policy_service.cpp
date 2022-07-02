@@ -1799,5 +1799,10 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     AUDIO_INFO_LOG("AudioPolicyService: SetParameterCallback call SetParameterCallback.");
     g_sProxy->SetParameterCallback(object);
 }
+
+uint32_t AudioPolicyService::GetSessionId(const std::string networkId)
+{
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS
