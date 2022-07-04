@@ -668,10 +668,11 @@ struct DeviceInfo {
     DeviceType deviceType;
     DeviceRole deviceRole;
     int32_t deviceId;
-    int32_t channelMasks;
     std::string deviceName;
     std::string macAddress;
-    AudioStreamInfo audioStreamInfo;
+    std::vector<AudioSamplingRate> supportedRates;
+    std::vector<AudioChannel> supportedChannels;
+    std::vector<int32_t> supportedChannelMasks;
 };
 
 struct AudioRendererChangeInfo {

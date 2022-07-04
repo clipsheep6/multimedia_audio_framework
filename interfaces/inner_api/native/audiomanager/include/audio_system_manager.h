@@ -30,6 +30,7 @@ namespace AudioStandard {
 class AudioDeviceDescriptor;
 class AudioDeviceDescriptor : public Parcelable {
     friend class AudioSystemManager;
+    int32_t GenerateNextId();
 public:
     DeviceType getType();
     DeviceRole getRole();
@@ -43,6 +44,11 @@ public:
     int32_t volumeGroupId_;
     std::string networkId_;
     AudioStreamInfo audioStreamInfo_ = {};
+    std::vector<AudioSamplingRate> supportedRates_;
+    std::vector<AudioEncodingType> supportedEncodings_;
+    std::vector<AudioSampleFormat> supportedFormats_;
+    std::vector<AudioChannel> supportedChannels_;
+    std::vector<int32_t> supportedChannelMasks_;
     AudioDeviceDescriptor();
     AudioDeviceDescriptor(DeviceType type, DeviceRole role);
     AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
@@ -51,7 +57,9 @@ public:
     static sptr<AudioDeviceDescriptor> Unmarshalling(Parcel &parcel);
 
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
-    void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask);
+    void SetDeviceCapabilities(const std::vector<AudioSamplingRate> &sampleRates,
+        const std::vector<AudioEncodingType> &encodings, const std::vector<AudioSampleFormat> &formats,
+        const std::vector<AudioChannel> &channels, const std::vector<int32_t> &channelMasks);
 };
 
 struct DeviceChangeAction {
