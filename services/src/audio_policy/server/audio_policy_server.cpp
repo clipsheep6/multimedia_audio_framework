@@ -1105,6 +1105,19 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
         deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
         policyData.outputDevices.push_back(deviceInfo);
     }
+    // Get group info
+    std::unordered_map<int32_t, sptr<VolumeGroupInfo>>  groupInfos = GetVolumeGroupInfos();
+    for (auto kv : groupInfos) {
+        sptr<VolumeGroupInfo> volumeGroupInfo = kv.second;
+        if (volumeGroupInfo != nullptr) {
+            GroupInfo info;
+            info.groupId = volumeGroupInfo->volumeGroupId_;
+            info.groupName = volumeGroupInfo->groupName_;
+            info.type = volumeGroupInfo->connectType_;
+            policyData.groupInfos.push_back(info);
+
+        }
+    }
 }
 
 int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
