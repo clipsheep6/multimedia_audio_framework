@@ -74,12 +74,19 @@ typedef struct {
 } StreamData;
 
 typedef struct {
+    ConnectType type;
+    std::string groupName;
+    std::int32_t groupId;
+} GroupInfo;
+
+typedef struct {
     std::vector<DevicesInfo> inputDevices;
     std::vector<DevicesInfo> outputDevices;
     std::map<AudioStreamType, int32_t> streamVolumes;
     AudioRingerMode ringerMode;
     AudioScene callStatus;
     AudioInterrupt audioFocusInfo;
+    std::vector<GroupInfo> groupInfos;
 } PolicyData;
 
 typedef struct {
@@ -119,6 +126,7 @@ private:
     void StreamVolumesDump(std::string &dumpString);
     void DevicesInfoDump(std::string &dumpString);
     void AudioFocusInfoDump(std::string &dumpString);
+    void GroupInfoDump(std::string& dumpString);
     void DataDump(std::string &dumpString);
     static const std::string GetStreamName(AudioStreamType audioType);
     static const std::string GetStreamUsgaeName(StreamUsage streamUsage);
