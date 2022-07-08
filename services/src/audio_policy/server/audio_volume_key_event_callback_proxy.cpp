@@ -42,6 +42,29 @@ void AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent(AudioStreamType streamTy
     reply.ReadInt32();
 }
 
+void AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent(VolumeEvent volumeEvent)
+{
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioVolumeKeyEventCallbackProxy: WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteInt32(static_cast<int32_t>(volumeEvent.volumeType));
+    data.WriteInt32(volumeEvent.volume);
+    data.WriteBool(volumeEvent.updateUi);
+    data.WriteString(volumeEvent.networkId);
+    data.WriteInt32(volumeEvent.volumeGroupId);
+    int error = Remote()->SendRequest(ON_VOLUME_KEY_EVENT, data, reply, option);
+    if (error != 0) {
+        AUDIO_DEBUG_LOG("Error while sending volume key event %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
 VolumeKeyEventCallbackListner::VolumeKeyEventCallbackListner(const sptr<IAudioVolumeKeyEventCallback> &listener)
     : listener_(listener)
 {
@@ -60,5 +83,14 @@ void VolumeKeyEventCallbackListner::OnVolumeKeyEvent(AudioStreamType streamType,
         listener_->OnVolumeKeyEvent(streamType, volumeLevel, isUpdateUi);
     }
 }
+
+void VolumeKeyEventCallbackListner::OnVolumeKeyEvent(VolumeEvent volumeEvent)
+{
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackProxy VolumeKeyEventCallbackListner");
+    if (listener_ != nullptr) {
+        listener_->OnVolumeKeyEvent(volumeEvent);
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

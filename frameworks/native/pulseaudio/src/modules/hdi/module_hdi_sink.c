@@ -43,6 +43,7 @@ PA_MODULE_USAGE(
         "sink_latency=<hdi latency>"
         "render_in_idle_state<renderer state>"
         "open_mic_speaker<open mic and speaker>"
+        "network_id<device network id>"
         );
 
 static const char * const VALID_MODARGS[] = {
@@ -60,6 +61,7 @@ static const char * const VALID_MODARGS[] = {
     "sink_latency",
     "render_in_idle_state",
     "open_mic_speaker",
+    "network_id",
     NULL
 };
 

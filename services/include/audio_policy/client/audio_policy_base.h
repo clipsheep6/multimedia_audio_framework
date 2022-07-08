@@ -62,7 +62,7 @@ public:
 
     virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
 
-    virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetDeviceChangeCallback(const int32_t clientId) = 0;
 
@@ -117,6 +117,10 @@ public:
     virtual int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
 
+    // virtual VolumeGroupInfo GetVolumeGroupById(int32_t groupId) = 0;
+    virtual int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
+
+    virtual int32_t SelectIntputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

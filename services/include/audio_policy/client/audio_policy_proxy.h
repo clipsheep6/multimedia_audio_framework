@@ -48,6 +48,10 @@ public:
 
     DeviceType GetActiveInputDevice() override;
 
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
+
+    int32_t SelectIntputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
+
     int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
     AudioRingerMode GetRingerMode() override;
@@ -60,7 +64,8 @@ public:
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+        const sptr<IRemoteObject>& object) override;
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId) override;
 
