@@ -435,7 +435,11 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     }
     u->attrs.channel = ss.channels;
     u->attrs.format = ConvertToHDIAudioFormat(ss.format);
+#ifdef BIG_ENDIAN
+    u->attrs.isBigEndian = !GetEndianInfo(ss.format);
+#else
     u->attrs.isBigEndian = GetEndianInfo(ss.format);
+#endif
     u->attrs.adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
 
     AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"

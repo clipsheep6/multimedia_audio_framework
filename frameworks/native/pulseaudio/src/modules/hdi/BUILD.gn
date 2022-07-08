@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/multimedia/audio_framework/multimedia_aafwk.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path =
@@ -79,6 +80,10 @@ ohos_shared_library("module-hdi-source") {
   configs = [ ":hdi_config" ]
 
   cflags = [ "-DPA_MODULE_NAME=libmodule_hdi_source_z_so" ]
+
+  if (multimedia_audio_framework_feature_big_endian) {
+    cflags += [ "-DBIG_ENDIAN" ]
+  }
 
   deps = [
     "$pulseaudio_build_path/src:pulsecommon",
