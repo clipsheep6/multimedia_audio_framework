@@ -27,7 +27,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-AudioStreamCollector::AudioStreamCollector()AudioStreamCollector() : mDispatcherService
+AudioStreamCollector::AudioStreamCollector(): mDispatcherService
     (AudioStreamEventDispatcher::GetAudioStreamEventDispatcher())
 {
     AUDIO_INFO_LOG("AudioStreamCollector::AudioStreamCollector()");
