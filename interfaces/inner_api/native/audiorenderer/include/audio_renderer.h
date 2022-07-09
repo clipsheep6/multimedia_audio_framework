@@ -522,6 +522,10 @@ public:
      * @return none
      */
     virtual void SetInterruptMode(InterruptMode mode) = 0;
+
+    virtual int32_t SetLowPowerVolume(float volume) = 0;
+
+    virtual float GetLowPowerVolume() = 0;
     
     virtual ~AudioRenderer();
 };

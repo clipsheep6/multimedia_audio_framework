@@ -112,6 +112,16 @@ bool AudioPolicyManager::GetStreamMute(AudioStreamType streamType)
     return g_sProxy->GetStreamMute(streamType);
 }
 
+int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume)
+{
+    return g_sProxy->SetLowPowerVolume(streamId, volume);
+}
+
+float AudioSystemManager::GetLowPowerVolume(int32_t streamId)
+{
+    return g_sProxy->GetLowPowerVolume(streamId);
+}
+
 bool AudioPolicyManager::IsStreamActive(AudioStreamType streamType)
 {
     return g_sProxy->IsStreamActive(streamType);

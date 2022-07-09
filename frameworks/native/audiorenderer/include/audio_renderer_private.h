@@ -66,6 +66,8 @@ public:
     int32_t GetBufQueueState(BufferQueueState &bufState) const override;
     void SetApplicationCachePath(const std::string cachePath) override;
     void SetInterruptMode(InterruptMode mode) override;
+    int32_t SetLowPowerVolume(float volume) override;
+    float GetLowPowerVolume() override;
 
     AudioRendererInfo rendererInfo_ = {};
 
