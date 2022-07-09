@@ -23,7 +23,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioStreamCollector {
 public:
-    static AudioStreamCollector& ()
+    static AudioStreamCollector& GetAudioStreamCollector()
     {
         static AudioStreamCollector audioStreamCollector;
         return audioStreamCollector;
