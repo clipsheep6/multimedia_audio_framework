@@ -23,7 +23,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioStreamCollector {
 public:
-    static AudioStreamCollector& GetAudioStreamCollector()
+    static AudioStreamCollector& ()
     {
         static AudioStreamCollector audioStreamCollector;
         return audioStreamCollector;
@@ -44,7 +44,9 @@ public:
     int32_t GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
-    void RegisteredStreamListenerClientDied(int32_t uid);
+    void RegisteredStreamListenerClientDied(int32_t uid); 
+    int32_t SetLowPowerVolume(int32_t streamId, float volume);
+    float GetLowPowerVolume(int32_t streamId);
 
 private:
     AudioStreamEventDispatcher &mDispatcherService;
