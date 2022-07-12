@@ -430,6 +430,9 @@ bool AudioStream::PauseAudioStream()
     // Ends the WriteBuffers thread
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = false;
+        if (writeThread_ && writeThread_->joinable()) {
+            writeThread_->join();
+        }
     }
 
     AUDIO_INFO_LOG("PauseAudioStream SUCCESS");
@@ -472,6 +475,9 @@ bool AudioStream::StopAudioStream()
     // Ends the WriteBuffers thread
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = false;
+        if (writeThread_ && writeThread_->joinable()) {
+            writeThread_->join();
+        }
     }
 
     AUDIO_INFO_LOG("StopAudioStream SUCCESS");
