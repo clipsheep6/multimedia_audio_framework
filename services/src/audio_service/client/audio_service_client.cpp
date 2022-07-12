@@ -166,6 +166,7 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
 
 void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
+    AUDIO_INFO_LOG("AudioServiceClient::PAStreamStopSuccessCb in");
     if (!userdata) {
         AUDIO_ERR_LOG("AudioServiceClient::PAStreamStopSuccessCb: userdata is null");
         return;
@@ -179,6 +180,7 @@ void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t succes
     if (streamCb != nullptr) {
         streamCb->OnStateChange(asClient->state_);
     }
+    AUDIO_INFO_LOG("AudioServiceClient::PAStreamStopSuccessCb Signal");
     asClient->streamCmdStatus = success;
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
@@ -1008,10 +1010,12 @@ int32_t AudioServiceClient::PauseStream()
 
 int32_t AudioServiceClient::StopStream()
 {
+    AUDIO_INFO_LOG("AudioServiceClient::StopStream");
     lock_guard<mutex> lock(ctrlMutex);
     PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
     int32_t ret = CorkStream();
     if (ret) {
+        AUDIO_ERR_LOG("Cork stream Failed");
         return ret;
     }
 
@@ -1032,7 +1036,9 @@ int32_t AudioServiceClient::StopStream()
 
 int32_t AudioServiceClient::CorkStream()
 {
+    AUDIO_INFO_LOG("AudioServiceClient::CorkStream");
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("PA state invalid");
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -1047,12 +1053,14 @@ int32_t AudioServiceClient::CorkStream()
         return AUDIO_CLIENT_ERR;
     }
 
+    AUDIO_INFO_LOG("AudioServiceClient::before pa_stream_cork");
     streamCmdStatus = 0;
     operation = pa_stream_cork(paStream, 1, PAStreamCorkSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
     }
+    AUDIO_INFO_LOG("AudioServiceClient::after pa_stream_cork wait");
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mainLoop);
 
