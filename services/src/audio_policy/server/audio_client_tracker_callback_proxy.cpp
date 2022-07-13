@@ -30,9 +30,7 @@ void AudioClientTrackerCallbackProxy::SetLowPowerVolumeImpl(float volume)
         return;
     }
 
-    //data.WriteInt32(static_cast<int32_t>(streamId));
     data.WriteFloat(static_cast<float>(volume));
-
     int error = Remote()->SendRequest(SETLOWPOWERVOL, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("SETLOWPOWERVOL failed, error: %{public}d", error);
@@ -49,15 +47,11 @@ void AudioClientTrackerCallbackProxy::GetLowPowerVolumeImpl(float &volume)
         return;
     }
 
-    //data.WriteInt32(static_cast<int32_t>(streamId));
-    //data.WriteInt32(static_cast<float>(volume));
-
     int error = Remote()->SendRequest(GETLOWPOWERVOL, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("SETLOWPOWERVOL failed, error: %{public}d", error);
     }
 
-    // FIXME ---yanfeng.
     volume = reply.ReadFloat();
 }
 

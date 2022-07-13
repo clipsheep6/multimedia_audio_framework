@@ -263,9 +263,9 @@ int main(int argc, char* argv[])
                 HandleAudioScene(opt);
                 break;
             case 'L':
-	    case 'l':
-		HandleLowPowerVolumeOption(opt);
-		break;
+            case 'l':
+                HandleLowPowerVolumeOption(opt);
+                break;
             case ':':
                 NoValueError();
                 break;

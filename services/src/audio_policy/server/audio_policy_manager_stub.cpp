@@ -114,7 +114,6 @@ void AudioPolicyManagerStub::GetStreamVolumeInternal(MessageParcel &data, Messag
 
 void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
-    //AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
     int32_t streamId = data.ReadInt32();
     float volume = data.ReadFloat();
     int result = SetLowPowerVolume(streamId, volume);
@@ -126,7 +125,6 @@ void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, Mess
 
 void AudioPolicyManagerStub::GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
-    //AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
     int32_t streamId = data.ReadInt32();
     float volume = GetLowPowerVolume(streamId);
     reply.WriteFloat(volume);

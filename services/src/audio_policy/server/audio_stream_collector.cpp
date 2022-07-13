@@ -157,12 +157,10 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     if (mode == AUDIO_MODE_PLAYBACK) {
         AddRendererStream(streamChangeInfo);
-        //clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
         clientID = streamChangeInfo.audioRendererChangeInfo.sessionId;
     } else {
         // mode = AUDIO_MODE_RECORD
         AddCapturerStream(streamChangeInfo);
-        //clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
         clientID = streamChangeInfo.audioCapturerChangeInfo.sessionId;
     }
 

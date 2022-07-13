@@ -37,16 +37,15 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
 
     switch (code) {
         case SETLOWPOWERVOL: {
-            //int32_t sessionId = static_cast<StreamSetState>(data.ReadInt32());
             float volume = data.ReadFloat();
             SetLowPowerVolumeImpl(volume);
             return AUDIO_OK;
         }
         case GETLOWPOWERVOL: {
-	        float volume;
+            float volume;
             GetLowPowerVolumeImpl(volume);
             reply.WriteFloat(volume);
-	    data.WriteFloat(static_cast<float>(volume));
+            data.WriteFloat(static_cast<float>(volume));
             return AUDIO_OK;
         }
         default: {

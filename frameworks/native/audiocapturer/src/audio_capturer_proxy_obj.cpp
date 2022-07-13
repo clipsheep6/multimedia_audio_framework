@@ -28,12 +28,11 @@ void AudioCapturerProxyObj::SaveCapturerObj(const AudioCapturer *capturerObj)
 
 void AudioCapturerProxyObj::SetLowPowerVolumeImpl(float volume)
 {
-   // capturer->SetLowPowerVolume(volume);
+
 }
 
 void AudioCapturerProxyObj::GetLowPowerVolumeImpl(float &volume)
 {
-    //capturer->GetLowPowerVolume(volume);
     volume = 1.0;
 }
 } // namespace AudioStandard
