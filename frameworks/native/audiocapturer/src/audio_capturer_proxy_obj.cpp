@@ -28,7 +28,6 @@ void AudioCapturerProxyObj::SaveCapturerObj(const AudioCapturer *capturerObj)
 
 void AudioCapturerProxyObj::SetLowPowerVolumeImpl(float volume)
 {
-
 }
 
 void AudioCapturerProxyObj::GetLowPowerVolumeImpl(float &volume)

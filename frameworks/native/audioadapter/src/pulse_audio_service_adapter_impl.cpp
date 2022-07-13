@@ -650,7 +650,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
     if ((streamtype == nullptr) || (streamVolume == nullptr) || (streamPowerVolume == nullptr) ||
         (sessionCStr == nullptr)) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid StreamType or streamVolume or streamPowerVolume
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid StreamType or streamVolume or streamPowerVolume \
             or SessionID");
         return;
     }
