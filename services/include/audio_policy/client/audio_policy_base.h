@@ -119,9 +119,11 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
 
     // virtual VolumeGroupInfo GetVolumeGroupById(int32_t groupId) = 0;
+    virtual std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos() = 0;
+
     virtual int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
 
-    virtual std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos() = 0;
+    virtual std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) = 0;
 
     virtual int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
 public:
