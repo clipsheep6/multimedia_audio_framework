@@ -66,6 +66,8 @@ bool AudioPolicyService::Init(void)
         return false;
     }
 
+    mAccessibilityConfigListener->SubscribeObserver();
+
     return true;
 }
 
@@ -115,6 +117,8 @@ void AudioPolicyService::Deinit(void)
 
     mIOHandles.clear();
     mDeviceStatusListener->UnRegisterDeviceStatusListener();
+    mAccessibilityConfigListener->UnsubscribeObserver();
+
     return;
 }
 
@@ -751,6 +755,16 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         mCurrentActiveDevice_ = DEVICE_TYPE_SPEAKER;
         mActiveInputDevice_ = DEVICE_TYPE_MIC;
     }
+}
+
+void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
+{
+    AUDIO_INFO_LOG("OnMonoAudioConfigChanged in");
+}
+
+void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
+{
+    AUDIO_INFO_LOG("OnAudioBalanceChanged in");
 }
 
 // Parser callbacks

@@ -16,6 +16,7 @@
 #ifndef ST_AUDIO_POLICY_SERVICE_H
 #define ST_AUDIO_POLICY_SERVICE_H
 
+#include "accessibility_config_listener.h"
 #include "audio_info.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
@@ -31,7 +32,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver {
+class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
+    public IAudioAccessibilityConfigObserver {
 public:
     static AudioPolicyService& GetAudioPolicyService()
     {
@@ -100,6 +102,10 @@ public:
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
+    void OnMonoAudioConfigChanged(bool audioMono);
+
+    void OnAudioBalanceChanged(float audioBalance);
+
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object);
@@ -143,6 +149,7 @@ private:
           mStreamCollector(AudioStreamCollector::GetAudioStreamCollector())
     {
         mDeviceStatusListener = std::make_unique<DeviceStatusListener>(*this);
+        mAccessibilityConfigListener = std::make_unique<AccessibilityConfigListener>(*this);
     }
 
     ~AudioPolicyService();
@@ -191,6 +198,7 @@ private:
     Parser& mConfigParser;
     AudioStreamCollector& mStreamCollector;
     std::unique_ptr<DeviceStatusListener> mDeviceStatusListener;
+    std::unique_ptr<AccessibilityConfigListener> mAccessibilityConfigListener;
     std::vector<sptr<AudioDeviceDescriptor>> mConnectedDevices;
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
