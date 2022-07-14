@@ -425,13 +425,16 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
     DistributedKvDataManager manager;
     Options options;
 
+    AppId appId;
+    appId.appId = "audio_policy_manager";
+
     options.createIfMissing = false;
     options.encrypt = false;
     options.autoSync = true;
     options.kvStoreType = KvStoreType::SINGLE_VERSION;
+    options.area = EL1;
+    options.baseDir = std::string("/data/service/el1/public/database/") + appId.appId;
 
-    AppId appId;
-    appId.appId = "policymanager";
     StoreId storeId;
     storeId.storeId = "audiopolicy";
     Status status = Status::SUCCESS;
