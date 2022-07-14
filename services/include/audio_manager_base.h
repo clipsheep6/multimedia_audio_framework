@@ -133,6 +133,8 @@ public:
      */
     virtual uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
     {
+        deviceType = DEVICE_TYPE_SPEAKER;
+	deviceRole = OUTPUT_DEVICE;
         return 0;
     }
 
