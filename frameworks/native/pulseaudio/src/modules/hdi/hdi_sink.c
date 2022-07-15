@@ -399,11 +399,7 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
         }
     }
 
-    if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT) {
-        if (!PA_SINK_IS_OPENED(newState)) {
-            return 0;
-        }
-
+    if (newState == PA_SINK_RUNNING) {
         u->timestamp = pa_rtclock_now();
         if (u->isHDISinkStarted) {
             return 0;
@@ -418,16 +414,12 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
             u->isHDISinkStarted = true;
             u->writeCount = 0;
             u->renderCount = 0;
-            AUDIO_INFO_LOG("Successfully restarted HDI renderer");
+            AUDIO_DEBUG_LOG("Successfully restarted HDI renderer");
         }
-    } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
-        if (newState != PA_SINK_SUSPENDED) {
-            return 0;
-        }
+    } else if (newState == PA_SINK_SUSPENDED) {
         // Continuously dropping data (clear counter on entering suspended state.
         if (u->bytes_dropped != 0) {
-            AUDIO_INFO_LOG("HDI-sink continuously dropping data - clear statistics (%zu -> 0 bytes dropped)",
-                           u->bytes_dropped);
+            AUDIO_INFO_LOG("HDI-sink dropping data - clear statistics (%zu -> 0 bytes dropped)", u->bytes_dropped);
             u->bytes_dropped = 0;
         }
 
@@ -559,13 +551,6 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
         return -1;
     }
 
-    ret = u->sinkAdapter->RendererSinkStart();
-    if (ret != 0) {
-        AUDIO_ERR_LOG("audiorenderer control start failed!");
-        u->sinkAdapter->RendererSinkDeInit();
-        return -1;
-    }
-
     return 0;
 }
 
@@ -587,7 +572,6 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0)
         goto fail;
 
-    u->isHDISinkStarted = true;
     AUDIO_DEBUG_LOG("Initialization of HDI rendering device completed");
     pa_sink_new_data_init(&data);
     data.driver = driver;

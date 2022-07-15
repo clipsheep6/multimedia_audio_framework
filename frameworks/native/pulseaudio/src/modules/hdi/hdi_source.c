@@ -276,17 +276,6 @@ static int pa_capturer_init(struct Userdata *u)
         return ret;
     }
 
-    ret = u->sourceAdapter->CapturerSourceStart();
-    if (ret != 0) {
-        AUDIO_ERR_LOG("Audio capturer start failed!");
-        goto fail;
-    }
-
-    u->IsCapturerStarted = true;
-    return ret;
-
-fail:
-    pa_capturer_exit(u);
     return ret;
 }
 
