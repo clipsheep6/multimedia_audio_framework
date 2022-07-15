@@ -433,6 +433,19 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
 	return;
 }
 
+void AudioServiceDump::GroupInfoDump(std::string& dumpString)
+{
+    dumpString += "\nGroupInfo:\n";
+    AppendFormat(dumpString, "%d  Group Infos (s) available :\n\n", audioData_.policyData.groupInfos.size());
+
+    for (auto it = audioData_.policyData.groupInfos.begin(); it != audioData_.policyData.groupInfos.end(); it++) {
+        GroupInfo groupInfo = *it;
+        AppendFormat(dumpString, "ConnectType: %d\n", groupInfo.type);
+        AppendFormat(dumpString, "Name: %s\n", groupInfo.groupName.c_str());
+        AppendFormat(dumpString, "Id: %d\n", groupInfo.groupId);
+    }
+}
+
 void AudioServiceDump::DevicesInfoDump(string &dumpString)
 {
     dumpString += "\nInput Devices:\n";
@@ -462,6 +475,7 @@ void AudioServiceDump::DataDump(string &dumpString)
     RingerModeDump(dumpString);
     StreamVolumesDump(dumpString);
     AudioFocusInfoDump(dumpString);
+    GroupInfoDump(dumpString);
 }
 
 void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString)

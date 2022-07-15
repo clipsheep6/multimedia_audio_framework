@@ -200,15 +200,72 @@ void AudioPolicyManagerStub::UnsetRingerModeCallbackInternal(MessageParcel &data
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<AudioRendererFilter> audioRendererFilter = AudioRendererFilter::Unmarshalling(data);
+    if (audioRendererFilter == nullptr) {
+        AUDIO_ERR_LOG("AudioRendererFilter unmarshall fail.");
+        return;
+    }
+
+    int validSize = 20; // Use 20 temporarily.
+    int size = data.ReadInt32();
+    if (size <=0 || size > validSize) {
+        AUDIO_ERR_LOG("SelectOutputDevice get invalid device size.");
+        return;
+    }
+    std::vector<sptr<AudioDeviceDescriptor>> targetOutputDevice;
+    for (int i = 0; i < size; i++) {
+        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+        if (audioDeviceDescriptor == nullptr) {
+            AUDIO_ERR_LOG("Unmarshalling fail.");
+            return;
+        }
+        targetOutputDevice.push_back(audioDeviceDescriptor);
+    }
+
+    int32_t ret = SelectOutputDevice(audioRendererFilter, targetOutputDevice);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<AudioCapturerFilter> audioCapturerFilter = AudioCapturerFilter::Unmarshalling(data);
+    if (audioCapturerFilter == nullptr) {
+        AUDIO_ERR_LOG("AudioCapturerFilter unmarshall fail.");
+        return;
+    }
+
+    int validSize = 10; // Use this value temporarily.
+    int size = data.ReadInt32();
+    if (size <=0 || size > validSize) {
+        AUDIO_ERR_LOG("SelectInputDevice get invalid device size.");
+        return;
+    }
+    std::vector<sptr<AudioDeviceDescriptor>> targetInputDevice;
+    for (int i = 0; i < size; i++) {
+        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+        if (audioDeviceDescriptor == nullptr) {
+            AUDIO_ERR_LOG("Unmarshalling fail.");
+            return;
+        }
+        targetInputDevice.push_back(audioDeviceDescriptor);
+    }
+
+    int32_t ret = SelectInputDevice(audioCapturerFilter, targetInputDevice);
+    reply.WriteInt32(ret);
+}
+
 void AudioPolicyManagerStub::SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientId = data.ReadInt32();
+    DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
-    int32_t result = SetDeviceChangeCallback(clientId, object);
+    int32_t result = SetDeviceChangeCallback(clientId, flag, object);
     reply.WriteInt32(result);
 }
 
@@ -641,6 +698,13 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case QUERY_PERMISSION:
             VerifyClientPermissionInternal(data, reply);
+
+        case SELECT_OUTPUT_DEVICE:
+            SelectOutputDeviceInternal(data, reply);
+            break;
+
+        case SELECT_INPUT_DEVICE:
+            SelectInputDeviceInternal(data, reply);
             break;
 
         case RECONFIGURE_CHANNEL:
@@ -687,6 +751,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             GetCapturerChangeInfosInternal(data, reply);
             break;
 
+        //case GET_VOLUMEGROUP_BY_ID:
+        //    GetVolumeGroupByIdInternal(data, reply);
+        //    break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

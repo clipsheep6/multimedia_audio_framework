@@ -20,13 +20,17 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <unordered_map>
 
 #include "parcel.h"
 #include "audio_info.h"
 #include "audio_interrupt_callback.h"
+#include "audio_group_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+// sptr<IStandardAudioService> g_sProxy = nullptr;
+
 class AudioDeviceDescriptor;
 class AudioDeviceDescriptor : public Parcelable {
     friend class AudioSystemManager;
@@ -44,6 +48,8 @@ public:
     std::string networkId_;
     AudioStreamInfo audioStreamInfo_ = {};
     AudioDeviceDescriptor();
+    AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId, int32_t volumeGroupId,
+        std::string networkId);
     AudioDeviceDescriptor(DeviceType type, DeviceRole role);
     AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
     virtual ~AudioDeviceDescriptor();
@@ -54,9 +60,80 @@ public:
     void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask);
 };
 
+class InterruptGroupInfo;
+class InterruptGroupInfo : public Parcelable {
+    friend class AudioSystemManager;
+public:
+    int32_t interruptGroupId_;
+    int32_t mappingId_;
+    std::string groupName_;
+    std::string networkId_;
+    ConnectType connectType_;
+    InterruptGroupInfo();
+    InterruptGroupInfo(int32_t interruptGroupId, int32_t mappingId, std::string groupName, std::string networkId,
+        ConnectType type);
+    virtual ~InterruptGroupInfo();
+    bool Marshalling(Parcel &parcel) const override;
+    static sptr<InterruptGroupInfo> Unmarshalling(Parcel &parcel);
+};
+
+class VolumeGroupInfo;
+class VolumeGroupInfo : public Parcelable {
+    friend class AudioSystemManager;
+public:
+    int32_t volumeGroupId_;
+    int32_t mappingId_;
+    std::string groupName_;
+    std::string networkId_;
+    ConnectType connectType_;
+    VolumeGroupInfo();
+    VolumeGroupInfo(int32_t volumeGroupId, int32_t mappingId, std::string groupName, std::string networkId,
+        ConnectType type);
+    virtual ~VolumeGroupInfo();
+    bool Marshalling(Parcel &parcel) const override;
+    static sptr<VolumeGroupInfo> Unmarshalling(Parcel &parcel);
+};
+
 struct DeviceChangeAction {
     DeviceChangeType type;
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+};
+
+/**
+ * @brief AudioRendererFilter is used for select speficed AudioRenderer.
+ * 
+ */
+class AudioRendererFilter;
+class AudioRendererFilter : public Parcelable {
+    friend class AudioSystemManager;
+public:
+    AudioRendererFilter();
+    virtual ~AudioRendererFilter();
+
+    int32_t uid = -1;
+    AudioRendererInfo rendererInfo = {};
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t streamId = -1;
+
+    bool Marshalling(Parcel &parcel) const override;
+    static sptr<AudioRendererFilter> Unmarshalling(Parcel &in);
+};
+
+/**
+ * @brief AudioCapturerFilter is used for select speficed audiocapturer.
+ * 
+ */
+class AudioCapturerFilter;
+class AudioCapturerFilter : public Parcelable {
+    friend class AudioSystemManager;
+public:
+    AudioCapturerFilter();
+    virtual ~AudioCapturerFilter();
+
+    int32_t uid = -1;
+
+    bool Marshalling(Parcel &parcel) const override;
+    static sptr<AudioCapturerFilter> Unmarshalling(Parcel &in);
 };
 
 // AudioManagerCallback OnInterrupt is added to handle compilation error in call manager
@@ -108,6 +185,22 @@ public:
      * @param isUpdateUi whether to update volume level in UI.
     **/
     virtual void OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi) = 0;
+
+    /**
+     * @brief VolumeKeyEventCallback will be executed when hard volume key is pressed up/down
+     *
+     * @param streamType the stream type for which volume must be updated.
+     * @param volumeLevel the volume level to be updated.
+     * @param isUpdateUi whether to update volume level in UI.
+     */
+    virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
+};
+
+class AudioParameterCallback {
+public:
+    virtual ~AudioParameterCallback() = default;
+    virtual void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
+        const std::string& value) = 0;
 };
 
 class AudioRingerModeCallback {
@@ -129,72 +222,6 @@ public:
 
 class AudioSystemManager {
 public:
-    enum AudioVolumeType {
-        /**
-         * Indicates audio streams default.
-         */
-        STREAM_DEFAULT = -1,
-        /**
-         * Indicates audio streams of voices in calls.
-         */
-        STREAM_VOICE_CALL = 0,
-        /**
-         * Indicates audio streams for music playback.
-         */
-        STREAM_MUSIC = 1,
-        /**
-         * Indicates audio streams for ringtones.
-         */
-        STREAM_RING = 2,
-        /**
-         * Indicates audio streams media.
-         */
-        STREAM_MEDIA = 3,
-        /**
-         * Indicates Audio streams for voice assistant
-         */
-        STREAM_VOICE_ASSISTANT = 4,
-        /**
-         * Indicates audio streams for system sounds.
-         */
-        STREAM_SYSTEM = 5,
-        /**
-         * Indicates audio streams for alarms.
-         */
-        STREAM_ALARM = 6,
-        /**
-         * Indicates audio streams for notifications.
-         */
-        STREAM_NOTIFICATION = 7,
-        /**
-         * Indicates audio streams for voice calls routed through a connected Bluetooth device.
-         */
-        STREAM_BLUETOOTH_SCO = 8,
-        /**
-         * Indicates audio streams for enforced audible.
-         */
-        STREAM_ENFORCED_AUDIBLE = 9,
-        /**
-         * Indicates audio streams for dual-tone multi-frequency (DTMF) tones.
-         */
-        STREAM_DTMF = 10,
-        /**
-         * Indicates audio streams exclusively transmitted through the speaker (text-to-speech) of a device.
-         */
-        STREAM_TTS =  11,
-        /**
-         * Indicates audio streams used for prompts in terms of accessibility.
-         */
-        STREAM_ACCESSIBILITY = 12,
-        /**
-         * Indicates special scene used for recording.
-         */
-        STREAM_RECORDING = 13,
-        /**
-         * Indicates audio streams used for only one volume bar of a device.
-         */
-        STREAM_ALL = 100
-    };
     const std::vector<AudioVolumeType> GET_STREAM_ALL_VOLUME_TYPES {
         STREAM_MUSIC,
         STREAM_RING,
@@ -205,14 +232,18 @@ public:
     static float MapVolumeToHDI(int32_t volume);
     static int32_t MapVolumeFromHDI(float volume);
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
-    int32_t SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const;
-    int32_t GetVolume(AudioSystemManager::AudioVolumeType volumeType) const;
-    int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType);
-    int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType);
-    int32_t SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const;
-    bool IsStreamMute(AudioSystemManager::AudioVolumeType volumeType) const;
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume);
+    int32_t GetVolume(AudioVolumeType volumeType);
+    int32_t GetMaxVolume(AudioVolumeType volumeType);
+    int32_t GetMinVolume(AudioVolumeType volumeType);
+    int32_t SetMute(AudioVolumeType volumeType, bool mute);
+    bool IsStreamMute(AudioVolumeType volumeType) const;
     int32_t SetMicrophoneMute(bool isMute);
     bool IsMicrophoneMute(void);
+    int32_t SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectInputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
     const std::string GetAudioParameter(const std::string key);
     void SetAudioParameter(const std::string &key, const std::string &value);
@@ -222,12 +253,13 @@ public:
     bool IsDeviceActive(ActiveDeviceType deviceType) const;
     DeviceType GetActiveOutputDevice();
     DeviceType GetActiveInputDevice();
-    bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
+    bool IsStreamActive(AudioVolumeType volumeType) const;
     int32_t SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;
     int32_t SetAudioScene(const AudioScene &scene);
     AudioScene GetAudioScene() const;
-    int32_t SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
+    int32_t SetDeviceChangeCallback(const DeviceFlag flag, const std::shared_ptr<AudioManagerDeviceChangeCallback>
+        &callback);
     int32_t UnsetDeviceChangeCallback();
     int32_t SetRingerModeCallback(const int32_t clientId,
                                   const std::shared_ptr<AudioRingerModeCallback> &callback);
@@ -237,10 +269,10 @@ public:
     int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid);
 
     // Below APIs are added to handle compilation error in call manager
-    // Once call manager adapt to new interrupt APIs, this will be removed
-    int32_t SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
+    // Once call manager adapt to new interrupt APIs, this will be rmeoved
+    int32_t SetAudioManagerCallback(const AudioVolumeType streamType,
                                     const std::shared_ptr<AudioManagerCallback> &callback);
-    int32_t UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const;
+    int32_t UnsetAudioManagerCallback(const AudioVolumeType streamType) const;
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
     int32_t SetAudioManagerInterruptCallback(const std::shared_ptr<AudioManagerCallback> &callback);
@@ -254,7 +286,8 @@ public:
     uint32_t GetSinkLatencyFromXml() const;
     AudioPin GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const;
     DeviceType GetTypeValueFromPin(AudioPin pin) const;
-
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroups(std::string networkId);
+    std::shared_ptr<AudioGroupManager> GetGroupManager(int32_t groupId);
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
@@ -273,6 +306,7 @@ private:
 
     uint32_t GetCallingPid();
     std::mutex mutex_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioGroupManager>> groupManagerMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

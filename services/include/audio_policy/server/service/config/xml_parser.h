@@ -57,6 +57,8 @@ private:
     void ParseUpdateRouteSupport(xmlNode &node);
     void ParseAudioLatency(xmlNode &node);
     void ParseSinkLatency(xmlNode &node);
+    void ParseGroups(xmlNode& node, NodeName type);
+    void ParseVolumeGroups(xmlNode& node, NodeName type);
     std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
     ClassType GetDeviceClassType(const std::string &deviceClass);
 
@@ -64,6 +66,8 @@ private:
     xmlDoc *mDoc;
     ClassType deviceClassType_;
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlParsedDataMap_;
+    std::unordered_map<std::string, std::string> volumeGroupMap_;
+    std::unordered_map<std::string, std::string> interruptGroupMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

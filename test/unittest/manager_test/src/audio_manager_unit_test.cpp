@@ -101,6 +101,102 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_004
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_004, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_005
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_005, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_006
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_006, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_007
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_007, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_008
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_008, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_009
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_009, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
 * @tc.name  : Test SetDeviceActive API
 * @tc.number: SetDeviceActive_001
 * @tc.desc  : Test SetDeviceActive interface. Activate bluetooth sco device by deactivating speaker
@@ -566,13 +662,13 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_ALL, volume);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_ALL, volume);
     EXPECT_EQ(SUCCESS, ret);
-    ret = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_ALL);
+    ret = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_ALL);
     EXPECT_EQ(volume, ret);
-    ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_ALL, mute);
+    ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_ALL, mute);
     EXPECT_EQ(SUCCESS, ret);
-    ret = AudioSystemManager::GetInstance()->IsStreamMute(AudioSystemManager::AudioVolumeType::STREAM_ALL);
+    ret = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_ALL);
     EXPECT_EQ(true, ret);
 
     audioRenderer->Release();
@@ -585,10 +681,10 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING, MAX_VOL);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_RING, MAX_VOL);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING);
+    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
     EXPECT_EQ(MAX_VOL, volume);
 }
 
@@ -599,10 +695,10 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING, MIN_VOL);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_RING, MIN_VOL);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING);
+    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
     EXPECT_EQ(MIN_VOL, volume);
 }
 
@@ -613,13 +709,13 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, MAX_VOL);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_MUSIC, MAX_VOL);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t mediaVol = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
+    int32_t mediaVol = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_MUSIC);
     EXPECT_EQ(MAX_VOL, mediaVol);
 
-    int32_t ringVolume = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING);
+    int32_t ringVolume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
     EXPECT_EQ(MIN_VOL, ringVolume);
 }
 
@@ -700,7 +796,7 @@ HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level0)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_RING, true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_RING, true);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -711,7 +807,7 @@ HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level0)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_RING, false);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_RING, false);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -722,7 +818,7 @@ HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetMute_003, TestSize.Level0)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_MUSIC, true);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -733,8 +829,21 @@ HWTEST(AudioManagerUnitTest, SetMute_003, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, false);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_MUSIC, false);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+* @tc.name  : Test getVolumeGroups API
+* @tc.number: getVolumeGroups001
+* @tc.desc  : Test getVolumeGroups functionality 
+*/
+HWTEST(AudioManagerUnitTest, GetVolumeGroups001, TestSize.Level0)
+{
+    auto ret = AudioSystemManager::GetInstance()->GetVolumeGroups("LocalDevice");
+    EXPECT_GE(SUCCESS, ret.size());
+}
+
+
 } // namespace AudioStandard
 } // namespace OHOS

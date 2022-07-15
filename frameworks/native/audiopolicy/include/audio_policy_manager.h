@@ -58,6 +58,10 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType);
 
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
@@ -76,7 +80,7 @@ public:
 
     AudioScene GetAudioScene();
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId,
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
