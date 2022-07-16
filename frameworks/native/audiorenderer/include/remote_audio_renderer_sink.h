@@ -65,6 +65,8 @@ public:
     void RegisterParameterCallback(ISinkParameterCallback* callback);
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
+    static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
+        void *cookie);
 private:
     static std::map<std::string, RemoteAudioRendererSink *> allsinks;
     RemoteAudioRendererSink(std::string deviceNetworkId);
