@@ -27,8 +27,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
-using namespace std;
 sptr<IStandardAudioService> g_sProxy = nullptr;
+using namespace std;
+
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
 
@@ -206,7 +207,7 @@ DeviceType AudioSystemManager::GetActiveInputDevice()
     return AudioPolicyManager::GetInstance().GetActiveInputDevice();
 }
 
-bool AudioSystemManager::IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const
+bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -258,73 +259,24 @@ uint64_t AudioSystemManager::GetTransactionId(DeviceType deviceType, DeviceRole 
     return g_sProxy->GetTransactionId(deviceType, deviceRole);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
+int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 {
-    AUDIO_DEBUG_LOG("AudioSystemManager SetVolume volumeType=%{public}d ", volumeType);
-
-    /* Validate and return INVALID_PARAMS error */
-    if ((volume < MIN_VOLUME_LEVEL) || (volume > MAX_VOLUME_LEVEL)) {
-        AUDIO_ERR_LOG("Invalid Volume Input!");
-        return ERR_INVALID_PARAM;
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(LOCAL_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("SetVolume find group manager failed");
+        return ERROR;
     }
-
-    switch (volumeType) {
-        case STREAM_MUSIC:
-        case STREAM_RING:
-        case STREAM_NOTIFICATION:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-        case STREAM_ALL:
-            break;
-        default:
-            AUDIO_ERR_LOG("SetVolume volumeType=%{public}d not supported", volumeType);
-            return ERR_NOT_SUPPORTED;
-    }
-
-    /* Call Audio Policy SetStreamVolume */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeToHdi = MapVolumeToHDI(volume);
-
-    if (volumeType == STREAM_ALL) {
-        for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
-            StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
-            AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
-            if (setResult != SUCCESS) {
-                return setResult;
-            }
-        }
-        return SUCCESS;
-    }
-
-    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+    return groupManager->SetVolume(volumeType, volume);
 }
 
-int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volumeType) const
+int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType)
 {
-    switch (volumeType) {
-        case STREAM_MUSIC:
-        case STREAM_RING:
-        case STREAM_NOTIFICATION:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-        case STREAM_ALL:
-            break;
-        default:
-            AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
-            return (float)ERR_NOT_SUPPORTED;
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(LOCAL_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("SetVolume find group manager failed");
+        return ERROR;
     }
-
-    if (volumeType == STREAM_ALL) {
-        volumeType = STREAM_MUSIC;
-        AUDIO_DEBUG_LOG("GetVolume of STREAM_ALL for volumeType=%{public}d ", volumeType);
-    }
-
-    /* Call Audio Policy SetStreamMute */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeFromHdi = AudioPolicyManager::GetInstance().GetStreamVolume(StreamVolType);
-
-    return MapVolumeFromHDI(volumeFromHdi);
+    return groupManager->GetVolume(volumeType);
 }
 
 float AudioSystemManager::MapVolumeToHDI(int32_t volume)
@@ -341,29 +293,27 @@ int32_t AudioSystemManager::MapVolumeFromHDI(float volume)
     return nearbyint(value);
 }
 
-int32_t AudioSystemManager::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
 {
-    if (!IsAlived()) {
-        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMaxVolume service unavailable");
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(LOCAL_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("SetVolume find group manager failed");
+        return ERROR;
     }
-    if (volumeType == STREAM_ALL) {
-        volumeType = STREAM_MUSIC;
-    }
-    return g_sProxy->GetMaxVolume(volumeType);
+    return groupManager->GetMaxVolume(volumeType);
 }
 
-int32_t AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
 {
-    if (!IsAlived()) {
-        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMinVolume service unavailable");
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(LOCAL_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("SetVolume find group manager failed");
+        return ERROR;
     }
-    if (volumeType == STREAM_ALL) {
-        volumeType = STREAM_MUSIC;
-    }
-    return g_sProxy->GetMinVolume(volumeType);
+    return groupManager->GetMinVolume(volumeType);
 }
 
-int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const
+int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute)
 {
     AUDIO_DEBUG_LOG("AudioSystemManager SetMute for volumeType=%{public}d", volumeType);
     switch (volumeType) {
@@ -397,7 +347,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
     return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
 }
 
-bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volumeType) const
+bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager::GetMute Client");
 
@@ -423,7 +373,8 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
     return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
 }
 
-int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
+int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,
+    const std::shared_ptr<AudioManagerDeviceChangeCallback>& callback)
 {
     AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
     if (callback == nullptr) {
@@ -432,7 +383,7 @@ int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioM
     }
 
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
-    return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, callback);
+    return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, flag, callback);
 }
 
 int32_t AudioSystemManager::UnsetDeviceChangeCallback()
@@ -486,6 +437,75 @@ bool AudioSystemManager::IsMicrophoneMute()
     return g_sProxy->IsMicrophoneMute();
 }
 
+int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+{
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = -1;
+    int32_t ret = SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    return ret;
+}
+
+int32_t AudioSystemManager::SelectInputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+{
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = -1;
+    int32_t ret = SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+    return ret;
+}
+
+int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+{
+    // basic check
+    if (audioRendererFilter == nullptr || audioDeviceDescriptors.size() == 0) {
+        AUDIO_ERR_LOG("SelectOutputDevice: invalid parameter");
+        return ERR_INVALID_PARAM;
+    }
+
+    size_t validDeviceSize = 1;
+    if (audioDeviceDescriptors.size() > validDeviceSize || audioDeviceDescriptors[0] == nullptr) {
+        AUDIO_ERR_LOG("SelectOutputDevice: device error");
+        return ERR_INVALID_OPERATION;
+    }
+    audioRendererFilter->streamType = AudioSystemManager::GetStreamType(audioRendererFilter->rendererInfo.contentType,
+                                                                        audioRendererFilter->rendererInfo.streamUsage);
+    // opetation chack
+    if (audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
+        AUDIO_ERR_LOG("SelectOutputDevice: not an output device.");
+        return ERR_INVALID_OPERATION;
+    }
+    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<type:%{public}d>",
+                    getpid(),
+                    audioRendererFilter->uid,
+                    static_cast<int32_t>(audioRendererFilter->streamType),
+                    static_cast<int32_t>(audioDeviceDescriptors[0]->deviceType_));
+
+    return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+}
+
+int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+{
+    // basic check
+    if (audioCapturerFilter == nullptr || audioDeviceDescriptors.size() == 0) {
+        AUDIO_ERR_LOG("SelectInputDevice: invalid parameter");
+        return ERR_INVALID_PARAM;
+    }
+
+    size_t validDeviceSize = 1;
+    if (audioDeviceDescriptors.size() > validDeviceSize || audioDeviceDescriptors[0] == nullptr) {
+        AUDIO_ERR_LOG("SelectInputDevice: device error.");
+        return ERR_INVALID_OPERATION;
+    }
+    // opetation chack
+    if (audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::INPUT_DEVICE) {
+        AUDIO_ERR_LOG("SelectInputDevice: not an input device");
+        return ERR_INVALID_OPERATION;
+    }
+    AUDIO_DEBUG_LOG("[%{public}d] SelectInputDevice: uid<%{public}d> device<type:%{public}d>",
+                    getpid(), audioCapturerFilter->uid, static_cast<int32_t>(audioDeviceDescriptors[0]->deviceType_));
+
+    return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
 {
     return AudioPolicyManager::GetInstance().GetDevices(deviceFlag);
@@ -519,14 +539,14 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
 
 // Below stub implementation is added to handle compilation error in call manager
 // Once call manager adapt to new interrupt implementation, this will be removed
-int32_t AudioSystemManager::SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
+int32_t AudioSystemManager::SetAudioManagerCallback(const AudioVolumeType streamType,
                                                     const std::shared_ptr<AudioManagerCallback> &callback)
 {
     AUDIO_DEBUG_LOG("AudioSystemManager SetAudioManagerCallback stub implementation");
     return SUCCESS;
 }
 
-int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const
+int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioVolumeType streamType) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager UnsetAudioManagerCallback stub implementation");
     return SUCCESS;
@@ -628,6 +648,22 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
 int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
     return AudioPolicyManager::GetInstance().ReconfigureAudioChannel(count, deviceType);
+}
+
+std::vector<sptr<VolumeGroupInfo>> AudioSystemManager::GetVolumeGroups(std::string networkId)
+{
+    return std::vector<sptr<VolumeGroupInfo>>();
+}
+
+std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
+{
+    auto iter = groupManagerMap_.find(groupId);
+    if (iter != groupManagerMap_.end()) {
+        return iter->second;
+    }
+    std::shared_ptr<AudioGroupManager> groupManager = std::make_shared<AudioGroupManager>(groupId);
+    groupManagerMap_.insert(std::pair(groupId, groupManager));
+    return groupManager;
 }
 
 AudioManagerInterruptCallbackImpl::AudioManagerInterruptCallbackImpl()

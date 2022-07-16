@@ -117,6 +117,16 @@ bool AudioPolicyManager::IsStreamActive(AudioStreamType streamType)
     return g_sProxy->IsStreamActive(streamType);
 }
 
+int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    return g_sProxy->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+}
+
+int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    return g_sProxy->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)
 {
     return g_sProxy->GetDevices(deviceFlag);
@@ -171,7 +181,7 @@ int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
     return g_sProxy->UnsetRingerModeCallback(clientId);
 }
 
-int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId,
+int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
     const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
@@ -195,7 +205,7 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId,
         return ERROR;
     }
 
-    return g_sProxy->SetDeviceChangeCallback(clientId, object);
+    return g_sProxy->SetDeviceChangeCallback(clientId, flag, object);
 }
 
 int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId)
@@ -460,6 +470,18 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
     AUDIO_DEBUG_LOG("AudioPolicyManager::GetCurrentCapturerChangeInfos");
 
     return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+}
+
+int32_t AudioPolicyManager::GetVolumeGroupInfo(int32_t groupId, sptr<VolumeGroupInfo>& info)
+{
+     std::unordered_map<int32_t, sptr<VolumeGroupInfo>> infos = g_sProxy->GetVolumeGroupInfos();
+     auto iter = infos.find(groupId);
+     if (iter == infos.end()) {
+         AUDIO_ERR_LOG("Has no group for id %d", groupId);
+         return ERROR;
+     }
+     info = iter->second;
+     return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

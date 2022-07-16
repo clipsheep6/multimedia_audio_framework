@@ -36,6 +36,8 @@ namespace {
     int32_t g_streamType(0);
     int32_t g_volumeLevel(0);
     bool g_isUpdateUi(false);
+    int32_t g_volumeGroupId(0);
+    std::string g_networkId(LOCAL_NETWORK_ID);
     bool g_isCallbackReceived(false);
 
     std::string g_callbackName("");
@@ -45,13 +47,25 @@ namespace {
 
 ApplicationCallback::ApplicationCallback(const std::string &testCaseName) : testCaseName_(testCaseName) {}
 
-void ApplicationCallback::OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
+void ApplicationCallback::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     g_isCallbackReceived = true;
-    g_streamType = streamType;
-    g_volumeLevel = volumeLevel;
+    g_streamType = volumeEvent.volumeType;
+    g_volumeLevel = volumeEvent.volume;
     g_callbackName = testCaseName_;
-    g_isUpdateUi = isUpdateUi;
+    g_isUpdateUi = volumeEvent.updateUi;
+    g_volumeGroupId = volumeEvent.volumeGroupId;
+    g_networkId = volumeEvent.networkId;
+    g_condVar.notify_all();
+}
+
+void ApplicationCallback::OnVolumeKeyEvent(VolumeEvent volumeEvent)
+{
+    g_isCallbackReceived = true;
+    g_streamType = volumeEvent.volumeType;
+    g_volumeLevel = volumeEvent.volume;
+    g_callbackName = testCaseName_;
+    g_isUpdateUi = volumeEvent.updateUi;
     g_condVar.notify_all();
 }
 
@@ -96,8 +110,8 @@ HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_001, TestSize.Level1)
     std::string testCaseName("volumeChange_test_001");
     g_isCallbackReceived = false;
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
-    AudioSystemManager::AudioVolumeType volumeType
-        = static_cast<AudioSystemManager::AudioVolumeType>(streamType);
+    AudioVolumeType volumeType
+        = static_cast<AudioVolumeType>(streamType);
     int volume = 10;
     g_callbackName = testCaseName;
     bool isUpdateUi = false;
@@ -132,8 +146,8 @@ HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_002, TestSize.Level1)
     std::string testCaseName("volumeChange_test_002");
     g_isCallbackReceived = false;
     AudioStreamType streamType = AudioStreamType::STREAM_RING;
-    AudioSystemManager::AudioVolumeType volumeType
-        = static_cast<AudioSystemManager::AudioVolumeType>(streamType);
+    AudioVolumeType volumeType
+        = static_cast<AudioVolumeType>(streamType);
     int volume = 10;
     g_callbackName = testCaseName;
     bool isUpdateUi = false;
@@ -168,8 +182,7 @@ HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_003, TestSize.Level1)
     std::string testCaseName("volumeChange_test_003");
     g_isCallbackReceived = false;
     AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL;
-    AudioSystemManager::AudioVolumeType volumeType
-        = static_cast<AudioSystemManager::AudioVolumeType>(streamType);
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(streamType);
     int volume = 10;
     g_callbackName = testCaseName;
     bool isUpdateUi = false;

@@ -23,6 +23,7 @@
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "parser_factory.h"
+#include "audio_group_handle.h"
 
 #include <bitset>
 #include <list>
@@ -53,6 +54,10 @@ public:
     bool GetStreamMute(AudioStreamType streamType) const;
 
     bool IsStreamActive(AudioStreamType streamType) const;
+
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
@@ -86,6 +91,10 @@ public:
     // Parser callbacks
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
 
+    void OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData);
+
+    void OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData);
+
     void OnAudioInterruptEnable(bool enable);
 
     void OnUpdateRouteSupport(bool isSupported);
@@ -98,11 +107,13 @@ public:
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
 
+    void OnDeviceStatusUpdated(DStatusInfo statusInfo);
+
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object);
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object);
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
 
@@ -136,6 +147,19 @@ public:
     void OnAudioLatencyParsed(uint64_t latency);
 
     void OnSinkLatencyParsed(uint32_t latency);
+
+    DeviceType GetDeviceTypeFromPin(AudioPin pin);
+
+    void UpdateVolumeGroupInfo(sptr<VolumeGroupInfo>& info, DStatusInfo& statusInfo);
+
+    void UpdateInterruptGroupInfo(sptr<InterruptGroupInfo>& info, DStatusInfo& statusInfo);
+
+    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+
+    void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
+
+    uint32_t GetSessionId(const std::string networkId);
+
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -149,9 +173,21 @@ private:
 
     std::string GetPortName(InternalDeviceType deviceType);
 
+    int32_t MoveToLocalOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> localDeviceDescriptor);
+
+    int32_t MoveToRemoteOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+
+    int32_t MoveToLocalInputDevice(std::vector<uint32_t> sourceOutputIds, sptr<AudioDeviceDescriptor> localDeviceDescriptor);
+
+    int32_t MoveToRemoteInputDevice(std::vector<uint32_t> sourceOutputIds, sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+
+    AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId, DeviceRole deviceRole, DeviceType deviceType);
+
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 
     InternalDeviceType GetDeviceType(const std::string &deviceName);
+
+    std::string GetGroupName(const std::string& deviceName, const GroupType type);
 
     InternalDeviceType GetCurrentActiveDevice(DeviceRole role) const;
 
@@ -161,12 +197,19 @@ private:
 
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
+    DeviceRole GetDeviceRole(AudioPin pin) const;
+
+    int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
+
     DeviceType FetchHighPriorityDevice();
 
-    void UpdateConnectedDevices(const AudioDeviceDescriptor &deviceDescriptor,
-        std::vector<sptr<AudioDeviceDescriptor>> &desc, bool status);
+    void UpdateConnectedDevices(const AudioDeviceDescriptor& deviceDescriptor,
+        std::vector<sptr<AudioDeviceDescriptor>>& desc, bool status);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
+ 
+    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
+        const std::vector<sptr<AudioDeviceDescriptor>>& desc);
 
     void WriteDeviceChangedSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
@@ -179,6 +222,9 @@ private:
     void UpdateStreamChangeDeviceInfo(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
 
     void UpdateTrackerDeviceChange(const vector<sptr<AudioDeviceDescriptor>> &desc);
+
+    void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
+        ConnectType connectType);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
@@ -194,7 +240,9 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> mConnectedDevices;
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
-    std::unordered_map<int32_t, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCallbackMap_;
+
+    std::unordered_map<int32_t, std::pair<DeviceFlag, sptr<IStandardAudioPolicyManagerListener>>>
+        deviceChangeCallbackMap_;
     AudioScene mAudioScene = AUDIO_SCENE_DEFAULT;
     AudioFocusEntry focusTable_[MAX_NUM_STREAMS][MAX_NUM_STREAMS];
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
@@ -212,6 +260,11 @@ private:
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_SPEAKER
     };
+
+    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> mVolumeGroupMap_;
+    std::unordered_map<int32_t, sptr<InterruptGroupInfo>> mInterruptGroupMap_;
+    std::unordered_map<std::string, std::string> volumeGroupData_;
+    std::unordered_map<std::string, std::string> interruptGroupData_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
