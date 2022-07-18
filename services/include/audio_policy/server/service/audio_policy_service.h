@@ -226,7 +226,9 @@ private:
     void UpdateTrackerDeviceChange(const vector<sptr<AudioDeviceDescriptor>> &desc);
 
     void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
-        ConnectType connectType);
+        ConnectType connectType, bool connected = true);
+
+    bool IsDeviceNone(GroupType type, int32_t groupId);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;

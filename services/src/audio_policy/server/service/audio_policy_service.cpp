@@ -924,8 +924,10 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     deviceDesc.SetDeviceInfo(deviceName, macAddress);
     deviceDesc.SetDeviceCapability(streamInfo, 0);
 
-    UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, LOCAL_NETWORK_ID, CONNECT_TYPE_LOCAL);
-    UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, LOCAL_NETWORK_ID, CONNECT_TYPE_LOCAL);
+    UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, LOCAL_NETWORK_ID, CONNECT_TYPE_LOCAL,
+        isConnected);
+    UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, LOCAL_NETWORK_ID,
+        CONNECT_TYPE_LOCAL, isConnected);
     deviceDesc.networkId_ = LOCAL_NETWORK_ID;
 
     // fill device change action for callback
@@ -1059,8 +1061,10 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
     deviceDesc.networkId_ = networkId;
-    UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId, statusInfo.connectType);
-    UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId, statusInfo.connectType);
+    UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId, statusInfo.connectType,
+        statusInfo.isConnected);
+    UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId, statusInfo.connectType,
+        statusInfo.isConnected);
 
     // fill device change action for callback
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
@@ -1546,7 +1550,7 @@ void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDevice
 }
 
 void AudioPolicyService::UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
-    ConnectType connectType)
+    ConnectType connectType, bool connected)
 {
     if (type == GroupType::VOLUME_TYPE) {
         sptr<VolumeGroupInfo> volumeGroupInfo;
@@ -1554,7 +1558,11 @@ void AudioPolicyService::UpdateGroupInfo(GroupType type, std::string groupName, 
             if (v->groupName_ == groupName && v->networkId_ == networkId) {
                 volumeGroupInfo = v;
                 groupId = volumeGroupInfo->volumeGroupId_;
-                break;
+                // if status is disconnected, remove the group that has none audio device
+                if (!connected && IsDeviceNone(type, groupId)) {
+                    mVolumeGroupMap_.erase(groupId);
+                }
+                return;
             }
         }
         if (volumeGroupInfo == nullptr && groupName != GROUP_NAME_NONE) {
@@ -1569,7 +1577,11 @@ void AudioPolicyService::UpdateGroupInfo(GroupType type, std::string groupName, 
             if (v->groupName_ == groupName && v->networkId_ == networkId) {
                 interrputGroupInfo = v;
                 groupId = interrputGroupInfo->interruptGroupId_;
-                break;
+                 // if status is disconnected, remove the group that has none audio device
+                if (!connected && IsDeviceNone(type, groupId)) {
+                    mInterruptGroupMap_.erase(groupId);
+                }
+                return;
             }
         }
         if (interrputGroupInfo == nullptr && groupName != GROUP_NAME_NONE) {
@@ -1579,6 +1591,20 @@ void AudioPolicyService::UpdateGroupInfo(GroupType type, std::string groupName, 
             mInterruptGroupMap_[groupId] = interrputGroupInfo;
         }
     }
+}
+
+bool AudioPolicyService::IsDeviceNone(GroupType type, int32_t groupId)
+{
+    for (auto devDes : mConnectedDevices)
+    {
+        if (type == VOLUME_TYPE && devDes->volumeGroupId_ == groupId) {
+            return false;
+        }
+        if (type == INTERRUPT_TYPE && devDes->interruptGroupId_ == groupId) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
