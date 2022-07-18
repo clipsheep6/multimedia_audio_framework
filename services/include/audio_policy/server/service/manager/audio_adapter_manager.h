@@ -81,6 +81,8 @@ public:
 
     int32_t SuspendAudioDevice(std::string &name, bool isSuspend);
 
+    int32_t AdjustAudioBalance(const std::string &portName, float audioBalance);
+
     virtual ~AudioAdapterManager() {}
 
 private:
