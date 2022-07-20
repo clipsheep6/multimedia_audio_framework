@@ -13,6 +13,7 @@
 ## Introduction<a name="introduction"></a>
 The **audio\_standard** repository is used to implement audio-related features, including audio playback, recording, volume management and device management.
 
+
 **Figure  1**  Position in the subsystem architecture<a name="fig483116248288"></a>
 
 
