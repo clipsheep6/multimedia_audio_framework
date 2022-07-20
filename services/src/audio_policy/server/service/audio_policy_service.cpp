@@ -1272,6 +1272,8 @@ void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDevice
 void AudioPolicyService::UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
     ConnectType connectType, bool connected)
 {
+    AUDIO_INFO_LOG("AudioPolicyService::UpdateGroupInfo type:%d, groupName: %s, networkId:%s , connectType: %d, connected: %d",
+        type, groupName.c_str(), networkId.c_str(), connectType, connected);
     if (type == GroupType::VOLUME_TYPE) {
         sptr<VolumeGroupInfo> volumeGroupInfo;
         std::vector<sptr<VolumeGroupInfo>>::iterator iter;
