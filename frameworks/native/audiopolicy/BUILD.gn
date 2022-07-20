@@ -55,6 +55,7 @@ ohos_shared_library("audio_policy_client") {
     "//foundation/multimedia/audio_framework/services/src/audio_policy/client/audio_renderer_state_change_listener_stub.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/client/audio_ringermode_update_listener_stub.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/client/audio_volume_key_event_callback_stub.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_policy/client/audio_volume_group_info.cpp",
   ]
 
   public_configs = [ ":audio_policy_public_config" ]
@@ -80,6 +81,8 @@ ohos_executable("audio_policy_test") {
 
   deps = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
+    "//utils/native/base:utils",
     "//third_party/bounds_checking_function:libsec_static",
   ]
 

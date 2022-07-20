@@ -34,6 +34,7 @@ constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t MIN_SERVICE_COUNT = 2;
 constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
+constexpr int32_t LOCAL_VOLUME_GROUP_ID = 0;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
@@ -150,6 +151,17 @@ enum DeviceType {
     DEVICE_TYPE_MAX
 };
 
+enum ConnectType {
+    /**
+     * Group connect type of local device
+     */
+    CONNECT_TYPE_LOCAL = 0,
+    /**
+     * Group connect type of distributed device
+     */
+    CONNECT_TYPE_DISTRIBUTED
+};
+
 enum ActiveDeviceType {
     ACTIVE_DEVICE_TYPE_NONE = -1,
     SPEAKER = 2,
@@ -218,8 +230,14 @@ enum AudioStreamType {
     /**
      * Indicates special scene used for recording.
      */
-    STREAM_RECORDING = 13
+    STREAM_RECORDING = 13,
+    /**
+     * Indicates audio streams used for only one volume bar of a device.
+     */
+    STREAM_ALL = 100
 };
+
+typedef AudioStreamType AudioVolumeType;
 
 enum FocusType {
     /**
@@ -589,11 +607,27 @@ enum AudioCaptureMode {
 struct SinkInput {
     int32_t streamId;
     AudioStreamType streamType;
+
+    // add for routing stream.
+    int32_t uid; // client uid
+    int32_t pid; // client pid
+    uint32_t paStreamId; // streamId
+    uint32_t deviceSinkId; // sink id
+    int32_t statusMark; // mark the router status
+    uint64_t startTime; // when this router is created
 };
 
 struct SourceOutput {
     int32_t streamId;
     AudioStreamType streamType;
+
+    // add for routing stream.
+    int32_t uid; // client uid
+    int32_t pid; // client pid
+    uint32_t paStreamId; // streamId
+    uint32_t deviceSourceId; // sink id
+    int32_t statusMark; // mark the router status
+    uint64_t startTime; // when this router is created
 };
 
 typedef uint32_t AudioIOHandle;
@@ -712,6 +746,26 @@ enum AudioPin {
     AUDIO_PIN_IN_LINEIN = 134217732,
     AUDIO_PIN_IN_USB_EXT = 134217736,
     AUDIO_PIN_IN_DAUDIO_DEFAULT = 134217744,
+};
+
+enum AudioParamKey {
+    VOLUME,
+    INTERRUPT,
+    RENDER_STATE
+};
+
+struct DStatusInfo {
+    char networkId[80];
+    AudioPin hdiPin = AUDIO_PIN_NONE;
+    int32_t mappingVolumeId = 0;
+    int32_t mappingInterruptId = 0;
+    int32_t deviceId;
+    int32_t channelMasks;
+    std::string deviceName = "";
+    bool isConnected = false;
+    std::string macAddress;
+    AudioStreamInfo streamInfo = {};
+    ConnectType connectType = CONNECT_TYPE_LOCAL;
 };
 } // namespace AudioStandard
 } // namespace OHOS

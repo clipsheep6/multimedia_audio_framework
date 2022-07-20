@@ -60,6 +60,12 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType) override;
 
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
+
+    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) override;
+
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
+
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
@@ -82,7 +88,8 @@ public:
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object)
+        override;
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId) override;
 
@@ -148,6 +155,20 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid);
 
+    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
+
+    class RemoteParameterCallback : public AudioParameterCallback {
+    public:
+        RemoteParameterCallback(sptr<AudioPolicyServer> server);
+        // AudioParameterCallback
+        void OnAudioParameterChange(const AudioParamKey key, const std::string& condition, const std::string& value)
+            override;
+    private:
+        sptr<AudioPolicyServer> server_;
+    };
+    std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
+
+    uint32_t GetSessionId(const std::string networkId);
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
