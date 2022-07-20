@@ -511,6 +511,17 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }
 
+void AudioPolicyManagerStub::IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamInfo audioStreamInfo = {};
+    audioStreamInfo.samplingRate = static_cast<AudioSamplingRate>(data.ReadInt32());
+    audioStreamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
+    audioStreamInfo.format = static_cast<OHOS::AudioStandard::AudioSampleFormat>(data.ReadInt32());
+    audioStreamInfo.encoding = static_cast<AudioEncodingType>(data.ReadInt32());
+    bool isSupported = IsAudioRendererLowLatencySupported(audioStreamInfo);
+    reply.WriteBool(isSupported);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -686,6 +697,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_CAPTURER_CHANGE_INFOS:
             GetCapturerChangeInfosInternal(data, reply);
             break;
+
+        case IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED:
+             IsAudioRendererLowLatencySupportedInternal(data, reply);
+             break;
 
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");

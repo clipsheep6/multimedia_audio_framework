@@ -148,6 +148,7 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid);
 
+    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

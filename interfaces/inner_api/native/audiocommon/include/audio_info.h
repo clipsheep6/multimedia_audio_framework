@@ -713,6 +713,11 @@ enum AudioPin {
     AUDIO_PIN_IN_USB_EXT = 134217736,
     AUDIO_PIN_IN_DAUDIO_DEFAULT = 134217744,
 };
+
+struct  AudioRendererDataInfo {
+    uint8_t *buffer;
+    int64_t frame;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

@@ -63,6 +63,7 @@ enum AudioPolicyCommand {
     UPDATE_TRACKER,
     GET_RENDERER_CHANGE_INFOS,
     GET_CAPTURER_CHANGE_INFOS,
+    IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED,
 };
 } // namespace AudioStandard
 } // namespace OHOS

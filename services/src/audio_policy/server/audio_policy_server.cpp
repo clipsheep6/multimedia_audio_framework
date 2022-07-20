@@ -1294,5 +1294,11 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
     AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, uid %{public}d", pid);
     mPolicyService.RegisteredStreamListenerClientDied(pid);
 }
+
+bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
+{
+    AUDIO_INFO_LOG("IsAudioRendererLowLatencySupported server call");
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS
