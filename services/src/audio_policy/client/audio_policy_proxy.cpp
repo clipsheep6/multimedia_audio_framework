@@ -955,13 +955,23 @@ void AudioPolicyProxy::ReadAudioRendererChangeInfo(MessageParcel &reply,
     rendererChangeInfo->outputDeviceInfo.deviceType = static_cast<DeviceType>(reply.ReadInt32());
     rendererChangeInfo->outputDeviceInfo.deviceRole = static_cast<DeviceRole>(reply.ReadInt32());
     rendererChangeInfo->outputDeviceInfo.deviceId = reply.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.channelMasks = reply.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate
-        = static_cast<AudioSamplingRate>(reply.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding
-        = static_cast<AudioEncodingType>(reply.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.format = static_cast<AudioSampleFormat>(reply.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(reply.ReadInt32());
+
+    int32_t i = 0;
+    int32_t samplingRateSize = reply.ReadInt32();
+    for (i = 0; i < samplingRateSize; i++) {
+        rendererChangeInfo->outputDeviceInfo.supportedRates.push_back(static_cast<AudioSamplingRate>(reply.ReadInt32()));
+    }
+
+    size_t channelsSize = reply.ReadInt32();
+    for (i = 0; i < channelsSize; i++) {
+        rendererChangeInfo->outputDeviceInfo.supportedChannels.push_back(static_cast<AudioChannel>(reply.ReadInt32()));
+    }
+
+    size_t channelMasksSize = reply.ReadInt32();
+    for (i = 0; i < channelMasksSize; i++) {
+        rendererChangeInfo->outputDeviceInfo.supportedChannelMasks.push_back(static_cast<int32_t>(reply.ReadInt32()));
+    }
+
     rendererChangeInfo->outputDeviceInfo.deviceName = reply.ReadString();
     rendererChangeInfo->outputDeviceInfo.macAddress = reply.ReadString();
 }
@@ -978,13 +988,23 @@ void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
     capturerChangeInfo->inputDeviceInfo.deviceType = static_cast<DeviceType>(reply.ReadInt32());
     capturerChangeInfo->inputDeviceInfo.deviceRole = static_cast<DeviceRole>(reply.ReadInt32());
     capturerChangeInfo->inputDeviceInfo.deviceId = reply.ReadInt32();
-    capturerChangeInfo->inputDeviceInfo.channelMasks = reply.ReadInt32();
-    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate
-        = static_cast<AudioSamplingRate>(reply.ReadInt32());
-    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding
-        = static_cast<AudioEncodingType>(reply.ReadInt32());
-    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.format = static_cast<AudioSampleFormat>(reply.ReadInt32());
-    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(reply.ReadInt32());
+
+    int32_t i = 0;
+    int32_t samplingRateSize = reply.ReadInt32();
+    for (i = 0; i < samplingRateSize; i++) {
+        capturerChangeInfo->inputDeviceInfo.supportedRates.push_back(static_cast<AudioSamplingRate>(reply.ReadInt32()));
+    }
+
+    size_t channelsSize = reply.ReadInt32();
+    for (i = 0; i < channelsSize; i++) {
+        capturerChangeInfo->inputDeviceInfo.supportedChannels.push_back(static_cast<AudioChannel>(reply.ReadInt32()));
+    }
+
+    size_t channelMasksSize = reply.ReadInt32();
+    for (i = 0; i < channelMasksSize; i++) {
+        capturerChangeInfo->inputDeviceInfo.supportedChannelMasks.push_back(static_cast<int32_t>(reply.ReadInt32()));
+    }
+
     capturerChangeInfo->inputDeviceInfo.deviceName = reply.ReadString();
     capturerChangeInfo->inputDeviceInfo.macAddress = reply.ReadString();
 }

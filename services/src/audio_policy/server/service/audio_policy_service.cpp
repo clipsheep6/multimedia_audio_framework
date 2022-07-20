@@ -527,7 +527,10 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
 
             auto itr = std::find_if(mConnectedDevices.begin(), mConnectedDevices.end(), isBuiltInMicPresent);
             if (itr != mConnectedDevices.end()) {
-                audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
+                sptr<AudioDeviceDescriptor> builtInMicDevDesc = *itr;
+                audioDescriptor->SetDeviceCapabilities({builtInMicDevDesc->audioStreamInfo_.samplingRate},
+                    {builtInMicDevDesc->audioStreamInfo_.encoding}, {builtInMicDevDesc->audioStreamInfo_.format},
+                    {builtInMicDevDesc->audioStreamInfo_.channels}, {0});
             }
         }
 
@@ -547,7 +550,10 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
 
             auto itr = std::find_if(mConnectedDevices.begin(), mConnectedDevices.end(), isSpeakerPresent);
             if (itr != mConnectedDevices.end()) {
-                audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
+                sptr<AudioDeviceDescriptor> speakerDevDesc = *itr;
+                audioDescriptor->SetDeviceCapabilities({speakerDevDesc->audioStreamInfo_.samplingRate},
+                    {speakerDevDesc->audioStreamInfo_.encoding}, {speakerDevDesc->audioStreamInfo_.format},
+                    {speakerDevDesc->audioStreamInfo_.channels}, {0});
             }
         }
         desc.push_back(audioDescriptor);
@@ -573,7 +579,8 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     int32_t result = ERROR;
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     deviceDesc.SetDeviceInfo(deviceName, macAddress);
-    deviceDesc.SetDeviceCapability(streamInfo, 0);
+    deviceDesc.SetDeviceCapabilities({streamInfo.samplingRate}, {streamInfo.encoding}, {streamInfo.format},
+        {streamInfo.channels}, {0});
 
     // fill device change action for callback
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
@@ -687,7 +694,8 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
                     sptr<AudioDeviceDescriptor> audioDescriptor
                         = new(std::nothrow) AudioDeviceDescriptor(deviceType, OUTPUT_DEVICE);
                     audioDescriptor->SetDeviceInfo(deviceName, macAddress);
-                    audioDescriptor->SetDeviceCapability(streamInfo, 0);
+                    audioDescriptor->SetDeviceCapabilities({streamInfo.samplingRate}, {streamInfo.encoding},
+                        {streamInfo.format}, {streamInfo.channels}, {0});
                     std::replace_if(mConnectedDevices.begin(), mConnectedDevices.end(), isPresent, audioDescriptor);
                     break;
                 }
@@ -738,7 +746,8 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
                         AudioStreamInfo streamInfo = {};
                         streamInfo.samplingRate = static_cast<AudioSamplingRate>(stoi(moduleInfo.rate));
                         streamInfo.channels = static_cast<AudioChannel>(stoi(moduleInfo.channels));
-                        audioDescriptor->SetDeviceCapability(streamInfo, 0);
+                        audioDescriptor->SetDeviceCapabilities({streamInfo.samplingRate}, {streamInfo.encoding},
+                            {streamInfo.format}, {streamInfo.channels}, {0});
                     }
                     mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
                 }
@@ -818,7 +827,6 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
     deviceInfo.deviceType = desc->deviceType_;
     deviceInfo.deviceRole = desc->deviceRole_;
     deviceInfo.deviceId = desc->deviceId_;
-    deviceInfo.channelMasks = desc->channelMasks_;
 
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;
@@ -828,10 +836,9 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
         deviceInfo.macAddress = "";
     }
 
-    deviceInfo.audioStreamInfo.samplingRate = desc->audioStreamInfo_.samplingRate;
-    deviceInfo.audioStreamInfo.encoding = desc->audioStreamInfo_.encoding;
-    deviceInfo.audioStreamInfo.format = desc->audioStreamInfo_.format;
-    deviceInfo.audioStreamInfo.channels = desc->audioStreamInfo_.channels;
+    deviceInfo.supportedRates = desc->supportedRates_;
+    deviceInfo.supportedChannels = desc->supportedChannels_;
+    deviceInfo.supportedChannelMasks = desc->supportedChannelMasks_;
 }
 
 void AudioPolicyService::UpdateStreamChangeDeviceInfo(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

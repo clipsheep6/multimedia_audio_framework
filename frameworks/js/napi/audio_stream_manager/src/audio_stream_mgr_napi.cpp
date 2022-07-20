@@ -102,6 +102,9 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &jsChangeInfoOb
 {
     napi_value jsDeviceDescriptorsObj = nullptr;
     napi_value valueParam = nullptr;
+    napi_value value = nullptr;
+    size_t i = 0;
+
     napi_create_array_with_length(env, 1, &jsDeviceDescriptorsObj);
 
     (void)napi_create_object(env, &valueParam);
@@ -111,23 +114,31 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &jsChangeInfoOb
     SetValueString(env, "name", deviceInfo.deviceName, valueParam);
     SetValueString(env, "address", deviceInfo.macAddress, valueParam);
 
-    napi_value value = nullptr;
     napi_value sampleRates;
-    napi_create_array_with_length(env, 1, &sampleRates);
-    napi_create_int32(env, deviceInfo.audioStreamInfo.samplingRate, &value);
-    napi_set_element(env, sampleRates, 0, value);
+    size_t sampleRatesSize = deviceInfo.supportedRates.size();
+    napi_create_array_with_length(env, sampleRatesSize, &sampleRates);
+    for(i = 0; i < sampleRatesSize; i++) {
+        napi_create_int32(env, deviceInfo.supportedRates[i], &value);
+        napi_set_element(env, sampleRates, i, value);
+    }
     napi_set_named_property(env, valueParam, "sampleRates", sampleRates);
 
     napi_value channelCounts;
-    napi_create_array_with_length(env, 1, &channelCounts);
-    napi_create_int32(env, deviceInfo.audioStreamInfo.channels, &value);
-    napi_set_element(env, channelCounts, 0, value);
+    size_t channelsSize = deviceInfo.supportedChannels.size();
+    napi_create_array_with_length(env, channelsSize, &channelCounts);
+    for(i = 0; i < channelsSize; i++) {
+        napi_create_int32(env, deviceInfo.supportedChannels[i], &value);
+        napi_set_element(env, channelCounts, i, value);
+    }
     napi_set_named_property(env, valueParam, "channelCounts", channelCounts);
 
     napi_value channelMasks;
-    napi_create_array_with_length(env, 1, &channelMasks);
-    napi_create_int32(env, deviceInfo.channelMasks, &value);
-    napi_set_element(env, channelMasks, 0, value);
+    size_t channelMasksSize = deviceInfo.supportedChannelMasks.size();
+    napi_create_array_with_length(env, channelMasksSize, &channelMasks);
+    for(i = 0; i < channelMasksSize; i++) {
+        napi_create_int32(env, deviceInfo.supportedChannelMasks[i], &value);
+        napi_set_element(env, channelMasks, i, value);
+    }
     napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
 
     napi_set_element(env, jsDeviceDescriptorsObj, 0, valueParam);

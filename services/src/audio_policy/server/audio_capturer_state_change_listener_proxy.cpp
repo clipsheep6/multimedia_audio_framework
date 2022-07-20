@@ -50,11 +50,25 @@ void AudioCapturerStateChangeListenerProxy::WriteCapturerChangeInfo(MessageParce
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceType);
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceRole);
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceId);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.channelMasks);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.format);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels);
+
+    size_t samplingRateSize = capturerChangeInfo->inputDeviceInfo.supportedRates.size();
+    data.WriteInt32(samplingRateSize);
+    for (const AudioSamplingRate &rate : capturerChangeInfo->inputDeviceInfo.supportedRates) {
+        data.WriteInt32(rate);
+    }
+
+    size_t channelsSize = capturerChangeInfo->inputDeviceInfo.supportedChannels.size();
+    data.WriteInt32(channelsSize);
+    for (const AudioChannel &channels : capturerChangeInfo->inputDeviceInfo.supportedChannels) {
+        data.WriteInt32(channels);
+    }
+
+    size_t channelMasksSize = capturerChangeInfo->inputDeviceInfo.supportedChannelMasks.size();
+    data.WriteInt32(channelMasksSize);
+    for (const int32_t &channelMask : capturerChangeInfo->inputDeviceInfo.supportedChannelMasks) {
+        data.WriteInt32(channelMask);
+    }
+
     data.WriteString(capturerChangeInfo->inputDeviceInfo.deviceName);
     data.WriteString(capturerChangeInfo->inputDeviceInfo.macAddress);
 }

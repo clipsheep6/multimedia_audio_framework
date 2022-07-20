@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#include <atomic>
+#include <limits>
+
 #include "audio_log.h"
 #include "audio_system_manager.h"
 
@@ -24,13 +27,7 @@ namespace AudioStandard {
  */
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) : deviceType_(type), deviceRole_(role)
 {
-    if (((deviceType_ == DEVICE_TYPE_WIRED_HEADSET) || (deviceType_ == DEVICE_TYPE_USB_HEADSET)
-        || (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) && (deviceRole_ == INPUT_DEVICE)) {
-        deviceId_ = deviceType_ + DEVICE_TYPE_MAX;
-    } else {
-        deviceId_ = deviceType_;
-    }
-
+    deviceId_ = GenerateNextId();
     audioStreamInfo_ = {};
     channelMasks_ = 0;
     deviceName_ = "";
@@ -52,6 +49,13 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     macAddress_ = deviceDescriptor.macAddress_;
     deviceType_ = deviceDescriptor.deviceType_;
     deviceRole_ = deviceDescriptor.deviceRole_;
+
+    supportedRates_ = deviceDescriptor.supportedRates_;
+    supportedEncodings_ = deviceDescriptor.supportedEncodings_;
+    supportedFormats_ = deviceDescriptor.supportedFormats_;
+    supportedChannels_ = deviceDescriptor.supportedChannels_;
+    supportedChannelMasks_ = deviceDescriptor.supportedChannelMasks_;
+
     audioStreamInfo_.channels = deviceDescriptor.audioStreamInfo_.channels;
     audioStreamInfo_.encoding = deviceDescriptor.audioStreamInfo_.encoding;
     audioStreamInfo_.format = deviceDescriptor.audioStreamInfo_.format;
@@ -65,6 +69,16 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
 {}
 
+int32_t AudioDeviceDescriptor::GenerateNextId() {
+    static std::atomic<uint32_t> sNextUniqueId(1);
+    int32_t id = sNextUniqueId++;
+    while (id > std::numeric_limits<int32_t>::max()) {
+        id -= std::numeric_limits<int32_t>::max();
+    }
+
+    return id;
+}
+
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
     parcel.WriteInt32(deviceType_);
@@ -76,6 +90,36 @@ bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
     parcel.WriteInt32(audioStreamInfo_.format);
     parcel.WriteInt32(audioStreamInfo_.samplingRate);
     parcel.WriteInt32(channelMasks_);
+
+    size_t samplingRateSize = supportedRates_.size();
+    parcel.WriteInt32(samplingRateSize);
+    for (const AudioSamplingRate &rate : supportedRates_) {
+        parcel.WriteInt32(rate);
+    }
+
+    size_t encodingsSize = supportedEncodings_.size();
+    parcel.WriteInt32(encodingsSize);
+    for (const AudioEncodingType &encoding : supportedEncodings_) {
+        parcel.WriteInt32(encoding);
+    }
+
+    size_t formatsSize = supportedFormats_.size();
+    parcel.WriteInt32(formatsSize);
+    for (const AudioSampleFormat &format : supportedFormats_) {
+        parcel.WriteInt32(format);
+    }
+
+    size_t channelsSize = supportedChannels_.size();
+    parcel.WriteInt32(channelsSize);
+    for (const AudioChannel &channels : supportedChannels_) {
+        parcel.WriteInt32(channels);
+    }
+
+    size_t channelMasksSize = supportedChannelMasks_.size();
+    parcel.WriteInt32(channelMasksSize);
+    for (const int32_t &channelMask : supportedChannelMasks_) {
+        parcel.WriteInt32(channelMask);
+    }
 
     parcel.WriteString(deviceName_);
     parcel.WriteString(macAddress_);
@@ -103,6 +147,32 @@ sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::Unmarshalling(Parcel &in)
     audioDeviceDescriptor->audioStreamInfo_.samplingRate = static_cast<AudioSamplingRate>(in.ReadInt32());
     audioDeviceDescriptor->channelMasks_ = in.ReadInt32();
 
+    int32_t i = 0;
+    int32_t samplingRateSize = in.ReadInt32();
+    for (i = 0; i < samplingRateSize; i++) {
+        audioDeviceDescriptor->supportedRates_.push_back(static_cast<AudioSamplingRate>(in.ReadInt32()));
+    }
+
+    int32_t encodingsSize = in.ReadInt32();
+    for (i = 0; i < encodingsSize; i++) {
+        audioDeviceDescriptor->supportedEncodings_.push_back(static_cast<AudioEncodingType>(in.ReadInt32()));
+    }
+
+    int32_t formatsSize = in.ReadInt32();
+    for (i = 0; i < formatsSize; i++) {
+        audioDeviceDescriptor->supportedFormats_.push_back(static_cast<AudioSampleFormat>(in.ReadInt32()));
+    }
+
+    int32_t channelsSize = in.ReadInt32();
+    for (i = 0; i < channelsSize; i++) {
+        audioDeviceDescriptor->supportedChannels_.push_back(static_cast<AudioChannel>(in.ReadInt32()));
+    }
+
+    int32_t channelMasksSize = in.ReadInt32();
+    for (i = 0; i < channelMasksSize; i++) {
+        audioDeviceDescriptor->supportedChannelMasks_.push_back(static_cast<int32_t>(in.ReadInt32()));
+    }
+
     audioDeviceDescriptor->deviceName_ = in.ReadString();
     audioDeviceDescriptor->macAddress_ = in.ReadString();
 
@@ -119,13 +189,32 @@ void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string ma
     macAddress_ = macAddress;
 }
 
-void AudioDeviceDescriptor::SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask)
+void AudioDeviceDescriptor::SetDeviceCapabilities(const std::vector<AudioSamplingRate> &sampleRates,
+    const std::vector<AudioEncodingType> &encodings, const std::vector<AudioSampleFormat> &formats,
+    const std::vector<AudioChannel> &channels, const std::vector<int32_t> &channelMasks)
 {
-    audioStreamInfo_.channels = audioStreamInfo.channels;
-    audioStreamInfo_.encoding = audioStreamInfo.encoding;
-    audioStreamInfo_.format = audioStreamInfo.format;
-    audioStreamInfo_.samplingRate = audioStreamInfo.samplingRate;
-    channelMasks_ = channelMask;
+    if (sampleRates.empty() || encodings.empty() || formats.empty() || channels.empty() || channelMasks.empty()) {
+        AUDIO_ERR_LOG("Set device capabilities failed");
+        return;
+    }
+
+    supportedRates_.clear();
+    supportedEncodings_.clear();
+    supportedFormats_.clear();
+    supportedChannels_.clear();
+    supportedChannelMasks_.clear();
+
+    audioStreamInfo_.samplingRate = sampleRates[0];
+    audioStreamInfo_.encoding = encodings[0];
+    audioStreamInfo_.format = formats[0];
+    audioStreamInfo_.channels = channels[0];
+    channelMasks_ = channelMasks[0];
+
+    supportedRates_.insert(supportedRates_.begin(), sampleRates.begin(), sampleRates.end());
+    supportedEncodings_.insert(supportedEncodings_.begin(), encodings.begin(), encodings.end());
+    supportedFormats_.insert(supportedFormats_.begin(), formats.begin(), formats.end());
+    supportedChannels_.insert(supportedChannels_.begin(), channels.begin(), channels.end());
+    supportedChannelMasks_.insert(supportedChannelMasks_.begin(), channelMasks.begin(), channelMasks.end());
 }
 } // namespace AudioStandard
 } // namespace OHOS
