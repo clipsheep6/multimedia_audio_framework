@@ -21,6 +21,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
 class CapturerPositionCallbackTest : public CapturerPositionCallback {
 public:
     void OnMarkReached(const int64_t &framePosition) override {}
