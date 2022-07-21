@@ -1999,7 +1999,7 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
 int32_t AudioServiceClient::SetStreamVolume(float volume)
 {
-    lock_guard<mutex> lock(ctrlMutex);
+    lock_guard<mutex> lock(dataMutex);
     AUDIO_INFO_LOG("SetVolume volume: %{public}f", volume);
 
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
