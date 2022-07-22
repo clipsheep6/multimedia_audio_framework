@@ -1347,5 +1347,11 @@ std::unordered_map<int32_t, sptr<VolumeGroupInfo>> AudioPolicyServer::GetVolumeG
 {
     return  mPolicyService.GetVolumeGroupInfos();
 }
+
+bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
+{
+    AUDIO_INFO_LOG("IsAudioRendererLowLatencySupported server call");
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS

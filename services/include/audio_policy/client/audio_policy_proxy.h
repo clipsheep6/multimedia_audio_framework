@@ -116,6 +116,8 @@ public:
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
+    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);
@@ -127,6 +129,7 @@ private:
         std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void ReadAudioCapturerChangeInfo(MessageParcel &reply,
         std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
+    void WriteAudioStreamInfoParams(MessageParcel &parcel, const AudioStreamInfo &audioStreamInfo);
 };
 } // namespace AudioStandard
 } // namespace OHOS
