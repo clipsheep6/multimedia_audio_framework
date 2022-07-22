@@ -393,7 +393,12 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
     pa_assert(s);
     pa_assert_se(u = s->userdata);
 
-    AUDIO_INFO_LOG("Sink old state: %{public}d, new state: %{public}d", s->thread_info.state, newState);
+    AUDIO_INFO_LOG("Sink<%{public}s> class<%{public}s> state[%{public}d]-->[%{public}d].",
+                    s->name,
+                    GetDeviceClass(),
+                    s->thread_info.state,
+                    newState);
+
     if (!strcmp(GetDeviceClass(), DEVICE_CLASS_A2DP)) {
         if (s->thread_info.state == PA_SINK_IDLE && newState == PA_SINK_RUNNING) {
             u->sinkAdapter->RendererSinkResume(u->sinkAdapter->wapper);
@@ -458,9 +463,14 @@ static pa_hook_result_t SinkStreamDisconnectCb(pa_core *c, pa_sink_input *s, str
         return PA_HOOK_OK;
     }
 
+    AUDIO_INFO_LOG("sink[%{public}s] disconnect sinkStreamCount[%{public}d]-->[%{public}d]",
+                    s->sink->name,
+                    u->sinkStreamCount,
+                    (u->sinkStreamCount - 1));
     u->sinkStreamCount--;
 
     if (u->sinkStreamCount == 0) {
+        AUDIO_INFO_LOG("no stream available, call suspend");
         pa_sink_suspend(s->sink, true, PA_SUSPEND_IDLE);
         pa_core_maybe_vacuum(s->core);
     }
@@ -484,10 +494,14 @@ static pa_hook_result_t SinkStreamConnectCb(pa_core *c, pa_sink_input *s, struct
     }
 
     if (!PA_SINK_IS_OPENED(s->sink->state)) {
+        AUDIO_INFO_LOG("stream available, wakeup sink.");
         u->sinkStreamCount = 0;
         pa_sink_suspend(s->sink, false, PA_SUSPEND_IDLE);
     }
-
+    AUDIO_INFO_LOG("sink[%{public}s] connect sinkStreamCount[%{public}d]-->[%{public}d]",
+                    s->sink->name,
+                    u->sinkStreamCount,
+                    (u->sinkStreamCount + 1));
     u->sinkStreamCount++;
 
     return PA_HOOK_OK;
@@ -508,8 +522,13 @@ static pa_hook_result_t SinkStreamMoveFinishCb(pa_core *c, pa_sink_input *s, str
         return PA_HOOK_OK;
     }
 
+    AUDIO_INFO_LOG("sink[%{public}s] stream move finished, sinkStreamCount[%{public}d]",
+                    s->sink->name,
+                    u->sinkStreamCount);
+
     u->sinkStreamCount = pa_idxset_size(s->sink->inputs);
     if (!PA_SINK_IS_OPENED(s->sink->state) && u->sinkStreamCount > 0) {
+        AUDIO_INFO_LOG("get moved stream, wakeup sink.");
         pa_sink_suspend(s->sink, false, PA_SUSPEND_IDLE);
     }
 

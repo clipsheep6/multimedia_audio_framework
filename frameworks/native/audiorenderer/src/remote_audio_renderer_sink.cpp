@@ -257,7 +257,7 @@ inline std::string printRemoteAttr(RemoteAudioSinkAttr attr_){
 
 int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
 {
-    AUDIO_INFO_LOG("RemoteAudioRendererSink: DeInit.");
+    AUDIO_INFO_LOG("RemoteAudioRendererSink: Init start.");
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;  // Set sound card information
     openSpeaker_ = attr_.openMicSpeaker;
@@ -351,7 +351,6 @@ int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t 
     }
 
     ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
-    AUDIO_DEBUG_LOG("RenderFrame[%{public}d] len[%{public}zu] writeLen[%{public}zu]", ret, len, writeLen);
     if (ret != 0) {
         AUDIO_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
@@ -367,7 +366,7 @@ int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t 
 #endif // DEBUG_DUMP_FILE
 
     int64_t cost = GetNowTimeMs() - start;
-    AUDIO_DEBUG_LOG("RenderFrame [%{public}zu] cost[%{public}zu]ms", len, cost);
+    AUDIO_DEBUG_LOG("RenderFrame len[%{public}zu] cost[%{public}zu]ms", (size_t)len, (size_t)cost);
     return SUCCESS;
 }
 
