@@ -47,7 +47,7 @@ public:
         SAMPLE_FORMAT_S32LE = 3,
         SAMPLE_FORMAT_F32LE = 4
     };
-
+    std::unique_ptr<AudioRenderer> audioRenderer_;
     static napi_value Init(napi_env env, napi_value exports);
 private:
     struct AudioRendererAsyncContext {
@@ -128,6 +128,8 @@ private:
                                                const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value RegisterPeriodPositionCallback(napi_env env, napi_value* argv,
                                                      const std::string& cbName, AudioRendererNapi *rendererNapi);
+    static napi_value RegisterDataRequestCallback(napi_env env, napi_value* argv,
+                                                     const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
 
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
@@ -147,7 +149,6 @@ private:
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioRendererOptions> sRendererOptions_;
 
-    std::unique_ptr<AudioRenderer> audioRenderer_;
     ContentType contentType_;
     StreamUsage streamUsage_;
     DeviceRole deviceRole_;
@@ -162,6 +163,7 @@ private:
     std::shared_ptr<AudioRendererCallback> callbackNapi_ = nullptr;
     std::shared_ptr<RendererPositionCallback> positionCBNapi_ = nullptr;
     std::shared_ptr<RendererPeriodPositionCallback> periodPositionCBNapi_ = nullptr;
+    std::shared_ptr<AudioRendererWriteCallback> dataRequestCBNapi_ = nullptr;
 };
 
 static const std::map<std::string, InterruptType> interruptEventTypeMap = {

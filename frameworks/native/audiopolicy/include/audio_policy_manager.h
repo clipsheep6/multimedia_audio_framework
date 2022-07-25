@@ -140,6 +140,8 @@ public:
 
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+
+    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 private:
     AudioPolicyManager()
     {

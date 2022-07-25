@@ -149,6 +149,8 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid);
 
+    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
+
     std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 
 protected:
