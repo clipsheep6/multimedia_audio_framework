@@ -218,14 +218,14 @@ static void HandleLowPowerVolumeOption(char option)
             cout << "Set low power volume 0.5" << endl;
             break;
         case 'P':
-            audioSystemMgr->SetLowPowerVolume(streamId, 1.0f); 
+            audioSystemMgr->SetLowPowerVolume(streamId, 1.0f);
             cout << "Set low power volume 1.0" << endl;
             break;
         case 'G': {
             float volume = audioSystemMgr->GetLowPowerVolume(streamId);
             cout << "Get low power volume is: " << volume << endl;
             break;
-	    }
+        }
         default :
             cout << "This operation is not supported" << endl;
             break;
