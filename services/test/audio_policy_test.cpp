@@ -208,13 +208,27 @@ static void HandleLowPowerVolumeOption(char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     int32_t streamId = stoi(optarg);
-    if (option == 'L') {
-        cout << "set low power volume" << endl;
-        audioSystemMgr->SetLowPowerVolume(streamId, 0.5f);
-    } else {
-        cout << "Get low power volume" << endl;
-        float volume = audioSystemMgr->GetLowPowerVolume(streamId);
-        cout << "low power volume is: " << volume << endl;
+    switch (option) {
+        case 'N':
+            audioSystemMgr->SetLowPowerVolume(streamId, 0);
+            cout << "Set low power volume 0" << endl;
+            break;
+        case 'O':
+            audioSystemMgr->SetLowPowerVolume(streamId, 0.5f);
+            cout << "Set low power volume 0.5" << endl;
+            break;
+        case 'P':
+            audioSystemMgr->SetLowPowerVolume(streamId, 1.0f);
+            cout << "Set low power volume 1.0" << endl;
+            break;
+        case 'G': {
+            float volume = audioSystemMgr->GetLowPowerVolume(streamId);
+            cout << "Get low power volume is: " << volume << endl;
+            break;
+        }
+        default :
+            cout << "This operation is not supported" << endl;
+            break;
     }
 }
 
@@ -228,7 +242,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:d:s:L:l:vmruc")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:d:s:N:O:P:G:vmruc")) != -1) {
         switch (opt) {
             case 'V':
             case 'v':
@@ -262,8 +276,11 @@ int main(int argc, char* argv[])
             case 'c':
                 HandleAudioScene(opt);
                 break;
-            case 'L':
-            case 'l':
+            case 'N':
+            case 'O':
+            case 'P':
+            case 'G':
+                // Set discounted volume factor(N：0， O：0.5f, P：1.0f）, Get discounted volume factor（G)
                 HandleLowPowerVolumeOption(opt);
                 break;
             case ':':
