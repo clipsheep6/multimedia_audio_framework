@@ -133,6 +133,8 @@ public:
      */
     virtual uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
     {
+        (void)deviceType;
+        (void)deviceRole;
         return 0;
     }
 
