@@ -140,7 +140,22 @@ int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const 
     void* reserved, void* cookie)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink::ParamEventCallback: key:%d, condition:%s, value:%s", key, condition, value);
+    RemoteAudioRendererSink *sink = reinterpret_cast<RemoteAudioRendererSink *>(cookie);
+    std::string networkId = sink->GetNetworkId();
+    AudioParamKey audioKey = AudioParamKey(key);
+    ISinkParameterCallback *callback = sink->GetParamCallback();
+    callback->OnAudioParameterChange(networkId, audioKey, condition, value);
     return 0;
+}
+
+std::string RemoteAudioRendererSink::GetNetworkId()
+{
+    return deviceNetworkId_;
+}
+
+ISinkParameterCallback* RemoteAudioRendererSink::GetParamCallback()
+{
+    return callback_;
 }
 
 void RemoteAudioRendererSink::DeInit()
