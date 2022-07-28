@@ -1181,6 +1181,10 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         return;
     }
 
+    if (g_sProxy != nullptr) {
+        g_sProxy->NotifyDeviceInfo(LOCAL_NETWORK_ID, true);
+    }
+
     int32_t result = ERROR;
     AUDIO_INFO_LOG("[module_load]::HDI and AUDIO SERVICE is READY. Loading default modules");
     for (const auto &device : deviceClassInfo_) {

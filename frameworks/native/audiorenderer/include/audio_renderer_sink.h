@@ -61,6 +61,7 @@ public:
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
     static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
         void *cookie);
+    ISinkParameterCallback* GetParamCallback();
 
 private:
     AudioRendererSink();

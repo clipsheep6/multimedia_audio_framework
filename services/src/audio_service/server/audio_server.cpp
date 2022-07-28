@@ -315,8 +315,14 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
 {
-    RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
-    audioRendererSinkInstance->RegisterParameterCallback(this);
+    AUDIO_INFO_LOG("notify device info: networkId(%s), connected(%d)", networkId.c_str(), connected);
+    if (networkId == LOCAL_NETWORK_ID) {
+        AudioRendererSink* instance = AudioRendererSink::GetInstance();
+        instance->RegisterParameterCallback(this);
+    } else {
+        RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
+        audioRendererSinkInstance->RegisterParameterCallback(this);
+    }
 }
 
 void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,

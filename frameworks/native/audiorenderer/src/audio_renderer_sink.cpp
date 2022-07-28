@@ -39,8 +39,8 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+const uint32_t PARAM_VALUE_LENTH = 10;
 }
-
 #ifdef DUMPFILE
 const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
 #endif // DUMPFILE
@@ -71,17 +71,14 @@ AudioRendererSink *AudioRendererSink::GetInstance()
 void AudioRendererSink::RegisterParameterCallback(ISinkParameterCallback* callback)
 {
     callback_ = callback;
-#ifdef DISTRIBUTED_AUDIO
     // register to adapter
-    ParamCallback adapterCallback = &RemoteAudioRendererSink::ParamEventCallback;
+    ParamCallback adapterCallback = &AudioRendererSink::ParamEventCallback;
     audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
-#endif
 }
 
 void AudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
- #ifdef DISTRIBUTED_AUDIO
     AUDIO_INFO_LOG("AudioRendererSink::SetAudioParameter: key %d, condition: %s, value: %s", key,
         condition.c_str(), value.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
@@ -89,12 +86,10 @@ void AudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::st
     if (ret == ERROR) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink::SetAudioParameter failed");
     }
-#endif
 }
 
 std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
 {
-#ifdef DISTRIBUTED_AUDIO
     AUDIO_INFO_LOG("AudioRendererSink::GetAudioParameter: key %d, condition: %s", key, condition.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     char value[PARAM_VALUE_LENTH];
@@ -104,18 +99,28 @@ std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const 
         return value;
     }
     return value;
-#else
-    return "";
-#endif
 }
 
 int32_t AudioRendererSink::ParamEventCallback(AudioExtParamKey key, const char* condition, const char* value,
     void* reserved, void* cookie)
 {
     AUDIO_INFO_LOG("AudioRendererSink::ParamEventCallback: key:%d, condition:%s, value:%s", key, condition, value);
-    return 0;
+    AudioRendererSink* sink = reinterpret_cast<AudioRendererSink*>(cookie);
+    AudioParamKey audioKey = AudioParamKey(key);
+    ISinkParameterCallback* callback = sink->GetParamCallback();
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("AudioRendererSink::ParamEventCallback callback is null");
+        return ERROR;
+    }
+
+    callback->OnAudioParameterChange(LOCAL_NETWORK_ID, audioKey, condition, value);
+    return ERROR;
 }
 
+OHOS::AudioStandard::ISinkParameterCallback* AudioRendererSink::GetParamCallback()
+{
+    return callback_;
+}
 
 void AudioRendererSink::DeInit()
 {
