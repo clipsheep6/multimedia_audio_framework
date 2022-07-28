@@ -38,7 +38,7 @@ const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
-#ifdef DISTRIBUTED_AUDIO
+#ifdef PRODUCT_M40
 const uint32_t PARAM_VALUE_LENTH = 3;
 #endif
 
@@ -92,7 +92,7 @@ void RemoteAudioRendererSink::RegisterParameterCallback(ISinkParameterCallback* 
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: register params callback");
     callback_ = callback;
-#ifdef DISTRIBUTED_AUDIO
+#ifdef PRODUCT_M40
     // register to adapter
     ParamCallback adapterCallback = &RemoteAudioRendererSink::ParamEventCallback;
     audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
@@ -102,7 +102,7 @@ void RemoteAudioRendererSink::RegisterParameterCallback(ISinkParameterCallback* 
 void RemoteAudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
- #ifdef DISTRIBUTED_AUDIO
+ #ifdef PRODUCT_M40 
     AUDIO_INFO_LOG("RemoteAudioRendererSink::SetParameter: key %{public}d, condition: %{public}s, value: %{public}s", key,
         condition.c_str(), value.c_str());
     enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
@@ -115,7 +115,7 @@ void RemoteAudioRendererSink::SetAudioParameter(const AudioParamKey key, const s
 
 std::string RemoteAudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
 {
-#ifdef DISTRIBUTED_AUDIO
+ #ifdef PRODUCT_M40
     AUDIO_INFO_LOG("RemoteAudioRendererSink::GetParameter: key %{public}d, condition: %{public}s", key, condition.c_str());
     enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
     char value[PARAM_VALUE_LENTH];
@@ -134,7 +134,22 @@ int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const 
     void* reserved, void* cookie)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink::ParamEventCallback: key:%d, condition:%s, value:%s", key, condition, value);
+    RemoteAudioRendererSink* sink = reinterpret_cast<RemoteAudioRendererSink*>(cookie);
+    std::string networkId = sink->GetNetworkId();
+    AudioParamKey audioKey = AudioParamKey(key);
+    ISinkParameterCallback* callback = sink->GetParamCallback();
+    callback->OnAudioParameterChange(networkId, audioKey, condition, value);
     return 0;
+}
+
+std::string RemoteAudioRendererSink::GetNetworkId()
+{
+    return deviceNetworkId_;
+}
+
+OHOS::AudioStandard::ISinkParameterCallback* RemoteAudioRendererSink::GetParamCallback()
+{
+    return callback_;
 }
 
 void RemoteAudioRendererSink::DeInit()

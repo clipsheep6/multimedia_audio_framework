@@ -19,6 +19,7 @@
 namespace OHOS {
 namespace AudioStandard {
 class ISinkParameterCallback {
+public:
     virtual void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
         const std::string value) = 0;
 };
