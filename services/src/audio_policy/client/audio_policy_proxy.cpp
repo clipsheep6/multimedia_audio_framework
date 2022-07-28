@@ -384,7 +384,8 @@ DeviceType AudioPolicyProxy::GetActiveInputDevice()
     return static_cast<DeviceType>(reply.ReadInt32());
 }
 
-int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+                                             std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -441,7 +442,8 @@ std::string AudioPolicyProxy::GetSelectedDeviceInfo(int32_t uid, int32_t pid, Au
     return reply.ReadString();
 }
 
-int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+                                            std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     MessageParcel data;
     MessageParcel reply;

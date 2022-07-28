@@ -524,7 +524,8 @@ std::string AudioSystemManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
     return AudioPolicyManager::GetInstance().GetSelectedDeviceInfo(uid, pid, streamType);
 }
 
-int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+                                               std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     // basic check
     if (audioRendererFilter == nullptr || audioDeviceDescriptors.size() == 0) {
@@ -553,7 +554,8 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
 
-int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+                                              std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     // basic check
     if (audioCapturerFilter == nullptr || audioDeviceDescriptors.size() == 0) {

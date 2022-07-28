@@ -325,7 +325,8 @@ bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
     return mPolicyService.GetStreamMute(streamType);
 }
 
-int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+                                              std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     // todo check the call client is a system hap.
     int uid = IPCSkeleton::GetCallingUid();
@@ -340,7 +341,8 @@ std::string AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, A
     return mPolicyService.GetSelectedDeviceInfo(uid, pid, streamType);
 }
 
-int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+                                             std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     // todo check the call client is a system hap.
     int uid = IPCSkeleton::GetCallingUid();

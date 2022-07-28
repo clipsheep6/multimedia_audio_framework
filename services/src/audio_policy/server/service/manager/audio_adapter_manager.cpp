@@ -218,7 +218,9 @@ int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, ui
     return mAudioServiceAdapter->MoveSinkInputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
-int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName)
+int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId,
+                                                           uint32_t sourceIndex,
+                                                           std::string sourceName)
 {
     return mAudioServiceAdapter->MoveSourceOutputByIndexOrName(sourceOutputId, sourceIndex, sourceName);
 }

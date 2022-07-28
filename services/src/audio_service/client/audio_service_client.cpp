@@ -399,14 +399,14 @@ void AudioServiceClient::PAStreamMovedCb(pa_stream *stream, void *userdata)
 
     AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
     (void)asClient;
-    // pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
     // informations.
-    uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index() todo
+    uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
 
     // Return 1 if the sink or source this stream is connected to has been suspended.
     // This will return 0 if not, and a negative value on error.
     int res = pa_stream_is_suspended(stream);
-    AUDIO_DEBUG_LOG("AudioServiceClient::PAstream moved to index:[%{public}d] suspended:[%{public}d]", deviceIndex, res);
+    AUDIO_INFO_LOG("AudioServiceClient::PAstream moved to index:[%{public}d] suspended:[%{public}d]",
+                   deviceIndex, res);
 }
 
 void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
@@ -800,7 +800,8 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
     sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
-    std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_, mStreamType);
+    std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_,
+                                                                                        clientPid_, mStreamType);
     const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
 
     pa_threaded_mainloop_lock(mainLoop);
