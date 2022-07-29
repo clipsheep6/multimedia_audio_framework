@@ -34,6 +34,7 @@ constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t MIN_SERVICE_COUNT = 2;
 constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
+constexpr int32_t LOCAL_VOLUME_GROUP_ID = 0;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
@@ -606,11 +607,27 @@ enum AudioCaptureMode {
 struct SinkInput {
     int32_t streamId;
     AudioStreamType streamType;
+
+    // add for routing stream.
+    int32_t uid; // client uid
+    int32_t pid; // client pid
+    uint32_t paStreamId; // streamId
+    uint32_t deviceSinkId; // sink id
+    int32_t statusMark; // mark the router status
+    uint64_t startTime; // when this router is created
 };
 
 struct SourceOutput {
     int32_t streamId;
     AudioStreamType streamType;
+
+    // add for routing stream.
+    int32_t uid; // client uid
+    int32_t pid; // client pid
+    uint32_t paStreamId; // streamId
+    uint32_t deviceSourceId; // sink id
+    int32_t statusMark; // mark the router status
+    uint64_t startTime; // when this router is created
 };
 
 typedef uint32_t AudioIOHandle;
@@ -729,6 +746,14 @@ enum AudioPin {
     AUDIO_PIN_IN_LINEIN = 134217732,
     AUDIO_PIN_IN_USB_EXT = 134217736,
     AUDIO_PIN_IN_DAUDIO_DEFAULT = 134217744,
+};
+
+enum AudioParamKey {
+    NONE = 0,
+    VOLUME = 1,
+    INTERRUPT = 2,
+    RENDER_STATE = 3,
+    PARAM_KEY_LOWPOWER = 1000,
 };
 
 struct DStatusInfo {

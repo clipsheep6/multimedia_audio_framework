@@ -20,13 +20,17 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <unordered_map>
 
 #include "parcel.h"
 #include "audio_info.h"
 #include "audio_interrupt_callback.h"
+#include "audio_group_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+// sptr<IStandardAudioService> g_sProxy = nullptr;
+
 class AudioDeviceDescriptor;
 class AudioDeviceDescriptor : public Parcelable {
     friend class AudioSystemManager;
@@ -95,6 +99,43 @@ struct DeviceChangeAction {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
 };
 
+/**
+ * @brief AudioRendererFilter is used for select speficed AudioRenderer.
+ * 
+ */
+class AudioRendererFilter;
+class AudioRendererFilter : public Parcelable {
+    friend class AudioSystemManager;
+public:
+    AudioRendererFilter();
+    virtual ~AudioRendererFilter();
+
+    int32_t uid = -1;
+    AudioRendererInfo rendererInfo = {};
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t streamId = -1;
+
+    bool Marshalling(Parcel &parcel) const override;
+    static sptr<AudioRendererFilter> Unmarshalling(Parcel &in);
+};
+
+/**
+ * @brief AudioCapturerFilter is used for select speficed audiocapturer.
+ * 
+ */
+class AudioCapturerFilter;
+class AudioCapturerFilter : public Parcelable {
+    friend class AudioSystemManager;
+public:
+    AudioCapturerFilter();
+    virtual ~AudioCapturerFilter();
+
+    int32_t uid = -1;
+
+    bool Marshalling(Parcel &parcel) const override;
+    static sptr<AudioCapturerFilter> Unmarshalling(Parcel &in);
+};
+
 // AudioManagerCallback OnInterrupt is added to handle compilation error in call manager
 // Once call manager adapt to new interrupt APIs, this will be removed
 class AudioManagerCallback {
@@ -144,6 +185,13 @@ public:
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
 };
 
+class AudioParameterCallback {
+public:
+    virtual ~AudioParameterCallback() = default;
+    virtual void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
+        const std::string& value) = 0;
+};
+
 class AudioRingerModeCallback {
 public:
     virtual ~AudioRingerModeCallback() = default;
@@ -173,8 +221,8 @@ public:
     static float MapVolumeToHDI(int32_t volume);
     static int32_t MapVolumeFromHDI(float volume);
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
-    int32_t GetVolume(AudioVolumeType volumeType) const;
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume);
+    int32_t GetVolume(AudioVolumeType volumeType);
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
     float GetLowPowerVolume(int32_t streamId) const;
     int32_t GetMaxVolume(AudioVolumeType volumeType);
@@ -183,6 +231,11 @@ public:
     bool IsStreamMute(AudioVolumeType volumeType) const;
     int32_t SetMicrophoneMute(bool isMute);
     bool IsMicrophoneMute(void);
+    int32_t SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectInputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) const;
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
     const std::string GetAudioParameter(const std::string key);
     void SetAudioParameter(const std::string &key, const std::string &value);
@@ -225,7 +278,8 @@ public:
     uint32_t GetSinkLatencyFromXml() const;
     AudioPin GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const;
     DeviceType GetTypeValueFromPin(AudioPin pin) const;
-
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroups(std::string networkId);
+    std::shared_ptr<AudioGroupManager> GetGroupManager(int32_t groupId);
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
@@ -244,6 +298,7 @@ private:
 
     uint32_t GetCallingPid();
     std::mutex mutex_;
+    std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

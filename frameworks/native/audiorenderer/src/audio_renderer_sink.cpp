@@ -39,8 +39,8 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+const uint32_t PARAM_VALUE_LENTH = 10;
 }
-
 #ifdef DUMPFILE
 const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
 #endif // DUMPFILE
@@ -66,6 +66,65 @@ AudioRendererSink *AudioRendererSink::GetInstance()
     static AudioRendererSink audioRenderer_;
 
     return &audioRenderer_;
+}
+
+void AudioRendererSink::RegisterParameterCallback(ISinkParameterCallback* callback)
+{
+    AUDIO_INFO_LOG("zhanhang RegisterParameterCallback");
+    callback_ = callback;
+    // register to adapter
+    ParamCallback adapterCallback = &AudioRendererSink::ParamEventCallback;
+    int32_t ret = audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("hdi register observer failed, ret: %d", ret);
+    }
+}
+
+void AudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
+    const std::string& value)
+{
+    AUDIO_INFO_LOG("AudioRendererSink::SetAudioParameter: key %{public}d, condition: %{public}s, value: %{public}s", key,
+        condition.c_str(), value.c_str());
+    AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
+    if (ret == ERROR) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::SetAudioParameter failed");
+    }
+}
+
+std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+{
+    AUDIO_INFO_LOG("AudioRendererSink::GetAudioParameter: key %{public}d, condition: %{public}s", key, condition.c_str());
+    AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    char value[PARAM_VALUE_LENTH];
+    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
+    if (ret == ERROR) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::GetAudioParameter failed");
+        return value;
+    }
+    return value;
+}
+
+int32_t AudioRendererSink::ParamEventCallback(AudioExtParamKey key, const char* condition, const char* value,
+    void* reserved, void* cookie)
+{
+    AUDIO_INFO_LOG("AudioRendererSink::ParamEventCallback: key:%{public}d, condition:%{public}s, value:%{public}s",
+        key, condition, value);
+    AudioRendererSink* sink = reinterpret_cast<AudioRendererSink*>(cookie);
+    AudioParamKey audioKey = AudioParamKey(key);
+    ISinkParameterCallback* callback = sink->GetParamCallback();
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("AudioRendererSink::ParamEventCallback callback is null");
+        return ERROR;
+    }
+
+    callback->OnAudioParameterChange(LOCAL_NETWORK_ID, audioKey, condition, value);
+    return ERROR;
+}
+
+OHOS::AudioStandard::ISinkParameterCallback* AudioRendererSink::GetParamCallback()
+{
+    return callback_;
 }
 
 void AudioRendererSink::DeInit()
@@ -633,8 +692,21 @@ using namespace OHOS::AudioStandard;
 
 AudioRendererSink *g_audioRendrSinkInstance = AudioRendererSink::GetInstance();
 
-int32_t AudioRendererSinkInit(AudioSinkAttr *attr)
+int32_t FillinAudioRenderSinkWapper(const char *deviceNetworkId, void **wapper)
 {
+    AudioRendererSink *instance = AudioRendererSink::GetInstance();
+    if (instance != nullptr) {
+        *wapper = static_cast<void *>(instance);
+    } else {
+        *wapper = nullptr;
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInit(void *wapper, AudioSinkAttr *attr)
+{
+    (void)wapper;
     int32_t ret;
     if (g_audioRendrSinkInstance->rendererInited_)
         return SUCCESS;
@@ -643,14 +715,16 @@ int32_t AudioRendererSinkInit(AudioSinkAttr *attr)
     return ret;
 }
 
-void AudioRendererSinkDeInit()
+void AudioRendererSinkDeInit(void *wapper)
 {
+    (void)wapper;
     if (g_audioRendrSinkInstance->rendererInited_)
         g_audioRendrSinkInstance->DeInit();
 }
 
-int32_t AudioRendererSinkStop()
+int32_t AudioRendererSinkStop(void *wapper)
 {
+    (void)wapper;
     int32_t ret;
 
     if (!g_audioRendrSinkInstance->rendererInited_)
@@ -660,8 +734,9 @@ int32_t AudioRendererSinkStop()
     return ret;
 }
 
-int32_t AudioRendererSinkStart()
+int32_t AudioRendererSinkStart(void *wapper)
 {
+    (void)wapper;
     int32_t ret;
 
     if (!g_audioRendrSinkInstance->rendererInited_) {
@@ -673,8 +748,9 @@ int32_t AudioRendererSinkStart()
     return ret;
 }
 
-int32_t AudioRendererSinkPause()
+int32_t AudioRendererSinkPause(void *wapper)
 {
+    (void)wapper;
     if (!g_audioRendrSinkInstance->rendererInited_) {
         AUDIO_ERR_LOG("Renderer pause failed");
         return ERR_NOT_STARTED;
@@ -683,8 +759,9 @@ int32_t AudioRendererSinkPause()
     return g_audioRendrSinkInstance->Pause();
 }
 
-int32_t AudioRendererSinkResume()
+int32_t AudioRendererSinkResume(void *wapper)
 {
+    (void)wapper;
     if (!g_audioRendrSinkInstance->rendererInited_) {
         AUDIO_ERR_LOG("Renderer resume failed");
         return ERR_NOT_STARTED;
@@ -693,8 +770,9 @@ int32_t AudioRendererSinkResume()
     return g_audioRendrSinkInstance->Resume();
 }
 
-int32_t AudioRendererRenderFrame(char &data, uint64_t len, uint64_t &writeLen)
+int32_t AudioRendererRenderFrame(void *wapper, char &data, uint64_t len, uint64_t &writeLen)
 {
+    (void)wapper;
     int32_t ret;
 
     if (!g_audioRendrSinkInstance->rendererInited_) {
@@ -706,8 +784,9 @@ int32_t AudioRendererRenderFrame(char &data, uint64_t len, uint64_t &writeLen)
     return ret;
 }
 
-int32_t AudioRendererSinkSetVolume(float left, float right)
+int32_t AudioRendererSinkSetVolume(void *wapper, float left, float right)
 {
+    (void)wapper;
     int32_t ret;
 
     if (!g_audioRendrSinkInstance->rendererInited_) {
@@ -719,8 +798,9 @@ int32_t AudioRendererSinkSetVolume(float left, float right)
     return ret;
 }
 
-int32_t AudioRendererSinkGetLatency(uint32_t *latency)
+int32_t AudioRendererSinkGetLatency(void *wapper, uint32_t *latency)
 {
+    (void)wapper;
     int32_t ret;
 
     if (!g_audioRendrSinkInstance->rendererInited_) {

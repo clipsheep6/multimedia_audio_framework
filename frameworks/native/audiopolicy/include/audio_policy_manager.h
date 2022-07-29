@@ -62,6 +62,12 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType);
 
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+
+    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
+
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
@@ -144,6 +150,8 @@ public:
 
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 private:
     AudioPolicyManager()
     {

@@ -59,6 +59,12 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType) const;
 
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+
+    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
+
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
@@ -150,7 +156,12 @@ public:
 
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
 
-    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+
+    void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
+
+    uint32_t GetSessionId(const std::string networkId);
+
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -164,8 +175,16 @@ private:
 
     std::string GetPortName(InternalDeviceType deviceType);
 
+    int32_t MoveToLocalOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> localDeviceDescriptor);
+
+    int32_t MoveToRemoteOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+
+    int32_t MoveToLocalInputDevice(std::vector<uint32_t> sourceOutputIds, sptr<AudioDeviceDescriptor> localDeviceDescriptor);
+
+    int32_t MoveToRemoteInputDevice(std::vector<uint32_t> sourceOutputIds, sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId, DeviceRole deviceRole, DeviceType deviceType);
- 
+
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 
     InternalDeviceType GetDeviceType(const std::string &deviceName);
@@ -220,6 +239,7 @@ private:
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     DeviceType mCurrentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType mActiveInputDevice_ = DEVICE_TYPE_NONE;
+    std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     IAudioPolicyInterface& mAudioPolicyManager;
     Parser& mConfigParser;
     AudioStreamCollector& mStreamCollector;

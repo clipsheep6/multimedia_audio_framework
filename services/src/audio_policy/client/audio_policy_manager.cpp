@@ -127,6 +127,21 @@ bool AudioPolicyManager::IsStreamActive(AudioStreamType streamType)
     return g_sProxy->IsStreamActive(streamType);
 }
 
+int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    return g_sProxy->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+}
+
+std::string AudioPolicyManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
+{
+    return g_sProxy->GetSelectedDeviceInfo(uid, pid, streamType);
+}
+
+int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    return g_sProxy->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)
 {
     return g_sProxy->GetDevices(deviceFlag);
@@ -470,6 +485,11 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
     AUDIO_DEBUG_LOG("AudioPolicyManager::GetCurrentCapturerChangeInfos");
 
     return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+}
+
+std::vector<sptr<VolumeGroupInfo>> AudioPolicyManager::GetVolumeGroupInfos()
+{
+    return g_sProxy->GetVolumeGroupInfos();
 }
 } // namespace AudioStandard
 } // namespace OHOS
