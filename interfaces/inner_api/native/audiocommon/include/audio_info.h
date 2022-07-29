@@ -752,7 +752,8 @@ enum AudioParamKey {
     NONE = 0,
     VOLUME = 1,
     INTERRUPT = 2,
-    RENDER_STATE
+    RENDER_STATE = 3,
+    PARAM_KEY_LOWPOWER = 1000,
 };
 
 struct DStatusInfo {

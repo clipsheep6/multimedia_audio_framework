@@ -70,16 +70,20 @@ AudioRendererSink *AudioRendererSink::GetInstance()
 
 void AudioRendererSink::RegisterParameterCallback(ISinkParameterCallback* callback)
 {
+    AUDIO_INFO_LOG("zhanhang RegisterParameterCallback");
     callback_ = callback;
     // register to adapter
     ParamCallback adapterCallback = &AudioRendererSink::ParamEventCallback;
-    audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
+    int32_t ret = audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("hdi register observer failed, ret: %d", ret);
+    }
 }
 
 void AudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
-    AUDIO_INFO_LOG("AudioRendererSink::SetAudioParameter: key %d, condition: %s, value: %s", key,
+    AUDIO_INFO_LOG("AudioRendererSink::SetAudioParameter: key %{public}d, condition: %{public}s, value: %{public}s", key,
         condition.c_str(), value.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
@@ -90,7 +94,7 @@ void AudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::st
 
 std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
 {
-    AUDIO_INFO_LOG("AudioRendererSink::GetAudioParameter: key %d, condition: %s", key, condition.c_str());
+    AUDIO_INFO_LOG("AudioRendererSink::GetAudioParameter: key %{public}d, condition: %{public}s", key, condition.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     char value[PARAM_VALUE_LENTH];
     int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
@@ -104,7 +108,8 @@ std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const 
 int32_t AudioRendererSink::ParamEventCallback(AudioExtParamKey key, const char* condition, const char* value,
     void* reserved, void* cookie)
 {
-    AUDIO_INFO_LOG("AudioRendererSink::ParamEventCallback: key:%d, condition:%s, value:%s", key, condition, value);
+    AUDIO_INFO_LOG("AudioRendererSink::ParamEventCallback: key:%{public}d, condition:%{public}s, value:%{public}s",
+        key, condition, value);
     AudioRendererSink* sink = reinterpret_cast<AudioRendererSink*>(cookie);
     AudioParamKey audioKey = AudioParamKey(key);
     ISinkParameterCallback* callback = sink->GetParamCallback();

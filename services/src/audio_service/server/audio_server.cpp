@@ -105,6 +105,16 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     }
 
     AudioServer::audioParameters[key] = value;
+    AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("has no valid sink");
+        return;
+    }
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
+        parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+    }
+    audioRendererSinkInstance->SetAudioParameter(AudioParamKey(parmKey), "", value);
 }
 
 void AudioServer::SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
@@ -123,11 +133,20 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
     AUDIO_DEBUG_LOG("server: get audio parameter");
 
-    if (AudioServer::audioParameters.count(key)) {
-        return AudioServer::audioParameters[key];
-    } else {
-        return "";
+    AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    if (audioRendererSinkInstance == nullptr) {
+         AUDIO_ERR_LOG("has no valid sink");
+         if (AudioServer::audioParameters.count(key)) {
+             return AudioServer::audioParameters[key];
+         } else {
+             return "";
+         }
     }
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
+        parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+    }
+    return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
 }
 
 const std::string AudioServer::GetAudioParameter(const std::string& networkId, const AudioParamKey key,

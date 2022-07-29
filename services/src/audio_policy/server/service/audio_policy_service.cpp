@@ -1182,6 +1182,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     }
 
     if (g_sProxy != nullptr) {
+        AUDIO_INFO_LOG("notifyDeviceInfo");
         g_sProxy->NotifyDeviceInfo(LOCAL_NETWORK_ID, true);
     }
 
