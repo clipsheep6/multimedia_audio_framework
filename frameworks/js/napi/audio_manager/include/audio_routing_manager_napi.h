@@ -33,6 +33,7 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
     static napi_value CreateRoutingManagerWrapper(napi_env env);
 private:
+    static napi_value GetDevices(napi_env env, napi_callback_info info);
     static napi_value SelectOutputDevice(napi_env env, napi_callback_info info);
     static napi_value SelectInputDevice(napi_env env, napi_callback_info info);
     static napi_value SelectOutputDeviceByFilter(napi_env env, napi_callback_info info);
