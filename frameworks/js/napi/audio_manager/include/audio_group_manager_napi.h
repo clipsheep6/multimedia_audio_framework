@@ -44,7 +44,6 @@ private:
     static napi_value GetMinVolume(napi_env env, napi_callback_info info);
     static napi_value SetMute(napi_env env, napi_callback_info info);
     static napi_value IsStreamMute(napi_env env, napi_callback_info info);
-
     std::shared_ptr<AudioGroupManager> audioGroupMngr_ = nullptr;
     
     napi_ref wrapper_;
@@ -52,4 +51,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif /* AUDIO_MNGR_NAPI_H_ */
+#endif AUDIO_GROUP_MNGR_NAPI_H_
