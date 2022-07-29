@@ -29,6 +29,13 @@ namespace OHOS {
 namespace AudioStandard {
 static __thread napi_ref g_routingManagerConstructor = nullptr;
 
+#define GET_PARAMS(env, info, num) \
+    size_t argc = num;             \
+    napi_value argv[num] = {0};    \
+    napi_value thisVar = nullptr;  \
+    void *data;                    \
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
+
 namespace {
     const int ARGS_ONE = 1;
     const int ARGS_TWO = 2;
@@ -37,6 +44,8 @@ namespace {
     const int PARAM0 = 0;
     const int PARAM1 = 1;
     const int PARAM2 = 2;
+    const int PARAM3 = 3;
+
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioRoutingManagerNapi"};
 }
 
@@ -387,6 +396,8 @@ static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, vo
 
 napi_value AudioRoutingManagerNapi::GetDevices(napi_env env, napi_callback_info info)
 {
+    AUDIO_INFO_LOG("zhanhang routing test getdevcies");
+
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -396,6 +407,7 @@ napi_value AudioRoutingManagerNapi::GetDevices(napi_env env, napi_callback_info 
 
     unique_ptr<AudioRoutingManagerAsyncContext> asyncContext = make_unique<AudioRoutingManagerAsyncContext>();
 
+    AUDIO_INFO_LOG("zhanhang routing test getdevcie 2s");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -448,6 +460,7 @@ napi_value AudioRoutingManagerNapi::GetDevices(napi_env env, napi_callback_info 
 
 napi_value AudioRoutingManagerNapi::SelectOutputDevice(napi_env env, napi_callback_info info)
 {
+    AUDIO_INFO_LOG("zhanhang selectOutp");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -572,7 +585,6 @@ napi_value AudioRoutingManagerNapi::SelectOutputDeviceByFilter(napi_env env, nap
     return result;
 }
 
-
 static void ParseAudioCapturerFilter(napi_env env, napi_value root, sptr<AudioCapturerFilter> &audioCapturerFilter)
 {
     napi_value tempValue = nullptr;
@@ -661,7 +673,6 @@ napi_value AudioRoutingManagerNapi::SelectInputDevice(napi_env env, napi_callbac
     return result;
 }
 
-
 napi_value AudioRoutingManagerNapi::SelectInputDeviceByFilter(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -725,6 +736,98 @@ napi_value AudioRoutingManagerNapi::SelectInputDeviceByFilter(napi_env env, napi
     }
 
     return result;
+}
+
+void AudioRoutingManagerNapi::RegisterDeviceChangeCallback(napi_env env, napi_value* args,
+    const std::string& cbName, int32_t flag, AudioRoutingManagerNapi* routingMgrNapi)
+{
+    if (!routingMgrNapi->deviceChangeCallbackNapi_) {
+        routingMgrNapi->deviceChangeCallbackNapi_= std::make_shared<AudioManagerCallbackNapi>(env);
+        if (!routingMgrNapi->deviceChangeCallbackNapi_) {
+            AUDIO_ERR_LOG("AudioStreamMgrNapi: Memory Allocation Failed !!");
+            return;
+        }
+        // toto
+        DeviceFlag deviceFlag = DeviceFlag(flag);
+
+        int32_t ret =
+            routingMgrNapi->audioMngr_->SetDeviceChangeCallback(deviceFlag,
+                routingMgrNapi->deviceChangeCallbackNapi_);
+        if (ret) {
+            AUDIO_ERR_LOG("AudioRoutingMgrNapi: Registering Device Change Callback Failed");
+            return;
+        }
+    }
+
+    std::shared_ptr<AudioManagerCallbackNapi> cb =
+        std::static_pointer_cast<AudioManagerCallbackNapi>(routingMgrNapi->deviceChangeCallbackNapi_);
+    cb->SaveCallbackReference(cbName, args[PARAM1]);
+
+    AUDIO_INFO_LOG("AudioRoutingManager::On SetDeviceChangeCallback is successful");
+}
+
+void AudioRoutingManagerNapi::RegisterCallback(napi_env env, napi_value jsThis,
+    napi_value* args, const std::string& cbName, int32_t flag)
+{
+    AudioRoutingManagerNapi* routingMgrNapi = nullptr;
+    napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void**>(&routingMgrNapi));
+    if ((status != napi_ok) || (routingMgrNapi == nullptr) || (routingMgrNapi->audioMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioStreamMgrNapi::Failed to retrieve stream mgr napi instance.");
+        return;
+    }
+
+    if (!cbName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
+        RegisterDeviceChangeCallback(env, args, cbName, flag, routingMgrNapi);
+    }
+    else {
+        AUDIO_ERR_LOG("AudioStreamMgrNapi::No such callback supported");
+    }
+}
+
+napi_value AudioRoutingManagerNapi::On(napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("audioRoutingManagerNapi: On inter");
+
+    const size_t requireArgc = PARAM2;
+    const size_t maxArgc = PARAM3;
+    size_t argc = PARAM3;
+
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    napi_value args[requireArgc + 1] = { nullptr, nullptr, nullptr };
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    bool isArgcCountRight = argc == requireArgc || argc == maxArgc;
+    NAPI_ASSERT(env, status == napi_ok && isArgcCountRight, "AudioStreamMgrNapi: On: requires 2 or 3 parameters");
+
+    napi_valuetype eventType = napi_undefined;
+    napi_typeof(env, args[0], &eventType);
+    NAPI_ASSERT(env, eventType == napi_string, "AudioStreamMgrNapi:On: type mismatch for event name, parameter 1");
+    std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
+    AUDIO_INFO_LOG("AaudioRoutingManagerNapi: On callbackName: %{public}s", callbackName.c_str());
+
+    int32_t deviceFlag;
+
+    if (argc == requireArgc) {
+        napi_valuetype handler = napi_undefined;
+        napi_typeof(env, args[1], &handler);
+        NAPI_ASSERT(env, handler == napi_function, "type mismatch for parameter 2");
+        
+        deviceFlag = 3; // 3 for ALL_DEVICES_FLAG
+    }
+    if (argc == maxArgc) {
+        napi_get_value_int32(env, args[PARAM1], &deviceFlag);
+        AUDIO_INFO_LOG("AudioRoutingMgrNapi:On deviceFlag: %{public}d", deviceFlag);
+
+        napi_valuetype handler = napi_undefined;
+        napi_typeof(env, args[PARAM2], &handler);
+        NAPI_ASSERT(env, handler == napi_function, "type mismatch for parameter 2");
+    }
+
+    RegisterCallback(env, jsThis, args, callbackName, deviceFlag);
+
+    return undefinedResult;
 }
 } // namespace AudioStandard
 } // namespace OHOS
