@@ -41,7 +41,6 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-
 std::map<std::string, std::string> AudioServer::audioParameters;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 
@@ -368,7 +367,6 @@ int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
     AUDIO_INFO_LOG("AudioServer:: SetParameterCallback  done");
 
     return SUCCESS;
-
 }
 
 bool AudioServer::VerifyClientPermission(const std::string &permissionName)

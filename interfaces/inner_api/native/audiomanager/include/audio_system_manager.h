@@ -29,8 +29,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-// sptr<IStandardAudioService> g_sProxy = nullptr;
-
 class AudioDeviceDescriptor;
 class AudioDeviceDescriptor : public Parcelable {
     friend class AudioSystemManager;
