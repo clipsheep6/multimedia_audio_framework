@@ -51,4 +51,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif AUDIO_GROUP_MNGR_NAPI_H_
+#endif //AUDIO_GROUP_MNGR_NAPI_H_

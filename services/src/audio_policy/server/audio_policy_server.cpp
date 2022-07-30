@@ -41,6 +41,9 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 constexpr float DUCK_FACTOR = 0.2f; // 20%
+constexpr int32_t PARAMS_VOLUME_NUM= 5;
+constexpr int32_t PARAMS_RENDER_STATE_NUM= 2;
+constexpr int32_t EVENT_DES_SIZE = 10;
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
@@ -49,8 +52,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 {
     if (mPolicyService.SetAudioSessionCallback(this)) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
-    }
-
+    } 
     interruptPriorityMap_[STREAM_VOICE_CALL] = THIRD_PRIORITY;
     interruptPriorityMap_[STREAM_RING] = SECOND_PRIORITY;
     interruptPriorityMap_[STREAM_MUSIC] = FIRST_PRIORITY;
@@ -1424,10 +1426,13 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const Au
     }
     if (key == AudioParamKey::VOLUME) {
         VolumeEvent volumeEvent;
-        volumeEvent.networkId = "xxx";
-        volumeEvent.updateUi = false;
-        volumeEvent.volume = 1;
-        volumeEvent.volumeGroupId = 0;
+        char eventDes[EVENT_DES_SIZE];
+        if (sscanf_s(condition.c_str(), "%[^;];AUDIO_STREAM_TYPE=%d;VOLUME_LEVEL=%d;IS_UPDATEUI=%d;VOLUME_GROUP_ID=%d",
+            &eventDes, EVENT_DES_SIZE, &(volumeEvent.volumeType), &(volumeEvent.volume), &(volumeEvent.updateUi),
+            &(volumeEvent.volumeGroupId)) < PARAMS_VOLUME_NUM) {
+            AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+            return;
+        }
 
         for (auto it = server_->volumeChangeCbsMap_.begin(); it != server_->volumeChangeCbsMap_.end(); ++it) {
             std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
@@ -1440,28 +1445,20 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const Au
             volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
         }
     }
-
-    if (key == AudioParamKey::INTERRUPT) {
-        InterruptEventInternal interruptEvent{ INTERRUPT_TYPE_BEGIN, InterruptForceType::INTERRUPT_FORCE, InterruptHint::INTERRUPT_HINT_DUCK, /*duckVolume*/0.2 };
-
-        // 1 get sessionId from networkId
-        uint32_t sessionId = server_->GetSessionId("networkId");
-
-        std::shared_ptr<AudioInterruptCallback> policyListenerCb = nullptr;
-
-        policyListenerCb = server_->policyListenerCbsMap_[sessionId];
-
-        if (policyListenerCb == nullptr) {
-            AUDIO_WARNING_LOG("AudioPolicyServer: policyListenerCb is null so ignoring to apply focus policy");
+    if (key == RENDER_STATE) {
+        int32_t state = 0;
+        char eventDes[EVENT_DES_SIZE];
+        if (sscanf_s(condition.c_str(), "%[^;];STATE=%d", &eventDes, EVENT_DES_SIZE, &state) < PARAMS_RENDER_STATE_NUM) {
+            AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
             return;
         }
-        policyListenerCb->OnInterrupt(interruptEvent);
+        server_->UpdateStreamState(1/*clientid*/, StreamSetState::STREAM_RESUME, STREAM_ALL);
     }
 }
 
 uint32_t AudioPolicyServer::GetSessionId(const std::string networkId)
 {
     return mPolicyService.GetSessionId(networkId);
-}
+} 
 } // namespace AudioStandard
 } // namespace OHOS
