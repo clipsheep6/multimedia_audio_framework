@@ -41,7 +41,6 @@ const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 #ifdef PRODUCT_M40
 const uint32_t PARAM_VALUE_LENTH = 3;
 #endif
-
 }
 
 std::map<std::string, RemoteAudioRendererSink *> RemoteAudioRendererSink::allsinks;

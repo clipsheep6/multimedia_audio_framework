@@ -41,8 +41,8 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 constexpr float DUCK_FACTOR = 0.2f; // 20%
-constexpr int32_t PARAMS_VOLUME_NUM= 5;
-constexpr int32_t PARAMS_RENDER_STATE_NUM= 2;
+constexpr int32_t PARAMS_VOLUME_NUM = 5;
+constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 10;
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -1459,6 +1459,6 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const Au
 uint32_t AudioPolicyServer::GetSessionId(const std::string networkId)
 {
     return mPolicyService.GetSessionId(networkId);
-} 
+}
 } // namespace AudioStandard
 } // namespace OHOS

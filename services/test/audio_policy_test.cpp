@@ -251,8 +251,7 @@ static void HandleVolume(int argc, char* argv[],int streamType, char option)
 
             float volume = strtof(optarg, nullptr);
             cout << "Set Volume : " << volume << endl;
-            int32_t result = groupManager->SetVolume(static_cast<AudioVolumeType>(streamType),
-                                                       volume);
+            int32_t result = groupManager->SetVolume(static_cast<AudioVolumeType>(streamType), volume);
             cout << "Set Volume Result: " << result << endl;
         }
     }

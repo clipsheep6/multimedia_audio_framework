@@ -1879,7 +1879,7 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
 {
     AUDIO_INFO_LOG("zhanhang Enter  AudioPolicyService::SetParameterCallback");
     auto parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
-     if (parameterChangeCbStub == nullptr) {
+    if (parameterChangeCbStub == nullptr) {
         AUDIO_ERR_LOG("SetDeviceChangeCallback: parameterChangeCbStub null");
         return;
     }

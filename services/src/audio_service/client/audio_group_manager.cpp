@@ -99,7 +99,6 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
 {
     if (groupId_ != LOCAL_VOLUME_GROUP_ID) {
-
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType);
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
@@ -293,6 +292,5 @@ int32_t AudioGroupManager::GetGroupId()
 {
     return groupId_;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
