@@ -46,7 +46,7 @@
 #define MAX_SINK_VOLUME_LEVEL 1.0
 
 const char *DEVICE_CLASS_A2DP = "a2dp";
-
+const char *DEVICE_CLASS_REMOTE = "remote";
 enum {
     HDI_INIT,
     HDI_DEINIT,
@@ -493,7 +493,11 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
         return -1;
     }
 
-    ret = u->sinkAdapter->RendererSinkStart(u->sinkAdapter->wapper);
+    // call start in io thread for remote device.
+    if (strcmp(GetDeviceClass(), DEVICE_CLASS_REMOTE)) {
+        ret = u->sinkAdapter->RendererSinkStart(u->sinkAdapter->wapper);
+    }
+
     if (ret != 0) {
         AUDIO_ERR_LOG("audiorenderer control start failed!");
         u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter->wapper);
