@@ -56,7 +56,8 @@ ohos_shared_library("audio_renderer") {
   public_configs = [ ":audio_external_library_config" ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-
+  install_images = [ system_base_dir ]
+  relative_install_dir = "platformsdk"
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
