@@ -24,8 +24,6 @@
 #include "audio_log.h"
 #include "remote_audio_renderer_sink.h"
 
-#define DEBUG_DUMP_FILE
-
 using namespace std;
 
 namespace OHOS {
@@ -40,6 +38,9 @@ const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+#ifdef PRODUCT_M40
+const uint32_t PARAM_VALUE_LENTH = 3;
+#endif
 }
 
 std::map<std::string, RemoteAudioRendererSink *> RemoteAudioRendererSink::allsinks;
@@ -84,6 +85,70 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *device
     }
     CHECK_AND_RETURN_RET_LOG((audioRenderer_ != nullptr), nullptr, "null audioRenderer!");
     return audioRenderer_;
+}
+
+void RemoteAudioRendererSink::RegisterParameterCallback(ISinkParameterCallback* callback)
+{
+    AUDIO_INFO_LOG("RemoteAudioRendererSink: register params callback");
+    callback_ = callback;
+#ifdef PRODUCT_M40
+    // register to adapter
+    ParamCallback adapterCallback = &RemoteAudioRendererSink::ParamEventCallback;
+    audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
+#endif
+}
+
+void RemoteAudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
+    const std::string& value)
+{
+ #ifdef PRODUCT_M40 
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::SetParameter: key %{public}d, condition: %{public}s, value: %{public}s", key,
+        condition.c_str(), value.c_str());
+    enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
+    if (ret == ERROR) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::SetAudioParameter failed");
+    }
+#endif
+}
+
+std::string RemoteAudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+{
+ #ifdef PRODUCT_M40
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::GetParameter: key %{public}d, condition: %{public}s", key, condition.c_str());
+    enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    char value[PARAM_VALUE_LENTH];
+    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
+    if (ret == ERROR) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::GetAudioParameter failed");
+        return value;
+    }
+    return value;
+#else
+    return "";
+#endif
+}
+
+int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const char* condition, const char* value,
+    void* reserved, void* cookie)
+{
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::ParamEventCallback: key:%d, condition:%s, value:%s", key, condition, value);
+    RemoteAudioRendererSink* sink = reinterpret_cast<RemoteAudioRendererSink*>(cookie);
+    std::string networkId = sink->GetNetworkId();
+    AudioParamKey audioKey = AudioParamKey(key);
+    ISinkParameterCallback* callback = sink->GetParamCallback();
+    callback->OnAudioParameterChange(networkId, audioKey, condition, value);
+    return 0;
+}
+
+std::string RemoteAudioRendererSink::GetNetworkId()
+{
+    return deviceNetworkId_;
+}
+
+OHOS::AudioStandard::ISinkParameterCallback* RemoteAudioRendererSink::GetParamCallback()
+{
+    return callback_;
 }
 
 void RemoteAudioRendererSink::DeInit()
@@ -205,6 +270,31 @@ inline std::string printRemoteAttr(RemoteAudioSinkAttr attr_)
     return value.str();
 }
 
+int32_t RemoteAudioRendererSink::GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size,
+    const char *networkId)
+{
+    int32_t targetIdx = -1;
+    for (int32_t index = 0; index < size; index++) {
+        struct AudioAdapterDescriptor *desc = &descs[index];
+        if (desc == nullptr || desc->adapterName == nullptr) {
+            continue;
+        }
+        if (strcmp(desc->adapterName, networkId)) {
+            AUDIO_INFO_LOG("[%{public}d] is not target adapter", index);
+            continue;
+        }
+        targetIdx = index;
+        for (uint32_t port = 0; port < desc->portNum; port++) {
+            // Only find out the port of out in the sound card
+            if (desc->ports[port].portId == PIN_OUT_SPEAKER) {
+                audioPort_ = desc->ports[port];
+                break;
+            }
+        }
+    }
+    return targetIdx;
+}
+
 int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: Init start.");
@@ -224,26 +314,9 @@ int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
         AUDIO_ERR_LOG("Get adapters Fail");
         return ERR_NOT_STARTED;
     }
-    int32_t targetIdx = -1;
     AUDIO_INFO_LOG("Get [%{publid}d]adapters", size);
-    for (int32_t index = 0; index < size; index++) {
-        struct AudioAdapterDescriptor *desc = &descs[index];
-        if (desc == nullptr || desc->adapterName == nullptr) {
-            continue;
-        }
-        if (strcmp(desc->adapterName, attr_.deviceNetworkId)) {
-            AUDIO_INFO_LOG("not target adapter");
-            continue;
-        }
-        targetIdx = index;
-        for (uint32_t port = 0; port < desc->portNum; port++) {
-            // Only find out the port of out in the sound card
-            if (desc->ports[port].portId == PIN_OUT_SPEAKER) {
-                audioPort_ = desc->ports[port];
-                break;
-            }
-        }
-    }
+    int32_t targetIdx = GetTargetAdapterPort(descs, size, attr_.deviceNetworkId);
+    CHECK_AND_RETURN_RET_LOG((targetIdx >= 0), ERR_NOT_STARTED, "can not find target adapter.");
 
     struct AudioAdapterDescriptor *desc = &descs[targetIdx];
 
@@ -262,11 +335,7 @@ int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
         return ERR_NOT_STARTED;
     }
 
-    if (CreateRender(audioPort_) != 0) {
-        AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
-        return ERR_NOT_STARTED;
-    }
-
+    AUDIO_INFO_LOG("RemoteAudioRendererSink: Init end.");
     rendererInited_ = true;
 
 #ifdef DEBUG_DUMP_FILE
@@ -323,6 +392,13 @@ int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t 
 int32_t RemoteAudioRendererSink::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
+    if (!isRenderCreated) {
+        if (CreateRender(audioPort_) != 0) {
+            AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
+            return ERR_NOT_STARTED;
+        }
+        isRenderCreated = true;
+    }
     int32_t ret;
 
     if (!started_) {

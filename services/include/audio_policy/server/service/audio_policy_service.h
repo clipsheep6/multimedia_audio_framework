@@ -160,8 +160,12 @@ public:
 
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
 
-    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
-    
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+
+    void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
+
+    uint32_t GetSessionId(const std::string networkId);
+
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),

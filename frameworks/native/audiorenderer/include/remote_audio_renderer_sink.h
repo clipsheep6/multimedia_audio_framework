@@ -18,6 +18,7 @@
 
 #include "audio_info.h"
 #include "audio_manager.h"
+#include "audio_sink_callback.h"
 
 #include <cstdio>
 #include <list>
@@ -57,12 +58,20 @@ public:
     int32_t OpenOutput(DeviceType deviceType);
     static RemoteAudioRendererSink *GetInstance(const char *deviceNetworkId);
     bool rendererInited_;
+    void RegisterParameterCallback(ISinkParameterCallback* callback);
+    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
+    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
+    static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
+        void *cookie);
+    std::string GetNetworkId();
+    ISinkParameterCallback* GetParamCallback();
 private:
     static std::map<std::string, RemoteAudioRendererSink *> allsinks;
     RemoteAudioRendererSink(std::string deviceNetworkId);
     ~RemoteAudioRendererSink();
     RemoteAudioSinkAttr attr_;
     std::string deviceNetworkId_;
+    bool isRenderCreated = false;
     bool started_;
     bool paused_;
     float leftVolume_;
@@ -74,10 +83,11 @@ private:
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;
     struct AudioPort audioPort_;
+    ISinkParameterCallback* callback_;
 
+    int32_t GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size, const char *networkId);
     int32_t CreateRender(struct AudioPort &renderPort);
     struct AudioManager *GetAudioManager();
-#define DEBUG_DUMP_FILE
 #ifdef DEBUG_DUMP_FILE
     FILE *pfd;
 #endif // DEBUG_DUMP_FILE
