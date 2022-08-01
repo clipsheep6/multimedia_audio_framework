@@ -455,6 +455,8 @@ public:
 
     void SaveStreamCallback(const std::weak_ptr<AudioStreamCallback> &callback);
 
+    int32_t GetBufferDescr(BufferDesc &bufDesc);
+
     /**
      * @brief Sets the render mode. By default the mode is RENDER_MODE_NORMAL.
      * This API is needs to be used only if RENDER_MODE_CALLBACK is required.
