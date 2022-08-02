@@ -813,7 +813,7 @@ napi_value AudioRoutingManagerNapi::On(napi_env env, napi_callback_info info)
         napi_valuetype handler = napi_undefined;
         napi_typeof(env, args[1], &handler);
         NAPI_ASSERT(env, handler == napi_function, "type mismatch for parameter 2");
-        
+fdasfdas        
         deviceFlag = 3; // 3 for ALL_DEVICES_FLAG
     }
     if (argc == maxArgc) {
