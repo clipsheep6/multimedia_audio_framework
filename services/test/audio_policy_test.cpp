@@ -230,7 +230,7 @@ static void HandleVolume(int argc, char* argv[], int streamType, char option)
     if ((option != 'v' && option != 'V') || argc > AudioPolicyTest::FOURTH_ARG) {
         cout << "HandVolume invalid argv[" << argc << "] " << endl;
     }
-    if (option == 'v') {
+    if (option == 'v' && argc == THIRD_ARG) {
         networkId = argv[AudioPolicyTest::SECOND_ARG];
         cout << "handle volume networkId: " << networkId << endl;
         std::vector<sptr<VolumeGroupInfo>> groups = audioSystemMgr->GetVolumeGroups(networkId);
@@ -240,7 +240,7 @@ static void HandleVolume(int argc, char* argv[], int streamType, char option)
             float volume = groupManager->GetVolume(static_cast<AudioVolumeType>(streamType));
             cout << "Get Volume : " << volume << endl;
         }
-    } else {
+    } else if (option == 'V' && argc == FOURTH_ARG){
         networkId = argv[AudioPolicyTest::THIRD_ARG];
         cout << "handle volume networkId: " << networkId << endl;
         std::vector<sptr<VolumeGroupInfo>> groups = audioSystemMgr->GetVolumeGroups(networkId);
@@ -253,6 +253,8 @@ static void HandleVolume(int argc, char* argv[], int streamType, char option)
             int32_t result = groupManager->SetVolume(static_cast<AudioVolumeType>(streamType), volume);
             cout << "Set Volume Result: " << result << endl;
         }
+    } else {
+        cout << "wrong parms " << endl;
     }
 }
 
@@ -401,7 +403,6 @@ static void UnknownOptionError()
     PrintUsage();
 }
 
-
 static void HandleUpdateStreamState(int type, char *seg1)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
@@ -454,6 +455,21 @@ static void HandleLowPowerVolumeOption(char option)
     }
 }
 
+static void HandleGetVolumeGroups(int argc, char* argv[]) {
+    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
+    if (argc == AudioPolicyTest::THIRD_ARG) {
+        std::string networkId = argv[AudioPolicyTest::SECOND_ARG];
+        cout << "networkId: "<< networkId << endl;
+        std::vector<sptr<VolumeGroupInfo>> volumeGroups = audioSystemMgr->GetVolumeGroups(networkId);
+        for (auto iter : volumeGroups) {
+            cout << "===============id:" << iter->volumeGroupId_ << "=================" << endl;
+            cout << "name: " << iter->groupName_ << endl;
+            cout << "networkId: " << iter->networkId_ << endl;
+            cout << "connectType: " << iter->connectType_ << endl;
+            cout << "mappingId: " << iter->mappingId_ << endl;
+        }
+    }
+}
 int main(int argc, char* argv[])
 {
     int opt = 0;
@@ -464,7 +480,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:L:l:s:T:vmrucOoIiGgt")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:L:l:s:T:vmrucOoIiGgtp")) != -1) {
         switch (opt) {
             case 'G':
             case 'g':
@@ -534,6 +550,9 @@ int main(int argc, char* argv[])
                 GetAudioParamter(argc, argv);
                 break;
 
+            case 'p':
+                HandleGetVolumeGroups(argc, argv);
+                break;
             default:
                 break;
         }
