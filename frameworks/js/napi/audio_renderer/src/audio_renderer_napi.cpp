@@ -151,6 +151,9 @@ napi_value AudioRendererNapi::CreateAudioSampleFormatObject(napi_env env)
                 case AudioRendererNapi::SAMPLE_FORMAT_S32LE:
                     propName = "SAMPLE_FORMAT_S32LE";
                     break;
+                case AudioRendererNapi::SAMPLE_FORMAT_F32LE:
+                    propName = "SAMPLE_FORMAT_F32LE";
+                    break;
                 default:
                     HiLog::Error(LABEL, "CreateAudioSampleFormatObject: No prop with this value try next value!");
                     continue;
