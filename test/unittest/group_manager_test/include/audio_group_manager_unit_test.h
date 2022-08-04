@@ -13,32 +13,33 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_VOLUME_CHANGE_UNIT_TEST_H
-#define AUDIO_VOLUME_CHANGE_UNIT_TEST_H
+#ifndef AUDIO_MANAGER_UNIT_TEST_H
+#define AUDIO_MANAGER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
 #include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioVolumeChangeUnitTest : public testing::Test {
+class AudioGroupManagerUnitTest : public testing::Test {
 public:
+    // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
+    // TearDownTestCase: Called after all test case
     static void TearDownTestCase(void);
-    void SetUp();
-    void TearDown();
-    static void WaitForCallback();
+    // SetUp: Called before each test cases
+    void SetUp(void);
+    // TearDown: Called after each test cases
+    void TearDown(void);
 };
-class ApplicationCallback : public VolumeKeyEventCallback {
+
+class AudioManagerCallbackImpl : public AudioManagerCallback {
 public:
-    explicit ApplicationCallback(const std::string &testCaseName);
-    ~ApplicationCallback() = default;
-
-    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
-
-private:
-    std::string testCaseName_;
+    AudioManagerCallbackImpl() {}
+    ~AudioManagerCallbackImpl() {}
+    void OnInterrupt(const InterruptAction &interruptAction) override {}
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_VOLUME_CHANGE_UNIT_TEST_H
+
+#endif // AUDIO_MANAGER_UNIT_TEST_H

@@ -20,10 +20,12 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <unordered_map>
 
 #include "parcel.h"
 #include "audio_info.h"
 #include "audio_interrupt_callback.h"
+#include "audio_group_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -179,6 +181,13 @@ public:
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
 };
 
+class AudioParameterCallback {
+public:
+    virtual ~AudioParameterCallback() = default;
+    virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+        const std::string& condition, const std::string& value) = 0;
+};
+
 class AudioRingerModeCallback {
 public:
     virtual ~AudioRingerModeCallback() = default;
@@ -208,8 +217,8 @@ public:
     static float MapVolumeToHDI(int32_t volume);
     static int32_t MapVolumeFromHDI(float volume);
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
-    int32_t GetVolume(AudioVolumeType volumeType) const;
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume);
+    int32_t GetVolume(AudioVolumeType volumeType);
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
     float GetLowPowerVolume(int32_t streamId) const;
     int32_t GetMaxVolume(AudioVolumeType volumeType);
@@ -269,7 +278,8 @@ public:
                                     AudioStreamType audioStreamType);
     AudioPin GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const;
     DeviceType GetTypeValueFromPin(AudioPin pin) const;
-
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroups(std::string networkId);
+    std::shared_ptr<AudioGroupManager> GetGroupManager(int32_t groupId);
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
@@ -289,6 +299,7 @@ private:
 
     uint32_t GetCallingPid();
     std::mutex mutex_;
+    std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

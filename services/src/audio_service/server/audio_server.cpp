@@ -16,13 +16,13 @@
 #include <cinttypes>
 #include <fstream>
 #include <sstream>
-
+#include <regex>
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
-#include "audio_renderer_sink.h"
 #include "iservice_registry.h"
 #include "audio_log.h"
 #include "system_ability_definition.h"
+#include "audio_manager_listener_proxy.h"
 
 #include "audio_server.h"
 
@@ -72,6 +72,7 @@ void AudioServer::OnDump()
 
 void AudioServer::OnStart()
 {
+    AUDIO_INFO_LOG("zhanhang AudioService OnStart ");
     AUDIO_DEBUG_LOG("AudioService OnStart");
     bool res = Publish(this);
     if (res) {
@@ -101,17 +102,61 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     }
 
     AudioServer::audioParameters[key] = value;
+#if PRODUCT_M40
+    AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("has no valid sink");
+        return;
+    }
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
+        parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+    }
+    audioRendererSinkInstance->SetAudioParameter(AudioParamKey(parmKey), "", value);
+#endif
+}
+
+void AudioServer::SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
+    const std::string& value)
+{
+    RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("has no valid sink");
+        return;
+    }
+
+    audioRendererSinkInstance->SetAudioParameter(key, condition, value);
 }
 
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
     AUDIO_DEBUG_LOG("server: get audio parameter");
+#if PRODUCT_M40
+    AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    if (audioRendererSinkInstance != nullptr) {
+        AudioParamKey parmKey = AudioParamKey::NONE;
+        if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
+            parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+        }
+        return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
+    }
+#endif
+     if (AudioServer::audioParameters.count(key)) {
+         return AudioServer::audioParameters[key];
+     } else {
+         return "";
+     }
+}
 
-    if (AudioServer::audioParameters.count(key)) {
-        return AudioServer::audioParameters[key];
-    } else {
+const std::string AudioServer::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
+    const std::string& condition)
+{
+    RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("has no valid sink");
         return "";
     }
+    return audioRendererSinkInstance->GetAudioParameter(key, condition);
 }
 
 const char *AudioServer::RetrieveCookie(int32_t &size)
@@ -282,6 +327,44 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
         default:
             break;
     }
+
+    return SUCCESS;
+}
+
+void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
+{
+    AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)", networkId.c_str(), connected);
+    RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
+    if (audioRendererSinkInstance != nullptr && connected) {
+        audioRendererSinkInstance->RegisterParameterCallback(this);
+    }
+}
+
+void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
+    const std::string value)
+{
+    AUDIO_INFO_LOG("OnAudioParameterChange Callback from networkId: %s", netWorkId.c_str());
+
+    if (callback_ != nullptr) {
+        callback_->OnAudioParameterChange(netWorkId, key, condition, value);
+    }
+}
+
+int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
+{
+    AUDIO_INFO_LOG("zhanhang Entered AudioServer::%{public}s", __func__);
+ 
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioServer:set listener object is nullptr");
+
+    sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);
+
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioServer: listener obj cast failed");
+
+    std::shared_ptr<AudioParameterCallback> callback = std::make_shared<AudioManagerListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+
+    callback_ = callback;
+    AUDIO_INFO_LOG("AudioServer:: SetParameterCallback  done");
 
     return SUCCESS;
 }

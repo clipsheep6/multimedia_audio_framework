@@ -48,6 +48,7 @@ public:
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
     float GetLowPowerVolume(int32_t streamId);
+    std::vector<int32_t> GetSessionId();
 private:
     AudioStreamEventDispatcher &mDispatcherService;
     std::mutex streamsInfoMutex_;

@@ -164,10 +164,25 @@ public:
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
         AudioStreamType audioStreamType) override;
                                     
-    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
 
+    class RemoteParameterCallback : public AudioParameterCallback {
+    public:
+        RemoteParameterCallback(sptr<AudioPolicyServer> server);
+        // AudioParameterCallback
+        void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string& condition,
+            const std::string& value) override;
+    private:
+        sptr<AudioPolicyServer> server_;
+    };
+    std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
+
+    std::vector<int32_t> GetSessionId();
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+
+    void RegisterParamCallback();
+
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 private:
     void PrintOwnersLists();
