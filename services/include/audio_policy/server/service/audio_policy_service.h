@@ -53,6 +53,8 @@ public:
 
     float GetLowPowerVolume(int32_t streamId) const;
 
+    float GetSingleStreamVolume(int32_t streamId) const;
+
     int32_t SetStreamMute(AudioStreamType streamType, bool mute) const;
 
     bool GetStreamMute(AudioStreamType streamType) const;
@@ -160,8 +162,10 @@ public:
 
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
 
-    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
-    
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+
+    void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
+
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),

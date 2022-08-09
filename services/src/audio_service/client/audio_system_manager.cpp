@@ -343,6 +343,11 @@ float AudioSystemManager::GetLowPowerVolume(int32_t streamId) const
     return AudioPolicyManager::GetInstance().GetLowPowerVolume(streamId);
 }
 
+float AudioSystemManager::GetSingleStreamVolume(int32_t streamId) const
+{
+    return AudioPolicyManager::GetInstance().GetSingleStreamVolume(streamId);
+}
+
 float AudioSystemManager::MapVolumeToHDI(int32_t volume)
 {
     float value = (float)volume / MAX_VOLUME_LEVEL;
@@ -755,6 +760,33 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
 int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
     return AudioPolicyManager::GetInstance().ReconfigureAudioChannel(count, deviceType);
+}
+
+std::vector<sptr<VolumeGroupInfo>> AudioSystemManager::GetVolumeGroups(std::string networkId)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = {};
+    infos = AudioPolicyManager::GetInstance().GetVolumeGroupInfos();
+
+    auto filter = [&networkId](const sptr<VolumeGroupInfo>& info) {
+        return networkId != info->networkId_;
+    };
+    infos.erase(std::remove_if(infos.begin(), infos.end(), filter), infos.end());
+    return infos;
+}
+
+std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
+{
+    std::vector<std::shared_ptr<AudioGroupManager>>::iterator iter = groupManagerMap_.begin();
+    while (iter != groupManagerMap_.end()) {
+        if ((*iter)->GetGroupId() == groupId)
+            return *iter;
+        else
+            iter++;
+    }
+
+    std::shared_ptr<AudioGroupManager> groupManager = std::make_shared<AudioGroupManager>(groupId);
+    groupManagerMap_.push_back(groupManager);
+    return groupManager;
 }
 
 AudioManagerInterruptCallbackImpl::AudioManagerInterruptCallbackImpl()

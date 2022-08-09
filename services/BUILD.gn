@@ -35,6 +35,7 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//drivers/peripheral/audio/interfaces/include",
+    "include/audio_service/common",
   ]
 
   if (target_cpu == "arm") {
@@ -46,15 +47,21 @@ ohos_shared_library("audio_service") {
   install_enable = true
 
   sources = [
+    "src/audio_service/server/audio_manager_listener_proxy.cpp",
     "src/audio_service/server/audio_manager_stub.cpp",
     "src/audio_service/server/audio_server.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
 
+  if ("${product_name}" == "m40") {
+    cflags = [ "-DPRODUCT_M40" ]
+  }
+
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_source",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:remote_audio_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:renderer_sink_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/daemon:pulseaudio",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
@@ -66,7 +73,7 @@ ohos_shared_library("audio_service") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   subsystem_name = "multimedia"
@@ -94,7 +101,8 @@ config("audio_policy_public_config") {
     "//drivers/peripheral/audio/interfaces/include",
     "//foundation/multimedia/audio_framework/services/include",
     "//foundation/multimedia/audio_framework/services/include/audio_service/client",
-    "//foundation/distributedschedule/safwk/services/safwk/include",
+    "//foundation/systemabilitymgr/safwk/services/safwk/include",
+    "//foundation/multimedia/audio_framework/services/include/audio_service/common",
     "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
@@ -110,7 +118,7 @@ config("audio_policy_public_config") {
     "//foundation/multimedia/audio_framework/services/include/audio_policy/client",
     "//foundation/multimedia/audio_framework/services/include/audio_bluetooth/client",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "//foundation/distributedschedule/samgr/interfaces/innerkits/samgr_proxy/include",
+    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//base/hiviewdfx/hilog/interfaces/native/inner_api/include",
     "//third_party/libxml2/include",
@@ -201,6 +209,7 @@ ohos_shared_library("audio_policy_service") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/audioadapter:pulse_audio_service_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_bluetooth_client",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_framework/services:audio_dump",
     "//third_party/libxml2:xml2",
   ]
@@ -214,7 +223,7 @@ ohos_shared_library("audio_policy_service") {
     "input:libmmi-client",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"

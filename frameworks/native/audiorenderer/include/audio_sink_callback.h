@@ -12,30 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef ST_AUDIO_SINK_CALLBACK_H
+#define ST_AUDIO_SINK_CALLBACK_H
 
-#ifndef AUDIO_CAPTURER_PROXY_OBJ_H
-#define AUDIO_CAPTURER_PROXY_OBJ_H
-
-#include "audio_capturer.h"
-#include "audio_stream_manager.h"
-
+#include "audio_info.h"
 namespace OHOS {
 namespace AudioStandard {
-class AudioCapturerProxyObj : public AudioClientTracker {
+class AudioSinkCallback {
 public:
-    virtual ~AudioCapturerProxyObj() = default;
-    void SaveCapturerObj(const AudioCapturer *capturerObj);
-
-    void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
-    void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
-
-    void SetLowPowerVolumeImpl(float volume);
-    void GetLowPowerVolumeImpl(float &volume);
-    void GetSingleStreamVolumeImpl(float &volume);
-
-private:
-    const AudioCapturer *capturer;
+    virtual void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
+        const std::string value) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_CAPTURER_PROXY_OBJ_H
+#endif // ST_AUDIO_SINK_CALLBACK_H

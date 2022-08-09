@@ -38,6 +38,9 @@ const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+#ifdef PRODUCT_M40
+const uint32_t PARAM_VALUE_LENTH = 20;
+#endif
 }
 
 std::map<std::string, RemoteAudioRendererSink *> RemoteAudioRendererSink::allsinks;
@@ -82,6 +85,72 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *device
     }
     CHECK_AND_RETURN_RET_LOG((audioRenderer_ != nullptr), nullptr, "null audioRenderer!");
     return audioRenderer_;
+}
+
+void RemoteAudioRendererSink::RegisterParameterCallback(AudioSinkCallback* callback)
+{
+    AUDIO_INFO_LOG("RemoteAudioRendererSink: register params callback");
+    callback_ = callback;
+#ifdef PRODUCT_M40
+    // register to adapter
+    ParamCallback adapterCallback = &RemoteAudioRendererSink::ParamEventCallback;
+    audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
+#endif
+}
+
+void RemoteAudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
+    const std::string& value)
+{
+#ifdef PRODUCT_M40
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::SetParameter: key %{public}d, condition: %{public}s, value: %{public}s",
+        key, condition.c_str(), value.c_str());
+    enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::SetAudioParameter failed, error code: %d", ret);
+    }
+#endif
+}
+
+std::string RemoteAudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+{
+#ifdef PRODUCT_M40
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::GetParameter: key %{public}d, condition: %{public}s", key,
+        condition.c_str());
+    enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    char value[PARAM_VALUE_LENTH];
+    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
+    if (ret !=SUCCESS) {
+        AUDIO_ERR_LOG("AudioRendererSink::GetAudioParameter failed, error code: %d", ret);
+        return "";
+    }
+    return value;
+#else
+    return "";
+#endif
+}
+
+int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const char* condition, const char* value,
+    void* reserved, void* cookie)
+{
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::ParamEventCallback:key:%{public}d, condition:%{public}s, value:%{public}s",
+        key, condition, value);
+    RemoteAudioRendererSink* sink = reinterpret_cast<RemoteAudioRendererSink*>(cookie);
+    std::string networkId = sink->GetNetworkId();
+    AudioParamKey audioKey = AudioParamKey(key);
+    AudioSinkCallback* callback = sink->GetParamCallback();
+    callback->OnAudioParameterChange(networkId, audioKey, condition, value);
+    return 0;
+}
+
+std::string RemoteAudioRendererSink::GetNetworkId()
+{
+    return deviceNetworkId_;
+}
+
+OHOS::AudioStandard::AudioSinkCallback* RemoteAudioRendererSink::GetParamCallback()
+{
+    return callback_;
 }
 
 void RemoteAudioRendererSink::DeInit()
@@ -167,9 +236,17 @@ struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
     return audioManager;
 }
 
+inline int64_t GetNowTimeMs()
+{
+    std::chrono::milliseconds nowMs =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    return nowMs.count();
+}
+
 int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
 {
     int32_t ret;
+    int64_t start = GetNowTimeMs();
     struct AudioSampleAttributes param;
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
@@ -188,6 +265,9 @@ int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
         return ERR_NOT_STARTED;
     }
+
+    int64_t cost = GetNowTimeMs() - start;
+    AUDIO_INFO_LOG("CreateRender cost[%{public}zu]ms", (size_t)cost);
 
     return 0;
 }
@@ -284,13 +364,6 @@ int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
 #endif // DEBUG_DUMP_FILE
 
     return SUCCESS;
-}
-
-inline int64_t GetNowTimeMs()
-{
-    std::chrono::milliseconds nowMs =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-    return nowMs.count();
 }
 
 int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)

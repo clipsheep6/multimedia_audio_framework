@@ -43,6 +43,8 @@ namespace AudioPolicyTest {
     const int TWELFTH_ARG = 12;
     const int OPT_ARG_BASE = 10;
     const int OPT_SHORT_LEN = 3;
+    const int OPT_GET_VOL_FACTOR = 1;
+    const int OPT_GET_SS_VOL = 2;
 }
 
 static void PrintUsage(void)
@@ -73,15 +75,12 @@ static void PrintUsage(void)
     cout << "-r\n\tGets RingerMode status" << endl << endl;
     cout << "-C\n\tSets AudioScene" << endl << endl;
     cout << "-c\n\tGets AudioScene status" << endl << endl;
-    cout << "-N\n\tSet the discount volume factor to 0" << endl << endl;
-    cout << "-O\n\tSet the discount volume factor to 0.5f" << endl << endl;
-    cout << "-P\n\tSet the discount volume factor to 1.0f" << endl << endl;
-    cout << "-G\n\tGet the discount volume factor" << endl << endl;
+    cout << "-N\n\tSet the discount volume factor" << endl << endl;
+    cout << "-n\n\tGet the discount volume factor or Get single stream volume" << endl << endl;
     cout << "-s\n\tGet Stream Status" << endl << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
 }
-
 
 static void ShowAudioDeviceDescriptorsVector(std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
 {
@@ -223,18 +222,39 @@ static void HandleSelectInputDevice(int argc, char* argv[], char opt)
     }
 }
 
-static void HandleVolume(int streamType, char option)
+static void HandleVolume(int argc, char* argv[], int streamType, char option)
 {
-    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    if (option == 'v') {
-        float volume = audioSystemMgr->GetVolume(static_cast<AudioVolumeType>(streamType));
-        cout << "Get Volume : " << volume << endl;
+    AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
+    std::string networkId = LOCAL_NETWORK_ID;
+
+    if ((option != 'v' && option != 'V') || argc > AudioPolicyTest::FOURTH_ARG) {
+        cout << "HandVolume invalid argv[" << argc << "] " << endl;
+    }
+    if (option == 'v' && argc == AudioPolicyTest::THIRD_ARG) {
+        networkId = argv[AudioPolicyTest::SECOND_ARG];
+        cout << "handle volume networkId: " << networkId << endl;
+        std::vector<sptr<VolumeGroupInfo>> groups = audioSystemMgr->GetVolumeGroups(networkId);
+        if (groups.size() > 0) {
+            int32_t groupId = groups[0]->volumeGroupId_;
+            std::shared_ptr<AudioGroupManager> groupManager = audioSystemMgr->GetGroupManager(groupId);
+            float volume = groupManager->GetVolume(static_cast<AudioVolumeType>(streamType));
+            cout << "Get Volume : " << volume << endl;
+        }
+    } else if (option == 'V' && argc == AudioPolicyTest::FOURTH_ARG) {
+        networkId = argv[AudioPolicyTest::THIRD_ARG];
+        cout << "handle volume networkId: " << networkId << endl;
+        std::vector<sptr<VolumeGroupInfo>> groups = audioSystemMgr->GetVolumeGroups(networkId);
+        if (groups.size() > 0) {
+            int32_t groupId = groups[0]->volumeGroupId_;
+            std::shared_ptr<AudioGroupManager> groupManager = audioSystemMgr->GetGroupManager(groupId);
+
+            float volume = strtof(optarg, nullptr);
+            cout << "Set Volume : " << volume << endl;
+            int32_t result = groupManager->SetVolume(static_cast<AudioVolumeType>(streamType), volume);
+            cout << "Set Volume Result: " << result << endl;
+        }
     } else {
-        float volume = strtof(optarg, nullptr);
-        cout << "Set Volume : " << volume << endl;
-        int32_t result = audioSystemMgr->SetVolume(static_cast<AudioVolumeType>(streamType),
-                                                   volume);
-        cout << "Set Volume Result: " << result << endl;
+        cout << "wrong parms " << endl;
     }
 }
 
@@ -307,6 +327,30 @@ static void IsDeviceActive()
     cout << "GetDevice Active : " << devActiveStatus << endl;
 }
 
+static void SetAudioParamter(int argc, char* argv[])
+{
+    std::string key = "";
+    std::string value = "";
+    if (argc == AudioPolicyTest::FOURTH_ARG) {
+        key = argv[AudioPolicyTest::SECOND_ARG];
+        value = argv[AudioPolicyTest::THIRD_ARG];
+        AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
+        audioSystemMgr->SetAudioParameter(key, value);
+        cout << "SetAudioParameter for key " << key << "; value: " << value << endl;
+    }
+}
+
+static void GetAudioParamter(int argc, char* argv[])
+{
+    std::string key = "";
+    if (argc == AudioPolicyTest::THIRD_ARG) {
+        key = argv[AudioPolicyTest::SECOND_ARG];
+        AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
+        std::string value = audioSystemMgr->GetAudioParameter(key);
+        cout << "GetAudioParameter for key " << key << "; result: " << value << endl;
+    }
+}
+
 static void HandleRingerMode(char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
@@ -359,7 +403,6 @@ static void UnknownOptionError()
     PrintUsage();
 }
 
-
 static void HandleUpdateStreamState(int type, char *seg1)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
@@ -384,34 +427,53 @@ static void HandleUpdateStreamState(int type, char *seg1)
     cout << "result :  " << result << endl;
 }
 
-static void HandleLowPowerVolumeOption(char option)
+static void HandleSingleStreamVolumeOption(int argc, char* argv[], char opt)
 {
+    if (argc != AudioPolicyTest::FOURTH_ARG) {
+        cout << "Incorrect number of test commands." << endl;
+        return;
+    }
+
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    int32_t streamId = stoi(optarg);
-    switch (option) {
-        case 'N':
-            audioSystemMgr->SetLowPowerVolume(streamId, 0);
-            cout << "Set low power volume 0" << endl;
-            break;
-        case 'O':
-            audioSystemMgr->SetLowPowerVolume(streamId, 0.5f);
-            cout << "Set low power volume 0.5" << endl;
-            break;
-        case 'P':
-            audioSystemMgr->SetLowPowerVolume(streamId, 1.0f);
-            cout << "Set low power volume 1.0" << endl;
-            break;
-        case 'G': {
-            float volume = audioSystemMgr->GetLowPowerVolume(streamId);
-            cout << "Get low power volume is: " << volume << endl;
-            break;
+    int32_t streamId = atoi(argv[AudioPolicyTest::SECOND_ARG]);
+    if (opt == 'N') {
+        float volume = atof(argv[AudioPolicyTest::THIRD_ARG]);
+        if (volume < 0 || volume > 1.0f) {
+            cout << "volume out of range." << endl;
+            return;
         }
-        default :
-            cout << "This operation is not supported" << endl;
-            break;
+        audioSystemMgr->SetLowPowerVolume(streamId, volume);
+        cout << "Set low power volume :" << volume << endl;
+    } else {
+        int32_t opt_flag = atoi(argv[AudioPolicyTest::THIRD_ARG]);
+        if (opt_flag == AudioPolicyTest::OPT_GET_VOL_FACTOR) {
+            float volume = audioSystemMgr->GetLowPowerVolume(streamId);
+            cout << "Get discounted volume factor: " << volume << endl;
+        } else if (opt_flag == AudioPolicyTest::OPT_GET_SS_VOL) {
+            float volume = audioSystemMgr->GetSingleStreamVolume(streamId);
+            cout << "Get single stream volume: " << volume << endl;
+        } else {
+            cout << "invalid operation." << endl;
+        }
     }
 }
 
+static void HandleGetVolumeGroups(int argc, char* argv[])
+{
+    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
+    if (argc == AudioPolicyTest::THIRD_ARG) {
+        std::string networkId = argv[AudioPolicyTest::SECOND_ARG];
+        cout << "networkId: "<< networkId << endl;
+        std::vector<sptr<VolumeGroupInfo>> volumeGroups = audioSystemMgr->GetVolumeGroups(networkId);
+        for (auto iter : volumeGroups) {
+            cout << "===============id:" << iter->volumeGroupId_ << "=================" << endl;
+            cout << "name: " << iter->groupName_ << endl;
+            cout << "networkId: " << iter->networkId_ << endl;
+            cout << "connectType: " << iter->connectType_ << endl;
+            cout << "mappingId: " << iter->mappingId_ << endl;
+        }
+    }
+}
 int main(int argc, char* argv[])
 {
     int opt = 0;
@@ -422,7 +484,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:L:l:s:vmrucOoIiGg")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:vmrucOoIiGgNntp")) != -1) {
         switch (opt) {
             case 'G':
             case 'g':
@@ -438,7 +500,7 @@ int main(int argc, char* argv[])
                 break;
             case 'V':
             case 'v':
-                HandleVolume(streamType, opt);
+                HandleVolume(argc, argv, streamType, opt);
                 break;
             case 'M':
             case 'm':
@@ -468,7 +530,6 @@ int main(int argc, char* argv[])
             case 'c':
                 HandleAudioScene(opt);
                 break;
-
             case 'X':
                 HandleUpdateStreamState(0, optarg);
                 break;
@@ -476,14 +537,23 @@ int main(int argc, char* argv[])
                 HandleUpdateStreamState(1, optarg);
                 break;
             case 'N':
-            case 'P':
-                HandleLowPowerVolumeOption(opt);
+            case 'n':
+                HandleSingleStreamVolumeOption(argc, argv, opt);
                 break;
             case ':':
                 NoValueError();
                 break;
             case '?':
                 UnknownOptionError();
+                break;
+            case 'T':
+                SetAudioParamter(argc, argv);
+                break;
+            case 't':
+                GetAudioParamter(argc, argv);
+                break;
+            case 'p':
+                HandleGetVolumeGroups(argc, argv);
                 break;
             default:
                 break;

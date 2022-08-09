@@ -38,6 +38,8 @@ public:
 
     virtual float GetLowPowerVolume(int32_t streamId) = 0;
 
+    virtual float GetSingleStreamVolume(int32_t streamId) = 0;
+
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute) = 0;
 
     virtual bool GetStreamMute(AudioStreamType streamType) = 0;
@@ -133,6 +135,7 @@ public:
     virtual int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
 
+    virtual std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

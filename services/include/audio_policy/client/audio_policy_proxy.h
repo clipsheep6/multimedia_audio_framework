@@ -36,6 +36,8 @@ public:
 
     float GetLowPowerVolume(int32_t streamId) override;
 
+    float GetSingleStreamVolume(int32_t streamId) override;
+
     int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
 
     bool GetStreamMute(AudioStreamType streamType) override;
@@ -130,6 +132,8 @@ public:
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
         AudioStreamType audioStreamType) override;
+
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

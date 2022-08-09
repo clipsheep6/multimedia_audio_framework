@@ -56,6 +56,8 @@ public:
 
     float GetLowPowerVolume(int32_t streamId);
 
+    float GetSingleStreamVolume(int32_t streamId);
+
     int32_t SetStreamMute(AudioStreamType streamType, bool mute);
 
     bool GetStreamMute(AudioStreamType streamType);
@@ -155,6 +157,8 @@ public:
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
                                     AudioStreamType audioStreamType);
+
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 private:
     AudioPolicyManager()
     {
