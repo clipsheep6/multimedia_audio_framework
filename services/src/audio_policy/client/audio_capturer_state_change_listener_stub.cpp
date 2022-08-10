@@ -14,10 +14,13 @@
  */
 
 #include "audio_capturer_state_change_listener_stub.h"
-
+#include "__config"
 #include "audio_errors.h"
-#include "audio_system_manager.h"
 #include "audio_log.h"
+#include "iosfwd"
+#include "ipc_object_stub.h"
+#include "string"
+#include "type_traits"
 
 using namespace std;
 

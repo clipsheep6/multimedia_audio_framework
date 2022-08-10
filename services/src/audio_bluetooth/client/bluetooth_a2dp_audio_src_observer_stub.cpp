@@ -14,8 +14,16 @@
  */
 
 #include "bluetooth_a2dp_audio_src_observer_stub.h"
+#include "bluetooth_a2dp_a2dpCodecInfo.h"
 #include "bluetooth_log.h"
+#include "cstdint"
+#include "iosfwd"
+#include "ipc_object_stub.h"
+#include "ipc_types.h"
+#include "map"
 #include "raw_address.h"
+#include "string"
+#include "utility"
 
 namespace OHOS {
 namespace Bluetooth {

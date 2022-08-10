@@ -15,6 +15,8 @@
 
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_log.h"
+#include "ipc_object_stub.h"
+#include "string"
 
 namespace OHOS {
 namespace AudioStandard {

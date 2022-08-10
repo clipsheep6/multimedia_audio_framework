@@ -16,6 +16,8 @@
 #ifndef REMOTE_AUDIO_RENDERER_SINK_INTF_H
 #define REMOTE_AUDIO_RENDERER_SINK_INTF_H
 
+#include "audio_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

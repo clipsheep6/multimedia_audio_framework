@@ -16,8 +16,15 @@
 #ifndef ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_STUB_H
 #define ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_STUB_H
 
+#include <stdint.h>
+#include "audio_info.h"
 #include "audio_system_manager.h"
 #include "i_audio_volume_key_event_callback.h"
+#include "iremote_stub.h"
+#include "memory"
+#include "message_option.h"
+#include "message_parcel.h"
+#include "refbase.h"
 
 namespace OHOS {
 namespace AudioStandard {

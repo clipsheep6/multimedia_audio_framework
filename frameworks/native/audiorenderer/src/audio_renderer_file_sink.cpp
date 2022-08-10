@@ -14,16 +14,15 @@
  */
 
 #include "audio_renderer_file_sink.h"
-
-#include <cerrno>
-#include <cstring>
-#include <dlfcn.h>
-#include <iostream>
 #include <string>
-#include <unistd.h>
-
+#include "__config"
 #include "audio_errors.h"
+#include "audio_info.h"
 #include "audio_log.h"
+#include "errno.h"
+#include "limits.h"
+#include "stdio.h"
+#include "stdlib.h"
 
 using namespace std;
 

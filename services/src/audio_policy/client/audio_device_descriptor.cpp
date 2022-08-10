@@ -14,7 +14,14 @@
  */
 
 #include "audio_log.h"
+#include <stdint.h>
+#include "audio_info.h"
 #include "audio_system_manager.h"
+#include "iosfwd"
+#include "new"
+#include "parcel.h"
+#include "refbase.h"
+#include "string"
 
 namespace OHOS {
 namespace AudioStandard {

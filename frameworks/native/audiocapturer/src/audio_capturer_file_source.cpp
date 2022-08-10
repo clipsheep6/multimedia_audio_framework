@@ -14,15 +14,16 @@
  */
 
 #include "audio_capturer_file_source.h"
-
-#include <cerrno>
-#include <cstring>
-#include <dlfcn.h>
 #include <string>
-#include <unistd.h>
-
+#include "__config"
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "errno.h"
+#include "iosfwd"
+#include "limits.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
 
 using namespace std;
 

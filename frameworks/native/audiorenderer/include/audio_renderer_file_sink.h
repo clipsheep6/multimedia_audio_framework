@@ -16,12 +16,10 @@
 #ifndef AUDIO_RENDERER_FILE_SINK_H
 #define AUDIO_RENDERER_FILE_SINK_H
 
-#include "audio_info.h"
-
+#include <stdint.h>
 #include <cstdio>
-#include <list>
-#include <iostream>
 #include <string>
+#include "iosfwd"
 
 namespace OHOS {
 namespace AudioStandard {

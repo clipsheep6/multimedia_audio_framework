@@ -16,8 +16,15 @@
 #ifndef ST_AUDIO_CLIENT_TRACKER_CALLBACK_STUB_H
 #define ST_AUDIO_CLIENT_TRACKER_CALLBACK_STUB_H
 
+#include <stdint.h>
+#include "audio_info.h"
 #include "audio_stream_manager.h"
 #include "i_standard_client_tracker.h"
+#include "iremote_stub.h"
+#include "memory"
+#include "message_option.h"
+#include "message_parcel.h"
+#include "refbase.h"
 
 namespace OHOS {
 namespace AudioStandard {

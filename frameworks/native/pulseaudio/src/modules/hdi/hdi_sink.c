@@ -13,30 +13,38 @@
  * limitations under the License.
  */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
-
-#include <pulsecore/modargs.h>
-#include <pulsecore/module.h>
-#include <pulsecore/sink.h>
-
-#include <audio_manager.h>
-#include <renderer_sink_adapter.h>
-
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
-#include <pulse/util.h>
 #include <pulse/xmalloc.h>
-
-#include <pulsecore/core-util.h>
 #include <pulsecore/log.h>
-#include <pulsecore/macro.h>
+#include <pulsecore/modargs.h>
+#include <pulsecore/module.h>
 #include <pulsecore/rtpoll.h>
+#include <pulsecore/sink.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
-
+#include <renderer_sink_adapter.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
 #include "audio_log.h"
+#include "audio_types.h"
+#include "inttypes.h"
+#include "pulse/channelmap.h"
+#include "pulse/def.h"
+#include "pulse/gccmacro.h"
+#include "pulse/proplist.h"
+#include "pulse/sample.h"
+#include "pulsecore/asyncmsgq.h"
+#include "pulsecore/atomic.h"
+#include "pulsecore/core.h"
+#include "pulsecore/memblock.h"
+#include "pulsecore/memchunk.h"
+#include "pulsecore/msgobject.h"
+#include "pulsecore/typedefs.h"
+#include "stdbool.h"
+#include "string.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"

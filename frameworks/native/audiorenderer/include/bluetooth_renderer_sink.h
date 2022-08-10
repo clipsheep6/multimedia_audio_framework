@@ -16,11 +16,11 @@
 #ifndef BLUETOOTH_RENDERER_SINK_H
 #define BLUETOOTH_RENDERER_SINK_H
 
-#include "audio_info.h"
+#include <stdint.h>
+#include "audio_adapter.h"
 #include "audio_proxy_manager.h"
-
-#include <cstdio>
-#include <list>
+#include "audio_render.h"
+#include "audio_types.h"
 
 namespace OHOS {
 namespace AudioStandard {

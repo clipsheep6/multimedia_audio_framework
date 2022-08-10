@@ -14,14 +14,17 @@
  */
 
 #include "bluetooth_renderer_sink.h"
-
-#include <cstring>
 #include <dlfcn.h>
-#include <string>
 #include <unistd.h>
-
+#include <string>
+#include "__config"
+#include "audio_control.h"
 #include "audio_errors.h"
+#include "audio_info.h"
 #include "audio_log.h"
+#include "audio_volume.h"
+#include "iosfwd"
+#include "string.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
