@@ -26,6 +26,13 @@ public:
     virtual ~AudioCapturerProxyObj() = default;
     void SaveCapturerObj(const AudioCapturer *capturerObj);
 
+    void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
+    void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
+
+    void SetLowPowerVolumeImpl(float volume);
+    void GetLowPowerVolumeImpl(float &volume);
+    void GetSingleStreamVolumeImpl(float &volume);
+
 private:
     const AudioCapturer *capturer;
 };

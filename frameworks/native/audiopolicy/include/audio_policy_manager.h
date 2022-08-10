@@ -52,11 +52,25 @@ public:
 
     float GetStreamVolume(AudioStreamType streamType);
 
+    int32_t SetLowPowerVolume(int32_t streamId, float volume);
+
+    float GetLowPowerVolume(int32_t streamId);
+
+    float GetSingleStreamVolume(int32_t streamId);
+
     int32_t SetStreamMute(AudioStreamType streamType, bool mute);
 
     bool GetStreamMute(AudioStreamType streamType);
 
     bool IsStreamActive(AudioStreamType streamType);
+
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+
+    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
+
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
@@ -76,7 +90,7 @@ public:
 
     AudioScene GetAudioScene();
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId,
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
@@ -140,6 +154,11 @@ public:
 
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+
+    int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
+                                    AudioStreamType audioStreamType);
+
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 private:
     AudioPolicyManager()
     {

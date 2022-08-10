@@ -112,9 +112,41 @@ bool AudioPolicyManager::GetStreamMute(AudioStreamType streamType)
     return g_sProxy->GetStreamMute(streamType);
 }
 
+int32_t AudioPolicyManager::SetLowPowerVolume(int32_t streamId, float volume)
+{
+    return g_sProxy->SetLowPowerVolume(streamId, volume);
+}
+
+float AudioPolicyManager::GetLowPowerVolume(int32_t streamId)
+{
+    return g_sProxy->GetLowPowerVolume(streamId);
+}
+
+float AudioPolicyManager::GetSingleStreamVolume(int32_t streamId)
+{
+    return g_sProxy->GetSingleStreamVolume(streamId);
+}
+
 bool AudioPolicyManager::IsStreamActive(AudioStreamType streamType)
 {
     return g_sProxy->IsStreamActive(streamType);
+}
+
+int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    return g_sProxy->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+}
+
+std::string AudioPolicyManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
+{
+    return g_sProxy->GetSelectedDeviceInfo(uid, pid, streamType);
+}
+
+int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    return g_sProxy->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)
@@ -171,7 +203,7 @@ int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
     return g_sProxy->UnsetRingerModeCallback(clientId);
 }
 
-int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId,
+int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
     const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
@@ -195,7 +227,7 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId,
         return ERROR;
     }
 
-    return g_sProxy->SetDeviceChangeCallback(clientId, object);
+    return g_sProxy->SetDeviceChangeCallback(clientId, flag, object);
 }
 
 int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId)
@@ -460,6 +492,18 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
     AUDIO_DEBUG_LOG("AudioPolicyManager::GetCurrentCapturerChangeInfos");
 
     return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+}
+
+int32_t AudioPolicyManager::UpdateStreamState(const int32_t clientUid,
+    StreamSetState streamSetState, AudioStreamType audioStreamType)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::UpdateStreamState");
+    return  g_sProxy->UpdateStreamState(clientUid, streamSetState, audioStreamType);
+}
+
+std::vector<sptr<VolumeGroupInfo>> AudioPolicyManager::GetVolumeGroupInfos()
+{
+    return g_sProxy->GetVolumeGroupInfos();
 }
 } // namespace AudioStandard
 } // namespace OHOS

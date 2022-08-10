@@ -18,6 +18,7 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_renderer.h"
+#include "audio_stream_manager.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -37,6 +38,9 @@ namespace {
     constexpr int32_t MIN_VOL = 0;
     constexpr int32_t INV_CHANNEL = -1;
     constexpr int32_t CHANNEL_10 = 10;
+    constexpr float DISCOUNT_VOLUME = 0.5;
+    constexpr float VOLUME_MIN = 0;
+    constexpr float VOLUME_MAX = 1.0;
 }
 
 void AudioManagerUnitTest::SetUpTestCase(void) {}
@@ -566,13 +570,13 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_ALL, volume);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_ALL, volume);
     EXPECT_EQ(SUCCESS, ret);
-    ret = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_ALL);
+    ret = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_ALL);
     EXPECT_EQ(volume, ret);
-    ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_ALL, mute);
+    ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_ALL, mute);
     EXPECT_EQ(SUCCESS, ret);
-    ret = AudioSystemManager::GetInstance()->IsStreamMute(AudioSystemManager::AudioVolumeType::STREAM_ALL);
+    ret = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_ALL);
     EXPECT_EQ(true, ret);
 
     audioRenderer->Release();
@@ -585,10 +589,10 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING, MAX_VOL);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_RING, MAX_VOL);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING);
+    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
     EXPECT_EQ(MAX_VOL, volume);
 }
 
@@ -599,10 +603,10 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING, MIN_VOL);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_RING, MIN_VOL);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING);
+    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
     EXPECT_EQ(MIN_VOL, volume);
 }
 
@@ -613,13 +617,13 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, MAX_VOL);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_MUSIC, MAX_VOL);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t mediaVol = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
+    int32_t mediaVol = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_MUSIC);
     EXPECT_EQ(MAX_VOL, mediaVol);
 
-    int32_t ringVolume = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING);
+    int32_t ringVolume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
     EXPECT_EQ(MIN_VOL, ringVolume);
 }
 
@@ -700,7 +704,7 @@ HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level0)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_RING, true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_RING, true);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -711,7 +715,7 @@ HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level0)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_RING, false);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_RING, false);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -722,7 +726,7 @@ HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetMute_003, TestSize.Level0)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_MUSIC, true);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -733,7 +737,156 @@ HWTEST(AudioManagerUnitTest, SetMute_003, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, false);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_MUSIC, false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetLowPowerVolume API
+* @tc.number: SetLowPowerVolume_001
+* @tc.desc  : Test set the volume discount coefficient of a single stream
+*/
+HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
+{
+    int32_t streamId = 0;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    AudioRendererOptions rendererOptions = {};
+    AppInfo appInfo = {};
+    appInfo.appUid = static_cast<int32_t>(getuid());
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        AudioRendererChangeInfo audioRendererChangeInfos_ = **it;
+        if (audioRendererChangeInfos_.clientUID == appInfo.appUid) {
+            streamId = audioRendererChangeInfos_.sessionId;
+        }
+    }
+    ASSERT_NE(0, streamId);
+
+    ret = AudioSystemManager::GetInstance()->SetLowPowerVolume(streamId, DISCOUNT_VOLUME);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GetLowPowerVolume API
+* @tc.number: GetLowPowerVolume_001
+* @tc.desc  : Test get the volume discount coefficient of a single stream
+*/
+HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
+{
+    int32_t streamId = 0;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    AudioRendererOptions rendererOptions = {};
+    AppInfo appInfo = {};
+    appInfo.appUid = static_cast<int32_t>(getuid());
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        AudioRendererChangeInfo audioRendererChangeInfos_ = **it;
+        if (audioRendererChangeInfos_.clientUID == appInfo.appUid) {
+            streamId = audioRendererChangeInfos_.sessionId;
+        }
+    }
+    ASSERT_NE(0, streamId);
+
+    float vol = AudioSystemManager::GetInstance()->GetLowPowerVolume(streamId);
+    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
+        ret = ERROR;
+    } else {
+        ret = SUCCESS;
+    }
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GetSingleStreamVolume API
+* @tc.number: GetSingleStreamVolume_001
+* @tc.desc  : Test get single stream volume.
+*/
+HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
+{
+    int32_t streamId = 0;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    AudioRendererOptions rendererOptions = {};
+    AppInfo appInfo = {};
+    appInfo.appUid = static_cast<int32_t>(getuid());
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        AudioRendererChangeInfo audioRendererChangeInfos_ = **it;
+        if (audioRendererChangeInfos_.clientUID == appInfo.appUid) {
+            streamId = audioRendererChangeInfos_.sessionId;
+        }
+    }
+    ASSERT_NE(0, streamId);
+
+    float vol = AudioSystemManager::GetInstance()->GetSingleStreamVolume(streamId);
+    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
+        ret = ERROR;
+    } else {
+        ret = SUCCESS;
+    }
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test SetPauseOrResumeStream API
+* @tc.number: SetPauseOrResumeStream_001
+* @tc.desc  : Test Puase functionality of media stream
+*/
+HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
+        StreamSetState::STREAM_PAUSE, AudioStreamType::STREAM_MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetPauseOrResumeStream API
+* @tc.number: SetPauseOrResumeStream_002
+* @tc.desc  : Test Resume functionality of media stream
+*/
+HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level1)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
+        StreamSetState::STREAM_RESUME, AudioStreamType::STREAM_MEDIA);
     EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard

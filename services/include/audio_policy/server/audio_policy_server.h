@@ -54,11 +54,25 @@ public:
 
     float GetStreamVolume(AudioStreamType streamType) override;
 
+    int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
+
+    float GetLowPowerVolume(int32_t streamId) override;
+
+    float GetSingleStreamVolume(int32_t streamId) override;
+
     int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
 
     bool GetStreamMute(AudioStreamType streamType) override;
 
     bool IsStreamActive(AudioStreamType streamType) override;
+
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
+
+    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) override;
+
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
@@ -82,7 +96,8 @@ public:
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object)
+        override;
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId) override;
 
@@ -148,8 +163,27 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid);
 
+    int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
+        AudioStreamType audioStreamType) override;
+
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
+
+    class RemoteParameterCallback : public AudioParameterCallback {
+    public:
+        RemoteParameterCallback(sptr<AudioPolicyServer> server);
+        // AudioParameterCallback
+        void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string& condition,
+            const std::string& value) override;
+        void VolumeOnChange(const std::string networkId, const std::string& condition);
+    private:
+        sptr<AudioPolicyServer> server_;
+    };
+    std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+
+    void RegisterParamCallback();
+
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 private:
     void PrintOwnersLists();
@@ -165,6 +199,8 @@ private:
     void RegisterAudioServerDeathRecipient();
     void AudioServerDied(pid_t pid);
     void GetPolicyData(PolicyData &policyData);
+    void GetDeviceInfo(PolicyData &policyData);
+    void GetGroupInfo(PolicyData &policyData);
     void SubscribeKeyEvents();
     void InitKVStore();
     void ConnectServiceAdapter();

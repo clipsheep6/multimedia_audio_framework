@@ -53,6 +53,8 @@ enum NodeName {
     UPDATE_ROUTE_SUPPORT,
     AUDIO_LATENCY,
     SINK_LATENCY,
+    VOLUME_GROUP_CONFIG,
+    INTERRUPT_GROUP_CONFIG,
     UNKNOWN
 };
 
@@ -61,6 +63,7 @@ enum ClassType {
     TYPE_A2DP,
     TYPE_USB,
     TYPE_FILE_IO,
+    TYPE_REMOTE_AUDIO,
     TYPE_INVALID
 };
 
@@ -84,6 +87,8 @@ public:
     std::string renderInIdleState;
     std::string OpenMicSpeaker;
     std::string fileName;
+    std::string networkId;
+    std::string deviceType;
     std::list<AudioModuleInfo> ports;
 };
 } // namespace AudioStandard

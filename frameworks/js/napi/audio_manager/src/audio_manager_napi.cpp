@@ -80,13 +80,16 @@ struct AudioManagerAsyncContext {
     int32_t intValue;
     int32_t status;
     int32_t focusType;
+    int32_t groupId;
     bool isMute;
     bool isActive;
     bool isTrue;
     string key;
     string valueStr;
+    string networkId;
     AudioManagerNapi *objectInfo;
     vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+    vector<sptr<VolumeGroupInfo>> volumeGroupInfos;
 };
 
 namespace {
@@ -120,28 +123,28 @@ void AudioManagerNapi::Destructor(napi_env env, void *nativeObject, void *finali
     }
 }
 
-static AudioSystemManager::AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
+static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
 {
-    AudioSystemManager::AudioVolumeType result = AudioSystemManager::STREAM_MUSIC;
+    AudioVolumeType result = STREAM_MUSIC;
 
     switch (volumeType) {
         case AudioManagerNapi::RINGTONE:
-            result = AudioSystemManager::STREAM_RING;
+            result = STREAM_RING;
             break;
         case AudioManagerNapi::MEDIA:
-            result = AudioSystemManager::STREAM_MUSIC;
+            result = STREAM_MUSIC;
             break;
         case AudioManagerNapi::VOICE_CALL:
-            result = AudioSystemManager::STREAM_VOICE_CALL;
+            result = STREAM_VOICE_CALL;
             break;
         case AudioManagerNapi::VOICE_ASSISTANT:
-            result = AudioSystemManager::STREAM_VOICE_ASSISTANT;
+            result = STREAM_VOICE_ASSISTANT;
             break;
         case AudioManagerNapi::ALL:
-            result = AudioSystemManager::STREAM_ALL;
+            result = STREAM_ALL;
             break;
         default:
-            result = AudioSystemManager::STREAM_MUSIC;
+            result = STREAM_MUSIC;
             HiLog::Error(LABEL, "Unknown volume type, Set it to default MEDIA!");
             break;
     }
@@ -374,7 +377,6 @@ napi_value AudioManagerNapi::CreateAudioSceneObject(napi_env env)
     }
     HiLog::Error(LABEL, "CreateAudioSceneObject is Failed!");
     napi_get_undefined(env, &result);
-
     return result;
 }
 
@@ -437,28 +439,7 @@ napi_value AudioManagerNapi::CreateDeviceFlagObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
-            switch (i) {
-                case OUTPUT_DEVICES_FLAG:
-                    propName = "OUTPUT_DEVICES_FLAG";
-                    break;
-                case INPUT_DEVICES_FLAG:
-                    propName = "INPUT_DEVICES_FLAG";
-                    break;
-                case ALL_DEVICES_FLAG:
-                    propName = "ALL_DEVICES_FLAG";
-                    break;
-                default:
-                    HiLog::Error(LABEL, "CreateDeviceFlagObject: No prob with this value try next value!");
-                    continue;
-            }
-            status = AddNamedProperty(env, result, propName, i);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop!");
-                break;
-            }
-            propName.clear();
-        }
+        AddPropName(propName, status, env, result);
         if (status == napi_ok) {
             status = napi_create_reference(env, result, refCount, &deviceFlagRef_);
             if (status == napi_ok) {
@@ -532,6 +513,9 @@ napi_value AudioManagerNapi::CreateDeviceTypeObject(napi_env env)
                     break;
                 case DEVICE_TYPE_WIRED_HEADSET:
                     propName = "WIRED_HEADSET";
+                    break;
+                case DEVICE_TYPE_WIRED_HEADPHONES:
+                    propName = "WIRED_HEADPHONES";
                     break;
                 case DEVICE_TYPE_BLUETOOTH_SCO:
                     propName = "BLUETOOTH_SCO";
@@ -692,6 +676,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
     napi_value constructor;
     napi_value result = nullptr;
     const int32_t refCount = 1;
+    napi_value localNetworkId;
+    napi_create_string_utf8(env, "LocalDevice", NAPI_AUTO_LENGTH, &localNetworkId);
 
     napi_property_descriptor audio_svc_mngr_properties[] = {
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
@@ -717,6 +703,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("requestIndependentInterrupt", RequestIndependentInterrupt),
         DECLARE_NAPI_FUNCTION("abandonIndependentInterrupt", AbandonIndependentInterrupt),
         DECLARE_NAPI_FUNCTION("getStreamManager", GetStreamManager),
+        DECLARE_NAPI_FUNCTION("getRoutingManager", GetRoutingManager),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -733,7 +720,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("InterruptHint", CreateInterruptHintObject(env)),
         DECLARE_NAPI_PROPERTY("InterruptType", CreateInterruptTypeObject(env)),
         DECLARE_NAPI_PROPERTY("InterruptMode", CreatePropertyBase(env, interruptModeMap, interruptMode_)),
-        DECLARE_NAPI_PROPERTY("FocusType", CreatePropertyBase(env, focusTypeMap, focusType_))
+        DECLARE_NAPI_PROPERTY("FocusType", CreatePropertyBase(env, focusTypeMap, focusType_)),
+        DECLARE_NAPI_PROPERTY("LOCAL_NETWORK_ID", localNetworkId)
     };
 
     status = napi_define_class(env, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -2358,7 +2346,8 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
         if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
             managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
         }
-        int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(managerNapi->deviceChangeCallbackNapi_);
+        int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG,
+            managerNapi->deviceChangeCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG("AudioManagerNapi: SetDeviceChangeCallback Failed");
             return undefinedResult;
@@ -2497,6 +2486,75 @@ napi_value AudioManagerNapi::GetStreamManager(napi_env env, napi_callback_info i
     return result;
 }
 
+static void GetRoutingManagerAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    napi_value valueParam = nullptr;
+    auto asyncContext = static_cast<AudioManagerAsyncContext *>(data);
+
+    if (asyncContext != nullptr) {
+        if (!asyncContext->status) {
+            valueParam = AudioRoutingManagerNapi::CreateRoutingManagerWrapper(env);
+        }
+        CommonCallbackRoutine(env, asyncContext, valueParam);
+    } else {
+        HiLog::Error(LABEL, "ERROR: GetRoutingManagerAsyncCallbackComplete asyncContext is Null!");
+    }
+}
+
+napi_value AudioManagerNapi::GetRoutingManager(napi_env env, napi_callback_info info)
+{
+    HiLog::Info(LABEL, "%{public}s IN", __func__);
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
+    CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioManagerAsyncContext object creation failed");
+
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+
+        if (i == PARAM0 && valueType == napi_function) {
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            break;
+        } else {
+            NAPI_ASSERT(env, false, "type mismatch");
+        }
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "GetRoutingManager", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioManagerAsyncContext *>(data);
+            context->status = SUCCESS;
+        },
+        GetRoutingManagerAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        status = napi_queue_async_work(env, asyncContext->work);
+        if (status == napi_ok) {
+            asyncContext.release();
+        } else {
+            result = nullptr;
+        }
+    }
+
+    return result;
+}
+
 void AudioManagerNapi::GetStreamMgrAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
     napi_value valueParam = nullptr;
@@ -2512,6 +2570,44 @@ void AudioManagerNapi::GetStreamMgrAsyncCallbackComplete(napi_env env, napi_stat
     }
 }
 
+void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result)
+{
+    for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
+        switch (i) {
+            case DEVICE_FLAG_NONE:
+                propName = "NONE_DEVICE_FLAG";
+                break;
+            case OUTPUT_DEVICES_FLAG:
+                propName = "OUTPUT_DEVICES_FLAG";
+                break;
+            case INPUT_DEVICES_FLAG:
+                propName = "INPUT_DEVICES_FLAG";
+                break;
+            case ALL_DEVICES_FLAG:
+                propName = "ALL_DEVICES_FLAG";
+                break;
+            case DISTRIBUTED_OUTPUT_DEVICES_FLAG:
+                propName = "DISTRIBUTED_OUTPUT_DEVICES_FLAG";
+                break;
+            case DISTRIBUTED_INPUT_DEVICES_FLAG:
+                propName = "DISTRIBUTED_INPUT_DEVICES_FLAG";
+                break;
+            case ALL_DISTRIBUTED_DEVICES_FLAG:
+                propName = "ALL_DISTRIBUTED_DEVICES_FLAG";
+                break;
+            default:
+                HiLog::Error(LABEL, "CreateDeviceFlagObject: No prob with this value try next value!");
+                continue;
+        }
+        status = AddNamedProperty(env, result, propName, i);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add named prop!");
+            break;
+        }
+        propName.clear();
+    }
+}
+
 static napi_value Init(napi_env env, napi_value exports)
 {
     AudioManagerNapi::Init(env, exports);
@@ -2523,6 +2619,7 @@ static napi_value Init(napi_env env, napi_value exports)
     RingtoneOptionsNapi::Init(env, exports);
     AudioRendererInfoNapi::Init(env, exports);
     AudioStreamMgrNapi::Init(env, exports);
+    AudioRoutingManagerNapi::Init(env, exports);
 
     return exports;
 }

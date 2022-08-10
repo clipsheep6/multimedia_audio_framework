@@ -109,7 +109,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
         appInfo_.appPid = getpid();
     }
 
-    if (!(appInfo_.appUid)) {
+    if (appInfo_.appUid < 0) {
         appInfo_.appUid = static_cast<int32_t>(getuid());
     }
 
@@ -182,12 +182,12 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
-
-    AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Success");
     if (ret) {
         AUDIO_ERR_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Failed");
         return ret;
     }
+
+    AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Succeeded");
 
     if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("AudioRendererPrivate::GetAudioSessionID Failed");
@@ -316,8 +316,9 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
     audioStream_->UnsetRendererPeriodPositionCallback();
 }
 
-bool AudioRendererPrivate::Start()
+bool AudioRendererPrivate::Start() const
 {
+    AUDIO_INFO_LOG("AudioRenderer::Start");
     RendererState state = GetStatus();
     if ((state != RENDERER_PREPARED) && (state != RENDERER_STOPPED) && (state != RENDERER_PAUSED)) {
         AUDIO_ERR_LOG("AudioRendererPrivate::Start() Illegal state:%{public}u, Start failed", state);
@@ -336,9 +337,6 @@ bool AudioRendererPrivate::Start()
         default:
             break;
     }
-    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::streamType::%{public}d", audioInterrupt.streamType);
-    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::contentType::%{public}d", audioInterrupt.contentType);
-    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::sessionID::%{public}d", audioInterrupt.sessionID);
 
     if (audioInterrupt.streamType == STREAM_DEFAULT || audioInterrupt.sessionID == INVALID_SESSION_ID) {
         return false;
@@ -380,6 +378,7 @@ bool AudioRendererPrivate::Flush() const
 
 bool AudioRendererPrivate::Pause() const
 {
+    AUDIO_INFO_LOG("AudioRenderer::Pause");
     bool result = audioStream_->PauseAudioStream();
     AudioInterrupt audioInterrupt;
     switch (mode_) {
@@ -403,6 +402,7 @@ bool AudioRendererPrivate::Pause() const
 
 bool AudioRendererPrivate::Stop() const
 {
+    AUDIO_INFO_LOG("AudioRenderer::Stop");
     bool result = audioStream_->StopAudioStream();
     AudioInterrupt audioInterrupt;
     switch (mode_) {
@@ -425,6 +425,7 @@ bool AudioRendererPrivate::Stop() const
 
 bool AudioRendererPrivate::Release() const
 {
+    AUDIO_INFO_LOG("AudioRenderer::Release");
     // If Stop call was skipped, Release to take care of Deactivation
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
@@ -538,7 +539,7 @@ bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal
         return false;
     }
 
-    AUDIO_DEBUG_LOG("AudioRendererPrivate: set duckVolume(instance) %{pubic}f success", duckInstanceVolume);
+    AUDIO_DEBUG_LOG("AudioRendererPrivate: set duckVolume(instance) %{pubic}f succeeded", duckInstanceVolume);
     return true;
 }
 
@@ -704,6 +705,21 @@ void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
 {
     AUDIO_INFO_LOG("AudioRendererPrivate: SetInterruptMode : InterruptMode %{pubilc}d", mode);
     mode_ = mode;
+}
+
+int32_t AudioRendererPrivate::SetLowPowerVolume(float volume) const
+{
+    return audioStream_->SetLowPowerVolume(volume);
+}
+
+float AudioRendererPrivate::GetLowPowerVolume() const
+{
+    return audioStream_->GetLowPowerVolume();
+}
+
+float AudioRendererPrivate::GetSingleStreamVolume() const
+{
+    return audioStream_->GetSingleStreamVolume();
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

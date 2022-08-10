@@ -34,6 +34,12 @@ public:
 
     virtual float GetStreamVolume(AudioStreamType streamType) = 0;
 
+    virtual int32_t SetLowPowerVolume(int32_t streamId, float volume) = 0;
+
+    virtual float GetLowPowerVolume(int32_t streamId) = 0;
+
+    virtual float GetSingleStreamVolume(int32_t streamId) = 0;
+
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute) = 0;
 
     virtual bool GetStreamMute(AudioStreamType streamType) = 0;
@@ -62,7 +68,8 @@ public:
 
     virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
 
-    virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+        const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetDeviceChangeCallback(const int32_t clientId) = 0;
 
@@ -117,6 +124,18 @@ public:
     virtual int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
 
+    virtual int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
+                                            AudioStreamType audioStreamType) = 0;
+
+    virtual int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
+
+    virtual std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) = 0;
+
+    virtual int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
+
+    virtual std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

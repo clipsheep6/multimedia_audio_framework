@@ -16,6 +16,7 @@
 #include "audio_service_client.h"
 
 #include <fstream>
+#include <sstream>
 
 #include "iservice_registry.h"
 #include "audio_log.h"
@@ -389,6 +390,23 @@ void AudioServiceClient::PAStreamLatencyUpdateCb(pa_stream *stream, void *userda
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
+void AudioServiceClient::PAStreamMovedCb(pa_stream *stream, void *userdata)
+{
+    if (!userdata) {
+        AUDIO_ERR_LOG("AudioServiceClient::PAStreamMovedCb: userdata is null");
+        return;
+    }
+
+    // get stream informations.
+    uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
+
+    // Return 1 if the sink or source this stream is connected to has been suspended.
+    // This will return 0 if not, and a negative value on error.
+    int res = pa_stream_is_suspended(stream);
+    AUDIO_INFO_LOG("AudioServiceClient::PAstream moved to index:[%{public}d] suspended:[%{public}d]",
+        deviceIndex, res);
+}
+
 void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 {
     if (!userdata) {
@@ -452,6 +470,7 @@ AudioServiceClient::AudioServiceClient()
     clientInfo.clear();
 
     mVolumeFactor = 1.0f;
+    mPowerVolumeFactor = 1.0f;
     mUnMute_ = false;
     mStreamType = STREAM_MUSIC;
     mAudioSystemMgr = nullptr;
@@ -591,24 +610,15 @@ AudioServiceClient::~AudioServiceClient()
 void AudioServiceClient::SetEnv()
 {
     AUDIO_INFO_LOG("SetEnv called");
-    int ret = 0;
-    const char *env_home_pa = getenv("HOME");
-    if (!env_home_pa) {
-        ret = setenv("HOME", PA_HOME_DIR, 1);
-        AUDIO_INFO_LOG("set env HOME: %{public}d", ret);
-    }
 
-    const char *env_runtime_pa = getenv("PULSE_RUNTIME_PATH");
-    if (!env_runtime_pa) {
-        ret = setenv("PULSE_RUNTIME_PATH", PA_RUNTIME_DIR, 1);
-        AUDIO_INFO_LOG("set env PULSE_RUNTIME_DIR: %{public}d", ret);
-    }
+    int ret = setenv("HOME", PA_HOME_DIR, 1);
+    AUDIO_DEBUG_LOG("set env HOME: %{public}d", ret);
 
-    const char *env_state_pa = getenv("PULSE_STATE_PATH");
-    if (!env_state_pa) {
-        ret = setenv("PULSE_STATE_PATH", PA_STATE_DIR, 1);
-        AUDIO_INFO_LOG("set env PULSE_STATE_PATH: %{public}d", ret);
-    }
+    ret = setenv("PULSE_RUNTIME_PATH", PA_RUNTIME_DIR, 1);
+    AUDIO_DEBUG_LOG("set env PULSE_RUNTIME_DIR: %{public}d", ret);
+
+    ret = setenv("PULSE_STATE_PATH", PA_STATE_DIR, 1);
+    AUDIO_DEBUG_LOG("set env PULSE_STATE_PATH: %{public}d", ret);
 }
 
 void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
@@ -659,8 +669,12 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
         ResetPAAudioClient();
         return AUDIO_CLIENT_INIT_ERR;
     }
-
-    context = pa_context_new(api, "AudioServiceClient");
+    stringstream ss;
+    string packageName = "";
+    ss << "app-pid<" << getpid() << ">-uid<" << getuid() << ">";
+    ss >> packageName;
+    AUDIO_INFO_LOG("AudioServiceClient:Initialize [%{public}s]", packageName.c_str());
+    context = pa_context_new(api, packageName.c_str());
     if (context == nullptr) {
         ResetPAAudioClient();
         return AUDIO_CLIENT_INIT_ERR;
@@ -784,6 +798,10 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
     sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
+    std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
+        mStreamType);
+    const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
+
     pa_threaded_mainloop_lock(mainLoop);
 
     pa_buffer_attr bufferAttr;
@@ -801,11 +819,9 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     bufferAttr.minreq = bufferAttr.prebuf;
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        result = pa_stream_connect_playback(paStream, nullptr, &bufferAttr,
-                                            (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY
-                                            | PA_STREAM_INTERPOLATE_TIMING
-                                            | PA_STREAM_START_CORKED
-                                            | PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
+        result = pa_stream_connect_playback(paStream, deviceName, &bufferAttr,
+            (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
+            PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
         preBuf_ = make_unique<uint8_t[]>(bufferAttr.maxlength);
         if (preBuf_ == nullptr) {
             AUDIO_ERR_LOG("Allocate memory for buffer failed.");
@@ -903,8 +919,13 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
 
+    // for remote audio device router filter.
+    pa_proplist_sets(propList, "stream.client.uid", std::to_string(clientUid_).c_str());
+    pa_proplist_sets(propList, "stream.client.pid", std::to_string(clientPid_).c_str());
+
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
+    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(pa_context_get_index(context)).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
@@ -947,6 +968,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     pa_proplist_free(propList);
     pa_stream_set_state_callback(paStream, PAStreamStateCb, (void *)this);
+    pa_stream_set_moved_callback(paStream, PAStreamMovedCb, (void *)this); // used to notify sink/source moved
     pa_stream_set_write_callback(paStream, PAStreamWriteCb, (void *)this);
     pa_stream_set_read_callback(paStream, PAStreamReadCb, (void *)this);
     pa_stream_set_latency_update_callback(paStream, PAStreamLatencyUpdateCb, mainLoop);
@@ -1834,7 +1856,13 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
         cacheLatency = pa_bytes_to_usec((acache.totalCacheSize - acache.writeIndex), &sampleSpec);
 
         // Total latency will be sum of audio write cache latency + PA latency
-        latency = paLatency + cacheLatency - (sinkLatencyInMsec_ * PA_USEC_PER_MSEC);
+        uint64_t fwLatency = paLatency + cacheLatency;
+        uint64_t sinkLatency = sinkLatencyInMsec_ * PA_USEC_PER_MSEC;
+        if (fwLatency > sinkLatency) {
+            latency = fwLatency - sinkLatency;
+        } else {
+            latency = fwLatency;
+        }
         AUDIO_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
             PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
@@ -2098,18 +2126,18 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
 {
     pa_cvolume cv = client.cvolume;
     int32_t systemVolumeInt
-        = client.mAudioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType));
+        = client.mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(client.mStreamType));
     float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
-    float vol = systemVolume * client.mVolumeFactor;
+    float vol = systemVolume * client.mVolumeFactor * client.mPowerVolumeFactor;
 
     AudioRingerMode ringerMode = client.mAudioSystemMgr->GetRingerMode();
     if ((client.mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
         vol = MIN_STREAM_VOLUME_LEVEL;
     }
 
-    if (client.mAudioSystemMgr->IsStreamMute(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType))) {
+    if (client.mAudioSystemMgr->IsStreamMute(static_cast<AudioVolumeType>(client.mStreamType))) {
         if (client.mUnMute_) {
-            client.mAudioSystemMgr->SetMute(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType),
+            client.mAudioSystemMgr->SetMute(static_cast<AudioVolumeType>(client.mStreamType),
                 false);
         } else {
             vol = MIN_STREAM_VOLUME_LEVEL;
@@ -2204,6 +2232,93 @@ void AudioServiceClient::WriteStateChangedSysEvents()
         "STREAMTYPE", mStreamType,
         "STATE", state_,
         "DEVICETYPE", deviceType);
+}
+
+int32_t AudioServiceClient::SetStreamLowPowerVolume(float powerVolumeFactor)
+{
+    lock_guard<mutex> lock(ctrlMutex);
+    AUDIO_INFO_LOG("SetPowerVolumeFactor volume: %{public}f", powerVolumeFactor);
+
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("context is null");
+        return AUDIO_CLIENT_ERR;
+    }
+
+    /* Validate and return INVALID_PARAMS error */
+    if ((powerVolumeFactor < MIN_STREAM_VOLUME_LEVEL) || (powerVolumeFactor > MAX_STREAM_VOLUME_LEVEL)) {
+        AUDIO_ERR_LOG("Invalid Power Volume Set!");
+        return AUDIO_CLIENT_INVALID_PARAMS_ERR;
+    }
+
+    pa_threaded_mainloop_lock(mainLoop);
+
+    mPowerVolumeFactor = powerVolumeFactor;
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    if (mAudioSystemMgr == nullptr) {
+        AUDIO_ERR_LOG("System manager instance is null");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    if (!streamInfoUpdated) {
+        uint32_t idx = pa_stream_get_index(paStream);
+        pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
+            reinterpret_cast<void *>(this));
+        if (operation == nullptr) {
+            AUDIO_ERR_LOG("pa_context_get_sink_input_info_list returned null");
+            pa_threaded_mainloop_unlock(mainLoop);
+            return AUDIO_CLIENT_ERR;
+        }
+
+        pa_threaded_mainloop_accept(mainLoop);
+
+        pa_operation_unref(operation);
+    } else {
+        SetPaVolume(*this);
+    }
+
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+float AudioServiceClient::GetStreamLowPowerVolume()
+{
+    return mPowerVolumeFactor;
+}
+
+float AudioServiceClient::GetSingleStreamVol()
+{
+    int32_t systemVolumeInt = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
+    float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
+    float vol = systemVolume * mVolumeFactor * mPowerVolumeFactor;
+
+    AudioRingerMode ringerMode = mAudioSystemMgr->GetRingerMode();
+    if ((mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
+        vol = MIN_STREAM_VOLUME_LEVEL;
+    }
+
+    if (mAudioSystemMgr->IsStreamMute(static_cast<AudioVolumeType>(mStreamType))) {
+        if (mUnMute_) {
+            mAudioSystemMgr->SetMute(static_cast<AudioVolumeType>(mStreamType), false);
+        } else {
+            vol = MIN_STREAM_VOLUME_LEVEL;
+        }
+    }
+
+    return vol;
 }
 } // namespace AudioStandard
 } // namespace OHOS

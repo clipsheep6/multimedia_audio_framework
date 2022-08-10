@@ -41,6 +41,8 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 constexpr float DUCK_FACTOR = 0.2f; // 20%
+constexpr int32_t PARAMS_VOLUME_NUM = 5;
+constexpr int32_t EVENT_DES_SIZE = 10;
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
@@ -50,7 +52,6 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     if (mPolicyService.SetAudioSessionCallback(this)) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
     }
-
     interruptPriorityMap_[STREAM_VOICE_CALL] = THIRD_PRIORITY;
     interruptPriorityMap_[STREAM_RING] = SECOND_PRIORITY;
     interruptPriorityMap_[STREAM_MUSIC] = FIRST_PRIORITY;
@@ -66,6 +67,7 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
+    AUDIO_DEBUG_LOG("AudioPolicyService OnStart");
     bool res = Publish(this);
     if (res) {
         AUDIO_DEBUG_LOG("AudioPolicyService OnStart res=%d", res);
@@ -100,6 +102,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case AUDIO_DISTRIBUTED_SERVICE_ID:
             AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility ConnectServiceAdapter");
             ConnectServiceAdapter();
+            RegisterParamCallback();
             break;
         default:
             AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -166,7 +169,13 @@ void AudioPolicyServer::SubscribeKeyEvents()
                 }
 
                 AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
-                volumeChangeCb->OnVolumeKeyEvent(streamInFocus, MIN_VOLUME_LEVEL, true);
+                VolumeEvent volumeEvent;
+                volumeEvent.volumeType = streamInFocus;
+                volumeEvent.volume = MIN_VOLUME_LEVEL;
+                volumeEvent.updateUi = true;
+                volumeEvent.volumeGroupId = 0;
+                volumeEvent.networkId = LOCAL_NETWORK_ID;
+                volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
             }
             return;
         }
@@ -194,7 +203,13 @@ void AudioPolicyServer::SubscribeKeyEvents()
                 }
 
                 AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
-                volumeChangeCb->OnVolumeKeyEvent(streamInFocus, MAX_VOLUME_LEVEL, true);
+                VolumeEvent volumeEvent;
+                volumeEvent.volumeType = streamInFocus;
+                volumeEvent.volume = MAX_VOLUME_LEVEL;
+                volumeEvent.updateUi = true;
+                volumeEvent.volumeGroupId = 0;
+                volumeEvent.networkId = LOCAL_NETWORK_ID;
+                volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
             }
             return;
         }
@@ -226,6 +241,21 @@ float AudioPolicyServer::GetStreamVolume(AudioStreamType streamType)
         return MIN_VOLUME_LEVEL;
     }
     return mPolicyService.GetStreamVolume(streamType);
+}
+
+int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
+{
+    return mPolicyService.SetLowPowerVolume(streamId, volume);
+}
+
+float AudioPolicyServer::GetLowPowerVolume(int32_t streamId)
+{
+    return mPolicyService.GetLowPowerVolume(streamId);
+}
+
+float AudioPolicyServer::GetSingleStreamVolume(int32_t streamId)
+{
+    return mPolicyService.GetSingleStreamVolume(streamId);
 }
 
 int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
@@ -272,7 +302,13 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
         }
 
         AUDIO_DEBUG_LOG("AudioPolicyServer::SetStreamVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
-        volumeChangeCb->OnVolumeKeyEvent(streamType, ConvertVolumeToInt(GetStreamVolume(streamType)), isUpdateUi);
+        VolumeEvent volumeEvent;
+        volumeEvent.volumeType = streamType;
+        volumeEvent.volume = ConvertVolumeToInt(GetStreamVolume(streamType));
+        volumeEvent.updateUi = isUpdateUi;
+        volumeEvent.volumeGroupId = 0;
+        volumeEvent.networkId = LOCAL_NETWORK_ID;
+        volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
     }
 
     return ret;
@@ -288,6 +324,25 @@ bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
     }
 
     return mPolicyService.GetStreamMute(streamType);
+}
+
+int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    int32_t ret = mPolicyService.SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    return ret;
+}
+
+std::string AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
+{
+    return mPolicyService.GetSelectedDeviceInfo(uid, pid, streamType);
+}
+
+int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    int32_t ret = mPolicyService.SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+    return ret;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
@@ -415,11 +470,12 @@ int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
     }
 }
 
-int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+    const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
 
-    return mPolicyService.SetDeviceChangeCallback(clientId, object);
+    return mPolicyService.SetDeviceChangeCallback(clientId, flag, object);
 }
 
 int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t clientId)
@@ -1094,8 +1150,12 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
         policyData.audioFocusInfo = audioInterrupt;
     }
 
-    // Get Input & Output Devices
+    GetDeviceInfo(policyData);
+    GetGroupInfo(policyData);
+}
 
+void AudioPolicyServer::GetDeviceInfo(PolicyData& policyData)
+{
     DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = GetDevices(deviceFlag);
 
@@ -1104,6 +1164,7 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
         DevicesInfo deviceInfo;
         deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
         deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
+        deviceInfo.conneceType  = CONNECT_TYPE_LOCAL;
         policyData.inputDevices.push_back(deviceInfo);
     }
 
@@ -1115,7 +1176,45 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
         DevicesInfo deviceInfo;
         deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
         deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
+        deviceInfo.conneceType  = CONNECT_TYPE_LOCAL;
         policyData.outputDevices.push_back(deviceInfo);
+    }
+
+    deviceFlag = DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG;
+    audioDeviceDescriptors = GetDevices(deviceFlag);
+
+    for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
+        AudioDeviceDescriptor audioDeviceDescriptor = **it;
+        DevicesInfo deviceInfo;
+        deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
+        deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
+        deviceInfo.conneceType  = CONNECT_TYPE_DISTRIBUTED;
+        policyData.inputDevices.push_back(deviceInfo);
+    }
+
+    deviceFlag = DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG;
+    audioDeviceDescriptors = GetDevices(deviceFlag);
+
+    for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
+        AudioDeviceDescriptor audioDeviceDescriptor = **it;
+        DevicesInfo deviceInfo;
+        deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
+        deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
+        deviceInfo.conneceType  = CONNECT_TYPE_DISTRIBUTED;
+        policyData.outputDevices.push_back(deviceInfo);
+    }
+}
+
+void AudioPolicyServer::GetGroupInfo(PolicyData& policyData)
+{
+   // Get group info
+    std::vector<sptr<VolumeGroupInfo>> groupInfos = GetVolumeGroupInfos();
+    for (auto volumeGroupInfo : groupInfos) {
+        GroupInfo info;
+        info.groupId = volumeGroupInfo->volumeGroupId_;
+        info.groupName = volumeGroupInfo->groupName_;
+        info.type = volumeGroupInfo->connectType_;
+        policyData.groupInfos.push_back(info);
     }
 }
 
@@ -1269,6 +1368,94 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 {
     AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, uid %{public}d", pid);
     mPolicyService.RegisteredStreamListenerClientDied(pid);
+}
+
+
+int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
+    StreamSetState streamSetState, AudioStreamType audioStreamType)
+{
+    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d state:%{public}d sType:%{public}d", clientUid,
+        streamSetState, audioStreamType);
+
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid == clientUid) {
+        AUDIO_ERR_LOG("UpdateStreamState clientUid value is error");
+        return ERROR;
+    }
+
+    StreamSetState setState = StreamSetState::STREAM_PAUSE;
+    if (streamSetState == StreamSetState::STREAM_RESUME) {
+        setState  = StreamSetState::STREAM_RESUME;
+    } else if (streamSetState != StreamSetState::STREAM_PAUSE) {
+        AUDIO_ERR_LOG("UpdateStreamState streamSetState value is error");
+        return ERROR;
+    }
+    StreamSetStateEventInternal setStateEvent = {};
+    setStateEvent.streamSetState = setState;
+    setStateEvent.audioStreamType = audioStreamType;
+
+    return mPolicyService.UpdateStreamState(clientUid, setStateEvent);
+}
+
+std::vector<sptr<VolumeGroupInfo>> AudioPolicyServer::GetVolumeGroupInfos()
+{
+    return  mPolicyService.GetVolumeGroupInfos();
+}
+
+AudioPolicyServer::RemoteParameterCallback::RemoteParameterCallback(sptr<AudioPolicyServer> server)
+{
+    server_ = server;
+}
+
+void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const std::string networkId,
+    const AudioParamKey key, const std::string& condition, const std::string& value)
+{
+    AUDIO_INFO_LOG("AudioPolicyServer::OnAudioParameterChange KEY :%{public}d ,value: %{public}s ",
+        key, value.c_str());
+    if (server_ == nullptr) {
+        AUDIO_ERR_LOG("server_ is nullptr");
+        return;
+    }
+    if (key == AudioParamKey::VOLUME) {
+        VolumeOnChange(networkId, condition);
+        return;
+    }
+    if (key == RENDER_STATE) {
+        AUDIO_DEBUG_LOG("[AudioPolicyServer]: No processing for now");
+        return;
+    }
+}
+
+void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::string networkId,
+    const std::string& condition)
+{
+    VolumeEvent volumeEvent;
+    volumeEvent.networkId = networkId;
+    char eventDes[EVENT_DES_SIZE];
+    if (sscanf_s(condition.c_str(), "%[^;];AUDIO_STREAM_TYPE=%d;VOLUME_LEVEL=%d;IS_UPDATEUI=%d;VOLUME_GROUP_ID=%d",
+        &eventDes, EVENT_DES_SIZE, &(volumeEvent.volumeType), &(volumeEvent.volume), &(volumeEvent.updateUi),
+        &(volumeEvent.volumeGroupId)) < PARAMS_VOLUME_NUM) {
+        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+        return;
+    }
+
+    for (auto it = server_->volumeChangeCbsMap_.begin(); it != server_->volumeChangeCbsMap_.end(); ++it) {
+        std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+        if (volumeChangeCb == nullptr) {
+            AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+            continue;
+        }
+
+        AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+        volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
+    }
+}
+
+void AudioPolicyServer::RegisterParamCallback()
+{
+    AUDIO_INFO_LOG("AudioPolicyServer::RegisterParamCallback");
+    remoteParameterCallback_ = std::make_shared<RemoteParameterCallback>(this);
+    mPolicyService.SetParameterCallback(remoteParameterCallback_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -32,6 +32,9 @@ private:
     void SetAudioSceneInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioSceneInternal(MessageParcel &data);
     void GetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSingleStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply);
@@ -57,6 +60,9 @@ private:
     void SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
+    void SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSelectedDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
+    void SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void VerifyClientPermissionInternal(MessageParcel &data, MessageParcel &reply);
@@ -72,6 +78,8 @@ private:
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
     void GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
+    void UpdateStreamStateInternal(MessageParcel& data, MessageParcel& reply);
+    void GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS
