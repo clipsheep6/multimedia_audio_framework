@@ -17,14 +17,15 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <string>
+#include "cstring"
+#include "iosfwd"
 #include "__config"
 #include "audio_control.h"
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_log.h"
 #include "audio_volume.h"
-#include "iosfwd"
-#include "string.h"
+
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;

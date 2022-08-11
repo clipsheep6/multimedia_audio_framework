@@ -14,19 +14,18 @@
  */
 
 #include <chrono>
-#include <stdint.h>
-#include <stdio.h>
+#include "climits"
+#include <cstdint>
+#include <cstdio>
+#include "cstdlib"
+#include "cstring"
 #include <thread>
 #include "__config"
 #include "audio_info.h"
 #include "audio_log.h"
 #include "audio_renderer.h"
-#include "limits.h"
 #include "memory"
 #include "pcm2wav.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
 
 using namespace std;
 using namespace OHOS;

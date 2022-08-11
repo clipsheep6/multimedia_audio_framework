@@ -16,7 +16,6 @@
 #ifndef AUDIO_RENDERER_FILE_SINK_H
 #define AUDIO_RENDERER_FILE_SINK_H
 
-#include <stdint.h>
 #include <cstdio>
 #include <string>
 #include "iosfwd"

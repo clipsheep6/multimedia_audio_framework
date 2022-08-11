@@ -14,14 +14,14 @@
  */
 
 #include <stdlib.h>
-#include "renderer_sink_adapter.h"
 #include <stdio.h>
+#include "string.h"
 #include "audio_log.h"
 #include "audio_renderer_file_sink_intf.h"
 #include "audio_renderer_sink_intf.h"
 #include "bluetooth_renderer_sink_intf.h"
 #include "remote_audio_renderer_sink_intf.h"
-#include "string.h"
+#include "renderer_sink_adapter.h"
 
 #ifdef __cplusplus
 extern "C" {
