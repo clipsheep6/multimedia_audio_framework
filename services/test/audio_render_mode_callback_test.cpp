@@ -14,12 +14,12 @@
  */
 
 #include <chrono>
-#include "climits"
 #include <cstdint>
 #include <cstdio>
+#include <thread>
+#include "climits"
 #include "cstdlib"
 #include "cstring"
-#include <thread>
 #include "__config"
 #include "audio_info.h"
 #include "audio_log.h"

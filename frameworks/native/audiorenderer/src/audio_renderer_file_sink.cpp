@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
+#include <string>
 #include "cerrno"
 #include "climits"
 #include "cstdio"
 #include "cstdlib"
-#include <string>
 #include "__config"
-#include "audio_renderer_file_sink.h"
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_log.h"
+#include "audio_renderer_file_sink.h"
 
 using namespace std;
 

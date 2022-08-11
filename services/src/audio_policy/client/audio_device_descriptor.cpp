@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include <cstdint>
 #include "string"
 #include "audio_log.h"
 #include "audio_info.h"

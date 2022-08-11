@@ -14,10 +14,10 @@
  */
 
 #include <stdlib.h>
-#include "capturer_source_adapter.h"
 #include <stdio.h>
 #include "audio_log.h"
 #include "i_audio_capturer_source_intf.h"
+#include "capturer_source_adapter.h"
 
 #ifdef __cplusplus
 extern "C" {

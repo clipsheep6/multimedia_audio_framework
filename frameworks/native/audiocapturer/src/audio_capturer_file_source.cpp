@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
+#include <string>
 #include "cstdio"
 #include "cstdlib"
-#include <string>
 #include "cerrno"
 #include "climits"
 #include "__config"
-#include "audio_capturer_file_source.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "iosfwd"
+#include "audio_capturer_file_source.h"
 
 using namespace std;
 
