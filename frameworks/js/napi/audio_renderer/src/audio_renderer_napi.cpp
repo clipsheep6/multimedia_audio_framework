@@ -1448,6 +1448,9 @@ napi_value AudioRendererNapi::Release(napi_env env, napi_callback_info info)
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioRendererAsyncContext *>(data);
+                if (context->objectInfo->audioRenderer_ == nullptr) {
+                    return nullptr;
+                }
                 context->isTrue = context->objectInfo->audioRenderer_->Release();
                 context->status = SUCCESS;
             },
