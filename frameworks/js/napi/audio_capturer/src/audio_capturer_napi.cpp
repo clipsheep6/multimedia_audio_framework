@@ -904,10 +904,12 @@ napi_value AudioCapturerNapi::Release(napi_env env, napi_callback_info info)
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
                 if (context->objectInfo->audioCapturer_ == nullptr) {
-                    return nullptr;
+                    context->isTrue = false;
+                    context->status = ERROR;
+                } else {
+                    context->isTrue = context->objectInfo->audioCapturer_->Release();
+                    context->status = SUCCESS;
                 }
-                context->isTrue = context->objectInfo->audioCapturer_->Release();
-                context->status = SUCCESS;
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
