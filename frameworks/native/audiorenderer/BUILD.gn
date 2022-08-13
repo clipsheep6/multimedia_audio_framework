@@ -12,235 +12,176 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
 
-ohos_shared_library("audio_renderer_sink") {
-  install_enable = true
+pulseaudio_dir = "//third_party/pulseaudio"
 
-  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer_sink.cpp" ]
-
-  cflags = [ "-fPIC" ]
-  cflags += [ "-Wall" ]
-  if ("${product_name}" == "m40") {
-    cflags += [ "-DPRODUCT_M40" ]
-  }
-  cflags_cc = cflags
-
+config("audio_renderer_config") {
   include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_framework/services/include",
+    "//foundation/multimedia/audio_framework/services/include/audio_service/client",
+    "//foundation/multimedia/audio_framework/services/test",
     "//commonlibrary/c_utils/base/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//drivers/peripheral/audio/interfaces/include",
-    "//commonlibrary/c_utils/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
   ]
 
-  public_configs = [ ":audio_external_library_config" ]
-
-  deps = [
-    "$hdf_uhdf_path/hdi:libhdi",
-    "$hdf_uhdf_path/host:libhdf_host",
-    "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-    "$hdf_uhdf_path/utils:libhdf_utils",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//third_party/bounds_checking_function:libsec_static",
+  cflags = [
+    "-Wall",
+    "-Werror",
   ]
-
-  deps += [ multimedia_audio_framework_hdi_audio_client ]
-
-  part_name = "multimedia_audio_framework"
-  subsystem_name = "multimedia"
-  external_deps = [ "c_utils:utils" ]
 }
 
-ohos_shared_library("bluetooth_renderer_sink") {
+ohos_shared_library("audio_renderer") {
   install_enable = true
 
-  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/bluetooth_renderer_sink.cpp" ]
+  configs = [ ":audio_renderer_config" ]
 
-  cflags = [ "-fPIC" ]
-  cflags += [ "-Wall" ]
-
-  cflags_cc = cflags
-
-  include_dirs = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//commonlibrary/c_utils/base/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//drivers/peripheral/bluetooth/audio/interfaces/include",
-    "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
-    "//commonlibrary/c_utils/base/include",
-  ]
-
-  public_configs = [ ":audio_external_library_config" ]
-
-  deps = [
-    "$hdf_uhdf_path/hdi:libhdi",
-    "$hdf_uhdf_path/host:libhdf_host",
-    "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-    "$hdf_uhdf_path/utils:libhdf_utils",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//third_party/bounds_checking_function:libsec_static",
-  ]
-
-  part_name = "multimedia_audio_framework"
-  subsystem_name = "multimedia"
-  external_deps = [ "c_utils:utils" ]
-}
-
-ohos_shared_library("remote_audio_renderer_sink") {
-  install_enable = true
-
-  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/remote_audio_renderer_sink.cpp" ]
-
-  cflags = [ "-fPIC" ]
-  cflags += [ "-Wall" ]
-  cflags_cc = cflags
-  if ("${product_name}" == "m40") {
-    cflags += [ "-DPRODUCT_M40" ]
-  }
-
-  include_dirs = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//commonlibrary/c_utils/base/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//drivers/peripheral/audio/interfaces/include",
-    "//commonlibrary/c_utils/base/include",
-  ]
-
-  public_configs = [ ":audio_external_library_config" ]
-
-  deps = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//third_party/bounds_checking_function:libsec_static",
-  ]
-  if ("${product_name}" == "m40") {
-    deps += [ "//foundation/distributedhardware/distributed_audio/hdf_service/distributed_audio/audio_client:daudio_client" ]
-  } else {
-    deps += [
-      "$hdf_uhdf_path/hdi:libhdi",
-      "$hdf_uhdf_path/host:libhdf_host",
-      "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-      "$hdf_uhdf_path/utils:libhdf_utils",
-      "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client",
-    ]
-    external_deps = [ "c_utils:utils" ]
-  }
-
-  part_name = "multimedia_audio_framework"
-  subsystem_name = "multimedia"
-}
-
-ohos_shared_library("audio_renderer_file_sink") {
-  install_enable = true
-
-  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer_file_sink.cpp" ]
-
-  cflags = [ "-fPIC" ]
-  cflags += [ "-Wall" ]
-
-  cflags_cc = cflags
-
-  include_dirs = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//commonlibrary/c_utils/base/include",
-  ]
-
-  public_configs = [ ":audio_external_library_config" ]
-
-  deps = [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
-
-  part_name = "multimedia_audio_framework"
-  subsystem_name = "multimedia"
-  external_deps = [ "c_utils:utils" ]
-}
-
-ohos_shared_library("audio_bluetooth_client") {
-  install_enable = true
   sources = [
-    "//foundation/multimedia/audio_framework/services/src/audio_bluetooth/client/audio_bluetooth_manager.cpp",
-    "//foundation/multimedia/audio_framework/services/src/audio_bluetooth/client/bluetooth_a2dp_audio_src_observer_stub.cpp",
-    "//foundation/multimedia/audio_framework/services/src/audio_bluetooth/client/bluetooth_a2dp_src_observer.cpp",
-  ]
-
-  include_dirs = [
-    "//foundation/communication/bluetooth/frameworks/inner/common",
-    "//foundation/communication/bluetooth/interfaces/inner_api/include",
-    "//foundation/communication/bluetooth/interfaces/inner_api/include/c_header",
-    "//foundation/communication/bluetooth/services/bluetooth/common/",
-    "//foundation/communication/bluetooth/services/bluetooth/ipc/include",
-    "//foundation/multimedia/audio_framework/services/include/audio_policy/server/service/interface",
-    "//foundation/multimedia/audio_framework/services/include/audio_bluetooth/client",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//commonlibrary/c_utils/base/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//drivers/peripheral/bluetooth/audio/interfaces/include",
-    "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer.cpp",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer_proxy_obj.cpp",
   ]
 
   deps = [
-    "$hdf_uhdf_path/hdi:libhdi",
-    "$hdf_uhdf_path/host:libhdf_host",
-    "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-    "$hdf_uhdf_path/utils:libhdf_utils",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//foundation/communication/bluetooth/frameworks/inner:btframework",
-    "//foundation/communication/bluetooth/services/bluetooth/ipc:btipc_static",
-    "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:bluetooth_renderer_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
   ]
+
+  public_configs = [ ":audio_external_library_config" ]
 
   external_deps = [
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
   ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
-ohos_shared_library("renderer_sink_adapter") {
-  install_enable = true
+ohos_executable("audio_renderer_test") {
+  install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/renderer_sink_adapter.c" ]
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_renderer_test.cpp" ]
 
-  cflags = [ "-fPIC" ]
-  cflags += [ "-Wall" ]
+  configs = [ ":audio_renderer_config" ]
 
-  cflags_cc = cflags
+  deps = [ ":audio_renderer" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_latency_accuracy_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_renderer_test.cpp" ]
+
+  configs = [ ":audio_renderer_config" ]
+  cflags = [ "-DLATENCY_ACCURACY_TEST" ]
+
+  deps = [ ":audio_renderer" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_render_mode_callback_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_render_mode_callback_test.cpp" ]
+
+  configs = [ ":audio_renderer_config" ]
+
+  deps = [ ":audio_renderer" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_voip_test") {
+  install_enable = false
+
+  sources = [
+    "//foundation/multimedia/audio_framework/services/test/audio_voip_test.cpp",
+  ]
 
   include_dirs = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//drivers/peripheral/audio/interfaces/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//third_party/bounds_checking_function:libsec_static",
-    "//commonlibrary/c_utils/base:utils",
+    "//foundation/multimedia/audio_framework/services/include",
+    "//foundation/multimedia/audio_framework/services/include/audio_service/client",
+    "//commonlibrary/c_utils/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
   ]
 
-  public_configs = [ ":audio_external_library_config" ]
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  configs = [ ":audio_renderer_config" ]
 
   deps = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_file_sink",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_sink",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:bluetooth_renderer_sink",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:remote_audio_renderer_sink",
+    ":audio_renderer",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer",
   ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_interrupt_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_interrupt_test.cpp" ]
+
+  configs = [ ":audio_renderer_config" ]
+
+  deps = [
+    ":audio_renderer",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("interrupt_multi_renderer_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_framework/services/test/interrupt_multi_renderer_test.cpp" ]
+
+  configs = [ ":audio_renderer_config" ]
+
+  deps = [ ":audio_renderer" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 config("audio_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include" ]
+  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include" ]
 }

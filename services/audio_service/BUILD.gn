@@ -1,0 +1,85 @@
+# Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
+
+group("audio_stream_service_group") {
+  deps = [
+    ":audio_stream_service_cfg",
+    ":audio_service",
+  ]
+}
+
+ohos_prebuilt_etc("audio_stream_service_cfg") {
+  source = "etc/pulseaudio.cfg"
+  relative_install_dir = "init"
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+config("audio_service_config") {
+  visibility = [ ":*" ]
+
+  include_dirs = [
+    "include",
+    "include/audio_service/server",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//drivers/peripheral/audio/interfaces/include",
+    "include/audio_service/common",
+  ]
+
+  if (target_cpu == "arm") {
+    cflags = [ "-DBINDER_IPC_32BIT" ]
+  }
+}
+
+ohos_shared_library("audio_service") {
+  install_enable = true
+
+  sources = [
+    "src/audio_service/server/audio_manager_listener_proxy.cpp",
+    "src/audio_service/server/audio_manager_stub.cpp",
+    "src/audio_service/server/audio_server.cpp",
+  ]
+
+  configs = [ ":audio_service_config" ]
+
+  if ("${product_name}" == "m40") {
+    cflags = [ "-DPRODUCT_M40" ]
+  }
+
+  deps = [
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:renderer_sink_adapter",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:remote_audio_renderer_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_source",
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/daemon:pulseaudio",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_framework"
+}
