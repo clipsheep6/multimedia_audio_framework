@@ -499,6 +499,7 @@ public:
     int32_t SetStreamLowPowerVolume(float powerVolumeFactor);
     float GetStreamLowPowerVolume();
     float GetSingleStreamVol();
+    void SetFreezeSt(bool isCallback);
 
     // Audio timer callback
     virtual void OnTimeOut();
@@ -666,6 +667,7 @@ private:
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
+    static bool isCallBack_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

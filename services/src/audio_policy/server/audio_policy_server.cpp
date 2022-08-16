@@ -1227,6 +1227,18 @@ void AudioPolicyServer::GetGroupInfo(PolicyData& policyData)
     }
 }
 
+int32_t AudioPolicyServer::ProxyApp(int32_t uid, bool isFreeze)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyServer: ProxyApp");
+    return mPolicyService.ProxyApp(uid, isFreeze);
+}
+
+int32_t AudioPolicyServer::ResetAll()
+{
+    AUDIO_DEBUG_LOG("AudioPolicyServer: ResetAll");
+    return mPolicyService.ResetAll();
+}
+
 int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
     AUDIO_DEBUG_LOG("AudioPolicyServer: Dump Process Invoked");

@@ -505,5 +505,17 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyManager::GetVolumeGroupInfos()
 {
     return g_sProxy->GetVolumeGroupInfos();
 }
+
+int32_t AudioPolicyManager::ProxyApp(int32_t uid, bool isFreeze)
+{
+    AUDIO_DEBUG_LOG("AudioSystemManager ProxyApp uid is %{public}d, isFreeze is %{public}d", uid, isFreeze);
+    return g_sProxy->ProxyApp(uid, isFreeze);
+}
+
+int32_t AudioPolicyManager::ResetAll()
+{
+    AUDIO_DEBUG_LOG("AudioSystemManager ResetAll");
+    return g_sProxy->ResetAll();
+}
 } // namespace AudioStandard
 } // namespace OHOS

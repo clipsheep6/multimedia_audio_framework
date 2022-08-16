@@ -40,14 +40,16 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
             StreamSetStateEventInternal sreamSetStateEventInternal = {};
             sreamSetStateEventInternal.streamSetState= static_cast<StreamSetState>(data.ReadInt32());
             sreamSetStateEventInternal.audioStreamType = static_cast<AudioStreamType>(data.ReadInt32());
-            PausedStreamImpl(sreamSetStateEventInternal);
+            bool isFreeze = data.ReadBool();
+            PausedStreamImpl(sreamSetStateEventInternal, isFreeze);
             return AUDIO_OK;
         }
         case RESUMESTREAM: {
             StreamSetStateEventInternal sreamSetStateEventInternal = {};
             sreamSetStateEventInternal.streamSetState= static_cast<StreamSetState>(data.ReadInt32());
             sreamSetStateEventInternal.audioStreamType = static_cast<AudioStreamType>(data.ReadInt32());
-            ResumeStreamImpl(sreamSetStateEventInternal);
+            bool isFreeze = data.ReadBool();
+            ResumeStreamImpl(sreamSetStateEventInternal, isFreeze);
             return AUDIO_OK;
         }
         case SETLOWPOWERVOL: {
@@ -84,12 +86,12 @@ void AudioClientTrackerCallbackStub::SetClientTrackerCallback(
 }
 
 void AudioClientTrackerCallbackStub::PausedStreamImpl(
-    const StreamSetStateEventInternal &streamSetStateEventInternal)
+    const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
 {
     AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub PausedStreamImpl start");
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
     if (cb != nullptr) {
-        cb->PausedStreamImpl(streamSetStateEventInternal);
+        cb->PausedStreamImpl(streamSetStateEventInternal, isFreeze);
     } else {
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: PausedStreamImpl callback_ is nullptr");
     }
@@ -107,12 +109,12 @@ void AudioClientTrackerCallbackStub::SetLowPowerVolumeImpl(float volume)
 }
 
 void AudioClientTrackerCallbackStub::ResumeStreamImpl(
-    const StreamSetStateEventInternal &streamSetStateEventInternal)
+    const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
 {
     AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub ResumeStreamImpl start");
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
     if (cb != nullptr) {
-        cb->ResumeStreamImpl(streamSetStateEventInternal);
+        cb->ResumeStreamImpl(streamSetStateEventInternal, isFreeze);
     } else {
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ResumeStreamImpl callback_ is nullptr");
     }

@@ -628,6 +628,26 @@ void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, Mes
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:GetVolumeGroups internal exit");
 }
 
+void AudioPolicyManagerStub::ProxyAppInternal(MessageParcel& data, MessageParcel& reply)
+{
+    AUDIO_DEBUG_LOG("ProxyAppInternal entered");
+    int32_t uid = data.ReadInt32();
+    bool isFreeze = data.ReadBool();
+
+    int32_t result = ProxyApp(uid, isFreeze);
+    reply.WriteInt32(result);
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:ProxyApp internal exit");
+}
+
+void AudioPolicyManagerStub::ResetAllInternal(MessageParcel& data, MessageParcel& reply)
+{
+    AUDIO_DEBUG_LOG("ResetAllInternal entered");
+    
+    int32_t result = ResetAll();
+    reply.WriteInt32(result);
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:ResetAll internal exit");
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -833,6 +853,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_VOLUME_GROUP_INFO:
             GetVolumeGroupInfoInternal(data, reply);
+            break;
+
+        case PROXY_APP:
+            ProxyAppInternal(data, reply);
+            break;
+        
+        case RESET_ALL:
+            ResetAllInternal(data, reply);
             break;
 
         default:

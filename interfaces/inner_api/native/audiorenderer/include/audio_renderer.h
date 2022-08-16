@@ -546,6 +546,14 @@ public:
      * @return single stream volume.
      */
     virtual float GetSingleStreamVolume() const = 0;
+
+    /**
+     * @brief Set freeze state.
+     *
+     * @param isFreeze The freeze state.
+     * @return none
+     */
+    virtual void SetFreezeState(bool isCallback) const = 0;
     
     virtual ~AudioRenderer();
 };

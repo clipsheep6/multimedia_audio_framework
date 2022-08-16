@@ -281,6 +281,8 @@ public:
     DeviceType GetTypeValueFromPin(AudioPin pin) const;
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroups(std::string networkId);
     std::shared_ptr<AudioGroupManager> GetGroupManager(int32_t groupId);
+    int32_t ProxyApp(int32_t uid, bool isFreeze);
+    int32_t ResetAll();
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();

@@ -16,6 +16,8 @@
 #ifndef AUDIO_STREAM_COLLECTOR_H
 #define AUDIO_STREAM_COLLECTOR_H
 
+#include <unordered_set>
+
 #include "audio_info.h"
 #include "audio_stream_event_dispatcher.h"
 
@@ -46,12 +48,18 @@ public:
     void RegisteredTrackerClientDied(int32_t uid);
     void RegisteredStreamListenerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
+    int32_t UpdateStreamStateInner(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal,
+        bool isFreeze);
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
     float GetLowPowerVolume(int32_t streamId);
     float GetSingleStreamVolume(int32_t streamId);
+    int32_t ProxyApp(int32_t uid, bool isFreeze);
+    int32_t ResetAll();
 private:
     AudioStreamEventDispatcher &mDispatcherService;
     std::mutex streamsInfoMutex_;
+    std::mutex freezeMutex_;
+    std::unordered_set<int32_t> freezeUids;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
     std::map<std::pair<int32_t, int32_t>, int32_t> capturerStatequeue_;
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos_;

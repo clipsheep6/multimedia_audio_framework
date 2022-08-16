@@ -21,7 +21,7 @@ AudioClientTrackerCallbackProxy::AudioClientTrackerCallbackProxy(const sptr<IRem
     : IRemoteProxy<IStandardClientTracker>(impl) { }
 
 void AudioClientTrackerCallbackProxy::PausedStreamImpl(
-    const StreamSetStateEventInternal &streamSetStateEventInternal)
+    const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -33,6 +33,7 @@ void AudioClientTrackerCallbackProxy::PausedStreamImpl(
 
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.streamSetState));
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.audioStreamType));
+    data.WriteBool(isFreeze);
     int error = Remote()->SendRequest(PAUSEDSTREAM, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("PausedStreamImpl failed, error: %{public}d", error);
@@ -40,7 +41,7 @@ void AudioClientTrackerCallbackProxy::PausedStreamImpl(
 }
 
 void AudioClientTrackerCallbackProxy::ResumeStreamImpl(
-    const StreamSetStateEventInternal &streamSetStateEventInternal)
+    const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -52,6 +53,7 @@ void AudioClientTrackerCallbackProxy::ResumeStreamImpl(
 
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.streamSetState));
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.audioStreamType));
+    data.WriteBool(isFreeze);
     int error = Remote()->SendRequest(RESUMESTREAM, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("ResumeStreamImpl failed, error: %{public}d", error);
@@ -124,18 +126,18 @@ ClientTrackerCallbackListener::~ClientTrackerCallbackListener()
 
 
 void ClientTrackerCallbackListener::PausedStreamImpl(
-    const StreamSetStateEventInternal &streamSetStateEventInternal)
+    const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
 {
     if (listener_ != nullptr) {
-        listener_->PausedStreamImpl(streamSetStateEventInternal);
+        listener_->PausedStreamImpl(streamSetStateEventInternal, isFreeze);
     }
 }
 
 void ClientTrackerCallbackListener::ResumeStreamImpl(
-    const StreamSetStateEventInternal &streamSetStateEventInternal)
+    const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
 {
     if (listener_ != nullptr) {
-        listener_->ResumeStreamImpl(streamSetStateEventInternal);
+        listener_->ResumeStreamImpl(streamSetStateEventInternal, isFreeze);
     }
 }
 

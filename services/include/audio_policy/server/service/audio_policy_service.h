@@ -166,6 +166,9 @@ public:
 
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 
+    int32_t ProxyApp(int32_t uid, bool isFreeze);
+    int32_t ResetAll();
+
     void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
 
 private:

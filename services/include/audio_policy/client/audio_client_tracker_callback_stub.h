@@ -29,8 +29,8 @@ public:
             MessageParcel &reply, MessageOption &option) override;
     void SetClientTrackerCallback(const std::weak_ptr<AudioClientTracker> &callback);
 
-    void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
-    void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze) override;
+    void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze) override;
 
     void SetLowPowerVolumeImpl(float volume) override;
     void GetLowPowerVolumeImpl(float &volume) override;

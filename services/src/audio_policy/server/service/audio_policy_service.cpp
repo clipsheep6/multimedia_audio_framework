@@ -1923,6 +1923,18 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
     return volumeGroupInfos;
 }
 
+int32_t AudioPolicyService::ProxyApp(int32_t uid, bool isFreeze)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyService: ProxyApp");
+    return mStreamCollector.ProxyApp(uid, isFreeze);
+}
+
+int32_t AudioPolicyService::ResetAll()
+{
+    AUDIO_DEBUG_LOG("AudioPolicyService: ResetAll");
+    return mStreamCollector.ResetAll();
+}
+
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
 {
     AUDIO_INFO_LOG("Enter AudioPolicyService::SetParameterCallback");

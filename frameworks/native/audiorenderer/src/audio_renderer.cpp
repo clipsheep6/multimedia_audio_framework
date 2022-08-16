@@ -721,5 +721,10 @@ float AudioRendererPrivate::GetSingleStreamVolume() const
 {
     return audioStream_->GetSingleStreamVolume();
 }
+
+void AudioRendererPrivate::SetFreezeState(bool isCallback) const
+{
+    return audioStream_->SetFreezeState(isCallback);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
