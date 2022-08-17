@@ -278,13 +278,7 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
             continue;
         }
         AUDIO_DEBUG_LOG("AudioPolicyServer::SetStreamMute trigger volumeChangeCb clientPid : %{public}d", it->first);
-        VolumeEvent volumeEvent;
-        volumeEvent.volumeType = streamType;
-        volumeEvent.volume = ConvertVolumeToInt(GetStreamVolume(streamType));
-        volumeEvent.updateUi = false;
-        volumeEvent.volumeGroupId = 0;
-        volumeEvent.networkId = LOCAL_NETWORK_ID;
-        volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
+        volumeChangeCb->OnVolumeKeyEvent(streamType, ConvertVolumeToInt(GetStreamVolume(streamType)), false);
     }
 
     return result;

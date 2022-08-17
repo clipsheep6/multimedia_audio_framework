@@ -40,7 +40,7 @@ public:
     SLresult GetStateAdapter(SLuint32 id, SLOHBufferQueueState *state);
     SLresult GetBufferAdapter(SLuint32 id, SLuint8 **buffer, SLuint32 *size);
     SLresult RegisterCallbackAdapter(SLOHBufferQueueItf itf, SlOHBufferQueueCallback callback, void *pContext);
-    
+
 private:
     AudioCapturerAdapter();
     ~AudioCapturerAdapter();
@@ -53,6 +53,6 @@ private:
     AudioSamplingRate SlToOhosSamplingRate(SLDataFormat_PCM *pcmFormat);
     AudioChannel SlToOhosChannel(SLDataFormat_PCM *pcmFormat);
 };
-}
-}
+} // namespace AudioStandard
+} // namespace OHOS
 #endif

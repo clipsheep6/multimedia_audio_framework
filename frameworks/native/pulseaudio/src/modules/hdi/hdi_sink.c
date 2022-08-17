@@ -63,8 +63,6 @@ struct Userdata {
     uint32_t sink_latency;
     uint32_t render_in_idle_state;
     uint32_t open_mic_speaker;
-    const char *deviceNetworkId;
-    int32_t device_type;
     size_t bytes_dropped;
     pa_thread_mq thread_mq;
     pa_memchunk memchunk;

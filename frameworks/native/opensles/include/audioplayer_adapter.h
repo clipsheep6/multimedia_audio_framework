@@ -43,7 +43,7 @@ public:
     SLresult GetStateAdapter(SLuint32 id, SLOHBufferQueueState *state);
     SLresult GetBufferAdapter(SLuint32 id, SLuint8 **buffer, SLuint32 *size);
     SLresult RegisterCallbackAdapter(SLOHBufferQueueItf itf, SlOHBufferQueueCallback callback, void *pContext);
-    
+
 private:
     AudioPlayerAdapter();
     ~AudioPlayerAdapter();
