@@ -496,6 +496,9 @@ public:
      * @return Returns whether the authentication was success or not
      */
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid);
+    int32_t SetStreamLowPowerVolume(float powerVolumeFactor);
+    float GetStreamLowPowerVolume();
+    float GetSingleStreamVol();
 
     // Audio timer callback
     virtual void OnTimeOut();
@@ -538,6 +541,7 @@ private:
     std::string cachePath_ = "";
 
     float mVolumeFactor;
+    float mPowerVolumeFactor;
     bool mUnMute_;
     AudioStreamType mStreamType;
     AudioSystemManager *mAudioSystemMgr;
@@ -647,6 +651,7 @@ private:
 
     // Callbacks to be implemented
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
+    static void PAStreamMovedCb(pa_stream *stream, void *userdata);
     static void PAStreamUnderFlowCb(pa_stream *stream, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
     static void PAStreamReadCb(pa_stream *stream, size_t length, void *userdata);

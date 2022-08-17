@@ -32,6 +32,12 @@ public:
 
     float GetStreamVolume(AudioStreamType streamType) override;
 
+    int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
+
+    float GetLowPowerVolume(int32_t streamId) override;
+
+    float GetSingleStreamVolume(int32_t streamId) override;
+
     int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
 
     bool GetStreamMute(AudioStreamType streamType) override;
@@ -48,6 +54,14 @@ public:
 
     DeviceType GetActiveInputDevice() override;
 
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
+
+    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) override;
+
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
+
     int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
     AudioRingerMode GetRingerMode() override;
@@ -60,7 +74,8 @@ public:
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+        const sptr<IRemoteObject>& object) override;
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId) override;
 
@@ -115,6 +130,10 @@ public:
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
+    int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
+        AudioStreamType audioStreamType) override;
+
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

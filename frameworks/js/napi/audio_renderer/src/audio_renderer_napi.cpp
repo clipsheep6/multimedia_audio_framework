@@ -43,6 +43,7 @@ napi_ref AudioRendererNapi::interruptHintType_ = nullptr;
 napi_ref AudioRendererNapi::interruptForceType_ = nullptr;
 napi_ref AudioRendererNapi::audioState_ = nullptr;
 napi_ref AudioRendererNapi::sampleFormat_ = nullptr;
+mutex AudioRendererNapi::createMutex_;
 
 namespace {
     const int ARGS_ONE = 1;
@@ -133,7 +134,7 @@ napi_value AudioRendererNapi::CreateAudioSampleFormatObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = AudioRendererNapi::SAMPLE_FORMAT_INVALID; i <= AudioRendererNapi::SAMPLE_FORMAT_S32LE; i++) {
+        for (int i = AudioRendererNapi::SAMPLE_FORMAT_INVALID; i <= AudioRendererNapi::SAMPLE_FORMAT_F32LE; i++) {
             switch (i) {
                 case AudioRendererNapi::SAMPLE_FORMAT_INVALID:
                     propName = "SAMPLE_FORMAT_INVALID";
@@ -149,6 +150,9 @@ napi_value AudioRendererNapi::CreateAudioSampleFormatObject(napi_env env)
                     break;
                 case AudioRendererNapi::SAMPLE_FORMAT_S32LE:
                     propName = "SAMPLE_FORMAT_S32LE";
+                    break;
+                case AudioRendererNapi::SAMPLE_FORMAT_F32LE:
+                    propName = "SAMPLE_FORMAT_F32LE";
                     break;
                 default:
                     HiLog::Error(LABEL, "CreateAudioSampleFormatObject: No prop with this value try next value!");
@@ -1929,6 +1933,7 @@ bool AudioRendererNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
 
 napi_value AudioRendererNapi::CreateAudioRendererWrapper(napi_env env, unique_ptr<AudioRendererOptions> &renderOptions)
 {
+    lock_guard<mutex> lock(createMutex_);
     napi_status status;
     napi_value result = nullptr;
     napi_value constructor;

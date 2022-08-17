@@ -182,6 +182,64 @@ float AudioPolicyProxy::GetStreamVolume(AudioStreamType streamType)
     return reply.ReadFloat();
 }
 
+int32_t AudioPolicyProxy::SetLowPowerVolume(int32_t streamId, float volume)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(streamId);
+    data.WriteFloat(volume);
+    int32_t error = Remote()->SendRequest(SET_LOW_POWER_STREM_VOLUME, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("set low power stream volume failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
+float AudioPolicyProxy::GetLowPowerVolume(int32_t streamId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(streamId);
+    int32_t error = Remote()->SendRequest(GET_LOW_POWRR_STREM_VOLUME, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get low power stream volume failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadFloat();
+}
+
+float AudioPolicyProxy::GetSingleStreamVolume(int32_t streamId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(streamId);
+    int32_t error = Remote()->SendRequest(GET_SINGLE_STREAM_VOLUME, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get single stream volume failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadFloat();
+}
+
 int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     MessageParcel data;
@@ -345,6 +403,101 @@ DeviceType AudioPolicyProxy::GetActiveInputDevice()
     return static_cast<DeviceType>(reply.ReadInt32());
 }
 
+int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    if (!audioRendererFilter->Marshalling(data)) {
+        AUDIO_ERR_LOG("AudioRendererFilter Marshalling() failed");
+        return -1;
+    }
+    int size = audioDeviceDescriptors.size();
+    int validSize = 20; // Use 20 as limit.
+    if (size <= 0 || size > validSize) {
+        AUDIO_ERR_LOG("SelectOutputDevice get invalid device size.");
+        return -1;
+    }
+    data.WriteInt32(size);
+    for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
+        if (!audioDeviceDescriptor->Marshalling(data)) {
+            AUDIO_ERR_LOG("AudioDeviceDescriptor Marshalling() failed");
+            return -1;
+        }
+    }
+    int error = Remote()->SendRequest(SELECT_OUTPUT_DEVICE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SelectOutputDevice failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+std::string AudioPolicyProxy::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return "";
+    }
+    data.WriteInt32(uid);
+    data.WriteInt32(pid);
+    data.WriteInt32(static_cast<int32_t>(streamType));
+    int error = Remote()->SendRequest(GET_SELECTED_DEVICE_INFO, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetSelectedDeviceInfo failed, error: %{public}d", error);
+        return "";
+    }
+
+    return reply.ReadString();
+}
+
+int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    if (!audioCapturerFilter->Marshalling(data)) {
+        AUDIO_ERR_LOG("AudioCapturerFilter Marshalling() failed");
+        return -1;
+    }
+    int size = audioDeviceDescriptors.size();
+    int validSize = 20; // Use 20 as limit.
+    if (size <= 0 || size > validSize) {
+        AUDIO_ERR_LOG("SelectInputDevice get invalid device size.");
+        return -1;
+    }
+    data.WriteInt32(size);
+    for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
+        if (!audioDeviceDescriptor->Marshalling(data)) {
+            AUDIO_ERR_LOG("AudioDeviceDescriptor Marshalling() failed");
+            return -1;
+        }
+    }
+    int error = Remote()->SendRequest(SELECT_INPUT_DEVICE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SelectInputDevice failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
@@ -390,7 +543,8 @@ int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+    const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -406,6 +560,7 @@ int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const 
     }
 
     data.WriteInt32(clientId);
+    data.WriteInt32(flag);
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(SET_DEVICE_CHANGE_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
@@ -1051,6 +1206,60 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
     }
 
     return SUCCESS;
+}
+
+int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
+    AudioStreamType audioStreamType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AUDIO_DEBUG_LOG("AudioPolicyProxy::UpdateStreamState");
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("UpdateStreamState: WriteInterfaceToken failed");
+        return ERROR;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(clientUid));
+    data.WriteInt32(static_cast<int32_t>(streamSetState));
+    data.WriteInt32(static_cast<int32_t>(audioStreamType));
+
+    int32_t error = Remote()->SendRequest(UPDATE_STREAM_STATE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UPDATE_STREAM_STATE stream changed info event failed , error: %d", error);
+        return ERROR;
+    }
+
+    return SUCCESS;
+}
+
+std::vector<sptr<VolumeGroupInfo>> AudioPolicyProxy::GetVolumeGroupInfos()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    std::vector<sptr<VolumeGroupInfo>> infos;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: GetVolumeGroupById WriteInterfaceToken failed");
+        return infos;
+    }
+
+    int32_t error = Remote()->SendRequest(GET_VOLUME_GROUP_INFO, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetVolumeGroupInfo, error: %d", error);
+        return infos;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        infos.push_back(VolumeGroupInfo::Unmarshalling(reply));
+    }
+
+    return infos;
 }
 } // namespace AudioStandard
 } // namespace OHOS

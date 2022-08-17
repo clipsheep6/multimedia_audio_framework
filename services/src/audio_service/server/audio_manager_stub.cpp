@@ -21,8 +21,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-int AudioManagerStub::OnRemoteRequest(
-    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     AUDIO_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);
     if (data.ReadInterfaceToken() != GetDescriptor()) {
@@ -35,8 +34,8 @@ int AudioManagerStub::OnRemoteRequest(
             AUDIO_DEBUG_LOG("GET_MAX_VOLUME AudioManagerStub");
             int volumeType = data.ReadInt32();
             AUDIO_DEBUG_LOG("GET_MAX_VOLUME volumeType received from client= %{public}d", volumeType);
-            AudioSystemManager::AudioVolumeType volumeStreamConfig =
-                   static_cast<AudioSystemManager::AudioVolumeType>(volumeType);
+            AudioVolumeType volumeStreamConfig =
+                   static_cast<AudioVolumeType>(volumeType);
             AUDIO_DEBUG_LOG("GET_MAX_VOLUME volumeType= %{public}d", volumeStreamConfig);
             int32_t ret = GetMaxVolume(volumeStreamConfig);
             reply.WriteInt32(ret);
@@ -46,8 +45,8 @@ int AudioManagerStub::OnRemoteRequest(
             AUDIO_DEBUG_LOG("GET_MIN_VOLUME AudioManagerStub");
             int volumeType = data.ReadInt32();
             AUDIO_DEBUG_LOG("GET_MIN_VOLUME volumeType received from client= %{public}d", volumeType);
-            AudioSystemManager::AudioVolumeType volumeStreamConfig =
-                   static_cast<AudioSystemManager::AudioVolumeType>(volumeType);
+            AudioVolumeType volumeStreamConfig =
+                   static_cast<AudioVolumeType>(volumeType);
             AUDIO_DEBUG_LOG("GET_MIN_VOLUME volumeType= %{public}d", volumeStreamConfig);
             int32_t ret = GetMinVolume(volumeStreamConfig);
             reply.WriteInt32(ret);
@@ -122,6 +121,45 @@ int AudioManagerStub::OnRemoteRequest(
             DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
             int32_t ret = UpdateActiveDeviceRoute(type, flag);
             reply.WriteInt32(ret);
+            return AUDIO_OK;
+        }
+        case SET_PARAMETER_CALLBACK: {
+            AUDIO_DEBUG_LOG("SET_PARAMETER_CALLBACK AudioManagerStub");
+            sptr<IRemoteObject> object = data.ReadRemoteObject();
+            if (object == nullptr) {
+                AUDIO_ERR_LOG("AudioManagerStub: SET_PARAMETER_CALLBACK obj is null");
+                return AUDIO_ERR;
+            }
+            int32_t result = SetParameterCallback(object);
+            reply.WriteInt32(result);
+            return AUDIO_OK;
+        }
+        case SET_REMOTE_AUDIO_PARAMETER: {
+            AUDIO_DEBUG_LOG("SET_AUDIO_PARAMETER AudioManagerStub");
+            const std::string networkId = data.ReadString();
+            AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
+            const std::string condtion = data.ReadString();
+            const std::string value = data.ReadString();
+            AUDIO_DEBUG_LOG("SET_AUDIO_PARAMETER key-value pair from client= %{public}d, %{public}s",
+                key, value.c_str());
+            SetAudioParameter(networkId, key, condtion, value);
+            return AUDIO_OK;
+        }
+        case GET_REMOTE_AUDIO_PARAMETER: {
+            AUDIO_DEBUG_LOG("GET_AUDIO_PARAMETER AudioManagerStub");
+            const std::string networkId = data.ReadString();
+            AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
+            const std::string condition = data.ReadString();
+            AUDIO_DEBUG_LOG("GET_AUDIO_PARAMETER key received from client= %{public}d", key);
+            const std::string value = GetAudioParameter(networkId, key, condition);
+            reply.WriteString(value);
+            return AUDIO_OK;
+        }
+        case NOTIFY_DEVICE_INFO: {
+            AUDIO_DEBUG_LOG("NOTIFY_DEVICE_INFO AudioManagerStub");
+            const std::string networkId = data.ReadString();
+            const bool connected = data.ReadBool();
+            NotifyDeviceInfo(networkId, connected);
             return AUDIO_OK;
         }
         default: {

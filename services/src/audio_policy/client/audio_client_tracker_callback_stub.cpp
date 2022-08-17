@@ -34,6 +34,45 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ReadInterfaceToken failed");
         return -1;
     }
+
+    switch (code) {
+        case PAUSEDSTREAM: {
+            StreamSetStateEventInternal sreamSetStateEventInternal = {};
+            sreamSetStateEventInternal.streamSetState= static_cast<StreamSetState>(data.ReadInt32());
+            sreamSetStateEventInternal.audioStreamType = static_cast<AudioStreamType>(data.ReadInt32());
+            PausedStreamImpl(sreamSetStateEventInternal);
+            return AUDIO_OK;
+        }
+        case RESUMESTREAM: {
+            StreamSetStateEventInternal sreamSetStateEventInternal = {};
+            sreamSetStateEventInternal.streamSetState= static_cast<StreamSetState>(data.ReadInt32());
+            sreamSetStateEventInternal.audioStreamType = static_cast<AudioStreamType>(data.ReadInt32());
+            ResumeStreamImpl(sreamSetStateEventInternal);
+            return AUDIO_OK;
+        }
+        case SETLOWPOWERVOL: {
+            float volume = data.ReadFloat();
+            SetLowPowerVolumeImpl(volume);
+            return AUDIO_OK;
+        }
+        case GETLOWPOWERVOL: {
+            float volume;
+            GetLowPowerVolumeImpl(volume);
+            reply.WriteFloat(volume);
+            return AUDIO_OK;
+        }
+        case GETSINGLESTREAMVOL: {
+            float volume;
+            GetSingleStreamVolumeImpl(volume);
+            reply.WriteFloat(volume);
+            return AUDIO_OK;
+        }
+        default: {
+            AUDIO_ERR_LOG("default case, need check AudioListenerStub");
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+        }
+    }
+
     return 0;
 }
 
@@ -42,6 +81,63 @@ void AudioClientTrackerCallbackStub::SetClientTrackerCallback(
 {
     AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub::SetClientTrackerCallback");
     callback_ = callback;
+}
+
+void AudioClientTrackerCallbackStub::PausedStreamImpl(
+    const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub PausedStreamImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->PausedStreamImpl(streamSetStateEventInternal);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: PausedStreamImpl callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::SetLowPowerVolumeImpl(float volume)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub SetLowPowerVolumeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->SetLowPowerVolumeImpl(volume);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: SetLowPowerVolumeImpl callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::ResumeStreamImpl(
+    const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub ResumeStreamImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->ResumeStreamImpl(streamSetStateEventInternal);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ResumeStreamImpl callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::GetLowPowerVolumeImpl(float &volume)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub GetLowPowerVolumeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->GetLowPowerVolumeImpl(volume);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: GetLowPowerVolumeImpl callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::GetSingleStreamVolumeImpl(float &volume)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub GetSingleStreamVolumeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->GetSingleStreamVolumeImpl(volume);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: GetSingleStreamVolumeImpl callback_ is nullptr");
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

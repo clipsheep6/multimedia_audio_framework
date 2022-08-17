@@ -15,6 +15,7 @@
 #ifndef AUDIO_STREAM_H
 #define AUDIO_STREAM_H
 
+#include <mutex>
 #include "audio_info.h"
 #include "audio_session.h"
 #include "timestamp.h"
@@ -59,6 +60,9 @@ public:
     int32_t GetBufQueueState(BufferQueueState &bufState);
     int32_t Enqueue(const BufferDesc &bufDesc);
     int32_t Clear();
+    int32_t SetLowPowerVolume(float volume);
+    float GetLowPowerVolume();
+    float GetSingleStreamVolume();
 
     std::vector<AudioSampleFormat> GetSupportedFormats() const;
     std::vector<AudioEncodingType> GetSupportedEncodingTypes() const;
@@ -106,6 +110,8 @@ private:
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     bool isFirstRead_;
     bool isFirstWrite_;
+
+    std::mutex mBufferQueueLock;
 };
 } // namespace AudioStandard
 } // namespace OHOS

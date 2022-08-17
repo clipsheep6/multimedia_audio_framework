@@ -22,6 +22,24 @@ namespace AudioStandard {
  * @brief The AudioDeviceDescriptor provides
  *         different sets of audio devices and their roles
  */
+AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId,
+    int32_t volumeGroupId, std::string networkId)
+    : deviceType_(type), deviceRole_(role), interruptGroupId_(interruptGroupId), volumeGroupId_(volumeGroupId),
+    networkId_(networkId)
+{
+    if (((deviceType_ == DEVICE_TYPE_WIRED_HEADSET) || (deviceType_ == DEVICE_TYPE_USB_HEADSET)
+        || (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) && (deviceRole_ == INPUT_DEVICE)) {
+        deviceId_ = deviceType_ + DEVICE_TYPE_MAX;
+    } else {
+        deviceId_ = deviceType_;
+    }
+
+    audioStreamInfo_ = {};
+    channelMasks_ = 0;
+    deviceName_ = "";
+    macAddress_ = "";
+}
+
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) : deviceType_(type), deviceRole_(role)
 {
     if (((deviceType_ == DEVICE_TYPE_WIRED_HEADSET) || (deviceType_ == DEVICE_TYPE_USB_HEADSET)
@@ -126,6 +144,62 @@ void AudioDeviceDescriptor::SetDeviceCapability(const AudioStreamInfo &audioStre
     audioStreamInfo_.format = audioStreamInfo.format;
     audioStreamInfo_.samplingRate = audioStreamInfo.samplingRate;
     channelMasks_ = channelMask;
+}
+
+AudioRendererFilter::AudioRendererFilter()
+{}
+
+AudioRendererFilter::~AudioRendererFilter()
+{}
+
+bool AudioRendererFilter::Marshalling(Parcel &parcel) const
+{
+    return parcel.WriteInt32(uid)
+        && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
+        && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
+        && parcel.WriteInt32(static_cast<int32_t>(streamType))
+        && parcel.WriteInt32(rendererInfo.rendererFlags)
+        && parcel.WriteInt32(streamId);
+}
+
+sptr<AudioRendererFilter> AudioRendererFilter::Unmarshalling(Parcel &in)
+{
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    if (audioRendererFilter == nullptr) {
+        return nullptr;
+    }
+
+    audioRendererFilter->uid = in.ReadInt32();
+    audioRendererFilter->rendererInfo.contentType = static_cast<ContentType>(in.ReadInt32());
+    audioRendererFilter->rendererInfo.streamUsage = static_cast<StreamUsage>(in.ReadInt32());
+    audioRendererFilter->streamType = static_cast<AudioStreamType>(in.ReadInt32());
+    audioRendererFilter->rendererInfo.rendererFlags = in.ReadInt32();
+    audioRendererFilter->streamId = in.ReadInt32();
+
+    return audioRendererFilter;
+}
+
+AudioCapturerFilter::AudioCapturerFilter()
+{}
+
+AudioCapturerFilter::~AudioCapturerFilter()
+{}
+
+bool AudioCapturerFilter::Marshalling(Parcel &parcel) const
+{
+    return parcel.WriteInt32(uid);
+}
+
+sptr<AudioCapturerFilter> AudioCapturerFilter::Unmarshalling(Parcel &in)
+{
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    if (audioCapturerFilter == nullptr) {
+        return nullptr;
+    }
+
+    audioCapturerFilter->uid = in.ReadInt32();
+
+    return audioCapturerFilter;
 }
 } // namespace AudioStandard
 } // namespace OHOS

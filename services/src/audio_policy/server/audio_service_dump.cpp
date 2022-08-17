@@ -264,6 +264,9 @@ const std::string AudioServiceDump::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_WIRED_HEADSET:
             device = "WIRED_HEADSET";
             break;
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+            device = "WIRED_HEADPHONES";
+            break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
              device = "BLUETOOTH_SCO";
             break;
@@ -285,6 +288,24 @@ const std::string AudioServiceDump::GetDeviceTypeName(DeviceType deviceType)
 
     const string deviceTypeName = device;
     return deviceTypeName;
+}
+
+const std::string AudioServiceDump::GetConnectTypeName(ConnectType connectType)
+{
+    string connectName;
+    switch (connectType) {
+        case OHOS::AudioStandard::CONNECT_TYPE_LOCAL:
+            connectName = "LOCAL";
+            break;
+        case OHOS::AudioStandard::CONNECT_TYPE_DISTRIBUTED:
+            connectName = "REMOTE";
+            break;
+        default:
+            connectName = "UNKNOWN";
+            break;
+    }
+    const string connectTypeName = connectName;
+    return connectTypeName;
 }
 
 void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
@@ -433,14 +454,28 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
 	return;
 }
 
-void AudioServiceDump::DevicesInfoDump(string &dumpString)
+void AudioServiceDump::GroupInfoDump(std::string& dumpString)
+{
+    dumpString += "\nGroupInfo:\n";
+    AppendFormat(dumpString, "%d  Group Infos (s) available :\n\n", audioData_.policyData.groupInfos.size());
+
+    for (auto it = audioData_.policyData.groupInfos.begin(); it != audioData_.policyData.groupInfos.end(); it++) {
+        GroupInfo groupInfo = *it;
+        AppendFormat(dumpString, "ConnectType(0 for Local, 1 for Remote): %d\n", groupInfo.type);
+        AppendFormat(dumpString, "Name: %s\n", groupInfo.groupName.c_str());
+        AppendFormat(dumpString, "Id: %d\n", groupInfo.groupId);
+    }
+}
+
+void AudioServiceDump::DevicesInfoDump(string& dumpString)
 {
     dumpString += "\nInput Devices:\n";
     AppendFormat(dumpString, "%d  Input Devices (s) available :\n\n", audioData_.policyData.inputDevices.size());
 
     for (auto it = audioData_.policyData.inputDevices.begin(); it != audioData_.policyData.inputDevices.end(); it++) {
         DevicesInfo devicesInfo = *it;
-        AppendFormat(dumpString, "%s\n", GetDeviceTypeName(devicesInfo.deviceType).c_str());
+        AppendFormat(dumpString, "device type:%s ", GetDeviceTypeName(devicesInfo.deviceType).c_str());
+        AppendFormat(dumpString, "connect type:%s\n", GetConnectTypeName(devicesInfo.conneceType).c_str());
     }
 
     dumpString += "\nOutput Devices:\n";
@@ -448,7 +483,8 @@ void AudioServiceDump::DevicesInfoDump(string &dumpString)
 
     for (auto it = audioData_.policyData.outputDevices.begin(); it != audioData_.policyData.outputDevices.end(); it++) {
         DevicesInfo devicesInfo = *it;
-        AppendFormat(dumpString, "%s\n", GetDeviceTypeName(devicesInfo.deviceType).c_str());
+        AppendFormat(dumpString, "device type:%s ", GetDeviceTypeName(devicesInfo.deviceType).c_str());
+        AppendFormat(dumpString, "connect type:%s\n", GetConnectTypeName(devicesInfo.conneceType).c_str());
     }
 }
 
@@ -462,6 +498,7 @@ void AudioServiceDump::DataDump(string &dumpString)
     RingerModeDump(dumpString);
     StreamVolumesDump(dumpString);
     AudioFocusInfoDump(dumpString);
+    GroupInfoDump(dumpString);
 }
 
 void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString)
