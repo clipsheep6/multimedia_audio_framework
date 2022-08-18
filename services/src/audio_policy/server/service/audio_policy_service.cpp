@@ -69,6 +69,8 @@ bool AudioPolicyService::Init(void)
         return false;
     }
 
+    mAccessibilityConfigListener->SubscribeObserver();
+
     return true;
 }
 
@@ -118,6 +120,8 @@ void AudioPolicyService::Deinit(void)
 
     mIOHandles.clear();
     mDeviceStatusListener->UnRegisterDeviceStatusListener();
+    mAccessibilityConfigListener->UnsubscribeObserver();
+
     return;
 }
 
@@ -1273,6 +1277,18 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
     }
 
     mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
+}
+
+void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
+{
+    AUDIO_INFO_LOG("OnMonoAudioConfigChanged in");
+}
+
+void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
+{
+    std::string activePort = GetPortName(mCurrentActiveDevice_);
+    AUDIO_DEBUG_LOG("Adjust balance of active sink %{public}s, balance: %{public}f", activePort.c_str(), audioBalance);
+    mAudioPolicyManager.AdjustAudioBalance(activePort, audioBalance);
 }
 
 // Parser callbacks
