@@ -97,3 +97,76 @@ ohos_shared_library("opensles") {
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
 }
+
+config("audio_operation_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiostream/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiosession/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_framework/services/include",
+    "//foundation/multimedia/audio_framework/services/include/audio_service/client",
+    "//foundation/multimedia/audio_framework/services/test",
+    "//commonlibrary/c_utils/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+config("audio_opensles_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/frameworks/native/opensles/include",
+    "$opensles_dir/api/1.0.1",
+  ]
+}
+
+ohos_executable("audio_opensles_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_opensles_test.cpp" ]
+
+  configs = [
+    ":audio_opensles_config",
+    ":audio_operation_config",
+  ]
+
+  deps = [
+    "//foundation/multimedia/audio_framework:libsl",
+    "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_opensles_capture_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_opensles_capture_test.cpp" ]
+
+  configs = [
+    ":audio_opensles_config",
+    ":audio_operation_config",
+  ]
+
+  deps = [
+    "//foundation/multimedia/audio_framework:libsl",
+    "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-group("audio_unit_test") {
+group("audio_unit_test_group") {
   testonly = true
 
   deps = [
@@ -26,13 +26,13 @@ group("audio_unit_test") {
   ]
 }
 
-group("audio_module_test") {
+group("audio_module_test_group") {
   testonly = true
 
   deps = [ "moduletest/audiopolicy:audio_policy_module_test" ]
 }
 
-group("audio_fuzz_test") {
+group("audio_fuzz_test_group") {
   testonly = true
 
   deps = [ "fuzztest/audiomanager_fuzzer:fuzztest" ]
