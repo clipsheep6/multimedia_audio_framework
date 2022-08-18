@@ -234,6 +234,9 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     ret = mAudioPolicyManager.SuspendAudioDevice(networkId, true);
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "SuspendAudioDevice failed!");
 
+    std::vector<sptr<AudioDeviceDescriptor>> desc = {};
+    desc.push_back(localDevice);
+    UpdateTrackerDeviceChange(desc);
     AUDIO_INFO_LOG("NotifyRemoteRenderState success");
 }
 
@@ -281,6 +284,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     } else {
         ret = MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     }
+    UpdateTrackerDeviceChange(audioDeviceDescriptors);
 
     AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d]", ret);
     return ret;
@@ -1038,6 +1042,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         AUDIO_INFO_LOG("BT SCO device detected in non-call mode [%{public}d]", GetAudioScene());
         UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, isConnected);
         TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+        UpdateTrackerDeviceChange(deviceChangeDescriptor);
         return;
     }
 
@@ -1075,6 +1080,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     }
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+    UpdateTrackerDeviceChange(deviceChangeDescriptor);
 }
 
 void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, const std::string &macAddress,
@@ -1364,6 +1370,7 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
     deviceInfo.deviceRole = desc->deviceRole_;
     deviceInfo.deviceId = desc->deviceId_;
     deviceInfo.channelMasks = desc->channelMasks_;
+    deviceInfo.networkId = desc->networkId_;
 
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;
@@ -1744,8 +1751,6 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
             it->second.second->OnDeviceChange(deviceChangeAction);
         }
     }
-
-    UpdateTrackerDeviceChange(desc);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByFlag(DeviceFlag flag,
