@@ -72,9 +72,10 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
     serverConnected = false;
 }
 
-int32_t AudioPolicyManager::SetStreamVolume(AudioStreamType streamType, float volume)
+int32_t AudioPolicyManager::SetStreamVolume(AudioStreamType streamType, float volume, std::string networkId,
+    int32_t groupId)
 {
-    return g_sProxy->SetStreamVolume(streamType, volume);
+    return g_sProxy->SetStreamVolume(streamType, volume, networkId, groupId);
 }
 
 int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode)
@@ -97,19 +98,19 @@ AudioScene AudioPolicyManager::GetAudioScene()
     return g_sProxy->GetAudioScene();
 }
 
-float AudioPolicyManager::GetStreamVolume(AudioStreamType streamType)
+float AudioPolicyManager::GetStreamVolume(AudioStreamType streamType, std::string networkId, int32_t groupId)
 {
-    return g_sProxy->GetStreamVolume(streamType);
+    return g_sProxy->GetStreamVolume(streamType, networkId, groupId);
 }
 
-int32_t AudioPolicyManager::SetStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioPolicyManager::SetStreamMute(AudioStreamType streamType, bool mute, std::string networkId, int32_t groupId)
 {
-    return g_sProxy->SetStreamMute(streamType, mute);
+    return g_sProxy->SetStreamMute(streamType, mute, networkId, groupId);
 }
 
-bool AudioPolicyManager::GetStreamMute(AudioStreamType streamType)
+bool AudioPolicyManager::GetStreamMute(AudioStreamType streamType, std::string networkId, int32_t groupId)
 {
-    return g_sProxy->GetStreamMute(streamType);
+    return g_sProxy->GetStreamMute(streamType, networkId, groupId);
 }
 
 int32_t AudioPolicyManager::SetLowPowerVolume(int32_t streamId, float volume)

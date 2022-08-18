@@ -30,9 +30,10 @@ namespace AudioStandard {
 class IAudioPolicy : public IRemoteBroker {
 public:
 
-    virtual int32_t SetStreamVolume(AudioStreamType streamType, float volume) = 0;
+    virtual int32_t SetStreamVolume(AudioStreamType streamType, float volume, std::string networkId, int32_t groupId)
+        = 0;
 
-    virtual float GetStreamVolume(AudioStreamType streamType) = 0;
+    virtual float GetStreamVolume(AudioStreamType streamType, std::string networkId, int32_t groupId) = 0;
 
     virtual int32_t SetLowPowerVolume(int32_t streamId, float volume) = 0;
 
@@ -40,9 +41,9 @@ public:
 
     virtual float GetSingleStreamVolume(int32_t streamId) = 0;
 
-    virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute) = 0;
+    virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute, std::string networkId, int32_t groupId) = 0;
 
-    virtual bool GetStreamMute(AudioStreamType streamType) = 0;
+    virtual bool GetStreamMute(AudioStreamType streamType, std::string networkId, int32_t groupId) = 0;
 
     virtual bool IsStreamActive(AudioStreamType streamType) = 0;
 

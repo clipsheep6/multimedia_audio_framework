@@ -45,9 +45,9 @@ public:
     void InitKVStore();
     bool ConnectServiceAdapter();
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume) const;
+    int32_t SetStreamVolume(AudioStreamType streamType, float volume, std::string networkId, int32_t groupId) const;
 
-    float GetStreamVolume(AudioStreamType streamType) const;
+    float GetStreamVolume(AudioStreamType streamType, std::string networkId, int32_t groupId) const;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
 
@@ -55,9 +55,9 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) const;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute) const;
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute, std::string networkId, int32_t groupId) const;
 
-    bool GetStreamMute(AudioStreamType streamType) const;
+    bool GetStreamMute(AudioStreamType streamType, std::string networkId, int32_t groupId) const;
 
     bool IsStreamActive(AudioStreamType streamType) const;
 

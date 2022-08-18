@@ -69,7 +69,8 @@ void AudioPolicyProxy::WriteStreamChangeInfo(MessageParcel &data,
     }
 }
 
-int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume)
+int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume, std::string networkId,
+    int32_t groupId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -81,6 +82,8 @@ int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volu
 
     data.WriteInt32(static_cast<int32_t>(streamType));
     data.WriteFloat(volume);
+    data.WriteString(networkId);
+    data.WriteInt32(groupId);
     int32_t error = Remote()->SendRequest(SET_STREAM_VOLUME, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("set volume failed, error: %d", error);
@@ -163,7 +166,7 @@ AudioScene AudioPolicyProxy::GetAudioScene()
     return static_cast<AudioScene>(reply.ReadInt32());
 }
 
-float AudioPolicyProxy::GetStreamVolume(AudioStreamType streamType)
+float AudioPolicyProxy::GetStreamVolume(AudioStreamType streamType, std::string networkId, int32_t groupId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -174,6 +177,8 @@ float AudioPolicyProxy::GetStreamVolume(AudioStreamType streamType)
         return -1;
     }
     data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteString(networkId);
+    data.WriteInt32(groupId);
     int32_t error = Remote()->SendRequest(GET_STREAM_VOLUME, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("get volume failed, error: %d", error);
@@ -240,7 +245,7 @@ float AudioPolicyProxy::GetSingleStreamVolume(int32_t streamId)
     return reply.ReadFloat();
 }
 
-int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute, std::string networkId, int32_t groupId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -252,6 +257,8 @@ int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute)
     }
     data.WriteInt32(static_cast<int32_t>(streamType));
     data.WriteBool(mute);
+    data.WriteString(networkId);
+    data.WriteInt32(groupId);
     int32_t error = Remote()->SendRequest(SET_STREAM_MUTE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("set mute failed, error: %d", error);
@@ -260,7 +267,7 @@ int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute)
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::GetStreamMute(AudioStreamType streamType)
+bool AudioPolicyProxy::GetStreamMute(AudioStreamType streamType, std::string networkId, int32_t groupId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -271,6 +278,8 @@ bool AudioPolicyProxy::GetStreamMute(AudioStreamType streamType)
         return false;
     }
     data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteString(networkId);
+    data.WriteInt32(groupId);
     int32_t error = Remote()->SendRequest(GET_STREAM_MUTE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("get mute failed, error: %d", error);

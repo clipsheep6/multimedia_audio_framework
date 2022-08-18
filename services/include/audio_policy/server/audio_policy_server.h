@@ -50,9 +50,9 @@ public:
     void OnStart() override;
     void OnStop() override;
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume) override;
+    int32_t SetStreamVolume(AudioStreamType streamType, float volume, std::string networkId, int32_t groupId) override;
 
-    float GetStreamVolume(AudioStreamType streamType) override;
+    float GetStreamVolume(AudioStreamType streamType, std::string networkId, int32_t groupId) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
@@ -60,9 +60,9 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute, std::string networkId, int32_t groupId) override;
 
-    bool GetStreamMute(AudioStreamType streamType) override;
+    bool GetStreamMute(AudioStreamType streamType, std::string networkId, int32_t groupId) override;
 
     bool IsStreamActive(AudioStreamType streamType) override;
 
@@ -197,7 +197,8 @@ private:
     void ResumeUnduckPendingList(const AudioInterrupt &exitingInterrupt);
     void NotifyFocusGranted(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
     int32_t NotifyFocusAbandoned(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi);
+    int32_t SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi, std::string networkId,
+        int32_t groupId);
     void RegisterAudioServerDeathRecipient();
     void AudioServerDied(pid_t pid);
     void GetPolicyData(PolicyData &policyData);

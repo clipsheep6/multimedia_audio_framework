@@ -161,7 +161,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
         if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
             streamInFocus = AudioStreamType::STREAM_MUSIC;
         }
-        float currentVolume = GetStreamVolume(streamInFocus);
+        float currentVolume = GetStreamVolume(streamInFocus, LOCAL_NETWORK_ID, 1); // 1 for default id
         int32_t volumeLevelInInt = ConvertVolumeToInt(currentVolume);
         if (volumeLevelInInt <= MIN_VOLUME_LEVEL) {
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
@@ -182,7 +182,8 @@ void AudioPolicyServer::SubscribeKeyEvents()
             }
             return;
         }
-        SetStreamVolume(streamInFocus, MapVolumeToHDI(volumeLevelInInt - 1), true);
+        // 1 for default id
+        SetStreamVolume(streamInFocus, MapVolumeToHDI(volumeLevelInInt - 1), true, LOCAL_NETWORK_ID, 1);
     });
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption_up = std::make_shared<OHOS::MMI::KeyOption>();
     keyOption_up->SetPreKeys(preKeys);
@@ -195,7 +196,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
         if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
             streamInFocus = AudioStreamType::STREAM_MUSIC;
         }
-        float currentVolume = GetStreamVolume(streamInFocus);
+        float currentVolume = GetStreamVolume(streamInFocus, LOCAL_NETWORK_ID, 1); // 1 for default id
         int32_t volumeLevelInInt = ConvertVolumeToInt(currentVolume);
         if (volumeLevelInInt >= MAX_VOLUME_LEVEL) {
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
@@ -216,7 +217,8 @@ void AudioPolicyServer::SubscribeKeyEvents()
             }
             return;
         }
-        SetStreamVolume(streamInFocus, MapVolumeToHDI(volumeLevelInInt + 1), true);
+        // 1 for default id
+        SetStreamVolume(streamInFocus, MapVolumeToHDI(volumeLevelInInt + 1), true, LOCAL_NETWORK_ID, 1);
     });
 }
 
@@ -233,17 +235,18 @@ void AudioPolicyServer::ConnectServiceAdapter()
     }
 }
 
-int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume)
+int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume, std::string networkId,
+    int32_t groupId)
 {
-    return SetStreamVolume(streamType, volume, false);
+    return SetStreamVolume(streamType, volume, false, networkId, groupId);
 }
 
-float AudioPolicyServer::GetStreamVolume(AudioStreamType streamType)
+float AudioPolicyServer::GetStreamVolume(AudioStreamType streamType, std::string networkId, int32_t groupId)
 {
-    if (GetStreamMute(streamType)) {
+    if (GetStreamMute(streamType, networkId, groupId)) {
         return MIN_VOLUME_LEVEL;
     }
-    return mPolicyService.GetStreamVolume(streamType);
+    return mPolicyService.GetStreamVolume(streamType, networkId, groupId);
 }
 
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
@@ -261,7 +264,7 @@ float AudioPolicyServer::GetSingleStreamVolume(int32_t streamId)
     return mPolicyService.GetSingleStreamVolume(streamId);
 }
 
-int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, std::string networkId, int32_t groupId)
 {
     if (streamType == AudioStreamType::STREAM_RING) {
         if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
@@ -270,7 +273,10 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
         }
     }
 
-    int result = mPolicyService.SetStreamMute(streamType, mute);
+    int result = mPolicyService.SetStreamMute(streamType, mute, networkId, groupId);
+    if (LOCAL_NETWORK_ID != networkId) {
+        return result;
+    }
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -280,7 +286,7 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
         AUDIO_DEBUG_LOG("AudioPolicyServer::SetStreamMute trigger volumeChangeCb clientPid : %{public}d", it->first);
         VolumeEvent volumeEvent;
         volumeEvent.volumeType = streamType;
-        volumeEvent.volume = ConvertVolumeToInt(GetStreamVolume(streamType));
+        volumeEvent.volume = ConvertVolumeToInt(GetStreamVolume(streamType, networkId, groupId));
         volumeEvent.updateUi = false;
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -290,10 +296,11 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
     return result;
 }
 
-int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi)
+int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi,
+    std::string networkId, int32_t groupId)
 {
     if (streamType == AudioStreamType::STREAM_RING && !isUpdateUi) {
-        float currentRingVolume = GetStreamVolume(AudioStreamType::STREAM_RING);
+        float currentRingVolume = GetStreamVolume(AudioStreamType::STREAM_RING, networkId, groupId);
         if ((currentRingVolume > 0.0f && volume == 0.0f) || (currentRingVolume == 0.0f && volume > 0.0f)) {
             if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
                 AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", streamType);
@@ -302,7 +309,10 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
         }
     }
 
-    int ret = mPolicyService.SetStreamVolume(streamType, volume);
+    int ret = mPolicyService.SetStreamVolume(streamType, volume, networkId, groupId);
+    if (LOCAL_NETWORK_ID != networkId) {
+        return ret;
+    }
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -313,7 +323,7 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
         AUDIO_DEBUG_LOG("AudioPolicyServer::SetStreamVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
         VolumeEvent volumeEvent;
         volumeEvent.volumeType = streamType;
-        volumeEvent.volume = ConvertVolumeToInt(GetStreamVolume(streamType));
+        volumeEvent.volume = ConvertVolumeToInt(GetStreamVolume(streamType, networkId, groupId));
         volumeEvent.updateUi = isUpdateUi;
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -323,7 +333,7 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
     return ret;
 }
 
-bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
+bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType, std::string networkId, int32_t groupId)
 {
     if (streamType == AudioStreamType::STREAM_RING) {
         if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
@@ -332,7 +342,7 @@ bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
         }
     }
 
-    return mPolicyService.GetStreamMute(streamType);
+    return mPolicyService.GetStreamMute(streamType, networkId, groupId);
 }
 
 int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
@@ -730,7 +740,7 @@ bool AudioPolicyServer::ProcessCurActiveInterrupt(std::list<AudioInterrupt>::ite
                 iterActiveErased = true;
                 break;
             case INTERRUPT_HINT_DUCK:
-                volume = GetStreamVolume(incomingStreamType);
+                volume = GetStreamVolume(incomingStreamType, LOCAL_NETWORK_ID, 1); // 1 for local default id
                 interruptEvent.duckVolume = DUCK_FACTOR * volume;
                 break;
             default:
@@ -739,7 +749,7 @@ bool AudioPolicyServer::ProcessCurActiveInterrupt(std::list<AudioInterrupt>::ite
     } else { // INCOMING
         if (focusEntry.hintType == INTERRUPT_HINT_DUCK) {
             AUDIO_INFO_LOG("AudioPolicyServer: force duck get GetStreamVolume(activeStreamType)");
-            volume = GetStreamVolume(activeStreamType);
+            volume = GetStreamVolume(activeStreamType, LOCAL_NETWORK_ID, 1); // 1 for local default id
             interruptEvent.duckVolume = DUCK_FACTOR * volume;
         }
     }
@@ -1148,7 +1158,7 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
         AudioStreamType streamType = (AudioStreamType)stream;
 
         if (AudioServiceDump::IsStreamSupported(streamType)) {
-            int32_t volume = ConvertVolumeToInt(GetStreamVolume(streamType));
+            int32_t volume = ConvertVolumeToInt(GetStreamVolume(streamType, LOCAL_NETWORK_ID, 1)); // 1 for default id
             policyData.streamVolumes.insert({ streamType, volume });
         }
     }
