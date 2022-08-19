@@ -70,6 +70,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_stream_manager.cpp",
     "client/src/audio_stream_tracker.cpp",
     "client/src/audio_system_manager.cpp",
+    "client/src/audio_device_descriptor.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]
