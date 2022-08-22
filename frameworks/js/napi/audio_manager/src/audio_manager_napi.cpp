@@ -153,6 +153,25 @@ static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
     return result;
 }
 
+static bool IsLegalInputArgument(int32_t inputType)
+{
+    bool result = false;
+    switch (inputType) {
+        case AudioManagerNapi::RINGTONE:
+        case AudioManagerNapi::MEDIA:
+        case AudioManagerNapi::VOICE_CALL:
+        case AudioManagerNapi::VOICE_ASSISTANT:
+        case AudioManagerNapi::ALL:
+            result = true;
+            break;
+        default:
+            HiLog::Error(LABEL, "Unknown volume type");
+            result = false;
+            break;
+    }
+    return result;
+}
+
 static AudioStandard::FocusType GetNativeFocusType(int32_t focusType)
 {
     AudioStandard::FocusType result = AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
@@ -1883,7 +1902,9 @@ napi_value AudioManagerNapi::GetVolume(napi_env env, napi_callback_info info)
     NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
 
     unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
-
+    napi_get_value_int32(env, argv[PARAM0], &asyncContext->volType);
+    bool isLegalInput = IsLegalInputArgument(asyncContext->volType);
+    NAPI_ASSERT(env, isLegalInput, "Unknown volume type, Please enter valid parameters!");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -1899,7 +1920,6 @@ napi_value AudioManagerNapi::GetVolume(napi_env env, napi_callback_info info)
                 NAPI_ASSERT(env, false, "type mismatch");
             }
         }
-
         if (asyncContext->callbackRef == nullptr) {
             napi_create_promise(env, &asyncContext->deferred, &result);
         } else {
@@ -1930,7 +1950,6 @@ napi_value AudioManagerNapi::GetVolume(napi_env env, napi_callback_info info)
             }
         }
     }
-
     return result;
 }
 
