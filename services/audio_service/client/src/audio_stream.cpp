@@ -864,8 +864,8 @@ void AudioStream::WriteBuffers()
     int32_t writeError;
 
     while (isReadyToWrite_) {
-        lock_guard<mutex> lock(mBufferQueueLock);
         while (!filledBufferQ_.empty()) {
+            lock_guard<mutex> lock(mBufferQueueLock);
             if (state_ != RUNNING) {
                 AUDIO_ERR_LOG("Write: Illegal  state:%{public}u", state_);
                 isReadyToWrite_ = false;
@@ -902,8 +902,8 @@ void AudioStream::ReadBuffers()
     bool isBlockingRead = true;
 
     while (isReadyToRead_) {
-        lock_guard<mutex> lock(mBufferQueueLock);
         while (!freeBufferQ_.empty()) {
+            lock_guard<mutex> lock(mBufferQueueLock);
             if (state_ != RUNNING) {
                 AUDIO_ERR_LOG("AudioStream::ReadBuffers Read: Illegal  state:%{public}u", state_);
                 isReadyToRead_ = false;
