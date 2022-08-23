@@ -15,9 +15,8 @@
 
 #include "config.h"
 #include <dlfcn.h>
-#include <pulsecore/core-util.h>
-
 #include "ltdl.h"
+#include "pulsecore/macro.h"
 
 #ifdef __aarch64__
 #define SYSTEM_LIB_PATH "/system/lib64/"

@@ -13,14 +13,14 @@
  * limitations under the License.
 */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
-
 #include <pulsecore/log.h>
-#include <pulsecore/macro.h>
 #include <pulsecore/modargs.h>
 #include <pulsecore/module.h>
+#include <stddef.h>
+#include "pulsecore/source.h"
+#include "pulsecore/typedefs.h"
+#include "stdbool.h"
 
 pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver);
 

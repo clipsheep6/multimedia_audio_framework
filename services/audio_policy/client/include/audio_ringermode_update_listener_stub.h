@@ -16,8 +16,15 @@
 #ifndef AUDIO_RINGERMODE_UPDATE_LISTENER_STUB_H
 #define AUDIO_RINGERMODE_UPDATE_LISTENER_STUB_H
 
+#include <stdint.h>
+#include "audio_info.h"
 #include "audio_system_manager.h"
 #include "i_standard_ringermode_update_listener.h"
+#include "iremote_stub.h"
+#include "memory"
+#include "message_option.h"
+#include "message_parcel.h"
+#include "refbase.h"
 
 namespace OHOS {
 namespace AudioStandard {

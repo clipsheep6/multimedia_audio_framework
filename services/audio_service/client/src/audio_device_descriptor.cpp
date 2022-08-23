@@ -13,8 +13,14 @@
  * limitations under the License.
  */
 
+#include "string"
 #include "audio_log.h"
+#include "audio_info.h"
 #include "audio_system_manager.h"
+#include "iosfwd"
+#include "new"
+#include "parcel.h"
+#include "refbase.h"
 
 namespace OHOS {
 namespace AudioStandard {

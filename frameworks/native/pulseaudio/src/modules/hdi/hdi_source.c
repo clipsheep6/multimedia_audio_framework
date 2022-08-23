@@ -14,32 +14,37 @@
  */
 
 #include <audio_manager.h>
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
 #include <pulse/util.h>
 #include <pulse/xmalloc.h>
-
 #include <pulsecore/core.h>
-#include <pulsecore/core-rtclock.h>
-#include <pulsecore/core-util.h>
 #include <pulsecore/log.h>
-#include <pulsecore/macro.h>
 #include <pulsecore/memchunk.h>
 #include <pulsecore/modargs.h>
 #include <pulsecore/module.h>
 #include <pulsecore/rtpoll.h>
-#include <pulsecore/thread.h>
 #include <pulsecore/thread-mq.h>
-
-#include <signal.h>
-
-#include "capturer_source_adapter.h"
+#include <pulsecore/thread.h>
+#include <stddef.h>
+#include <stdint.h>
 #include "audio_log.h"
+#include "audio_types.h"
+#include "capturer_source_adapter.h"
+#include "inttypes.h"
+#include "pulse/channelmap.h"
+#include "pulse/def.h"
+#include "pulse/proplist.h"
+#include "pulse/sample.h"
+#include "pulsecore/asyncmsgq.h"
+#include "pulsecore/memblock.h"
+#include "pulsecore/msgobject.h"
+#include "pulsecore/source.h"
+#include "pulsecore/typedefs.h"
+#include "stdbool.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"

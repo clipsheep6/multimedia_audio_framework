@@ -16,8 +16,11 @@
 #ifndef BLUETOOTH_A2DP_SRC_OBSERVER_H
 #define BLUETOOTH_A2DP_SRC_OBSERVER_H
 
-#include "bluetooth_a2dp_audio_src_observer_stub.h"
 #include "audio_bluetooth_manager.h"
+#include "bluetooth_a2dp_a2dpCodecInfo.h"
+#include "bluetooth_a2dp_audio_src_observer_stub.h"
+#include "bluetooth_types.h"
+#include "raw_address.h"
 
 class BluetoothA2dpSrcObserver : public OHOS::Bluetooth::BluetoothA2dpAudioSrcObserverStub {
 public:

@@ -14,10 +14,10 @@
  */
 
 #include "audio_ringermode_update_listener_stub.h"
-
-#include "audio_errors.h"
-#include "audio_system_manager.h"
 #include "audio_log.h"
+#include "audio_system_manager.h"
+#include "ipc_object_stub.h"
+#include "string"
 
 namespace OHOS {
 namespace AudioStandard {

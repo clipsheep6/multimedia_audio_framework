@@ -16,8 +16,16 @@
 #ifndef AUDIO_CAPTURER_STATE_CHANGE_LISTENER_STUB_H
 #define AUDIO_CAPTURER_STATE_CHANGE_LISTENER_STUB_H
 
+#include <stdint.h>
+#include "audio_info.h"
 #include "audio_stream_manager.h"
 #include "i_standard_capturer_state_change_listener.h"
+#include "iremote_stub.h"
+#include "memory"
+#include "message_option.h"
+#include "message_parcel.h"
+#include "refbase.h"
+#include "vector"
 
 namespace OHOS {
 namespace AudioStandard {

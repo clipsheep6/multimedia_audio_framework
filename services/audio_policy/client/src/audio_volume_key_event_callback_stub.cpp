@@ -15,6 +15,8 @@
 
 #include "audio_volume_key_event_callback_stub.h"
 #include "audio_log.h"
+#include "iosfwd"
+#include "string"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -16,6 +16,9 @@
 #ifndef I_AUDIO_CAPTURER_SINK_INTF_H
 #define I_AUDIO_CAPTURER_SINK_INTF_H
 
+#include <stdint.h>
+#include "audio_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

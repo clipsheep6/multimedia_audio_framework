@@ -16,10 +16,16 @@
 #ifndef OHOS_BLUETOOTH_A2DP_AUDIO_SRC_OBSERVER_STUB_H
 #define OHOS_BLUETOOTH_A2DP_AUDIO_SRC_OBSERVER_STUB_H
 
+#include <stdint.h>
 #include <map>
-
-#include "iremote_stub.h"
+#include "__functional_base"
+#include "errors.h"
 #include "i_bluetooth_a2dp_src_observer.h"
+#include "iremote_stub.h"
+#include "message_option.h"
+#include "message_parcel.h"
+#include "nocopyable.h"
+#include "refbase.h"
 
 namespace OHOS {
 namespace Bluetooth {
