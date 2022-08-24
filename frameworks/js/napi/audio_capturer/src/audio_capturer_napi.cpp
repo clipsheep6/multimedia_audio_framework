@@ -168,6 +168,16 @@ static shared_ptr<AbilityRuntime::Context> GetAbilityContext(napi_env env)
     return faContext;
 }
 
+napi_value AudioCapturerNapiUtils::ThrowExceptionError(napi_env env, const int32_t errCode, const std::string errMsg) {
+
+    napi_value result = nullptr;
+    napi_status status = napi_throw_error(env,std::to_string(errCode).c_str(),errMsg.c_str());
+    if (status == napi_ok) {
+        napi_get_undefined(env,&result);
+    }
+    return result;
+}
+
 napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -189,6 +199,9 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     capturerOptions.streamInfo.channels = sCapturerOptions_->streamInfo.channels;
 
     capturerOptions.capturerInfo.sourceType = sCapturerOptions_->capturerInfo.sourceType;
+    if ((capturerOptions.capturerInfo.sourceType != 0) || (capturerOptions.capturerInfo.sourceType != 7)) {
+        ThrowExceptionError(env, 70, errMsg.c_str());
+    }
     capturerOptions.capturerInfo.capturerFlags = sCapturerOptions_->capturerInfo.capturerFlags;
 
     std::shared_ptr<AbilityRuntime::Context> abilityContext = GetAbilityContext(env);
@@ -905,7 +918,11 @@ napi_value AudioCapturerNapi::Release(napi_env env, napi_callback_info info)
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
                 context->isTrue = context->objectInfo->audioCapturer_->Release();
-                context->status = SUCCESS;
+                if (context ->isTrue) {
+                    context->status = SUCCESS;
+                } else {
+                    context->status = ERROR;
+                }
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
