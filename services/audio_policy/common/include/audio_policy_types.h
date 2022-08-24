@@ -71,6 +71,8 @@ enum AudioPolicyCommand {
     UPDATE_STREAM_STATE,
     GET_SINGLE_STREAM_VOLUME,
     GET_VOLUME_GROUP_INFO,
+    GET_TONEINFO,
+    GET_SUPPORTED_TONES
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -16,6 +16,10 @@
 #ifndef ST_AUDIO_POLICY_SERVICE_H
 #define ST_AUDIO_POLICY_SERVICE_H
 
+#include <bitset>
+#include <list>
+#include <string>
+#include <unordered_map>
 #include "audio_info.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
@@ -24,11 +28,8 @@
 #include "iport_observer.h"
 #include "parser_factory.h"
 #include "audio_group_handle.h"
+#include "audio_tone_parser.h"
 
-#include <bitset>
-#include <list>
-#include <string>
-#include <unordered_map>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -110,6 +111,10 @@ public:
     void OnAudioInterruptEnable(bool enable);
 
     void OnUpdateRouteSupport(bool isSupported);
+
+    std::vector<int32_t> GetSupportedTones();
+
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
 
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
@@ -262,6 +267,7 @@ private:
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     IAudioPolicyInterface& mAudioPolicyManager;
     Parser& mConfigParser;
+    std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
     AudioStreamCollector& mStreamCollector;
     std::unique_ptr<DeviceStatusListener> mDeviceStatusListener;
     std::vector<sptr<AudioDeviceDescriptor>> mConnectedDevices;
