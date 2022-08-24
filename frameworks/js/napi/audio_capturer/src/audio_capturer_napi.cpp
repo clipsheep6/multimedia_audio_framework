@@ -168,7 +168,7 @@ static shared_ptr<AbilityRuntime::Context> GetAbilityContext(napi_env env)
     return faContext;
 }
 
-napi_value AudioCapturerNapiUtils::ThrowExceptionError(napi_env env, const int32_t errCode, const std::string errMsg) {
+napi_value AudioCapturerNapi::ThrowExceptionError(napi_env env, const int32_t errCode, const std::string errMsg) {
 
     napi_value result = nullptr;
     napi_status status = napi_throw_error(env,std::to_string(errCode).c_str(),errMsg.c_str());
@@ -200,7 +200,7 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
 
     capturerOptions.capturerInfo.sourceType = sCapturerOptions_->capturerInfo.sourceType;
     if ((capturerOptions.capturerInfo.sourceType != 0) || (capturerOptions.capturerInfo.sourceType != 7)) {
-        ThrowExceptionError(env, 70, errMsg.c_str());
+        ThrowExceptionError(env, 70, "parameter sourceType is out of range");
     }
     capturerOptions.capturerInfo.capturerFlags = sCapturerOptions_->capturerInfo.capturerFlags;
 
