@@ -184,6 +184,8 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
 
+    const std::string ERRORMSG = "parameter sourceType is out of rang";
+
     GET_PARAMS(env, info, ARGS_TWO);
 
     unique_ptr<AudioCapturerNapi> capturerNapi = make_unique<AudioCapturerNapi>();
@@ -199,8 +201,8 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     capturerOptions.streamInfo.channels = sCapturerOptions_->streamInfo.channels;
 
     capturerOptions.capturerInfo.sourceType = sCapturerOptions_->capturerInfo.sourceType;
-    if ((capturerOptions.capturerInfo.sourceType != 0) || (capturerOptions.capturerInfo.sourceType != 7)) {
-        ThrowExceptionError(env, 70, "parameter sourceType is out of range");
+    if ((capturerOptions.capturerInfo.sourceType != 0) && (capturerOptions.capturerInfo.sourceType != 7)) {
+        ThrowExceptionError(env, ERR_INVALID_PARAM, ERRORMSG);
     }
     capturerOptions.capturerInfo.capturerFlags = sCapturerOptions_->capturerInfo.capturerFlags;
 
