@@ -38,6 +38,7 @@ void AudioGroupManagerUnitTest::TearDown(void) {}
 * @tc.name  : Test AudioVolume API
 * @tc.number: AudioVolume_001
 * @tc.desc  : Test AudioVolume manager interface multiple requests
+* @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, AudioVolume_001, TestSize.Level1)
 {
@@ -63,6 +64,7 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_001, TestSize.Level1)
 * @tc.name  : Test SetVolume API
 * @tc.number: SetVolumeTest_001
 * @tc.desc  : Test setting volume of ringtone stream with max volume
+* @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
 {
@@ -80,6 +82,7 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
 * @tc.name  : Test SetVolume API
 * @tc.number: SetVolumeTest_002
 * @tc.desc  : Test setting volume of ringtone stream with min volume
+* @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
 {
@@ -97,6 +100,7 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
 * @tc.name  : Test SetVolume API
 * @tc.number: SetVolumeTest_003
 * @tc.desc  : Test setting volume of media stream with max volume
+* @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 {
@@ -117,6 +121,7 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 * @tc.name  : Test GetMaxVolume API
 * @tc.number: GetMaxVolumeTest_001
 * @tc.desc  : Test GetMaxVolume of media stream
+* @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, GetMaxVolumeTest_001, TestSize.Level0)
 {
@@ -135,6 +140,7 @@ HWTEST(AudioGroupManagerUnitTest, GetMaxVolumeTest_001, TestSize.Level0)
 * @tc.name  : Test GetMaxVolume API
 * @tc.number: GetMinVolumeTest_001
 * @tc.desc  : Test GetMaxVolume of media stream
+* @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, GetMinVolumeTest_001, TestSize.Level0)
 {
@@ -153,6 +159,7 @@ HWTEST(AudioGroupManagerUnitTest, GetMinVolumeTest_001, TestSize.Level0)
 * @tc.name  : Test SetMute API
 * @tc.number: SetMute_001
 * @tc.desc  : Test mute functionality of ringtone stream
+* @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, SetMute_001, TestSize.Level0)
 {
@@ -171,6 +178,7 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_001, TestSize.Level0)
 * @tc.name  : Test SetMute IsStreamMute API
 * @tc.number: SetMute_002
 * @tc.desc  : Test unmute functionality of ringtone stream
+* @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, SetMute_002, TestSize.Level0)
 {
@@ -189,6 +197,7 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_002, TestSize.Level0)
 * @tc.name  : Test SetMute IsStreamMute API
 * @tc.number: SetMute_003
 * @tc.desc  : Test mute functionality of media stream
+* @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, SetMute_003, TestSize.Level0)
 {
@@ -207,6 +216,7 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_003, TestSize.Level0)
 * @tc.name  : Test SetMute IsStreamMute API
 * @tc.number: SetMute_004
 * @tc.desc  : Test unmute functionality of media stream
+* @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level0)
 {
