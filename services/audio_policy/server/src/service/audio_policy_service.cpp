@@ -1929,7 +1929,7 @@ void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
 int32_t AudioPolicyService::UpdateStreamState(int32_t clientUid,
     StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    return mStreamCollector.UpdateStreamState(clientUid, streamSetStateEventInternal);
+    return SUCCESS;
 }
 
 DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)
