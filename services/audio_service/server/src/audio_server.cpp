@@ -235,11 +235,6 @@ int32_t AudioServer::GetMinVolume(AudioVolumeType volumeType)
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
-    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
-        return ERR_PERMISSION_DENIED;
-    }
-
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
 
     if (!audioCapturerSourceInstance->capturerInited_) {
@@ -253,11 +248,6 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
 
 bool AudioServer::IsMicrophoneMute()
 {
-    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("IsMicrophoneMute: MICROPHONE permission denied");
-        return false;
-    }
-
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     bool isMute = false;
 
