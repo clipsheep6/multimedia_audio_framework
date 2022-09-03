@@ -28,9 +28,9 @@ public:
     explicit AudioPolicyProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioPolicyProxy() = default;
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume) override;
+    int32_t SetStreamVolume(AudioStreamType streamType, float volume, std::string networkId, int32_t groupId) override;
 
-    float GetStreamVolume(AudioStreamType streamType) override;
+    float GetStreamVolume(AudioStreamType streamType, std::string networkId, int32_t groupId) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
@@ -38,9 +38,9 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute, std::string networkId, int32_t groupId) override;
 
-    bool GetStreamMute(AudioStreamType streamType) override;
+    bool GetStreamMute(AudioStreamType streamType, std::string networkId, int32_t groupId) override;
 
     bool IsStreamActive(AudioStreamType streamType) override;
 

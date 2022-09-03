@@ -523,7 +523,8 @@ void AudioInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEven
 
 bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
 {
-    float streamVolume = AudioPolicyManager::GetInstance().GetStreamVolume(audioInterrupt_.streamType);
+    float streamVolume = AudioPolicyManager::GetInstance().GetStreamVolume(audioInterrupt_.streamType,
+        LOCAL_NETWORK_ID, 1); // 1 for default groupId
     float duckVolume = interruptEvent.duckVolume;
     int32_t ret = 0;
 

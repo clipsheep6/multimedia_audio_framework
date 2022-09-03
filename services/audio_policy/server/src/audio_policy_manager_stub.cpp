@@ -72,7 +72,9 @@ void AudioPolicyManagerStub::SetStreamVolumeInternal(MessageParcel &data, Messag
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
     float volume = data.ReadFloat();
-    int result = SetStreamVolume(streamType, volume);
+    std::string networkId = data.ReadString();
+    int32_t groupId = data.ReadInt32();
+    int result = SetStreamVolume(streamType, volume, networkId, groupId);
     if (result == SUCCESS)
         reply.WriteInt32(AUDIO_OK);
     else
@@ -108,7 +110,9 @@ void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel &reply)
 void AudioPolicyManagerStub::GetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    float volume = GetStreamVolume(streamType);
+    std::string networkId = data.ReadString();
+    int32_t groupId = data.ReadInt32();
+    float volume = GetStreamVolume(streamType, networkId, groupId);
     reply.WriteFloat(volume);
 }
 
@@ -141,7 +145,9 @@ void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageP
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
     bool mute = data.ReadBool();
-    int result = SetStreamMute(streamType, mute);
+    std::string networkId = data.ReadString();
+    int32_t groupId = data.ReadInt32();
+    int result = SetStreamMute(streamType, mute, networkId, groupId);
     if (result == SUCCESS)
         reply.WriteInt32(AUDIO_OK);
     else
@@ -151,7 +157,9 @@ void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageP
 void AudioPolicyManagerStub::GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    bool mute = GetStreamMute(streamType);
+    std::string networkId = data.ReadString();
+    int32_t groupId = data.ReadInt32();
+    bool mute = GetStreamMute(streamType, networkId, groupId);
     reply.WriteBool(mute);
 }
 

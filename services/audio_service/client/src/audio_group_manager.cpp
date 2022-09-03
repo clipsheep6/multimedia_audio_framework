@@ -49,13 +49,6 @@ int32_t AudioGroupManager::MapVolumeFromHDI(float volume)
 
 int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 {
-    if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
-        std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
-            + std::to_string(volumeType) + ";";
-        std::string value = std::to_string(volume);
-        g_sProxy->SetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition, value);
-    }
-
     AUDIO_DEBUG_LOG("AudioSystemManager SetVolume volumeType=%{public}d ", volumeType);
 
     /* Validate and return INVALID_PARAMS error */
@@ -84,7 +77,8 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi,
+                netWorkId_, groupId_);
             AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -93,21 +87,11 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
         return SUCCESS;
     }
 
-    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi, netWorkId_, groupId_);
 }
 
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
 {
-    if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
-        std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
-            + std::to_string(volumeType) + ";";
-        std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        if (value.empty()) {
-            AUDIO_ERR_LOG("[AudioGroupManger]: invalid value %{public}s", value.c_str());
-            return 0;
-        }
-        return std::stoi(value);
-    }
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
@@ -128,7 +112,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
 
     /* Call Audio Policy SetStreamMute */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeFromHdi = AudioPolicyManager::GetInstance().GetStreamVolume(StreamVolType);
+    float volumeFromHdi = AudioPolicyManager::GetInstance().GetStreamVolume(StreamVolType, netWorkId_, groupId_);
 
     return MapVolumeFromHDI(volumeFromHdi);
 }
@@ -179,14 +163,6 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
 
 int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
 {
-    if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
-        std::string conditon = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
-            + std::to_string(volumeType) + ";";
-        std::string value = mute ? "1" : "0";
-        g_sProxy->SetAudioParameter(netWorkId_, AudioParamKey::VOLUME, conditon, value);
-        return SUCCESS;
-    }
-
     AUDIO_DEBUG_LOG("AudioSystemManager SetMute for volumeType=%{public}d", volumeType);
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -207,7 +183,8 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, netWorkId_,
+                groupId_);
             AUDIO_DEBUG_LOG("SetMute of STREAM_ALL for volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -216,19 +193,12 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
         return SUCCESS;
     }
 
-    return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
+    return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, netWorkId_, groupId_);
 }
 
 bool AudioGroupManager::IsStreamMute(AudioVolumeType volumeType)
 {
     AUDIO_DEBUG_LOG("AudioSystemManager::GetMute Client");
-    if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
-        std::string condition = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
-            + std::to_string(volumeType) + ";";
-        std::string ret = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-
-        return ret == "1" ? true : false;
-    }
 
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -249,7 +219,7 @@ bool AudioGroupManager::IsStreamMute(AudioVolumeType volumeType)
 
     /* Call Audio Policy SetStreamVolume */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
+    return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType, netWorkId_, groupId_);
 }
 
 int32_t AudioGroupManager::Init()

@@ -289,6 +289,7 @@ private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
+    static constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
     static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
 

@@ -48,9 +48,9 @@ public:
         return policyManager;
     }
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume);
+    int32_t SetStreamVolume(AudioStreamType streamType, float volume, std::string networkId, int32_t groupId);
 
-    float GetStreamVolume(AudioStreamType streamType);
+    float GetStreamVolume(AudioStreamType streamType, std::string networkId, int32_t groupId);
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
 
@@ -58,9 +58,9 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId);
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute);
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute, std::string networkId, int32_t groupId);
 
-    bool GetStreamMute(AudioStreamType streamType);
+    bool GetStreamMute(AudioStreamType streamType, std::string networkId, int32_t groupId);
 
     bool IsStreamActive(AudioStreamType streamType);
 

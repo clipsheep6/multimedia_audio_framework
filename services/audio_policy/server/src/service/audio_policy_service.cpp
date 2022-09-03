@@ -127,14 +127,40 @@ int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callba
     return mAudioPolicyManager.SetAudioSessionCallback(callback);
 }
 
-int32_t AudioPolicyService::SetStreamVolume(AudioStreamType streamType, float volume) const
+int32_t AudioPolicyService::SetStreamVolume(AudioStreamType streamType, float volume, std::string networkId,
+    int32_t groupId) const
 {
-    return mAudioPolicyManager.SetStreamVolume(streamType, volume);
+    if (LOCAL_NETWORK_ID == networkId) {
+        return mAudioPolicyManager.SetStreamVolume(streamType, volume);
+    } else if (g_sProxy != nullptr) {
+        std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId) + ";AUDIO_VOLUME_TYPE="
+            + std::to_string(streamType) + ";";
+        std::string value = std::to_string(volume);
+        g_sProxy->SetAudioParameter(networkId, AudioParamKey::VOLUME, condition, value);
+        return SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("Set distributed device volume failed");
+        return ERROR;
+    }
 }
 
-float AudioPolicyService::GetStreamVolume(AudioStreamType streamType) const
+float AudioPolicyService::GetStreamVolume(AudioStreamType streamType, std::string networkId, int32_t groupId) const
 {
-    return mAudioPolicyManager.GetStreamVolume(streamType);
+    if (LOCAL_NETWORK_ID == networkId) {
+        return mAudioPolicyManager.GetStreamVolume(streamType);
+    } else if (g_sProxy != nullptr) {
+        std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId) + ";AUDIO_VOLUME_TYPE="
+            + std::to_string(streamType) + ";";
+        std::string value = g_sProxy->GetAudioParameter(networkId, AudioParamKey::VOLUME, condition);
+        if (value.empty()) {
+            AUDIO_ERR_LOG("[AudioGroupManger]: invalid value %{public}s", value.c_str());
+            return 0;
+        }
+        return std::stoi(value);
+    } else {
+        AUDIO_ERR_LOG("Set distributed device volume failed");
+        return 0;
+    }
 }
 
 int32_t AudioPolicyService::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -152,14 +178,36 @@ float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
     return mStreamCollector.GetSingleStreamVolume(streamId);
 }
 
-int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute) const
+int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute, std::string networkId,
+    int32_t groupId) const
 {
-    return mAudioPolicyManager.SetStreamMute(streamType, mute);
+    if (LOCAL_NETWORK_ID == networkId) {
+        return mAudioPolicyManager.SetStreamMute(streamType, mute);
+    } else if (g_sProxy != nullptr) {
+        std::string conditon = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId) + ";AUDIO_VOLUME_TYPE="
+            + std::to_string(streamType) + ";";
+        std::string value = mute ? "1" : "0";
+        g_sProxy->SetAudioParameter(networkId, AudioParamKey::VOLUME, conditon, value);
+        return SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("Set distributed device mute failed");
+        return 0;
+    }
 }
 
-bool AudioPolicyService::GetStreamMute(AudioStreamType streamType) const
+bool AudioPolicyService::GetStreamMute(AudioStreamType streamType, std::string networkId, int32_t groupId) const
 {
-    return mAudioPolicyManager.GetStreamMute(streamType);
+    if (LOCAL_NETWORK_ID == networkId) {
+        return mAudioPolicyManager.GetStreamMute(streamType);
+    } else if (g_sProxy != nullptr) {
+        std::string condition = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId) + ";AUDIO_VOLUME_TYPE="
+            + std::to_string(streamType) + ";";
+        std::string ret = g_sProxy->GetAudioParameter(networkId, AudioParamKey::VOLUME, condition);
+        return ret == "1" ? true : false;
+    } else {
+        AUDIO_ERR_LOG("Get distributed device mute status failed");
+        return false;
+    }
 }
 
 inline std::string PrintSinkInput(SinkInput sinkInput)

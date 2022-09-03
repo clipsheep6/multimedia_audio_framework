@@ -288,7 +288,8 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi,
+                LOCAL_NETWORK_ID, DEFAULT_VOLUME_GROUP_ID);
             AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -297,7 +298,8 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
         return SUCCESS;
     }
 
-    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi, LOCAL_NETWORK_ID,
+        DEFAULT_VOLUME_GROUP_ID);
 }
 
 int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
@@ -322,7 +324,8 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
 
     /* Call Audio Policy SetStreamMute */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeFromHdi = AudioPolicyManager::GetInstance().GetStreamVolume(StreamVolType);
+    float volumeFromHdi = AudioPolicyManager::GetInstance().GetStreamVolume(StreamVolType, LOCAL_NETWORK_ID,
+        DEFAULT_VOLUME_GROUP_ID);
 
     return MapVolumeFromHDI(volumeFromHdi);
 }
@@ -406,7 +409,8 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute,
+                    LOCAL_NETWORK_ID, DEFAULT_VOLUME_GROUP_ID);
             AUDIO_DEBUG_LOG("SetMute of STREAM_ALL for volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -415,7 +419,8 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
         return SUCCESS;
     }
 
-    return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
+    return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, LOCAL_NETWORK_ID,
+        DEFAULT_VOLUME_GROUP_ID);
 }
 
 bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
@@ -441,7 +446,7 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
 
     /* Call Audio Policy SetStreamVolume */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
+    return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType, LOCAL_NETWORK_ID, DEFAULT_VOLUME_GROUP_ID);
 }
 
 int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,
