@@ -494,18 +494,14 @@ bool AudioSystemManager::IsAlived()
 
 int32_t AudioSystemManager::SetMicrophoneMute(bool isMute)
 {
-    if (!IsAlived()) {
-        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "SetMicrophoneMute service unavailable");
-    }
-    return g_sProxy->SetMicrophoneMute(isMute);
+    AUDIO_INFO_LOG("SetMicrophoneMute isMute_=%{public}d done", isMute);
+    return AudioPolicyManager::GetInstance().SetMicrophoneMute(isMute);
 }
 
 bool AudioSystemManager::IsMicrophoneMute()
 {
-    if (!IsAlived()) {
-        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, false, "IsMicrophoneMute service unavailable");
-    }
-    return g_sProxy->IsMicrophoneMute();
+    AUDIO_INFO_LOG("Enter SetMicrophoneMute");
+    return AudioPolicyManager::GetInstance().IsMicrophoneMute();
 }
 
 int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
