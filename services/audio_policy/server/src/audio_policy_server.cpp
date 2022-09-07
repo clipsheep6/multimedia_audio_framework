@@ -534,8 +534,7 @@ int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const uint32_t clien
     sptr<IStandardAudioPolicyManagerListener> listener = iface_cast<IStandardAudioPolicyManagerListener>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: listener obj cast failed");
 
-    std::shared_ptr<AudioInterruptCallback> callback = std::make_shared<AudioPolicyManagerListenerCallback>(listener);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+    std::shared_ptr<AudioInterruptCallback> callback = std::make_shared<AudioPolicyManagerListenerCallback>(listener); CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
 
     audioManagerListenerCbsMap_[clientID] = callback;
     AUDIO_INFO_LOG("AudioPolicyServer: SetAudioManagerInterruptCallback for client id %{public}d done", clientID);
@@ -1508,11 +1507,22 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
         return;
     }
 
+    std::vector<SinkInput> inputs = server_->mPolicyService.GetAllSinkInputs();
+    int32_t streamId = 0;
+    auto filter = [&networkId] (SinkInput input) {
+        return networkId == input.sinkName;
+    };
+    auto iter = find_if(inputs.begin(), inputs.end(), filter);
+    if (iter != inputs.end()) {
+        streamId = iter->streamId;
+    }
+
+    std::shared_ptr<AudioInterruptCallback> policyListenerCb = nullptr;
+    policyListenerCb = server_->policyListenerCbsMap_[streamId];
+
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
-    for (auto it : server_->policyListenerCbsMap_) {
-        if (it.second != nullptr) {
-            it.second->OnInterrupt(interruptEvent);
-        }
+    if (policyListenerCb != nullptr) {
+        policyListenerCb->OnInterrupt(interruptEvent);
     }
 }
 

@@ -224,6 +224,10 @@ std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
         return "";
     }
 }
+std::vector<SinkInput> AudioPolicyService::GetAllSinkInputs()
+{
+    return mAudioPolicyManager.GetAllSinkInputs();
+}
 
 void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value)
 {
