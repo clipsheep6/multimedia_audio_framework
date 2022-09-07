@@ -1450,7 +1450,11 @@ napi_value AudioRendererNapi::Release(napi_env env, napi_callback_info info)
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioRendererAsyncContext *>(data);
                 context->isTrue = context->objectInfo->audioRenderer_->Release();
-                context->status = SUCCESS;
+                if (context->isTrue) {
+                    context->status = SUCCESS;
+                } else {
+                    context->status = ERROR;
+                }
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -1716,19 +1720,15 @@ napi_value AudioRendererNapi::RegisterPositionCallback(napi_env env, napi_value*
     napi_get_value_int64(env, argv[PARAM1], &markPosition);
 
     if (markPosition > 0) {
-        if (rendererNapi->positionCBNapi_ == nullptr) {
-            rendererNapi->positionCBNapi_ = std::make_shared<RendererPositionCallbackNapi>(env);
-            NAPI_ASSERT(env, rendererNapi->positionCBNapi_ != nullptr, "AudioRendererNapi: No memory.");
-            int32_t ret = rendererNapi->audioRenderer_->SetRendererPositionCallback(markPosition,
-                rendererNapi->positionCBNapi_);
-            NAPI_ASSERT(env, ret == SUCCESS, "AudioRendererNapi: SetRendererPositionCallback failed.");
+        rendererNapi->positionCBNapi_ = std::make_shared<RendererPositionCallbackNapi>(env);
+        NAPI_ASSERT(env, rendererNapi->positionCBNapi_ != nullptr, "AudioRendererNapi: No memory.");
+        int32_t ret = rendererNapi->audioRenderer_->SetRendererPositionCallback(markPosition,
+            rendererNapi->positionCBNapi_);
+        NAPI_ASSERT(env, ret == SUCCESS, "AudioRendererNapi: SetRendererPositionCallback failed.");
 
-            std::shared_ptr<RendererPositionCallbackNapi> cb =
-                std::static_pointer_cast<RendererPositionCallbackNapi>(rendererNapi->positionCBNapi_);
-            cb->SaveCallbackReference(cbName, argv[PARAM2]);
-        } else {
-            AUDIO_DEBUG_LOG("AudioRendererNapi: markReach already subscribed.");
-        }
+        std::shared_ptr<RendererPositionCallbackNapi> cb =
+            std::static_pointer_cast<RendererPositionCallbackNapi>(rendererNapi->positionCBNapi_);
+        cb->SaveCallbackReference(cbName, argv[PARAM2]);
     } else {
         AUDIO_ERR_LOG("AudioRendererNapi: Mark Position value not supported!!");
     }

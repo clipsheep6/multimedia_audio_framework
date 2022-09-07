@@ -906,7 +906,11 @@ napi_value AudioCapturerNapi::Release(napi_env env, napi_callback_info info)
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
                 context->isTrue = context->objectInfo->audioCapturer_->Release();
-                context->status = SUCCESS;
+                if (context->isTrue) {
+                    context->status = SUCCESS;
+                } else {
+                    context->status = ERROR;
+                }
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -961,19 +965,15 @@ napi_value AudioCapturerNapi::RegisterPositionCallback(napi_env env, napi_value*
     napi_get_value_int64(env, argv[PARAM1], &markPosition);
 
     if (markPosition > 0) {
-        if (capturerNapi->positionCBNapi_ == nullptr) {
-            capturerNapi->positionCBNapi_ = std::make_shared<CapturerPositionCallbackNapi>(env);
-            NAPI_ASSERT(env, capturerNapi->positionCBNapi_ != nullptr, "AudioCapturerNapi: No memory.");
-            int32_t ret = capturerNapi->audioCapturer_->SetCapturerPositionCallback(markPosition,
-                                                                                    capturerNapi->positionCBNapi_);
-            NAPI_ASSERT(env, ret == SUCCESS, "AudioCapturerNapi: SetCapturerPositionCallback failed.");
+        capturerNapi->positionCBNapi_ = std::make_shared<CapturerPositionCallbackNapi>(env);
+        NAPI_ASSERT(env, capturerNapi->positionCBNapi_ != nullptr, "AudioCapturerNapi: No memory.");
+        int32_t ret = capturerNapi->audioCapturer_->SetCapturerPositionCallback(markPosition,
+                                                                                capturerNapi->positionCBNapi_);
+        NAPI_ASSERT(env, ret == SUCCESS, "AudioCapturerNapi: SetCapturerPositionCallback failed.");
 
-            std::shared_ptr<CapturerPositionCallbackNapi> cb =
-                std::static_pointer_cast<CapturerPositionCallbackNapi>(capturerNapi->positionCBNapi_);
-            cb->SaveCallbackReference(cbName, argv[PARAM2]);
-        } else {
-            AUDIO_DEBUG_LOG("AudioCapturerNapi: markReach already subscribed.");
-        }
+        std::shared_ptr<CapturerPositionCallbackNapi> cb =
+            std::static_pointer_cast<CapturerPositionCallbackNapi>(capturerNapi->positionCBNapi_);
+        cb->SaveCallbackReference(cbName, argv[PARAM2]);
     } else {
         AUDIO_ERR_LOG("AudioCapturerNapi: Mark Position value not supported!!");
     }
