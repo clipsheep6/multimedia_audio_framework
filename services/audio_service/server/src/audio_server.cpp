@@ -263,6 +263,18 @@ bool AudioServer::IsMicrophoneMute()
     return isMute;
 }
 
+int32_t AudioServer::SetVoiceVolume(float volume)
+{
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_WARNING_LOG("Renderer is null.");
+    } else {
+        return audioRendererSinkInstance->SetVoiceVolume(volume);
+    }
+    return ERROR;
+}
+
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
