@@ -90,6 +90,8 @@ ohos_shared_library("audio_client") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+  install_images = [ system_base_dir ]
+  relative_install_dir = "platformsdk"
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
 }
