@@ -26,13 +26,15 @@ void AudioRendererProxyObj::SaveRendererObj(const AudioRenderer *rendererObj)
     renderer = rendererObj;
 }
 
-void AudioRendererProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+void AudioRendererProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
 {
+    renderer->SetFreezeState(isFreeze);
     renderer->Pause();
 }
 
-void AudioRendererProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+void AudioRendererProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
 {
+    renderer->SetFreezeState(isFreeze);
     renderer->Start();
 }
 

@@ -449,6 +449,12 @@ void AudioStreamCollector::RegisteredStreamListenerClientDied(int32_t uid)
 int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     StreamSetStateEventInternal &streamSetStateEventInternal)
 {
+    return UpdateStreamStateInner(clientUid, streamSetStateEventInternal, true);
+}
+
+int32_t AudioStreamCollector::UpdateStreamStateInner(int32_t clientUid,
+    StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
+{
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->clientUID == clientUid) {
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
@@ -458,13 +464,44 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
                 continue;
             }
             if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_PAUSE) {
-                callback->PausedStreamImpl(streamSetStateEventInternal);
+                callback->PausedStreamImpl(streamSetStateEventInternal, isFreeze);
             } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_RESUME) {
-                callback->ResumeStreamImpl(streamSetStateEventInternal);
+                callback->ResumeStreamImpl(streamSetStateEventInternal, isFreeze);
             }
         }
     }
 
+    return SUCCESS;
+}
+
+int32_t AudioStreamCollector::ProxyApp(int32_t uid, bool isFreeze)
+{
+    AUDIO_DEBUG_LOG("AudioStreamCollector: ProxyApp, uid is %{public}d, isFreeze is %{public}d", uid, isFreeze);
+    std::lock_guard<std::mutex> lock(freezeMutex_);
+    if (isFreeze && !freezeUids.count(uid)) {
+        freezeUids.emplace(uid);
+        StreamSetStateEventInternal streamSetStateEventInternal;
+        streamSetStateEventInternal.streamSetState = StreamSetState::STREAM_PAUSE;
+        return UpdateStreamStateInner(uid, streamSetStateEventInternal, false);
+    } else if (!isFreeze && freezeUids.count(uid)) {
+        freezeUids.erase(uid);
+        StreamSetStateEventInternal streamSetStateEventInternal;
+        streamSetStateEventInternal.streamSetState = StreamSetState::STREAM_RESUME;
+        return UpdateStreamStateInner(uid, streamSetStateEventInternal, false);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioStreamCollector::ResetAll()
+{
+    AUDIO_DEBUG_LOG("AudioStreamCollector: ResetAll");
+    StreamSetStateEventInternal streamSetStateEventInternal;
+    streamSetStateEventInternal.streamSetState = StreamSetState::STREAM_RESUME;
+    for (const auto& uid : freezeUids) {
+        AUDIO_DEBUG_LOG("resume uid is : %{public}d", uid);
+        UpdateStreamStateInner(uid, streamSetStateEventInternal, false);
+    }
+    freezeUids.clear();
     return SUCCESS;
 }
 

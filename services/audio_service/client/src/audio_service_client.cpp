@@ -44,6 +44,7 @@ const int32_t NO_OF_PREBUF_TIMES = 6;
 
 const string PATH_SEPARATOR = "/";
 const string COOKIE_FILE_NAME = "cookie";
+bool AudioServiceClient::isCallBack_ = true;
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
 {
@@ -154,7 +155,7 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
     asClient->state_ = RUNNING;
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
-    if (streamCb != nullptr) {
+    if (streamCb != nullptr && isCallBack_) {
         streamCb->OnStateChange(asClient->state_);
     }
     asClient->streamCmdStatus = success;
@@ -194,7 +195,7 @@ void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t succe
     asClient->state_ = PAUSED;
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
-    if (streamCb != nullptr) {
+    if (streamCb != nullptr && isCallBack_) {
         streamCb->OnStateChange(asClient->state_);
     }
     asClient->streamCmdStatus = success;
@@ -2325,6 +2326,11 @@ float AudioServiceClient::GetSingleStreamVol()
     }
 
     return vol;
+}
+
+void AudioServiceClient::SetFreezeSt(bool isCallback)
+{
+    isCallBack_ = isCallback;
 }
 } // namespace AudioStandard
 } // namespace OHOS

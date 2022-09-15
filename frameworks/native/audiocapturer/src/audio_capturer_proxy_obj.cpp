@@ -27,12 +27,12 @@ void AudioCapturerProxyObj::SaveCapturerObj(const AudioCapturer *capturerObj)
 }
 
 
-void AudioCapturerProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+void AudioCapturerProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
 {
     AUDIO_INFO_LOG("AudioCapturerProxyObj::PausedStreamImpl");
 }
 
-void AudioCapturerProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+void AudioCapturerProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal, bool isFreeze)
 {
     AUDIO_INFO_LOG("AudioCapturerProxyObj::ResumeStreamImpl");
 }

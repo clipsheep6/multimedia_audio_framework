@@ -134,6 +134,8 @@ public:
         AudioStreamType audioStreamType) override;
 
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
+    int32_t ProxyApp(int32_t uid, bool isFreeze) override;
+    int32_t ResetAll() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

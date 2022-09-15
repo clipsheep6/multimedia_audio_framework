@@ -1261,5 +1261,46 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyProxy::GetVolumeGroupInfos()
 
     return infos;
 }
+
+int32_t AudioPolicyProxy::ProxyApp(int32_t uid, bool isFreeze)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyProxy::ProxyApp");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: ProxyApp WriteInterfaceToken failed");
+        return ERROR;
+    }
+    data.WriteInt32(uid);
+    data.WriteBool(isFreeze);
+    int32_t error = Remote()->SendRequest(PROXY_APP, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("ProxyApp, error: %{public}d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::ResetAll()
+{
+    AUDIO_DEBUG_LOG("AudioPolicyProxy::ResetAll");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: ResetAll WriteInterfaceToken failed");
+        return ERROR;
+    }
+
+    int32_t error = Remote()->SendRequest(RESET_ALL, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("ProxyApp, error: %{public}d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -80,6 +80,8 @@ private:
     void GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateStreamStateInternal(MessageParcel& data, MessageParcel& reply);
     void GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply);
+    void ProxyAppInternal(MessageParcel& data, MessageParcel& reply);
+    void ResetAllInternal(MessageParcel& data, MessageParcel& reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

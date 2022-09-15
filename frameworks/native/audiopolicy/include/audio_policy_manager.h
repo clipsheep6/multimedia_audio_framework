@@ -159,6 +159,8 @@ public:
                                     AudioStreamType audioStreamType);
 
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+    int32_t ProxyApp(int32_t uid, bool isFreeze);
+    int32_t ResetAll();
 private:
     AudioPolicyManager()
     {

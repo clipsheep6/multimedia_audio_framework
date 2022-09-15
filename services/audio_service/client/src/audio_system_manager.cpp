@@ -794,6 +794,18 @@ std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t g
     return groupManager;
 }
 
+int32_t AudioSystemManager::ProxyApp(int32_t uid, bool isFreeze)
+{
+    AUDIO_DEBUG_LOG("AudioSystemManager ProxyApp uid is %{public}d, isFreeze is %{public}d", uid, isFreeze);
+    return AudioPolicyManager::GetInstance().ProxyApp(uid, isFreeze);
+}
+
+int32_t AudioSystemManager::ResetAll()
+{
+    AUDIO_DEBUG_LOG("AudioSystemManager ResetAll");
+    return AudioPolicyManager::GetInstance().ResetAll();
+}
+
 AudioManagerInterruptCallbackImpl::AudioManagerInterruptCallbackImpl()
 {
     AUDIO_INFO_LOG("AudioManagerInterruptCallbackImpl constructor");

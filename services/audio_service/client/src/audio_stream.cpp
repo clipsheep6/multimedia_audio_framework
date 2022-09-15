@@ -942,5 +942,10 @@ float AudioStream::GetSingleStreamVolume()
 {
     return GetSingleStreamVol();
 }
+
+void AudioStream::SetFreezeState(bool isCallback)
+{
+    return SetFreezeSt(isCallback);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -63,6 +63,7 @@ public:
     int32_t SetLowPowerVolume(float volume);
     float GetLowPowerVolume();
     float GetSingleStreamVolume();
+    void SetFreezeState(bool isCallback);
 
     std::vector<AudioSampleFormat> GetSupportedFormats() const;
     std::vector<AudioEncodingType> GetSupportedEncodingTypes() const;

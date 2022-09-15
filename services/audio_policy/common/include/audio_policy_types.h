@@ -71,6 +71,8 @@ enum AudioPolicyCommand {
     UPDATE_STREAM_STATE,
     GET_SINGLE_STREAM_VOLUME,
     GET_VOLUME_GROUP_INFO,
+    PROXY_APP,
+    RESET_ALL,
 };
 } // namespace AudioStandard
 } // namespace OHOS
