@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <audio_manager.h>
+#include "v1_0/iaudio_manager.h"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>

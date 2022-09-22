@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "audio_types.h"
+#include "v1_0/iaudio_manager.h"
 
 #include "capturer_source_adapter.h"
 

@@ -127,7 +127,7 @@ int32_t IAudioCapturerSourceStart(void *wapper)
     return ret;
 }
 
-int32_t IAudioCapturerSourceFrame(void *wapper, char *frame, uint64_t requestBytes, uint64_t *replyBytes)
+int32_t IAudioCapturerSourceFrame(void *wapper, int8_t *frame, uint32_t *requestBytes, uint64_t *replyBytes)
 {
     int32_t ret;
     IAudioCapturerSource *iAudioCapturerSource = static_cast<IAudioCapturerSource *>(wapper);

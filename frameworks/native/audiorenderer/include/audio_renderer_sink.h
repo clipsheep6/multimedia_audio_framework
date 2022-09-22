@@ -17,7 +17,7 @@
 #define AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
-#include "audio_manager.h"
+#include "v1_0/iaudio_manager.h"
 #include "audio_sink_callback.h"
 
 #include <cstdio>
@@ -70,9 +70,10 @@ private:
     int32_t routeHandle_ = -1;
     uint32_t openSpeaker_;
     std::string adapterNameCase_;
-    struct AudioManager *audioManager_;
-    struct AudioAdapter *audioAdapter_;
-    struct AudioRender *audioRender_;
+    struct IAudioManager *audioManager_;
+    struct IAudioAdapter *audioAdapter_;
+    struct IAudioRender *audioRender_;
+    struct AudioAdapterDescriptor *desc_;
     struct AudioPort audioPort_ = {};
 
     int32_t CreateRender(struct AudioPort &renderPort);

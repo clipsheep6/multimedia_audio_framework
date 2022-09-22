@@ -34,7 +34,6 @@ config("audio_service_config") {
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
-    "//drivers/peripheral/audio/interfaces/include",
     "include/audio_service/common",
   ]
 
@@ -74,6 +73,7 @@ ohos_shared_library("audio_service") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "drivers_interface_audio:libaudio_proxy_1.0",
   ]
 
   subsystem_name = "multimedia"
@@ -98,7 +98,6 @@ ohos_prebuilt_etc("audio_policy.rc") {
 
 config("audio_policy_public_config") {
   include_dirs = [
-    "//drivers/peripheral/audio/interfaces/include",
     "//foundation/multimedia/audio_framework/services/include",
     "//foundation/multimedia/audio_framework/services/include/audio_service/client",
     "//foundation/systemabilitymgr/safwk/services/safwk/include",
@@ -199,10 +198,6 @@ ohos_shared_library("audio_policy_service") {
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [
-    "$hdf_uhdf_path/hdi:libhdi",
-    "$hdf_uhdf_path/host:libhdf_host",
-    "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-    "$hdf_uhdf_path/utils:libhdf_utils",
     "//foundation/communication/bluetooth/services/bluetooth/ipc:btipc_static",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -224,6 +219,7 @@ ohos_shared_library("audio_policy_service") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "drivers_interface_audio:libaudio_proxy_1.0",
   ]
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"

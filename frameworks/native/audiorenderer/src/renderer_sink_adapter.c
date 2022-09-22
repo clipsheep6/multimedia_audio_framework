@@ -16,8 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "audio_types.h"
-
+#include "v1_0/iaudio_manager.h"
 #include "renderer_sink_adapter.h"
 
 #include "audio_log.h"
