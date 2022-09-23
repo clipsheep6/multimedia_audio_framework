@@ -47,12 +47,12 @@ std::map<std::string, RemoteAudioRendererSink *> RemoteAudioRendererSink::allsin
 
 RemoteAudioRendererSink::RemoteAudioRendererSink(std::string deviceNetworkId)
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-      rightVolume_(DEFAULT_VOLUME_LEVEL), audioAdapter_(nullptr), audioRender_(nullptr)
+      rightVolume_(DEFAULT_VOLUME_LEVEL), audioAdapter_(nullptr), audioRender_(nullptr), desc_(nullptr)
 {
     AUDIO_INFO_LOG("Constract.");
     attr_ = {};
     this->deviceNetworkId_ = deviceNetworkId;
-    audioManager_ = GetAudioManager();
+    audioManager_ = IAudioManagerGet(false);
 #ifdef DEBUG_DUMP_FILE
     pfd = nullptr;
 #endif // DEBUG_DUMP_FILE
@@ -158,8 +158,8 @@ void RemoteAudioRendererSink::DeInit()
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
-    if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
-        audioAdapter_->DestroyRender(audioAdapter_, audioRender_);
+    if (audioRender_ != nullptr) {
+        audioAdapter_->DestroyRender(audioAdapter_);
     }
     audioRender_ = nullptr;
 
@@ -167,8 +167,11 @@ void RemoteAudioRendererSink::DeInit()
         if (routeHandle_ != -1) {
             audioAdapter_->ReleaseAudioRoute(audioAdapter_, routeHandle_);
         }
-        audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
+        if (desc_ != nullptr) {
+            audioManager_->UnloadAdapter(audioManager_, desc_->adapterName);
+        }
     }
+    desc_ = nullptr;
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
 #ifdef DEBUG_DUMP_FILE
@@ -201,7 +204,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.silenceThreshold = 0;
 }
 
-struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
+struct IAudioManager *RemoteAudioRendererSink::GetAudioManager()
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: Initialize audio proxy manager");
 #ifdef PRODUCT_M40
@@ -210,7 +213,7 @@ struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
 #else
     char resolvedPath[100] = "/vendor/lib/libdaudio_client.z.so";
 #endif
-    struct AudioManager *(*GetAudioManagerFuncs)() = nullptr;
+    struct IAudioManager *(*IAudioManagerGet)() = nullptr;
 
     void *handle_ = dlopen(resolvedPath, 1);
     if (handle_ == nullptr) {
@@ -219,19 +222,19 @@ struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
     }
     AUDIO_INFO_LOG("dlopen successful");
 
-    GetAudioManagerFuncs = (struct AudioManager *(*)())(dlsym(handle_, "GetAudioManagerFuncs"));
-    if (GetAudioManagerFuncs == nullptr) {
+    IAudioManagerGet = (struct AudioManager *(*)())(dlsym(handle_, "IAudioManagerGet"));
+    if (IAudioManagerGet == nullptr) {
         return nullptr;
     }
-    AUDIO_INFO_LOG("GetAudioManagerFuncs done");
+    AUDIO_INFO_LOG("IAudioManagerGet done");
 
-    struct AudioManager *audioManager = GetAudioManagerFuncs();
+    struct IAudioManager *audioManager = IAudioManagerGet();
     if (audioManager == nullptr) {
         return nullptr;
     }
     AUDIO_INFO_LOG("daudio manager created");
 #else
-    struct AudioManager *audioManager = GetAudioManagerFuncs();
+    struct IAudioManager *audioManager = IAudioManagerGet(false);
 #endif // PRODUCT_M40
     return audioManager;
 }
@@ -262,7 +265,7 @@ int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed");
-        audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
+        audioManager_->UnloadAdapter(audioManager_, desc_->adapterName);
         return ERR_NOT_STARTED;
     }
 
@@ -297,7 +300,7 @@ int32_t RemoteAudioRendererSink::GetTargetAdapterPort(struct AudioAdapterDescrip
             continue;
         }
         targetIdx = index;
-        for (uint32_t port = 0; port < desc->portNum; port++) {
+        for (uint32_t port = 0; port < desc->portsLen; port++) {
             // Only find out the port of out in the sound card
             if (desc->ports[port].portId == PIN_OUT_SPEAKER) {
                 audioPort_ = desc->ports[port];
@@ -320,9 +323,9 @@ int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
         return ERR_NOT_STARTED;
     }
 
-    int32_t size = 0;
+    uint32_t size = 0;
     struct AudioAdapterDescriptor *descs = nullptr;
-    int32_t ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
+    int32_t ret = audioManager_->GetAllAdapters(audioManager_, descs, &size);
     if (size == 0 || descs == nullptr || ret != 0) {
         AUDIO_ERR_LOG("Get adapters Fail");
         return ERR_NOT_STARTED;
@@ -331,9 +334,9 @@ int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
     int32_t targetIdx = GetTargetAdapterPort(descs, size, attr_.deviceNetworkId);
     CHECK_AND_RETURN_RET_LOG((targetIdx >= 0), ERR_NOT_STARTED, "can not find target adapter.");
 
-    struct AudioAdapterDescriptor *desc = &descs[targetIdx];
+    desc_ = &descs[targetIdx];
 
-    if (audioManager_->LoadAdapter(audioManager_, desc, &audioAdapter_) != 0) {
+    if (audioManager_->LoadAdapter(audioManager_, desc_, &audioAdapter_) != 0) {
         AUDIO_ERR_LOG("Load Adapter Fail");
         return ERR_NOT_STARTED;
     }
@@ -375,7 +378,7 @@ int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t 
         return ERR_INVALID_HANDLE;
     }
 
-    ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
+    ret = audioRender_->RenderFrame(audioRender_, (int8_t*)&data, len, &writeLen);
     if (ret != 0) {
         AUDIO_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
@@ -408,7 +411,7 @@ int32_t RemoteAudioRendererSink::Start(void)
     int32_t ret;
 
     if (!started_) {
-        ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Start(audioRender_);
         if (!ret) {
             started_ = true;
             return SUCCESS;
@@ -441,7 +444,7 @@ int32_t RemoteAudioRendererSink::SetVolume(float left, float right)
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
 
-    ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
+    ret = audioRender_->SetVolume(audioRender_, volume);
     if (ret) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink::Set volume failed!");
     }
@@ -512,15 +515,15 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     switch (outputDevice) {
         case DEVICE_TYPE_SPEAKER:
             sink.ext.device.type = PIN_OUT_SPEAKER;
-            sink.ext.device.desc = "pin_out_speaker";
+            sink.ext.device.desc = const_cast<char*>("pin_out_speaker");
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
             sink.ext.device.type = PIN_OUT_HEADSET;
-            sink.ext.device.desc = "pin_out_headset";
+            sink.ext.device.desc = const_cast<char*>("pin_out_headset");
             break;
         case DEVICE_TYPE_USB_HEADSET:
             sink.ext.device.type = PIN_OUT_USB_EXT;
-            sink.ext.device.desc = "pin_out_usb_ext";
+            sink.ext.device.desc = const_cast<char*>("pin_out_usb_ext");
             break;
         default:
             ret = ERR_NOT_SUPPORTED;
@@ -553,10 +556,10 @@ int32_t RemoteAudioRendererSink::OpenOutput(DeviceType outputDevice)
     sink.ext.device.moduleId = 0;
 
     AudioRoute route = {
-        .sourcesNum = 1,
         .sources = &source,
-        .sinksNum = 1,
+        .sourcesLen = 1,
         .sinks = &sink,
+        .sinksLen = 1,
     };
 
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
@@ -586,13 +589,9 @@ int32_t RemoteAudioRendererSink::SetAudioScene(AudioScene audioScene)
     struct AudioSceneDescriptor scene;
     scene.scene.id = GetAudioCategory(audioScene);
     scene.desc.pins = PIN_OUT_SPEAKER;
-    if (audioRender_->scene.SelectScene == nullptr) {
-        AUDIO_ERR_LOG("RemoteAudioRendererSink: Select scene nullptr");
-        return ERR_OPERATION_FAILED;
-    }
 
     AUDIO_INFO_LOG("RemoteAudioRendererSink::SelectScene start");
-    ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
+    ret = audioRender_->SelectScene(audioRender_, &scene);
     AUDIO_INFO_LOG("RemoteAudioRendererSink::SelectScene over");
     if (ret < 0) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink: Select scene FAILED: %{public}d", ret);
@@ -614,7 +613,7 @@ int32_t RemoteAudioRendererSink::Stop(void)
     }
 
     if (started_) {
-        ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Stop(audioRender_);
         if (!ret) {
             started_ = false;
             return SUCCESS;
@@ -643,7 +642,7 @@ int32_t RemoteAudioRendererSink::Pause(void)
     }
 
     if (!paused_) {
-        ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Pause(audioRender_);
         if (!ret) {
             paused_ = true;
             return SUCCESS;
@@ -671,7 +670,7 @@ int32_t RemoteAudioRendererSink::Resume(void)
     }
 
     if (paused_) {
-        ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Resume(audioRender_);
         if (!ret) {
             paused_ = false;
             return SUCCESS;
@@ -689,7 +688,7 @@ int32_t RemoteAudioRendererSink::Reset(void)
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Flush(audioRender_);
         if (!ret) {
             return SUCCESS;
         } else {
@@ -706,7 +705,7 @@ int32_t RemoteAudioRendererSink::Flush(void)
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Flush(audioRender_);
         if (!ret) {
             return SUCCESS;
         } else {

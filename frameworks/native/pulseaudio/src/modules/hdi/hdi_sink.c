@@ -21,7 +21,7 @@
 #include <pulsecore/module.h>
 #include <pulsecore/sink.h>
 
-#include <audio_manager.h>
+#include "v1_0/iaudio_manager.h"
 #include <renderer_sink_adapter.h>
 
 #include <pulse/rtclock.h>

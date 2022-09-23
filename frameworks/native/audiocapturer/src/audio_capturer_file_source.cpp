@@ -137,7 +137,7 @@ int32_t AudioCapturerFileSource::Init(IAudioSourceAttr &attr)
     return SUCCESS;
 }
 
-int32_t AudioCapturerFileSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
+int32_t AudioCapturerFileSource::CaptureFrame(int8_t *frame, uint32_t *requestBytes, uint64_t &replyBytes)
 {
     if (filePtr == nullptr) {
         AUDIO_ERR_LOG("Invalid filePtr!");
@@ -149,7 +149,7 @@ int32_t AudioCapturerFileSource::CaptureFrame(char *frame, uint64_t requestBytes
         rewind(filePtr);
     }
 
-    replyBytes = fread(frame, 1, requestBytes, filePtr);
+    replyBytes = fread(frame, 1, *requestBytes, filePtr);
 
     return SUCCESS;
 }

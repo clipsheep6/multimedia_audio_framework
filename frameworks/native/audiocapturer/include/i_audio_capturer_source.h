@@ -17,7 +17,7 @@
 #define I_AUDIO_CAPTURER_SOURCE_H
 
 #include "audio_info.h"
-#include "audio_manager.h"
+#include "v1_0/iaudio_manager.h"
 
 #include <cstdio>
 #include <list>
@@ -53,7 +53,7 @@ public:
     virtual int32_t Reset(void) = 0;
     virtual int32_t Pause(void) = 0;
     virtual int32_t Resume(void) = 0;
-    virtual int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) = 0;
+    virtual int32_t CaptureFrame(int8_t *frame, uint32_t *requestBytes, uint64_t &replyBytes) = 0;
     virtual int32_t SetVolume(float left, float right) = 0;
     virtual int32_t GetVolume(float &left, float &right) = 0;
     virtual int32_t SetMute(bool isMute) = 0;

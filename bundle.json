@@ -28,7 +28,8 @@
               "native_dataability",
               "native_rdb",
               "samgr_proxy",
-              "system_ability_fwk"
+              "system_ability_fwk",
+              "drivers_interface_audio"
             ],
             "third_party": [
               "libsnd",

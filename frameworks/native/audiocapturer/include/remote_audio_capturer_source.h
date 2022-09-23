@@ -17,7 +17,7 @@
 #define REMOTE_AUDIO_CAPTURER_SOURCE_H
 
 #include "audio_info.h"
-#include "audio_manager.h"
+#include "v1_0/iaudio_manager.h"
 #include "i_audio_capturer_source.h"
 
 #include <cstdio>
@@ -40,7 +40,7 @@ public:
     int32_t Reset(void) override;
     int32_t Pause(void) override;
     int32_t Resume(void) override;
-    int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
+    int32_t CaptureFrame(int8_t *frame, uint32_t *requestBytes, uint64_t &replyBytes) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetMute(bool isMute) override;
@@ -67,9 +67,10 @@ private:
     bool micMuteState_ = false;
 
     int32_t routeHandle_ = -1;
-    struct AudioManager *audioManager_;
-    struct AudioAdapter *audioAdapter_;
-    struct AudioCapture *audioCapture_;
+    struct IAudioManager *audioManager_;
+    struct IAudioAdapter *audioAdapter_;
+    struct IAudioCapture *audioCapture_;
+    struct AudioAdapterDescriptor *desc_;
     struct AudioPort audioPort;
 
     int32_t CreateCapture(struct AudioPort &capturePort);
