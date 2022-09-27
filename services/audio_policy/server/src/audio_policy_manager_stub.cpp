@@ -99,6 +99,19 @@ void AudioPolicyManagerStub::SetAudioSceneInternal(MessageParcel &data, MessageP
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    int32_t result = SetMicrophoneMute(isMute);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &reply)
+{
+    int32_t result = IsMicrophoneMute();
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel &reply)
 {
     AudioScene audioScene = GetAudioScene();
@@ -215,6 +228,20 @@ void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, 
         return;
     }
     int32_t result = SetRingerModeCallback(clientId, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetMicStateChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    int32_t clientId = data.ReadInt32();
+    AUDIO_INFO_LOG("AudioPolicyManagerStub: SetMicStateChangeCallback for client %{public}d done", clientId);
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+        return;
+    }
+    int32_t result = SetMicStateChangeCallback(clientId, object);
     reply.WriteInt32(result);
 }
 
@@ -666,6 +693,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_AUDIO_SCENE:
             GetAudioSceneInternal(reply);
             break;
+        
+        case SET_MICROPHONE_MUTE:
+            SetMicrophoneMuteInternal(data, reply);
+            break;
+
+        case IS_MICROPHONE_MUTE:
+            IsMicrophoneMuteInternal(reply);
+            break;
 
         case GET_STREAM_VOLUME:
             GetStreamVolumeInternal(data, reply);
@@ -705,6 +740,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case UNSET_RINGERMODE_CALLBACK:
             UnsetRingerModeCallbackInternal(data, reply);
+            break;
+
+        case SET_MIC_STATE_CHANGE_CALLBACK:
+            SetMicStateChangeCallbackInternal(data, reply);
             break;
 
         case SET_DEVICE_CHANGE_CALLBACK:
