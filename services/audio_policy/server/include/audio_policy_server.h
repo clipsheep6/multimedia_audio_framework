@@ -28,6 +28,9 @@
 #include "iremote_stub.h"
 #include "system_ability.h"
 #include "audio_service_dump.h"
+#include <condition_variable>
+#include "event_handler.h"
+#include "event_runner.h"
 #include "audio_info.h"
 
 namespace OHOS {
@@ -90,11 +93,17 @@ public:
 
     int32_t SetAudioScene(AudioScene audioScene) override;
 
+    int32_t SetMicrophoneMute(bool isMute) override;
+
+    bool IsMicrophoneMute() override;
+
     AudioScene GetAudioScene() override;
 
     int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
+
+    int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object)
         override;
@@ -164,6 +173,8 @@ public:
     void RegisteredStreamListenerClientDied(int pid);
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
+    
+    void HandleSetMicMuteRequestEvent();
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
         AudioStreamType audioStreamType) override;
@@ -218,7 +229,9 @@ private:
     std::mutex ringerModeMutex_;
     std::mutex interruptMutex_;
     std::mutex volumeKeyEventMutex_;
+    std::mutex micStateChangeMutex_;
     uint32_t clientOnFocus_;
+    bool isMute_;
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> policyListenerCbsMap_;
@@ -227,6 +240,7 @@ private:
     std::list<AudioInterrupt> pendingOwnersList_;
     std::unordered_map<AudioStreamType, int32_t> interruptPriorityMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeListenerCbsMap_;
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
