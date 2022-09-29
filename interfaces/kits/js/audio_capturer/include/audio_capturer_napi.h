@@ -72,6 +72,7 @@ private:
     };
 
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
+    static napi_value ThrowExceptionError(napi_env env, const int32_t errCode, const std::string errMsg);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value CreateAudioCapturer(napi_env env, napi_callback_info info);
     static napi_value GetCapturerInfo(napi_env env, napi_callback_info info);
