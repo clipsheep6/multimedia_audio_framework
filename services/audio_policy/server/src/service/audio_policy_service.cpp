@@ -1321,6 +1321,16 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     }
 }
 
+void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
+{
+    AUDIO_ERR_LOG("OnServiceDisconnected for [%{public}d]", serviceIndex);
+    CHECK_AND_RETURN_LOG(serviceIndex >= HDI_SERVICE_INDEX && serviceIndex <= AUDIO_SERVICE_INDEX, "invalid index");
+    if (serviceIndex == HDI_SERVICE_INDEX) {
+        AUDIO_ERR_LOG("Auto exit audio policy service for hdi service stopped!");
+        exit(0);
+    }
+}
+
 void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)
 {
     // add new device into active device list
