@@ -18,11 +18,14 @@ pulseaudio_dir = "//third_party/pulseaudio"
 config("audio_capturer_config") {
   include_dirs = [
     "include",
+    "//base/security/access_token/interfaces/innerkits/privacy/include",
+    "//base/security/access_token/interfaces/innerkits/accesstoken/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]
@@ -47,7 +50,11 @@ ohos_shared_library("audio_capturer") {
 
   public_configs = [ ":audio_external_library_config" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "access_token:libprivacy_sdk",
+    "ipc:ipc_core",
+  ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
