@@ -469,8 +469,8 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
 int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
+    if (!VerifyClientPermission(MANAGE_AUDIO_CONFIG_PERMISSION)) {
+        AUDIO_ERR_LOG("SetMicrophoneMute: MANAGE_AUDIO_CONFIG permission denied");
         return ERR_PERMISSION_DENIED;
     }
     
@@ -496,8 +496,8 @@ int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
 bool AudioPolicyServer::IsMicrophoneMute()
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("IsMicrophoneMute: MICROPHONE permission denied");
+    if (!VerifyClientPermission(MANAGE_AUDIO_CONFIG_PERMISSION)) {
+        AUDIO_ERR_LOG("IsMicrophoneMute: MANAGE_AUDIO_CONFIG permission denied");
         return ERR_PERMISSION_DENIED;
     }
 
