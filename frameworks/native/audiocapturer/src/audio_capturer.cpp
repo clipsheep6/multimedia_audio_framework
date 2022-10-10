@@ -19,6 +19,10 @@
 #include "audio_errors.h"
 #include "audio_stream.h"
 #include "audio_log.h"
+#include "privacy_kit.h"
+#include "ipc_skeleton.h"
+
+using OHOS::Security::AccessToken::PrivacyKit;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -127,6 +131,21 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
+    AUDIO_ERR_LOG("Recording permission denied for2222222222: %{public}d", IPCSkeleton::GetCallingTokenID());
+    auto flag = PrivacyKit::IsAllowedUsingPermission(IPCSkeleton::GetCallingTokenID(), MICROPHONE_PERMISSION);
+    AUDIO_ERR_LOG("Recording permission denied for33333: %{public}d", flag);
+    if (flag == 0) {
+        AUDIO_ERR_LOG("The app has been exited to the background %{public}d", IPCSkeleton::GetCallingTokenID());
+        return ERR_PERMISSION_DENIED;
+    }
+
+	  auto flag1 = PrivacyKit::StartUsingPermission(IPCSkeleton::GetCallingTokenID(), MICROPHONE_PERMISSION);
+    AUDIO_ERR_LOG("Recording permission denied for11111111111:: %{public}d", flag1);
+    if (flag1 != 0) {
+        AUDIO_ERR_LOG("Recording permission denied for %{public}d", IPCSkeleton::GetCallingTokenID());
+        return ERR_PERMISSION_DENIED;
+    }
+
     if (!audioStream_->VerifyClientPermission(MICROPHONE_PERMISSION, appInfo_.appTokenId, appInfo_.appUid)) {
         AUDIO_ERR_LOG("MICROPHONE permission denied for %{public}d", appInfo_.appTokenId);
         return ERR_PERMISSION_DENIED;
@@ -289,6 +308,13 @@ bool AudioCapturerPrivate::Flush() const
 
 bool AudioCapturerPrivate::Release() const
 {
+    auto flag1 = PrivacyKit::StopUsingPermission(IPCSkeleton::GetCallingTokenID(), MICROPHONE_PERMISSION);
+    AUDIO_ERR_LOG("Recording permission denied for444444444444:: %{public}d", flag1);
+    AUDIO_ERR_LOG("Recording permission denied for555555555555 %{public}d", IPCSkeleton::GetCallingTokenID());
+    if (flag1 != 0) {
+        AUDIO_ERR_LOG("Recording permission denied for %{public}d", IPCSkeleton::GetCallingTokenID());
+        return ERR_PERMISSION_DENIED;
+    }
     return audioStream_->ReleaseAudioStream();
 }
 
