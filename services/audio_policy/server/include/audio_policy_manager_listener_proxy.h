@@ -17,7 +17,7 @@
 #define AUDIO_POLICY_MANAGER_LISTENER_PROXY_H
 
 #include "audio_interrupt_callback.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "i_standard_audio_policy_manager_listener.h"
 
 namespace OHOS {

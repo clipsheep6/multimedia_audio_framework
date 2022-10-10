@@ -32,6 +32,12 @@ sptr<IStandardAudioService> g_sProxy = nullptr;
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
 
+void AudioSystemEventCallback::OnSystemEvent(const AudioRingerMode &ringerMode)
+{
+    // SendEvent(AppExecFwk::InnerEvent::Get(RINGER_MODE_CHANGE_EVENT), ringerMode);
+    AUDIO_INFO_LOG("lxlx AudioSystemEventCallback: received OnSystemEvent");
+}
+
 AudioSystemManager::AudioSystemManager()
 {
     AUDIO_DEBUG_LOG("AudioSystemManager start");
@@ -124,21 +130,49 @@ void AudioSystemManager::init()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr == nullptr) {
-        AUDIO_ERR_LOG("AudioSystemManager::init failed");
+        AUDIO_ERR_LOG("AudioSystemManager::init get samgr");
         return;
     }
-
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     if (object == nullptr) {
-        AUDIO_DEBUG_LOG("AudioSystemManager::object is NULL.");
+        AUDIO_ERR_LOG("AudioSystemManager::init remote object is NULL");
         return;
     }
     g_sProxy = iface_cast<IStandardAudioService>(object);
     if (g_sProxy == nullptr) {
-        AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is NULL.");
-    } else {
-        AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is assigned.");
+        AUDIO_ERR_LOG("AudioSystemManager::init g_sProxy is NULL");
+        return;
     }
+
+    // initialize looper and handler to receive callbacks
+    mainRunner_ = AppExecFwk::EventRunner::Create("AudioSystemManagerRunner");
+    SetEventRunner(mainRunner_);
+    mainRunner_->Run();
+
+    // register member callback stub for current instance, can be extended to receive all events
+    eventCallback_ = std::make_shared<AudioSystemEventCallback>();
+    int32_t ret = AudioPolicyManager::GetInstance().SetRingerModeCallback(getpid(), eventCallback_);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioSystemManager::SetRingerModeCallback err = %{public}d", ret);
+    }
+}
+
+void AudioSystemManager::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    uint32_t eventId = event->GetInnerEventId();
+    switch (eventId) {
+        case RINGER_MODE_CHANGE_EVENT: {
+            DispatchRingerModeChangeEvent();
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void AudioSystemManager::DispatchRingerModeChangeEvent()
+{
+    AUDIO_INFO_LOG("lxlx DispatchRingerModeChangeEvent");
 }
 
 int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode) const
@@ -465,21 +499,22 @@ int32_t AudioSystemManager::UnsetDeviceChangeCallback()
 }
 
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
-                                                  const std::shared_ptr<AudioRingerModeCallback> &callback)
+    const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
     if (callback == nullptr) {
         AUDIO_ERR_LOG("AudioSystemManager: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
+    // TODO: check if user callback already registered, if so, do not register, return error directly
 
-    cbClientId_ = clientId;
-
-    return AudioPolicyManager::GetInstance().SetRingerModeCallback(clientId, callback);
+    ringerModeCbs_.push_back(callback);
+    return SUCCESS;
 }
 
-int32_t AudioSystemManager::UnsetRingerModeCallback(const int32_t clientId) const
+int32_t AudioSystemManager::UnsetRingerModeCallback(const int32_t clientId)
 {
-    return AudioPolicyManager::GetInstance().UnsetRingerModeCallback(clientId);
+    ringerModeCbs_.clear();
+    return SUCCESS;
 }
 
 bool AudioSystemManager::IsAlived()

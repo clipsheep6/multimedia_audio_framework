@@ -23,189 +23,20 @@
 #include <unordered_map>
 
 #include "parcel.h"
+#include "event_handler.h"
+#include "event_runner.h"
 #include "audio_info.h"
+#include "audio_system_utils.h"
 #include "audio_interrupt_callback.h"
 #include "audio_group_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioDeviceDescriptor;
-class AudioDeviceDescriptor : public Parcelable {
-    friend class AudioSystemManager;
-public:
-    DeviceType getType();
-    DeviceRole getRole();
-    DeviceType deviceType_;
-    DeviceRole deviceRole_;
-    int32_t deviceId_;
-    int32_t channelMasks_;
-    std::string deviceName_;
-    std::string macAddress_;
-    int32_t interruptGroupId_;
-    int32_t volumeGroupId_;
-    std::string networkId_;
-    AudioStreamInfo audioStreamInfo_ = {};
-    AudioDeviceDescriptor();
-    AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId, int32_t volumeGroupId,
-        std::string networkId);
-    AudioDeviceDescriptor(DeviceType type, DeviceRole role);
-    AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
-    virtual ~AudioDeviceDescriptor();
-    bool Marshalling(Parcel &parcel) const override;
-    static sptr<AudioDeviceDescriptor> Unmarshalling(Parcel &parcel);
-
-    void SetDeviceInfo(std::string deviceName, std::string macAddress);
-    void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask);
-};
-
-class InterruptGroupInfo;
-class InterruptGroupInfo : public Parcelable {
-    friend class AudioSystemManager;
-public:
-    int32_t interruptGroupId_;
-    int32_t mappingId_;
-    std::string groupName_;
-    std::string networkId_;
-    ConnectType connectType_;
-    InterruptGroupInfo();
-    InterruptGroupInfo(int32_t interruptGroupId, int32_t mappingId, std::string groupName, std::string networkId,
-        ConnectType type);
-    virtual ~InterruptGroupInfo();
-    bool Marshalling(Parcel &parcel) const override;
-    static sptr<InterruptGroupInfo> Unmarshalling(Parcel &parcel);
-};
-
-class VolumeGroupInfo;
-class VolumeGroupInfo : public Parcelable {
-    friend class AudioSystemManager;
-public:
-    int32_t volumeGroupId_;
-    int32_t mappingId_;
-    std::string groupName_;
-    std::string networkId_;
-    ConnectType connectType_;
-    VolumeGroupInfo();
-    VolumeGroupInfo(int32_t volumeGroupId, int32_t mappingId, std::string groupName, std::string networkId,
-        ConnectType type);
-    virtual ~VolumeGroupInfo();
-    bool Marshalling(Parcel &parcel) const override;
-    static sptr<VolumeGroupInfo> Unmarshalling(Parcel &parcel);
-};
-
-struct DeviceChangeAction {
-    DeviceChangeType type;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
-};
-
-/**
- * @brief AudioRendererFilter is used for select speficed AudioRenderer.
- */
-class AudioRendererFilter;
-class AudioRendererFilter : public Parcelable {
-    friend class AudioSystemManager;
-public:
-    AudioRendererFilter();
-    virtual ~AudioRendererFilter();
-
-    int32_t uid = -1;
-    AudioRendererInfo rendererInfo = {};
-    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
-    int32_t streamId = -1;
-
-    bool Marshalling(Parcel &parcel) const override;
-    static sptr<AudioRendererFilter> Unmarshalling(Parcel &in);
-};
-
-/**
- * @brief AudioCapturerFilter is used for select speficed audiocapturer.
- */
-class AudioCapturerFilter;
-class AudioCapturerFilter : public Parcelable {
-    friend class AudioSystemManager;
-public:
-    AudioCapturerFilter();
-    virtual ~AudioCapturerFilter();
-
-    int32_t uid = -1;
-
-    bool Marshalling(Parcel &parcel) const override;
-    static sptr<AudioCapturerFilter> Unmarshalling(Parcel &in);
-};
-
-// AudioManagerCallback OnInterrupt is added to handle compilation error in call manager
-// Once call manager adapt to new interrupt APIs, this will be removed
-class AudioManagerCallback {
-public:
-    virtual ~AudioManagerCallback() = default;
-    /**
-     * Called when an interrupt is received.
-     *
-     * @param interruptAction Indicates the InterruptAction information needed by client.
-     * For details, refer InterruptAction struct in audio_info.h
-     */
-    virtual void OnInterrupt(const InterruptAction &interruptAction) = 0;
-};
-
-class AudioManagerInterruptCallbackImpl : public AudioInterruptCallback {
-public:
-    explicit AudioManagerInterruptCallbackImpl();
-    virtual ~AudioManagerInterruptCallbackImpl();
-
-    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
-    void SaveCallback(const std::weak_ptr<AudioManagerCallback> &callback);
-private:
-    std::weak_ptr<AudioManagerCallback> callback_;
-    std::shared_ptr<AudioManagerCallback> cb_;
-};
-
-class AudioManagerDeviceChangeCallback {
-public:
-    virtual ~AudioManagerDeviceChangeCallback() = default;
-    /**
-     * Called when an interrupt is received.
-     *
-     * @param deviceChangeAction Indicates the DeviceChangeAction information needed by client.
-     * For details, refer DeviceChangeAction struct
-     */
-    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
-};
-
-class VolumeKeyEventCallback {
-public:
-    virtual ~VolumeKeyEventCallback() = default;
-    /**
-     * @brief VolumeKeyEventCallback will be executed when hard volume key is pressed up/down
-     *
-     * @param volumeEvent the volume event info.
-    **/
-    virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
-};
-
-class AudioParameterCallback {
-public:
-    virtual ~AudioParameterCallback() = default;
-    virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
-        const std::string& condition, const std::string& value) = 0;
-};
-
-class AudioRingerModeCallback {
-public:
-    virtual ~AudioRingerModeCallback() = default;
-    /**
-     * Called when ringer mode is updated.
-     *
-     * @param ringerMode Indicates the updated ringer mode value.
-     * For details, refer RingerMode enum in audio_info.h
-     */
-    virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
-};
-
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
  *        Provides a series of client/interfaces for audio management
  */
-
-class AudioSystemManager {
+class AudioSystemManager : public AppExecFwk::EventHandler {
 public:
     const std::vector<AudioVolumeType> GET_STREAM_ALL_VOLUME_TYPES {
         STREAM_MUSIC,
@@ -253,16 +84,16 @@ public:
         &callback);
     int32_t UnsetDeviceChangeCallback();
     int32_t SetRingerModeCallback(const int32_t clientId,
-                                  const std::shared_ptr<AudioRingerModeCallback> &callback);
-    int32_t UnsetRingerModeCallback(const int32_t clientId) const;
+        const std::shared_ptr<AudioRingerModeCallback> &callback);
+    int32_t UnsetRingerModeCallback(const int32_t clientId);
     int32_t RegisterVolumeKeyEventCallback(const int32_t clientPid,
-                                           const std::shared_ptr<VolumeKeyEventCallback> &callback);
+        const std::shared_ptr<VolumeKeyEventCallback> &callback);
     int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid);
 
     // Below APIs are added to handle compilation error in call manager
     // Once call manager adapt to new interrupt APIs, this will be removed
     int32_t SetAudioManagerCallback(const AudioVolumeType streamType,
-                                    const std::shared_ptr<AudioManagerCallback> &callback);
+        const std::shared_ptr<AudioManagerCallback> &callback);
     int32_t UnsetAudioManagerCallback(const AudioVolumeType streamType) const;
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
@@ -276,31 +107,42 @@ public:
     int32_t GetAudioLatencyFromXml() const;
     uint32_t GetSinkLatencyFromXml() const;
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                    AudioStreamType audioStreamType);
+        AudioStreamType audioStreamType);
     AudioPin GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const;
     DeviceType GetTypeValueFromPin(AudioPin pin) const;
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroups(std::string networkId);
     std::shared_ptr<AudioGroupManager> GetGroupManager(int32_t groupId);
+protected:
+    virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
 private:
+    static constexpr int32_t MAX_VOLUME_LEVEL = 15;
+    static constexpr int32_t MIN_VOLUME_LEVEL = 0;
+    static constexpr int32_t CONST_FACTOR = 100;
+    enum {
+        RINGER_MODE_CHANGE_EVENT = 0,
+    };
+
     AudioSystemManager();
     virtual ~AudioSystemManager();
     void init();
     bool IsAlived();
-    static constexpr int32_t MAX_VOLUME_LEVEL = 15;
-    static constexpr int32_t MIN_VOLUME_LEVEL = 0;
-    static constexpr int32_t CONST_FACTOR = 100;
+    uint32_t GetCallingPid();
+    void DispatchRingerModeChangeEvent();
+
     static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
 
     int32_t cbClientId_ = -1;
-
     int32_t volumeChangeClientPid_ = -1;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
 
-    uint32_t GetCallingPid();
     std::mutex mutex_;
     std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
+    std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCbs_;
+
+    std::shared_ptr<AppExecFwk::EventRunner> mainRunner_ = nullptr;
+    std::shared_ptr<AudioSystemEventCallback> eventCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

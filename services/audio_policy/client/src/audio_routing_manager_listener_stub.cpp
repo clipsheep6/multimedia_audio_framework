@@ -35,7 +35,7 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
-        AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: ReadInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioRoutingManagerListenerStub: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {

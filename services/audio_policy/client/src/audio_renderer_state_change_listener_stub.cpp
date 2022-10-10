@@ -16,7 +16,7 @@
 #include "audio_renderer_state_change_listener_stub.h"
 
 #include "audio_errors.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "audio_log.h"
 
 using namespace std;

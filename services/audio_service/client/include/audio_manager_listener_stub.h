@@ -18,7 +18,7 @@
 
 #include <thread>
 
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "i_standard_audio_server_manager_listener.h"
 
 namespace OHOS {

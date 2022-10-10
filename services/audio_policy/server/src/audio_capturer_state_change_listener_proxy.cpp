@@ -14,7 +14,7 @@
  */
 
 #include "audio_capturer_state_change_listener_proxy.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "audio_log.h"
 
 using namespace std;

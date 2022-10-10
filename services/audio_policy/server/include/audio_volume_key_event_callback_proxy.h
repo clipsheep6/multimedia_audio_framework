@@ -17,7 +17,7 @@
 #define ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_PROXY_H
 
 #include "iremote_proxy.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "i_audio_volume_key_event_callback.h"
 
 namespace OHOS {

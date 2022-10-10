@@ -16,22 +16,21 @@
 #ifndef AUDIO_RINGERMODE_UPDATE_LISTENER_STUB_H
 #define AUDIO_RINGERMODE_UPDATE_LISTENER_STUB_H
 
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "i_standard_ringermode_update_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRingerModeUpdateListenerStub : public IRemoteStub<IStandardRingerModeUpdateListener> {
+class AudioSystemEventListenerStub : public IRemoteStub<IStandardSystemEventListener> {
 public:
-    AudioRingerModeUpdateListenerStub();
-    virtual ~AudioRingerModeUpdateListenerStub();
+    AudioSystemEventListenerStub();
+    virtual ~AudioSystemEventListenerStub();
 
-    int OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option) override;
-    void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
-    void SetCallback(const std::weak_ptr<AudioRingerModeCallback> &callback);
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
+    void OnSystemEvent(const AudioRingerMode &ringerMode) override;
+    void SetCallback(const std::weak_ptr<AudioSystemEventCallback> &callback);
 private:
-    std::weak_ptr<AudioRingerModeCallback> callback_;
+    std::weak_ptr<AudioSystemEventCallback> callback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

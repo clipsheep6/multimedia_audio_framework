@@ -16,7 +16,7 @@
 #ifndef AUDIO_POLICY_TEST_H
 #define AUDIO_POLICY_TEST_H
 
-#include <audio_system_manager.h>
+#include <audio_system_utils.h>
 #include <gtest/gtest.h>
 #include <audio_log.h>
 

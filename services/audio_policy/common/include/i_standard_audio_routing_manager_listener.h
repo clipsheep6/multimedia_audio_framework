@@ -28,7 +28,7 @@ public:
     virtual ~IStandardAudioRoutingManagerListener() = default;
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
 
-    enum AudioRingerModeUpdateListenerMsg {
+    enum AudioRoutingManagerMsg {
         ON_ERROR = 0,
         ON_MIC_STATE_UPDATED,
     };
