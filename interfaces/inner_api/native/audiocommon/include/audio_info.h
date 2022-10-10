@@ -37,6 +37,7 @@ constexpr int32_t INVALID_UID = -1;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
+const std::string MANAGE_AUDIO_CONFIG_PERMISSION = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
