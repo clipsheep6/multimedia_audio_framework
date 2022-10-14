@@ -61,8 +61,11 @@ ohos_shared_library("audio") {
     "audio_manager/src/audio_volume_manager_napi.cpp",
     "audio_manager/src/audio_interrupt_manager_napi.cpp",
     "audio_manager/src/audio_stream_mgr_napi.cpp",
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 3c292d92... napi errorCode for audioManager
   ]
 
   deps = [

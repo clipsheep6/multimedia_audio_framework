@@ -140,7 +140,6 @@ bool AudioCommonNapi::IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceF
     return result;
 }
 
-
 bool AudioCommonNapi::IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType)
 {
     bool result = false;

@@ -50,8 +50,6 @@ private:
 
     static void RegisterDeviceChangeCallback(napi_env env, napi_value* args, const std::string& cbName, int32_t flag,
         AudioRoutingManagerNapi* routingMgrNapi);
-    static void RegisterMicStateChangeCallback(napi_env env, napi_value* args, const std::string& cbName,
-        AudioRoutingManagerNapi* routingMgrNapi);
     static void RegisterCallback(napi_env env, napi_value jsThis, napi_value* args, const std::string& cbName,
         int32_t flag);
     static napi_value On(napi_env env, napi_callback_info info);

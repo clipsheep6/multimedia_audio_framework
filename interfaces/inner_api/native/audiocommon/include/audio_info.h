@@ -316,6 +316,14 @@ enum AudioOutputChannelMask {
     CHANNEL_OUT_SIDE_RIGHT = 0x1 << 5, 
     CHANNEL_OUT_BACK_LEFT = 0x1 << 6,
     CHANNEL_OUT_BACK_RIGHT = 0x1 << 7
+
+};
+
+enum AudioInputChannelMask {
+    CHANNEL_IN_LEFT = 0x1 << 0,
+    CHANNEL_IN_RIGHT = 0x1 << 1,
+    CHANNEL_IN_FRONT = 0x1 << 2,
+    CHANNEL_IN_BACK = 0x1 << 3
 };
 
 enum InterruptMode {
@@ -550,6 +558,8 @@ struct AudioStreamInfo {
     AudioEncodingType encoding;
     AudioSampleFormat format;
     AudioChannel channels;
+    AudioOutputChannelMask channelOut;
+    AudioInputChannelMask channelIn;
 };
 
 struct AudioRendererInfo {

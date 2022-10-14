@@ -238,10 +238,8 @@ napi_value AudioVolumeGroupManagerNapi::Construct(napi_env env, napi_callback_in
 
     if (status == napi_ok) {
         unique_ptr<AudioVolumeGroupManagerNapi> groupmanagerNapi = make_unique<AudioVolumeGroupManagerNapi>();
-        groupmanagerNapi->audioSystemMngr_ = AudioSystemManager::GetInstance();
         if (groupmanagerNapi != nullptr) {
             groupmanagerNapi->audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-            groupmanagerNapi->audioRoutingMngr_ = AudioRoutingManager::GetInstance();
             if (groupmanagerNapi->audioGroupMngr_ == nullptr) {
                 HiLog::Error(LABEL, "Failed in AudioVolumeGroupManagerNapi::Construct()!");
 
@@ -762,7 +760,6 @@ napi_value AudioVolumeGroupManagerNapi::SetRingerMode(napi_env env, napi_callbac
                 if (context->status == SUCCESS) {
                     context->status =
                     context->objectInfo->audioGroupMngr_->SetRingerMode(GetNativeAudioRingerMode(context->ringMode));
-                    context->status = context->status == SUCCESS ? SUCCESS : ERR_NUMBER301;
                 }
                 
             },
@@ -795,18 +792,12 @@ napi_value AudioVolumeGroupManagerNapi::GetRingerMode(napi_env env, napi_callbac
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM0; i < argc; i++) {
+        if (argc > PARAM0) {
             napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-
-            if (i == PARAM0) {
-                if (valueType == napi_function) {
-                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                }                
-                break;
-            } else {
-                asyncContext->status = ERR_NUMBER101;
-            }
+            napi_typeof(env, argv[PARAM0], &valueType);
+            if (valueType == napi_function) {
+                napi_create_reference(env, argv[PARAM0], refCount, &asyncContext->callbackRef);
+            }                
         }
 
         if (asyncContext->callbackRef == nullptr) {
@@ -853,7 +844,6 @@ napi_value AudioVolumeGroupManagerNapi::SetMicrophoneMute(napi_env env, napi_cal
     napi_value result = nullptr;
 
     GET_PARAMS(env, info, ARGS_TWO);
-    NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
 
     unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
 
@@ -893,7 +883,6 @@ napi_value AudioVolumeGroupManagerNapi::SetMicrophoneMute(napi_env env, napi_cal
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
                     context->status = context->objectInfo->audioGroupMngr_->SetMicrophoneMute(context->isMute);
-                    context->status = context->status == SUCCESS ? SUCCESS : ERR_NUMBER301;
                 }
             },
             SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -924,16 +913,13 @@ napi_value AudioVolumeGroupManagerNapi::IsMicrophoneMute(napi_env env, napi_call
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
 
-            if (i == PARAM0 && valueType == napi_function) {
-                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                break;
-            } else {
-                asyncContext->status = ERR_NUMBER101;
-            }
+        if (argc > PARAM0) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[PARAM0], &valueType);
+            if (valueType == napi_function) {
+                napi_create_reference(env, argv[PARAM0], refCount, &asyncContext->callbackRef);
+            }                
         }
 
         if (asyncContext->callbackRef == nullptr) {
@@ -995,8 +981,6 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
 
     AudioVolumeGroupManagerNapi *volumeGroupManagerNapi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&volumeGroupManagerNapi));
-    NAPI_ASSERT(env, status == napi_ok && volumeGroupManagerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
-    NAPI_ASSERT(env, volumeGroupManagerNapi->audioSystemMngr_ != nullptr, "audio system manager instance is null.");
 
     napi_valuetype handler = napi_undefined;
     if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
@@ -1009,7 +993,7 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
     if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
         if (volumeGroupManagerNapi->ringerModecallbackNapi_ == nullptr) {
             volumeGroupManagerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
-            int32_t ret = volumeGroupManagerNapi->audioSystemMngr_->SetRingerModeCallback(
+            int32_t ret = volumeGroupManagerNapi->audioGroupMngr_->SetRingerModeCallback(
                 volumeGroupManagerNapi->cachedClientId, volumeGroupManagerNapi->ringerModecallbackNapi_);
             if (ret) {
                 AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: SetRingerModeCallback Failed");
@@ -1029,7 +1013,7 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
                 AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: Memory Allocation Failed !!");
             }
 
-            int32_t ret = volumeGroupManagerNapi->audioRoutingMngr_->SetMicStateChangeCallback(
+            int32_t ret = volumeGroupManagerNapi->audioGroupMngr_->SetMicStateChangeCallback(
                 volumeGroupManagerNapi->micStateChangeCallbackNapi_);
             if (ret) {
                 AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: Registering Microphone Change Callback Failed");

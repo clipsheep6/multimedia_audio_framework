@@ -18,6 +18,23 @@
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "audio_info.h"
+
+
+#define THROW_ERROR_ASSERT(env, assertion, code)        \
+    do {                                                \
+        if (!(assertion)) {                             \
+            AudioCommonNapi::throwError( env, code);    \
+            return nullptr;                             \
+        }                                               \
+    } while (0)
+
+#define GET_PARAMS(env, info, num) \
+    size_t argc = num;             \
+    napi_value argv[num] = {0};    \
+    napi_value thisVar = nullptr;  \
+    void *data;                    \
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
 
 #define THROW_ERROR_ASSERT(env, assertion, code)        \
     do {                                                \
@@ -65,7 +82,6 @@ public:
     static bool IsLegalInputArgumentActiveDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentRingMode(int32_t ringerMode);
-
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
 };
 

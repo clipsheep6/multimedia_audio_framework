@@ -127,6 +127,7 @@ private:
     static napi_ref audioErrors_;
     static napi_ref communicationDeviceType_;
     static napi_ref audioOutputChannelMask_;
+    static napi_ref audioInputChannelMask_;
 
     AudioSystemManager *audioMngr_;
     int32_t cachedClientId = -1;
@@ -198,6 +199,12 @@ static const std::map<std::string, AudioStandard::AudioOutputChannelMask> audioO
     {"CHANNEL_OUT_BACK_LEFT", CHANNEL_OUT_BACK_LEFT},
     {"CHANNEL_OUT_BACK_RIGHT", CHANNEL_OUT_BACK_RIGHT},
 
+};
+static const std::map<std::string, AudioStandard::AudioInputChannelMask> audioInputChannelMaskMap = {
+    {"CHANNEL_IN_LEFT", CHANNEL_IN_LEFT},
+    {"CHANNEL_IN_RIGHT", CHANNEL_IN_RIGHT},
+    {"CHANNEL_IN_FRONT", CHANNEL_IN_FRONT},
+    {"CHANNEL_IN_BACK", CHANNEL_IN_BACK},
 };
 } // namespace AudioStandard
 } // namespace OHOS

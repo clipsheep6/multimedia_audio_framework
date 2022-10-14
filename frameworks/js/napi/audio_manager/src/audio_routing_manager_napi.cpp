@@ -425,6 +425,18 @@ static void SetDevicesInfo(AudioRoutingManagerAsyncContext* asyncContext, napi_e
             napi_set_element(env, channelCounts, 0, value);
             napi_set_named_property(env, valueParam, "channelCounts", channelCounts);
 
+            napi_value channelOut;
+            napi_create_array_with_length(env, 1, &channelOut);
+            napi_create_int32(env, asyncContext->deviceDescriptors[i]->audioStreamInfo_.channelOut, &value);
+            napi_set_element(env, channelOut, 0, value);
+            napi_set_named_property(env, valueParam, "channelOut", channelOut);
+
+            napi_value channelIn;
+            napi_create_array_with_length(env, 1, &channelIn);
+            napi_create_int32(env, asyncContext->deviceDescriptors[i]->audioStreamInfo_.channelIn, &value);
+            napi_set_element(env, channelIn, 0, value);
+            napi_set_named_property(env, valueParam, "channelIn", channelIn);
+
             napi_value channelMasks;
             napi_create_array_with_length(env, 1, &channelMasks);
             napi_create_int32(env, asyncContext->deviceDescriptors[i]->channelMasks_, &value);
@@ -881,31 +893,6 @@ void AudioRoutingManagerNapi::RegisterDeviceChangeCallback(napi_env env, napi_va
     AUDIO_INFO_LOG("AudioRoutingManager::On SetDeviceChangeCallback is successful");
 }
 
-void AudioRoutingManagerNapi::RegisterMicStateChangeCallback(napi_env env, napi_value* args,
-    const std::string& cbName, AudioRoutingManagerNapi* routingMgrNapi)
-{
-    if (!routingMgrNapi->micStateChangeCallbackNapi_) {
-        routingMgrNapi->micStateChangeCallbackNapi_= std::make_shared<AudioManagerMicStateChangeCallbackNapi>(env);
-        if (!routingMgrNapi->micStateChangeCallbackNapi_) {
-            AUDIO_ERR_LOG("AudioStreamMgrNapi: Memory Allocation Failed !!");
-            return;
-        }
-
-        int32_t ret = routingMgrNapi->audioRoutingMngr_->SetMicStateChangeCallback(
-            routingMgrNapi->micStateChangeCallbackNapi_);
-        if (ret) {
-            AUDIO_ERR_LOG("AudioRoutingMgrNapi: Registering Microphone Change Callback Failed");
-            return;
-        }
-    }
-
-    std::shared_ptr<AudioManagerMicStateChangeCallbackNapi> cb =
-        std::static_pointer_cast<AudioManagerMicStateChangeCallbackNapi>(routingMgrNapi->micStateChangeCallbackNapi_);
-    cb->SaveCallbackReference(cbName, args[PARAM1]);
-
-    AUDIO_INFO_LOG("AudioRoutingManager::On SetMicStateChangeCallback is successful");
-}
-
 void AudioRoutingManagerNapi::RegisterCallback(napi_env env, napi_value jsThis,
     napi_value* args, const std::string& cbName, int32_t flag)
 {
@@ -920,8 +907,6 @@ void AudioRoutingManagerNapi::RegisterCallback(napi_env env, napi_value jsThis,
 
     if (!cbName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         RegisterDeviceChangeCallback(env, args, cbName, flag, routingMgrNapi);
-    } else if (!cbName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
-        RegisterMicStateChangeCallback(env, args, cbName, routingMgrNapi);
     } else {
         AUDIO_ERR_LOG("AudioRoutingMgrNapi::No such supported");
         AudioCommonNapi::throwError(env, ERR_NUMBER101);
@@ -1067,7 +1052,6 @@ napi_value AudioRoutingManagerNapi::SetCommunicationDevice(napi_env env, napi_ca
                 if (context->status == 0) {
                     context->status = context->objectInfo->audioMngr_->SetDeviceActive(
                         static_cast<ActiveDeviceType>(context->deviceType), context->isActive);
-                    context->status = context->status == 0 ? 0 : ERR_NUMBER301;
                 }
               
             },

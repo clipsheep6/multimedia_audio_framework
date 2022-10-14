@@ -22,7 +22,6 @@
 #include "audio_stream_manager.h"
 #include "audio_system_manager.h"
 
-
 namespace OHOS {
 namespace AudioStandard {
 static const std::string AUDIO_STREAM_MGR_NAPI_CLASS_NAME = "AudioStreamManager";
@@ -43,8 +42,6 @@ private:
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value IsAudioRendererLowLatencySupported(napi_env env, napi_callback_info info);
     static napi_value IsStreamActive(napi_env env, napi_callback_info info);
-
-    
     static void RegisterCallback(napi_env env, napi_value jsThis,
                                 napi_value* args, const std::string& cbName);
     static void RegisterCapturerStateChangeCallback(napi_env env, napi_value* args,
