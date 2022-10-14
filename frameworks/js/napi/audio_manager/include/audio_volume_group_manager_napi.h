@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_GROUP_MNGR_NAPI_H_
-#define AUDIO_GROUP_MNGR_NAPI_H_
+#ifndef AUDIO_VOLUME_GROUP_MNGR_NAPI_H_
+#define AUDIO_VOLUME_GROUP_MNGR_NAPI_H_
 
 #include <iostream>
 #include <map>
@@ -22,21 +22,20 @@
 #include "audio_system_manager.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
-#include "audio_manager_napi.h"
+#include "audio_common_napi.h"
 
 namespace OHOS {
 namespace AudioStandard {
-static const std::string AUDIO_GROUP_MNGR_NAPI_CLASS_NAME = "AudioGroupManager";
+static const std::string AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME = "AudioVolumeGroupManager";
 
-class AudioGroupManagerNapi {
+class AudioVolumeGroupManagerNapi {
 public:
 
     static napi_value Init(napi_env env, napi_value exports);
-    static napi_value CreateAudioGroupManagerWrapper(napi_env env, int32_t groupId);
+    static napi_value CreateAudioVolumeGroupManagerWrapper(napi_env env, int32_t groupId);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
-    static void GetGroupManagerAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value GetVolume(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
@@ -50,4 +49,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_GROUP_MNGR_NAPI_H_
+#endif // AUDIO_VOLUME_GROUP_MNGR_NAPI_H_

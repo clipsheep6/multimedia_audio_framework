@@ -19,6 +19,13 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
+#define GET_PARAMS(env, info, num) \
+    size_t argc = num;             \
+    napi_value argv[num] = {0};    \
+    napi_value thisVar = nullptr;  \
+    void *data;                    \
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -29,9 +36,23 @@ namespace {
 
 class AudioCommonNapi {
 public:
+    enum AudioVolumeType {
+        VOLUMETYPE_DEFAULT = -1,
+        VOICE_CALL = 0,
+        RINGTONE = 2,
+        MEDIA = 3,
+        VOICE_ASSISTANT = 9,
+        VOLUMETYPE_MAX,
+        ALL = 100
+    };
     AudioCommonNapi() = delete;
     ~AudioCommonNapi() = delete;
     static std::string GetStringArgument(napi_env env, napi_value value);
+    static std::string getMessageByCode(int32_t code);
+    static void throwError (napi_env env, int32_t code);
+    static bool IsLegalInputArgumentVolLevel(int32_t volLevel);
+    static bool IsLegalInputArgumentVolType(int32_t inputType);
+    static bool IsLegalInputArgumentDeviceFlag(int32_t inputType);
 };
 
 struct AutoRef {
@@ -48,6 +69,21 @@ struct AutoRef {
     napi_env env_;
     napi_ref cb_;
 };
+const int32_t  ERR_NUMBER101 = 6800101;
+const int32_t  ERR_NUMBER102 = 6800102;
+const int32_t  ERR_NUMBER103 = 6800103;
+const int32_t  ERR_NUMBER104 = 6800104;
+const int32_t  ERR_NUMBER105 = 6800105;
+const int32_t  ERR_NUMBER201 = 6800201;
+const int32_t  ERR_NUMBER301 = 6800301;
+
+const std::string ERR_MESSAGE101 = "invalid parameter";
+const std::string ERR_MESSAGE102 = "allocate memory failed";
+const std::string ERR_MESSAGE103 = "Operation not permit at current state";
+const std::string ERR_MESSAGE104 = "unsupported option";
+const std::string ERR_MESSAGE105 = "time out";
+const std::string ERR_MESSAGE201 = "stream number limited";
+const std::string ERR_MESSAGE301 = "system error";
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_COMMON_NAPI_H_
