@@ -43,8 +43,8 @@ const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUD
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
-const int32_t LOCAL_VOLUME_GROUP_ID = 1;
-const int32_t LOCAL_INTERRUPT_GROUP_ID = 1;
+const int32_t DEFAULT_VOLUME_GROUP_ID = 1;
+const int32_t DEFAULT_INTERRUPT_GROUP_ID = 1;
 
 // Maximun number of sine waves in a tone segment
 constexpr uint32_t TONEINFO_MAX_WAVES = 3;

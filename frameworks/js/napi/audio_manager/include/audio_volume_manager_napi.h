@@ -36,7 +36,7 @@ public:
     static napi_value CreateVolumeManagerWrapper(napi_env env);
 private:
     static napi_value GetVolumeGroupInfos(napi_env env, napi_callback_info info);
-    static napi_value GetVolumeGroup(napi_env env, napi_callback_info info);
+    static napi_value GetVolumeGroupManager(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
 
     static napi_value Construct(napi_env env, napi_callback_info info);

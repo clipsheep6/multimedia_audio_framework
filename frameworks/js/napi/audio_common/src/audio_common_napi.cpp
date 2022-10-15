@@ -115,5 +115,6 @@ bool AudioCommonNapi::IsLegalInputArgumentDeviceFlag(int32_t deviceFlag)
     }
     return result;
 }
+
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -743,10 +743,10 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
     const int32_t refCount = 1;
     napi_value localNetworkId;
     napi_create_string_utf8(env, LOCAL_NETWORK_ID.c_str(), NAPI_AUTO_LENGTH, &localNetworkId);
-    napi_value localVolumeGroupId;
-    napi_create_int32(env, LOCAL_VOLUME_GROUP_ID, &localVolumeGroupId);
-    napi_value localInterruptId;
-    napi_create_int32(env, LOCAL_INTERRUPT_GROUP_ID, &localInterruptId);
+    napi_value defaultVolumeGroupId;
+    napi_create_int32(env, DEFAULT_VOLUME_GROUP_ID, &defaultVolumeGroupId);
+    napi_value defaultInterruptId;
+    napi_create_int32(env, DEFAULT_INTERRUPT_GROUP_ID, &defaultInterruptId);
 
     napi_property_descriptor audio_svc_mngr_properties[] = {
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
@@ -793,8 +793,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("InterruptMode", CreatePropertyBase(env, interruptModeMap, interruptMode_)),
         DECLARE_NAPI_PROPERTY("FocusType", CreatePropertyBase(env, focusTypeMap, focusType_)),
         DECLARE_NAPI_PROPERTY("LOCAL_NETWORK_ID", localNetworkId),
-        DECLARE_NAPI_PROPERTY("LOCAL_VOLUME_GROUP_ID", localVolumeGroupId),
-        DECLARE_NAPI_PROPERTY("LOCAL_INTERRUPT_GROUP_ID", localInterruptId),
+        DECLARE_NAPI_PROPERTY("DEFAULT_VOLUME_GROUP_ID", defaultVolumeGroupId),
+        DECLARE_NAPI_PROPERTY("DEFAULT_INTERRUPT_GROUP_ID", defaultInterruptId),
         DECLARE_NAPI_PROPERTY("AudioErrors", CreatePropertyBase(env, audioErrorsMap, audioErrors_)),
         DECLARE_NAPI_PROPERTY("CommunicationDeviceType", CreatePropertyBase(env, communicationDeviceTypeMap, communicationDeviceType_)),
     };

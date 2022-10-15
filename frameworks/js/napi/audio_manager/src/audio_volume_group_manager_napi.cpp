@@ -255,12 +255,14 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
     napi_value result = nullptr;
 
     GET_PARAMS(env, info, ARGS_TWO);
-    NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
 
     unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        if (argc < ARGS_ONE){
+            asyncContext->status = ERR_NUMBER101;
+        }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
@@ -322,12 +324,14 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
     napi_value result = nullptr;
 
     GET_PARAMS(env, info, ARGS_THREE);
-    NAPI_ASSERT(env, argc >= ARGS_TWO, "requires 2 parameters minimum");
 
     unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
+    
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-
+        if (argc < ARGS_TWO){
+            asyncContext->status = ERR_NUMBER101;
+        }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
@@ -340,8 +344,7 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
             } else if (i == PARAM1 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volLevel);
                 if(!AudioCommonNapi::IsLegalInputArgumentVolLevel(asyncContext->volLevel)){
-                    asyncContext->status = ERR_NUMBER104;
-                }
+                    asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;                }
             } else if (i == PARAM2) {
                 if (valueType == napi_function){
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
@@ -392,11 +395,13 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
     napi_value result = nullptr;
 
     GET_PARAMS(env, info, ARGS_TWO);
-    NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
 
     unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        if (argc < ARGS_ONE){
+            asyncContext->status = ERR_NUMBER101;
+        }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
@@ -459,11 +464,13 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
     napi_value result = nullptr;
 
     GET_PARAMS(env, info, ARGS_TWO);
-    NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
 
     unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        if (argc < ARGS_ONE){
+            asyncContext->status = ERR_NUMBER101;
+        }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
@@ -526,11 +533,13 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
     napi_value result = nullptr;
 
     GET_PARAMS(env, info, ARGS_THREE);
-    NAPI_ASSERT(env, argc >= ARGS_TWO, "requires 2 parameters minimum");
 
     unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        if (argc < ARGS_ONE){
+            asyncContext->status = ERR_NUMBER101;
+        }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
@@ -593,12 +602,14 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
     napi_value result = nullptr;
 
     GET_PARAMS(env, info, ARGS_TWO);
-    NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
 
     unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        if (argc < ARGS_ONE){
+            asyncContext->status = ERR_NUMBER101;
+        }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
