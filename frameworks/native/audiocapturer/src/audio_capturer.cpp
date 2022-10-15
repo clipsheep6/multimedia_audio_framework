@@ -255,6 +255,11 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 
 bool AudioCapturerPrivate::Start() const
 {
+    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
+        AUDIO_PERMISSION_START)) {
+       AUDIO_ERR_LOG("start monitor permission failed"); 
+    }
+    
     return audioStream_->StartAudioStream();
 }
 
@@ -275,11 +280,19 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioCapturerPrivate::Pause() const
 {
+    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
+        AUDIO_PERMISSION_STOP)) {
+       AUDIO_ERR_LOG("Pause monitor permission failed"); 
+    }
     return audioStream_->PauseAudioStream();
 }
 
 bool AudioCapturerPrivate::Stop() const
 {
+    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
+        AUDIO_PERMISSION_STOP)) {
+       AUDIO_ERR_LOG("Stop monitor permission failed"); 
+    }
     return audioStream_->StopAudioStream();
 }
 

@@ -1223,22 +1223,25 @@ bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName
         AUDIO_ERR_LOG("Permission denied [tid:%{public}d]", clientTokenId);
         return false;
     }
+    if (!PrivacyKit::IsAllowedUsingPermission(clientTokenId, MICROPHONE_PERMISSION)) {
+        AUDIO_ERR_LOG("app background, not allow using perm for client %{public}d", clientTokenId);
+    }
+    return true;
+}
 
-    if (privacyFlag) {
-        if (state == AUDIO_PERMISSION_START) {
-            if (PrivacyKit::IsAllowedUsingPermission(clientTokenId, MICROPHONE_PERMISSION)) {
-                res = PrivacyKit::StartUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
-                if (res != 0) {
-                    AUDIO_ERR_LOG("start using perm error for client %{public}d", clientTokenId);
-                }
-            } else {
-                AUDIO_ERR_LOG("app background, not allow using perm for client %{public}d", clientTokenId);
-            }
-        } else {
-            res = PrivacyKit::StopUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
-            if (res != 0) {
-                AUDIO_ERR_LOG("stop using perm error for client %{public}d", clientTokenId);
-            }
+bool AudioPolicyServer::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId, AudioPermissionState state)
+{
+    Security::AccessToken::AccessTokenID clientTokenId = IPCSkeleton::GetCallingTokenID();
+    
+    if (state == AUDIO_PERMISSION_START) {
+         int res = PrivacyKit::StartUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
+         if (res != 0) {
+             AUDIO_ERR_LOG("start using perm error for client %{public}d", clientTokenId);
+         }
+    } else {
+        int res = PrivacyKit::StopUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
+        if (res != 0) {
+            AUDIO_ERR_LOG("stop using perm error for client %{public}d", clientTokenId);
         }
     }
 
