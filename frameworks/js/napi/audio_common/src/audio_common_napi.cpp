@@ -143,5 +143,21 @@ bool AudioCommonNapi::IsLegalInputArgumentDeviceType(int32_t deviceFlag)
     return result;
 }
 
+bool AudioCommonNapi::IsLegalInputArgumentRingMode(int32_t ringerMode)
+{
+    bool result = false;
+    switch (ringerMode) {
+        case AudioRingerMode::RINGER_MODE_SILENT:
+        case AudioRingerMode::RINGER_MODE_VIBRATE:
+        case AudioRingerMode::RINGER_MODE_NORMAL:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -55,7 +55,9 @@ public:
     static bool IsLegalInputArgumentVolType(int32_t inputType);
     static bool IsLegalInputArgumentDeviceFlag(int32_t inputType);
     static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
+    static bool IsLegalInputArgumentRingMode(int32_t ringerMode);
 
+    static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
 };
 
 struct AutoRef {
