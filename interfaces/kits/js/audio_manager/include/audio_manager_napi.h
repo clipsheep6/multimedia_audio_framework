@@ -105,6 +105,7 @@ private:
     static napi_value GetStreamManager(napi_env env, napi_callback_info info);
     static napi_value GetRoutingManager(napi_env env, napi_callback_info info);
     static napi_value GetVolumeManager(napi_env env, napi_callback_info info);
+    static napi_value GetInterruptManager(napi_env env, napi_callback_info info);
     static void AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result);
 
     template<typename T> static napi_value CreatePropertyBase(napi_env env, T& t_map, napi_ref ref);
@@ -125,6 +126,7 @@ private:
     static napi_ref connectTypeRef_;
     static napi_ref audioErrors_;
     static napi_ref communicationDeviceType_;
+    static napi_ref audioOutputChannelMask_;
 
     AudioSystemManager *audioMngr_;
     int32_t cachedClientId = -1;
@@ -185,6 +187,17 @@ static const std::map<std::string, AudioStandard::AudioErrors> audioErrorsMap = 
 
 static const std::map<std::string, AudioStandard::CommunicationDeviceType> communicationDeviceTypeMap = {
     {"SPEAKER", COMMUNICATION_SPEAKER}
+};
+static const std::map<std::string, AudioStandard::AudioOutputChannelMask> audioOutputChannelMaskMap = {
+    {"CHANNEL_OUT_FRONT_LEFT", CHANNEL_OUT_FRONT_LEFT},
+    {"CHANNEL_OUT_FRONT_RIGHT", CHANNEL_OUT_FRONT_RIGHT},
+    {"CHANNEL_OUT_FRONT_CENTER", CHANNEL_OUT_FRONT_CENTER},
+    {"CHANNEL_OUT_LOW_FREQUENCY", CHANNEL_OUT_LOW_FREQUENCY},
+    {"CHANNEL_OUT_SIDE_LEFT", CHANNEL_OUT_SIDE_LEFT},
+    {"CHANNEL_OUT_SIDE_RIGHT", CHANNEL_OUT_SIDE_RIGHT},
+    {"CHANNEL_OUT_BACK_LEFT", CHANNEL_OUT_BACK_LEFT},
+    {"CHANNEL_OUT_BACK_RIGHT", CHANNEL_OUT_BACK_RIGHT},
+
 };
 } // namespace AudioStandard
 } // namespace OHOS

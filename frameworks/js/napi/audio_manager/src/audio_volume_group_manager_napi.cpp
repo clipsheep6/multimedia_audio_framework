@@ -46,7 +46,7 @@ struct AudioGroupManagerAsyncContext {
     int32_t scene;
     int32_t deviceFlag;
     int32_t intValue;
-    int32_t status;
+    int32_t status = SUCCESS;
     int32_t groupId;
     bool isMute;
     bool isActive;

@@ -309,6 +309,17 @@ enum CommunicationDeviceType {
     COMMUNICATION_SPEAKER = ActiveDeviceType::SPEAKER
 };
 
+enum AudioOutputChannelMask {
+    CHANNEL_OUT_FRONT_LEFT = 0x1 << 0,
+    CHANNEL_OUT_FRONT_RIGHT = 0x1 << 1,
+    CHANNEL_OUT_FRONT_CENTER = 0x1 << 2, 
+    CHANNEL_OUT_LOW_FREQUENCY = 0x1 << 3, 
+    CHANNEL_OUT_SIDE_LEFT = 0x1 << 4,
+    CHANNEL_OUT_SIDE_RIGHT = 0x1 << 5, 
+    CHANNEL_OUT_BACK_LEFT = 0x1 << 6,
+    CHANNEL_OUT_BACK_RIGHT = 0x1 << 7
+};
+
 enum InterruptMode {
     SHARE_MODE = 0,
     INDEPENDENT_MODE = 1

@@ -116,5 +116,32 @@ bool AudioCommonNapi::IsLegalInputArgumentDeviceFlag(int32_t deviceFlag)
     return result;
 }
 
+bool AudioCommonNapi::IsLegalInputArgumentDeviceType(int32_t deviceFlag)
+{
+    bool result = false;
+    switch (deviceFlag) {
+        case DeviceType::DEVICE_TYPE_NONE:
+        case DeviceType::DEVICE_TYPE_INVALID:
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_MIC:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_FILE_SINK:
+        case DeviceType::DEVICE_TYPE_FILE_SOURCE:
+        case DeviceType::DEVICE_TYPE_DEFAULT:
+        case DeviceType::DEVICE_TYPE_MAX:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

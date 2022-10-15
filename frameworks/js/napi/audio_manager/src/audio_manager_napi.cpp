@@ -28,6 +28,7 @@
 #include "audio_common_napi.h"
 #include "audio_volume_manager_napi.h"
 #include "audio_volume_group_manager_napi.h"
+#include "audio_interrupt_manager_napi.h"
 
 #include "hilog/log.h"
 #include "audio_log.h"
@@ -62,6 +63,7 @@ napi_ref AudioManagerNapi::interruptMode_ = nullptr;
 napi_ref AudioManagerNapi::focusType_ = nullptr;
 napi_ref AudioManagerNapi::audioErrors_ = nullptr;
 napi_ref AudioManagerNapi::communicationDeviceType_ = nullptr;
+napi_ref AudioManagerNapi::audioOutputChannelMask_ = nullptr;
 
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
@@ -774,6 +776,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getStreamManager", GetStreamManager),
         DECLARE_NAPI_FUNCTION("getRoutingManager", GetRoutingManager),
         DECLARE_NAPI_FUNCTION("getVolumeManager", GetVolumeManager),
+        DECLARE_NAPI_FUNCTION("getInterruptManager", GetInterruptManager),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -797,6 +800,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("DEFAULT_INTERRUPT_GROUP_ID", defaultInterruptId),
         DECLARE_NAPI_PROPERTY("AudioErrors", CreatePropertyBase(env, audioErrorsMap, audioErrors_)),
         DECLARE_NAPI_PROPERTY("CommunicationDeviceType", CreatePropertyBase(env, communicationDeviceTypeMap, communicationDeviceType_)),
+        DECLARE_NAPI_PROPERTY("AudioOutputChannelMask", CreatePropertyBase(env, audioOutputChannelMaskMap, audioOutputChannelMask_)),
+
     };
 
     status = napi_define_class(env, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -2563,6 +2568,20 @@ napi_value AudioManagerNapi::GetVolumeManager(napi_env env, napi_callback_info i
     return AudioVolumeManagerNapi::CreateVolumeManagerWrapper(env);
 }
 
+napi_value AudioManagerNapi::GetInterruptManager(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    size_t argCount = 0;
+
+    status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
+    if (status != napi_ok || argCount != 0) {
+        HiLog::Error(LABEL, "Invalid arguments!");
+        return nullptr;
+    }
+
+    return AudioInterruptManagerNapi::CreateInterruptManagerWrapper(env);
+}
+
 void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result)
 {
     for (int i = NONE_DEVICES_FLAG; i < DEVICE_FLAG_MAX; i++) {
@@ -2611,6 +2630,7 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioRoutingManagerNapi::Init(env, exports);
     AudioVolumeGroupManagerNapi::Init(env, exports);
     AudioVolumeManagerNapi::Init(env, exports);
+    AudioInterruptManagerNapi::Init(env, exports);
 
     return exports;
 }

@@ -46,7 +46,7 @@ struct AudioVolumeManagerAsyncContext {
     napi_ref callbackRef = nullptr;
     int32_t deviceFlag;
     bool bArgTransFlag = true;
-    int32_t status;
+    int32_t status = SUCCESS;
     int32_t groupId;
     std::string networkId;
     AudioVolumeManagerNapi *objectInfo;

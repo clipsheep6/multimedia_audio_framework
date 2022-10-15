@@ -54,6 +54,8 @@ public:
     static bool IsLegalInputArgumentVolLevel(int32_t volLevel);
     static bool IsLegalInputArgumentVolType(int32_t inputType);
     static bool IsLegalInputArgumentDeviceFlag(int32_t inputType);
+    static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
+
 };
 
 struct AutoRef {
