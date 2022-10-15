@@ -18,6 +18,8 @@
 #include <string>
 #include <unistd.h>
 
+#include "power_mgr_client.h"
+
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
@@ -41,8 +43,10 @@ const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 const uint32_t PARAM_VALUE_LENTH = 10;
+const uint32_t STEREO_CHANNEL_COUNT = 2;
 }
 #ifdef DUMPFILE
+// Note: accessing to this directory requires selinux permission
 const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
 #endif // DUMPFILE
 
@@ -95,8 +99,107 @@ std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const 
     return value;
 }
 
+void AudioRendererSink::SetAudioMonoState(bool audioMono)
+{
+    audioMonoState_ = audioMono;
+}
+
+void AudioRendererSink::SetAudioBalanceValue(float audioBalance)
+{
+    // reset the balance coefficient value firstly
+    leftBalanceCoef_ = 1.0f;
+    rightBalanceCoef_ = 1.0f;
+
+    if (std::abs(audioBalance - 0.0f) <= std::numeric_limits<float>::epsilon()) {
+        // audioBalance is equal to 0.0f
+        audioBalanceState_ = false;
+    } else {
+        // audioBalance is not equal to 0.0f
+        audioBalanceState_ = true;
+        // calculate the balance coefficient
+        if (audioBalance > 0.0f) {
+            leftBalanceCoef_ -= audioBalance;
+        } else if (audioBalance < 0.0f) {
+            rightBalanceCoef_ += audioBalance;
+        }
+    }
+}
+
+void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
+{
+    if (attr_.channel != STEREO_CHANNEL_COUNT) {
+        // only stereo is surpported now (stereo channel count is 2)
+        AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported channel number. Channel: %{public}d",
+            attr_.channel);
+        return;
+    }
+
+    switch (attr_.format) {
+        case AUDIO_FORMAT_PCM_8_BIT: {
+            // this function needs to be further tested for usability
+            AdjustStereoToMonoForPCM8Bit(reinterpret_cast<int8_t *>(data), len);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_16_BIT: {
+            AdjustStereoToMonoForPCM16Bit(reinterpret_cast<int16_t *>(data), len);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_24_BIT: {
+            // this function needs to be further tested for usability
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_32_BIT: {
+            AdjustStereoToMonoForPCM32Bit(reinterpret_cast<int32_t *>(data), len);
+            break;
+        }
+        default: {
+            // if the audio format is unsupported, the audio data will not be changed
+            AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported audio format");
+            break;
+        }
+    }
+}
+
+void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
+{
+    if (attr_.channel != STEREO_CHANNEL_COUNT) {
+        // only stereo is surpported now (stereo channel count is 2)
+        AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported channel number. Channel: %{public}d",
+            attr_.channel);
+        return;
+    }
+
+    switch (attr_.format) {
+        case AUDIO_FORMAT_PCM_8_BIT: {
+            // this function needs to be further tested for usability
+            AdjustAudioBalanceForPCM8Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_16_BIT: {
+            AdjustAudioBalanceForPCM16Bit(reinterpret_cast<int16_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_24_BIT: {
+            // this function needs to be further tested for usability
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_32_BIT: {
+            AdjustAudioBalanceForPCM32Bit(reinterpret_cast<int32_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            break;
+        }
+        default: {
+            // if the audio format is unsupported, the audio data will not be changed
+            AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported audio format");
+            break;
+        }
+    }
+}
+
 void AudioRendererSink::DeInit()
 {
+    AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
@@ -292,6 +395,14 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
         return ERR_INVALID_HANDLE;
     }
 
+    if (audioMonoState_) {
+        AdjustStereoToMono(&data, len);
+    }
+
+    if (audioBalanceState_) {
+        AdjustAudioBalance(&data, len);
+    }
+
 #ifdef DUMPFILE
     size_t writeResult = fwrite((void*)&data, 1, len, pfd);
     if (writeResult != len) {
@@ -312,8 +423,21 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
 
 int32_t AudioRendererSink::Start(void)
 {
-    int32_t ret;
+    AUDIO_INFO_LOG("Start.");
 
+    if (mKeepRunningLock == nullptr) {
+        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
+            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
+    }
+
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("AudioRendererSink call KeepRunningLock lock");
+        mKeepRunningLock->Lock(0); // 0 for lasting.
+    } else {
+        AUDIO_ERR_LOG("mKeepRunningLock is null, playback can not work well!");
+    }
+
+    int32_t ret;
     if (!started_) {
         ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (!ret) {
@@ -552,6 +676,15 @@ int32_t AudioRendererSink::GetTransactionId(uint64_t *transactionId)
 
 int32_t AudioRendererSink::Stop(void)
 {
+    AUDIO_INFO_LOG("Stop.");
+
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("AudioRendererSink call KeepRunningLock UnLock");
+        mKeepRunningLock->UnLock();
+    } else {
+        AUDIO_ERR_LOG("mKeepRunningLock is null, playback can not work well!");
+    }
+
     int32_t ret;
 
     if (audioRender_ == nullptr) {

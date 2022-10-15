@@ -19,6 +19,7 @@
 #include "audio_info.h"
 #include "audio_manager.h"
 #include "audio_sink_callback.h"
+#include "running_lock.h"
 
 #include <cstdio>
 #include <list>
@@ -56,9 +57,11 @@ public:
     int32_t SetOutputRoute(DeviceType deviceType, AudioPortPin &outputPortPin);
     int32_t SetOutputRoute(DeviceType deviceType);
     static AudioRendererSink *GetInstance(void);
-    bool rendererInited_;
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
+    void SetAudioMonoState(bool audioMono);
+    void SetAudioBalanceValue(float audioBalance);
+    bool rendererInited_;
 
 private:
     AudioRendererSink();
@@ -75,9 +78,17 @@ private:
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;
     struct AudioPort audioPort_ = {};
+    bool audioMonoState_ = false;
+    bool audioBalanceState_ = false;
+    float leftBalanceCoef_ = 1.0f;
+    float rightBalanceCoef_ = 1.0f;
+
+    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 
     int32_t CreateRender(struct AudioPort &renderPort);
     int32_t InitAudioManager();
+    void AdjustStereoToMono(char *data, uint64_t len);
+    void AdjustAudioBalance(char *data, uint64_t len);
 #ifdef DUMPFILE
     FILE *pfd;
 #endif // DUMPFILE

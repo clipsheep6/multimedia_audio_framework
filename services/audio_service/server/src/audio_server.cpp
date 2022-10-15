@@ -25,6 +25,7 @@
 #include "audio_log.h"
 #include "system_ability_definition.h"
 #include "audio_manager_listener_proxy.h"
+#include "bluetooth_renderer_sink_intf.h"
 
 #include "audio_server.h"
 
@@ -251,11 +252,12 @@ int32_t AudioServer::GetMinVolume(AudioVolumeType volumeType)
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
-    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
+    int32_t audio_policy_server_id = 1041;
+    int32_t audio_policy_server_Uid = 1005;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id
+        && IPCSkeleton::GetCallingUid() != audio_policy_server_Uid) {
         return ERR_PERMISSION_DENIED;
     }
-
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
 
     if (!audioCapturerSourceInstance->capturerInited_) {
@@ -269,11 +271,12 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
 
 bool AudioServer::IsMicrophoneMute()
 {
-    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("IsMicrophoneMute: MICROPHONE permission denied");
+    int32_t audio_policy_server_id = 1041;
+    int32_t audio_policy_server_Uid = 1005;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id
+        && IPCSkeleton::GetCallingUid() != audio_policy_server_Uid) {
         return false;
     }
-
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     bool isMute = false;
 
@@ -362,6 +365,38 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
     return SUCCESS;
 }
 
+void AudioServer::SetAudioMonoState(bool audioMono)
+{
+    AUDIO_INFO_LOG("AudioServer::SetAudioMonoState: audioMono = %{public}s", audioMono? "true": "false");
+
+    // Set mono for audio_renderer_sink(primary sink)
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    if (!audioRendererSinkInstance->rendererInited_) {
+        AUDIO_WARNING_LOG("Renderer is not initialized.");
+    } else {
+        audioRendererSinkInstance->SetAudioMonoState(audioMono);
+    }
+
+    // Set mono for bluetooth_renderer_sink
+    BluetoothRendererSinkSetAudioMonoState(audioMono);
+}
+
+void AudioServer::SetAudioBalanceValue(float audioBalance)
+{
+    AUDIO_INFO_LOG("AudioServer::SetAudioBalanceValue: audioBalance = %{public}f", audioBalance);
+
+    // Set balance for audio_renderer_sink(primary sink)
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    if (!audioRendererSinkInstance->rendererInited_) {
+        AUDIO_WARNING_LOG("Renderer is not initialized.");
+    } else {
+        audioRendererSinkInstance->SetAudioBalanceValue(audioBalance);
+    }
+
+    // Set balance for bluetooth_renderer_sink
+    BluetoothRendererSinkSetAudioBalanceValue(audioBalance);
+}
+
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
 {
     AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)", networkId.c_str(), connected);
@@ -442,20 +477,20 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag devi
 
 void AudioServer::AudioServerDied(pid_t pid)
 {
-    AUDIO_INFO_LOG("Audio server died: restart pulse audio");
+    AUDIO_INFO_LOG("Policy server died: restart pulse audio");
     exit(0);
 }
 
 void AudioServer::RegisterPolicyServerDeathRecipient()
 {
-    AUDIO_INFO_LOG("Register audio server death recipient");
+    AUDIO_INFO_LOG("Register policy server death recipient");
     pid_t pid = IPCSkeleton::GetCallingPid();
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
     if (deathRecipient_ != nullptr) {
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain system ability manager");
         sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_POLICY_SERVICE_ID);
-        CHECK_AND_RETURN_LOG(object != nullptr, "Audio service unavailable");
+        CHECK_AND_RETURN_LOG(object != nullptr, "Policy service unavailable");
         deathRecipient_->SetNotifyCb(std::bind(&AudioServer::AudioServerDied, this, std::placeholders::_1));
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (!result) {

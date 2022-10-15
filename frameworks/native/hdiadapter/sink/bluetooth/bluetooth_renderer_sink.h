@@ -18,6 +18,7 @@
 
 #include "audio_info.h"
 #include "audio_proxy_manager.h"
+#include "running_lock.h"
 
 #include <cstdio>
 #include <list>
@@ -48,7 +49,12 @@ public:
     int32_t GetLatency(uint32_t *latency);
     int32_t GetTransactionId(uint64_t *transactionId);
     static BluetoothRendererSink *GetInstance(void);
+    bool GetAudioMonoState();
+    float GetAudioBalanceValue();
+    void SetAudioMonoState(bool audioMono);
+    void SetAudioBalanceValue(float audioBalance);
     bool rendererInited_;
+
 private:
     BluetoothRendererSink();
     ~BluetoothRendererSink();
@@ -62,9 +68,18 @@ private:
     struct HDI::Audio_Bluetooth::AudioRender *audioRender_;
     struct HDI::Audio_Bluetooth::AudioPort audioPort = {};
     void *handle_;
+    bool audioMonoState_ = false;
+    bool audioBalanceState_ = false;
+    float audioBalanceValue_ = 0.0f;
+    float leftBalanceCoef_ = 1.0f;
+    float rightBalanceCoef_ = 1.0f;
+
+    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 
     int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
     int32_t InitAudioManager();
+    void AdjustStereoToMono(char *data, uint64_t len);
+    void AdjustAudioBalance(char *data, uint64_t len);
 #ifdef BT_DUMPFILE
     FILE *pfd;
 #endif // DUMPFILE
