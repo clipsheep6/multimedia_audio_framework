@@ -804,16 +804,16 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
             std::static_pointer_cast<AudioRingerModeCallbackNapi>(volumeManagerNapi->ringerModecallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
     } else if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
-        int32_t ret = 0;
-        volumeManagerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
-        ret = volumeManagerNapi->audioSystemMngr_->RegisterVolumeKeyEventCallback(volumeManagerNapi->cachedClientId,
-                                                                    volumeManagerNapi->volumeKeyEventCallbackNapi_);
-        if (ret) {
-            AUDIO_ERR_LOG("AudioVolumeManagerNapi:: RegisterVolumeKeyEventCallback Failed");
-        } else {
-            AUDIO_DEBUG_LOG("AudioVolumeManagerNapi:: RegisterVolumeKeyEventCallback Success");
+        if (volumeManagerNapi->volumeKeyEventCallbackNapi_ == nullptr) {
+            volumeManagerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
+            int32_t ret = volumeManagerNapi->audioSystemMngr_->RegisterVolumeKeyEventCallback(volumeManagerNapi->cachedClientId,
+                                                                        volumeManagerNapi->volumeKeyEventCallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioVolumeManagerNapi:: RegisterVolumeKeyEventCallback Failed");
+            } else {
+                AUDIO_DEBUG_LOG("AudioVolumeManagerNapi:: RegisterVolumeKeyEventCallback Success");
+            }
         }
-
         std::shared_ptr<AudioVolumeKeyEventNapi> cb =
             std::static_pointer_cast<AudioVolumeKeyEventNapi>(volumeManagerNapi->volumeKeyEventCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
