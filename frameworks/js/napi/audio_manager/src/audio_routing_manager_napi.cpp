@@ -16,7 +16,7 @@
 #include "audio_routing_manager_napi.h"
 
 #include "audio_common_napi.h"
-#include "audio_routing_manager_callback_napi.h"
+#include "audio_micstatechange_callback_napi.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "hilog/log.h"
@@ -885,7 +885,7 @@ void AudioRoutingManagerNapi::RegisterMicStateChangeCallback(napi_env env, napi_
     const std::string& cbName, AudioRoutingManagerNapi* routingMgrNapi)
 {
     if (!routingMgrNapi->micStateChangeCallbackNapi_) {
-        routingMgrNapi->micStateChangeCallbackNapi_= std::make_shared<AudioRoutingManagerCallbackNapi>(env);
+        routingMgrNapi->micStateChangeCallbackNapi_= std::make_shared<AudioManagerMicStateChangeCallbackNapi>(env);
         if (!routingMgrNapi->micStateChangeCallbackNapi_) {
             AUDIO_ERR_LOG("AudioStreamMgrNapi: Memory Allocation Failed !!");
             return;
@@ -899,8 +899,8 @@ void AudioRoutingManagerNapi::RegisterMicStateChangeCallback(napi_env env, napi_
         }
     }
 
-    std::shared_ptr<AudioRoutingManagerCallbackNapi> cb =
-        std::static_pointer_cast<AudioRoutingManagerCallbackNapi>(routingMgrNapi->micStateChangeCallbackNapi_);
+    std::shared_ptr<AudioManagerMicStateChangeCallbackNapi> cb =
+        std::static_pointer_cast<AudioManagerMicStateChangeCallbackNapi>(routingMgrNapi->micStateChangeCallbackNapi_);
     cb->SaveCallbackReference(cbName, args[PARAM1]);
 
     AUDIO_INFO_LOG("AudioRoutingManager::On SetMicStateChangeCallback is successful");

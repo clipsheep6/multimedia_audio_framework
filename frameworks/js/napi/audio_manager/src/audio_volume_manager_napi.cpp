@@ -18,8 +18,8 @@
 
 #include "audio_common_napi.h"
 #include "audio_ringermode_callback_napi.h"
-#include "audio_manager_callback_napi.h"
 #include "audio_volume_key_event_napi.h"
+#include "audio_micstatechange_callback_napi.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "hilog/log.h"
@@ -143,6 +143,7 @@ napi_value AudioVolumeManagerNapi::Construct(napi_env env, napi_callback_info in
     CHECK_AND_RETURN_RET_LOG(audioVolumeManagerNapi != nullptr, result, "No memory");
 
     audioVolumeManagerNapi->audioSystemMngr_ = AudioSystemManager::GetInstance();
+    audioVolumeManagerNapi->audioRoutingMngr_ = AudioRoutingManager::GetInstance();
     audioVolumeManagerNapi->env_ = env;
 
     status = napi_wrap(env, thisVar, static_cast<void*>(audioVolumeManagerNapi.get()),
@@ -772,7 +773,7 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
         return undefinedResult;
     }
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
-    AUDIO_INFO_LOG("AudioManagerNapi::On callbackName: %{public}s", callbackName.c_str());
+    AUDIO_INFO_LOG("AudioVolumeManagerNapi::On callbackName: %{public}s", callbackName.c_str());
 
     AudioVolumeManagerNapi *volumeManagerNapi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&volumeManagerNapi));
@@ -781,7 +782,7 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
     if (argCount == minArgCount) {
         napi_valuetype handler = napi_undefined;
         if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
-            AUDIO_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 2");
+            AUDIO_ERR_LOG("AudioVolumeManagerNapi::On type mismatch for parameter 2");
             return undefinedResult;
         }
     }
@@ -792,10 +793,10 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
             int32_t ret = volumeManagerNapi->audioSystemMngr_->SetRingerModeCallback(
                 volumeManagerNapi->cachedClientId, volumeManagerNapi->ringerModecallbackNapi_);
             if (ret) {
-                AUDIO_ERR_LOG("AudioManagerNapi: SetRingerModeCallback Failed");
+                AUDIO_ERR_LOG("AudioVolumeManagerNapi:: SetRingerModeCallback Failed");
                 return undefinedResult;
             } else {
-                AUDIO_INFO_LOG("AudioManagerNapi: SetRingerModeCallback Success");
+                AUDIO_INFO_LOG("AudioVolumeManagerNapi:: SetRingerModeCallback Success");
             }
         }
 
@@ -808,18 +809,36 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
         ret = volumeManagerNapi->audioSystemMngr_->RegisterVolumeKeyEventCallback(volumeManagerNapi->cachedClientId,
                                                                     volumeManagerNapi->volumeKeyEventCallbackNapi_);
         if (ret) {
-            AUDIO_ERR_LOG("AudioManagerNapi: RegisterVolumeKeyEventCallback Failed");
+            AUDIO_ERR_LOG("AudioVolumeManagerNapi:: RegisterVolumeKeyEventCallback Failed");
         } else {
-            AUDIO_DEBUG_LOG("AudioManagerNapi: RegisterVolumeKeyEventCallback Success");
+            AUDIO_DEBUG_LOG("AudioVolumeManagerNapi:: RegisterVolumeKeyEventCallback Success");
         }
 
         std::shared_ptr<AudioVolumeKeyEventNapi> cb =
             std::static_pointer_cast<AudioVolumeKeyEventNapi>(volumeManagerNapi->volumeKeyEventCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
+    }else if (!callbackName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
+        if (!volumeManagerNapi->micStateChangeCallbackNapi_) {
+            volumeManagerNapi->micStateChangeCallbackNapi_= std::make_shared<AudioManagerMicStateChangeCallbackNapi>(env);
+            if (!volumeManagerNapi->micStateChangeCallbackNapi_) {
+                AUDIO_ERR_LOG("AudioVolumeManagerNapi:: Memory Allocation Failed !!");
+            }
+
+            int32_t ret = volumeManagerNapi->audioRoutingMngr_->SetMicStateChangeCallback(
+                volumeManagerNapi->micStateChangeCallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioVolumeManagerNapi:: Registering Microphone Change Callback Failed");
+            }
+        }
+
+        std::shared_ptr<AudioManagerMicStateChangeCallbackNapi> cb =
+            std::static_pointer_cast<AudioManagerMicStateChangeCallbackNapi>(volumeManagerNapi->micStateChangeCallbackNapi_);
+        cb->SaveCallbackReference(callbackName, args[PARAM1]);
+
+        AUDIO_INFO_LOG("AudioRoutingManager::On SetMicStateChangeCallback is successful");
     } 
     return undefinedResult;
+ 
 }
-
-
 } // namespace AudioStandard
 } // namespace OHOS
