@@ -1039,7 +1039,7 @@ napi_value AudioRoutingManagerNapi::SetCommunicationDevice(napi_env env, napi_ca
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->deviceType);
-                if(!AudioCommonNapi::IsLegalInputArgumentDeviceType(asyncContext->deviceType)){
+                if(!AudioCommonNapi::IsLegalInputArgumentCommunicationDeviceType(asyncContext->deviceType)){
                 asyncContext->status = asyncContext->status == ERR_NUMBER101? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1 && valueType == napi_boolean) {
@@ -1111,7 +1111,7 @@ napi_value AudioRoutingManagerNapi::IsCommunicationDeviceActive(napi_env env, na
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->deviceType);
-                if(!AudioCommonNapi::IsLegalInputArgumentDeviceType(asyncContext->deviceType)){
+                if(!AudioCommonNapi::IsLegalInputArgumentActiveDeviceType(asyncContext->deviceType)){
                     asyncContext->status = asyncContext->status == ERR_NUMBER101? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1) {

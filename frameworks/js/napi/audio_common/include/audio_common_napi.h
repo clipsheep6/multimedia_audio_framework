@@ -54,7 +54,8 @@ public:
     static bool IsLegalInputArgumentVolLevel(int32_t volLevel);
     static bool IsLegalInputArgumentVolType(int32_t inputType);
     static bool IsLegalInputArgumentDeviceFlag(int32_t inputType);
-    static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
+    static bool IsLegalInputArgumentActiveDeviceType(int32_t deviceType);
+    static bool IsLegalInputArgumentCommunicationDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentRingMode(int32_t ringerMode);
 
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);

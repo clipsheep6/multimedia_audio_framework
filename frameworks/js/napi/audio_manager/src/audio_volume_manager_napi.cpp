@@ -182,7 +182,7 @@ napi_value AudioVolumeManagerNapi::Init(napi_env env, napi_value exports)
     napi_property_descriptor audio_routing_manager_properties[] = {
         DECLARE_NAPI_FUNCTION("getVolumeGroupInfos", GetVolumeGroupInfos),
         DECLARE_NAPI_FUNCTION("getVolumeGroupManager", GetVolumeGroupManager),
-        DECLARE_NAPI_FUNCTION("getRingerMode", GetRingerMode),
+        DECLARE_NAPI_FUNCTION("setRingerMode", SetRingerMode),
         DECLARE_NAPI_FUNCTION("getRingerMode", GetRingerMode),
         DECLARE_NAPI_FUNCTION("setMicrophoneMute", SetMicrophoneMute),
         DECLARE_NAPI_FUNCTION("isMicrophoneMute", IsMicrophoneMute),
@@ -473,6 +473,7 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupManager(napi_env env, napi_call
 
 napi_value AudioVolumeManagerNapi::SetRingerMode(napi_env env, napi_callback_info info)
 {
+    HiLog::Info(LABEL, " %{public}s IN", __func__);
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -543,6 +544,7 @@ napi_value AudioVolumeManagerNapi::SetRingerMode(napi_env env, napi_callback_inf
 
 napi_value AudioVolumeManagerNapi::GetRingerMode(napi_env env, napi_callback_info info)
 {
+    HiLog::Info(LABEL, " %{public}s IN", __func__);
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;

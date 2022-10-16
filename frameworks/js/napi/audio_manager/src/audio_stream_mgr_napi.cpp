@@ -829,11 +829,13 @@ napi_value AudioStreamMgrNapi::IsStreamActive(napi_env env, napi_callback_info i
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-            } else if (i == PARAM1 && valueType == napi_function) {
-                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            } else if (i == PARAM1){
+                if (valueType == napi_function) {
+                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+                }
                 break;
             } else {
-                NAPI_ASSERT(env, false, "type mismatch");
+                asyncContext->status = ERR_NUMBER101;
             }
         }
 
@@ -850,10 +852,12 @@ napi_value AudioStreamMgrNapi::IsStreamActive(napi_env env, napi_callback_info i
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioStreamMgrAsyncContext*>(data);
-                context->isActive =
-                    context->objectInfo->audioMngr_->IsStreamActive(GetNativeAudioVolumeType(context->volType));
-                context->isTrue = context->isActive;
-                context->status = 0;
+                if (context->status == SUCCESS) {
+                    context->isActive =
+                        context->objectInfo->audioMngr_->IsStreamActive(GetNativeAudioVolumeType(context->volType));
+                    context->isTrue = context->isActive;
+                    context->status = 0;
+                }
             },
             IsTrueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {

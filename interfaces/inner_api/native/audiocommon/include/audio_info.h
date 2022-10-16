@@ -305,7 +305,7 @@ enum CommunicationDeviceType {
      * @since 7
      * @syscap SystemCapability.Multimedia.Audio.Communication
      */
-    COMMUNICATION_SPEAKER = ActiveDeviceType::SPEAKER
+    COMMUNICATION_SPEAKER = 2
 };
 
 enum AudioOutputChannelMask {
