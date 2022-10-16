@@ -51,6 +51,10 @@ private:
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     AudioSystemManager *audioSystemMngr_;
+    int32_t cachedClientId = -1;
+
+    std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;
+    std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
 
     napi_env env_;
     napi_ref wrapper_;

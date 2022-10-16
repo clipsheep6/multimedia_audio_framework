@@ -17,7 +17,9 @@
 #include "audio_volume_group_manager_napi.h"
 
 #include "audio_common_napi.h"
-#include "audio_routing_manager_callback_napi.h"
+#include "audio_ringermode_callback_napi.h"
+#include "audio_manager_callback_napi.h"
+#include "audio_volume_key_event_napi.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "hilog/log.h"
@@ -37,6 +39,9 @@ namespace {
     const int PARAM0 = 0;
     const int PARAM1 = 1;
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioVolumeManagerNapi"};
+
+    const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
+    const std::string VOLUME_CHANGE_CALLBACK_NAME = "volumeChange";
 }
 
 struct AudioVolumeManagerAsyncContext {
@@ -132,12 +137,12 @@ napi_value AudioVolumeManagerNapi::Construct(napi_env env, napi_callback_info in
     napi_value argv[ARGS_TWO] = {0};
     napi_value thisVar = nullptr;
     void *data = nullptr;
+    
     napi_get_cb_info(env, info, &argc, argv, &thisVar, &data);
     unique_ptr<AudioVolumeManagerNapi> audioVolumeManagerNapi = make_unique<AudioVolumeManagerNapi>();
     CHECK_AND_RETURN_RET_LOG(audioVolumeManagerNapi != nullptr, result, "No memory");
 
     audioVolumeManagerNapi->audioSystemMngr_ = AudioSystemManager::GetInstance();
-        
     audioVolumeManagerNapi->env_ = env;
 
     status = napi_wrap(env, thisVar, static_cast<void*>(audioVolumeManagerNapi.get()),
@@ -186,6 +191,7 @@ napi_value AudioVolumeManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getRingerMode", GetRingerMode),
         DECLARE_NAPI_FUNCTION("setMicrophoneMute", SetMicrophoneMute),
         DECLARE_NAPI_FUNCTION("isMicrophoneMute", IsMicrophoneMute),
+        DECLARE_NAPI_FUNCTION("on", On),
 
     };
 
@@ -744,6 +750,76 @@ napi_value AudioVolumeManagerNapi::IsMicrophoneMute(napi_env env, napi_callback_
 
     return result;
 }
+
+
+napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
+{
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    const size_t minArgCount = 2;
+    size_t argCount = 3;
+    napi_value args[minArgCount + 1] = {nullptr, nullptr, nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
+    if (status != napi_ok || argCount < minArgCount) {
+        AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 2 parameters");
+        return undefinedResult;
+    }
+
+    napi_valuetype eventType = napi_undefined;
+    if (napi_typeof(env, args[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
+        return undefinedResult;
+    }
+    std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
+    AUDIO_INFO_LOG("AudioManagerNapi::On callbackName: %{public}s", callbackName.c_str());
+
+    AudioVolumeManagerNapi *volumeManagerNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&volumeManagerNapi));
+    NAPI_ASSERT(env, status == napi_ok && volumeManagerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
+    NAPI_ASSERT(env, volumeManagerNapi->audioSystemMngr_ != nullptr, "audio system manager instance is null.");
+    if (argCount == minArgCount) {
+        napi_valuetype handler = napi_undefined;
+        if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
+            AUDIO_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 2");
+            return undefinedResult;
+        }
+    }
+
+    if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
+        if (volumeManagerNapi->ringerModecallbackNapi_ == nullptr) {
+            volumeManagerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
+            int32_t ret = volumeManagerNapi->audioSystemMngr_->SetRingerModeCallback(
+                volumeManagerNapi->cachedClientId, volumeManagerNapi->ringerModecallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioManagerNapi: SetRingerModeCallback Failed");
+                return undefinedResult;
+            } else {
+                AUDIO_INFO_LOG("AudioManagerNapi: SetRingerModeCallback Success");
+            }
+        }
+
+        std::shared_ptr<AudioRingerModeCallbackNapi> cb =
+            std::static_pointer_cast<AudioRingerModeCallbackNapi>(volumeManagerNapi->ringerModecallbackNapi_);
+        cb->SaveCallbackReference(callbackName, args[PARAM1]);
+    } else if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
+        int32_t ret = 0;
+        volumeManagerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
+        ret = volumeManagerNapi->audioSystemMngr_->RegisterVolumeKeyEventCallback(volumeManagerNapi->cachedClientId,
+                                                                    volumeManagerNapi->volumeKeyEventCallbackNapi_);
+        if (ret) {
+            AUDIO_ERR_LOG("AudioManagerNapi: RegisterVolumeKeyEventCallback Failed");
+        } else {
+            AUDIO_DEBUG_LOG("AudioManagerNapi: RegisterVolumeKeyEventCallback Success");
+        }
+
+        std::shared_ptr<AudioVolumeKeyEventNapi> cb =
+            std::static_pointer_cast<AudioVolumeKeyEventNapi>(volumeManagerNapi->volumeKeyEventCallbackNapi_);
+        cb->SaveCallbackReference(callbackName, args[PARAM1]);
+    } 
+    return undefinedResult;
+}
+
 
 } // namespace AudioStandard
 } // namespace OHOS
