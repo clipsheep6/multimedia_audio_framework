@@ -19,6 +19,14 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
+#define THROW_ERROR_ASSERT(env, assertion, code)        \
+    do {                                                \
+        if (!(assertion)) {                             \
+            AudioCommonNapi::throwError( env, code);    \
+            return nullptr;                             \
+        }                                               \
+    } while (0)
+
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
     napi_value argv[num] = {0};    \
@@ -49,7 +57,7 @@ public:
     AudioCommonNapi() = delete;
     ~AudioCommonNapi() = delete;
     static std::string GetStringArgument(napi_env env, napi_value value);
-    static std::string getMessageByCode(int32_t code);
+    static std::string getMessageByCode(int32_t &code);
     static void throwError (napi_env env, int32_t code);
     static bool IsLegalInputArgumentVolLevel(int32_t volLevel);
     static bool IsLegalInputArgumentVolType(int32_t inputType);
@@ -75,6 +83,7 @@ struct AutoRef {
     napi_env env_;
     napi_ref cb_;
 };
+const int32_t  ERR_NUMBER_401 = 401;
 const int32_t  ERR_NUMBER101 = 6800101;
 const int32_t  ERR_NUMBER102 = 6800102;
 const int32_t  ERR_NUMBER103 = 6800103;
@@ -83,6 +92,7 @@ const int32_t  ERR_NUMBER105 = 6800105;
 const int32_t  ERR_NUMBER201 = 6800201;
 const int32_t  ERR_NUMBER301 = 6800301;
 
+const std::string ERR_MESSAGE_401 = "input parameter type or number mismatch";
 const std::string ERR_MESSAGE101 = "invalid parameter";
 const std::string ERR_MESSAGE102 = "allocate memory failed";
 const std::string ERR_MESSAGE103 = "Operation not permit at current state";

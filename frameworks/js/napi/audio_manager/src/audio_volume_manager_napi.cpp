@@ -239,12 +239,12 @@ static void CommonCallbackRoutine(napi_env env, AudioVolumeManagerAsyncContext *
         napi_get_undefined(env, &result[PARAM0]);
         result[PARAM1] = valueParam;
     } else {
-        napi_value code = nullptr;
-        napi_create_string_utf8(env, (std::to_string(asyncContext->status)).c_str(), NAPI_AUTO_LENGTH, &code);
-
         napi_value message = nullptr;
         std::string messageValue = AudioCommonNapi::getMessageByCode(asyncContext->status);
         napi_create_string_utf8(env, messageValue.c_str(), NAPI_AUTO_LENGTH, &message);
+
+        napi_value code = nullptr;
+        napi_create_string_utf8(env, (std::to_string(asyncContext->status)).c_str(), NAPI_AUTO_LENGTH, &code);
 
         napi_create_error(env, code, message, &result[PARAM0]);
         napi_get_undefined(env, &result[PARAM1]);
@@ -765,11 +765,12 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
     if (status != napi_ok || argCount < minArgCount) {
         AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 2 parameters");
-        return undefinedResult;
+        AudioCommonNapi::throwError(env, ERR_NUMBER_401);
     }
 
     napi_valuetype eventType = napi_undefined;
     if (napi_typeof(env, args[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
+        AudioCommonNapi::throwError(env, ERR_NUMBER_401);
         return undefinedResult;
     }
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
@@ -779,13 +780,14 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&volumeManagerNapi));
     NAPI_ASSERT(env, status == napi_ok && volumeManagerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
     NAPI_ASSERT(env, volumeManagerNapi->audioSystemMngr_ != nullptr, "audio system manager instance is null.");
-    if (argCount == minArgCount) {
-        napi_valuetype handler = napi_undefined;
-        if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
-            AUDIO_ERR_LOG("AudioVolumeManagerNapi::On type mismatch for parameter 2");
-            return undefinedResult;
-        }
+
+    napi_valuetype handler = napi_undefined;
+    if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
+        AUDIO_ERR_LOG("AudioVolumeManagerNapi::On type mismatch for parameter 2");
+        AudioCommonNapi::throwError(env, ERR_NUMBER_401);
+        return undefinedResult;
     }
+
 
     if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
         if (volumeManagerNapi->ringerModecallbackNapi_ == nullptr) {
@@ -835,8 +837,11 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
             std::static_pointer_cast<AudioManagerMicStateChangeCallbackNapi>(volumeManagerNapi->micStateChangeCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
 
-        AUDIO_INFO_LOG("AudioRoutingManager::On SetMicStateChangeCallback is successful");
-    } 
+        AUDIO_INFO_LOG("AudioVolumeManagerNapi::On SetMicStateChangeCallback is successful");
+    } else {
+        AUDIO_ERR_LOG("AudioVolumeManagerNapi::No such callback supported");
+        AudioCommonNapi::throwError(env, ERR_NUMBER101);
+    }
     return undefinedResult;
  
 }

@@ -180,12 +180,12 @@ static void CommonCallbackRoutine(napi_env env, AudioRoutingManagerAsyncContext 
         napi_get_undefined(env, &result[PARAM0]);
         result[PARAM1] = valueParam;
     } else {
-        napi_value code = nullptr;
-        napi_create_string_utf8(env, (std::to_string(asyncContext->status)).c_str(), NAPI_AUTO_LENGTH, &code);
-
         napi_value message = nullptr;
         std::string messageValue = AudioCommonNapi::getMessageByCode(asyncContext->status);
         napi_create_string_utf8(env, messageValue.c_str(), NAPI_AUTO_LENGTH, &message);
+
+        napi_value code = nullptr;
+        napi_create_string_utf8(env, (std::to_string(asyncContext->status)).c_str(), NAPI_AUTO_LENGTH, &code);
 
         napi_create_error(env, code, message, &result[PARAM0]);
         napi_get_undefined(env, &result[PARAM1]);
@@ -920,14 +920,11 @@ void AudioRoutingManagerNapi::RegisterCallback(napi_env env, napi_value jsThis,
 
     if (!cbName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         RegisterDeviceChangeCallback(env, args, cbName, flag, routingMgrNapi);
-    } else {
-        AUDIO_ERR_LOG("AudioRoutingMgrNapi::No such callback supported");
-    }
-
-    if (!cbName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
+    } else if (!cbName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
         RegisterMicStateChangeCallback(env, args, cbName, routingMgrNapi);
     } else {
-        AUDIO_ERR_LOG("AudioRoutingMgrNapi::No such micStateChangeCallback supported");
+        AUDIO_ERR_LOG("AudioRoutingMgrNapi::No such supported");
+        AudioCommonNapi::throwError(env, ERR_NUMBER101);
     }
 }
 
@@ -946,11 +943,11 @@ napi_value AudioRoutingManagerNapi::On(napi_env env, napi_callback_info info)
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     bool isArgcCountRight = argc == requireArgc || argc == maxArgc;
-    NAPI_ASSERT(env, status == napi_ok && isArgcCountRight, "AudioRoutingMgrNapi: On: requires 2 or 3 parameters");
+    THROW_ERROR_ASSERT(env, status == napi_ok && isArgcCountRight, ERR_NUMBER_401);
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, args[0], &eventType);
-    NAPI_ASSERT(env, eventType == napi_string, "type mismatch for parameter 1");
+    THROW_ERROR_ASSERT(env, eventType == napi_string, ERR_NUMBER_401);
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
     AUDIO_INFO_LOG("AaudioRoutingManagerNapi: On callbackName: %{public}s", callbackName.c_str());
 
@@ -959,7 +956,7 @@ napi_value AudioRoutingManagerNapi::On(napi_env env, napi_callback_info info)
     if (argc == requireArgc) {
         napi_valuetype handler = napi_undefined;
         napi_typeof(env, args[1], &handler);
-        NAPI_ASSERT(env, handler == napi_function, "type mismatch for parameter 2");
+        THROW_ERROR_ASSERT(env, handler == napi_function, ERR_NUMBER_401);
         deviceFlag = 3; // 3 for ALL_DEVICES_FLAG
     }
     if (argc == maxArgc) {
@@ -968,7 +965,7 @@ napi_value AudioRoutingManagerNapi::On(napi_env env, napi_callback_info info)
 
         napi_valuetype handler = napi_undefined;
         napi_typeof(env, args[PARAM2], &handler);
-        NAPI_ASSERT(env, handler == napi_function, "type mismatch for parameter 2");
+        THROW_ERROR_ASSERT(env, handler == napi_function, ERR_NUMBER_401);
     }
 
     RegisterCallback(env, jsThis, args, callbackName, deviceFlag);

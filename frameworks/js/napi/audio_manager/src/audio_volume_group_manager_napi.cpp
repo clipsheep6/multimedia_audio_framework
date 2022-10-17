@@ -102,12 +102,12 @@ static void CommonCallbackRoutine(napi_env env, AudioGroupManagerAsyncContext* &
         napi_get_undefined(env, &result[PARAM0]);
         result[PARAM1] = valueParam;
     } else {
-        napi_value code = nullptr;
-        napi_create_string_utf8(env, (std::to_string(asyncContext->status)).c_str(), NAPI_AUTO_LENGTH, &code);
-
         napi_value message = nullptr;
         std::string messageValue = AudioCommonNapi::getMessageByCode(asyncContext->status);
         napi_create_string_utf8(env, messageValue.c_str(), NAPI_AUTO_LENGTH, &message);
+
+        napi_value code = nullptr;
+        napi_create_string_utf8(env, (std::to_string(asyncContext->status)).c_str(), NAPI_AUTO_LENGTH, &code);
 
         napi_create_error(env, code, message, &result[PARAM0]);
         napi_get_undefined(env, &result[PARAM1]);

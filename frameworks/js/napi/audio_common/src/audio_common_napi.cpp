@@ -39,7 +39,7 @@ std::string AudioCommonNapi::GetStringArgument(napi_env env, napi_value value)
     return strValue;
 }
 
-std::string AudioCommonNapi::getMessageByCode(int32_t code){
+std::string AudioCommonNapi::getMessageByCode(int32_t &code){
     std::string err_message;
     switch (code) {
         case ERR_NUMBER101:
@@ -62,6 +62,13 @@ std::string AudioCommonNapi::getMessageByCode(int32_t code){
             break;   
         case ERR_NUMBER301:
             err_message = ERR_MESSAGE301;
+            break;
+        case ERR_NUMBER_401:
+            err_message = ERR_MESSAGE_401;
+            break;
+        default:
+            err_message = ERR_MESSAGE301;
+            code = ERR_NUMBER301;
             break;
     }
     return err_message;
