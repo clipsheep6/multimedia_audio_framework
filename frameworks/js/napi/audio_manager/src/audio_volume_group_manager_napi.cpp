@@ -15,7 +15,6 @@
 #include "audio_volume_group_manager_napi.h"
 #include "audio_common_napi.h"
 #include "audio_errors.h"
-
 #include "hilog/log.h"
 #include "audio_log.h"
 
@@ -34,7 +33,7 @@ static __thread napi_ref g_groupmanagerConstructor = nullptr;
     void *data;                    \
     napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
 
-struct AudioGroupManagerAsyncContext {
+struct AudioVolumeGroupManagerAsyncContext {
     napi_env env;
     napi_async_work work;
     napi_deferred deferred;
@@ -64,6 +63,7 @@ namespace {
     const int PARAM1 = 1;
     const int PARAM2 = 2;
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioVolumeGroupManagerNapi"};
+    const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
 }
 
 static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
@@ -92,7 +92,52 @@ static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
     return result;
 }
 
-static void CommonCallbackRoutine(napi_env env, AudioGroupManagerAsyncContext* &asyncContext,
+static AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode)
+{
+    AudioRingerMode result = RINGER_MODE_NORMAL;
+
+    switch (ringMode) {
+        case AudioVolumeGroupManagerNapi::RINGER_MODE_SILENT:
+            result = RINGER_MODE_SILENT;
+            break;
+        case AudioVolumeGroupManagerNapi::RINGER_MODE_VIBRATE:
+            result = RINGER_MODE_VIBRATE;
+            break;
+        case AudioVolumeGroupManagerNapi::RINGER_MODE_NORMAL:
+            result = RINGER_MODE_NORMAL;
+            break;
+        default:
+            result = RINGER_MODE_NORMAL;
+            HiLog::Error(LABEL, "Unknown ringer mode requested by JS, Set it to default RINGER_MODE_NORMAL!");
+            break;
+    }
+
+    return result;
+}
+
+static AudioVolumeGroupManagerNapi::AudioRingMode GetJsAudioRingMode(int32_t ringerMode)
+{
+    AudioVolumeGroupManagerNapi::AudioRingMode result = AudioVolumeGroupManagerNapi::RINGER_MODE_NORMAL;
+
+    switch (ringerMode) {
+        case RINGER_MODE_SILENT:
+            result = AudioVolumeGroupManagerNapi::RINGER_MODE_SILENT;
+            break;
+        case RINGER_MODE_VIBRATE:
+            result = AudioVolumeGroupManagerNapi::RINGER_MODE_VIBRATE;
+            break;
+        case RINGER_MODE_NORMAL:
+            result = AudioVolumeGroupManagerNapi::RINGER_MODE_NORMAL;
+            break;
+        default:
+            result = AudioVolumeGroupManagerNapi::RINGER_MODE_NORMAL;
+            HiLog::Error(LABEL, "Unknown ringer mode returned from native, Set it to default RINGER_MODE_NORMAL!");
+            break;
+    }
+
+    return result;
+}
+static void CommonCallbackRoutine(napi_env env, AudioVolumeGroupManagerAsyncContext* &asyncContext,
     const napi_value &valueParam)
 {
     napi_value result[ARGS_TWO] = {0};
@@ -133,7 +178,7 @@ static void CommonCallbackRoutine(napi_env env, AudioGroupManagerAsyncContext* &
 
 static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
-    auto asyncContext = static_cast<AudioGroupManagerAsyncContext*>(data);
+    auto asyncContext = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
     napi_value valueParam = nullptr;
 
     if (asyncContext != nullptr) {
@@ -142,14 +187,13 @@ static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, v
         }
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
-        HiLog::Error(LABEL, "ERROR: AudioGroupManagerAsyncContext* is Null!");
+        HiLog::Error(LABEL, "ERROR: AudioVolumeGroupManagerAsyncContext* is Null!");
     }
 }
 
-
 static void SetFunctionAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
-    auto asyncContext = static_cast<AudioGroupManagerAsyncContext*>(data);
+    auto asyncContext = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
     napi_value valueParam = nullptr;
 
     if (asyncContext != nullptr) {
@@ -164,7 +208,7 @@ static void SetFunctionAsyncCallbackComplete(napi_env env, napi_status status, v
 
 static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
-    auto asyncContext = static_cast<AudioGroupManagerAsyncContext*>(data);
+    auto asyncContext = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
     napi_value valueParam = nullptr;
 
     if (asyncContext != nullptr) {
@@ -194,8 +238,10 @@ napi_value AudioVolumeGroupManagerNapi::Construct(napi_env env, napi_callback_in
 
     if (status == napi_ok) {
         unique_ptr<AudioVolumeGroupManagerNapi> groupmanagerNapi = make_unique<AudioVolumeGroupManagerNapi>();
+        groupmanagerNapi->audioSystemMngr_ = AudioSystemManager::GetInstance();
         if (groupmanagerNapi != nullptr) {
             groupmanagerNapi->audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+            groupmanagerNapi->audioRoutingMngr_ = AudioRoutingManager::GetInstance();
             if (groupmanagerNapi->audioGroupMngr_ == nullptr) {
                 HiLog::Error(LABEL, "Failed in AudioVolumeGroupManagerNapi::Construct()!");
 
@@ -256,7 +302,7 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
 
     GET_PARAMS(env, info, ARGS_TWO);
 
-    unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
+    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
@@ -294,7 +340,7 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
         status = napi_create_async_work(
             env, nullptr, resource,
             [](napi_env env, void *data) {
-                auto context = static_cast<AudioGroupManagerAsyncContext*>(data);
+                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if(context->status == 0){
                     context->volLevel = context->objectInfo->audioGroupMngr_->GetVolume(
                         GetNativeAudioVolumeType(context->volType));
@@ -325,7 +371,7 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
 
     GET_PARAMS(env, info, ARGS_THREE);
 
-    unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
+    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
     
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
@@ -367,7 +413,7 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
         status = napi_create_async_work(
             env, nullptr, resource,
             [](napi_env env, void *data) {
-                auto context = static_cast<AudioGroupManagerAsyncContext*>(data);
+                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if(context->status == 0){
                     context->status = context->objectInfo->audioGroupMngr_->SetVolume(GetNativeAudioVolumeType(
                         context->volType), context->volLevel);
@@ -396,7 +442,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
 
     GET_PARAMS(env, info, ARGS_TWO);
 
-    unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
+    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE){
@@ -433,7 +479,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
         status = napi_create_async_work(
             env, nullptr, resource,
             [](napi_env env, void *data) {
-                auto context = static_cast<AudioGroupManagerAsyncContext*>(data);
+                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if(context->status == 0){
                     context->volLevel = context->objectInfo->audioGroupMngr_->GetMaxVolume(
                         GetNativeAudioVolumeType(context->volType));
@@ -465,7 +511,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
 
     GET_PARAMS(env, info, ARGS_TWO);
 
-    unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
+    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE){
@@ -502,7 +548,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
         status = napi_create_async_work(
             env, nullptr, resource,
             [](napi_env env, void *data) {
-                auto context = static_cast<AudioGroupManagerAsyncContext*>(data);
+                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if(context->status == 0){
                     context->volLevel = context->objectInfo->audioGroupMngr_->GetMinVolume(
                         GetNativeAudioVolumeType(context->volType));
@@ -534,7 +580,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
 
     GET_PARAMS(env, info, ARGS_THREE);
 
-    unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
+    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE){
@@ -573,7 +619,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
         status = napi_create_async_work(
             env, nullptr, resource,
             [](napi_env env, void *data) {
-                auto context = static_cast<AudioGroupManagerAsyncContext*>(data);
+                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if(context->status == 0){
                     context->status = context->objectInfo->audioGroupMngr_->SetMute(GetNativeAudioVolumeType(
                         context->volType), context->isMute);
@@ -603,7 +649,7 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
 
     GET_PARAMS(env, info, ARGS_TWO);
 
-    unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
+    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
@@ -641,7 +687,7 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
         status = napi_create_async_work(
             env, nullptr, resource,
             [](napi_env env, void *data) {
-                auto context = static_cast<AudioGroupManagerAsyncContext*>(data);
+                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if(context->status == 0){
                     context->isMute =
                         context->objectInfo->audioGroupMngr_->IsStreamMute(GetNativeAudioVolumeType(context->volType));
@@ -665,6 +711,344 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
     return result;
 }
 
+napi_value AudioVolumeGroupManagerNapi::SetRingerMode(napi_env env, napi_callback_info info)
+{
+    HiLog::Info(LABEL, " %{public}s IN", __func__);
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_TWO);
+
+    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        if (argc < ARGS_ONE) {
+            asyncContext->status = ERR_NUMBER101;
+        }
+        for (size_t i = PARAM0; i < argc; i++) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[i], &valueType);
+
+            if (i == PARAM0 && valueType == napi_number) {
+                napi_get_value_int32(env, argv[i], &asyncContext->ringMode);
+                if(!AudioCommonNapi::IsLegalInputArgumentRingMode(asyncContext->ringMode)){
+                    asyncContext->status = asyncContext->status == ERR_NUMBER101 ? ERR_NUMBER101 : ERR_NUMBER104;
+                }
+            } else if (i == PARAM1) {
+                if (valueType == napi_function) {
+                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+                }
+                break;
+            } else {
+                asyncContext->status = ERR_NUMBER101;
+            }
+        }
+
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
+        } else {
+            napi_get_undefined(env, &result);
+        }
+
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "SetRingerMode", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
+                if (context->status == SUCCESS) {
+                    context->status =
+                    context->objectInfo->audioSystemMngr_->SetRingerMode(GetNativeAudioRingerMode(context->ringMode));
+                    context->status = context->status == SUCCESS ? SUCCESS : ERR_NUMBER301;
+                }
+                
+            },
+            SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
+            result = nullptr;
+        } else {
+            status = napi_queue_async_work(env, asyncContext->work);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
+        }
+    }
+
+    return result;
+}
+
+napi_value AudioVolumeGroupManagerNapi::GetRingerMode(napi_env env, napi_callback_info info)
+{
+    HiLog::Info(LABEL, " %{public}s IN", __func__);
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        for (size_t i = PARAM0; i < argc; i++) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[i], &valueType);
+
+            if (i == PARAM0) {
+                if (valueType == napi_function) {
+                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+                }                
+                break;
+            } else {
+                asyncContext->status = ERR_NUMBER101;
+            }
+        }
+
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
+        } else {
+            napi_get_undefined(env, &result);
+        }
+
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "GetRingerMode", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
+                if (context->status == SUCCESS) {
+                    context->ringMode = GetJsAudioRingMode(context->objectInfo->audioSystemMngr_->GetRingerMode());
+                    context->intValue = context->ringMode;
+                    context->status = 0;
+                }
+
+            },
+            GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
+            result = nullptr;
+        } else {
+            status = napi_queue_async_work(env, asyncContext->work);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
+        }
+    }
+
+    return result;
+}
+
+
+napi_value AudioVolumeGroupManagerNapi::SetMicrophoneMute(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_TWO);
+    NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
+
+    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        if (argc < ARGS_ONE) {
+            asyncContext->status = ERR_NUMBER101;
+        }
+        for (size_t i = PARAM0; i < argc; i++) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[i], &valueType);
+
+            if (i == PARAM0 && valueType == napi_boolean) {
+                napi_get_value_bool(env, argv[i], &asyncContext->isMute);
+            } else if (i == PARAM1) {
+                if (valueType == napi_function) {
+                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+                }
+                break;
+            } else {
+                asyncContext->status = ERR_NUMBER101;
+            }
+        }
+
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
+        } else {
+            napi_get_undefined(env, &result);
+        }
+
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "SetMicrophoneMute", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
+                if (context->status == SUCCESS) {
+                    context->status = context->objectInfo->audioSystemMngr_->SetMicrophoneMute(context->isMute);
+                    context->status = context->status == SUCCESS ? SUCCESS : ERR_NUMBER301;
+                }
+            },
+            SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
+            result = nullptr;
+        } else {
+            status = napi_queue_async_work(env, asyncContext->work);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
+        }
+    }
+
+    return result;
+}
+
+napi_value AudioVolumeGroupManagerNapi::IsMicrophoneMute(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        for (size_t i = PARAM0; i < argc; i++) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[i], &valueType);
+
+            if (i == PARAM0 && valueType == napi_function) {
+                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+                break;
+            } else {
+                asyncContext->status = ERR_NUMBER101;
+            }
+        }
+
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
+        } else {
+            napi_get_undefined(env, &result);
+        }
+
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "IsMicrophoneMute", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
+                if (context->status == SUCCESS) {
+                    context->isMute = context->objectInfo->audioSystemMngr_->IsMicrophoneMute();
+                    context->isTrue = context->isMute;
+                }
+            },
+            IsTrueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
+            result = nullptr;
+        } else {
+            status = napi_queue_async_work(env, asyncContext->work);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
+        }
+    }
+
+    return result;
+}
+
+napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info)
+{
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    const size_t minArgCount = 2;
+    size_t argCount = 3;
+    napi_value args[minArgCount + 1] = {nullptr, nullptr, nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
+    if (status != napi_ok || argCount < minArgCount) {
+        AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 2 parameters");
+        AudioCommonNapi::throwError(env, ERR_NUMBER_401);
+    }
+
+    napi_valuetype eventType = napi_undefined;
+    if (napi_typeof(env, args[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
+        AudioCommonNapi::throwError(env, ERR_NUMBER_401);
+        return undefinedResult;
+    }
+    std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
+    AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi::On callbackName: %{public}s", callbackName.c_str());
+
+    AudioVolumeGroupManagerNapi *volumeGroupManagerNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&volumeGroupManagerNapi));
+    NAPI_ASSERT(env, status == napi_ok && volumeGroupManagerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
+    NAPI_ASSERT(env, volumeGroupManagerNapi->audioSystemMngr_ != nullptr, "audio system manager instance is null.");
+
+    napi_valuetype handler = napi_undefined;
+    if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
+        AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi::On type mismatch for parameter 2");
+        AudioCommonNapi::throwError(env, ERR_NUMBER_401);
+        return undefinedResult;
+    }
+
+
+    if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
+        if (volumeGroupManagerNapi->ringerModecallbackNapi_ == nullptr) {
+            volumeGroupManagerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
+            int32_t ret = volumeGroupManagerNapi->audioSystemMngr_->SetRingerModeCallback(
+                volumeGroupManagerNapi->cachedClientId, volumeGroupManagerNapi->ringerModecallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: SetRingerModeCallback Failed");
+                return undefinedResult;
+            } else {
+                AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi:: SetRingerModeCallback Success");
+            }
+        }
+
+        std::shared_ptr<AudioRingerModeCallbackNapi> cb =
+            std::static_pointer_cast<AudioRingerModeCallbackNapi>(volumeGroupManagerNapi->ringerModecallbackNapi_);
+        cb->SaveCallbackReference(callbackName, args[PARAM1]);
+    } else if (!callbackName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
+        if (!volumeGroupManagerNapi->micStateChangeCallbackNapi_) {
+            volumeGroupManagerNapi->micStateChangeCallbackNapi_= std::make_shared<AudioManagerMicStateChangeCallbackNapi>(env);
+            if (!volumeGroupManagerNapi->micStateChangeCallbackNapi_) {
+                AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: Memory Allocation Failed !!");
+            }
+
+            int32_t ret = volumeGroupManagerNapi->audioRoutingMngr_->SetMicStateChangeCallback(
+                volumeGroupManagerNapi->micStateChangeCallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: Registering Microphone Change Callback Failed");
+            }
+        }
+
+        std::shared_ptr<AudioManagerMicStateChangeCallbackNapi> cb =
+            std::static_pointer_cast<AudioManagerMicStateChangeCallbackNapi>(volumeGroupManagerNapi->micStateChangeCallbackNapi_);
+        cb->SaveCallbackReference(callbackName, args[PARAM1]);
+
+        AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi::On SetMicStateChangeCallback is successful");
+    } else {
+        AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi::No such callback supported");
+        AudioCommonNapi::throwError(env, ERR_NUMBER101);
+    }
+    return undefinedResult;
+ 
+}
+
 napi_value AudioVolumeGroupManagerNapi::Init(napi_env env, napi_value exports)
 {
     AUDIO_INFO_LOG("AudioRoutingManagerNapi::Init");
@@ -681,6 +1065,10 @@ napi_value AudioVolumeGroupManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getMinVolume", AudioVolumeGroupManagerNapi::GetMinVolume),
         DECLARE_NAPI_FUNCTION("mute", AudioVolumeGroupManagerNapi::SetMute),
         DECLARE_NAPI_FUNCTION("isMute", AudioVolumeGroupManagerNapi::IsStreamMute),
+        DECLARE_NAPI_FUNCTION("setRingerMode", SetRingerMode),
+        DECLARE_NAPI_FUNCTION("getRingerMode", GetRingerMode),
+        DECLARE_NAPI_FUNCTION("setMicrophoneMute", SetMicrophoneMute),
+        DECLARE_NAPI_FUNCTION("isMicrophoneMute", IsMicrophoneMute),
     };
 
     status = napi_define_class(env, AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,

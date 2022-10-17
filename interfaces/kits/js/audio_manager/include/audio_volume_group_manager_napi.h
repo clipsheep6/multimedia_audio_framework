@@ -23,6 +23,8 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "audio_common_napi.h"
+#include "audio_ringermode_callback_napi.h"
+#include "audio_micstatechange_callback_napi.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -30,6 +32,12 @@ static const std::string AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME = "AudioVolumeG
 
 class AudioVolumeGroupManagerNapi {
 public:
+
+    enum AudioRingMode {
+        RINGER_MODE_SILENT = 0,
+        RINGER_MODE_VIBRATE,
+        RINGER_MODE_NORMAL
+    };
 
     static napi_value Init(napi_env env, napi_value exports);
     static napi_value CreateAudioVolumeGroupManagerWrapper(napi_env env, int32_t groupId);
@@ -43,8 +51,18 @@ private:
     static napi_value GetMinVolume(napi_env env, napi_callback_info info);
     static napi_value SetMute(napi_env env, napi_callback_info info);
     static napi_value IsStreamMute(napi_env env, napi_callback_info info);
+    static napi_value SetRingerMode(napi_env env, napi_callback_info info);
+    static napi_value GetRingerMode(napi_env env, napi_callback_info info);
+    static napi_value SetMicrophoneMute(napi_env env, napi_callback_info info);
+    static napi_value IsMicrophoneMute(napi_env env, napi_callback_info info);
+    static napi_value On(napi_env env, napi_callback_info info);
     std::shared_ptr<AudioGroupManager> audioGroupMngr_ = nullptr;
+    AudioSystemManager *audioSystemMngr_;
+    AudioRoutingManager *audioRoutingMngr_;
+    int32_t cachedClientId = -1;
 
+    std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;
+    std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallbackNapi_ = nullptr;
     napi_ref wrapper_;
 };
 } // namespace AudioStandard

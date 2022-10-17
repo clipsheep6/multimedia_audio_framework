@@ -32,11 +32,6 @@ public:
     AudioVolumeManagerNapi();
     ~AudioVolumeManagerNapi();
 
-    enum AudioRingMode {
-        RINGER_MODE_SILENT = 0,
-        RINGER_MODE_VIBRATE,
-        RINGER_MODE_NORMAL
-    };
     static napi_value Init(napi_env env, napi_value exports);
     static napi_value CreateVolumeManagerWrapper(napi_env env);
 private:
@@ -51,13 +46,9 @@ private:
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     AudioSystemManager *audioSystemMngr_;
-    AudioRoutingManager *audioRoutingMngr_;
 
     int32_t cachedClientId = -1;
-
-    std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
-    std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallbackNapi_ = nullptr;
 
     napi_env env_;
     napi_ref wrapper_;
