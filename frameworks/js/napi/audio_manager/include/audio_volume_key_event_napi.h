@@ -17,7 +17,7 @@
 #define AUDIO_VOLUME_KEY_EVENT_NAPI_CALLBACK_H_
 
 #include "audio_manager_napi.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 

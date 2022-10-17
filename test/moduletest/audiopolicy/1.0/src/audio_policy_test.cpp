@@ -14,7 +14,7 @@
  */
 
 #include "audio_errors.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "audio_policy_test.h"
 
 using namespace std;

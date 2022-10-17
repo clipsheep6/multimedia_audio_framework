@@ -14,54 +14,55 @@
  */
 
 #include "audio_ringermode_update_listener_proxy.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
-AudioRingerModeUpdateListenerProxy::AudioRingerModeUpdateListenerProxy(const sptr<IRemoteObject> &impl)
-    : IRemoteProxy<IStandardRingerModeUpdateListener>(impl)
+AudioSystemEventListenerProxy::AudioSystemEventListenerProxy(const sptr<IRemoteObject> &impl)
+    : IRemoteProxy<IStandardSystemEventListener>(impl)
 {
-    AUDIO_DEBUG_LOG("Instances create");
+    AUDIO_DEBUG_LOG("AudioSystemEventListenerProxy: Instances create");
 }
 
-AudioRingerModeUpdateListenerProxy::~AudioRingerModeUpdateListenerProxy()
+AudioSystemEventListenerProxy::~AudioSystemEventListenerProxy()
 {
-    AUDIO_DEBUG_LOG("~AudioRingerModeUpdateListenerProxy: Instance destroy");
+    AUDIO_DEBUG_LOG("AudioSystemEventListenerProxy: Instance destroy");
 }
 
-void AudioRingerModeUpdateListenerProxy::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
+void AudioSystemEventListenerProxy::OnSystemEvent(const AudioRingerMode &ringerMode)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioRingerModeListenerCallback: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
     data.WriteInt32(static_cast<int32_t>(ringerMode));
+
     int error = Remote()->SendRequest(ON_RINGERMODE_UPDATE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OnRingerModeUpdated failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("OnSystemEvent failed, error: %{public}d", error);
     }
 }
 
-AudioRingerModeListenerCallback::AudioRingerModeListenerCallback(
-    const sptr<IStandardRingerModeUpdateListener> &listener) : listener_(listener)
+AudioSystemEventListenerCallback::AudioSystemEventListenerCallback(
+    const sptr<IStandardSystemEventListener> &listener) : listener_(listener)
 {
-        AUDIO_DEBUG_LOG("AudioRingerModeListenerCallback: Instance create");
+    AUDIO_DEBUG_LOG("AudioSystemEventListenerCallback: Instance create");
 }
 
-AudioRingerModeListenerCallback::~AudioRingerModeListenerCallback()
+AudioSystemEventListenerCallback::~AudioSystemEventListenerCallback()
 {
-    AUDIO_DEBUG_LOG("AudioRingerModeListenerCallback: Instance destroy");
+    AUDIO_DEBUG_LOG("AudioSystemEventListenerCallback: Instance destroy");
 }
 
-void AudioRingerModeListenerCallback::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
+void AudioSystemEventListenerCallback::OnSystemEvent(const AudioRingerMode &ringerMode)
 {
     if (listener_ != nullptr) {
-        listener_->OnRingerModeUpdated(ringerMode);
+        listener_->OnSystemEvent(ringerMode);
     }
 }
 } // namespace AudioStandard

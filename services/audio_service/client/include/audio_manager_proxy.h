@@ -17,7 +17,7 @@
 #define ST_AUDIO_MANAGER_PROXY_H
 
 #include "iremote_proxy.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "audio_manager_base.h"
 
 namespace OHOS {

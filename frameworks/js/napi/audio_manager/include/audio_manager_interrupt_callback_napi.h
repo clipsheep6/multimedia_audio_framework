@@ -17,7 +17,7 @@
 #define AUDIO_MANAGER_INTERRUPT_CALLBACK_NAPI_H_
 #include "audio_common_napi.h"
 #include "audio_manager_napi.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 

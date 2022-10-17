@@ -16,32 +16,32 @@
 #include "audio_ringermode_update_listener_stub.h"
 
 #include "audio_errors.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
-AudioRingerModeUpdateListenerStub::AudioRingerModeUpdateListenerStub()
+AudioSystemEventListenerStub::AudioSystemEventListenerStub()
 {
-    AUDIO_DEBUG_LOG("AudioRingerModeUpdateListenerStub Instance create");
+    AUDIO_DEBUG_LOG("AudioSystemEventListenerStub Instance create");
 }
 
-AudioRingerModeUpdateListenerStub::~AudioRingerModeUpdateListenerStub()
+AudioSystemEventListenerStub::~AudioSystemEventListenerStub()
 {
-    AUDIO_DEBUG_LOG("AudioRingerModeUpdateListenerStub Instance destroy");
+    AUDIO_DEBUG_LOG("AudioSystemEventListenerStub Instance destroy");
 }
 
-int AudioRingerModeUpdateListenerStub::OnRemoteRequest(
-    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+int AudioSystemEventListenerStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
+    MessageParcel &reply, MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
-        AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: ReadInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioSystemEventListenerStub: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {
         case ON_RINGERMODE_UPDATE: {
             AudioRingerMode ringerMode = static_cast<AudioRingerMode>(data.ReadInt32());
-            OnRingerModeUpdated(ringerMode);
+            OnSystemEvent(ringerMode);
             return AUDIO_OK;
         }
         default: {
@@ -51,17 +51,17 @@ int AudioRingerModeUpdateListenerStub::OnRemoteRequest(
     }
 }
 
-void AudioRingerModeUpdateListenerStub::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
+void AudioSystemEventListenerStub::OnSystemEvent(const AudioRingerMode &ringerMode)
 {
-    std::shared_ptr<AudioRingerModeCallback> cb = callback_.lock();
+    std::shared_ptr<AudioSystemEventCallback> cb = callback_.lock();
     if (cb != nullptr) {
-        cb->OnRingerModeUpdated(ringerMode);
+        cb->OnSystemEvent(ringerMode);
     } else {
-        AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: callback_ is nullptr");
+        AUDIO_ERR_LOG("AudioSystemEventListenerStub: callback_ is nullptr");
     }
 }
 
-void AudioRingerModeUpdateListenerStub::SetCallback(const std::weak_ptr<AudioRingerModeCallback> &callback)
+void AudioSystemEventListenerStub::SetCallback(const std::weak_ptr<AudioSystemEventCallback> &callback)
 {
     callback_ = callback;
 }

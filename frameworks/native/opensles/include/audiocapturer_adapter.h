@@ -21,7 +21,7 @@
 #include <iostream>
 #include <map>
 #include <audio_capturer.h>
-#include <audio_system_manager.h>
+#include <audio_system_utils.h>
 #include <readorwritecallback_adapter.h>
 
 namespace OHOS {

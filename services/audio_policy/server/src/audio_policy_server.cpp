@@ -444,15 +444,15 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
 
     int32_t ret = mPolicyService.SetRingerMode(ringMode);
     if (ret == SUCCESS) {
-        for (auto it = ringerModeListenerCbsMap_.begin(); it != ringerModeListenerCbsMap_.end(); ++it) {
-            std::shared_ptr<AudioRingerModeCallback> ringerModeListenerCb = it->second;
-            if (ringerModeListenerCb == nullptr) {
-                AUDIO_ERR_LOG("ringerModeListenerCbsMap_: nullptr for client : %{public}d", it->first);
+        for (auto it = systemEventCbsMap_.begin(); it != systemEventCbsMap_.end(); ++it) {
+            std::shared_ptr<AudioSystemEventCallback> systemEventCb = it->second;
+            if (systemEventCb == nullptr) {
+                AUDIO_ERR_LOG("systemEventCb: nullptr for client : %{public}d", it->first);
                 continue;
             }
 
-            AUDIO_DEBUG_LOG("ringerModeListenerCbsMap_ :client =  %{public}d", it->first);
-            ringerModeListenerCb->OnRingerModeUpdated(ringMode);
+            AUDIO_DEBUG_LOG("systemEventCb :client =  %{public}d", it->first);
+            systemEventCb->OnSystemEvent(ringMode);
         }
     }
 
@@ -528,13 +528,15 @@ int32_t AudioPolicyServer::SetRingerModeCallback(const int32_t clientId, const s
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
 
-    sptr<IStandardRingerModeUpdateListener> listener = iface_cast<IStandardRingerModeUpdateListener>(object);
+    sptr<IStandardSystemEventListener> listener = iface_cast<IStandardSystemEventListener>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: listener obj cast failed");
 
-    std::shared_ptr<AudioRingerModeCallback> callback = std::make_shared<AudioRingerModeListenerCallback>(listener);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+    std::shared_ptr<AudioSystemEventCallback> callback = std::make_shared<AudioSystemEventListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to create cb obj");
 
-    ringerModeListenerCbsMap_[clientId] = callback;
+    systemEventCbsMap_[clientId] = callback;
+
+    // TODO: need to consider death handler for client process die
 
     return SUCCESS;
 }
@@ -543,8 +545,8 @@ int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
 {
     std::lock_guard<std::mutex> lock(ringerModeMutex_);
 
-    if (ringerModeListenerCbsMap_.find(clientId) != ringerModeListenerCbsMap_.end()) {
-        ringerModeListenerCbsMap_.erase(clientId);
+    if (systemEventCbsMap_.find(clientId) != systemEventCbsMap_.end()) {
+        systemEventCbsMap_.erase(clientId);
         AUDIO_ERR_LOG("AudioPolicyServer: UnsetRingerModeCallback for client %{public}d done", clientId);
         return SUCCESS;
     } else {

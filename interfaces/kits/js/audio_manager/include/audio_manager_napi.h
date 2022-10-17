@@ -128,7 +128,7 @@ private:
     static napi_ref connectTypeRef_;
 
     AudioSystemManager *audioMngr_;
-    int32_t cachedClientId = -1;
+    int32_t cachedClientId_ = -1;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerCallback> interruptCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;

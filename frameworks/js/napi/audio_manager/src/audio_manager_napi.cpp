@@ -825,11 +825,12 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
         unique_ptr<AudioManagerNapi> managerNapi = make_unique<AudioManagerNapi>();
         if (managerNapi != nullptr) {
             managerNapi->env_ = env;
+            // TODO: AudioSystemManager change to multi-instance, to avoid using pid to link callback instance in server side
             managerNapi->audioMngr_ = AudioSystemManager::GetInstance();
-            managerNapi->cachedClientId = getpid();
+            managerNapi->cachedClientId_ = getpid();
 
             managerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
-            ret = managerNapi->audioMngr_->RegisterVolumeKeyEventCallback(managerNapi->cachedClientId,
+            ret = managerNapi->audioMngr_->RegisterVolumeKeyEventCallback(managerNapi->cachedClientId_,
                                                                           managerNapi->volumeKeyEventCallbackNapi_);
             if (ret) {
                 AUDIO_ERR_LOG("AudioManagerNapi: RegisterVolumeKeyEventCallback Failed");
@@ -2399,20 +2400,16 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
     }
 
     if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
-        if (managerNapi->ringerModecallbackNapi_ == nullptr) {
-            managerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
-            int32_t ret = managerNapi->audioMngr_->SetRingerModeCallback(
-                managerNapi->cachedClientId, managerNapi->ringerModecallbackNapi_);
-            if (ret) {
-                AUDIO_ERR_LOG("AudioManagerNapi: SetRingerModeCallback Failed");
-                return undefinedResult;
-            } else {
-                AUDIO_INFO_LOG("AudioManagerNapi: SetRingerModeCallback Success");
-            }
+        std::shared_ptr<AudioRingerModeCallback> audioRingerModeCallbackNapi =
+            std::make_shared<AudioRingerModeCallbackNapi>(env);
+        int32_t ret = managerNapi->audioMngr_->SetRingerModeCallback(
+            managerNapi->cachedClientId_, audioRingerModeCallbackNapi);
+        if (ret) {
+            AUDIO_ERR_LOG("AudioManagerNapi: SetRingerModeCallback Failed");
+            return undefinedResult;
         }
-
         std::shared_ptr<AudioRingerModeCallbackNapi> cb =
-            std::static_pointer_cast<AudioRingerModeCallbackNapi>(managerNapi->ringerModecallbackNapi_);
+            std::static_pointer_cast<AudioRingerModeCallbackNapi>(audioRingerModeCallbackNapi);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
     } else if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
         std::shared_ptr<AudioVolumeKeyEventNapi> cb =

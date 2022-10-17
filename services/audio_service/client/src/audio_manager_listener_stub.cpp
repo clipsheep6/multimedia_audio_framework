@@ -64,7 +64,7 @@ void AudioManagerListenerStub::OnAudioParameterChange(const std::string networkI
     if (cb != nullptr) {
         cb->OnAudioParameterChange(networkId, key, condition, value);
     } else {
-        AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: callback_ is nullptr");
+        AUDIO_ERR_LOG("AudioManagerListenerStub: callback_ is nullptr");
     }
 }
 } // namespace AudioStandard

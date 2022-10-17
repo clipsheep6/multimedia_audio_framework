@@ -23,17 +23,17 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class IStandardRingerModeUpdateListener : public IRemoteBroker {
+class IStandardSystemEventListener : public IRemoteBroker {
 public:
-    virtual ~IStandardRingerModeUpdateListener() = default;
-    virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
+    virtual ~IStandardSystemEventListener() = default;
+    virtual void OnSystemEvent(const AudioRingerMode &ringerMode) = 0;
 
-    enum AudioRingerModeUpdateListenerMsg {
+    enum AudioSystemEventListenerMsg {
         ON_ERROR = 0,
         ON_RINGERMODE_UPDATE,
     };
 
-    DECLARE_INTERFACE_DESCRIPTOR(u"IStandardRingerModeUpdateListener");
+    DECLARE_INTERFACE_DESCRIPTOR(u"IStandardSystemEventListener");
 };
 } // namespace AudioStandard
 } // namespace OHOS

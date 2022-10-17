@@ -19,7 +19,7 @@
 #include <thread>
 
 #include "audio_renderer.h"
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {

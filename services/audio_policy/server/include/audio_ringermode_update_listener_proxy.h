@@ -16,30 +16,30 @@
 #ifndef AUDIO_RINGERMODE_UPDATE_LISTENER_PROXY_H
 #define AUDIO_RINGERMODE_UPDATE_LISTENER_PROXY_H
 
-#include "audio_system_manager.h"
+#include "audio_system_utils.h"
 #include "i_standard_ringermode_update_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRingerModeUpdateListenerProxy : public IRemoteProxy<IStandardRingerModeUpdateListener> {
+class AudioSystemEventListenerProxy : public IRemoteProxy<IStandardSystemEventListener> {
 public:
-    explicit AudioRingerModeUpdateListenerProxy(const sptr<IRemoteObject> &impl);
-    virtual ~AudioRingerModeUpdateListenerProxy();
-    DISALLOW_COPY_AND_MOVE(AudioRingerModeUpdateListenerProxy);
-    void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
+    explicit AudioSystemEventListenerProxy(const sptr<IRemoteObject> &impl);
+    virtual ~AudioSystemEventListenerProxy();
+    DISALLOW_COPY_AND_MOVE(AudioSystemEventListenerProxy);
+    void OnSystemEvent(const AudioRingerMode &ringerMode) override;
 
 private:
-    static inline BrokerDelegator<AudioRingerModeUpdateListenerProxy> delegator_;
+    static inline BrokerDelegator<AudioSystemEventListenerProxy> delegator_;
 };
 
-class AudioRingerModeListenerCallback : public AudioRingerModeCallback {
+class AudioSystemEventListenerCallback : public AudioSystemEventCallback {
 public:
-    AudioRingerModeListenerCallback(const sptr<IStandardRingerModeUpdateListener> &listener);
-    virtual ~AudioRingerModeListenerCallback();
-    DISALLOW_COPY_AND_MOVE(AudioRingerModeListenerCallback);
-    void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
+    AudioSystemEventListenerCallback(const sptr<IStandardSystemEventListener> &listener);
+    virtual ~AudioSystemEventListenerCallback();
+    DISALLOW_COPY_AND_MOVE(AudioSystemEventListenerCallback);
+    void OnSystemEvent(const AudioRingerMode &ringerMode) override;
 private:
-    sptr<IStandardRingerModeUpdateListener> listener_ = nullptr;
+    sptr<IStandardSystemEventListener> listener_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

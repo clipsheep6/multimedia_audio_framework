@@ -20,15 +20,14 @@
 #include "audio_capturer_state_change_listener_stub.h"
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_info.h"
+#include "audio_system_utils.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_renderer_state_change_listener_stub.h"
 #include "audio_ringermode_update_listener_stub.h"
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"
-#include "audio_system_manager.h"
 #include "audio_volume_key_event_callback_stub.h"
-#include "audio_system_manager.h"
 #include "i_audio_volume_key_event_callback.h"
 #include "i_standard_renderer_state_change_listener.h"
 #include "i_standard_capturer_state_change_listener.h"
@@ -106,15 +105,15 @@ public:
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
 
     int32_t SetRingerModeCallback(const int32_t clientId,
-                                  const std::shared_ptr<AudioRingerModeCallback> &callback);
+        const std::shared_ptr<AudioSystemEventCallback> &callback);
 
     int32_t UnsetRingerModeCallback(const int32_t clientId);
 
     int32_t SetMicStateChangeCallback(const int32_t clientId,
-                                  const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
+        const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
-                                    const std::shared_ptr<AudioInterruptCallback> &callback);
+        const std::shared_ptr<AudioInterruptCallback> &callback);
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID);
 
@@ -135,7 +134,8 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt);
 
-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid, const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback);
 
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid);
 
@@ -170,7 +170,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                    AudioStreamType audioStreamType);
+        AudioStreamType audioStreamType);
 
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 
@@ -183,19 +183,20 @@ private:
     ~AudioPolicyManager() {}
 
     void Init();
+    void RegisterAudioPolicyServerDeathRecipient();
+    void AudioPolicyServerDied(pid_t pid);
+
     sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
     std::mutex listenerStubMutex_;
     std::mutex volumeCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
     sptr<AudioVolumeKeyEventCallbackStub> volumeKeyEventListenerStub_ = nullptr;
-    sptr<AudioRingerModeUpdateListenerStub> ringerModelistenerStub_ = nullptr;
+    sptr<AudioSystemEventListenerStub> systemEventListenerStub_ = nullptr;
     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
     static bool serverConnected;
-    void RegisterAudioPolicyServerDeathRecipient();
-    void AudioPolicyServerDied(pid_t pid);
 };
 } // namespce AudioStandard
 } // namespace OHOS

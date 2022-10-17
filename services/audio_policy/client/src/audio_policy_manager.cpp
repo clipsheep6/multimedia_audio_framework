@@ -197,21 +197,21 @@ DeviceType AudioPolicyManager::GetActiveInputDevice()
 }
 
 int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
-                                                  const std::shared_ptr<AudioRingerModeCallback> &callback)
+    const std::shared_ptr<AudioSystemEventCallback> &callback)
 {
     if (callback == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManager: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
 
-    ringerModelistenerStub_ = new(std::nothrow) AudioRingerModeUpdateListenerStub();
-    if (ringerModelistenerStub_ == nullptr || g_sProxy == nullptr) {
+    systemEventListenerStub_ = new(std::nothrow) AudioSystemEventListenerStub();
+    if (systemEventListenerStub_ == nullptr || g_sProxy == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManager: object null");
         return ERROR;
     }
-    ringerModelistenerStub_->SetCallback(callback);
+    systemEventListenerStub_->SetCallback(callback);
 
-    sptr<IRemoteObject> object = ringerModelistenerStub_->AsObject();
+    sptr<IRemoteObject> object = systemEventListenerStub_->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManager: listenerStub->AsObject is nullptr..");
         return ERROR;

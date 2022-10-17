@@ -260,7 +260,7 @@ private:
     std::list<AudioInterrupt> curActiveOwnersList_;
     std::list<AudioInterrupt> pendingOwnersList_;
     std::unordered_map<AudioStreamType, int32_t> interruptPriorityMap_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioSystemEventCallback>> systemEventCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeListenerCbsMap_;
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;

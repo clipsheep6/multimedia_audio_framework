@@ -44,7 +44,7 @@ void AudioRingerModeCallbackNapi::SaveCallbackReference(const std::string &callb
     const int32_t refCount = 1;
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-                         "AudioRingerModeCallbackNapi: creating reference for callback fail");
+        "AudioRingerModeCallbackNapi: creating reference for callback fail");
 
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     if (callbackName == RINGERMODE_CALLBACK_NAME) {
