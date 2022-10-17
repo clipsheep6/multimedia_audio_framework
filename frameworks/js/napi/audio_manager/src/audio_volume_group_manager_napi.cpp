@@ -761,7 +761,7 @@ napi_value AudioVolumeGroupManagerNapi::SetRingerMode(napi_env env, napi_callbac
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
                     context->status =
-                    context->objectInfo->audioSystemMngr_->SetRingerMode(GetNativeAudioRingerMode(context->ringMode));
+                    context->objectInfo->audioGroupMngr_->SetRingerMode(GetNativeAudioRingerMode(context->ringMode));
                     context->status = context->status == SUCCESS ? SUCCESS : ERR_NUMBER301;
                 }
                 
@@ -823,7 +823,7 @@ napi_value AudioVolumeGroupManagerNapi::GetRingerMode(napi_env env, napi_callbac
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->ringMode = GetJsAudioRingMode(context->objectInfo->audioSystemMngr_->GetRingerMode());
+                    context->ringMode = GetJsAudioRingMode(context->objectInfo->audioGroupMngr_->GetRingerMode());
                     context->intValue = context->ringMode;
                     context->status = 0;
                 }
@@ -892,7 +892,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMicrophoneMute(napi_env env, napi_cal
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->status = context->objectInfo->audioSystemMngr_->SetMicrophoneMute(context->isMute);
+                    context->status = context->objectInfo->audioGroupMngr_->SetMicrophoneMute(context->isMute);
                     context->status = context->status == SUCCESS ? SUCCESS : ERR_NUMBER301;
                 }
             },
@@ -950,7 +950,7 @@ napi_value AudioVolumeGroupManagerNapi::IsMicrophoneMute(napi_env env, napi_call
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->isMute = context->objectInfo->audioSystemMngr_->IsMicrophoneMute();
+                    context->isMute = context->objectInfo->audioGroupMngr_->IsMicrophoneMute();
                     context->isTrue = context->isMute;
                 }
             },
@@ -1069,6 +1069,8 @@ napi_value AudioVolumeGroupManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getRingerMode", GetRingerMode),
         DECLARE_NAPI_FUNCTION("setMicrophoneMute", SetMicrophoneMute),
         DECLARE_NAPI_FUNCTION("isMicrophoneMute", IsMicrophoneMute),
+        DECLARE_NAPI_FUNCTION("on", On),
+
     };
 
     status = napi_define_class(env, AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
