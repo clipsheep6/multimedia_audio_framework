@@ -51,7 +51,7 @@ struct AudioRoutingManagerAsyncContext {
     int32_t deviceFlag;
     int32_t status = SUCCESS;
     int32_t deviceType;
-    bool isActive;    
+    bool isActive;
     bool isTrue;
     bool bArgTransFlag = true;
     AudioRoutingManagerNapi *objectInfo;
@@ -480,7 +480,6 @@ napi_value AudioRoutingManagerNapi::GetDevices(napi_env env, napi_callback_info 
 
     napi_status status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-
         CheckParams(argc, env, argv, asyncContext, refCount, result);
 
         napi_value resource = nullptr;
@@ -489,7 +488,7 @@ napi_value AudioRoutingManagerNapi::GetDevices(napi_env env, napi_callback_info 
         status = napi_create_async_work(
             env, nullptr, resource, [](napi_env env, void *data) {
                 auto context = static_cast<AudioRoutingManagerAsyncContext*>(data);
-                if(context->status == 0){
+                if (context->status == SUCCESS) {
                     context->deviceDescriptors = context->objectInfo->audioMngr_->GetDevices(
                         static_cast<DeviceFlag>(context->deviceFlag));
                     context->status = 0;
@@ -513,7 +512,7 @@ napi_value AudioRoutingManagerNapi::GetDevices(napi_env env, napi_callback_info 
 void AudioRoutingManagerNapi::CheckParams(size_t argc, napi_env env, napi_value* argv,
     std::unique_ptr<AudioRoutingManagerAsyncContext>& asyncContext, const int32_t refCount, napi_value& result)
 {
-    if (argc < ARGS_ONE){
+    if (argc < ARGS_ONE) {
             asyncContext->status = ERR_NUMBER101;
     }
     for (size_t i = PARAM0; i < argc; i++) {
@@ -523,7 +522,7 @@ void AudioRoutingManagerNapi::CheckParams(size_t argc, napi_env env, napi_value*
         if (i == PARAM0 && valueType == napi_number) {
             napi_get_value_int32(env, argv[i], &asyncContext->deviceFlag);
             HiLog::Info(LABEL, " GetDevices deviceFlag = %{public}d", asyncContext->deviceFlag);
-            if(!AudioCommonNapi::IsLegalInputArgumentDeviceFlag(asyncContext->deviceFlag)){
+            if (!AudioCommonNapi::IsLegalInputArgumentDeviceFlag(asyncContext->deviceFlag)) {
                 asyncContext->status = asyncContext->status == ERR_NUMBER101? ERR_NUMBER101 : ERR_NUMBER104;
             }
         } else if (i == PARAM1) {
@@ -559,7 +558,7 @@ napi_value AudioRoutingManagerNapi::SelectOutputDevice(napi_env env, napi_callba
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_ONE){
+        if (argc < ARGS_ONE) {
             asyncContext->status = ERR_NUMBER101;
         }
         for (size_t i = PARAM0; i < argc; i++) {
@@ -577,7 +576,6 @@ napi_value AudioRoutingManagerNapi::SelectOutputDevice(napi_env env, napi_callba
             } else {
                 asyncContext->status = ERR_NUMBER101;
             }
-
         }
 
         if (asyncContext->callbackRef == nullptr) {
@@ -629,7 +627,7 @@ napi_value AudioRoutingManagerNapi::SelectOutputDeviceByFilter(napi_env env, nap
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_TWO){
+        if (argc < ARGS_TWO) {
             asyncContext->status = ERR_NUMBER101;
         }
         for (size_t i = PARAM0; i < argc; i++) {
@@ -649,7 +647,6 @@ napi_value AudioRoutingManagerNapi::SelectOutputDeviceByFilter(napi_env env, nap
             } else {
                 asyncContext->status = ERR_NUMBER101;
             }
-
         }
 
         if (asyncContext->callbackRef == nullptr) {
@@ -730,7 +727,7 @@ napi_value AudioRoutingManagerNapi::SelectInputDevice(napi_env env, napi_callbac
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_ONE){
+        if (argc < ARGS_ONE) {
             asyncContext->status = ERR_NUMBER101;
         }
         for (size_t i = PARAM0; i < argc; i++) {
@@ -739,7 +736,7 @@ napi_value AudioRoutingManagerNapi::SelectInputDevice(napi_env env, napi_callbac
             if (i == PARAM0 && valueType == napi_object) {
                 ParseAudioDeviceDescriptorVector(env, argv[i], asyncContext->deviceDescriptors,
                     asyncContext->bArgTransFlag);
-            } else if (i == PARAM1 ) {
+            } else if ( i == PARAM1 ) {
                 if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 }
@@ -805,7 +802,7 @@ napi_value AudioRoutingManagerNapi::SelectInputDeviceByFilter(napi_env env, napi
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_TWO){
+        if (argc < ARGS_TWO) {
             asyncContext->status = ERR_NUMBER101;
         }
         for (size_t i = PARAM0; i < argc; i++) {
@@ -1021,7 +1018,7 @@ napi_value AudioRoutingManagerNapi::SetCommunicationDevice(napi_env env, napi_ca
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->deviceType);
-                if(!AudioCommonNapi::IsLegalInputArgumentCommunicationDeviceType(asyncContext->deviceType)){
+                if (!AudioCommonNapi::IsLegalInputArgumentCommunicationDeviceType(asyncContext->deviceType)) {
                 asyncContext->status = asyncContext->status == ERR_NUMBER101? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1 && valueType == napi_boolean) {
@@ -1029,7 +1026,7 @@ napi_value AudioRoutingManagerNapi::SetCommunicationDevice(napi_env env, napi_ca
             } else if (i == PARAM2) {
                 if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                }                
+                }
                 break;
             } else {
                 asyncContext->status = ERR_NUMBER101;
@@ -1092,13 +1089,13 @@ napi_value AudioRoutingManagerNapi::IsCommunicationDeviceActive(napi_env env, na
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->deviceType);
-                if(!AudioCommonNapi::IsLegalInputArgumentActiveDeviceType(asyncContext->deviceType)){
+                if (!AudioCommonNapi::IsLegalInputArgumentActiveDeviceType(asyncContext->deviceType)) {
                     asyncContext->status = asyncContext->status == ERR_NUMBER101? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1) {
                 if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                }                
+                }
                 break;
             } else {
                 asyncContext->status = ERR_NUMBER101;
@@ -1120,11 +1117,11 @@ napi_value AudioRoutingManagerNapi::IsCommunicationDeviceActive(napi_env env, na
                 auto context = static_cast<AudioRoutingManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
                     context->isActive =
-                        context->objectInfo->audioMngr_->IsDeviceActive(static_cast<ActiveDeviceType>(context->deviceType));
+                        context->objectInfo->audioMngr_->
+                            IsDeviceActive(static_cast<ActiveDeviceType>(context->deviceType));
                     context->isTrue = context->isActive;
                     context->status = 0;
                 }
-
             },
             IsTrueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {

@@ -31,10 +31,8 @@ namespace AudioStandard {
 static __thread napi_ref g_interruptManagerConstructor = nullptr;
 
 namespace {
-    // const int ARGS_ONE = 1;
     const int ARGS_TWO = 2;
     const int PARAM0 = 0;
-    // const int PARAM1 = 1;
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioInterruptManagerNapi"};
 }
 
@@ -132,8 +130,8 @@ napi_value AudioInterruptManagerNapi::Init(napi_env env, napi_value exports)
 
     };
 
-    status = napi_define_class(env, AUDIO_INTERRUPT_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
-        sizeof(audio_routing_manager_properties) / sizeof(audio_routing_manager_properties[PARAM0]),
+    status = napi_define_class(env, AUDIO_INTERRUPT_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
+        nullptr, sizeof(audio_routing_manager_properties) / sizeof(audio_routing_manager_properties[PARAM0]),
         audio_routing_manager_properties, &constructor);
     if (status != napi_ok) {
         return result;

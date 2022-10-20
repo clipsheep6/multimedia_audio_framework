@@ -262,7 +262,7 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupInfos(napi_env env, napi_callba
     GET_PARAMS(env, info, ARGS_TWO);
 
     unique_ptr<AudioVolumeManagerAsyncContext> asyncContext = make_unique<AudioVolumeManagerAsyncContext>();
-    if (argc < ARGS_ONE){
+    if (argc < ARGS_ONE) {
         asyncContext->status = ERR_NUMBER101;
     }
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
@@ -297,7 +297,8 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupInfos(napi_env env, napi_callba
             [](napi_env env, void* data) {
                 auto context = static_cast<AudioVolumeManagerAsyncContext*>(data);
                 if (!context->status) {
-                    context->volumeGroupInfos = context->objectInfo->audioSystemMngr_->GetVolumeGroups(context->networkId);
+                    context->volumeGroupInfos = context->objectInfo->audioSystemMngr_->
+                        GetVolumeGroups(context->networkId);
                     context->status = 0;
                 }
             },
@@ -344,7 +345,7 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupManager(napi_env env, napi_call
 
     unique_ptr<AudioVolumeManagerAsyncContext> asyncContext = make_unique<AudioVolumeManagerAsyncContext>();
     CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioVolumeManagerAsyncContext object creation failed");
-    if (argc < ARGS_ONE){
+    if (argc < ARGS_ONE) {
         asyncContext->status = ERR_NUMBER101;
     }
     for (size_t i = PARAM0; i < argc; i++) {
@@ -419,7 +420,8 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
 
     AudioVolumeManagerNapi *volumeManagerNapi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&volumeManagerNapi));
-    NAPI_ASSERT(env, status == napi_ok && volumeManagerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
+    NAPI_ASSERT(env, status == napi_ok && volumeManagerNapi != nullptr,
+         "Failed to retrieve audio manager napi instance.");
     NAPI_ASSERT(env, volumeManagerNapi->audioSystemMngr_ != nullptr, "audio system manager instance is null.");
 
     napi_valuetype handler = napi_undefined;
@@ -433,8 +435,8 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
     if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
         if (volumeManagerNapi->volumeKeyEventCallbackNapi_ == nullptr) {
             volumeManagerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
-            int32_t ret = volumeManagerNapi->audioSystemMngr_->RegisterVolumeKeyEventCallback(volumeManagerNapi->cachedClientId,
-                                                                        volumeManagerNapi->volumeKeyEventCallbackNapi_);
+            int32_t ret = volumeManagerNapi->audioSystemMngr_->RegisterVolumeKeyEventCallback
+                (volumeManagerNapi->cachedClientId, volumeManagerNapi->volumeKeyEventCallbackNapi_);
             if (ret) {
                 AUDIO_ERR_LOG("AudioVolumeManagerNapi:: RegisterVolumeKeyEventCallback Failed");
             } else {

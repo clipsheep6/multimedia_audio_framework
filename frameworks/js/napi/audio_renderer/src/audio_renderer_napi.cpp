@@ -1720,7 +1720,7 @@ napi_value AudioRendererNapi::SetVolume(napi_env env, napi_callback_info info)
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioRendererAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    if (!AudioCommonNapi::IsLegalInputArgumentVolLevel(context->volLevel)){
+                    if (!AudioCommonNapi::IsLegalInputArgumentVolLevel(context->volLevel)) {
                         context->status = ERR_NUMBER101;
                     } else {
                         context->status = context->objectInfo->audioMngr_->SetVolume(GetNativeAudioVolumeType(context->volType),
