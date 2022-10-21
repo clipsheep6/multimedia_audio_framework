@@ -1013,9 +1013,10 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
+int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID)
 {
     AUDIO_DEBUG_LOG("AudioServiceClient: GetSessionID");
+    lock_guard<mutex> lock(ctrlMutex);
     uint32_t client_index = pa_context_get_index(context);
     if (client_index == PA_INVALID_INDEX) {
         return AUDIO_CLIENT_ERR;

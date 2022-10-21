@@ -157,7 +157,7 @@ public:
      *
      * @return Returns unique session ID for the created session
     */
-    int32_t GetSessionID(uint32_t &sessionID) const;
+    int32_t GetSessionID(uint32_t &sessionID);
 
     /**
     * Starts the stream created using CreateStream
