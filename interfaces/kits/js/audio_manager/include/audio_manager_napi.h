@@ -104,11 +104,9 @@ private:
     static napi_value AbandonIndependentInterrupt(napi_env env, napi_callback_info info);
     static napi_value GetStreamManager(napi_env env, napi_callback_info info);
     static napi_value GetRoutingManager(napi_env env, napi_callback_info info);
-    static void GetStreamMgrAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static napi_value GetVolumeManager(napi_env env, napi_callback_info info);
+    static napi_value GetInterruptManager(napi_env env, napi_callback_info info);
     static void AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result);
-    static napi_value GetVolumeGroups(napi_env env, napi_callback_info info);
-    static napi_value GetGroupManager(napi_env env, napi_callback_info info);
-    static void GetGroupMgrAsyncCallbackComplete(napi_env env, napi_status status, void* data);
 
     template<typename T> static napi_value CreatePropertyBase(napi_env env, T& t_map, napi_ref ref);
 
@@ -126,6 +124,12 @@ private:
     static napi_ref interruptMode_;
     static napi_ref focusType_;
     static napi_ref connectTypeRef_;
+    static napi_ref audioErrors_;
+    static napi_ref communicationDeviceType_;
+    static napi_ref audioOutputChannelMask_;
+    static napi_ref audioInputChannelMask_;
+    static napi_ref interruptRequestType_;
+    static napi_ref interruptRequestResultType_;
 
     AudioSystemManager *audioMngr_;
     int32_t cachedClientId = -1;
@@ -172,6 +176,43 @@ static const std::map<std::string, AudioStandard::InterruptMode> interruptModeMa
 };
 static const std::map<std::string, AudioStandard::FocusType> focusTypeMap = {
     {"FOCUS_TYPE_RECORDING", FOCUS_TYPE_RECORDING}
+};
+
+static const std::map<std::string, AudioStandard::AudioErrors> audioErrorsMap = {
+    {"ERROR_INVALID_PARAM", ERROR_INVALID_PARAM},
+    {"ERROR_NO_MEMORY", ERROR_NO_MEMORY},
+    {"ERROR_ILLEGAL_STATE", ERROR_ILLEGAL_STATE},
+    {"ERROR_UNSUPPORTED", ERROR_UNSUPPORTED},
+    {"ERROR_TIMEOUT", ERROR_TIMEOUT},
+    {"ERROR_STREAM_LIMIT", ERROR_STREAM_LIMIT},
+    {"ERROR_SYSTEM", ERROR_SYSTEM}
+};
+
+static const std::map<std::string, AudioStandard::CommunicationDeviceType> communicationDeviceTypeMap = {
+    {"SPEAKER", COMMUNICATION_SPEAKER}
+};
+static const std::map<std::string, AudioStandard::AudioOutputChannelMask> audioOutputChannelMaskMap = {
+    {"CHANNEL_OUT_FRONT_LEFT", CHANNEL_OUT_FRONT_LEFT},
+    {"CHANNEL_OUT_FRONT_RIGHT", CHANNEL_OUT_FRONT_RIGHT},
+    {"CHANNEL_OUT_FRONT_CENTER", CHANNEL_OUT_FRONT_CENTER},
+    {"CHANNEL_OUT_LOW_FREQUENCY", CHANNEL_OUT_LOW_FREQUENCY},
+    {"CHANNEL_OUT_SIDE_LEFT", CHANNEL_OUT_SIDE_LEFT},
+    {"CHANNEL_OUT_SIDE_RIGHT", CHANNEL_OUT_SIDE_RIGHT},
+    {"CHANNEL_OUT_BACK_LEFT", CHANNEL_OUT_BACK_LEFT},
+    {"CHANNEL_OUT_BACK_RIGHT", CHANNEL_OUT_BACK_RIGHT},
+};
+static const std::map<std::string, AudioStandard::AudioInputChannelMask> audioInputChannelMaskMap = {
+    {"CHANNEL_IN_LEFT", CHANNEL_IN_LEFT},
+    {"CHANNEL_IN_RIGHT", CHANNEL_IN_RIGHT},
+    {"CHANNEL_IN_FRONT", CHANNEL_IN_FRONT},
+    {"CHANNEL_IN_BACK", CHANNEL_IN_BACK},
+};
+static const std::map<std::string, AudioStandard::InterruptRequestType> interruptRequestTypeMap = {
+    {"INTERRUPT_REQUEST_TYPE_DEFAULT", INTERRUPT_REQUEST_TYPE_DEFAULT},
+};
+static const std::map<std::string, AudioStandard::InterruptRequestResultType> interruptRequestResultTypeMap = {
+    {"INTERRUPT_REQUEST_GRANT ", INTERRUPT_REQUEST_GRANT},
+    {"INTERRUPT_REQUEST_REJECT", INTERRUPT_REQUEST_REJECT},
 };
 } // namespace AudioStandard
 } // namespace OHOS
