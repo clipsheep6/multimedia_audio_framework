@@ -279,7 +279,7 @@ napi_value AudioVolumeGroupManagerNapi::CreateAudioVolumeGroupManagerWrapper(nap
     napi_value args[PARAM1] = {groupId_};
     status = napi_get_reference_value(env, g_groupmanagerConstructor, &constructor);
     if (status == napi_ok) {
-        status = napi_new_instance(env, constructor,1 , args, &result);
+        status = napi_new_instance(env, constructor, 1, args, &result);
         if (status == napi_ok) {
             return result;
         }
@@ -760,7 +760,7 @@ napi_value AudioVolumeGroupManagerNapi::SetRingerMode(napi_env env, napi_callbac
                 if (context->status == SUCCESS) {
                     context->status =
                     context->objectInfo->audioGroupMngr_->SetRingerMode(GetNativeAudioRingerMode(context->ringMode));
-                } 
+                }
             },
             SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -916,7 +916,7 @@ napi_value AudioVolumeGroupManagerNapi::IsMicrophoneMute(napi_env env, napi_call
             napi_typeof(env, argv[PARAM0], &valueType);
             if (valueType == napi_function) {
                 napi_create_reference(env, argv[PARAM0], refCount, &asyncContext->callbackRef);
-            }                
+            }
         }
 
         if (asyncContext->callbackRef == nullptr) {
@@ -1055,7 +1055,7 @@ napi_value AudioVolumeGroupManagerNapi::Init(napi_env env, napi_value exports)
     };
 
     status = napi_define_class(env, AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
-        nullptr,sizeof(audio_svc_group_mngr_properties) / sizeof(audio_svc_group_mngr_properties[PARAM0]),
+        nullptr, sizeof(audio_svc_group_mngr_properties) / sizeof(audio_svc_group_mngr_properties[PARAM0]),
         audio_svc_group_mngr_properties, &constructor);
     if (status != napi_ok) {
         return result;

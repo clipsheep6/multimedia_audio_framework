@@ -103,7 +103,7 @@ void AudioManagerMicStateChangeCallbackNapi::OnJsCallbackMicStateChange(
 
     int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, [] (uv_work_t *work, int status) {
         // Js Thread
-        AudioManagerMicStateChangeJsCallback *event = 
+        AudioManagerMicStateChangeJsCallback *event =
             reinterpret_cast<AudioManagerMicStateChangeJsCallback *>(work->data);
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;

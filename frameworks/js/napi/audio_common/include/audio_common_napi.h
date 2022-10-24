@@ -18,7 +18,6 @@
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
-#include "audio_info.h"
 
 #define THROW_ERROR_ASSERT(env, assertion, code)        \
     do {                                                \

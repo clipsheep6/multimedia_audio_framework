@@ -673,7 +673,6 @@ void AudioRendererNapi::PauseAsyncCallbackComplete(napi_env env, napi_status sta
 
     if (asyncContext != nullptr) {
         if (!asyncContext->status) {
-
             // set pause result to doNotScheduleWrite_
             asyncContext->objectInfo->doNotScheduleWrite_ = asyncContext->isTrue;
             napi_get_undefined(env, &valueParam);
@@ -792,7 +791,6 @@ void AudioRendererNapi::StopAsyncCallbackComplete(napi_env env, napi_status stat
 
     if (asyncContext != nullptr) {
         if (!asyncContext->status) {
-
             // set pause result to doNotScheduleWrite_
             asyncContext->objectInfo->doNotScheduleWrite_ = asyncContext->isTrue;
             napi_get_undefined(env, &valueParam);
@@ -1058,7 +1056,6 @@ napi_value AudioRendererNapi::SetRenderRate(napi_env env, napi_callback_info inf
                         context->status = ERR_NUMBER301;
                     }
                 }
-
             },
             VoidAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -2083,7 +2080,6 @@ napi_value AudioRendererNapi::Off(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
     THROW_ERROR_ASSERT(env, status == napi_ok, ERR_NUMBER301);
     THROW_ERROR_ASSERT(env, argc >= requireArgc, ERR_NUMBER101);
-
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, argv[0], &eventType);

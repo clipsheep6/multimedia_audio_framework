@@ -267,7 +267,6 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupInfos(napi_env env, napi_callba
     }
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
@@ -431,7 +430,6 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
         return undefinedResult;
     }
 
-
     if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
         if (volumeManagerNapi->volumeKeyEventCallbackNapi_ == nullptr) {
             volumeManagerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
@@ -451,7 +449,6 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
         AudioCommonNapi::throwError(env, ERR_NUMBER101);
     }
     return undefinedResult;
- 
 }
 } // namespace AudioStandard
 } // namespace OHOS

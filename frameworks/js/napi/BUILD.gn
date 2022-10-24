@@ -26,7 +26,6 @@ ohos_shared_library("audio") {
     "audio_renderer/include",
     "audio_capturer/include",
     "audio_manager/include",
-    "audio_stream_manager/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_manager/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_capturer/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_renderer/include",

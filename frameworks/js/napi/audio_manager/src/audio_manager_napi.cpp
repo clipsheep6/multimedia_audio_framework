@@ -1528,7 +1528,7 @@ napi_value AudioManagerNapi::SetStreamMute(napi_env env, napi_callback_info info
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
                     context->status = context->objectInfo->audioMngr_->
-                        SetMute(GetNativeAudioVolumeType(context->volType),context->isMute);
+                        SetMute(GetNativeAudioVolumeType(context->volType), context->isMute);
                 }
             },
             SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -2344,7 +2344,7 @@ napi_value AudioManagerNapi::GetDevices(napi_env env, napi_callback_info info)
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->deviceFlag);
-                if( !AudioCommonNapi::IsLegalInputArgumentDeviceFlag(asyncContext->deviceFlag)) {
+                if (!AudioCommonNapi::IsLegalInputArgumentDeviceFlag(asyncContext->deviceFlag)) {
                     asyncContext->status = asyncContext->status == ERR_NUMBER101 ? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1) {

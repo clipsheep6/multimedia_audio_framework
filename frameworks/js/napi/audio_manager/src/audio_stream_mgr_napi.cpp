@@ -575,7 +575,7 @@ napi_value AudioStreamMgrNapi::GetCurrentAudioRendererInfos(napi_env env, napi_c
                     context->status = context->objectInfo->audioStreamMngr_->
                         GetCurrentRendererChangeInfos(context->audioRendererChangeInfos);
                     context->status = context->status == SUCCESS ? SUCCESS : ERR_NUMBER301;
-                }   
+                }
             },
             GetCurrentRendererChangeInfosCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
