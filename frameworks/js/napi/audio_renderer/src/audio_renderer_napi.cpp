@@ -907,7 +907,7 @@ void AudioRendererNapi::AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_
         if (asyncContext->status == SUCCESS) {
             (void)napi_create_object(env, &valueParam);
             SetValueInt32(env, "samplingRate", static_cast<int32_t>(asyncContext->samplingRate), valueParam);
-            SetValueInt32(env, "channels", static_cast<int32_t>(asyncContext->channelCount), valueParam);
+            SetValueInt32(env, "channels", AudioCommonNapi::ConvertChannelToJs(asyncContext->channelCount), valueParam);
             SetValueInt32(env, "sampleFormat", static_cast<int32_t>(asyncContext->sampleFormat), valueParam);
             SetValueInt32(env, "encodingType", static_cast<int32_t>(asyncContext->encodingType), valueParam);
         }
@@ -1933,7 +1933,7 @@ bool AudioRendererNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
 
     if (napi_get_named_property(env, root, "channels", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
-        streamInfo->channels = static_cast<AudioChannel>(intValue);
+        streamInfo->channels = AudioCommonNapi::ConvertChannelToNative(intValue);
     }
 
     if (napi_get_named_property(env, root, "sampleFormat", &tempValue) == napi_ok) {

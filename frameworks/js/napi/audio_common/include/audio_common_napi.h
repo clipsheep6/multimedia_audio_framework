@@ -18,6 +18,7 @@
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,6 +33,13 @@ public:
     AudioCommonNapi() = delete;
     ~AudioCommonNapi() = delete;
     static std::string GetStringArgument(napi_env env, napi_value value);
+    
+    enum AudioChannelMask {
+        CHANNEL_1 = 0x1 << 0,
+        CHANNEL_2 = 0x1 << 1
+    };
+    static int32_t ConvertChannelToJs(AudioChannel channels);
+    static AudioChannel ConvertChannelToNative(int32_t channels);
 };
 
 struct AutoRef {
