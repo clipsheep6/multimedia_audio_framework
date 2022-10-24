@@ -464,8 +464,16 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_014, TestSize.Level0)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Playback_001, TestSize.Level0)
 {
     AudioRendererOptions rendererOptions;
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_12000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isStarted = audioRenderer->Start();
