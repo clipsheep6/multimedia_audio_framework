@@ -43,6 +43,7 @@ const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUD
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
+const int32_t DEFAULT_INTERRUPT_GROUP_ID = 1;
 
 // Maximun number of sine waves in a tone segment
 constexpr uint32_t TONEINFO_MAX_WAVES = 3;
@@ -276,7 +277,46 @@ enum FocusType {
     /**
      * Recording type.
      */
-    FOCUS_TYPE_RECORDING = 0,
+    FOCUS_TYPE_DEFAULT = 0,
+};
+
+enum AudioErrors {
+    /**
+     * Common errors.
+     */
+    ERROR_INVALID_PARAM = 6800101,
+    ERROR_NO_MEMORY     = 6800102,
+    ERROR_ILLEGAL_STATE = 6800103,
+    ERROR_UNSUPPORTED   = 6800104,
+    ERROR_TIMEOUT       = 6800105,
+    /**
+     * Audio specific errors.
+     */
+    ERROR_STREAM_LIMIT  = 6800201,
+    /**
+     * Default error.
+     */
+    ERROR_SYSTEM        = 6800301
+};
+
+enum CommunicationDeviceType {
+    /**
+     * Speaker.
+     * @since 7
+     * @syscap SystemCapability.Multimedia.Audio.Communication
+     */
+    COMMUNICATION_SPEAKER = 2
+};
+
+enum AudioOutputChannelMask {
+    CHANNEL_OUT_FRONT_LEFT = 0x1 << 0,
+    CHANNEL_OUT_FRONT_RIGHT = 0x1 << 1,
+    CHANNEL_OUT_FRONT_CENTER = 0x1 << 2, 
+    CHANNEL_OUT_LOW_FREQUENCY = 0x1 << 3, 
+    CHANNEL_OUT_SIDE_LEFT = 0x1 << 4,
+    CHANNEL_OUT_SIDE_RIGHT = 0x1 << 5, 
+    CHANNEL_OUT_BACK_LEFT = 0x1 << 6,
+    CHANNEL_OUT_BACK_RIGHT = 0x1 << 7
 };
 
 enum InterruptMode {

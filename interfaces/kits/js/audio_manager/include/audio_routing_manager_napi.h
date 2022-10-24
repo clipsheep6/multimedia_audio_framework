@@ -45,6 +45,9 @@ private:
     static napi_value SelectInputDevice(napi_env env, napi_callback_info info);
     static napi_value SelectOutputDeviceByFilter(napi_env env, napi_callback_info info);
     static napi_value SelectInputDeviceByFilter(napi_env env, napi_callback_info info);
+    static napi_value SetCommunicationDevice(napi_env env, napi_callback_info info);
+    static napi_value IsCommunicationDeviceActive(napi_env env, napi_callback_info info);
+
     static void RegisterDeviceChangeCallback(napi_env env, napi_value* args, const std::string& cbName, int32_t flag,
         AudioRoutingManagerNapi* routingMgrNapi);
     static void RegisterMicStateChangeCallback(napi_env env, napi_value* args, const std::string& cbName,
