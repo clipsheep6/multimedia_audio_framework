@@ -20,7 +20,10 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
   fuzz_config_file =
       "//foundation/multimedia/audio_framework/test/fuzztest/audiopolicy_fuzzer"
 
-  include_dirs = [ "//foundation/multimedia/audio_framework/services/audio_policy/server/include" ]
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
+    "//foundation/multimedia/audio_framework/services/audio_policy/client/include"
+  ]
 
   cflags = [
     "-g",
