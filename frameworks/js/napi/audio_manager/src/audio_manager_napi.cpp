@@ -392,34 +392,29 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
     napi_value result = nullptr;
     napi_status status;
     int32_t refCount = 1;
-    string propName;
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = AudioManagerNapi::VOLUMETYPE_DEFAULT + 1; i < AudioManagerNapi::VOLUMETYPE_MAX; i++) {
-            switch (i) {
-                case AudioManagerNapi::RINGTONE:
-                    propName = "RINGTONE";
-                    break;
-                case AudioManagerNapi::MEDIA:
-                    propName = "MEDIA";
-                    break;
-                case AudioManagerNapi::VOICE_CALL:
-                    propName = "VOICE_CALL";
-                    break;
-                case AudioManagerNapi::VOICE_ASSISTANT:
-                    propName = "VOICE_ASSISTANT";
-                    break;
-                default:
-                    continue;
-            }
-            status = AddNamedProperty(env, result, propName, i);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop!");
-                break;
-            }
-            propName.clear();
+        status = AddNamedProperty(env, result, "RINGTONE", AudioManagerNapi::RINGTONE);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add ringtone prop!");
         }
+
+        status = AddNamedProperty(env, result, "MEDIA", AudioManagerNapi::MEDIA);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add media prop!");
+        }
+
+        status = AddNamedProperty(env, result, "VOICE_CALL", AudioManagerNapi::VOICE_CALL);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add voice call prop!");
+        }
+
+        status = AddNamedProperty(env, result, "VOICE_ASSISTANT", AudioManagerNapi::VOICE_ASSISTANT);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add voice assistant prop!");
+        }
+
         status = AddNamedProperty(env, result, "ALL", AudioManagerNapi::ALL);
         if (status == napi_ok) {
             status = napi_create_reference(env, result, refCount, &audioVolumeTypeRef_);
@@ -505,50 +500,54 @@ napi_value AudioManagerNapi::CreateDeviceTypeObject(napi_env env)
     napi_value result = nullptr;
     napi_status status;
     int32_t refCount = 1;
-    string propName;
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = DEVICE_TYPE_NONE + 1; i < DEVICE_TYPE_MAX; i++) {
-            switch (i) {
-                case DEVICE_TYPE_INVALID:
-                    propName = "INVALID";
-                    break;
-                case DEVICE_TYPE_EARPIECE:
-                    propName = "EARPIECE";
-                    break;
-                case DEVICE_TYPE_SPEAKER:
-                    propName = "SPEAKER";
-                    break;
-                case DEVICE_TYPE_WIRED_HEADSET:
-                    propName = "WIRED_HEADSET";
-                    break;
-                case DEVICE_TYPE_WIRED_HEADPHONES:
-                    propName = "WIRED_HEADPHONES";
-                    break;
-                case DEVICE_TYPE_BLUETOOTH_SCO:
-                    propName = "BLUETOOTH_SCO";
-                    break;
-                case DEVICE_TYPE_BLUETOOTH_A2DP:
-                    propName = "BLUETOOTH_A2DP";
-                    break;
-                case DEVICE_TYPE_MIC:
-                    propName = "MIC";
-                    break;
-                case DEVICE_TYPE_USB_HEADSET:
-                    propName = "USB_HEADSET";
-                    break;
-                default:
-                    HiLog::Error(LABEL, "CreateDeviceTypeObject: No prob with this value try next value!");
-                    continue;
-            }
-            status = AddNamedProperty(env, result, propName, i);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop!");
-                break;
-            }
-            propName.clear();
+        status = AddNamedProperty(env, result, "INVALID", DEVICE_TYPE_INVALID);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add invalid prop!");
         }
+
+        status = AddNamedProperty(env, result, "EARPIECE", DEVICE_TYPE_EARPIECE);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add earpiece prop!");
+        }
+
+        status = AddNamedProperty(env, result, "SPEAKER", DEVICE_TYPE_SPEAKER);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add speaker prop!");
+        }
+
+        status = AddNamedProperty(env, result, "WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add wired headset prop!");
+        }
+
+        status = AddNamedProperty(env, result, "WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add wired headphones prop!");
+        }
+
+        status = AddNamedProperty(env, result, "BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add bluetooth sco prop!");
+        }
+
+        status = AddNamedProperty(env, result, "BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add bluetooth a2dp prop!");
+        }
+
+        status = AddNamedProperty(env, result, "MIC", DEVICE_TYPE_MIC);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add mic prop!");
+        }
+
+        status = AddNamedProperty(env, result, "USB_HEADSET", DEVICE_TYPE_USB_HEADSET);
+        if ( != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add usb headset prop!");
+        }
+
         if (status == napi_ok) {
             status = napi_create_reference(env, result, refCount, &deviceTypeRef_);
             if (status == napi_ok) {
@@ -567,29 +566,19 @@ napi_value AudioManagerNapi::CreateActiveDeviceTypeObject(napi_env env)
     napi_value result = nullptr;
     napi_status status;
     int32_t refCount = 1;
-    string propName;
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = ACTIVE_DEVICE_TYPE_NONE + 1; i < ACTIVE_DEVICE_TYPE_MAX; i++) {
-            switch (i) {
-                case SPEAKER:
-                    propName = "SPEAKER";
-                    break;
-                case BLUETOOTH_SCO:
-                    propName = "BLUETOOTH_SCO";
-                    break;
-                default:
-                    HiLog::Error(LABEL, "CreateActiveDeviceTypeObject: No prob with this value try next value!");
-                    continue;
-            }
-            status = AddNamedProperty(env, result, propName, i);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop!");
-                break;
-            }
-            propName.clear();
+        status = AddNamedProperty(env, result, "SPEAKER", SPEAKER);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add speak prop!");
         }
+
+        status = AddNamedProperty(env, result, "BLUETOOTH_SCO", BLUETOOTH_SCO);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add bluetooth_sco prop!");
+        }
+
         if (status == napi_ok) {
             status = napi_create_reference(env, result, refCount, &activeDeviceTypeRef_);
             if (status == napi_ok) {
