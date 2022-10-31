@@ -98,6 +98,7 @@ napi_value AudioRoutingManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("selectInputDeviceByFilter", SelectInputDeviceByFilter),
         DECLARE_NAPI_FUNCTION("setCommunicationDevice", SetCommunicationDevice),
         DECLARE_NAPI_FUNCTION("isCommunicationDeviceActive", IsCommunicationDeviceActive),
+        DECLARE_NAPI_FUNCTION("getActiveOutputDevice", GetActiveOutputDevice),
         
     };
 
@@ -588,6 +589,93 @@ napi_value AudioRoutingManagerNapi::SelectOutputDevice(napi_env env, napi_callba
                 }
             },
             SelectOutputDeviceAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
+            result = nullptr;
+        } else {
+            status = napi_queue_async_work(env, asyncContext->work);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
+        }
+    }
+    return result;
+}
+
+static void GetActiveOutputDeviceAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    auto asyncContext = static_cast<AudioRoutingManagerAsyncContext*>(data);
+    napi_value valueParam = nullptr;
+    if (asyncContext != nullptr) {
+        napi_value result[ARGS_TWO] = {0};
+        if (asyncContext->status) {
+            napi_get_undefined(env, &result[PARAM0]);
+        } else {
+            std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+            for (const auto& device : asyncContext->deviceDescriptors) {
+                if (device == nullptr) {
+                    continue;
+                }
+                bool filterLocalOutput = asyncContext->deviceType == device->deviceType_ && device->networkId_ == LOCAL_NETWORK_ID
+                    && device->deviceRole_ == DeviceRole::OUTPUT_DEVICE;
+                if (filterLocalOutput) {
+                    sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+                    deviceList.push_back(devDesc);
+                    asyncContext->deviceDescriptors = deviceList;
+                    break;
+                }
+            }
+            SetDevicesInfo(asyncContext, env, result, valueParam);
+        }
+        CommonCallbackRoutine(env, asyncContext, result[PARAM1]);
+    } else {
+        HiLog::Error(LABEL, "ERROR: AudioRoutingManagerAsyncContext* is Null!");
+    }
+}
+
+napi_value AudioRoutingManagerNapi::GetActiveOutputDevice(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {0};
+    napi_value thisVar = nullptr;
+    void *data = nullptr;
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, &data);
+
+    unique_ptr<AudioRoutingManagerAsyncContext> asyncContext = make_unique<AudioRoutingManagerAsyncContext>();
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[PARAM0], &valueType);
+
+        if (argc == PARAM1 && valueType == napi_function) {
+                napi_create_reference(env, argv[PARAM0], refCount, &asyncContext->callbackRef);
+        }
+
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
+        } else {
+            napi_get_undefined(env, &result);
+        }
+
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "GetActiveOutputDevice", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioRoutingManagerAsyncContext*>(data);
+                if (context->status == SUCCESS) {
+                    context->deviceType = context->objectInfo->audioMngr_->GetActiveOutputDevice();
+                    context->deviceDescriptors = context->objectInfo->audioMngr_->GetDevices(OUTPUT_DEVICES_FLAG);
+                    context->status = SUCCESS;
+                }
+            },
+            GetActiveOutputDeviceAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
             result = nullptr;
         } else {
