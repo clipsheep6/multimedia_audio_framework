@@ -1017,8 +1017,15 @@ int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID)
 {
     AUDIO_DEBUG_LOG("AudioServiceClient: GetSessionID");
     lock_guard<mutex> lock(ctrlMutex);
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("GetSessionID failed, pa_status is invalid");
+        return AUDIO_CLIENT_PA_ERR;
+    }
+    pa_threaded_mainloop_lock(mainLoop);
     uint32_t client_index = pa_context_get_index(context);
+    pa_threaded_mainloop_unlock(mainLoop);
     if (client_index == PA_INVALID_INDEX) {
+        AUDIO_ERR_LOG("GetSessionID failed, sessionID is invalid");
         return AUDIO_CLIENT_ERR;
     }
 

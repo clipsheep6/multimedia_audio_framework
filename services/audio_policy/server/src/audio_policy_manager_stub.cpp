@@ -89,6 +89,10 @@ void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageP
 void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(data.ReadInt32());
+    if (ltoneInfo == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: GetToneInfoInternal obj is null");
+        return;
+    }
     reply.WriteUint32(ltoneInfo->segmentCnt);
     reply.WriteUint32(ltoneInfo->repeatCnt);
     reply.WriteUint32(ltoneInfo->repeatSegment);
@@ -130,6 +134,13 @@ void AudioPolicyManagerStub::SetMicrophoneMuteInternal(MessageParcel &data, Mess
 {
     bool isMute = data.ReadBool();
     int32_t result = SetMicrophoneMute(isMute);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    int32_t result = SetMicrophoneMuteAudioConfig(isMute);
     reply.WriteInt32(result);
 }
 
@@ -732,6 +743,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         
         case SET_MICROPHONE_MUTE:
             SetMicrophoneMuteInternal(data, reply);
+            break;
+                    
+        case SET_MICROPHONE_MUTE_AUDIO_CONFIG:
+            SetMicrophoneMuteAudioConfigInternal(data, reply);
             break;
 
         case IS_MICROPHONE_MUTE:
