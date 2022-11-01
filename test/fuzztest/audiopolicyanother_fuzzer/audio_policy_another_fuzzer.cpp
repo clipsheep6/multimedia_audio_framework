@@ -27,7 +27,7 @@ namespace OHOS {
     const bool RUN_ON_CREATE = false;
     const int32_t LIMITSIZE = 4;
     namespace AudioStandard {
-        void AudioPolicyAnotherFuzzTest(const uint8_t *rawData, size_t size)
+        void AudioPolicyAnotherFuzzTestOne(const uint8_t *rawData, size_t size)
         {
             if (rawData == nullptr ||size < LIMITSIZE) {
                 return;
@@ -50,56 +50,61 @@ namespace OHOS {
             AudioPolicyServerPtr->SetStreamMute(streamType, mute);
             AudioPolicyServerPtr->GetStreamMute(streamType);
             AudioPolicyServerPtr->IsStreamActive(streamType);
-
             InternalDeviceType deviceType = *reinterpret_cast<const InternalDeviceType *>(rawData);
             bool active = *reinterpret_cast<const bool *>(rawData);
             AudioPolicyServerPtr->SetDeviceActive(deviceType, active);
             AudioPolicyServerPtr->IsDeviceActive(deviceType);
-
             AudioRingerMode ringMode = *reinterpret_cast<const AudioRingerMode *>(rawData);
             AudioPolicyServerPtr->SetRingerMode(ringMode);
-
             int32_t ltonetype = *reinterpret_cast<const int32_t *>(rawData);
             AudioPolicyServerPtr->GetToneConfig(ltonetype);
-
             AudioScene audioScene = *reinterpret_cast<const AudioScene *>(rawData);
             AudioPolicyServerPtr->SetAudioScene(audioScene);
             AudioPolicyServerPtr->SetMicrophoneMute(mute);
-
             int32_t clientId = *reinterpret_cast<const int32_t *>(rawData);
             sptr<IRemoteObject> object = data.ReadRemoteObject();
             AudioPolicyServerPtr->SetRingerModeCallback(clientId, object);
             AudioPolicyServerPtr->UnsetRingerModeCallback(clientId);
-
             DeviceFlag flag = *reinterpret_cast<const DeviceFlag *>(rawData);
             AudioPolicyServerPtr->SetDeviceChangeCallback(clientId, flag, object);
             AudioPolicyServerPtr->UnsetDeviceChangeCallback(clientId);
-
             uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
             AudioPolicyServerPtr->SetAudioInterruptCallback(sessionID, object);
             AudioPolicyServerPtr->UnsetAudioInterruptCallback(sessionID);
             uint32_t clientID = *reinterpret_cast<const uint32_t *>(rawData);
             AudioPolicyServerPtr->SetAudioManagerInterruptCallback(clientID, object);
-
             AudioInterrupt audioInterrupt;
             audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
             audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
             audioInterrupt.streamType = STREAM_ACCESSIBILITY;
             AudioPolicyServerPtr->RequestAudioFocus(clientID, audioInterrupt);
             AudioPolicyServerPtr->AbandonAudioFocus(clientID, audioInterrupt);
-
+        }
+        void AudioPolicyAnotherFuzzTestTwo(const uint8_t *rawData, size_t size)
+        {
+            if (rawData == nullptr ||size < LIMITSIZE) {
+                return;
+            }
+            MessageParcel data;
+            data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+            data.WriteBuffer(rawData, size);
+            data.RewindRead(0);
+            sptr<IRemoteObject> object = data.ReadRemoteObject();
+            std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
+                std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);            
             int32_t clientPid = *reinterpret_cast<const int32_t *>(rawData);
             AudioPolicyServerPtr->SetVolumeKeyEventCallback(clientPid, object);
             AudioPolicyServerPtr->UnsetVolumeKeyEventCallback(clientPid);
+            uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
             AudioPolicyServerPtr->OnSessionRemoved(sessionID);
-
             int32_t clientUID = *reinterpret_cast<const int32_t *>(rawData);
             AudioPolicyServerPtr->RegisterAudioRendererEventListener(clientUID, object);
             AudioPolicyServerPtr->UnregisterAudioRendererEventListener(clientUID);
             AudioPolicyServerPtr->RegisterAudioCapturerEventListener(clientUID, object);
             AudioPolicyServerPtr->UnregisterAudioCapturerEventListener(clientUID);
 
-            AudioPolicyServer::DeathRecipientId id = *reinterpret_cast<const AudioPolicyServer::DeathRecipientId *>(rawData);
+            AudioPolicyServer::DeathRecipientId id =
+                *reinterpret_cast<const AudioPolicyServer::DeathRecipientId *>(rawData);
             AudioPolicyServerPtr->RegisterClientDeathRecipient(object, id);
 
             int pid = *reinterpret_cast<const int *>(rawData);
@@ -123,7 +128,8 @@ namespace OHOS {
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioPolicyAnotherFuzzTest(data, size);
+    OHOS::AudioStandard::AudioPolicyAnotherFuzzTestOne(data, size);
+    OHOS::AudioStandard::AudioPolicyAnotherFuzzTestTwo(data, size);
     return 0;
 }
 

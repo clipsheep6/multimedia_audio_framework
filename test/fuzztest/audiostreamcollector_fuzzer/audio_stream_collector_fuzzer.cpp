@@ -37,9 +37,11 @@ namespace OHOS {
             data.RewindRead(0);
             sptr<IRemoteObject> object = data.ReadRemoteObject();
             bool hasBTPermission = *reinterpret_cast<const bool *>(rawData);
-            AudioStreamCollector::GetAudioStreamCollector().RegisterAudioRendererEventListener(clientUID, object, hasBTPermission);
+            AudioStreamCollector::GetAudioStreamCollector()
+                .RegisterAudioRendererEventListener(clientUID, object, hasBTPermission);
             AudioStreamCollector::GetAudioStreamCollector().UnregisterAudioRendererEventListener(clientUID);
-            AudioStreamCollector::GetAudioStreamCollector().RegisterAudioCapturerEventListener(clientUID, object, hasBTPermission);
+            AudioStreamCollector::GetAudioStreamCollector()
+                .RegisterAudioCapturerEventListener(clientUID, object, hasBTPermission);
             AudioStreamCollector::GetAudioStreamCollector().UnregisterAudioCapturerEventListener(clientUID);
 
             int32_t uid = *reinterpret_cast<const int32_t *>(rawData);
@@ -50,7 +52,8 @@ namespace OHOS {
             StreamSetStateEventInternal streamSetStateEventInternal = {};
             streamSetStateEventInternal.streamSetState = *reinterpret_cast<const StreamSetState *>(rawData);
             streamSetStateEventInternal.audioStreamType = *reinterpret_cast<const AudioStreamType *>(rawData);
-            AudioStreamCollector::GetAudioStreamCollector().UpdateStreamState(clientUid, streamSetStateEventInternal);
+            AudioStreamCollector::GetAudioStreamCollector().
+                UpdateStreamState(clientUid, streamSetStateEventInternal);
 
             int32_t streamId = *reinterpret_cast<const int32_t *>(rawData);
             float volume = *reinterpret_cast<const float *>(rawData);
