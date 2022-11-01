@@ -22,10 +22,11 @@
 using namespace std;
 
 namespace OHOS {
-constexpr int32_t OFFSET = 4;
+    constexpr int32_t OFFSET = 4;
     const std::u16string FORMMGR_INTERFACE_TOKEN = u"IStandardAudioService";
     const int32_t SYSTEM_ABILITY_ID = 3001;
     const bool RUN_ON_CREATE = false;
+    const int32_t LIMITSIZE = 4;
     namespace AudioStandard {
         uint32_t Convert2Uint32(const uint8_t *ptr)
         {
@@ -37,8 +38,7 @@ constexpr int32_t OFFSET = 4;
         }
         void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
         {
-            if (rawData == nullptr) {
-                std::cout << "Invalid data" << std::endl;
+            if (rawData == nullptr || size < LIMITSIZE) {
                 return;
             }
             uint32_t code = Convert2Uint32(rawData);
@@ -59,7 +59,7 @@ constexpr int32_t OFFSET = 4;
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
     OHOS::AudioStandard::AudioServerFuzzTest(data, size);
