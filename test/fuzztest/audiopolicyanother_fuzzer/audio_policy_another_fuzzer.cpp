@@ -91,7 +91,7 @@ namespace OHOS {
             data.RewindRead(0);
             sptr<IRemoteObject> object = data.ReadRemoteObject();
             std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
-                std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);            
+                std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);      
             int32_t clientPid = *reinterpret_cast<const int32_t *>(rawData);
             AudioPolicyServerPtr->SetVolumeKeyEventCallback(clientPid, object);
             AudioPolicyServerPtr->UnsetVolumeKeyEventCallback(clientPid);
