@@ -38,7 +38,6 @@ namespace OHOS {
         void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
         {
             if (rawData == nullptr || size < LIMITSIZE) {
-                std::cout << "Invalid data" << std::endl;
                 return;
             }
             uint32_t code = Convert2Uint32(rawData);
