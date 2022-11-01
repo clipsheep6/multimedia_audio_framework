@@ -19,10 +19,7 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
   module_out_path = "multimedia_audio_framework/audiopolicyanother_fuzzer"
   fuzz_config_file = "//foundation/multimedia/audio_framework/test/fuzztest/audiopolicyanother_fuzzer"
 
-  include_dirs = [
-    "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
-  ]
+  include_dirs = [ "//foundation/multimedia/audio_framework/services/audio_policy/server/include" ]
 
   cflags = [
     "-g",
@@ -37,7 +34,6 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
   deps = [
     "$hdf_uhdf_path/hdi:libhdi",
     "//foundation/barrierfree/accessibility/interfaces/innerkits/acfwk:accessibilityconfig",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_service",
   ]
   external_deps = [
