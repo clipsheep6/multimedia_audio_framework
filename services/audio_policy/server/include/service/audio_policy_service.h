@@ -125,6 +125,8 @@ public:
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
+    void OnServiceDisconnected(AudioServiceIndex serviceIndex);
+
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object);
