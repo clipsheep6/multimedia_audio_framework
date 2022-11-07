@@ -521,8 +521,11 @@ int32_t AudioRendererSinkInner::Start(void)
     AUDIO_INFO_LOG("Start.");
 
     if (mKeepRunningLock == nullptr) {
-        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
+        auto runningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
+        if (runningLock.IsOk()) {
+            mKeepRunningLock = runningLock.GetData();
+        }
     }
 
     if (mKeepRunningLock != nullptr) {
