@@ -428,6 +428,71 @@ updateUi : Whether the volume change details need to be shown or not. (If volume
     ```
 Please refer **AudioScene** enum in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for supported audio scenes.
 
+#### Stream Management<a name="stream-management"></a>
+You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_stream_manager.h) for stream management functions.
+1. Use **GetInstance** API to get **AudioSystemManager** instance.
+    ```
+    AudioStreamManager *audioStreamMgr = AudioStreamManager::GetInstance();
+    ```
+
+2. Use **RegisterAudioRendererEventListener** to register the listeners for the renderer state changes.  Renderer state changes callback which will be called when the renderer stream state changes, by overriding **OnRendererStateChange** function in **AudioRendererStateChangeCallback** class.
+    ```
+    const int32_t clientUID;
+
+    class RendererStateChangeCallback : public AudioRendererStateChangeCallback {
+    public:
+        RendererStateChangeCallback = default;
+        ~RendererStateChangeCallback = default;
+    void OnRendererStateChange(
+        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override
+    {
+        cout<<"OnRendererStateChange entered"<<endl;
+    }
+    };
+
+    std::shared_ptr<AudioRendererStateChangeCallback> callback = std::make_shared<RendererStateChangeCallback>();
+    int32_t state = audioStreamMgr->RegisterAudioRendererEventListener(clientUID, callback);
+    int32_t result = audioStreamMgr->UnregisterAudioRendererEventListener(clientUID);
+    ```
+
+3. Use **RegisterAudioCapturerEventListener** to register the listeners for capturer state changes. Capturer state changes callback which will be called when the caturer stream state changes, by overriding **OnCapturerStateChange** function in **AudioCapturerStateChangeCallback** class.
+    ```
+    const int32_t clientUID;
+
+    class CapturerStateChangeCallback : public AudioCapturerStateChangeCallback {
+    public:
+        CapturerStateChangeCallback = default;
+        ~CapturerStateChangeCallback = default;
+    void OnCapturerStateChange(
+        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override
+    {
+        cout<<"OnCapturerStateChange entered"<<endl;
+    }
+    };
+
+    std::shared_ptr<AudioCapturerStateChangeCallback> callback = std::make_shared<CapturerStateChangeCallback>();
+    int32_t state = audioStreamMgr->RegisterAudioCapturerEventListener(clientUID, callback);
+    int32_t result = audioStreamMgr->UnregisterAudioCapturerEventListener(clientUID);
+    ```
+4. Use **GetCurrentRendererChangeInfos** to get all the current running streams capturer info including clientuid, sessionid,rendererinfo, rendererstate and output device details.
+    ```
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    int32_t currentRendererChangeInfo = audioStreamMgr->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    ```
+
+5. Use **GetCurrentCapturerChangeInfos** to get all the current running streams renderer info including clientuid, sessionid,capturerInfo, capturerState and input device details.
+    ```
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    int32_t currentCapturerChangeInfo = audioStreamMgr->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+    ```
+    Please Refer to [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for struct **audioRendererChangeInfos** and **audioCapturerChangeInfos**.
+
+6. Use **IsAudioRendererLowLatencySupported** to check the low latency functionalty support.
+    ```
+    const AudioStreamInfo &audioStreamInfo;
+    bool isLatencySupport = audioStreamMgr->IsAudioRendererLowLatencySupported(audioStreamInfo);
+    ```
+
 #### JavaScript Usage:
 JavaScript apps can use the APIs provided by audio manager to control the volume and the device.\
 Please refer [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/en/application-dev/reference/apis/js-apis-audio.md#audiomanager) for complete JavaScript APIs available for audio manager.
@@ -464,6 +529,17 @@ You can use the APIs provided in [**iringtone_sound_manager.h**](https://gitee.c
 7. Use **GetRingtoneState** to the the ringtone playback state - **RingtoneState**
 8. Use **GetAudioRendererInfo** to get the **AudioRendererInfo** to check the content type and stream usage.
 
+### Bluetooth SCO Call<a name="bt-sco-call"></a>
+You can use the APIs provided in [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/services/include/audio_bluetooth/client/audio_bluetooth_manager.h) for Bluetooth call using the synchronous connection oriented link (SCO).
+
+1. In order to register for SCO state changes you can use **OnScoStateChanged**.
+```
+const BluetoothRemoteDevice &device;
+int state;
+void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
+```
+
+2. (Optional) Static APIs **RegisterBluetoothScoAgListener**(), **UnregisterBluetoothScoAgListener**(), can be used to register the listeners for bluetooth SCO.
 
 ## Supported devices<a name="supported-devices"></a>
 Currently following are the list of device types supported by audio subsystem.
