@@ -34,6 +34,7 @@ namespace {
     const int32_t READ_BUFFERS_COUNT = 128;
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
+    const int32_t VALUE_ONE = 1;
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
