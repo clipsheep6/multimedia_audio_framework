@@ -1,85 +1,162 @@
-/*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-#include "audio_stream_unit_test.h"
-
-#include <thread>
-
-#include "audio_stream.h"
-#include "audio_errors.h"
-#include "audio_info.h"
-
-using namespace std;
-using namespace testing::ext;
-
-namespace OHOS {
-namespace AudioStandard {
-void AudioStreamUnitTest::SetUpTestCase(void) {
-    AppInfo appInfo_ = {};
-    if (!(appInfo_.appPid)) {
-        appInfo_.appPid = getpid();
-    }
-
-    if (appInfo_.appUid < 0) {
-        appInfo_.appUid = static_cast<int32_t>(getuid());
-    }
-    
-    audioStream_ = std::make_shared<AudioStream>(STREAM_NOTIFICATION, AUDIO_MODE_PLAYBACK, appInfo_.appUid);
-    if (audioStream_) {
-        AUDIO_DEBUG_LOG("AudioRendererPrivate::Audio stream created");
-    }
-}
-void AudioStreamUnitTest::TearDownTestCase(void) {}
-void AudioStreamUnitTest::SetUp(void) {}
-void AudioStreamUnitTest::TearDown(void) {}
-
 /**
-* @tc.name  : Test Audio_Stream_WriteCbTheadLoop_001 via legal state
-* @tc.number: Audio_Stream_WriteCbTheadLoop_001
-* @tc.desc  : Test WriteCbTheadLoop interface. Returns success.
+* @tc.name  : Test SetAudioRendererDesc API via legal input
+* @tc.number: Audio_Renderer_SetAudioRendererDesc_001
+* @tc.desc  : Test SetAudioRendererDesc interface. Returns 0 {SUCCESS}, if the setting is successful.
 */
-HWTEST(AudioStreamUnitTest, Audio_Stream_WriteCbTheadLoop_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetAudioRendererDesc_001, TestSize.Level1)
 {
-    audioStream_->WriteCbTheadLoop();
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererDesc rendererDesc;
+    rendererDesc.contentType = ContentType.CONTENT_TYPE_SPEECH;
+    rendererDesc.streamUsage = StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION; 
+    int32_t ret = audioRenderer->SetAudioRendererDesc(rendererDesc);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
-* @tc.name  : Test Audio_Stream_WriteCbTheadLoop_001 via legal state
-* @tc.number: Audio_Stream_WriteCbTheadLoop_001
-* @tc.desc  : Test WriteCbTheadLoop interface. Returns success.
+* @tc.name  : Test SetStreamType API via legal input
+* @tc.number: Audio_Renderer_SetStreamType_001
+* @tc.desc  : Test SetStreamType interface. Returns 0 {SUCCESS}, if the setting is successful.
 */
-HWTEST(AudioStreamUnitTest, Audio_Stream_WriteCbTheadLoop_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetStreamType_001, TestSize.Level1)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererDesc rendererDesc;
+    rendererDesc.contentType = ContentType.CONTENT_TYPE_SPEECH;
+    rendererDesc.streamUsage = StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION; 
+    AudioStreamType audioStreamType = AudioRenderer->GetStreamType(rendererDesc.contentType, rendererDesc.streamUsage);
+    int32_t ret = audioRenderer->SetStreamType(audioStreamType);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test SetRenderRate API via legal input
+* @tc.number: Audio_Renderer_SetRenderRate_001
+* @tc.desc  : Test SetRenderRate interface. Returns 0 {SUCCESS}, if the setting is successful.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRenderRate_001, TestSize.Level1)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t ret = audioRenderer->SetRenderRate(1);
+    EXPECT_EQ(SUCCESS, ret);
+    int32_t ret_get = audioRenderer->GetRenderRate();
+    EXPECT_NE(0, ret_get);
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test SetInterruptMode API via legal input
+* @tc.number: Audio_Renderer_SetInterruptMode_001
+* @tc.desc  : Test SetInterruptMode interface. Returns 0 {SUCCESS}, if the setting is successful.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetInterruptMode_001, TestSize.Level1)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t ret = audioRenderer->SetInterruptMode(0);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+void StartRenderThread(AudioRenderer *audioRenderer, uint32_t limit)
 {
     int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
 
-    ret = AudioStreamUnitTest::InitializeStream();
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
     EXPECT_EQ(SUCCESS, ret);
 
-    uint32_t samplingRate = audioStream_->GetSamplingRate();
-    EXPECT_EQ(DEFAULT_SAMPLING_RATE, ret);
+    int32_t streamId = -1;
+    streamId = audioRenderer->GetAudioStreamId(streamId);
+    EXPECT_NE(-1, streamId);
+void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
+{
+    int32_t ret = -1;
+    bool isBlockingRead = true;
+    size_t bufferLen;
+    ret = audioCapturer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
 
-    uint8_t channelCount = audioStream_->GetChannelCount();
-    EXPECT_EQ(DEFAULT_CHANNEL_COUNT, ret);
+    int32_t streamId = -1;
+    streamId = audioCapturer->GetAudioStreamId(streamId);
+    EXPECT_NE(-1, streamId);
 
-    uint8_t sampleSize = audioStream_->GetSampleSize();
-    EXPECT_EQ(DEFAULT_SAMPLE_SIZE, ret);
 
-    uint32_t sessionID = 0;
-    uint8_t sampleSize = audioStream_->GetStreamVolume(sessionID);
-    EXPECT_EQ(DEFAULT_STREAM_VOLUME, ret);
 }
-x'x'x'x'x
-} // namespace AudioStandard
-} // namespace OHOS
+
+/**
+* @tc.name  : Test GetCaptureMode, CAPTURER_MODE_CALLBACK
+* @tc.number: Audio_CAPTURER_GetCaptureMode_001
+* @tc.desc  : Test GetCaptureMode interface. Returns CAPTURE_MODE_CALLBACK, if obtained successfully.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_CAPTURER_GetCaptureMode_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = audioCapturer->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioCaptureMode capturerMode = audioCapturer->GetCaptureMode();
+    EXPECT_EQ(CAPTURE_MODE_CALLBACK, capturerMode);
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test GetBufQueueState 
+* @tc.number: Audio_Renderer_GetBufQueueState_001
+* @tc.desc  : Test GetBufQueueState interface. Returns BufferQueueState, if obtained successfully.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufQueueState_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(SUCCESS, ret);
+
+    BufferQueueState bQueueSate {};
+    bQueueSate.currentIndex = 1;
+    bQueueSate.numBuffers = 1;
+
+    ret = audioRenderer->GetBufQueueState(bQueueSate);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+
+/**
+* @tc.name  : Test SetInterruptMode API via legal input
+* @tc.number: Audio_Renderer_SetInterruptMode_001
+* @tc.desc  : Test SetInterruptMode interface. Returns 0 {SUCCESS}, if the setting is successful.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetInterruptMode_001, TestSize.Level1)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t ret = audioRenderer->SetInterruptMode(0);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
