@@ -93,9 +93,9 @@ void StartRenderThread(AudioRenderer *audioRenderer, uint32_t limit)
     ret = audioRenderer->GetBufferSize(bufferLen);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t streamId = -1;
+    uint32_t streamId = 0;
     streamId = audioRenderer->GetAudioStreamId(streamId);
-    EXPECT_NE(-1, streamId);
+    EXPECT_NE(0, streamId);
 
     auto buffer = std::make_unique<uint8_t[]>(bufferLen);
     ASSERT_NE(nullptr, buffer);
@@ -186,8 +186,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetAudioRendererDesc_001, TestSize.
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererDesc rendererDesc;
-    rendererDesc.contentType = ContentType.CONTENT_TYPE_SPEECH;
-    rendererDesc.streamUsage = StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION; 
+    rendererDesc.contentType = CONTENT_TYPE_SPEECH;
+    rendererDesc.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION; 
     int32_t ret = audioRenderer->SetAudioRendererDesc(rendererDesc);
     EXPECT_EQ(SUCCESS, ret);
     audioRenderer->Release();
@@ -202,12 +202,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetStreamType_001, TestSize.Level1)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
-
-    AudioRendererDesc rendererDesc;
-    rendererDesc.contentType = ContentType.CONTENT_TYPE_SPEECH;
-    rendererDesc.streamUsage = StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION; 
-    AudioStreamType audioStreamType = AudioRenderer->GetStreamType(rendererDesc.contentType, rendererDesc.streamUsage);
-    int32_t ret = audioRenderer->SetStreamType(audioStreamType);
+    int32_t ret = audioRenderer->SetStreamType(STREAM_MUSIC);
     EXPECT_EQ(SUCCESS, ret);
     audioRenderer->Release();
 }
@@ -221,7 +216,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRenderRate_001, TestSize.Level1)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
-    int32_t ret = audioRenderer->SetRenderRate(1);
+    int32_t ret = audioRenderer->SetRenderRate(RENDER_RATE_DOUBLE);
     EXPECT_EQ(SUCCESS, ret);
     int32_t ret_get = audioRenderer->GetRenderRate();
     EXPECT_NE(0, ret_get);
@@ -237,8 +232,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetInterruptMode_001, TestSize.Leve
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
-    int32_t ret = audioRenderer->SetInterruptMode(0);
-    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->SetInterruptMode(SHARE_MODE);
     audioRenderer->Release();
 }
 

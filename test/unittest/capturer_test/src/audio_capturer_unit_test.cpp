@@ -79,9 +79,9 @@ void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
     ret = audioCapturer->GetBufferSize(bufferLen);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t streamId = -1;
+    uint32_t streamId = 0;
     streamId = audioCapturer->GetAudioStreamId(streamId);
-    EXPECT_NE(-1, streamId);
+    EXPECT_NE(0, streamId);
 
     auto buffer = std::make_unique<uint8_t[]>(bufferLen);
     ASSERT_NE(nullptr, buffer);
