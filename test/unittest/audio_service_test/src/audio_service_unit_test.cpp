@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#include "audio_capturer_unit_test.h"
+#include "audio_stream_unit_test.h"
 
 #include <thread>
 
-#include "audio_capturer.h"
+#include "audio_stream.h"
 #include "audio_errors.h"
 #include "audio_info.h"
 
@@ -26,40 +26,60 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-namespace {
-    const string AUDIO_CAPTURE_FILE1 = "/data/audiocapturetest_blocking.pcm";
-    const string AUDIO_CAPTURE_FILE2 = "/data/audiocapturetest_nonblocking.pcm";
-    const string AUDIO_TIME_STABILITY_TEST_FILE = "/data/audiocapture_getaudiotime_stability_test.pcm";
-    const string AUDIO_FLUSH_STABILITY_TEST_FILE = "/data/audiocapture_flush_stability_test.pcm";
-    const int32_t READ_BUFFERS_COUNT = 128;
-    const int32_t VALUE_NEGATIVE = -1;
-    const int32_t VALUE_ZERO = 0;
-    const int32_t VALUE_HUNDRED = 100;
-    const int32_t VALUE_THOUSAND = 1000;
-    const int32_t CAPTURER_FLAG = 0;
+void AudioStreamUnitTest::SetUpTestCase(void) {
+    AppInfo appInfo_ = {};
+    if (!(appInfo_.appPid)) {
+        appInfo_.appPid = getpid();
+    }
 
-    constexpr uint64_t BUFFER_DURATION_FIVE = 5;
-    constexpr uint64_t BUFFER_DURATION_TEN = 10;
-    constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
-    constexpr uint64_t BUFFER_DURATION_TWENTY = 20;
-} // namespace
-
-void AudioServiceUnitTest::SetUpTestCase(void) {}
-void AudioServiceUnitTest::TearDownTestCase(void) {}
-void AudioServiceUnitTest::SetUp(void) {}
-void AudioServiceUnitTest::TearDown(void) {}
-
-
+    if (appInfo_.appUid < 0) {
+        appInfo_.appUid = static_cast<int32_t>(getuid());
+    }
+    
+    audioStream_ = std::make_shared<AudioStream>(STREAM_NOTIFICATION, AUDIO_MODE_PLAYBACK, appInfo_.appUid);
+    if (audioStream_) {
+        AUDIO_DEBUG_LOG("AudioRendererPrivate::Audio stream created");
+    }
+}
+void AudioStreamUnitTest::TearDownTestCase(void) {}
+void AudioStreamUnitTest::SetUp(void) {}
+void AudioStreamUnitTest::TearDown(void) {}
 
 /**
-* @tc.name  : Test GetSupportedFormats API
-* @tc.number: Audio_Capturer_GetSupportedFormats_001
-* @tc.desc  : Test GetSupportedFormats interface. Returns supported Formats on success.
+* @tc.name  : Test Audio_Stream_WriteCbTheadLoop_001 via legal state
+* @tc.number: Audio_Stream_WriteCbTheadLoop_001
+* @tc.desc  : Test WriteCbTheadLoop interface. Returns success.
 */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedFormats_001, TestSize.Level0)
+HWTEST(AudioStreamUnitTest, Audio_Stream_WriteCbTheadLoop_001, TestSize.Level1)
 {
-    vector<AudioSampleFormat> supportedFormatList = AudioCapturer::GetSupportedFormats();
-    EXPECT_EQ(AUDIO_SUPPORTED_FORMATS.size(), supportedFormatList.size());
+    audioStream_->WriteCbTheadLoop();
 }
+
+/**
+* @tc.name  : Test Audio_Stream_WriteCbTheadLoop_001 via legal state
+* @tc.number: Audio_Stream_WriteCbTheadLoop_001
+* @tc.desc  : Test WriteCbTheadLoop interface. Returns success.
+*/
+HWTEST(AudioStreamUnitTest, Audio_Stream_WriteCbTheadLoop_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    ret = AudioStreamUnitTest::InitializeStream();
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint32_t samplingRate = audioStream_->GetSamplingRate();
+    EXPECT_EQ(DEFAULT_SAMPLING_RATE, ret);
+
+    uint8_t channelCount = audioStream_->GetChannelCount();
+    EXPECT_EQ(DEFAULT_CHANNEL_COUNT, ret);
+
+    uint8_t sampleSize = audioStream_->GetSampleSize();
+    EXPECT_EQ(DEFAULT_SAMPLE_SIZE, ret);
+
+    uint32_t sessionID = 0;
+    uint8_t sampleSize = audioStream_->GetStreamVolume(sessionID);
+    EXPECT_EQ(DEFAULT_STREAM_VOLUME, ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
