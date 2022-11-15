@@ -1716,7 +1716,7 @@ napi_value AudioRendererNapi::SetVolume(napi_env env, napi_callback_info info)
                 auto context = static_cast<AudioRendererAsyncContext*>(data);
                 if (context->status == SUCCESS) {
                     if (!AudioCommonNapi::IsLegalInputArgumentVolLevel(context->volLevel)) {
-                        context->status = NAPI_ERR_INVALID_PARAM;
+                        context->status = NAPI_ERR_UNSUPPORTED;
                     } else {
                         context->status = context->objectInfo->audioMngr_->
                             SetVolume(GetNativeAudioVolumeType(context->volType), context->volLevel);
@@ -2200,6 +2200,10 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
             napi_typeof(env, argv[i], &valueType);
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->interruptMode);
+                if (asyncContext->interruptMode != InterruptMode::SHARE_MODE &&
+                    asyncContext->interruptMode != InterruptMode::INDEPENDENT_MODE) {
+                    asyncContext->status = NAPI_ERR_UNSUPPORTED;
+                }
             } else if (i == PARAM1) {
                 if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
