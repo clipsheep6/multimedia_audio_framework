@@ -116,9 +116,7 @@ bool AudioPolicyService::ConnectServiceAdapter()
         return false;
     }
 
-    if (serviceFlag_.count() != MIN_SERVICE_COUNT) {
-        OnServiceConnected(AudioServiceIndex::AUDIO_SERVICE_INDEX);
-    }
+    OnServiceConnected(AudioServiceIndex::AUDIO_SERVICE_INDEX);
 
     return true;
 }
@@ -1407,6 +1405,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     CHECK_AND_RETURN_LOG(serviceIndex >= HDI_SERVICE_INDEX && serviceIndex <= AUDIO_SERVICE_INDEX, "invalid index");
 
     // If audio service or hdi service is not ready, donot load default modules
+    lock_guard<mutex> lock(serviceFlagMutex_);
     serviceFlag_.set(serviceIndex, true);
     if (serviceFlag_.count() != MIN_SERVICE_COUNT) {
         AUDIO_INFO_LOG("[module_load]::hdi service or audio service not up. Cannot load default module now");
