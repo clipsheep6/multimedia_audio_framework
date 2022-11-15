@@ -80,6 +80,6 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_WriteCbTheadLoop_001, TestSize.Level1)
     uint8_t sampleSize = audioStream_->GetStreamVolume(sessionID);
     EXPECT_EQ(DEFAULT_STREAM_VOLUME, ret);
 }
-
+x'x'x'x'x
 } // namespace AudioStandard
 } // namespace OHOS
