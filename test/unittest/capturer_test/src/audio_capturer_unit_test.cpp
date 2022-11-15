@@ -34,7 +34,6 @@ namespace {
     const int32_t READ_BUFFERS_COUNT = 128;
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
-    const int32_t VALUE_ONE = 1;
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
@@ -80,6 +79,10 @@ void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
     ret = audioCapturer->GetBufferSize(bufferLen);
     EXPECT_EQ(SUCCESS, ret);
 
+    int32_t streamId = -1;
+    streamId = audioCapturer->GetAudioStreamId(streamId);
+    EXPECT_NE(-1, streamId);
+
     auto buffer = std::make_unique<uint8_t[]>(bufferLen);
     ASSERT_NE(nullptr, buffer);
     FILE *capFile = fopen(filePath.c_str(), "wb");
@@ -102,6 +105,27 @@ void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
     audioCapturer->Flush();
 
     fclose(capFile);
+}
+
+/**
+* @tc.name  : Test GetCaptureMode, CAPTURER_MODE_CALLBACK
+* @tc.number: Audio_CAPTURER_GetCaptureMode_001
+* @tc.desc  : Test GetCaptureMode interface. Returns CAPTURE_MODE_CALLBACK, if obtained successfully.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_CAPTURER_GetCaptureMode_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = audioCapturer->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioCaptureMode capturerMode = audioCapturer->GetCaptureMode();
+    EXPECT_EQ(CAPTURE_MODE_CALLBACK, capturerMode);
+    audioCapturer->Release();
 }
 
 /**
