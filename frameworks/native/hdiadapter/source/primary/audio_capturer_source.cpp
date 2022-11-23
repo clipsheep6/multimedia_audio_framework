@@ -44,7 +44,7 @@ AudioCapturerSource::AudioCapturerSource()
 
 AudioCapturerSource::~AudioCapturerSource()
 {
-    DeInit();
+    AUDIO_ERR_LOG("~AudioCapturerSource");
 }
 
 AudioCapturerSource *AudioCapturerSource::GetInstance()
