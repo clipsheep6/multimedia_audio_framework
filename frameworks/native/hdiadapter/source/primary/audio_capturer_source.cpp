@@ -69,9 +69,6 @@ void AudioCapturerSource::DeInit()
     audioCapture_ = nullptr;
 
     if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
-        if (routeHandle_ != -1) {
-            audioAdapter_->ReleaseAudioRoute(audioAdapter_, routeHandle_);
-        }
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
     }
     audioAdapter_ = nullptr;
