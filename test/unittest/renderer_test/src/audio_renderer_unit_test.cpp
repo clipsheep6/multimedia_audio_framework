@@ -180,6 +180,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_001, TestSize.Level0)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
 }
 
 /**
@@ -191,6 +192,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_002, TestSize.Level0)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_RING);
     EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
 }
 
 /**
@@ -203,6 +205,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_003, TestSize.Level0)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_VOICE_CALL);
     EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
 }
 
 /**
@@ -215,6 +218,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_004, TestSize.Level0)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_SYSTEM);
     EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
 }
 
 /**
@@ -227,6 +231,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_005, TestSize.Level0)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_BLUETOOTH_SCO);
     EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
 }
 
 /**
@@ -239,6 +244,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_006, TestSize.Level0)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_ALARM);
     EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
 }
 
 /**
@@ -251,6 +257,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_007, TestSize.Level0)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_NOTIFICATION);
     EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
 }
 
 /**
@@ -604,6 +611,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_005, TestSize.Level1)
 
     int32_t ret = audioRenderer->SetParams(rendererParams);
     EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -628,6 +636,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_006, TestSize.Level1)
 
     int32_t ret = audioRenderer->SetParams(rendererParams);
     EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -763,6 +772,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_003, TestSize.Level1)
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -1013,6 +1023,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufferSize_002, TestSize.Level1)
     size_t bufferLen;
     ret = audioRenderer->GetBufferSize(bufferLen);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -1123,6 +1134,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFrameCount_002, TestSize.Level1)
     uint32_t frameCount;
     ret = audioRenderer->GetFrameCount(frameCount);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -1428,6 +1440,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Start_002, TestSize.Level1)
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(false, isStarted);
+    audioRenderer->Release();
 }
 
 /**
@@ -1610,6 +1623,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_002, TestSize.Level1)
 
     free(buffer);
     fclose(wavFile);
+    audioRenderer->Release();
 }
 
 /**
@@ -1966,6 +1980,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_002, TestSize.Level1)
     Timestamp timeStamp;
     bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
+    audioRenderer->Release();
 }
 
 /**
@@ -2347,6 +2362,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Flush_003, TestSize.Level1)
 
     bool isFlushed = audioRenderer->Flush();
     EXPECT_EQ(false, isFlushed);
+    audioRenderer->Release();
 }
 
 /**
@@ -2502,6 +2518,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Pause_002, TestSize.Level1)
 
     bool isPaused = audioRenderer->Pause();
     EXPECT_EQ(false, isPaused);
+    audioRenderer->Release();
 }
 
 /**
@@ -2711,6 +2728,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Stop_002, TestSize.Level1)
 
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(false, isStopped);
+    audioRenderer->Release();
 }
 
 /**
@@ -2998,6 +3016,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_002, TestSize.Level1)
     state = audioRenderer->GetStatus();
     EXPECT_NE(RENDERER_RUNNING, state);
     EXPECT_EQ(RENDERER_NEW, state);
+    audioRenderer->Release();
 }
 
 /**
@@ -3150,6 +3169,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_002, TestSize.Level1)
     uint64_t latency;
     ret = audioRenderer->GetLatency(latency);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -3249,6 +3269,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_001, TestSize.L
     ret = audioRenderer->SetRendererCallback(nullptr);
     EXPECT_NE(SUCCESS, ret);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -3275,6 +3296,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_002, TestSize.L
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
     ret = audioRenderer->SetRendererCallback(audioRendererCB);
     EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -3337,6 +3359,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_004, TestSize.L
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
     ret = audioRenderer->SetRendererCallback(audioRendererCB);
     EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -4201,6 +4224,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetBufferDuration_001, TestSize.Lev
 
     ret = audioRenderer->SetBufferDuration(BUFFER_DURATION_TWENTY);
     EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -4232,6 +4256,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetBufferDuration_002, TestSize.Lev
 
     ret = audioRenderer->SetBufferDuration(VALUE_HUNDRED);
     EXPECT_NE(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -4249,6 +4274,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPositionCallback_001, Te
     shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
     ret = audioRenderer->SetRendererPositionCallback(VALUE_THOUSAND, positionCB);
     EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -4272,6 +4298,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPositionCallback_002, Te
     shared_ptr<RendererPositionCallbackTest> positionCB2 = std::make_shared<RendererPositionCallbackTest>();
     ret = audioRenderer->SetRendererPositionCallback(VALUE_THOUSAND, positionCB2);
     EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -4288,6 +4315,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPositionCallback_003, Te
 
     ret = audioRenderer->SetRendererPositionCallback(VALUE_THOUSAND, nullptr);
     EXPECT_NE(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -4308,6 +4336,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPositionCallback_004, Te
 
     ret = audioRenderer->SetRendererPositionCallback(VALUE_NEGATIVE, positionCB);
     EXPECT_NE(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -4326,6 +4355,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPeriodPositionCallback_0
     shared_ptr<RendererPeriodPositionCallbackTest> positionCB = std::make_shared<RendererPeriodPositionCallbackTest>();
     ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_THOUSAND, positionCB);
     EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -4349,6 +4379,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPeriodPositionCallback_0
     shared_ptr<RendererPeriodPositionCallbackTest> positionCB2 = std::make_shared<RendererPeriodPositionCallbackTest>();
     ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_THOUSAND, positionCB2);
     EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -4365,6 +4396,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPeriodPositionCallback_0
 
     ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_THOUSAND, nullptr);
     EXPECT_NE(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -4385,6 +4417,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPeriodPositionCallback_0
 
     ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_NEGATIVE, positionCB);
     EXPECT_NE(SUCCESS, ret);
+    audioRenderer->Release();
 }
 } // namespace AudioStandard
 } // namespace OHOS
