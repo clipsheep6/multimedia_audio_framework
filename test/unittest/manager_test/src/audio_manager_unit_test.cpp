@@ -39,6 +39,7 @@ namespace {
     constexpr int32_t INV_CHANNEL = -1;
     constexpr int32_t CHANNEL_10 = 10;
     constexpr float DISCOUNT_VOLUME = 0.5;
+    constexpr float INVALID_VOLUME = -1.0;
     constexpr float VOLUME_MIN = 0;
     constexpr float VOLUME_MAX = 1.0;
 }
@@ -191,8 +192,180 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_004, TestSize.Level0)
     outputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
-    EXPECT_TRUE(ret < 0);
+    EXPECT_LT(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test SelectOutputDevice API
+* @tc.number: SelectOutputDevice_005
+* @tc.desc  : Test SelectOutputDevice interface, set deviceDescriptorVector.size() to zero.
+* @tc.require: issueI5NZAQ
+*/
+HWTEST(AudioManagerUnitTest, SelectOutputDevice_005, TestSize.Level0)
+{
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(deviceDescriptorVector);
+    EXPECT_LT(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SelectOutputDevice API
+* @tc.number: SelectOutputDevice_006
+* @tc.desc  : Test SelectOutputDevice interface, set networkId_ to "".
+* @tc.require: issueI5NZAQ
+*/
+HWTEST(AudioManagerUnitTest, SelectOutputDevice_006, TestSize.Level0)
+{
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto outputDevice =  audioDeviceDescriptors[0];
+    outputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    outputDevice->networkId_ = std::string("");
+    deviceDescriptorVector.push_back(outputDevice);
+    auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(deviceDescriptorVector);
+    EXPECT_LT(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SelectOutputDevice API
+* @tc.number: SelectOutputDevice_007
+* @tc.desc  : Test SelectOutputDevice interface, set audioRendererFilter to nullptr.
+* @tc.require: issueI5NZAQ
+*/
+HWTEST(AudioManagerUnitTest, SelectOutputDevice_007, TestSize.Level0)
+{
+    sptr<AudioRendererFilter> audioRendererFilter = nullptr;
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto outputDevice =  audioDeviceDescriptors[0];
+    outputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    outputDevice->networkId_ = LOCAL_NETWORK_ID;
+    deviceDescriptorVector.push_back(outputDevice);
+    auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
+    EXPECT_LT(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SelectOutputDevice API
+* @tc.number: SelectOutputDevice_008
+* @tc.desc  : Test SelectOutputDevice interface, set audioDeviceDescriptors[0] to nullptr.
+* @tc.require: issueI5NZAQ
+*/
+HWTEST(AudioManagerUnitTest, SelectOutputDevice_008, TestSize.Level0)
+{
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = 20010041;
+    audioRendererFilter->rendererInfo.contentType   = ContentType::CONTENT_TYPE_MUSIC;
+    audioRendererFilter->rendererInfo.streamUsage   = StreamUsage::STREAM_USAGE_MEDIA;
+    audioRendererFilter->rendererInfo.rendererFlags = 0;
+    audioRendererFilter->streamId = 0;
+
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    deviceDescriptorVector.push_back(nullptr);
+    auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
+    EXPECT_LT(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SelectOutputDevice API
+* @tc.number: SelectOutputDevice_009
+* @tc.desc  : Test SelectOutputDevice interface, set deviceRole_ to INPUT_DEVICE.
+* @tc.require: issueI5NZAQ
+*/
+HWTEST(AudioManagerUnitTest, SelectOutputDevice_009, TestSize.Level0)
+{
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = 20010041;
+    audioRendererFilter->rendererInfo.contentType   = ContentType::CONTENT_TYPE_MUSIC;
+    audioRendererFilter->rendererInfo.streamUsage   = StreamUsage::STREAM_USAGE_MEDIA;
+    audioRendererFilter->rendererInfo.rendererFlags = 0;
+    audioRendererFilter->streamId = 0;
+
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto outputDevice =  audioDeviceDescriptors[0];
+    outputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    outputDevice->networkId_ = LOCAL_NETWORK_ID;
+    deviceDescriptorVector.push_back(outputDevice);
+    auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
+    EXPECT_LT(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SelectOutputDevice API
+* @tc.number: SelectOutputDevice_010
+* @tc.desc  : Test SelectOutputDevice interface, set networkId_ to "".
+* @tc.require: issueI5NZAQ
+*/
+HWTEST(AudioManagerUnitTest, SelectOutputDevice_010, TestSize.Level0)
+{
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = 20010041;
+    audioRendererFilter->rendererInfo.contentType   = ContentType::CONTENT_TYPE_MUSIC;
+    audioRendererFilter->rendererInfo.streamUsage   = StreamUsage::STREAM_USAGE_MEDIA;
+    audioRendererFilter->rendererInfo.rendererFlags = 0;
+    audioRendererFilter->streamId = 0;
+
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto outputDevice =  audioDeviceDescriptors[0];
+    outputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    outputDevice->networkId_ = "";
+    deviceDescriptorVector.push_back(outputDevice);
+    auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
+    EXPECT_LT(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SelectInputDevice API
+* @tc.number: SelectInputDevice_001
+* @tc.desc  : Test SelectInputDevice interface. deviceRole_ set to INPUT_DEVICE
+*/
+HWTEST(AudioManagerUnitTest, SelectInputDevice_001, TestSize.Level0)
+{
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
+    auto inputDevice =  audioDeviceDescriptors[0];
+    inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    inputDevice->networkId_ = LOCAL_NETWORK_ID;
+    deviceDescriptorVector.push_back(inputDevice);
+    auto ret = AudioSystemManager::GetInstance()->SelectInputDevice(deviceDescriptorVector);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SelectInputDevice API
+* @tc.number: SelectInputDevice_002
+* @tc.desc  : Test SelectInputDevice interface. deviceRole_ set to OUTPUT_DEVICE
+*/
+HWTEST(AudioManagerUnitTest, SelectInputDevice_002, TestSize.Level0)
+{
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
+    auto inputDevice =  audioDeviceDescriptors[0];
+    inputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    inputDevice->networkId_ = LOCAL_NETWORK_ID;
+    deviceDescriptorVector.push_back(inputDevice);
+    auto ret = AudioSystemManager::GetInstance()->SelectInputDevice(deviceDescriptorVector);
+    EXPECT_LT(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SelectInputDevice API
+* @tc.number: SelectInputDevice_002
+* @tc.desc  : Test SelectInputDevice interface. deviceDescriptorVector[0] set to nullptr
+*/
+HWTEST(AudioManagerUnitTest, SelectInputDevice_003, TestSize.Level0)
+{
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+    auto ret = AudioSystemManager::GetInstance()->SelectInputDevice(deviceDescriptorVector);
+    EXPECT_LT(ret, SUCCESS);
+}
+
 
 /**
 * @tc.name  : Test SetDeviceActive API
@@ -235,6 +408,56 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_004, TestSize.Level0)
 
     auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
     EXPECT_TRUE(isActive);
+}
+
+/**
+* @tc.name  : Test IsDeviceActive API
+* @tc.number: IsDeviceActive_001
+* @tc.desc  : Test IsDeviceActive interface. Activate device by ACTIVE_DEVICE_TYPE_NONE
+*/
+HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level0)
+{
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::ACTIVE_DEVICE_TYPE_NONE);
+    EXPECT_FALSE(isActive);
+}
+
+/**
+* @tc.name  : Test IsStreamActive API
+* @tc.number: IsStreamActive_001
+* @tc.desc  : Test IsStreamActive interface. set AudioVolumeType return true
+*/
+HWTEST(AudioManagerUnitTest, IsStreamActive_001, TestSize.Level0)
+{
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::STREAM_MUSIC);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::STREAM_RING);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::STREAM_VOICE_CALL);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::STREAM_VOICE_ASSISTANT);
+    EXPECT_FALSE(isActive);
+}
+
+/**
+* @tc.name  : Test IsStreamActive API
+* @tc.number: IsStreamActive_002
+* @tc.desc  : Test IsStreamActive interface. set AudioVolumeType return false
+*/
+HWTEST(AudioManagerUnitTest, IsStreamActive_002, TestSize.Level0)
+{
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::STREAM_DEFAULT);
+    EXPECT_FALSE(isActive);
+}
+
+/**
+* @tc.name  : Test IsStreamMute API
+* @tc.number: IsStreamMute_001
+* @tc.desc  : Test IsStreamMute interface. set AudioVolumeType return false
+*/
+HWTEST(AudioManagerUnitTest, IsStreamMute_001, TestSize.Level0)
+{
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_DEFAULT);
+    EXPECT_FALSE(isActive);
 }
 
 /**
@@ -718,6 +941,32 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test SetVolume API
+* @tc.number: SetVolumeTest_004
+* @tc.desc  : Test setting volume of default stream with max volume
+*/
+HWTEST(AudioManagerUnitTest, SetVolumeTest_004, TestSize.Level0)
+{
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_DEFAULT, MAX_VOL);
+    EXPECT_LT(ret, SUCCESS);
+    int32_t mediaVol = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_DEFAULT);
+    EXPECT_LT(mediaVol, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetRingerModeCallbak API
+* @tc.number: SetRingerModeCallbak_001
+* @tc.desc  : Test setting of callback to nullptr
+*/
+HWTEST(AudioManagerUnitTest, SetRingerModeCallbak_001, TestSize.Level0)
+{
+    int32_t clientId = 1;
+    std::shared_ptr<AudioRingerModeCallback> callback = nullptr;
+    auto ret = AudioSystemManager::GetInstance()->SetRingerModeCallback(clientId, callback);
+    EXPECT_LT(ret, SUCCESS);
+}
+
+/**
 * @tc.name  : Test SetRingerMode API
 * @tc.number: SetRingerModeTest_001
 * @tc.desc  : Test setting of ringer mode to SILENT
@@ -790,7 +1039,7 @@ HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level0)
 /**
 * @tc.name  : Test SetMute API
 * @tc.number: SetMute_001
-* @tc.desc  : Test mute functionality of ringtone stream
+* @tc.desc  : Test mute functionality of ring stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level0)
 {
@@ -800,8 +1049,8 @@ HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level0)
 
 /**
 * @tc.name  : Test SetMute API
-* @tc.number: SetMute_001
-* @tc.desc  : Test unmute functionality of ringtone stream
+* @tc.number: SetMute_002
+* @tc.desc  : Test unmute functionality of ring stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level0)
 {
@@ -811,8 +1060,8 @@ HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level0)
 
 /**
 * @tc.name  : Test SetMute API
-* @tc.number: SetMute_001
-* @tc.desc  : Test mute functionality of media stream
+* @tc.number: SetMute_003
+* @tc.desc  : Test mute functionality of music stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_003, TestSize.Level0)
 {
@@ -822,13 +1071,35 @@ HWTEST(AudioManagerUnitTest, SetMute_003, TestSize.Level0)
 
 /**
 * @tc.name  : Test SetMute API
-* @tc.number: SetMute_001
-* @tc.desc  : Test unmute functionality of media stream
+* @tc.number: SetMute_004
+* @tc.desc  : Test unmute functionality of music stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
 {
     int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_MUSIC, false);
     EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetMute API
+* @tc.number: SetMute_005
+* @tc.desc  : Test mute functionality of default stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_005, TestSize.Level0)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_DEFAULT, true);
+    EXPECT_LT(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetMute API
+* @tc.number: SetMute_006
+* @tc.desc  : Test unmute functionality of default stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_006, TestSize.Level0)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_DEFAULT, false);
+    EXPECT_LT(ret, SUCCESS);
 }
 
 /**
@@ -867,6 +1138,46 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
 
     ret = AudioSystemManager::GetInstance()->SetLowPowerVolume(streamId, DISCOUNT_VOLUME);
     EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name : SetLowPowerVolume_002
+ * @tc.desc : Test set the volume invalid value
+ * @tc.type : FUNC
+ * @tc.require : issueI5NXAE
+ */
+HWTEST(AudioManagerUnitTest, SetLowPowerVolume_002, TestSize.Level1)
+{
+    int32_t streamId = 0;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    AudioRendererOptions rendererOptions = {};
+    AppInfo appInfo = {};
+    appInfo.appUid = static_cast<int32_t>(getuid());
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        AudioRendererChangeInfo audioRendererChangeInfos_ = **it;
+        if (audioRendererChangeInfos_.clientUID == appInfo.appUid) {
+            streamId = audioRendererChangeInfos_.sessionId;
+        }
+    }
+    ASSERT_NE(0, streamId);
+
+    ret = AudioSystemManager::GetInstance()->SetLowPowerVolume(streamId, INVALID_VOLUME);
+    EXPECT_LT(ret, SUCCESS);
 
     audioRenderer->Release();
 }
