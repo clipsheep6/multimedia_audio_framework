@@ -586,6 +586,7 @@ void AudioServiceClient::ResetPAAudioClient()
 
 AudioServiceClient::~AudioServiceClient()
 {
+    lock_guard<mutex> lockdata(dataMutex);
     ResetPAAudioClient();
 }
 
@@ -658,7 +659,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     mainLoop = pa_threaded_mainloop_new();
     if (mainLoop == nullptr)
         return AUDIO_CLIENT_INIT_ERR;
-
+    lock_guard<mutex> lockdata(dataMutex);
     api = pa_threaded_mainloop_get_api(mainLoop);
     if (api == nullptr) {
         ResetPAAudioClient();
@@ -901,7 +902,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_CONTROLLER) {
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
-
+    lock_guard<mutex> lockdata(dataMutex);
     pa_threaded_mainloop_lock(mainLoop);
     mStreamType = audioType;
     const std::string streamName = GetStreamName(audioType);
