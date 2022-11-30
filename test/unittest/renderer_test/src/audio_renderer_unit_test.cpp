@@ -1117,7 +1117,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufferSize_005, TestSize.Level1)
  * @tc.number: Audio_Renderer_GetAudioStreamId_001
  * @tc.desc  : Test GetAudioStreamId interface stability.
  */
-HWTEST(AudioCapturerUnitTest, Audio_Renderer_GetAudioStreamId_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioStreamId_001, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -1138,7 +1138,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Renderer_GetAudioStreamId_001, TestSize.Leve
  * @tc.number: Audio_Renderer_SetAudioRendererDesc_001
  * @tc.desc  : Test SetAudioRendererDesc interface stability.
  */
-HWTEST(AudioCapturerUnitTest, Audio_Renderer_SetAudioRendererDesc_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetAudioRendererDesc_001, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -1159,7 +1159,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Renderer_SetAudioRendererDesc_001, TestSize.
  * @tc.number: Audio_Renderer_SetStreamType_001
  * @tc.desc  : Test SetStreamType interface stability.
  */
-HWTEST(AudioCapturerUnitTest, Audio_Renderer_SetStreamType_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetStreamType_001, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
