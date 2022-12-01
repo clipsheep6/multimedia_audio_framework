@@ -32,3 +32,22 @@ ohos_unittest("audio_capturer_unit_test") {
 
   deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer" ]
 }
+
+ohos_unittest("audio_capturer_proxy_obj_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include/",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  sources = [ "src/audio_capturer_proxy_obj_unit_test.cpp" ]
+
+  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer" ]
+}
