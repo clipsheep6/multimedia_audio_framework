@@ -389,20 +389,24 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
 
 void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
 {
-    AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died", uid);
-
+    AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died 0", uid);
     // Send the release state event notification for all streams of died client to registered app
     int32_t sessionID = -1;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-
+    AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died 1", uid);
     vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator audioRendererBegin = audioRendererChangeInfos_.begin();
+    AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died 2", uid);
     while (audioRendererBegin != audioRendererChangeInfos_.end()) {
+        AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died 3", uid);
         const auto &audioRendererChangeInfo = *audioRendererBegin;
         if (audioRendererChangeInfo == nullptr || audioRendererChangeInfo->clientUID != uid) {
             audioRendererBegin++;
+            AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared 11111", sessionID);
             continue;
         }
+        AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died 4", uid);
         sessionID = audioRendererChangeInfo->sessionId;
+        AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died 5", uid);
         audioRendererChangeInfo->rendererState = RENDERER_RELEASED;
         mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
             audioRendererChangeInfos_);
@@ -410,11 +414,13 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
             audioRendererChangeInfo->sessionId));
         vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator temp = audioRendererBegin;
         audioRendererBegin = audioRendererChangeInfos_.erase(temp);
+        AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared 6", sessionID);
         clientTracker_.erase(sessionID);
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
-            AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
+            AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared  7  ", sessionID);
         }
     }
+    AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died 8", uid);
 
     sessionID = -1;
     vector<std::unique_ptr<AudioCapturerChangeInfo>>::iterator audioCapturerBegin = audioCapturerChangeInfos_.begin();
