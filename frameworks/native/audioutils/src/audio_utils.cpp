@@ -209,5 +209,6 @@ template bool GetSysPara(const char *key, int32_t &value);
 template bool GetSysPara(const char *key, uint32_t &value);
 template bool GetSysPara(const char *key, int64_t &value);
 template bool GetSysPara(const char *key, std::string &value);
+template bool GetSysPara(const char *key, bool &value);
 } // namespace AudioStandard
 } // namespace OHOS

@@ -51,6 +51,9 @@ ohos_shared_library("audio_renderer") {
   ]
 
   deps = [
+    ":audio_renderer_config.para",
+    ":audio_renderer_config.para.dac",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
@@ -64,6 +67,18 @@ ohos_shared_library("audio_renderer") {
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
+}
+
+ohos_prebuilt_etc("audio_renderer_config.para") {
+  source = "etc/audio_renderer_config.para"
+  part_name = "multimedia_audio_framework"
+  module_install_dir = "etc/param"
+}
+
+ohos_prebuilt_etc("audio_renderer_config.para.dac") {
+  source = "etc/audio_renderer_config.para.dac"
+  part_name = "multimedia_audio_framework"
+  module_install_dir = "etc/param"
 }
 
 config("audio_external_library_config") {

@@ -22,6 +22,7 @@
 #include "audio_policy_manager.h"
 #include "audio_stream.h"
 #include "audio_renderer_private.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,12 +35,11 @@ AudioRendererPrivate::~AudioRendererPrivate()
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
         Release();
     }
-#ifdef DUMP_CLIENT_PCM
+
     if (dcp_) {
         fclose(dcp_);
         dcp_ = nullptr;
     }
-#endif
 }
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStreamType)
@@ -137,19 +137,28 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     audioInterrupt_.streamType = audioStreamType;
     sharedInterrupt_.streamType = audioStreamType;
 
-#ifdef DUMP_CLIENT_PCM
-    std::stringstream strStream;
-    std::string dumpPatch;
-    strStream << "/data/local/tmp/";
-    strStream << appInfo_.appPid << ".pcm";
-    strStream >> dumpPatch;
-    AUDIO_INFO_LOG("Client dump using path: %{public}s with pid:%{public}d", dumpPatch.c_str(), getpid());
-
-    dcp_ = fopen(dumpPatch.c_str(), "a+");
-    if (dcp_ == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
+    if (IsClientDumpEnable()) {
+        std::stringstream strStream;
+        std::string dumpPatch;
+        strStream << "/data/local/tmp/audio/";
+        strStream << appInfo_.appPid << ".pcm";
+        strStream >> dumpPatch;
+        AUDIO_INFO_LOG("Client dump using path: %{public}s with pid:%{public}d", dumpPatch.c_str(), getpid());
+        dcp_ = fopen(dumpPatch.c_str(), "a+");
+        if (dcp_ == nullptr) {
+            AUDIO_ERR_LOG("Error opening pcm test file!");
+        }
     }
-#endif
+}
+
+bool AudioRendererPrivate::IsClientDumpEnable()
+{
+    bool isDumpEnable = false;
+    if (GetSysPara("persist.multimedia.audio.debug.clientdump", isDumpEnable)) {
+        AUDIO_INFO_LOG("IsClientDumpEnable:%{public}d", isDumpEnable);
+        return isDumpEnable;
+    }
+    return false;
 }
 
 int32_t AudioRendererPrivate::InitAudioInterruptCallback()
@@ -413,11 +422,9 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
-#ifdef DUMP_CLIENT_PCM
     if (dcp_ != nullptr) {
         fwrite((void *)buffer, 1, bufferSize, dcp_);
     }
-#endif
     return audioStream_->Write(buffer, bufferSize);
 }
 
