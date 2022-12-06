@@ -39,16 +39,13 @@ public:
 
     ~AudioTimer()
     {
-        exitLoop = true;
-        isTimerStarted = false;
-        timerCtrl.notify_one();
-        isTimerStarted = true;
-        timerCtrl.notify_one();
+        StopLoopFunc();
         timerLoop.join();
     }
 
     void StartTimer(uint32_t duration)
     {
+        std::unique_lock<std::mutex> lck(timerMutex);
         timeoutDuration = duration;
         isTimerStarted = true;
         timerCtrl.notify_one();
@@ -56,6 +53,7 @@ public:
 
     void StopTimer()
     {
+        std::unique_lock<std::mutex> lck(timerMutex);
         isTimerStarted = false;
         if (!isTimedOut) {
             timerCtrl.notify_one();
@@ -83,16 +81,29 @@ private:
     {
         while (true) {
             std::unique_lock<std::mutex> lck(timerMutex);
-            timerCtrl.wait(lck, [this] { return CheckTimerStarted(); });
-            isTimedOut = false;
-            if (exitLoop) break;
-            if (!timerCtrl.wait_for(lck, std::chrono::seconds(timeoutDuration),
-                [this] { return CheckTimerStopped(); })) {
-                isTimedOut = true;
-                isTimerStarted = false;
-                OnTimeOut();
+            if (isTimerStarted) {
+                if (!timerCtrl.wait_for(lck, std::chrono::seconds(timeoutDuration),
+                    [this] { return CheckTimerStopped(); })) {
+                    isTimedOut = true;
+                    isTimerStarted = false;
+                    OnTimeOut();
+                }
+            } else {
+                timerCtrl.wait(lck, [this] { return CheckTimerStarted(); });
+                isTimedOut = false;
+            }
+            if (exitLoop) {
+                break;
             }
         }
+    }
+
+    void StopLoopFunc()
+    {
+        std::unique_lock<std::mutex> lck(timerMutex);
+        exitLoop = true;
+        isTimerStarted = !isTimerStarted;
+        timerCtrl.notify_one();
     }
 
     bool CheckTimerStarted()
