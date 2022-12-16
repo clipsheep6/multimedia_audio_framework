@@ -19,6 +19,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class PermissionUtil {
+public:
+    static bool VerifyIsSystemApp();
+    static bool VerifySystemPermission();
+};
+
 int64_t GetNowTimeMs();
 int64_t GetNowTimeUs();
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
