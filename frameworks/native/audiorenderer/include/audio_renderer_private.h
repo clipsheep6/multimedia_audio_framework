@@ -79,6 +79,7 @@ public:
 private:
     int32_t InitAudioInterruptCallback();
     int32_t InitSharedInterrupt();
+    bool IsClientDumpEnable();
     static std::map<pid_t, std::map<AudioStreamType, AudioInterrupt>> sharedInterrupts_;
     std::shared_ptr<AudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
@@ -91,9 +92,7 @@ private:
     uint32_t sessionID_ = INVALID_SESSION_ID;
     AudioStandard::InterruptMode mode_ = AudioStandard::InterruptMode::SHARE_MODE;
     std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
-#ifdef DUMP_CLIENT_PCM
     FILE *dcp_ = nullptr;
-#endif
 };
 
 class AudioInterruptCallbackImpl : public AudioInterruptCallback {
