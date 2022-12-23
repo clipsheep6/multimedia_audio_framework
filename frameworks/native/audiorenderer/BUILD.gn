@@ -59,7 +59,7 @@ ohos_shared_library("audio_renderer") {
 
   deps = [
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_stream_client",
   ]
 
   deps += audio_renderer_gateway_deps
@@ -181,7 +181,7 @@ ohos_executable("audio_interrupt_test") {
 
   deps = [
     ":audio_renderer",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

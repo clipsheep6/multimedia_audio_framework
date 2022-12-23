@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
+#include "audio_stream_manager.h"
+
+#include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
-#include "audio_log.h"
-#include "audio_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

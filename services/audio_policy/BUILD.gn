@@ -36,6 +36,7 @@ ohos_prebuilt_etc("audio_policy_init") {
 
 config("audio_policy_public_config") {
   include_dirs = [
+    "//foundation/multimedia/audio_framework/services/audio_service/stream/include",
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
     "//foundation/multimedia/audio_framework/services/audio_service/common/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
@@ -151,7 +152,7 @@ ohos_shared_library("audio_policy_service") {
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_config.para",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_config.para.dac",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_dump",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
     "//third_party/libxml2:xml2",
   ]
 
@@ -276,7 +277,7 @@ ohos_executable("audio_policy_test") {
 
   deps = [
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
     "//third_party/bounds_checking_function:libsec_static",
   ]
 

@@ -53,7 +53,7 @@ ohos_shared_library("audio_toneplayer") {
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
   ]
 
   public_configs = [ ":audio_external_library_config" ]

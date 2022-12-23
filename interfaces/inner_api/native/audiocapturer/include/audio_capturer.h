@@ -17,9 +17,10 @@
 #define AUDIO_CAPTURER_H
 
 #include <memory>
+#include "timestamp.h"
 
 #include "audio_info.h"
-#include "timestamp.h"
+#include "audio_capturer_callbacks.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,54 +40,6 @@ struct AudioCapturerParams {
     AudioStreamType streamType = STREAM_MEDIA;
     /** audioSampleFormat */
     AudioSampleFormat audioSampleFormat = SAMPLE_S16LE;
-};
-
-class AudioCapturerCallback {
-public:
-    virtual ~AudioCapturerCallback() = default;
-    /**
-    * Called when renderer state is updated.
-     *
-     * @param state Indicates updated state of the capturer.
-     * For details, refer enum CapturerState.
-     */
-    virtual void OnStateChange(const CapturerState state) = 0;
-};
-
-class CapturerPositionCallback {
-public:
-    virtual ~CapturerPositionCallback() = default;
-
-    /**
-     * Called when the requested frame number is read.
-     *
-     * @param framePosition requested frame position.
-     */
-    virtual void OnMarkReached(const int64_t &framePosition) = 0;
-};
-
-class CapturerPeriodPositionCallback {
-public:
-    virtual ~CapturerPeriodPositionCallback() = default;
-
-    /**
-     * Called when the requested frame count is read.
-     *
-     * @param frameCount requested frame frame count for callback.
-     */
-    virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
-};
-
-class AudioCapturerReadCallback {
-public:
-    virtual ~AudioCapturerReadCallback() = default;
-
-    /**
-     * Called when buffer to be enqueued.
-     *
-     * @param length Indicates requested buffer length.
-     */
-    virtual void OnReadData(size_t length) = 0;
 };
 
 /**

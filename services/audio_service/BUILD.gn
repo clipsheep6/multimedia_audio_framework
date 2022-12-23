@@ -33,6 +33,7 @@ config("audio_client_public_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/services/audio_service/stream/include",
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
     "//foundation/multimedia/audio_framework/services/audio_service/common/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
@@ -57,7 +58,38 @@ config("audio_client_public_config") {
   }
 }
 
-ohos_shared_library("audio_client") {
+ohos_shared_library("audio_stream_client") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
+  install_enable = true
+  sources = [
+    "stream/audio_service_client.cpp",
+    "stream/audio_stream.cpp",
+  ]
+
+  public_configs = [ ":audio_client_public_config" ]
+
+  deps = [
+    "$pulseaudio_build_path/src/pulse:pulse",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
+    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hisysevent_native:libhisysevent",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_framework"
+}
+
+ohos_shared_library("audio_service_client") {
   sanitize = {
     cfi = true
     debug = false
@@ -70,8 +102,6 @@ ohos_shared_library("audio_client") {
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
     "client/src/audio_routing_manager.cpp",
-    "client/src/audio_service_client.cpp",
-    "client/src/audio_stream.cpp",
     "client/src/audio_stream_manager.cpp",
     "client/src/audio_stream_tracker.cpp",
     "client/src/audio_system_manager.cpp",
@@ -87,8 +117,6 @@ ohos_shared_library("audio_client") {
 
   external_deps = [
     "c_utils:utils",
-    "eventhandler:libeventhandler",
-    "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -216,7 +244,10 @@ ohos_executable("audio_service_playback_test") {
 
   configs = [ ":audio_client_public_config" ]
 
-  deps = [ ":audio_client" ]
+  deps = [
+    ":audio_service_client",
+    ":audio_stream_client",
+  ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
@@ -231,7 +262,10 @@ ohos_executable("audio_service_record_test") {
 
   configs = [ ":audio_client_public_config" ]
 
-  deps = [ ":audio_client" ]
+  deps = [
+    ":audio_service_client",
+    ":audio_stream_client",
+  ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
@@ -246,7 +280,10 @@ ohos_executable("audio_multichannel_test") {
 
   configs = [ ":audio_client_public_config" ]
 
-  deps = [ ":audio_client" ]
+  deps = [
+    ":audio_service_client",
+    ":audio_stream_client",
+  ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 

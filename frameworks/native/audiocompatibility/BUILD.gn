@@ -41,7 +41,7 @@ ohos_shared_library("audio_capturer_gateway") {
 
   deps = [
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_stream_client",
   ]
 
   deps += [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
@@ -89,7 +89,7 @@ ohos_shared_library("audio_renderer_gateway") {
 
   deps = [
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_stream_client",
   ]
 
   deps += [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]

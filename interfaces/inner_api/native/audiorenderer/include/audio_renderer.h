@@ -17,12 +17,14 @@
 #define AUDIO_RENDERER_H
 
 #include <vector>
-#include <stddef.h>
-#include <stdint.h>
 #include <memory>
 #include <cstring>
+#include <stddef.h>
+#include <stdint.h>
 #include <timestamp.h>
+
 #include "audio_info.h"
+#include "audio_renderer_callbacks.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,63 +41,6 @@ struct AudioRendererParams {
     AudioChannel channelCount = MONO;
     /** Encoding Type */
     AudioEncodingType encodingType = ENCODING_PCM;
-};
-
-class AudioRendererCallback {
-public:
-    virtual ~AudioRendererCallback() = default;
-
-    /**
-     * Called when an interrupt is received.
-     *
-     * @param interruptEvent Indicates the InterruptEvent information needed by client.
-     * For details, refer InterruptEvent struct in audio_info.h
-     */
-    virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
-
-    /**
-     * Called when renderer state is updated.
-     *
-     * @param state Indicates updated state of the renderer.
-     * For details, refer RendererState enum.
-     */
-    virtual void OnStateChange(const RendererState state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
-};
-
-class RendererPositionCallback {
-public:
-    virtual ~RendererPositionCallback() = default;
-
-    /**
-     * Called when the requested frame number is reached.
-     *
-     * @param framePosition requested frame position.
-     */
-    virtual void OnMarkReached(const int64_t &framePosition) = 0;
-};
-
-class RendererPeriodPositionCallback {
-public:
-    virtual ~RendererPeriodPositionCallback() = default;
-
-    /**
-     * Called when the requested frame count is written.
-     *
-     * @param frameCount requested frame frame count for callback.
-     */
-    virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
-};
-
-class AudioRendererWriteCallback {
-public:
-    virtual ~AudioRendererWriteCallback() = default;
-
-    /**
-     * Called when buffer to be enqueued.
-     *
-     * @param length Indicates requested buffer length.
-     */
-    virtual void OnWriteData(size_t length) = 0;
 };
 
 /**

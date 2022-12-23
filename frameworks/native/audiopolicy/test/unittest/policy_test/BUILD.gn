@@ -49,6 +49,7 @@ ohos_unittest("audio_policy_unit_test") {
   deps = [
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_service",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_stream_client",
   ]
 }

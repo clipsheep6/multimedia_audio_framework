@@ -32,7 +32,7 @@ ohos_unittest("audio_group_manager_unit_test") {
 
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
   ]
   external_deps = [ "c_utils:utils" ]
 }

@@ -54,7 +54,7 @@ ohos_shared_library("audio_capturer") {
     "src/audio_capturer_proxy_obj.cpp",
   ]
 
-  deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
+  deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_stream_client" ]
 
   deps += audio_capturer_gateway_deps
 

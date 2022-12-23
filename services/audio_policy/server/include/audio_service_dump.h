@@ -16,16 +16,16 @@
 #ifndef AUDIO_SERVICE_DUMP_H
 #define AUDIO_SERVICE_DUMP_H
 
-#include <pulse/pulseaudio.h>
-#include <audio_info.h>
-#include <audio_timer.h>
-#include <audio_errors.h>
 #include <vector>
 #include <pwd.h>
 #include <map>
 #include "securec.h"
-#include "audio_log.h"
 #include "nocopyable.h"
+#include <pulse/pulseaudio.h>
+#include "audio_info.h"
+#include "audio_errors.h"
+#include "audio_log.h"
+#include "audio_timer.h"
 
 namespace OHOS {
 namespace AudioStandard {
