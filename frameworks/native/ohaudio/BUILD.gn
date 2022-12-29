@@ -1,0 +1,95 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+config("audio_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiostream/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
+    "//commonlibrary/c_utils/base/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+ohos_shared_library("ohaudio") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/frameworks/native/opensles/include",
+    "//foundation/multimedia/audio_framework/interfaces/kits/c/",
+    "//foundation/multimedia/audio_framework/interfaces/kits/c/common/",
+    "//foundation/multimedia/audio_framework/interfaces/kits/c/audio_renderer/",
+    "//foundation/multimedia/audio_framework/interfaces/kits/c/audio_capturer/",
+  ]
+
+  configs = [ ":audio_config" ]
+
+  sources = [
+    "//foundation/multimedia/audio_framework/frameworks/native/ohaudio/OHAudio.cpp",
+    "//foundation/multimedia/audio_framework/frameworks/native/ohaudio/OHAudioStreamBuilder.cpp",
+    "//foundation/multimedia/audio_framework/frameworks/native/ohaudio/OHAudioRenderer.cpp",
+    "//foundation/multimedia/audio_framework/frameworks/native/ohaudio/OHAudioCapturer.cpp"
+  ]
+
+  deps = [
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
+  ]
+  cflags = [ "-Werror" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  output_name = "ohaudio"
+  output_extension = "so"
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_framework"
+}
+
+group("oh_audio_renderer_test_packages") {
+  deps = [ ":oh_audio_renderer_test" ]
+}
+
+ohos_executable("oh_audio_renderer_test") {
+  install_enable = false
+
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/kits/c/",
+    "//foundation/multimedia/audio_framework/interfaces/kits/c/common/",
+    "//foundation/multimedia/audio_framework/interfaces/kits/c/audio_renderer/",
+    "//foundation/multimedia/audio_framework/interfaces/kits/c/audio_capturer/",
+  ]
+
+  sources = [ "test/example/oh_audio_renderer_test.cpp" ]
+
+  configs = [ ":audio_config" ]
+
+  deps = [ ":ohaudio" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
