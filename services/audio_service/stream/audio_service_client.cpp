@@ -2183,7 +2183,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
 
     AUDIO_INFO_LOG("Applied volume : %{public}f, pa volume: %{public}d", vol, volume);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
-        "AUDIO_VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1,
         "STREAMID", client.sessionID,
         "STREAMTYPE", client.mStreamType,
@@ -2257,7 +2257,7 @@ void AudioServiceClient::WriteStateChangedSysEvents()
 
     GetSessionID(sessionID);
 
-    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "AUDIO_STREAM_CHANGE",
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_CHANGE",
         HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", isOutput ? 1 : 0,
         "STREAMID", sessionID,

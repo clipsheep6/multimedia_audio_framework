@@ -18,6 +18,7 @@
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "audio_utils.h"
 
 #include "audio_log.h"
 #include "audio_errors.h"
@@ -90,7 +91,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi, API_9);
             AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -99,7 +100,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
         return SUCCESS;
     }
 
-    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi, API_9);
 }
 
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
@@ -120,7 +121,12 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+            break;
         case STREAM_ALL:
+            if (!PermissionUtil::VerifySystemPermission()) {
+                AUDIO_ERR_LOG("GetVolume: STREAM_ALL No system permission");
+                return ERR_PERMISSION_DENIED;
+            }
             break;
         default:
             AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
@@ -156,6 +162,10 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
     }
 
     if (volumeType == STREAM_ALL) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("GetMaxVolume: No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
         volumeType = STREAM_MUSIC;
     }
     return g_sProxy->GetMaxVolume(volumeType);
@@ -178,6 +188,10 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
     }
 
     if (volumeType == STREAM_ALL) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("GetMinVolume: No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
         volumeType = STREAM_MUSIC;
     }
     return g_sProxy->GetMinVolume(volumeType);
@@ -213,7 +227,7 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, API_9);
             AUDIO_DEBUG_LOG("SetMute of STREAM_ALL for volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -222,10 +236,10 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
         return SUCCESS;
     }
 
-    return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
+    return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, API_9);
 }
 
-bool AudioGroupManager::IsStreamMute(AudioVolumeType volumeType)
+int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute)
 {
     AUDIO_DEBUG_LOG("AudioSystemManager::GetMute Client");
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
@@ -242,7 +256,12 @@ bool AudioGroupManager::IsStreamMute(AudioVolumeType volumeType)
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+            break;
         case STREAM_ALL:
+            if (!PermissionUtil::VerifySystemPermission()) {
+                AUDIO_ERR_LOG("IsStreamMute: No system permission");
+                return ERR_PERMISSION_DENIED;
+            }
             break;
         default:
             AUDIO_ERR_LOG("IsStreamMute volumeType=%{public}d not supported", volumeType);
@@ -255,7 +274,8 @@ bool AudioGroupManager::IsStreamMute(AudioVolumeType volumeType)
 
     /* Call Audio Policy SetStreamVolume */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
+    isMute = AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
+    return SUCCESS;
 }
 
 int32_t AudioGroupManager::Init()
@@ -263,7 +283,8 @@ int32_t AudioGroupManager::Init()
     // init networkId_
     int32_t groupId = groupId_;
     std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
-    volumeGroupInfos = AudioPolicyManager::GetInstance().GetVolumeGroupInfos();
+    int32_t ret = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(volumeGroupInfos, false);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioGroupManager::Init filed");
     auto filter = [&groupId](const sptr<VolumeGroupInfo>& info) {
         return groupId != info->volumeGroupId_;
     };
@@ -324,7 +345,7 @@ int32_t AudioGroupManager::SetRingerModeCallback(const int32_t clientId,
 
     cbClientId_ = clientId;
 
-    return AudioPolicyManager::GetInstance().SetRingerModeCallback(clientId, callback);
+    return AudioPolicyManager::GetInstance().SetRingerModeCallback(clientId, callback, API_9);
 }
 
 int32_t AudioGroupManager::UnsetRingerModeCallback(const int32_t clientId) const
@@ -339,7 +360,7 @@ int32_t AudioGroupManager::SetRingerMode(AudioRingerMode ringMode) const
         return ERROR;
     }
     /* Call Audio Policy SetRingerMode */
-    return AudioPolicyManager::GetInstance().SetRingerMode(ringMode);
+    return AudioPolicyManager::GetInstance().SetRingerMode(ringMode, API_9);
 }
 
 AudioRingerMode AudioGroupManager::GetRingerMode() const

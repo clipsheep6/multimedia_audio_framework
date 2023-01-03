@@ -24,6 +24,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_policy_manager.h"
 #include "audio_volume_key_event_callback_stub.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -304,7 +305,12 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+            break;
         case STREAM_ALL:
+            if (!PermissionUtil::VerifySystemPermission()) {
+                AUDIO_ERR_LOG("SetVolume: STREAM_ALL No system permission");
+                return ERR_PERMISSION_DENIED;
+            }
             break;
         default:
             AUDIO_ERR_LOG("SetVolume volumeType=%{public}d not supported", volumeType);
@@ -318,7 +324,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi, API_7);
             AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -327,7 +333,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
         return SUCCESS;
     }
 
-    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi, API_7);
 }
 
 int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
@@ -338,7 +344,12 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+            break;
         case STREAM_ALL:
+            if (!PermissionUtil::VerifySystemPermission()) {
+                AUDIO_ERR_LOG("SetMute: No system permission");
+                return ERR_PERMISSION_DENIED;
+            }
             break;
         default:
             AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
@@ -395,6 +406,10 @@ int32_t AudioSystemManager::MapVolumeFromHDI(float volume)
 int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
 {
     if (volumeType == STREAM_ALL) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("GetMaxVolume: No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
         volumeType = STREAM_MUSIC;
     }
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
@@ -408,6 +423,10 @@ int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
 int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
 {
     if (volumeType == STREAM_ALL) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("GetMinVolume: No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
         volumeType = STREAM_MUSIC;
     }
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
@@ -427,7 +446,12 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+            break;
         case STREAM_ALL:
+            if (!PermissionUtil::VerifySystemPermission()) {
+                AUDIO_ERR_LOG("SetMute: STREAM_ALL No system permission");
+                return ERR_PERMISSION_DENIED;
+            }
             break;
         default:
             AUDIO_ERR_LOG("SetMute volumeType=%{public}d not supported", volumeType);
@@ -440,7 +464,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, API_7);
             AUDIO_DEBUG_LOG("SetMute of STREAM_ALL for volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -449,7 +473,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
         return SUCCESS;
     }
 
-    return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
+    return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, API_7);
 }
 
 bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
@@ -462,7 +486,12 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+            break;
         case STREAM_ALL:
+            if (!PermissionUtil::VerifySystemPermission()) {
+                AUDIO_ERR_LOG("IsStreamMute: STREAM_ALL No system permission");
+                return ERR_PERMISSION_DENIED;
+            }
             break;
         default:
             AUDIO_ERR_LOG("IsStreamMute volumeType=%{public}d not supported", volumeType);
@@ -501,6 +530,10 @@ int32_t AudioSystemManager::UnsetDeviceChangeCallback()
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
                                                   const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("SetRingerModeCallback: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
     if (callback == nullptr) {
         AUDIO_ERR_LOG("AudioSystemManager: callback is nullptr");
         return ERR_INVALID_PARAM;
@@ -657,7 +690,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetActiveOutputDevi
 }
 
 int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientPid,
-                                                           const std::shared_ptr<VolumeKeyEventCallback> &callback)
+    const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v)
 {
     AUDIO_DEBUG_LOG("AudioSystemManager RegisterVolumeKeyEventCallback");
 
@@ -667,7 +700,7 @@ int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientP
     }
     volumeChangeClientPid_ = clientPid;
 
-    return AudioPolicyManager::GetInstance().SetVolumeKeyEventCallback(clientPid, callback);
+    return AudioPolicyManager::GetInstance().SetVolumeKeyEventCallback(clientPid, callback, api_v);
 }
 
 int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clientPid)
@@ -815,16 +848,15 @@ int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, Devic
     return AudioPolicyManager::GetInstance().ReconfigureAudioChannel(count, deviceType);
 }
 
-std::vector<sptr<VolumeGroupInfo>> AudioSystemManager::GetVolumeGroups(std::string networkId)
+int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
-    std::vector<sptr<VolumeGroupInfo>> infos = {};
-    infos = AudioPolicyManager::GetInstance().GetVolumeGroupInfos();
+    int32_t result = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(infos);
 
     auto filter = [&networkId](const sptr<VolumeGroupInfo>& info) {
         return networkId != info->networkId_;
     };
     infos.erase(std::remove_if(infos.begin(), infos.end(), filter), infos.end());
-    return infos;
+    return result;
 }
 
 std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
