@@ -346,6 +346,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+            break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
@@ -490,6 +491,7 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ULTRASONIC:
+            break;
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
                 AUDIO_ERR_LOG("IsStreamMute: STREAM_ALL No system permission");
