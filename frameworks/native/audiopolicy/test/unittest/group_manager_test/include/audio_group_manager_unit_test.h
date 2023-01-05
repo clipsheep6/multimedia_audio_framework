@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_MANAGER_UNIT_TEST_H
-#define AUDIO_MANAGER_UNIT_TEST_H
+#ifndef AUDIO_GROUP_MANAGER_UNIT_TEST_H
+#define AUDIO_GROUP_MANAGER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
 #include "audio_system_manager.h"
@@ -39,7 +39,19 @@ public:
     ~AudioManagerCallbackImpl() {}
     void OnInterrupt(const InterruptAction &interruptAction) override {}
 };
+
+class AudioRingerModeCallbackTest : public AudioRingerModeCallback {
+public:
+    AudioRingerMode ringerMode_;
+    void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
+};
+
+class AudioManagerMicStateChangeCallbackTest : public AudioManagerMicStateChangeCallback {
+public:
+    MicStateChangeEvent micStateChangeEvent_;
+    void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent);
+};
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_MANAGER_UNIT_TEST_H
+#endif // AUDIO_GROUP_MANAGER_UNIT_TEST_H

@@ -34,6 +34,16 @@ void AudioGroupManagerUnitTest::TearDownTestCase(void) {}
 void AudioGroupManagerUnitTest::SetUp(void) {}
 void AudioGroupManagerUnitTest::TearDown(void) {}
 
+void AudioRingerModeCallbackTest::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
+{
+    ringerMode_ = ringerMode;
+}
+
+void AudioManagerMicStateChangeCallbackTest::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
+{
+    micStateChangeEvent_ = micStateChangeEvent;
+}
+
 /**
 * @tc.name  : Test AudioVolume API
 * @tc.number: AudioVolume_001
@@ -131,6 +141,60 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 
         int32_t ringVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
         EXPECT_EQ(MIN_VOL, ringVolume);
+    }
+}
+
+/**
+* @tc.name  : Test SetVolume API
+* @tc.number: SetVolumeTest_004
+* @tc.desc  : Test setting volume of not supported stream with max volume
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_004, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        auto ret = audioGroupMngr_->SetVolume(static_cast<AudioVolumeType>(ERR_NOT_SUPPORTED), MAX_VOL);
+        EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
+    }
+}
+
+/**
+* @tc.name  : Test SetVolume API
+* @tc.number: SetVolumeTest_005
+* @tc.desc  : Test setting volume of media stream with error invalid volume
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_005, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, ERR_INVALID_PARAM);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    }
+}
+
+/**
+* @tc.name  : Test GetVolume API
+* @tc.number: GetVolumeTest_001
+* @tc.desc  : Test getting volume of not supported stream
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, GetVolumeTest_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        auto ret = audioGroupMngr_->GetVolume(static_cast<AudioVolumeType>(ERR_NOT_SUPPORTED));
+        EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
     }
 }
 
@@ -267,6 +331,120 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level0)
         bool isMute;
         ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING, isMute);
         EXPECT_EQ(false, isMute);
+    }
+}
+
+/**
+* @tc.name  : Test SetMute IsStreamMute API
+* @tc.number: SetMute_005
+* @tc.desc  : Test unmute functionality of media stream
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_005, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        auto ret = audioGroupMngr_->SetMute(static_cast<AudioVolumeType>(ERR_NOT_SUPPORTED), false);
+        EXPECT_EQ(ERR_NOT_SUPPORTED, ERR_NOT_SUPPORTED);
+
+        ret = audioGroupMngr_->IsStreamMute(static_cast<AudioVolumeType>(ERR_NOT_SUPPORTED));
+        EXPECT_EQ(false, ret);
+    }
+}
+
+/**
+* @tc.name  : Test SetRingerMode IsStreamMute API
+* @tc.number: SetRingerMode_001
+* @tc.desc  : Test set ringer mode of normal ringer mode
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetRingerMode_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        auto ret = audioGroupMngr_->SetRingerMode(AudioRingerMode::RINGER_MODE_NORMAL);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioGroupMngr_->GetRingerMode();
+        EXPECT_EQ(RINGER_MODE_NORMAL, ret);
+    }
+}
+
+/**
+* @tc.name  : Test SetRingerMode IsStreamMute API
+* @tc.number: SetRingerModeCallback_001
+* @tc.desc  : Test set ringer mode callback unset ringer mode callback
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetRingerModeCallback_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        shared_ptr<AudioRingerModeCallbackTest> ringerModeCB = make_shared<AudioRingerModeCallbackTest>();
+        auto ret = audioGroupMngr_->SetRingerModeCallback(1, ringerModeCB);
+        EXPECT_EQ(SUCCESS, ret);
+
+        audioGroupMngr_->SetRingerMode(AudioRingerMode::RINGER_MODE_VIBRATE);
+        sleep(1);
+        EXPECT_EQ(ringerModeCB->ringerMode_, AudioRingerMode::RINGER_MODE_VIBRATE);
+
+        ret = audioGroupMngr_->UnsetRingerModeCallback(1);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
+* @tc.name  : Test SetMicrophoneMute IsStreamMute API
+* @tc.number: SetMicrophoneMute_001
+* @tc.desc  : Test set microphone mute
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMicrophoneMute_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        auto ret = audioGroupMngr_->SetMicrophoneMute(false);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioGroupMngr_->IsMicrophoneMute();
+        EXPECT_EQ(false, ret);
+    }
+}
+
+/**
+* @tc.name  : Test SetMicStateChangeCallback IsStreamMute API
+* @tc.number: SetMicStateChangeCallback_001
+* @tc.desc  : Test set micphone callback unset ringer mode callback
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMicStateChangeCallback_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        auto ret = audioGroupMngr_->SetMicrophoneMute(false);
+        EXPECT_EQ(SUCCESS, ret);
+
+        shared_ptr<AudioManagerMicStateChangeCallbackTest> micStateChangeCB =
+            make_shared<AudioManagerMicStateChangeCallbackTest>();
+        ret = audioGroupMngr_->SetMicStateChangeCallback(micStateChangeCB);
+        EXPECT_EQ(SUCCESS, ret);
+
+        audioGroupMngr_->SetMicrophoneMute(true);
+        sleep(1);
+        EXPECT_EQ(micStateChangeCB->micStateChangeEvent_.mute, true);
     }
 }
 } // namespace AudioStandard
