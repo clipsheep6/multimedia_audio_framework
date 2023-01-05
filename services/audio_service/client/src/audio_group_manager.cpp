@@ -122,7 +122,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
             break;
         default:
             AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
-            return (float)ERR_NOT_SUPPORTED;
+            return ERR_NOT_SUPPORTED;
     }
 
     if (volumeType == STREAM_ALL) {
