@@ -157,6 +157,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_001, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     EXPECT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
 }
 
 /**
@@ -168,6 +169,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_002, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_RING);
     EXPECT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
 }
 
 /**
@@ -180,6 +182,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_003, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_VOICE_CALL);
     EXPECT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
 }
 
 /**
@@ -192,6 +195,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_004, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_SYSTEM);
     EXPECT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
 }
 
 /**
@@ -204,6 +208,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_005, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_BLUETOOTH_SCO);
     EXPECT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
 }
 
 /**
@@ -216,6 +221,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_006, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_ALARM);
     EXPECT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
 }
 
 /**
@@ -228,6 +234,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_007, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_NOTIFICATION);
     EXPECT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
 }
 
 /**
@@ -621,6 +628,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_005, TestSize.Level1)
 
     int32_t ret = audioCapturer->SetParams(capturerParams);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -645,6 +653,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_006, TestSize.Level1)
 
     int32_t ret = audioCapturer->SetParams(capturerParams);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -780,6 +789,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_003, TestSize.Level1)
     AudioCapturerParams getCapturerParams;
     ret = audioCapturer->GetParams(getCapturerParams);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -916,6 +926,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_002, TestSize.Level1)
     size_t bufferLen;
     ret = audioCapturer->GetBufferSize(bufferLen);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -938,6 +949,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_003, TestSize.Level1)
     size_t bufferLen;
     ret = audioCapturer->GetBufferSize(bufferLen);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -1026,6 +1038,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFrameCount_002, TestSize.Level1)
     uint32_t frameCount;
     ret = audioCapturer->GetFrameCount(frameCount);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -1132,6 +1145,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_002, TestSize.Level1)
 
     bool isStarted = audioCapturer->Start();
     EXPECT_EQ(false, isStarted);
+    audioCapturer->Release();
 }
 
 /**
@@ -1521,6 +1535,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_002, TestSize.Level1)
     Timestamp timeStamp;
     bool getAudioTime = audioCapturer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
+    audioCapturer->Release();
 }
 
 /**
@@ -1836,6 +1851,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_002, TestSize.Level1)
 
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(false, isStopped);
+    audioCapturer->Release();
 }
 
 /**
@@ -2071,6 +2087,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_002, TestSize.Level1)
     state = audioCapturer->GetStatus();
     EXPECT_NE(CAPTURER_RUNNING, state);
     EXPECT_EQ(CAPTURER_NEW, state);
+    audioCapturer->Release();
 }
 
 /**
@@ -2483,6 +2500,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetBufferDuration_001, TestSize.Lev
 
     ret = audioCapturer->SetBufferDuration(BUFFER_DURATION_TWENTY);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2513,6 +2531,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetBufferDuration_002, TestSize.Lev
 
     ret = audioCapturer->SetBufferDuration(VALUE_HUNDRED);
     EXPECT_NE(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2530,6 +2549,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPositionCallback_001, Te
     shared_ptr<CapturerPositionCallbackTest> positionCB = std::make_shared<CapturerPositionCallbackTest>();
     ret = audioCapturer->SetCapturerPositionCallback(VALUE_THOUSAND, positionCB);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2553,6 +2573,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPositionCallback_002, Te
     shared_ptr<CapturerPositionCallbackTest> positionCB2 = std::make_shared<CapturerPositionCallbackTest>();
     ret = audioCapturer->SetCapturerPositionCallback(VALUE_THOUSAND, positionCB2);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2569,6 +2590,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPositionCallback_003, Te
 
     ret = audioCapturer->SetCapturerPositionCallback(VALUE_THOUSAND, nullptr);
     EXPECT_NE(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2589,6 +2611,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPositionCallback_004, Te
 
     ret = audioCapturer->SetCapturerPositionCallback(VALUE_NEGATIVE, positionCB);
     EXPECT_NE(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2607,6 +2630,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPeriodPositionCallback_0
     shared_ptr<CapturerPeriodPositionCallbackTest> positionCB = std::make_shared<CapturerPeriodPositionCallbackTest>();
     ret = audioCapturer->SetCapturerPeriodPositionCallback(VALUE_THOUSAND, positionCB);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2630,6 +2654,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPeriodPositionCallback_0
     shared_ptr<CapturerPeriodPositionCallbackTest> positionCB2 = std::make_shared<CapturerPeriodPositionCallbackTest>();
     ret = audioCapturer->SetCapturerPeriodPositionCallback(VALUE_THOUSAND, positionCB2);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2666,6 +2691,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPeriodPositionCallback_0
 
     ret = audioCapturer->SetCapturerPeriodPositionCallback(VALUE_NEGATIVE, positionCB);
     EXPECT_NE(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2691,6 +2717,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_001, TestSize.L
     ret = audioCapturer->SetCapturerCallback(nullptr);
     EXPECT_NE(SUCCESS, ret);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2716,6 +2743,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_002, TestSize.L
     shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = std::make_shared<AudioCapturerCallbackTest>();
     ret = audioCapturer->SetCapturerCallback(audioCapturerCB);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2776,6 +2804,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_004, TestSize.L
     shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = std::make_shared<AudioCapturerCallbackTest>();
     ret = audioCapturer->SetCapturerCallback(audioCapturerCB);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
