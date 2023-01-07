@@ -299,7 +299,7 @@ bool AudioCapturerPrivate::Start() const
         AUDIO_PERMISSION_START)) {
         AUDIO_ERR_LOG("Start monitor permission failed");
     }
-
+    // zcc
     return audioStream_->StartAudioStream();
 }
 
