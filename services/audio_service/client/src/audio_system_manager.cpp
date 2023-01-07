@@ -305,6 +305,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ULTRASONIC:
             break;
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
@@ -344,6 +345,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ULTRASONIC:
             break;
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
@@ -446,6 +448,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ULTRASONIC:
             break;
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
@@ -486,6 +489,7 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ULTRASONIC:
             break;
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
@@ -821,8 +825,8 @@ int32_t AudioSystemManager::RequestAudioFocus(const AudioInterrupt &audioInterru
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamUsage >= STREAM_USAGE_UNKNOWN
                              && audioInterrupt.streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
                              ERR_INVALID_PARAM, "Invalid stream usage");
-    CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamType >= AudioStreamType::STREAM_VOICE_CALL
-                             && audioInterrupt.streamType <= AudioStreamType::STREAM_RECORDING,
+    CHECK_AND_RETURN_RET_LOG(audioInterrupt.audioFocusType.streamType >= AudioStreamType::STREAM_VOICE_CALL
+                             && audioInterrupt.audioFocusType.streamType <= AudioStreamType::STREAM_RECORDING,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().RequestAudioFocus(clientID, audioInterrupt);
 }
@@ -837,8 +841,8 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamUsage >= STREAM_USAGE_UNKNOWN
                              && audioInterrupt.streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
                              ERR_INVALID_PARAM, "Invalid stream usage");
-    CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamType >= AudioStreamType::STREAM_VOICE_CALL
-                             && audioInterrupt.streamType <= AudioStreamType::STREAM_RECORDING,
+    CHECK_AND_RETURN_RET_LOG(audioInterrupt.audioFocusType.streamType >= AudioStreamType::STREAM_VOICE_CALL
+                             && audioInterrupt.audioFocusType.streamType <= AudioStreamType::STREAM_RECORDING,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().AbandonAudioFocus(clientID, audioInterrupt);
 }
@@ -920,7 +924,7 @@ bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
     uint32_t clientID = GetCallingPid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
+    audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
     int32_t result = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 
@@ -934,7 +938,7 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     uint32_t clientID = GetCallingPid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
+    audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
     int32_t result = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : result -> %{public}d", result);
