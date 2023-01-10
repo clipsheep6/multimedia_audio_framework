@@ -26,8 +26,17 @@ namespace AudioStandard {
 class AudioCapturerCallback {
 public:
     virtual ~AudioCapturerCallback() = default;
+
     /**
-    * Called when capturer state is updated.
+     * Called when an interrupt is received.
+     *
+     * @param interruptEvent Indicates the InterruptEvent information needed by client.
+     * For details, refer InterruptEvent struct in audio_info.h
+     */
+    virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
+
+    /**
+     * Called when capturer state is updated.
      *
      * @param state Indicates updated state of the capturer.
      * For details, refer enum CapturerState.
