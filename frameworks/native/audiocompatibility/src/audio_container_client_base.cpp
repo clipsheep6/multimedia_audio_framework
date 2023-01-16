@@ -161,6 +161,7 @@ int32_t AudioContainerClientBase::CreateStreamGa(AudioStreamParams audioParams, 
     data.WriteInt32(static_cast<int32_t>(audioParams.format));
     data.WriteInt32(static_cast<int32_t>(audioParams.channels));
     data.WriteInt32(static_cast<int32_t>(audioType));
+    mFrameSize = audioParams.channels * audioParams.format;
     error = Remote()->SendRequest(CMD_CREATE_AUDIOSTREAM, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioContainerClientBase::CreateRemoteAudioRenderer() failed, error: %{public}d", error);
@@ -406,6 +407,7 @@ void AudioContainerClientBase::HandleRenderPositionCallbacksGa(size_t bytesWritt
     uint64_t writtenFrameNumber = mTotalBytesWritten / mFrameSize;
     if (!mMarkReached && mRenderPositionCb) {
         if (writtenFrameNumber >= mFrameMarkPosition) {
+            mRenderPositionCb->OnMarkReached(mFrameMarkPosition);
             mPositionCBThreads.emplace_back(std::make_unique<std::thread>(&RendererPositionCallback::OnMarkReached,
                 mRenderPositionCb, mFrameMarkPosition));
             mMarkReached = true;
@@ -415,6 +417,7 @@ void AudioContainerClientBase::HandleRenderPositionCallbacksGa(size_t bytesWritt
     if (mRenderPeriodPositionCb) {
         mFramePeriodWritten += (bytesWritten / mFrameSize);
         if (mFramePeriodWritten >= mFramePeriodNumber) {
+            mRenderPeriodPositionCb->OnPeriodReached(mFramePeriodNumber);
             mFramePeriodWritten %= mFramePeriodNumber;
             mPeriodPositionCBThreads.emplace_back(std::make_unique<std::thread>(
                 &RendererPeriodPositionCallback::OnPeriodReached, mRenderPeriodPositionCb, mFramePeriodNumber));
@@ -481,6 +484,7 @@ void AudioContainerClientBase::HandleCapturePositionCallbacksGa(size_t bytesRead
     uint64_t readFrameNumber = mTotalBytesRead / mFrameSize;
     if (!mMarkReached && mCapturePositionCb) {
         if (readFrameNumber >= mFrameMarkPosition) {
+            mCapturePositionCb->OnMarkReached(mFrameMarkPosition);
             mPositionCBThreads.emplace_back(std::make_unique<std::thread>(&CapturerPositionCallback::OnMarkReached,
                 mCapturePositionCb, mFrameMarkPosition));
             mMarkReached = true;
@@ -490,6 +494,7 @@ void AudioContainerClientBase::HandleCapturePositionCallbacksGa(size_t bytesRead
     if (mCapturePeriodPositionCb) {
         mFramePeriodRead += (bytesRead / mFrameSize);
         if (mFramePeriodRead >= mFramePeriodNumber) {
+            mCapturePeriodPositionCb->OnPeriodReached(mFramePeriodNumber);
             mFramePeriodRead %= mFramePeriodNumber;
             mPeriodPositionCBThreads.emplace_back(std::make_unique<std::thread>(
                 &CapturerPeriodPositionCallback::OnPeriodReached, mCapturePeriodPositionCb, mFramePeriodNumber));
