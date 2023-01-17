@@ -41,6 +41,8 @@ public:
         MEDIA = 3,
         VOICE_ASSISTANT = 9,
         VOLUMETYPE_MAX,
+        ALARM,
+        ACCESSIBILITY,
         ALL = 100
     };
 
