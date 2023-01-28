@@ -22,23 +22,23 @@
 extern "C" {
 #endif
 
-OH_AudioStream_Result OH_AudioRendererBuilder_SetSamplingRate(OH_AudioStreamBuilder* builder, int32_t rate);
+enum OH_AudioStream_Result OH_AudioRendererBuilder_SetSamplingRate(OH_AudioStreamBuilder* builder, int32_t rate);
 
-OH_AudioStream_Result OH_AudioRendererBuilder_SetChannelCount(OH_AudioStreamBuilder* builder, int32_t channelCount);
+enum OH_AudioStream_Result OH_AudioRendererBuilder_SetChannelCount(OH_AudioStreamBuilder* builder, int32_t channelCount);
 
-OH_AudioStream_Result OH_AudiRendererBuilder_SetSampleFormat(OH_AudioStreamBuilder* builder,
-        OH_AudioStream_SampleFormat format);
+enum OH_AudioStream_Result OH_AudiRendererBuilder_SetSampleFormat(OH_AudioStreamBuilder* builder,
+        enum OH_AudioStream_SampleFormat format);
 
-OH_AudioStream_Result OH_AudioRendererBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder,
-        OH_AudioStream_Usage usage, OH_AudioStream_Content content);
+enum OH_AudioStream_Result OH_AudioRendererBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder,
+        enum OH_AudioStream_Usage usage, enum OH_AudioStream_Content content);
 
-OH_AudioStream_Result OH_AudioRendererBuilder_SetEncodingType(OH_AudioStreamBuilder* builder,
-        OH_AudioStream_EncodingType encodingType);
+enum OH_AudioStream_Result OH_AudioRendererBuilder_SetEncodingType(OH_AudioStreamBuilder* builder,
+        enum OH_AudioStream_EncodingType encodingType);
 
-OH_AudioStream_Result OH_AudioStreamBuilder_SetCallback(OH_AudioStreamBuilder* builder,
-        OH_AudioRendererCallbacks callbacks, void*);
+enum OH_AudioStream_Result OH_AudioStreamBuilder_SetCallback(OH_AudioStreamBuilder* builder,
+        struct OH_AudioRendererCallbacks callbacks, void*);
 
-OH_AudioStream_Result OH_AudioRendererBuilder_Generate(OH_AudioStreamBuilder* builder,
+enum OH_AudioStream_Result OH_AudioRendererBuilder_Generate(OH_AudioStreamBuilder* builder,
         OH_AudioRenderer** audioRenderer);
 
 #ifdef __cplusplus

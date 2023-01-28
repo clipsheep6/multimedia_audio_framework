@@ -15,7 +15,9 @@
 
 #include "common/native_audiostream_builder.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 /**
  * Create a OH_AudioStreamBuilder that can be used to open a Stream.
@@ -26,7 +28,7 @@ extern "C" {
  * @param type The stream type to be created. {@link #AUDIOSTREAM_TYPE_RERNDERER} or {@link #AUDIOSTREAM_TYPE_CAPTURER}
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioStream_CreateBuilder(OH_AudioStreamBuilder** builder, OH_AudioStream_Type type);
+enum OH_AudioStream_Result OH_AudioStream_CreateBuilder(OH_AudioStreamBuilder** builder, enum OH_AudioStream_Type type);
 
 /**
  * Destroy a OH_AudioStreamBuilder.
@@ -36,6 +38,8 @@ OH_AudioStream_Result OH_AudioStream_CreateBuilder(OH_AudioStreamBuilder** build
  * @param builder Reference provided by AAudio_createStreamBuilder()
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder* builder);
+enum OH_AudioStream_Result OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder* builder);
 
+#ifdef __cplusplus
 }
+#endif

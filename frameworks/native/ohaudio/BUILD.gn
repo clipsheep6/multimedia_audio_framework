@@ -82,7 +82,7 @@ ohos_executable("oh_audio_renderer_test") {
     "//foundation/multimedia/audio_framework/interfaces/kits/c/audio_capturer/",
   ]
 
-  sources = [ "test/example/oh_audio_renderer_test.cpp" ]
+  sources = [ "test/example/oh_audio_renderer_test_for_c.c" ]
 
   configs = [ ":audio_config" ]
 

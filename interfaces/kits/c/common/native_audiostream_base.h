@@ -52,7 +52,8 @@ enum OH_AudioStream_SampleFormat {
 };
 
 enum OH_AudioStream_EncodingType {
-
+    AUDIOSTREAM_ENCODING_PCM = 0,
+    AUDIOSTREAM_ENCODING_INVALID = -1
 };
 
 enum OH_AudioStream_Usage {
@@ -114,9 +115,9 @@ struct OH_AudioRendererCallbacks {
 
     int32_t (*OH_AudioRendererOnStreamEvent)(OH_AudioRenderer*, void*, void*, int32_t);
 
-    int32_t (*OH_AudioRendererOnInterrptEvent)(OH_AudioRenderer*, void*, OH_AudioInterrupt_ForceType, OH_AudioInterrupt_Hint);
+    int32_t (*OH_AudioRendererOnInterrptEvent)(OH_AudioRenderer*, void*, enum OH_AudioInterrupt_ForceType, enum OH_AudioInterrupt_Hint);
 
-    int32_t (*OH_AudioRendererOnError)(OH_AudioRenderer*, void*, OH_AudioStream_Result);
+    int32_t (*OH_AudioRendererOnError)(OH_AudioRenderer*, void*, enum OH_AudioStream_Result);
 };
 #ifdef __cplusplus
 }

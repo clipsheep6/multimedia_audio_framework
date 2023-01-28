@@ -26,7 +26,7 @@ extern "C" {
  * @param renderer reference created by OH_AudioStreamBuilder
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer* renderer);
+enum OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer* renderer);
 
 /*
  * Request to start playing the renderer stream.
@@ -34,7 +34,7 @@ OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer* renderer);
  * @param renderer reference created by OH_AudioStreamBuilder
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer* renderer);
+enum OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer* renderer);
 
 /*
  * Request {bõfor the renderer stream to pause
@@ -42,7 +42,7 @@ OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer* renderer);
  * @param renderer reference created by OH_AudioStreamBuilder
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer* renderer);
+enum OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer* renderer);
 
 /*
  * Request for the renderer stream stop
@@ -50,7 +50,7 @@ OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer* renderer);
  * @param renderer reference created by OH_AudioStreamBuilder
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer* renderer);
+enum OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer* renderer);
 
 /*
  * Request for the renderer stream flush
@@ -58,7 +58,7 @@ OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer* renderer);
  * @param renderer reference created by OH_AudioStreamBuilder
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_Flush(OH_AudioRenderer* renderer);
+enum OH_AudioStream_Result OH_AudioRenderer_Flush(OH_AudioRenderer* renderer);
 
 /*
  * Query the current state of the renderer client
@@ -69,10 +69,10 @@ OH_AudioStream_Result OH_AudioRenderer_Flush(OH_AudioRenderer* renderer);
  * @param state Pointer to a variable that will be set for the state value.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_GetCurrentState(OH_AudioRenderer* renderer, OH_AudioStream_State* state);
+enum OH_AudioStream_Result OH_AudioRenderer_GetCurrentState(OH_AudioRenderer* renderer, enum OH_AudioStream_State* state);
 
 // 获取回调写入帧数
-OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* renderer, int32_t* frameSize);
+enum OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* renderer, int32_t* frameSize);
 
 /*
  * Query the sample rate value of the renderer client
@@ -83,7 +83,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* 
  * @param rate The state value to be updated
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_GetSamplingRate(OH_AudioRenderer* renderer, int32_t* rate);
+enum OH_AudioStream_Result OH_AudioRenderer_GetSamplingRate(OH_AudioRenderer* renderer, int32_t* rate);
 
 /*
  * Query the stream id of the renderer client
@@ -92,7 +92,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetSamplingRate(OH_AudioRenderer* rendere
  * @param stramId Pointer to a variable that will be set for the stream id.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_GetStreamId(OH_AudioRenderer* renderer, uint32_t* streamId);
+enum OH_AudioStream_Result OH_AudioRenderer_GetStreamId(OH_AudioRenderer* renderer, uint32_t* streamId);
 
 /*
  * Query the channel count of the renderer client
@@ -101,7 +101,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetStreamId(OH_AudioRenderer* renderer, u
  * @param channelCount Pointer to a variable that will be set for the channel count.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_GetChannelCount(OH_AudioRenderer* renderer, int32_t* channelCount);
+enum OH_AudioStream_Result OH_AudioRenderer_GetChannelCount(OH_AudioRenderer* renderer, int32_t* channelCount);
 
 /*
  * Query the sample format of the renderer client
@@ -110,8 +110,8 @@ OH_AudioStream_Result OH_AudioRenderer_GetChannelCount(OH_AudioRenderer* rendere
  * @param sampleFormat Pointer to a variable that will be set for the sample format. 
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_GetSampleFormat(OH_AudioRenderer* renderer,
-        OH_AudioStream_SampleFormat* sampleFormat);
+enum OH_AudioStream_Result OH_AudioRenderer_GetSampleFormat(OH_AudioRenderer* renderer,
+        enum OH_AudioStream_SampleFormat* sampleFormat);
 
 /*
  * Query the latency mode of the renderer client
@@ -120,8 +120,8 @@ OH_AudioStream_Result OH_AudioRenderer_GetSampleFormat(OH_AudioRenderer* rendere
  * @param latencyMode Pointer to a variable that will be set for the latency mode. 
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_GetLatencyMode(OH_AudioRenderer* renderer,
-        OH_AudioStream_LatencyMode* latencyMode);
+enum OH_AudioStream_Result OH_AudioRenderer_GetLatencyMode(OH_AudioRenderer* renderer,
+        enum OH_AudioStream_LatencyMode* latencyMode);
 /*
  * Query the renderer info of the renderer client
  *
@@ -132,8 +132,8 @@ OH_AudioStream_Result OH_AudioRenderer_GetLatencyMode(OH_AudioRenderer* renderer
  * @param content Pointer to a variable that will be set for the stream content. 
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* renderer,
-        OH_AudioStream_Usage* usage, OH_AudioStream_Content* content);
+enum OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* renderer,
+        enum OH_AudioStream_Usage* usage, enum OH_AudioStream_Content* content);
 
 /*
  * Query the frame count number the has been written.
@@ -142,7 +142,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* rendere
  * @param frames Pointer to a variable that will be set for the frame count number. 
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer* renderer, int32_t* frames);
+enum OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer* renderer, int32_t* frames);
 #ifdef __cplusplus
 }
 #endif
