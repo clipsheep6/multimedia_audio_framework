@@ -57,6 +57,7 @@ ohos_shared_library("ohaudio") {
 
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
   ]
   cflags = [ "-Werror" ]
 

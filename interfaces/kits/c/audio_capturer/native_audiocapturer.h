@@ -21,33 +21,35 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer);
+enum OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer);
 
-OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer);
+enum OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer);
 
-OH_AudioStream_Result OH_AudioCapturer_Pause(OH_AudioCapturer* capturer);
+enum OH_AudioStream_Result OH_AudioCapturer_Pause(OH_AudioCapturer* capturer);
 
-OH_AudioStream_Result OH_AudioCapturer_Stop(OH_AudioCapturer* capturer);
+enum OH_AudioStream_Result OH_AudioCapturer_Stop(OH_AudioCapturer* capturer);
 
-OH_AudioStream_Result OH_AudioCapturer_Flush(OH_AudioCapturer* capturer);
+enum OH_AudioStream_Result OH_AudioCapturer_Flush(OH_AudioCapturer* capturer);
 
-OH_AudioStream_Result OH_AudioCapturer_GetLatencyMode(OH_AudioCapturer* capturer,
-        OH_AudioStream_LatencyMode* latencyMode);
+enum OH_AudioStream_Result OH_AudioCapturer_GetLatencyMode(OH_AudioCapturer* capturer,
+        enum OH_AudioStream_LatencyMode* latencyMode);
 
-OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer, int32_t* frames);
+enum OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer, int32_t* frames);
 
+enum OH_AudioStream_Result OH_AudioCapturer_GetStreamId(OH_AudioCapturer* capturer, uint32_t* streamId);
 
-OH_AudioStream_Result OH_AudioCapturer_GetStreamId(OH_AudioCapturer*, uint32_t*);
+enum OH_AudioStream_Result OH_AudioCapturer_GetSamplingRate(OH_AudioRenderer* capturer, int32_t* rate);
 
-OH_AudioStream_Result OH_AudioCapturer_GetSamplingRate(OH_AudioRenderer*, int32_t*);
+enum OH_AudioStream_Result OH_AudioCapturer_GetChannelCount(OH_AudioRenderer* capturer, int32_t* channelCount);
 
-OH_AudioStream_Result OH_AudioCapturer_GetChannelCount(OH_AudioRenderer*, int32_t*);
+enum OH_AudioStream_Result OH_AudioCapturer_GetSampleFormat(OH_AudioRenderer* capturer,
+        enum OH_AudioStream_SampleFormat* sampleFormat);
 
-OH_AudioStream_Result OH_AudioCapturer_GetSampleFormat(OH_AudioRenderer*, OH_AudioStream_SampleFormat*);
+enum OH_AudioStream_Result OH_AudioCapturer_GetEncodingType(OH_AudioRenderer* capturer,
+        enum OH_AudioStream_EncodingType* encodingType);
 
-OH_AudioStream_Result OH_AudioCapturer_GetEncodingType(OH_AudioRenderer*, OH_AudioStream_EncodingType*);
-
-OH_AudioStream_Result OH_AudioCapturer_GetCapturerInfo(OH_AudioCapturer*, OH_AudioStream_Usage*, OH_AudioStream_Content);
+enum OH_AudioStream_Result OH_AudioCapturer_GetCapturerInfo(OH_AudioCapturer* capturer,
+        enum OH_AudioStream_Usage* usage, enum OH_AudioStream_Content* content);
 
 #ifdef __cplusplus
 }

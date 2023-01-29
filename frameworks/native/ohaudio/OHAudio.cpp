@@ -39,6 +39,14 @@ OH_AudioStream_Result OH_AudioRendererBuilder_Generate(OH_AudioStreamBuilder* bu
     return AUDIOSTREAM_SUCCESS;
 }
 
+enum OH_AudioStream_Result OH_AudioCapturerBuilder_Generate(OH_AudioStreamBuilder* builder,
+        OH_AudioCapturer** audioCapturer)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    audioStreamBuilder->Generate(*audioCapturer);
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder* builder)
 {
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);

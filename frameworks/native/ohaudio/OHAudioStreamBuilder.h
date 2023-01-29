@@ -29,7 +29,10 @@ class OHAudioStreamBuilder
         {
             streamType_ = type;
         }
+
         int32_t Generate(OH_AudioRenderer* renderer);
+
+        int32_t Generate(OH_AudioCapturer* capturer);
 
         // for audiorenderer setting
 

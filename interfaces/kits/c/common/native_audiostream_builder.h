@@ -41,6 +41,8 @@ enum OH_AudioStream_Result OH_AudioStreamBuilder_SetCallback(OH_AudioStreamBuild
 enum OH_AudioStream_Result OH_AudioRendererBuilder_Generate(OH_AudioStreamBuilder* builder,
         OH_AudioRenderer** audioRenderer);
 
+enum OH_AudioStream_Result OH_AudioCapturerBuilder_Generate(OH_AudioStreamBuilder* builder,
+        OH_AudioCapturer** audioCapturer);
 #ifdef __cplusplus
 }
 #endif

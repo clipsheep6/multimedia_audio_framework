@@ -16,6 +16,7 @@
 #include "OHAudioStreamBuilder.h"
 #include <memory>
 #include "OHAudioRenderer.h"
+#include "OHAudioCapturer.h"
 
 using OHOS::AudioStandard::OHAudioStreamBuilder;
 using OHOS::AudioStandard::AudioSampleFormat;
@@ -104,8 +105,21 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetEncodingType(AudioEncodingType en
 
 int32_t OHAudioStreamBuilder::Generate(OH_AudioRenderer* renderer)
 {
+    if (streamType_ != RENDERER_TYPE) {
+        return -1;
+    }
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
     renderer = (OH_AudioRenderer*)audioRenderer;
+    return 0;
+}
+
+int32_t OHAudioStreamBuilder::Generate(OH_AudioCapturer* capturer)
+{
+    if (streamType_ != CAPTURER_TYPE) {
+        return -1;
+    }
+    OHAudioCapturer *audioCapturer = new OHAudioCapturer();
+    capturer = (OH_AudioCapturer*)audioCapturer;
     return 0;
 }
 

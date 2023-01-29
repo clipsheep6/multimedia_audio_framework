@@ -14,8 +14,6 @@
  */
 #include "OHAudioCapturer.h"
 
-namespace OHOS {
-namespace AudioStandard {
 static OHOS::AudioStandard::OHAudioCapturer *convertRenderer(OH_AudioCapturer* capturer)
 {
     return (OHOS::AudioStandard::OHAudioCapturer*) capturer;
@@ -73,48 +71,53 @@ OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer,
     return AUDIOSTREAM_SUCCESS;
 }
 
-
-OH_AudioStream_Result OH_AudioCapturer_GetStreamId(OH_AudioCapturer*, uint32_t*)
+OH_AudioStream_Result OH_AudioCapturer_GetStreamId(OH_AudioCapturer* capturer, uint32_t* streamId)
 {
     //OHOS::AudioStandard::OHAudioCapturer *audiocapturer = convertRenderer(capturer);
     // wait to implement
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioCapturer_GetSamplingRate(OH_AudioRenderer*, int32_t*)
+OH_AudioStream_Result OH_AudioCapturer_GetChannelCount(OH_AudioRenderer* capturer, int32_t* channelCount)
 {
     //OHOS::AudioStandard::OHAudioCapturer *audiocapturer = convertRenderer(capturer);
     // wait to implement
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioCapturer_GetChannelCount(OH_AudioRenderer*, int32_t*)
+OH_AudioStream_Result OH_AudioCapturer_GetSamplingRate(OH_AudioRenderer* capturer, int32_t* rate)
 {
     //OHOS::AudioStandard::OHAudioCapturer *audiocapturer = convertRenderer(capturer);
     // wait to implement
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioCapturer_GetSampleFormat(OH_AudioRenderer*, OH_AudioStream_SampleFormat*)
+OH_AudioStream_Result OH_AudioCapturer_GetSampleFormat(OH_AudioRenderer* capturer,
+        enum OH_AudioStream_SampleFormat* sampleFormat)
 {
     //OHOS::AudioStandard::OHAudioCapturer *audiocapturer = convertRenderer(capturer);
     // wait to implement
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioCapturer_GetEncodingType(OH_AudioRenderer*, OH_AudioStream_EncodingType*)
+OH_AudioStream_Result OH_AudioCapturer_GetEncodingType(OH_AudioRenderer* capturer,
+        enum OH_AudioStream_EncodingType* encodingType)
 {
     //OHOS::AudioStandard::OHAudioCapturer *audiocapturer = convertRenderer(capturer);
     // wait to implement
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioCapturer_GetCapturerInfo(OH_AudioCapturer*, OH_AudioStream_Usage*, OH_AudioStream_Content)
+OH_AudioStream_Result OH_AudioCapturer_GetCapturerInfo(OH_AudioCapturer* capturer,
+        enum OH_AudioStream_Usage* usage, enum OH_AudioStream_Content* content)
 {
     //OHOS::AudioStandard::OHAudioCapturer *audiocapturer = convertRenderer(capturer);
     // wait to implement
     return AUDIOSTREAM_SUCCESS;
 }
+
+namespace OHOS {
+namespace AudioStandard {
 
 int32_t OHAudioCapturer::Start()
 {
@@ -155,6 +158,5 @@ int32_t OHAudioCapturer::Release()
     }
     return 0;
 }
-
 }  // namespace AudioStandard
 }  // namespace OHOS
