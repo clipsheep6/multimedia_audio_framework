@@ -18,6 +18,19 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class OHAudioRenderModeCallback : public AudioRendererWriteCallback {
+public:
+    OHAudioRenderModeCallback(OH_AudioRendererCallbacks callbacks, void* userData)
+    {
+        callbacks_ = callbacks;
+        userData_ = userData;
+    }
+    void OnWriteData(size_t length) override;
+private:
+    OH_AudioRendererCallbacks callbacks_;
+    void* userData_;
+};
+
 class OHAudioRenderer {
     public:
         OHAudioRenderer()
@@ -49,6 +62,8 @@ class OHAudioRenderer {
         StreamUsage GetStreamUsage();
         ContentType GetContentType();
         int32_t GetFramesWritten();
+
+        void SetRendererWriteCallback(OH_AudioRendererCallbacks callbacks, void* userData);
     private:
         std::unique_ptr<AudioRenderer> audioRenderer_;
 };

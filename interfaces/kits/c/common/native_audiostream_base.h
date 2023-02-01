@@ -110,14 +110,34 @@ typedef struct OH_AudioRendererStruct OH_AudioRenderer;
 typedef struct OH_AudioCapturerStruct OH_AudioCapturer;
 
 // callback for renderer
+typedef int32_t (*OH_AudioRendererOnWriteData)(
+        OH_AudioRenderer* renderer,
+        void* userData,
+        void*,
+        int32_t);
+
+typedef int32_t (*OH_AudioRendererOnStreamEvent)(
+        OH_AudioRenderer* renderer,
+        void* userData,
+        void*,
+        int32_t);
+
+typedef int32_t (*OH_AudioRendererOnInterrptEvent)(
+        OH_AudioRenderer*,
+        void*,
+        enum OH_AudioInterrupt_ForceType,
+        enum OH_AudioInterrupt_Hint);
+
+typedef int32_t (*OH_AudioRendererOnError)(
+        OH_AudioRenderer*,
+        void*,
+        enum OH_AudioStream_Result);
+
 struct OH_AudioRendererCallbacks {
-    int32_t (*OH_AudioRendererOnWriteData)(OH_AudioRenderer*, void*, void*, int32_t);
-
-    int32_t (*OH_AudioRendererOnStreamEvent)(OH_AudioRenderer*, void*, void*, int32_t);
-
-    int32_t (*OH_AudioRendererOnInterrptEvent)(OH_AudioRenderer*, void*, enum OH_AudioInterrupt_ForceType, enum OH_AudioInterrupt_Hint);
-
-    int32_t (*OH_AudioRendererOnError)(OH_AudioRenderer*, void*, enum OH_AudioStream_Result);
+    OH_AudioRendererOnWriteData OnWriteData;
+    OH_AudioRendererOnStreamEvent OnStreamEvent;
+    OH_AudioRendererOnInterrptEvent OnInterruptEvent;
+    OH_AudioRendererOnError OnError;
 };
 #ifdef __cplusplus
 }

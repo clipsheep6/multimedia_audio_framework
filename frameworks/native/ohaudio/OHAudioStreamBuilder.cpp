@@ -71,6 +71,14 @@ OH_AudioStream_Result OH_AudioRendererBuilder_SetEncodingType(OH_AudioStreamBuil
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCallback(OH_AudioStreamBuilder* builder,
+        OH_AudioRendererCallbacks callbacks, void* userData)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    audioStreamBuilder->SetCallback(callbacks, userData);
+    return AUDIOSTREAM_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 void OHAudioStreamBuilder::SetSamplingRate(int32_t rate)
@@ -103,12 +111,16 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetEncodingType(AudioEncodingType en
     return AUDIOSTREAM_SUCCESS;
 }
 
+
 int32_t OHAudioStreamBuilder::Generate(OH_AudioRenderer* renderer)
 {
     if (streamType_ != RENDERER_TYPE) {
         return -1;
     }
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
+    if (userData_ != nullptr) {
+        audioRenderer->SetRendererWriteCallback(callbacks_, userData_);
+    }
     renderer = (OH_AudioRenderer*)audioRenderer;
     return 0;
 }
@@ -123,5 +135,10 @@ int32_t OHAudioStreamBuilder::Generate(OH_AudioCapturer* capturer)
     return 0;
 }
 
+void OHAudioStreamBuilder::SetCallback(OH_AudioRendererCallbacks callbacks, void* userData)
+{
+    callbacks_ = callbacks;
+    userData_ = userData;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

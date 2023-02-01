@@ -143,6 +143,7 @@ enum OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* re
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 enum OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer* renderer, int32_t* frames);
+
 #ifdef __cplusplus
 }
 #endif

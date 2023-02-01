@@ -36,7 +36,7 @@ enum OH_AudioStream_Result OH_AudioRendererBuilder_SetEncodingType(OH_AudioStrea
         enum OH_AudioStream_EncodingType encodingType);
 
 enum OH_AudioStream_Result OH_AudioStreamBuilder_SetCallback(OH_AudioStreamBuilder* builder,
-        struct OH_AudioRendererCallbacks callbacks, void*);
+        struct OH_AudioRendererCallbacks callbacks, void* userData);
 
 enum OH_AudioStream_Result OH_AudioRendererBuilder_Generate(OH_AudioStreamBuilder* builder,
         OH_AudioRenderer** audioRenderer);

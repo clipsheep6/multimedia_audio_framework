@@ -201,5 +201,19 @@ int32_t OHAudioRenderer::GetFramesWritten()
 {
     return 0;
 }
+
+
+void OHAudioRenderer::SetRendererWriteCallback(OH_AudioRendererCallbacks callbacks, void* userData)
+{
+    std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRenderModeCallback>(callbacks, userData);
+    if (audioRenderer_ != nullptr) {
+        audioRenderer_->SetRendererWriteCallback(callback);
+    }
+}
+
+void OHAudioRenderModeCallback::OnWriteData(size_t length) 
+{
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS
