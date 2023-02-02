@@ -20,7 +20,11 @@ ohos_shared_library("audio_ringtone_client") {
     debug = false
     blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
   }
-  install_enable = true
+  if ("${product_name}" == "ohcore") {
+    install_enable = false
+  } else {
+    install_enable = true
+  }
   sources = [ "audio_ringtone_manager.cpp" ]
 
   include_dirs = [

@@ -91,9 +91,9 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 
     AudioStreamType audioStreamType = AudioStream::GetStreamType(contentType, streamUsage);
 #ifdef OHCORE
-        auto audioRenderer = std::make_unique<AudioRendererGateway>(audioStreamType);
+    auto audioRenderer = std::make_unique<AudioRendererGateway>(audioStreamType);
 #else
-        auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo);
+    auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo);
 #endif
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
     if (!cachePath.empty()) {
