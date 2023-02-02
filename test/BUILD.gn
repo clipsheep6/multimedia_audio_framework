@@ -16,6 +16,7 @@ group("audio_unit_test") {
 
   deps = [
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_capturer_unit_test",
+    "../frameworks/native/audiopolicy/test/unittest/group_manager_js_test:audio_group_manager_JS_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/group_manager_test:audio_group_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/manager_test:audio_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/policy_test:audio_policy_unit_test",
