@@ -279,7 +279,7 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     }
     localDevice->networkId_ = LOCAL_NETWORK_ID;
     localDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    localDevice->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    localDevice->deviceType_ = currentActiveDevice_;
 
     int32_t ret = MoveToLocalOutputDevice(targetSinkInputs, localDevice);
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "MoveToLocalOutputDevice failed!");
@@ -355,7 +355,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         ret = MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     }
     UpdateTrackerDeviceChange(audioDeviceDescriptors);
-    OnPreferOutputDeviceUpdated(currentActiveDevice_, networkId);
+    OnPreferOutputDeviceUpdated(deviceType, networkId);
     AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
     return ret;
 }
@@ -410,7 +410,7 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
 
     // start move.
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
-    std::string sinkName = GetPortName(currentActiveDevice_);
+    std::string sinkName = GetPortName(localDeviceType);
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
         if (audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName) != SUCCESS) {
             AUDIO_ERR_LOG("move [%{public}d] to local failed", sinkInputIds[i].streamId);
