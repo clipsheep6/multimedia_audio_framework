@@ -152,7 +152,8 @@ public:
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
 
-    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object);
+    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, AudioRendererInfo &rendererInfo,
+        const sptr<IRemoteObject> &object);
 
     int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId);
 
