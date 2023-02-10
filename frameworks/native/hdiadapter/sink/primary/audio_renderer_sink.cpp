@@ -21,9 +21,9 @@
 #include <string>
 #include <unistd.h>
 
-#include "audio_manager.h"
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#include "v1_0/iaudio_manager.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -91,9 +91,11 @@ private:
     int32_t routeHandle_ = -1;
     uint32_t openSpeaker_;
     std::string adapterNameCase_;
-    struct AudioManager *audioManager_;
-    struct AudioAdapter *audioAdapter_;
-    struct AudioRender *audioRender_;
+    struct IAudioManager *audioManager_;
+    struct IAudioAdapter *audioAdapter_;
+    struct IAudioRender *audioRender_;
+    struct AudioAdapterDescriptor adapterDesc_;
+    struct AudioDeviceDescriptor deviceDesc_;
     struct AudioPort audioPort_ = {};
     bool audioMonoState_ = false;
     bool audioBalanceState_ = false;
@@ -282,13 +284,13 @@ void AudioRendererSinkInner::DeInit()
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
-    if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
-        audioAdapter_->DestroyRender(audioAdapter_, audioRender_);
+    if (audioAdapter_ != nullptr) {
+        audioAdapter_->DestroyRender(audioAdapter_, &deviceDesc_);
     }
     audioRender_ = nullptr;
 
-    if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
-        audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
+    if (audioManager_ != nullptr) {
+        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
@@ -316,19 +318,19 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
 }
 
 static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string adapterNameCase,
-    enum AudioPortDirection portFlag, struct AudioPort &renderPort, int32_t size)
+    enum AudioPortDirection portFlag, struct AudioPort &renderPort, uint32_t size)
 {
     if (descs == nullptr) {
         return ERROR;
     }
 
-    for (int32_t index = 0; index < size; index++) {
+    for (uint32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
         if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
-            for (uint32_t port = 0; port < desc->portNum; port++) {
+            for (uint32_t port = 0; port < desc->portsLen; port++) {
                 // Only find out the port of out in the sound card
                 if (desc->ports[port].dir == portFlag) {
                     renderPort = desc->ports[port];
@@ -346,7 +348,7 @@ int32_t AudioRendererSinkInner::InitAudioManager()
 {
     AUDIO_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
 
-    audioManager_ = GetAudioManagerFuncs();
+    audioManager_ = IAudioManagerGet(false);
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
@@ -406,14 +408,13 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     AUDIO_INFO_LOG("AudioRendererSink Create render format: %{public}d", param.format);
-    struct AudioDeviceDescriptor deviceDesc;
-    deviceDesc.portId = renderPort.portId;
-    deviceDesc.desc = nullptr;
-    deviceDesc.pins = PIN_OUT_SPEAKER;
-    ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_);
+    deviceDesc_.portId = renderPort.portId;
+    deviceDesc_.desc = nullptr;
+    deviceDesc_.pins = PIN_OUT_SPEAKER;
+    ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc_, &param, &audioRender_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
-        audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
+        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
         return ERR_NOT_STARTED;
     }
 
@@ -432,10 +433,10 @@ int32_t AudioRendererSinkInner::Init(IAudioSinkAttr attr)
         return ERR_NOT_STARTED;
     }
 
-    int32_t size = 0;
+    uint32_t size = 0;
     int32_t ret;
     struct AudioAdapterDescriptor *descs = nullptr;
-    ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
+    ret = audioManager_->GetAllAdapters(audioManager_, descs, &size);
     if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret != 0) {
         AUDIO_ERR_LOG("Get adapters Fail.");
         return ERR_NOT_STARTED;
@@ -448,8 +449,8 @@ int32_t AudioRendererSinkInner::Init(IAudioSinkAttr attr)
         return ERR_NOT_STARTED;
     }
 
-    struct AudioAdapterDescriptor *desc = &descs[index];
-    if (audioManager_->LoadAdapter(audioManager_, desc, &audioAdapter_) != 0) {
+    adapterDesc_ = descs[index];
+    if (audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) != 0) {
         AUDIO_ERR_LOG("Load Adapter Fail.");
         return ERR_NOT_STARTED;
     }
@@ -513,7 +514,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     }
 #endif // DUMPFILE
 
-    ret = audioRender_->RenderFrame(audioRender_, static_cast<void*>(&data), len, &writeLen);
+    ret = audioRender_->RenderFrame(audioRender_, (int8_t*)(&data), (uint32_t)len, &writeLen);
     if (ret != 0) {
         AUDIO_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
@@ -542,7 +543,7 @@ int32_t AudioRendererSinkInner::Start(void)
 
     int32_t ret;
     if (!started_) {
-        ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Start(audioRender_);
         if (!ret) {
             started_ = true;
             return SUCCESS;
@@ -575,7 +576,7 @@ int32_t AudioRendererSinkInner::SetVolume(float left, float right)
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
 
-    ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
+    ret = audioRender_->SetVolume(audioRender_, volume);
     if (ret) {
         AUDIO_ERR_LOG("AudioRendererSink::Set volume failed!");
     }
@@ -653,19 +654,19 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     switch (outputDevice) {
         case DEVICE_TYPE_SPEAKER:
             sink.ext.device.type = PIN_OUT_SPEAKER;
-            sink.ext.device.desc = "pin_out_speaker";
+            sink.ext.device.desc = const_cast<char*>("pin_out_speaker");
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
             sink.ext.device.type = PIN_OUT_HEADSET;
-            sink.ext.device.desc = "pin_out_headset";
+            sink.ext.device.desc = const_cast<char*>("pin_out_headset");
             break;
         case DEVICE_TYPE_USB_HEADSET:
             sink.ext.device.type = PIN_OUT_USB_EXT;
-            sink.ext.device.desc = "pin_out_usb_ext";
+            sink.ext.device.desc = const_cast<char*>("pin_out_usb_ext");
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
             sink.ext.device.type = PIN_OUT_BLUETOOTH_SCO;
-            sink.ext.device.desc = "pin_out_bluetooth_sco";
+            sink.ext.device.desc = const_cast<char*>("pin_out_bluetooth_sco");
             break;
         default:
             ret = ERR_NOT_SUPPORTED;
@@ -706,10 +707,10 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
     sink.ext.device.moduleId = 0;
 
     AudioRoute route = {
-        .sourcesNum = 1,
         .sources = &source,
-        .sinksNum = 1,
+        .sourcesLen = 1,
         .sinks = &sink,
+        .sinksLen = 1,
     };
 
     if (audioAdapter_ == nullptr) {
@@ -747,12 +748,8 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
         scene.scene.id = GetAudioCategory(audioScene);
         scene.desc.pins = audioSceneOutPort;
         scene.desc.desc = nullptr;
-        if (audioRender_->scene.SelectScene == nullptr) {
-            AUDIO_ERR_LOG("AudioRendererSink: Select scene nullptr");
-            return ERR_OPERATION_FAILED;
-        }
 
-        ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
+        ret = audioRender_->SelectScene(audioRender_, &scene);
         if (ret < 0) {
             AUDIO_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
             return ERR_OPERATION_FAILED;
@@ -800,7 +797,7 @@ int32_t AudioRendererSinkInner::Stop(void)
     }
 
     if (started_) {
-        ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Stop(audioRender_);
         if (!ret) {
             started_ = false;
             return SUCCESS;
@@ -828,7 +825,7 @@ int32_t AudioRendererSinkInner::Pause(void)
     }
 
     if (!paused_) {
-        ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Pause(audioRender_);
         if (!ret) {
             paused_ = true;
             return SUCCESS;
@@ -856,7 +853,7 @@ int32_t AudioRendererSinkInner::Resume(void)
     }
 
     if (paused_) {
-        ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Resume(audioRender_);
         if (!ret) {
             paused_ = false;
             return SUCCESS;
@@ -874,7 +871,7 @@ int32_t AudioRendererSinkInner::Reset(void)
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Flush(audioRender_);
         if (!ret) {
             return SUCCESS;
         } else {
@@ -891,7 +888,7 @@ int32_t AudioRendererSinkInner::Flush(void)
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Flush(audioRender_);
         if (!ret) {
             return SUCCESS;
         } else {
