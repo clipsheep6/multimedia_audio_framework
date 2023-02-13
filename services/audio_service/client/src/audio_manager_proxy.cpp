@@ -39,7 +39,7 @@ int32_t AudioManagerProxy::GetMaxVolume(AudioVolumeType volumeType)
     data.WriteInt32(static_cast<int>(volumeType));
     int32_t error = Remote()->SendRequest(GET_MAX_VOLUME, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get max volume failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("Get max volume failed, error: %d", error);
         return error;
     }
 
@@ -61,7 +61,7 @@ int32_t AudioManagerProxy::GetMinVolume(AudioVolumeType volumeType)
 
     int32_t error = Remote()->SendRequest(GET_MIN_VOLUME, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get min volume failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("Get min volume failed, error: %d", error);
         return error;
     }
 
@@ -82,7 +82,7 @@ int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)
     data.WriteBool(isMute);
     int32_t error = Remote()->SendRequest(SET_MICROPHONE_MUTE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetMicrophoneMute failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("SetMicrophoneMute failed, error: %d", error);
         return error;
     }
 
@@ -101,7 +101,7 @@ bool AudioManagerProxy::IsMicrophoneMute()
     }
     int32_t error = Remote()->SendRequest(IS_MICROPHONE_MUTE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("IsMicrophoneMute failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("IsMicrophoneMute failed, error: %d", error);
         return false;
     }
 
@@ -124,7 +124,7 @@ int32_t AudioManagerProxy::SetVoiceVolume(float volume)
 
     int32_t error = Remote()->SendRequest(SET_VOICE_VOLUME, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetVoiceVolume failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("SetVoiceVolume failed, error: %d", error);
         return false;
     }
 
@@ -148,7 +148,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activ
 
     int32_t error = Remote()->SendRequest(SET_AUDIO_SCENE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetAudioScene failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("SetAudioScene failed, error: %d", error);
         return false;
     }
 
@@ -171,7 +171,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFla
 
     int32_t error = Remote()->SendRequest(GET_DEVICES, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get devices failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("Get devices failed, error: %d", error);
         return deviceInfo;
     }
 
@@ -196,7 +196,7 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string &key)
     data.WriteString(static_cast<std::string>(key));
     int32_t error = Remote()->SendRequest(GET_AUDIO_PARAMETER, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get audio parameter failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
         const std::string value = "";
         return value;
     }
@@ -221,7 +221,7 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string& networ
     data.WriteString(static_cast<std::string>(condition));
     int32_t error = Remote()->SendRequest(GET_REMOTE_AUDIO_PARAMETER, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get audio parameter failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
         const std::string value = "";
         return value;
     }
@@ -244,7 +244,7 @@ void AudioManagerProxy::SetAudioParameter(const std::string &key, const std::str
     data.WriteString(static_cast<std::string>(value));
     int32_t error = Remote()->SendRequest(SET_AUDIO_PARAMETER, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get audio parameter failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
         return;
     }
 }
@@ -266,7 +266,7 @@ void AudioManagerProxy::SetAudioParameter(const std::string& networkId, const Au
     data.WriteString(static_cast<std::string>(value));
     int32_t error = Remote()->SendRequest(SET_REMOTE_AUDIO_PARAMETER, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get audio parameter failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
         return;
     }
 }
@@ -285,7 +285,7 @@ const char *AudioManagerProxy::RetrieveCookie(int32_t &size)
 
     int32_t error = Remote()->SendRequest(RETRIEVE_COOKIE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("retrieve cookie failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("retrieve cookie failed, error: %d", error);
         return nullptr;
     }
 
@@ -314,7 +314,7 @@ uint64_t AudioManagerProxy::GetTransactionId(DeviceType deviceType, DeviceRole d
 
     int32_t error = Remote()->SendRequest(GET_TRANSACTION_ID, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("get transaction id failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("get transaction id failed, error: %d", error);
         return transactionId;
     }
 
@@ -337,7 +337,7 @@ void AudioManagerProxy::NotifyDeviceInfo(std::string networkId, bool connected)
     data.WriteBool(connected);
     int32_t error = Remote()->SendRequest(NOTIFY_DEVICE_INFO, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get audio parameter failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
         return;
     }
 }
@@ -357,7 +357,7 @@ int32_t AudioManagerProxy::CheckRemoteDeviceState(std::string networkId, DeviceR
     data.WriteBool(isStartDevice);
     int32_t error = Remote()->SendRequest(CHECK_REMOTE_DEVICE_STATE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("CheckRemoteDeviceState failed in proxy, error: %{public}d", error);
+        AUDIO_ERR_LOG("CheckRemoteDeviceState failed in proxy, error: %d", error);
         return error;
     }
     return reply.ReadInt32();
@@ -379,12 +379,12 @@ int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag f
 
     auto error = Remote()->SendRequest(UPDATE_ROUTE_REQ, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UpdateActiveDeviceRoute failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("UpdateActiveDeviceRoute failed, error: %d", error);
         return false;
     }
 
     auto result = reply.ReadInt32();
-    AUDIO_DEBUG_LOG("[UPDATE_ROUTE_REQ] result %{public}d", result);
+    AUDIO_DEBUG_LOG("[UPDATE_ROUTE_REQ] result %d", result);
     return result;
 }
 
@@ -406,7 +406,7 @@ int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& objec
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(SET_PARAMETER_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetParameterCallback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetParameterCallback failed, error: %d", error);
         return error;
     }
 
@@ -426,7 +426,7 @@ void AudioManagerProxy::SetAudioMonoState(bool audioMono)
     (void)data.WriteBool(audioMono);
     int error = Remote()->SendRequest(SET_AUDIO_MONO_STATE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioMonoState failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioMonoState failed, error: %d", error);
         return;
     }
 }
@@ -444,7 +444,7 @@ void AudioManagerProxy::SetAudioBalanceValue(float audioBalance)
     (void)data.WriteFloat(audioBalance);
     int error = Remote()->SendRequest(SET_AUDIO_BALANCE_VALUE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioBalanceValue failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioBalanceValue failed, error: %d", error);
         return;
     }
 }
