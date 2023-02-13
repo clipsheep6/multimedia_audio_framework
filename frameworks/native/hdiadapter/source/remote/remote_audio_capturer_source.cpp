@@ -71,7 +71,7 @@ void RemoteAudioCapturerSource::DeInit()
         audioAdapter_->DestroyCapture(audioAdapter_, audioCapture_);
     }
     audioCapture_ = nullptr;
-    isCapturerCreated_ = false;
+    isCapturerCreated_.store(false);
 
     if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
         if (routeHandle_ != -1) {
@@ -151,11 +151,11 @@ int32_t RemoteAudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
 
     ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_);
     if (audioCapture_ == nullptr || ret < 0) {
-        AUDIO_ERR_LOG("Create capture failed");
+        AUDIO_ERR_LOG("Create capture failed, error code %{public}d.", ret);
         return ERR_NOT_STARTED;
     }
 
-    isCapturerCreated_ = true;
+    isCapturerCreated_.store(true);
     return SUCCESS;
 }
 
@@ -280,10 +280,10 @@ int32_t RemoteAudioCapturerSource::CaptureFrame(char *frame, uint64_t requestByt
 
 int32_t RemoteAudioCapturerSource::Start(void)
 {
-    AUDIO_INFO_LOG("RemoteAudioCapturerSource::Start in");
-    if (!isCapturerCreated_) {
+    AUDIO_INFO_LOG("RemoteAudioCapturerSource start enter.");
+    if (!isCapturerCreated_.load()) {
         if (CreateCapture(audioPort) != SUCCESS) {
-            AUDIO_ERR_LOG("Create capture failed");
+            AUDIO_ERR_LOG("Create capture failed.");
             return ERR_NOT_STARTED;
         }
     }
@@ -292,6 +292,7 @@ int32_t RemoteAudioCapturerSource::Start(void)
     if (!started_) {
         ret = audioCapture_->control.Start((AudioHandle)audioCapture_);
         if (ret < 0) {
+            AUDIO_ERR_LOG("Remote audio capturer start fail, error code %{public}d", ret);
             return ERR_NOT_STARTED;
         }
         started_ = true;

@@ -62,7 +62,7 @@ private:
     IAudioSourceAttr attr_;
     std::string deviceNetworkId_;
     bool capturerInited_;
-    bool isCapturerCreated_ = false;
+    std::atomic<bool> isCapturerCreated_ = false;
     bool started_;
     bool paused_;
     bool micMuteState_ = false;

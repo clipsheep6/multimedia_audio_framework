@@ -747,7 +747,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
             && device->deviceRole_ == DeviceRole::OUTPUT_DEVICE;
         bool filterRemoteInput = deviceFlag == DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG
             && device->networkId_ != LOCAL_NETWORK_ID
-        && device->deviceRole_ == DeviceRole::INPUT_DEVICE;
+            && device->deviceRole_ == DeviceRole::INPUT_DEVICE;
 
         if (filterAllLocal || filterLocalOutput || filterLocalInput || filterAllRemote || filterRemoteOutput
             || filterRemoteInput) {

@@ -54,6 +54,7 @@ const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 }
+
 class FastAudioRendererSinkInner : public FastAudioRendererSink {
 public:
     int32_t Init(IAudioSinkAttr attr) override;
