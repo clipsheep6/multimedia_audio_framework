@@ -379,12 +379,12 @@ int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag f
 
     auto error = Remote()->SendRequest(UPDATE_ROUTE_REQ, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UpdateActiveDeviceRoute failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("UpdateActiveDeviceRoute failed, error: %d", error);
         return false;
     }
 
     auto result = reply.ReadInt32();
-    AUDIO_DEBUG_LOG("[UPDATE_ROUTE_REQ] result %{public}d", result);
+    AUDIO_DEBUG_LOG("[UPDATE_ROUTE_REQ] result %d", result);
     return result;
 }
 
@@ -406,7 +406,7 @@ int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& objec
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(SET_PARAMETER_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetParameterCallback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetParameterCallback failed, error: %d", error);
         return error;
     }
 
@@ -426,7 +426,7 @@ void AudioManagerProxy::SetAudioMonoState(bool audioMono)
     (void)data.WriteBool(audioMono);
     int error = Remote()->SendRequest(SET_AUDIO_MONO_STATE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioMonoState failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioMonoState failed, error: %d", error);
         return;
     }
 }
@@ -444,7 +444,7 @@ void AudioManagerProxy::SetAudioBalanceValue(float audioBalance)
     (void)data.WriteFloat(audioBalance);
     int error = Remote()->SendRequest(SET_AUDIO_BALANCE_VALUE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioBalanceValue failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioBalanceValue failed, error: %d", error);
         return;
     }
 }
