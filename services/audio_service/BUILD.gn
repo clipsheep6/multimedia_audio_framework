@@ -93,6 +93,12 @@ ohos_shared_library("audio_client") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  # version_script = "audio_client.versionscript"
+
+  version_script = "//foundation/multimedia/audio_framework/audio_framework.versionscript"
+  innerapi_tags = [ "platformsdk" ]
+
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
 }

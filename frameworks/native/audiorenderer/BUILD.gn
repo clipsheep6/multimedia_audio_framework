@@ -71,6 +71,11 @@ ohos_shared_library("audio_renderer") {
     "hiviewdfx_hilog_native:libhilog",
   ]
 
+  # version_script = "audio_renderer.versionscript"
+
+  version_script = "//foundation/multimedia/audio_framework/audio_framework.versionscript"
+  innerapi_tags = [ "platformsdk" ]
+
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
