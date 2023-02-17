@@ -110,7 +110,7 @@
               "name": "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer",
               "header": {
                 "header_files": [
-                  "audio_toneplayer_private.h",
+                  "tone_player.h",
                   "audio_renderer.h",
                   "audio_info.h"
                 ],
