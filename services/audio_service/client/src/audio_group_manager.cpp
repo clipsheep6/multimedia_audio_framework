@@ -124,7 +124,12 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+            break;
         case STREAM_ULTRASONIC:
+            if (!PermissionUtil::VerifySystemPermission()) {
+                AUDIO_ERR_LOG("GetVolume: STREAM_ULTRASONIC No system permission");
+                return ERR_PERMISSION_DENIED;
+            }
             break;
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
@@ -172,6 +177,12 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
         }
         volumeType = STREAM_MUSIC;
     }
+    if (volumeType == STREAM_ULTRASONIC) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("GetMaxVolume: STREAM_ULTRASONIC No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
+    }
     return g_sProxy->GetMaxVolume(volumeType);
 }
 
@@ -197,6 +208,13 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
             return ERR_PERMISSION_DENIED;
         }
         volumeType = STREAM_MUSIC;
+    }
+
+    if (volumeType == STREAM_ULTRASONIC) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("GetMinVolume: STREAM_ULTRASONIC No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
     }
     return g_sProxy->GetMinVolume(volumeType);
 }
@@ -265,7 +283,12 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+            break;
         case STREAM_ULTRASONIC:
+            if (!PermissionUtil::VerifySystemPermission()) {
+                AUDIO_ERR_LOG("IsStreamMute: STREAM_ULTRASONIC No system permission");
+                return ERR_PERMISSION_DENIED;
+            }
             break;
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
