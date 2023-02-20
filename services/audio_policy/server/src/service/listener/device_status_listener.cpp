@@ -115,7 +115,7 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
             OnDeviceStatusChange(info, devListener);
         }
     } else if (serviceStatus->serviceName == AUDIO_HDI_PNP_SERVICE_NAME) {
-        if (serviceStatus->status == SERVIE_STATUS_CHANGE) {
+        if (serviceStatus->status == SERVIE_STATUS_CHANGE || serviceStatus->status == SERVIE_STATUS_START) {
             OnDeviceStatusChange(info, devListener);
         }
     } else if (serviceStatus->serviceName == AUDIO_BLUETOOTH_HDI_SERVICE_NAME) {
