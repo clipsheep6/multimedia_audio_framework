@@ -56,8 +56,8 @@ ohos_shared_library("audio_capturer") {
   ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_stream_client",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_stream_client",
   ]
 
   deps += audio_capturer_gateway_deps

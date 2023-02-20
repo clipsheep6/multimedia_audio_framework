@@ -33,9 +33,9 @@ ohos_unittest("audio_stream_manager_unit_test") {
   sources = [ "src/audio_stream_manager_unit_test.cpp" ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
+    "../../../../../../frameworks/native/audiocapturer:audio_capturer",
+    "../../../../../../frameworks/native/audiorenderer:audio_renderer",
+    "../../../../../../services/audio_service:audio_service_client",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

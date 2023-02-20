@@ -32,7 +32,7 @@ ohos_unittest("audio_balance_test") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
+    "../../..:audio_service_client",
     "//third_party/googletest:gtest_main",
   ]
 

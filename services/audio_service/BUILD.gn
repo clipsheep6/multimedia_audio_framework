@@ -26,18 +26,18 @@ group("audio_service_packages") {
 
 config("audio_client_public_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/stream/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/common/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
+    "../../frameworks/native/audiopolicy/include",
+    "../../frameworks/native/audioutils/include",
+    "../../frameworks/native/audiostream/include",
+    "../../interfaces/inner_api/native/audiocapturer/include",
+    "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiomanager/include",
+    "../../interfaces/inner_api/native/audiorenderer/include",
+    "stream/include",
+    "client/include",
+    "common/include",
+    "../audio_policy/client/include",
+    "../audio_policy/common/include",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "//utils/system/safwk/native/include",
     "//commonlibrary/c_utils/base/include",
@@ -73,10 +73,10 @@ ohos_shared_library("audio_stream_client") {
   public_configs = [ ":audio_client_public_config" ]
 
   deps = [
+    ":audio_service_client",
     "$pulseaudio_build_path/src/pulse:pulse",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_policy_client",
   ]
 
   external_deps = [
@@ -111,8 +111,8 @@ ohos_shared_library("audio_service_client") {
 
   deps = [
     "$pulseaudio_build_path/src/pulse:pulse",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_policy_client",
   ]
 
   external_deps = [
@@ -139,16 +139,16 @@ config("audio_service_config") {
     "common/include",
     "server/include",
     "client/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/primary",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/remote",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/file",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/bluetooth",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/primary",
+    "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiomanager/include",
+    "../../frameworks/native/audiopolicy/include",
+    "../../frameworks/native/hdiadapter/sink/common",
+    "../../frameworks/native/hdiadapter/sink/primary",
+    "../../frameworks/native/hdiadapter/sink/remote",
+    "../../frameworks/native/hdiadapter/sink/file",
+    "../../frameworks/native/hdiadapter/sink/bluetooth",
+    "../../frameworks/native/hdiadapter/source/common",
+    "../../frameworks/native/hdiadapter/source/primary",
     "//drivers/peripheral/audio/interfaces/include",
   ]
 
@@ -179,11 +179,11 @@ ohos_shared_library("audio_service") {
 
   deps = [
     "$pulseaudio_build_path/src/daemon:pulseaudio",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:audio_renderer_sink",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:audio_capturer_source",
+    "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
+    "../../frameworks/native/hdiadapter/source:audio_capturer_source",
   ]
 
   external_deps = [
@@ -214,10 +214,10 @@ ohos_executable("audio_hdi_device_test") {
   install_enable = false
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
+    "../../frameworks/native/hdiadapter/sink",
+    "../../interfaces/inner_api/native/audiocommon/include",
+    "../../frameworks/native/audioutils/include",
+    "../../frameworks/native/hdiadapter/sink/common",
     "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
@@ -227,8 +227,8 @@ ohos_executable("audio_hdi_device_test") {
   sources = [ "test/example/audio_hdi_device_test.cpp" ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
