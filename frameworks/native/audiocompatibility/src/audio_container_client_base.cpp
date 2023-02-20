@@ -26,6 +26,17 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
+static const int32_t MAX_VOLUME_LEVEL = 15;
+static const int32_t CONST_FACTOR = 100;
+
+static float VolumeToDb(int32_t volumeLevel)
+{
+    float value = static_cast<float>(volumeLevel) / MAX_VOLUME_LEVEL;
+    float roundValue = static_cast<int>(value * CONST_FACTOR);
+
+    return static_cast<float>(roundValue) / CONST_FACTOR;
+}
+
 void AudioContainerClientBase::InitializeClientGa()
 {
     mVolumeFactor = 1.0f;
@@ -149,12 +160,6 @@ int32_t AudioContainerClientBase::CreateStreamGa(AudioStreamParams audioParams, 
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
 
-    mStreamType = audioType;
-    const std::string streamName = GetStreamNameGa(audioType);
-
-    auto timenow = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    const std::string streamStartTime = ctime(&timenow);
-
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -169,6 +174,8 @@ int32_t AudioContainerClientBase::CreateStreamGa(AudioStreamParams audioParams, 
     data.WriteInt32(static_cast<int32_t>(audioType));
 
     error = Remote()->SendRequest(CMD_CREATE_AUDIOSTREAM, data, reply, option);
+
+    mFrameSize = (static_cast<uint32_t>(audioParams.channels)) * (static_cast<uint32_t>(audioParams.format));
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioContainerClientBase::CreateRemoteAudioRenderer() failed, error: %{public}d", error);
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
@@ -387,7 +394,6 @@ int32_t AudioContainerClientBase::WriteStreamInnerGa(const uint8_t *buffer, size
         return AUDIO_CLIENT_ERR;
     }
     HandleRenderPositionCallbacksGa(length);
-    AUDIO_INFO_LOG("AudioContainerClientBase: WriteStreamInnerGa SUCCESS");
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -395,13 +401,13 @@ void AudioContainerClientBase::HandleRenderPositionCallbacksGa(size_t bytesWritt
 {
     mTotalBytesWritten += bytesWritten;
     if (mFrameSize == 0) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: HandleRenderPositionCallbackGa capturerPeriodPositionCb not set");
         return;
     }
 
     uint64_t writtenFrameNumber = mTotalBytesWritten / mFrameSize;
     if (!mMarkReached && mRenderPositionCb) {
         if (writtenFrameNumber >= mFrameMarkPosition) {
+            mRenderPositionCb->OnMarkReached(mFrameMarkPosition);
             mPositionCBThreads.emplace_back(std::make_unique<std::thread>(&RendererPositionCallback::OnMarkReached,
                 mRenderPositionCb, mFrameMarkPosition));
             mMarkReached = true;
@@ -411,6 +417,7 @@ void AudioContainerClientBase::HandleRenderPositionCallbacksGa(size_t bytesWritt
     if (mRenderPeriodPositionCb) {
         mFramePeriodWritten += (bytesWritten / mFrameSize);
         if (mFramePeriodWritten >= mFramePeriodNumber) {
+            mRenderPeriodPositionCb->OnPeriodReached(mFramePeriodNumber);
             mFramePeriodWritten %= mFramePeriodNumber;
             mPeriodPositionCBThreads.emplace_back(std::make_unique<std::thread>(
                 &RendererPeriodPositionCallback::OnPeriodReached, mRenderPeriodPositionCb, mFramePeriodNumber));
@@ -448,7 +455,7 @@ size_t AudioContainerClientBase::WriteStreamGa(const StreamBuffer &stream, int32
 int32_t AudioContainerClientBase::UpdateReadBufferGa(uint8_t *buffer, size_t &length, size_t &readSize)
 {
     size_t l = (internalRdBufLen < length) ? internalRdBufLen : length;
-    if (memcpy_s(buffer, length, (const uint8_t*)internalReadBuffer + internalRdBufIndex, l)) {
+    if (memcpy_s(buffer, length, static_cast<const uint8_t*>(internalReadBuffer) + internalRdBufIndex, l)) {
         return AUDIO_CLIENT_READ_STREAM_ERR;
     }
 
@@ -477,6 +484,7 @@ void AudioContainerClientBase::HandleCapturePositionCallbacksGa(size_t bytesRead
     uint64_t readFrameNumber = mTotalBytesRead / mFrameSize;
     if (!mMarkReached && mCapturePositionCb) {
         if (readFrameNumber >= mFrameMarkPosition) {
+            mCapturePositionCb->OnMarkReached(mFrameMarkPosition);
             mPositionCBThreads.emplace_back(std::make_unique<std::thread>(&CapturerPositionCallback::OnMarkReached,
                 mCapturePositionCb, mFrameMarkPosition));
             mMarkReached = true;
@@ -486,6 +494,7 @@ void AudioContainerClientBase::HandleCapturePositionCallbacksGa(size_t bytesRead
     if (mCapturePeriodPositionCb) {
         mFramePeriodRead += (bytesRead / mFrameSize);
         if (mFramePeriodRead >= mFramePeriodNumber) {
+            mCapturePeriodPositionCb->OnPeriodReached(mFramePeriodNumber);
             mFramePeriodRead %= mFramePeriodNumber;
             mPeriodPositionCBThreads.emplace_back(std::make_unique<std::thread>(
                 &CapturerPeriodPositionCallback::OnPeriodReached, mCapturePeriodPositionCb, mFramePeriodNumber));
@@ -646,10 +655,9 @@ int32_t AudioContainerClientBase::SetStreamVolumeGa(float volume, const int32_t 
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
     mVolumeFactor = volume;
-    int32_t systemVolumeInt
-        = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
-    float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
-    float vol = systemVolume * mVolumeFactor;
+    int32_t systemVolumeLevel = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
+    float systemVolumeDb = VolumeToDb(systemVolumeLevel);
+    float vol = systemVolumeDb * mVolumeFactor;
 
     AudioRingerMode ringerMode = mAudioSystemMgr->GetRingerMode();
     if ((mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {

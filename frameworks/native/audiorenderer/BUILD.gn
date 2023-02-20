@@ -181,7 +181,7 @@ ohos_executable("audio_interrupt_test") {
 
   deps = [
     ":audio_renderer",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_service_client",
+    "../../../services/audio_service:audio_service_client",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

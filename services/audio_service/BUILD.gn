@@ -62,7 +62,7 @@ ohos_shared_library("audio_stream_client") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [
@@ -93,7 +93,7 @@ ohos_shared_library("audio_service_client") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [

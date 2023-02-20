@@ -184,23 +184,6 @@ public:
     int32_t SetStreamType(AudioStreamType audioStreamType);
 
     /**
-    * Sets the volume of the stream associated with session ID
-    *
-    * @param sessionID indicates the ID for the active stream to be controlled
-    * @param volume indicates volume level between 0 to 65536
-    * @return Returns {@code 0} if success; returns {@code -1} otherwise.
-    */
-    int32_t SetStreamVolume(uint32_t sessionID, uint32_t volume);
-
-    /**
-    * Get the volume of the stream associated with session ID
-    *
-    * @param sessionID indicates the ID for the active stream to be controlled
-    * @return returns volume level between 0 to 65536
-    */
-    uint32_t GetStreamVolume(uint32_t sessionID);
-
-    /**
     * Writes audio data of the stream created using CreateStream to active sink device
     *
     * @param buffer contains audio data to write
@@ -451,16 +434,7 @@ public:
      */
     AudioRenderMode GetAudioRenderMode();
 
-    /**
-     * @brief Registers the renderer write callback listener.
-     * This API should only be used if RENDER_MODE_CALLBACK is needed.
-     *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     */
-    int32_t SaveWriteCallback(const std::weak_ptr<AudioRendererWriteCallback> &callback);
     int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);
-    int32_t SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback);
     AudioCaptureMode GetAudioCaptureMode();
     /**
      * @brief Set the applicationcache path to access the application resources
@@ -486,12 +460,16 @@ public:
     virtual void OnTimeOut() override;
 
     void SetClientID(int32_t clientPid, int32_t clientUid);
-    void SendWriteBufferRequestEvent();
-    void HandleWriteRequestEvent();
-    int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback);
 
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
+    void SendWriteBufferRequestEvent();
+    void SendReadBufferRequestEvent();
+    void HandleWriteRequestEvent();
+    void HandleReadRequestEvent();
+    int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback);
+    int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback);
+
 private:
     pa_threaded_mainloop *mainLoop;
     pa_mainloop_api *api;
@@ -544,7 +522,7 @@ private:
     AudioRendererRate renderRate;
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
-    std::weak_ptr<AudioCapturerReadCallback> readCallback_;
+    std::shared_ptr<AudioCapturerReadCallback> readCallback_;
     std::shared_ptr<AudioRendererWriteCallback> writeCallback_;
     int64_t mWriteCbStamp = 0; // used to measure callback duration
     uint32_t mFrameSize = 0;
@@ -693,22 +671,23 @@ private:
 
     enum {
         WRITE_BUFFER_REQUEST = 0,
+        READ_BUFFER_REQUEST,
 
-        RENDERER_MARK_REACHED_REQUEST = 1,
-        SET_RENDERER_MARK_REACHED_REQUEST = 2,
-        UNSET_RENDERER_MARK_REACHED_REQUEST = 3,
+        RENDERER_MARK_REACHED_REQUEST,
+        SET_RENDERER_MARK_REACHED_REQUEST,
+        UNSET_RENDERER_MARK_REACHED_REQUEST,
 
-        RENDERER_PERIOD_REACHED_REQUEST = 4,
-        SET_RENDERER_PERIOD_REACHED_REQUEST = 5,
-        UNSET_RENDERER_PERIOD_REACHED_REQUEST = 6,
+        RENDERER_PERIOD_REACHED_REQUEST,
+        SET_RENDERER_PERIOD_REACHED_REQUEST,
+        UNSET_RENDERER_PERIOD_REACHED_REQUEST,
 
-        CAPTURER_PERIOD_REACHED_REQUEST = 7,
-        SET_CAPTURER_PERIOD_REACHED_REQUEST = 8,
-        UNSET_CAPTURER_PERIOD_REACHED_REQUEST = 9,
+        CAPTURER_PERIOD_REACHED_REQUEST,
+        SET_CAPTURER_PERIOD_REACHED_REQUEST,
+        UNSET_CAPTURER_PERIOD_REACHED_REQUEST,
 
-        CAPTURER_MARK_REACHED_REQUEST = 10,
-        SET_CAPTURER_MARK_REACHED_REQUEST = 11,
-        UNSET_CAPTURER_MARK_REACHED_REQUEST = 12,
+        CAPTURER_MARK_REACHED_REQUEST,
+        SET_CAPTURER_MARK_REACHED_REQUEST,
+        UNSET_CAPTURER_MARK_REACHED_REQUEST,
     };
 };
 } // namespace AudioStandard

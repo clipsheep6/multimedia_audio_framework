@@ -330,9 +330,9 @@ enum AudioEncodingType {
 
 // Ringer Mode
 enum AudioRingerMode {
-    RINGER_MODE_NORMAL = 0,
-    RINGER_MODE_SILENT = 1,
-    RINGER_MODE_VIBRATE = 2
+    RINGER_MODE_SILENT = 0,
+    RINGER_MODE_VIBRATE = 1,
+    RINGER_MODE_NORMAL = 2
 };
 
 // format
@@ -439,7 +439,8 @@ enum ContentType {
     CONTENT_TYPE_MUSIC = 2,
     CONTENT_TYPE_MOVIE = 3,
     CONTENT_TYPE_SONIFICATION = 4,
-    CONTENT_TYPE_RINGTONE = 5
+    CONTENT_TYPE_RINGTONE = 5,
+    CONTENT_TYPE_ULTRASONIC = 9
 };
 
 /**
@@ -450,8 +451,11 @@ enum StreamUsage {
     STREAM_USAGE_MEDIA = 1,
     STREAM_USAGE_VOICE_COMMUNICATION = 2,
     STREAM_USAGE_VOICE_ASSISTANT = 3,
-    STREAM_USAGE_RANGING = 4,
-    STREAM_USAGE_NOTIFICATION_RINGTONE = 6
+    STREAM_USAGE_ALARM = 4,
+    STREAM_USAGE_NOTIFICATION_RINGTONE = 6,
+    STREAM_USAGE_RANGING = 7,
+    STREAM_USAGE_ACCESSIBILITY = 8,
+    STREAM_USAGE_SYSTEM = 9
 };
 
 /**
@@ -567,6 +571,8 @@ struct AudioInterrupt {
     AudioFocusType audioFocusType;
     uint32_t sessionID;
     bool pauseWhenDucked;
+    int32_t pid { -1 };
+    InterruptMode mode { SHARE_MODE };
 };
 
 struct VolumeEvent {

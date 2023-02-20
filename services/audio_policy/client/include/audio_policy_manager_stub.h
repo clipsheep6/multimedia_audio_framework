@@ -23,10 +23,12 @@ namespace AudioStandard {
 class AudioPolicyManagerStub : public IRemoteStub<IAudioPolicy> {
 public:
     virtual int32_t OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option) override;
+        MessageParcel &reply, MessageOption &option) override;
 
 private:
-    void SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeInternal(MessageParcel &data, MessageParcel &reply);
     void GetToneInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply);
@@ -35,8 +37,8 @@ private:
     void GetAudioSceneInternal(MessageParcel &data);
     void SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply);
-    void IsMicrophoneMuteInternal(MessageParcel &data);
-    void GetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetSingleStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
@@ -88,7 +90,9 @@ private:
     void GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply);
     void IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply);
     void getUsingPemissionFromPrivacyInternal(MessageParcel &data, MessageParcel &reply);
-    void GetActiveOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
+    void SetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void UnsetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

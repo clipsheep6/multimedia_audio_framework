@@ -403,29 +403,29 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
     return SUCCESS;
 }
 
-int32_t PulseAudioServiceAdapterImpl::SetVolume(AudioStreamType streamType, float volume)
+int32_t PulseAudioServiceAdapterImpl::SetVolumeDb(AudioStreamType streamType, float volumeDb)
 {
     lock_guard<mutex> lock(mMutex);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     if (userData == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] SetVolume UserData memory alloc failed");
+        AUDIO_ERR_LOG("SetVolumeDb userData memory alloc failed");
         return ERROR;
     }
 
     userData->thiz = this;
-    userData->volume = volume;
+    userData->volume = volumeDb;
     userData->streamType = streamType;
 
     if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] SetVolume mContext is nullptr");
+        AUDIO_ERR_LOG("SetVolumeDb mContext is nullptr");
         return ERROR;
     }
     pa_threaded_mainloop_lock(mMainLoop);
     pa_operation *operation = pa_context_get_sink_input_info_list(mContext,
         PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb, reinterpret_cast<void*>(userData.get()));
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_get_sink_input_info_list nullptr");
+        AUDIO_ERR_LOG("SetVolumeDb pa_context_get_sink_input_info_list nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERROR;
     }
@@ -668,6 +668,8 @@ string PulseAudioServiceAdapterImpl::GetNameByStreamType(AudioStreamType streamT
             return "voice_call";
         case STREAM_VOICE_ASSISTANT:
             return "voice_assistant";
+        case STREAM_ACCESSIBILITY:
+            return "accessibility";
         case STREAM_ULTRASONIC:
             return "ultrasonic";
         default:
@@ -693,7 +695,9 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
         stream = STREAM_VOICE_CALL;
     }  else if (!streamType.compare(string("voice_assistant"))) {
         stream = STREAM_VOICE_ASSISTANT;
-    }  else if (!streamType.compare(string("ultrasonic"))) {
+    } else if (!streamType.compare(string("accessibility"))) {
+        stream = STREAM_ACCESSIBILITY;
+    } else if (!streamType.compare(string("ultrasonic"))) {
         stream = STREAM_ULTRASONIC;
     } else {
         stream = STREAM_MUSIC;
@@ -892,7 +896,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     uint32_t sessionID;
     sessionStr << sessionCStr;
     sessionStr >> sessionID;
-    AUDIO_INFO_LOG("PulseAudioServiceAdapterImpl: PaGetSinkInputInfoVolumeCb sessionID %{public}u", sessionID);
+    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl] PaGetSinkInputInfoVolumeCb sessionID %{public}u", sessionID);
 
     sinkIndexSessionIDMap[i->index] = sessionID;
 
@@ -900,14 +904,14 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     float volumeFactor = atof(streamVolume);
     float powerVolumeFactor = atof(streamPowerVolume);
     AudioStreamType streamID = thiz->GetIdByStreamType(streamType);
-    float volumeCb = g_audioServiceAdapterCallback->OnGetVolumeCb(streamtype);
-    float vol = volumeCb * volumeFactor * powerVolumeFactor;
+    float volumeDbCb = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamtype);
+    float vol = volumeDbCb * volumeFactor * powerVolumeFactor;
 
     pa_cvolume cv = i->volume;
     uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
 
-    if (streamID == userData->streamType) {
+    if (streamID == userData->streamType || userData->isSubscribingCb) {
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
         if (i->mute) {
             pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, 0, nullptr, nullptr));
@@ -1070,6 +1074,7 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
     unique_ptr<UserData> userData = make_unique<UserData>();
     PulseAudioServiceAdapterImpl *thiz = reinterpret_cast<PulseAudioServiceAdapterImpl*>(userdata);
     userData->thiz = thiz;
+    userData->isSubscribingCb = true;
     switch (t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
         case PA_SUBSCRIPTION_EVENT_SINK:
             break;

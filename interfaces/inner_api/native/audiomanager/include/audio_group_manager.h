@@ -60,8 +60,7 @@ public:
     };
     AudioGroupManager(int32_t groupId);
     virtual ~AudioGroupManager();
-    static float MapVolumeToHDI(int32_t volume);
-    static int32_t MapVolumeFromHDI(float volume);
+
     int32_t SetVolume(AudioVolumeType volumeType, int32_t volume);
     int32_t GetVolume(AudioVolumeType volumeType);
     int32_t GetMaxVolume(AudioVolumeType volumeType);
@@ -77,7 +76,7 @@ public:
     int32_t SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;
     int32_t SetMicrophoneMute(bool isMute);
-    bool IsMicrophoneMute(void);
+    bool IsMicrophoneMute(API_VERSION api_v = API_9);
     int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 private:
     int32_t groupId_;

@@ -34,6 +34,8 @@ void AudioPolicyProxy::WriteAudioInteruptParams(MessageParcel &data, const Audio
     data.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.sourceType));
     data.WriteBool(audioInterrupt.audioFocusType.isPlay);
     data.WriteUint32(audioInterrupt.sessionID);
+    data.WriteInt32(audioInterrupt.pid);
+    data.WriteInt32(static_cast<int32_t>(audioInterrupt.mode));
 }
 
 void AudioPolicyProxy::WriteAudioManagerInteruptParams(MessageParcel &data, const AudioInterrupt &audioInterrupt)
@@ -44,6 +46,8 @@ void AudioPolicyProxy::WriteAudioManagerInteruptParams(MessageParcel &data, cons
     data.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.sourceType));
     data.WriteBool(audioInterrupt.audioFocusType.isPlay);
     data.WriteBool(audioInterrupt.pauseWhenDucked);
+    data.WriteInt32(audioInterrupt.pid);
+    data.WriteInt32(static_cast<int32_t>(audioInterrupt.mode));
 }
 
 void AudioPolicyProxy::ReadAudioInterruptParams(MessageParcel &reply, AudioInterrupt &audioInterrupt)
@@ -54,6 +58,8 @@ void AudioPolicyProxy::ReadAudioInterruptParams(MessageParcel &reply, AudioInter
     audioInterrupt.audioFocusType.sourceType = static_cast<SourceType>(reply.ReadInt32());
     audioInterrupt.audioFocusType.isPlay = reply.ReadBool();
     audioInterrupt.sessionID = reply.ReadUint32();
+    audioInterrupt.pid = reply.ReadInt32();
+    audioInterrupt.mode = static_cast<InterruptMode>(reply.ReadInt32());
 }
 
 void AudioPolicyProxy::WriteStreamChangeInfo(MessageParcel &data,
@@ -83,7 +89,45 @@ void AudioPolicyProxy::WriteAudioStreamInfoParams(MessageParcel &data, const Aud
     data.WriteInt32(static_cast<int32_t>(audioStreamInfo.encoding));
 }
 
-int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v)
+int32_t AudioPolicyProxy::GetMaxVolumeLevel(AudioVolumeType volumeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetMaxVolumeLevel: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(static_cast<int32_t>(volumeType));
+    int32_t error = Remote()->SendRequest(GET_MAX_VOLUMELEVEL, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get max volume failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetMinVolumeLevel(AudioVolumeType volumeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetMinVolumeLevel: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(static_cast<int32_t>(volumeType));
+    int32_t error = Remote()->SendRequest(GET_MIN_VOLUMELEVEL, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get min volume failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -94,9 +138,9 @@ int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volu
     }
 
     data.WriteInt32(static_cast<int32_t>(streamType));
-    data.WriteFloat(volume);
+    data.WriteInt32(volumeLevel);
     data.WriteInt32(static_cast<int32_t>(api_v));
-    int32_t error = Remote()->SendRequest(SET_STREAM_VOLUME, data, reply, option);
+    int32_t error = Remote()->SendRequest(SET_SYSTEM_VOLUMELEVEL, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("set volume failed, error: %d", error);
         return error;
@@ -228,7 +272,7 @@ int32_t AudioPolicyProxy::SetMicrophoneMuteAudioConfig(bool isMute)
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::IsMicrophoneMute()
+bool AudioPolicyProxy::IsMicrophoneMute(API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -238,6 +282,7 @@ bool AudioPolicyProxy::IsMicrophoneMute()
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
+    data.WriteInt32(static_cast<int32_t>(api_v));
     int32_t error = Remote()->SendRequest(IS_MICROPHONE_MUTE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("set microphoneMute failed, error: %d", error);
@@ -301,7 +346,7 @@ AudioScene AudioPolicyProxy::GetAudioScene()
     return static_cast<AudioScene>(reply.ReadInt32());
 }
 
-float AudioPolicyProxy::GetStreamVolume(AudioStreamType streamType)
+int32_t AudioPolicyProxy::GetSystemVolumeLevel(AudioStreamType streamType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -312,12 +357,12 @@ float AudioPolicyProxy::GetStreamVolume(AudioStreamType streamType)
         return -1;
     }
     data.WriteInt32(static_cast<int32_t>(streamType));
-    int32_t error = Remote()->SendRequest(GET_STREAM_VOLUME, data, reply, option);
+    int32_t error = Remote()->SendRequest(GET_SYSTEM_VOLUMELEVEL, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("get volume failed, error: %d", error);
         return error;
     }
-    return reply.ReadFloat();
+    return reply.ReadInt32();
 }
 
 int32_t AudioPolicyProxy::SetLowPowerVolume(int32_t streamId, float volume)
@@ -463,7 +508,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
     return deviceInfo;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetActiveOutputDeviceDescriptors()
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferOutputDeviceDescriptors(
+    AudioRendererInfo &rendererInfo)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -474,6 +520,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetActiveOutputDevice
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return deviceInfo;
     }
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = -1;
     int32_t error = Remote()->SendRequest(GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("Get out devices failed, error: %d", error);
@@ -777,6 +825,53 @@ int32_t AudioPolicyProxy::UnsetDeviceChangeCallback(const int32_t clientId)
     int error = Remote()->SendRequest(UNSET_DEVICE_CHANGE_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioPolicyProxy: unset device change callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+    const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(clientId);
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(clientId);
+    int error = Remote()->SendRequest(UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("unset active output device change callback failed, error: %{public}d", error);
         return error;
     }
 

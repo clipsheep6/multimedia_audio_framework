@@ -41,6 +41,8 @@ const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
 
+static const int32_t MAX_VOLUME_LEVEL = 15;
+static const int32_t CONST_FACTOR = 100;
 
 const string PATH_SEPARATOR = "/";
 const string COOKIE_FILE_NAME = "cookie";
@@ -71,6 +73,14 @@ static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop, pa_context
         return -1;
     }
     return retVal;
+}
+
+static float VolumeToDb(int32_t volumeLevel)
+{
+    float value = static_cast<float>(volumeLevel) / MAX_VOLUME_LEVEL;
+    float roundValue = static_cast<int>(value * CONST_FACTOR);
+
+    return static_cast<float>(roundValue) / CONST_FACTOR;
 }
 
 AudioStreamParams AudioServiceClient::ConvertFromPAAudioParams(pa_sample_spec paSampleSpec)
@@ -262,8 +272,8 @@ int32_t AudioServiceClient::SetAudioRenderMode(AudioRenderMode renderMode)
     pa_buffer_attr bufferAttr;
     bufferAttr.fragsize = static_cast<uint32_t>(-1);
     bufferAttr.prebuf = AlignToAudioFrameSize(pa_usec_to_bytes(MIN_BUF_DURATION_IN_USEC, &sampleSpec), sampleSpec);
-    bufferAttr.maxlength = static_cast<uint32_t>(-1);
-    bufferAttr.tlength = static_cast<uint32_t>(-1);
+    bufferAttr.maxlength = bufferAttr.prebuf * MAX_LENGTH_FACTOR;
+    bufferAttr.tlength = bufferAttr.prebuf * T_LENGTH_FACTOR;
     bufferAttr.minreq = bufferAttr.prebuf;
     pa_operation *operation = pa_stream_set_buffer_attr(paStream, &bufferAttr,
         PAStreamSetBufAttrSuccessCb, (void *)this);
@@ -296,17 +306,6 @@ AudioCaptureMode AudioServiceClient::GetAudioCaptureMode()
     return captureMode_;
 }
 
-int32_t AudioServiceClient::SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback)
-{
-    if (callback.lock() == nullptr) {
-        AUDIO_ERR_LOG("AudioServiceClient::SaveReadCallback callback == nullptr");
-        return AUDIO_CLIENT_INIT_ERR;
-    }
-    readCallback_ = callback;
-
-    return AUDIO_CLIENT_SUCCESS;
-}
-
 void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata)
 {
     if (!userdata) {
@@ -333,21 +332,6 @@ void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *
     auto asClient = static_cast<AudioServiceClient *>(userdata);
     auto mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
     pa_threaded_mainloop_signal(mainLoop, 0);
-
-    if (asClient->captureMode_ != CAPTURE_MODE_CALLBACK) {
-        return;
-    }
-
-    std::shared_ptr<AudioCapturerReadCallback> cb = asClient->readCallback_.lock();
-    if (cb != nullptr) {
-        size_t requestSize;
-        asClient->GetMinimumBufferSize(requestSize);
-        AUDIO_INFO_LOG("AudioServiceClient::PAStreamReadCb: cb != nullptr firing OnReadData");
-        AUDIO_INFO_LOG("AudioServiceClient::OnReadData requestSize : %{public}zu", requestSize);
-        cb->OnReadData(requestSize);
-    } else {
-        AUDIO_ERR_LOG("AudioServiceClient::PAStreamReadCb: cb == nullptr not firing OnReadData");
-    }
 }
 
 void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
@@ -517,20 +501,29 @@ void AudioServiceClient::ResetPAAudioClient()
         pa_stream_set_latency_update_callback(paStream, nullptr, nullptr);
         pa_stream_set_underflow_callback(paStream, nullptr, nullptr);
 
-        if (isStreamConnected == true)
+        if (isStreamConnected == true) {
             pa_stream_disconnect(paStream);
-        pa_stream_unref(paStream);
+            pa_stream_unref(paStream);
+            isStreamConnected  = false;
+            paStream = nullptr;
+        }
     }
 
     if (context) {
         pa_context_set_state_callback(context, nullptr, nullptr);
-        if (isContextConnected == true)
+        if (isContextConnected == true) {
             pa_context_disconnect(context);
-        pa_context_unref(context);
+            pa_context_unref(context);
+            isContextConnected = false;
+            context = nullptr;
+        }
     }
 
-    if (mainLoop)
+    if (mainLoop) {
         pa_threaded_mainloop_free(mainLoop);
+        isMainLoopStarted  = false;
+        mainLoop = nullptr;
+    }
 
     for (auto &thread : mPositionCBThreads) {
         if (thread && thread->joinable()) {
@@ -549,10 +542,6 @@ void AudioServiceClient::ResetPAAudioClient()
         appCookiePath = "";
     }
 
-    isMainLoopStarted  = false;
-    isContextConnected = false;
-    isStreamConnected  = false;
-
     sinkDevices.clear();
     sourceDevices.clear();
     sinkInputs.clear();
@@ -563,9 +552,6 @@ void AudioServiceClient::ResetPAAudioClient()
     mAudioCapturerCallbacks = nullptr;
     internalReadBuffer      = nullptr;
 
-    mainLoop = nullptr;
-    paStream = nullptr;
-    context  = nullptr;
     api      = nullptr;
 
     internalRdBufIndex = 0;
@@ -1246,11 +1232,6 @@ int32_t AudioServiceClient::DrainStream()
     }
 }
 
-int32_t AudioServiceClient::SetStreamVolume(uint32_t sessionID, uint32_t volume)
-{
-    return AUDIO_CLIENT_SUCCESS;
-}
-
 int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 {
     int error = 0;
@@ -1798,11 +1779,6 @@ int32_t AudioServiceClient::GetAudioStreamParams(AudioStreamParams& audioParams)
     return AUDIO_CLIENT_SUCCESS;
 }
 
-uint32_t AudioServiceClient::GetStreamVolume(uint32_t sessionID)
-{
-    return DEFAULT_STREAM_VOLUME;
-}
-
 int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
     lock_guard<mutex> lock(dataMutex);
@@ -1990,7 +1966,7 @@ void AudioServiceClient::SetCapturerPeriodPositionCallback(int64_t periodPositio
     std::lock_guard<std::mutex> lock(capturerPeriodReachedMutex_);
     AUDIO_INFO_LOG("Registering period position callback");
     mFramePeriodNumber = periodPosition;
-    if ((mFrameSize != 0) && (mFramePeriodNumber) != 0) {
+    if ((mFrameSize != 0) && (mFramePeriodNumber != 0)) {
         mFramePeriodRead = (mTotalBytesRead / mFrameSize) % mFramePeriodNumber;
     } else {
         AUDIO_INFO_LOG("AudioServiceClient::SetCapturerPeriodPositionCallback failed");
@@ -2057,9 +2033,7 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
 
-    int32_t volumeFactor = AudioSystemManager::MapVolumeFromHDI(mVolumeFactor);
-    int32_t newVolumeFactor = AudioSystemManager::MapVolumeFromHDI(volume);
-    if (newVolumeFactor > volumeFactor) {
+    if ((volume - mVolumeFactor) > std::numeric_limits<float>::epsilon()) {
         mUnMute_ = true;
     }
     AUDIO_INFO_LOG("mUnMute_ %{public}d", mUnMute_);
@@ -2162,10 +2136,9 @@ void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_i
 void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
 {
     pa_cvolume cv = client.cvolume;
-    int32_t systemVolumeInt
-        = client.mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(client.mStreamType));
-    float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
-    float vol = systemVolume * client.mVolumeFactor * client.mPowerVolumeFactor;
+    int32_t systemVolumeLevel = AudioSystemManager::GetInstance()->GetVolume(client.mStreamType);
+    float systemVolumeDb = VolumeToDb(systemVolumeLevel);
+    float vol = systemVolumeDb * client.mVolumeFactor * client.mPowerVolumeFactor;
 
     AudioRingerMode ringerMode = client.mAudioSystemMgr->GetRingerMode();
     if ((client.mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
@@ -2339,9 +2312,9 @@ float AudioServiceClient::GetStreamLowPowerVolume()
 
 float AudioServiceClient::GetSingleStreamVol()
 {
-    int32_t systemVolumeInt = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
-    float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
-    float vol = systemVolume * mVolumeFactor * mPowerVolumeFactor;
+    int32_t systemVolumeLevel = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
+    float systemVolumeDb = VolumeToDb(systemVolumeLevel);
+    float vol = systemVolumeDb * mVolumeFactor * mPowerVolumeFactor;
 
     AudioRingerMode ringerMode = mAudioSystemMgr->GetRingerMode();
     if ((mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
@@ -2570,21 +2543,43 @@ void AudioServiceClient::HandleUnsetCapturerPeriodReachedEvent()
 int32_t AudioServiceClient::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
 {
     if (!callback) {
-        AUDIO_ERR_LOG("AudioServiceClient::SetRendererWriteCallback callback is nullptr");
+        AUDIO_ERR_LOG("SetRendererWriteCallback callback is nullptr");
         return ERR_INVALID_PARAM;
     }
     writeCallback_ = callback;
     return SUCCESS;
 }
+
+int32_t AudioServiceClient::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
+{
+    if (!callback) {
+        AUDIO_ERR_LOG("SetCapturerReadCallback callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+    readCallback_ = callback;
+    return SUCCESS;
+}
+
 void AudioServiceClient::SendWriteBufferRequestEvent()
 {
     // send write event to handler
     lock_guard<mutex> runnerlock(runnerMutex_);
     if (runnerReleased_) {
-        AUDIO_WARNING_LOG("AudioServiceClient::SendWriteBufferRequestEvent runner released");
+        AUDIO_WARNING_LOG("SendWriteBufferRequestEvent after runner released");
         return;
     }
     SendEvent(AppExecFwk::InnerEvent::Get(WRITE_BUFFER_REQUEST));
+}
+
+void AudioServiceClient::SendReadBufferRequestEvent()
+{
+    // send write event to handler
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("SendReadBufferRequestEvent after runner released");
+        return;
+    }
+    SendEvent(AppExecFwk::InnerEvent::Get(READ_BUFFER_REQUEST));
 }
 
 void AudioServiceClient::HandleWriteRequestEvent()
@@ -2594,6 +2589,16 @@ void AudioServiceClient::HandleWriteRequestEvent()
         size_t requestSize;
         GetMinimumBufferSize(requestSize);
         writeCallback_->OnWriteData(requestSize);
+    }
+}
+
+void AudioServiceClient::HandleReadRequestEvent()
+{
+    // do callback to application
+    if (readCallback_) {
+        size_t requestSize;
+        GetMinimumBufferSize(requestSize);
+        readCallback_->OnReadData(requestSize);
     }
 }
 
@@ -2610,6 +2615,9 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
     switch (eventId) {
         case WRITE_BUFFER_REQUEST:
             HandleWriteRequestEvent();
+            break;
+        case READ_BUFFER_REQUEST:
+            HandleReadRequestEvent();
             break;
 
         // RenderMarkReach

@@ -26,6 +26,7 @@
 #include "audio_info.h"
 #include "audio_interrupt_callback.h"
 #include "audio_group_manager.h"
+#include "audio_routing_manager.h"
 #include "audio_manager_base.h"
 
 namespace OHOS {
@@ -188,6 +189,7 @@ public:
     virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) = 0;
 };
+class AudioPreferOutputDeviceChangeCallback;
 
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
@@ -203,8 +205,6 @@ public:
         STREAM_VOICE_ASSISTANT
     };
     static AudioSystemManager *GetInstance();
-    static float MapVolumeToHDI(int32_t volume);
-    static int32_t MapVolumeFromHDI(float volume);
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
     int32_t GetVolume(AudioVolumeType volumeType) const;
@@ -216,7 +216,7 @@ public:
     int32_t SetMute(AudioVolumeType volumeType, bool mute) const;
     bool IsStreamMute(AudioVolumeType volumeType) const;
     int32_t SetMicrophoneMute(bool isMute);
-    bool IsMicrophoneMute(void);
+    bool IsMicrophoneMute(API_VERSION api_v = API_7);
     int32_t SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
     int32_t SelectInputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) const;
@@ -289,7 +289,7 @@ private:
 
     int32_t cbClientId_ = -1;
     int32_t volumeChangeClientPid_ = -1;
-    AudioRingerMode ringModeBackup_;
+    AudioRingerMode ringModeBackup_ = RINGER_MODE_NORMAL;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModeCallback_ = nullptr;

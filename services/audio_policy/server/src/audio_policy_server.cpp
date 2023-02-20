@@ -173,8 +173,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
         if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
             streamInFocus = AudioStreamType::STREAM_MUSIC;
         }
-        float currentVolume = GetStreamVolume(streamInFocus);
-        int32_t volumeLevelInInt = ConvertVolumeToInt(currentVolume);
+        int32_t volumeLevelInInt = GetSystemVolumeLevel(streamInFocus);
         if (volumeLevelInInt <= MIN_VOLUME_LEVEL) {
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
                 std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
@@ -194,7 +193,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
             }
             return;
         }
-        SetStreamVolume(streamInFocus, MapVolumeToHDI(volumeLevelInInt - 1), true);
+        SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt - 1, true);
     });
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption_up = std::make_shared<OHOS::MMI::KeyOption>();
     keyOption_up->SetPreKeys(preKeys);
@@ -208,8 +207,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
         if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
             streamInFocus = AudioStreamType::STREAM_MUSIC;
         }
-        float currentVolume = GetStreamVolume(streamInFocus);
-        int32_t volumeLevelInInt = ConvertVolumeToInt(currentVolume);
+        int32_t volumeLevelInInt = GetSystemVolumeLevel(streamInFocus);
         if (volumeLevelInInt >= MAX_VOLUME_LEVEL) {
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
                 std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
@@ -229,7 +227,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
             }
             return;
         }
-        SetStreamVolume(streamInFocus, MapVolumeToHDI(volumeLevelInInt + 1), true);
+        SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt + 1, true);
     });
 }
 
@@ -241,26 +239,33 @@ void AudioPolicyServer::InitKVStore()
 void AudioPolicyServer::ConnectServiceAdapter()
 {
     if (!mPolicyService.ConnectServiceAdapter()) {
-        AUDIO_ERR_LOG("AudioPolicyServer::ConnectServiceAdapter Error in connecting to audio service adapter");
+        AUDIO_ERR_LOG("ConnectServiceAdapter Error in connecting to audio service adapter");
         return;
     }
 }
 
-int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v)
+int32_t AudioPolicyServer::GetMaxVolumeLevel(AudioVolumeType volumeType)
 {
-    if (api_v == API_9 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("SetStreamVolume: No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
-    return SetStreamVolume(streamType, volume, false);
+    return mPolicyService.GetMaxVolumeLevel(volumeType);
 }
 
-float AudioPolicyServer::GetStreamVolume(AudioStreamType streamType)
+int32_t AudioPolicyServer::GetMinVolumeLevel(AudioVolumeType volumeType)
 {
-    if (GetStreamMute(streamType)) {
-        return MIN_VOLUME_LEVEL;
+    return mPolicyService.GetMinVolumeLevel(volumeType);
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v)
+{
+    if (api_v == API_9 && !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("SetSystemVolumeLevel: No system permission");
+        return ERR_PERMISSION_DENIED;
     }
-    return mPolicyService.GetStreamVolume(streamType);
+    return SetSystemVolumeLevelForKey(streamType, volumeLevel, false);
+}
+
+int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
+{
+    return mPolicyService.GetSystemVolumeLevel(streamType);
 }
 
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
@@ -298,10 +303,10 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, 
             AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
             continue;
         }
-        AUDIO_DEBUG_LOG("AudioPolicyServer::SetStreamMute trigger volumeChangeCb clientPid : %{public}d", it->first);
+        AUDIO_DEBUG_LOG("SetStreamMute trigger volumeChangeCb clientPid : %{public}d", it->first);
         VolumeEvent volumeEvent;
         volumeEvent.volumeType = streamType;
-        volumeEvent.volume = ConvertVolumeToInt(GetStreamVolume(streamType));
+        volumeEvent.volume = GetSystemVolumeLevel(streamType);
         volumeEvent.updateUi = false;
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -311,11 +316,19 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, 
     return result;
 }
 
-int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi)
+float AudioPolicyServer::GetSystemVolumeDb(AudioStreamType streamType)
 {
+    return mPolicyService.GetSystemVolumeDb(streamType);
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeLevelForKey(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
+{
+    AUDIO_INFO_LOG("SetSystemVolumeLevelForKey streamType: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
+        streamType, volumeLevel, isUpdateUi);
+
     if (streamType == AudioStreamType::STREAM_RING && !isUpdateUi) {
-        float currentRingVolume = GetStreamVolume(AudioStreamType::STREAM_RING);
-        if ((currentRingVolume > 0.0f && volume == 0.0f) || (currentRingVolume == 0.0f && volume > 0.0f)) {
+        int32_t curRingVolumeLevel = GetSystemVolumeLevel(AudioStreamType::STREAM_RING);
+        if ((curRingVolumeLevel > 0 && volumeLevel == 0) || (curRingVolumeLevel == 0 && volumeLevel > 0)) {
             if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
                 AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", streamType);
                 return ERR_PERMISSION_DENIED;
@@ -323,9 +336,7 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
         }
     }
 
-    AUDIO_INFO_LOG("SetStreamVolume streamType: %{public}d, volume: %{public}f, updateUi: %{public}d",
-        streamType, volume, isUpdateUi);
-    int ret = mPolicyService.SetStreamVolume(streamType, volume);
+    int ret = mPolicyService.SetSystemVolumeLevel(streamType, volumeLevel);
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -333,10 +344,11 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
             continue;
         }
 
-        AUDIO_DEBUG_LOG("AudioPolicyServer::SetStreamVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
+        AUDIO_DEBUG_LOG("SetSystemVolumeLevelForKey trigger volumeChangeCb clientPid : %{public}d",
+            it->first);
         VolumeEvent volumeEvent;
         volumeEvent.volumeType = streamType;
-        volumeEvent.volume = ConvertVolumeToInt(GetStreamVolume(streamType));
+        volumeEvent.volume = GetSystemVolumeLevel(streamType);
         volumeEvent.updateUi = isUpdateUi;
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -429,9 +441,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
     return deviceDescs;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetActiveOutputDeviceDescriptors()
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferOutputDeviceDescriptors(
+    AudioRendererInfo &rendererInfo)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = mPolicyService.GetActiveOutputDeviceDescriptors();
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs =
+        mPolicyService.GetPreferOutputDeviceDescriptors(rendererInfo);
     bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
         for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
@@ -523,10 +537,10 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
 }
 
 
-int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute)
+int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_v)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    bool isMicrophoneMute = IsMicrophoneMute();
+    bool isMicrophoneMute = IsMicrophoneMute(api_v);
     int32_t ret = mPolicyService.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute) {
         for (auto it = micStateChangeListenerCbsMap_.begin(); it != micStateChangeListenerCbsMap_.end(); ++it) {
@@ -552,7 +566,7 @@ int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
         AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
         return ERR_PERMISSION_DENIED;
     }
-    return SetMicrophoneMuteCommon(isMute);
+    return SetMicrophoneMuteCommon(isMute, API_7);
 }
 
 int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
@@ -562,13 +576,13 @@ int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
         AUDIO_ERR_LOG("SetMicrophoneMuteAudioConfig: MANAGE_AUDIO_CONFIG permission denied");
         return ERR_PERMISSION_DENIED;
     }
-    return SetMicrophoneMuteCommon(isMute);
+    return SetMicrophoneMuteCommon(isMute, API_9);
 }
 
-bool AudioPolicyServer::IsMicrophoneMute()
+bool AudioPolicyServer::IsMicrophoneMute(API_VERSION api_v)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
+    if (api_v == API_7 && !VerifyClientPermission(MICROPHONE_PERMISSION)) {
         AUDIO_ERR_LOG("IsMicrophoneMute: MICROPHONE permission denied");
         return ERR_PERMISSION_DENIED;
     }
@@ -624,10 +638,10 @@ int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
 
     if (ringerModeListenerCbsMap_.find(clientId) != ringerModeListenerCbsMap_.end()) {
         ringerModeListenerCbsMap_.erase(clientId);
-        AUDIO_ERR_LOG("AudioPolicyServer: UnsetRingerModeCallback for client %{public}d done", clientId);
+        AUDIO_ERR_LOG("UnsetRingerModeCallback for client %{public}d done", clientId);
         return SUCCESS;
     } else {
-        AUDIO_ERR_LOG("AudioPolicyServer: Cb does not exit for client %{public}d cannot unregister", clientId);
+        AUDIO_ERR_LOG("UnsetRingerModeCallback Cb does not exit for client %{public}d cannot unregister", clientId);
         return ERR_INVALID_OPERATION;
     }
 }
@@ -635,14 +649,17 @@ int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
 int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "SetMicStateChangeCallback set listener object is nullptr");
 
     sptr<IStandardAudioRoutingManagerListener> listener = iface_cast<IStandardAudioRoutingManagerListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: listener obj cast failed");
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
+        "SetMicStateChangeCallback listener obj cast failed");
 
     std::shared_ptr<AudioManagerMicStateChangeCallback> callback =
         std::make_shared<AudioRoutingManagerListenerCallback>(listener);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "SetMicStateChangeCallback failed to create cb obj");
 
     micStateChangeListenerCbsMap_[clientId] = callback;
 
@@ -652,7 +669,8 @@ int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t clientId, con
 int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
     const sptr<IRemoteObject> &object)
 {
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "SetDeviceChangeCallback set listener object is nullptr");
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     switch (flag) {
         case NONE_DEVICES_FLAG:
@@ -672,6 +690,18 @@ int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t clientId, const
 }
 
 int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t clientId)
+{
+    return mPolicyService.UnsetDeviceChangeCallback(clientId);
+}
+
+int32_t AudioPolicyServer::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+    const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
+    return mPolicyService.SetPreferOutputDeviceChangeCallback(clientId, object);
+}
+
+int32_t AudioPolicyServer::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
 {
     return mPolicyService.UnsetDeviceChangeCallback(clientId);
 }
@@ -821,11 +851,27 @@ int32_t AudioPolicyServer::NotifyFocusAbandoned(const uint32_t clientID, const A
     return SUCCESS;
 }
 
+bool AudioPolicyServer::IsSameAppInShareMode(const AudioInterrupt incomingInterrupt,
+    const AudioInterrupt activateInterrupt)
+{
+    if (incomingInterrupt.mode != SHARE_MODE || activateInterrupt.mode != SHARE_MODE) {
+        return false;
+    }
+    if (incomingInterrupt.pid == DEFAULT_APP_PID || activateInterrupt.pid == DEFAULT_APP_PID) {
+        return false;
+    }
+    return incomingInterrupt.pid == activateInterrupt.pid;
+}
+
 void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingInterrupt)
 {
     auto focusMap = mPolicyService.GetAudioFocusMap();
     AudioFocusType incomingFocusType = incomingInterrupt.audioFocusType;
     for (auto iterActive = audioFocusInfoList_.begin(); iterActive != audioFocusInfoList_.end();) {
+        if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) {
+            ++iterActive;
+            continue;
+        }
         bool iterActiveErased = false;
         AudioFocusType activeFocusType = (iterActive->first).audioFocusType;
         std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
@@ -839,7 +885,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         uint32_t activeSessionID = (iterActive->first).sessionID;
         std::shared_ptr<AudioInterruptCallback> policyListenerCb = policyListenerCbsMap_[activeSessionID];
 
-        float volume = 0.0f;
+        float volumeDb = 0.0f;
         switch (focusEntry.hintType) {
             case INTERRUPT_HINT_STOP:
                 iterActive = audioFocusInfoList_.erase(iterActive);
@@ -850,13 +896,15 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
                 break;
             case INTERRUPT_HINT_DUCK:
                 iterActive->second = DUCK;
-                volume = GetStreamVolume(activeFocusType.streamType);
-                interruptEvent.duckVolume = DUCK_FACTOR * volume;
+                volumeDb = GetSystemVolumeDb(activeFocusType.streamType);
+                interruptEvent.duckVolume = DUCK_FACTOR * volumeDb;
                 break;
             default:
                 break;
         }
-        if (policyListenerCb != nullptr) {
+        if (policyListenerCb != nullptr && interruptEvent.hintType != INTERRUPT_HINT_NONE) {
+            AUDIO_INFO_LOG("OnInterrupt for processing sessionID: %{public}d, hintType: %{public}d",
+                activeSessionID, interruptEvent.hintType);
             policyListenerCb->OnInterrupt(interruptEvent);
         }
         if (!iterActiveErased) {
@@ -869,16 +917,18 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
 {
     auto focusMap = mPolicyService.GetAudioFocusMap();
     AudioFocuState incomingState = ACTIVE;
+    bool isRejected = false;
     AudioFocusType incomingFocusType = incomingInterrupt.audioFocusType;
-    uint32_t incomingSessionID = incomingInterrupt.sessionID;
-    std::shared_ptr<AudioInterruptCallback> policyListenerCb = policyListenerCbsMap_[incomingSessionID];
+    std::shared_ptr<AudioInterruptCallback> policyListenerCb = policyListenerCbsMap_[incomingInterrupt.sessionID];
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
     for (auto iterActive = audioFocusInfoList_.begin(); iterActive != audioFocusInfoList_.end(); ++iterActive) {
-        AudioFocusType activeFocusType = (iterActive->first).audioFocusType;
+        if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) {
+            continue;
+        }
         std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
-            std::make_pair(activeFocusType, incomingFocusType);
+            std::make_pair((iterActive->first).audioFocusType, incomingFocusType);
         if (focusMap.find(audioFocusTypePair) == focusMap.end()) {
-            AUDIO_WARNING_LOG("AudioPolicyServer: Audio Focus type is invalid");
+            AUDIO_ERR_LOG("ProcessFocusEntry: audio focus type pair is invalid");
             return ERR_INVALID_PARAM;
         }
         AudioFocusEntry focusEntry = focusMap[audioFocusTypePair];
@@ -886,11 +936,10 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
             continue;
         }
         if (focusEntry.isReject) {
-            AUDIO_INFO_LOG("AudioPolicyServer: focusEntry.isReject : ActivateAudioInterrupt request rejected");
             incomingState = PAUSE;
+            isRejected = true;
             break;
         }
-
         AudioFocuState newState = ACTIVE;
         auto pos = HINTSTATEMAP.find(focusEntry.hintType);
         if (pos != HINTSTATEMAP.end()) {
@@ -898,57 +947,56 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         }
         incomingState = newState > incomingState ? newState : incomingState;
     }
-
-    audioFocusInfoList_.emplace_back(std::make_pair(incomingInterrupt, incomingState));
     if (incomingState == PAUSE) {
         interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
-    }
-    if (incomingState == DUCK) {
-        float volume = GetStreamVolume(incomingFocusType.streamType);
+    } else if (incomingState == DUCK) {
         interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-        interruptEvent.duckVolume = DUCK_FACTOR * volume;
-    }
-    if (policyListenerCb != nullptr) {
-        policyListenerCb->OnInterrupt(interruptEvent);
-    }
-    if (incomingState != PAUSE) {
+        interruptEvent.duckVolume = DUCK_FACTOR * GetSystemVolumeDb(incomingFocusType.streamType);
+    } else {
         ProcessCurrentInterrupt(incomingInterrupt);
     }
-
-    return SUCCESS;
+    audioFocusInfoList_.emplace_back(std::make_pair(incomingInterrupt, incomingState));
+    if (policyListenerCb != nullptr && interruptEvent.hintType != INTERRUPT_HINT_NONE) {
+        AUDIO_INFO_LOG("OnInterrupt for incoming sessionID: %{public}d, hintType: %{public}d, isRejected: %{public}d",
+            incomingInterrupt.sessionID, interruptEvent.hintType, isRejected);
+        policyListenerCb->OnInterrupt(interruptEvent);
+    }
+    return isRejected ? ERR_FOCUS_DENIED : SUCCESS;
 }
 
 int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
-    AUDIO_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt audioInterrupt: sessionID: %{public}u,\
-        isPlay: %{public}d, streamType: %{public}d, sourceType: %{public}d", audioInterrupt.sessionID,
-        (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).streamType,
-        (audioInterrupt.audioFocusType).sourceType);
+    AUDIO_INFO_LOG("ActivateAudioInterrupt audioInterrupt:streamType: %{public}d, sessionID: %{public}u, "\
+        "isPlay: %{public}d, sourceType: %{public}d", (audioInterrupt.audioFocusType).streamType,
+        audioInterrupt.sessionID, (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).sourceType);
 
     if (!mPolicyService.IsAudioInterruptEnabled()) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer: interrupt is not enabled. No need to ActivateAudioInterrupt");
+        AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
         return SUCCESS;
     }
 
     uint32_t incomingSessionID = audioInterrupt.sessionID;
-    // If audioFocusInfoList_ owners list is empty, directly activate interrupt
-    if (audioFocusInfoList_.empty()) {
-        audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
-        return SUCCESS;
-    } else {
-        AUDIO_DEBUG_LOG("incomingSessionID is already in audioFocusInfoList");
+    if (!audioFocusInfoList_.empty()) {
+        // If the session is present in audioFocusInfoList_, remove and treat it as a new request
+        AUDIO_DEBUG_LOG("audioFocusInfoList_ is not empty, check whether the session is present");
         audioFocusInfoList_.remove_if([&incomingSessionID](std::pair<AudioInterrupt, AudioFocuState> &audioFocus) {
             return (audioFocus.first).sessionID == incomingSessionID;
         });
+    }
+    if (audioFocusInfoList_.empty()) {
+        // If audioFocusInfoList_ is empty, directly activate interrupt
+        AUDIO_INFO_LOG("audioFocusInfoList_ is empty, add the session into it directly");
+        audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
+        return SUCCESS;
     }
 
     // Process ProcessFocusEntryTable for current audioFocusInfoList_
     int32_t ret = ProcessFocusEntry(audioInterrupt);
     if (ret) {
-        AUDIO_ERR_LOG("AudioPolicyServer:  ActivateAudioInterrupt request rejected");
+        AUDIO_ERR_LOG("ActivateAudioInterrupt request rejected");
         return ERR_FOCUS_DENIED;
     }
 
@@ -965,7 +1013,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::Simulate
         std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpAudioFocuInfoList = newAudioFocuInfoList;
         for (auto iter = newAudioFocuInfoList.begin(); iter != newAudioFocuInfoList.end(); ++iter) {
             AudioInterrupt inprocessing = iter->first;
-            if (iter->second == PAUSE) {
+            if (iter->second == PAUSE || IsSameAppInShareMode(incoming, inprocessing)) {
                 continue;
             }
             AudioFocusType activeFocusType = inprocessing.audioFocusType;
@@ -1013,8 +1061,8 @@ void AudioPolicyServer::NotifyStateChangedEvent(AudioFocuState oldState, AudioFo
     InterruptEventInternal forceUnduck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNDUCK, 1.0f};
     InterruptEventInternal forceDuck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK, 1.0f};
     InterruptEventInternal forcePause {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
-    float volume = GetStreamVolume((audioInterrupt.audioFocusType).streamType);
-    forceDuck.duckVolume = DUCK_FACTOR * volume;
+    float volumeDb = GetSystemVolumeDb((audioInterrupt.audioFocusType).streamType);
+    forceDuck.duckVolume = DUCK_FACTOR * volumeDb;
     switch (newState) {
         case ACTIVE:
             if (oldState == PAUSE) {
@@ -1050,6 +1098,8 @@ void AudioPolicyServer::ResumeAudioFocusList()
         AudioFocuState oldState = iterActive->second;
         AudioFocuState newState = iterNew->second;
         if (oldState != newState) {
+            AUDIO_INFO_LOG("ResumeAudioFocusList: State change: sessionID %{public}d, oldstate %{public}d, "\
+                "newState %{public}d", (iterActive->first).sessionID, oldState, newState);
             NotifyStateChangedEvent(oldState, newState, iterActive);
         }
     }
@@ -1060,7 +1110,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
     if (!mPolicyService.IsAudioInterruptEnabled()) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer: interrupt is not enabled. No need to DeactivateAudioInterrupt");
+        AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
         audioFocusInfoList_.remove_if([&exitSessionID](std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
             return (audioFocusInfo.first).sessionID == exitSessionID;
@@ -1068,10 +1118,9 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
         return SUCCESS;
     }
 
-    AUDIO_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt audioInterrupt: sessionID: %{public}u, isPlay:\
-        %{public}d, streamType: %{public}d, sourceType: %{public}d", audioInterrupt.sessionID,
-        (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).streamType,
-        (audioInterrupt.audioFocusType).sourceType);
+    AUDIO_INFO_LOG("DeactivateAudioInterrupt audioInterrupt:streamType: %{public}d, sessionID: %{public}u, "\
+        "isPlay: %{public}d, sourceType: %{public}d", (audioInterrupt.audioFocusType).streamType,
+        audioInterrupt.sessionID, (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).sourceType);
 
     bool isInterruptActive = false;
     for (auto it = audioFocusInfoList_.begin(); it != audioFocusInfoList_.end();) {
@@ -1085,7 +1134,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     // If it was not in the audioFocusInfoList_, no need to take any action on other sessions, just return.
     if (!isInterruptActive) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer: Session : %{public}d is not currently active. return success",
+        AUDIO_INFO_LOG("DeactivateAudioInterrupt: the stream (sessionID %{public}d) is not active now, return success",
             audioInterrupt.sessionID);
         return SUCCESS;
     }
@@ -1280,20 +1329,6 @@ int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, Device
     return mPolicyService.ReconfigureAudioChannel(count, deviceType);
 }
 
-float AudioPolicyServer::MapVolumeToHDI(int32_t volume)
-{
-    float value = (float)volume / MAX_VOLUME_LEVEL;
-    float roundValue = (int)(value * CONST_FACTOR);
-
-    return (float)roundValue / CONST_FACTOR;
-}
-
-int32_t AudioPolicyServer::ConvertVolumeToInt(float volume)
-{
-    float value = (float)volume * MAX_VOLUME_LEVEL;
-    return nearbyint(value);
-}
-
 void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
 {
     policyData.ringerMode = GetRingerMode();
@@ -1304,7 +1339,7 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
         AudioStreamType streamType = (AudioStreamType)stream;
 
         if (AudioServiceDump::IsStreamSupported(streamType)) {
-            int32_t volume = ConvertVolumeToInt(GetStreamVolume(streamType));
+            int32_t volume = GetSystemVolumeLevel(streamType);
             policyData.streamVolumes.insert({ streamType, volume });
         }
     }
@@ -1472,8 +1507,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
     const sptr<IRemoteObject> &object)
 {
     // update the clientUID
-    auto callerUid =  IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("  AudioPolicyServer::RegisterTracker : [caller uid:%{public}d]==", callerUid);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("RegisterTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
         if (mode == AUDIO_MODE_PLAYBACK) {
             streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
@@ -1492,8 +1527,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
 int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     // update the clientUID
-    auto callerUid =  IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("  AudioPolicyServer::UpdateTracker : [caller uid:%{public}d]==", callerUid);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("UpdateTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
         if (mode == AUDIO_MODE_PLAYBACK) {
             streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
@@ -1732,7 +1767,7 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
         AUDIO_ERR_LOG("fail to get uid.");
     } else {
         server_->mPolicyService.SetSourceOutputStreamMute(appUid, bSetMute);
-        AUDIO_DEBUG_LOG(" get uid value:%{public}d", appUid);
+        AUDIO_DEBUG_LOG("get uid value:%{public}d", appUid);
     }
 }
 
@@ -1759,20 +1794,20 @@ int32_t AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName
 
 void AudioPolicyServer::RegisterParamCallback()
 {
-    AUDIO_INFO_LOG("AudioPolicyServer::RegisterParamCallback");
+    AUDIO_INFO_LOG("RegisterParamCallback");
     remoteParameterCallback_ = std::make_shared<RemoteParameterCallback>(this);
     mPolicyService.SetParameterCallback(remoteParameterCallback_);
 }
 
 void AudioPolicyServer::RegisterBluetoothListener()
 {
-    AUDIO_INFO_LOG("AudioPolicyServer::RegisterBluetoothListener");
+    AUDIO_INFO_LOG("RegisterBluetoothListener");
     mPolicyService.RegisterBluetoothListener();
 }
 
 void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
 {
-    AUDIO_INFO_LOG("AudioPolicyServer::SubscribeAccessibilityConfigObserver");
+    AUDIO_INFO_LOG("SubscribeAccessibilityConfigObserver");
     mPolicyService.SubscribeAccessibilityConfigObserver();
 }
 

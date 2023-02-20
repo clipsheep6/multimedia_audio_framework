@@ -49,9 +49,13 @@ public:
 
     const sptr<IAudioPolicy> GetAudioPolicyManagerProxy();
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v = API_9);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
 
-    float GetStreamVolume(AudioStreamType streamType);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9);
+
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
 
@@ -97,7 +101,7 @@ public:
 
     int32_t SetMicrophoneMuteAudioConfig(bool isMute);
 
-    bool IsMicrophoneMute(void);
+    bool IsMicrophoneMute(API_VERSION api_v = API_9);
 
     AudioScene GetAudioScene();
 
@@ -181,7 +185,12 @@ public:
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 
-    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(AudioRendererInfo &rendererInfo);
+
+    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+        const std::shared_ptr<AudioPreferOutputDeviceChangeCallback> &callback);
+
+    int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

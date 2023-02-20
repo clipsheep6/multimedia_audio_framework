@@ -28,9 +28,13 @@ public:
     explicit AudioPolicyProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioPolicyProxy() = default;
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v) override;
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) override;
 
-    float GetStreamVolume(AudioStreamType streamType) override;
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
+
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v) override;
+
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
@@ -76,7 +80,7 @@ public:
 
     int32_t SetMicrophoneMuteAudioConfig(bool isMute) override;
 
-    bool IsMicrophoneMute(void) override;
+    bool IsMicrophoneMute(API_VERSION api_v) override;
 
     AudioScene GetAudioScene() override;
 
@@ -155,8 +159,13 @@ public:
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
 
-    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors() override;
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
+        AudioRendererInfo &rendererInfo) override;
 
+    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+        const sptr<IRemoteObject>& object) override;
+
+    int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

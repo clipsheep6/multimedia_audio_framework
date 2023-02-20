@@ -27,7 +27,6 @@
 
 #include "audio_policy_service.h"
 
-
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -153,22 +152,38 @@ int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callba
     return audioPolicyManager_.SetAudioSessionCallback(callback);
 }
 
-int32_t AudioPolicyService::SetStreamVolume(AudioStreamType streamType, float volume)
+int32_t AudioPolicyService::GetMaxVolumeLevel(AudioVolumeType volumeType) const
+{
+    return audioPolicyManager_.GetMaxVolumeLevel(volumeType);
+}
+
+int32_t AudioPolicyService::GetMinVolumeLevel(AudioVolumeType volumeType) const
+{
+    return audioPolicyManager_.GetMinVolumeLevel(volumeType);
+}
+
+int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     if (streamType == STREAM_VOICE_CALL) {
         const sptr<IStandardAudioService> gsp = GetAudioPolicyServiceProxy();
         if (gsp == nullptr) {
-            AUDIO_ERR_LOG("AudioPolicyService: SetVoiceVolume gsp null");
+            AUDIO_ERR_LOG("SetVoiceVolumeLevel gsp null");
         } else {
-            gsp->SetVoiceVolume(volume);
+            float volumeDb = audioPolicyManager_.CalculateVolumeDb(volumeLevel);
+            gsp->SetVoiceVolume(volumeDb);
         }
     }
-    return audioPolicyManager_.SetStreamVolume(streamType, volume);
+    return audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
 }
 
-float AudioPolicyService::GetStreamVolume(AudioStreamType streamType) const
+int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType) const
 {
-    return audioPolicyManager_.GetStreamVolume(streamType);
+    return audioPolicyManager_.GetSystemVolumeLevel(streamType);
+}
+
+float AudioPolicyService::GetSystemVolumeDb(AudioStreamType streamType) const
+{
+    return audioPolicyManager_.GetSystemVolumeDb(streamType);
 }
 
 int32_t AudioPolicyService::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -291,6 +306,7 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     std::vector<sptr<AudioDeviceDescriptor>> desc = {};
     desc.push_back(localDevice);
     UpdateTrackerDeviceChange(desc);
+    OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
     AUDIO_INFO_LOG("NotifyRemoteRenderState success");
 }
 
@@ -354,7 +370,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         ret = MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     }
     UpdateTrackerDeviceChange(audioDeviceDescriptors);
-
+    OnPreferOutputDeviceUpdated(currentActiveDevice_, networkId);
     AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
     return ret;
 }
@@ -702,6 +718,17 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
     return audioModuleInfo;
 }
 
+void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std::string networkId)
+{
+    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+
+    for (auto it = activeOutputDeviceListenerCbsMap_.begin(); it != activeOutputDeviceListenerCbsMap_.end(); ++it) {
+        AudioRendererInfo rendererInfo;
+        auto desc = GetPreferOutputDeviceDescriptors(rendererInfo);
+        it->second->OnPreferOutputDeviceUpdated(desc);
+    }
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
 {
     AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
@@ -735,7 +762,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
             && device->deviceRole_ == DeviceRole::OUTPUT_DEVICE;
         bool filterRemoteInput = deviceFlag == DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG
             && device->networkId_ != LOCAL_NETWORK_ID
-        && device->deviceRole_ == DeviceRole::INPUT_DEVICE;
+            && device->deviceRole_ == DeviceRole::INPUT_DEVICE;
 
         if (filterAllLocal || filterLocalOutput || filterLocalInput || filterAllRemote || filterRemoteOutput
             || filterRemoteInput) {
@@ -748,9 +775,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
     return deviceList;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetActiveOutputDeviceDescriptors()
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferOutputDeviceDescriptors(
+    AudioRendererInfo &rendererInfo, std::string networkId)
 {
     AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
     for (const auto& device : connectedDevices_) {
         if (device == nullptr) {
@@ -759,10 +788,16 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetActiveOutputDevi
         bool filterLocalOutput = ((currentActiveDevice_ == device->deviceType_)
             && (device->networkId_ == LOCAL_NETWORK_ID)
             && (device->deviceRole_ == DeviceRole::OUTPUT_DEVICE));
-        if (filterLocalOutput) {
+        if (!isCurrentRemoteRenderer && filterLocalOutput && networkId == LOCAL_NETWORK_ID) {
             sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
             deviceList.push_back(devDesc);
-            return deviceList;
+        }
+
+        bool filterRemoteOutput = ((device->networkId_ != networkId)
+            && (device->deviceRole_ == DeviceRole::OUTPUT_DEVICE));
+        if (isCurrentRemoteRenderer && filterRemoteOutput) {
+            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+            deviceList.push_back(devDesc);
         }
     }
 
@@ -777,8 +812,8 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = tru
     for (const auto &device : priorityList) {
         auto isPresent = [&device, this] (const sptr<AudioDeviceDescriptor> &desc) {
             CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-            if (((audioScene_ != AUDIO_SCENE_DEFAULT) && (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) ||
-                ((audioScene_ == AUDIO_SCENE_DEFAULT) && (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO))) {
+            if ((audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT)
+                && (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) {
                 return false;
             } else {
                 return desc->deviceType_ == device;
@@ -899,6 +934,7 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
 
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
         currentActiveDevice_ = deviceType;
+        OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
     } else {
         activeInputDevice_ = deviceType;
     }
@@ -1031,6 +1067,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     }
 
     currentActiveDevice_ = deviceType;
+    OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
     return result;
 }
 
@@ -1073,6 +1110,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Device activation failed [%{public}d]", result);
 
     currentActiveDevice_ = priorityDev;
+    OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
 
     result = gsp->SetAudioScene(audioScene, priorityDev);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
@@ -1280,6 +1318,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         currentActiveDevice_ = priorityDev;
     }
 
+    OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
     UpdateTrackerDeviceChange(deviceChangeDescriptor);
 }
@@ -1380,9 +1419,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
         statusInfo.hdiPin, statusInfo.isConnected, statusInfo.networkId);
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
-    if (GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
-        return; // not support input device.
-    }
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
@@ -1475,6 +1511,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         AUDIO_INFO_LOG("[module_load]::Setting speaker as active device on bootup");
         currentActiveDevice_ = DEVICE_TYPE_SPEAKER;
         activeInputDevice_ = DEVICE_TYPE_MIC;
+        OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
     }
 }
 
@@ -1591,6 +1628,34 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId)
     } else {
         AUDIO_DEBUG_LOG("AudioPolicyServer:UnsetDeviceChangeCallback clientID %{public}d not present/unset already",
                         clientId);
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+    const sptr<IRemoteObject> &object)
+{
+    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+
+    sptr<IStandardAudioRoutingManagerListener> callback = iface_cast<IStandardAudioRoutingManagerListener>(object);
+
+    if (callback != nullptr) {
+        activeOutputDeviceListenerCbsMap_[clientId] = callback;
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
+{
+    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+
+    if (activeOutputDeviceListenerCbsMap_.erase(clientId)) {
+        AUDIO_DEBUG_LOG("UnsetPreferOutputDeviceChangeCallback for clientID %{public}d done", clientId);
+    } else {
+        AUDIO_DEBUG_LOG("UnsetPreferOutputDeviceChangeCallback clientID %{public}d not present or already erase",
+            clientId);
     }
 
     return SUCCESS;

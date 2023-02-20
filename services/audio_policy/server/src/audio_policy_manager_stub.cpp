@@ -31,6 +31,8 @@ void AudioPolicyManagerStub::ReadAudioInterruptParams(MessageParcel &data, Audio
     audioInterrupt.audioFocusType.sourceType = static_cast<SourceType>(data.ReadInt32());
     audioInterrupt.audioFocusType.isPlay = data.ReadBool();
     audioInterrupt.sessionID = data.ReadUint32();
+    audioInterrupt.pid = data.ReadInt32();
+    audioInterrupt.mode = static_cast<InterruptMode>(data.ReadInt32());
 }
 
 void AudioPolicyManagerStub::ReadAudioManagerInterruptParams(MessageParcel &data, AudioInterrupt &audioInterrupt)
@@ -41,6 +43,8 @@ void AudioPolicyManagerStub::ReadAudioManagerInterruptParams(MessageParcel &data
     audioInterrupt.audioFocusType.sourceType = static_cast<SourceType>(data.ReadInt32());
     audioInterrupt.audioFocusType.isPlay = data.ReadBool();
     audioInterrupt.pauseWhenDucked = data.ReadBool();
+    audioInterrupt.pid = data.ReadInt32();
+    audioInterrupt.mode = static_cast<InterruptMode>(data.ReadInt32());
 }
 
 void AudioPolicyManagerStub::WriteAudioInteruptParams(MessageParcel &reply, const AudioInterrupt &audioInterrupt)
@@ -51,6 +55,8 @@ void AudioPolicyManagerStub::WriteAudioInteruptParams(MessageParcel &reply, cons
     reply.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.sourceType));
     reply.WriteBool(audioInterrupt.audioFocusType.isPlay);
     reply.WriteUint32(audioInterrupt.sessionID);
+    reply.WriteInt32(audioInterrupt.pid);
+    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.mode));
 }
 
 void AudioPolicyManagerStub::ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
@@ -74,12 +80,26 @@ void AudioPolicyManagerStub::ReadStreamChangeInfo(MessageParcel &data, const Aud
     }
 }
 
-void AudioPolicyManagerStub::SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    int32_t maxLevel = GetMaxVolumeLevel(volumeType);
+    reply.WriteInt32(maxLevel);
+}
+
+void AudioPolicyManagerStub::GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    int32_t minLevel = GetMinVolumeLevel(volumeType);
+    reply.WriteInt32(minLevel);
+}
+
+void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    float volume = data.ReadFloat();
+    int32_t volumeLevel = data.ReadInt32();
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    int result = SetStreamVolume(streamType, volume, api_v);
+    int result = SetSystemVolumeLevel(streamType, volumeLevel, api_v);
     reply.WriteInt32(result);
 }
 
@@ -149,9 +169,10 @@ void AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal(MessageParcel 
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &reply)
+void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t result = IsMicrophoneMute();
+    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
+    int32_t result = IsMicrophoneMute(api_v);
     reply.WriteBool(result);
 }
 
@@ -161,11 +182,11 @@ void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel &reply)
     reply.WriteInt32(static_cast<int>(audioScene));
 }
 
-void AudioPolicyManagerStub::GetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    float volume = GetStreamVolume(streamType);
-    reply.WriteFloat(volume);
+    int32_t volumeLevel = GetSystemVolumeLevel(streamType);
+    reply.WriteInt32(volumeLevel);
 }
 
 void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
@@ -230,10 +251,11 @@ void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParc
     }
 }
 
-void AudioPolicyManagerStub::GetActiveOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
-    std::vector<sptr<AudioDeviceDescriptor>> devices = GetActiveOutputDeviceDescriptors();
+    AudioRendererInfo rendererInfo;
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferOutputDeviceDescriptors(rendererInfo);
     int32_t size = static_cast<int32_t>(devices.size());
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS size= %{public}d", size);
     reply.WriteInt32(size);
@@ -270,6 +292,25 @@ void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, M
 {
     InternalDeviceType deviceType = GetActiveInputDevice();
     reply.WriteInt32(static_cast<int>(deviceType));
+}
+
+void AudioPolicyManagerStub::SetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
+        return;
+    }
+    int32_t result = SetPreferOutputDeviceChangeCallback(clientId, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    int32_t result = UnsetPreferOutputDeviceChangeCallback(clientId);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
@@ -743,12 +784,20 @@ int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: ReadInterfaceToken failed");
+        AUDIO_ERR_LOG("OnRemoteRequest: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {
-        case SET_STREAM_VOLUME:
-            SetStreamVolumeInternal(data, reply);
+        case GET_MAX_VOLUMELEVEL:
+            GetMaxVolumeLevelInternal(data, reply);
+            break;
+
+        case GET_MIN_VOLUMELEVEL:
+            GetMinVolumeLevelInternal(data, reply);
+            break;
+
+        case SET_SYSTEM_VOLUMELEVEL:
+            SetSystemVolumeLevelInternal(data, reply);
             break;
 
         case SET_RINGER_MODE:
@@ -766,21 +815,21 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_AUDIO_SCENE:
             GetAudioSceneInternal(reply);
             break;
-        
+
         case SET_MICROPHONE_MUTE:
             SetMicrophoneMuteInternal(data, reply);
             break;
-                    
+
         case SET_MICROPHONE_MUTE_AUDIO_CONFIG:
             SetMicrophoneMuteAudioConfigInternal(data, reply);
             break;
 
         case IS_MICROPHONE_MUTE:
-            IsMicrophoneMuteInternal(reply);
+            IsMicrophoneMuteInternal(data, reply);
             break;
 
-        case GET_STREAM_VOLUME:
-            GetStreamVolumeInternal(data, reply);
+        case GET_SYSTEM_VOLUMELEVEL:
+            GetSystemVolumeLevelInternal(data, reply);
             break;
 
         case SET_STREAM_MUTE:
@@ -977,7 +1026,15 @@ int AudioPolicyManagerStub::OnRemoteRequest(
              break;
 
         case GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS:
-            GetActiveOutputDeviceDescriptorsInternal(data, reply);
+            GetPreferOutputDeviceDescriptorsInternal(data, reply);
+            break;
+
+        case SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK:
+            SetPreferOutputDeviceChangeCallbackInternal(data, reply);
+            break;
+
+        case UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK:
+            UnsetPreferOutputDeviceChangeCallbackInternal(data, reply);
             break;
 
         default:

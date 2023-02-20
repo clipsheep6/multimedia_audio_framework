@@ -32,9 +32,13 @@ using InternalDeviceType = DeviceType;
 class IAudioPolicy : public IRemoteBroker {
 public:
 
-    virtual int32_t SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v = API_9) = 0;
+    virtual int32_t GetMaxVolumeLevel(AudioVolumeType streamType) = 0;
 
-    virtual float GetStreamVolume(AudioStreamType streamType) = 0;
+    virtual int32_t GetMinVolumeLevel(AudioVolumeType streamType) = 0;
+
+    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9) = 0;
+
+    virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
 
     virtual int32_t SetLowPowerVolume(int32_t streamId, float volume) = 0;
 
@@ -72,7 +76,7 @@ public:
 
     virtual int32_t SetMicrophoneMuteAudioConfig(bool isMute) = 0;
 
-    virtual bool IsMicrophoneMute() = 0;
+    virtual bool IsMicrophoneMute(API_VERSION api_v = API_9) = 0;
 
     virtual AudioScene GetAudioScene() = 0;
 
@@ -159,7 +163,13 @@ public:
 
     virtual bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) = 0;
 
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors() = 0;
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
+        AudioRendererInfo &rendererInfo) = 0;
+
+    virtual int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+        const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
