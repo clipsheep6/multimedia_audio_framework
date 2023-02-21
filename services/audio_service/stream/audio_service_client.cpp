@@ -2604,13 +2604,17 @@ void AudioServiceClient::HandleReadRequestEvent()
 
 void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
+    HandleRendererEvent(event);
+    HandleCapturerEvent(event);
+}
+
+void AudioServiceClient::HandleRendererEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
     uint32_t eventId = event->GetInnerEventId();
     uint64_t mFrameMarkPosition;
     uint64_t mFramePeriodNumber;
     std::shared_ptr<RendererPositionCallback> renderPositionCb;
     std::shared_ptr<RendererPeriodPositionCallback> renderPeriodPositionCb;
-    std::shared_ptr<CapturerPositionCallback> capturePositionCb;
-    std::shared_ptr<CapturerPeriodPositionCallback> capturePeriodPositionCb;
 
     switch (eventId) {
         case WRITE_BUFFER_REQUEST:
@@ -2644,6 +2648,24 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
             break;
         case UNSET_RENDERER_PERIOD_REACHED_REQUEST:
             HandleUnsetRenderPeriodReachedEvent();
+            break;
+
+        default:
+            break;
+    }
+}
+
+void AudioServiceClient::HandleCapturerEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    uint32_t eventId = event->GetInnerEventId();
+    uint64_t mFrameMarkPosition;
+    uint64_t mFramePeriodNumber;
+    std::shared_ptr<CapturerPositionCallback> capturePositionCb;
+    std::shared_ptr<CapturerPeriodPositionCallback> capturePeriodPositionCb;
+
+    switch (eventId) {
+        case READ_BUFFER_REQUEST:
+            HandleReadRequestEvent();
             break;
 
         // CapturerMarkReach

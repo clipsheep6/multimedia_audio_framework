@@ -635,6 +635,9 @@ private:
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
 
+    void HandleRendererEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleCapturerEvent(const AppExecFwk::InnerEvent::Pointer &event);
+
     // OnRenderMarkReach SetRenderMarkReached UnsetRenderMarkReach  by eventHandler
     void SendRenderMarkReachedRequestEvent(uint64_t mFrameMarkPosition);
     void HandleRenderMarkReachedEvent(uint64_t mFrameMarkPosition);
