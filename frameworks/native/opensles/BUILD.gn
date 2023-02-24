@@ -82,9 +82,9 @@ ohos_shared_library("opensles") {
 
   deps = [
     ":libsl",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "../../../frameworks/native/audiocapturer:audio_capturer",
+    "../../../frameworks/native/audiorenderer:audio_renderer",
+    "../../../services/audio_service:audio_service_client",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

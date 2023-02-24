@@ -27,18 +27,18 @@
 #include <stdlib.h>
 #include <thread>
 #include <unistd.h>
-#include <pulse/pulseaudio.h>
-#include <pulse/thread-mainloop.h>
-#include <audio_error.h>
-#include <audio_info.h>
-#include <audio_timer.h>
 
-#include "audio_capturer.h"
-#include "audio_policy_manager.h"
-#include "audio_renderer.h"
-#include "audio_system_manager.h"
 #include "event_handler.h"
 #include "event_runner.h"
+
+#include <pulse/pulseaudio.h>
+#include <pulse/thread-mainloop.h>
+#include "audio_error.h"
+#include "audio_info.h"
+#include "audio_timer.h"
+#include "audio_renderer_callbacks.h"
+#include "audio_capturer_callbacks.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -65,29 +65,6 @@ struct AudioCache {
     uint32_t writeIndex;
     uint32_t totalCacheSize;
     bool isFull;
-};
-
-/**
- * @brief Enumerates the stream states of the current device.
- *
- * @since 1.0
- * @version 1.0
- */
-enum State {
-    /** INVALID */
-    INVALID = -1,
-    /** New */
-    NEW,
-    /** Prepared */
-    PREPARED,
-    /** Running */
-    RUNNING,
-    /** Stopped */
-    STOPPED,
-    /** Released */
-    RELEASED,
-    /** Paused */
-    PAUSED
 };
 
 class AudioStreamCallback {
@@ -657,6 +634,9 @@ private:
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
+
+    void HandleRendererEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleCapturerEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     // OnRenderMarkReach SetRenderMarkReached UnsetRenderMarkReach  by eventHandler
     void SendRenderMarkReachedRequestEvent(uint64_t mFrameMarkPosition);

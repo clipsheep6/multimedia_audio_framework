@@ -13,14 +13,17 @@
  * limitations under the License.
  */
 
-#include <thread>
-#include "audio_errors.h"
-#include "audio_info.h"
-#include "parcel.h"
 #include "audio_policy_unit_test.h"
-#include "audio_system_manager.h"
+
+#include <thread>
+#include "parcel.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+
+#include "audio_log.h"
+#include "audio_errors.h"
+#include "audio_info.h"
+#include "audio_system_manager.h"
 #include "audio_capturer_state_change_listener_stub.h"
 #include "audio_renderer_state_change_listener_stub.h"
 #include "audio_ringermode_update_listener_stub.h"

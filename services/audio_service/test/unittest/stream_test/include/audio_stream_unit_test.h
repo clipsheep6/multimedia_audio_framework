@@ -17,6 +17,7 @@
 #define AUDIO_STREAM_UNIT_TEST_H
 
 #include "gtest/gtest.h"
+#include "audio_log.h"
 #include "audio_info.h"
 #include "audio_stream.h"
 

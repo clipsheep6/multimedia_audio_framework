@@ -36,5 +36,5 @@ ohos_unittest("audio_routing_manager_test") {
     "hiviewdfx_hilog_native:libhilog",
   ]
   sources = [ "src/audio_routing_manager_unit_test.cpp" ]
-  deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
+  deps = [ "../../../../../../services/audio_service:audio_service_client" ]
 }

@@ -52,10 +52,10 @@ ohos_shared_library("audio_toneplayer") {
   sources = [ "src/toneplayer.cpp" ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "../../../frameworks/native/audiorenderer:audio_renderer",
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_service_client",
   ]
 
   public_configs = [ ":audio_external_library_config" ]

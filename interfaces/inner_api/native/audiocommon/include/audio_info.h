@@ -829,6 +829,26 @@ enum CapturerState {
     CAPTURER_PAUSED
 };
 
+/**
+ * @brief Enumerates the stream states of the current device.
+ */
+enum State {
+    /** INVALID */
+    INVALID = -1,
+    /** New */
+    NEW,
+    /** Prepared */
+    PREPARED,
+    /** Running */
+    RUNNING,
+    /** Stopped */
+    STOPPED,
+    /** Released */
+    RELEASED,
+    /** Paused */
+    PAUSED
+};
+
 enum AudioMode {
     AUDIO_MODE_PLAYBACK,
     AUDIO_MODE_RECORD

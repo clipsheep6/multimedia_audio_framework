@@ -17,15 +17,14 @@
 
 #include <fstream>
 #include <sstream>
-
-#include "iservice_registry.h"
-#include "audio_log.h"
-#include "audio_utils.h"
-#include "hisysevent.h"
-#include "securec.h"
-#include "system_ability_definition.h"
 #include "unistd.h"
+#include "securec.h"
+#include "hisysevent.h"
+
+#include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
+#include "audio_policy_manager.h"
 
 using namespace std;
 
@@ -2605,13 +2604,17 @@ void AudioServiceClient::HandleReadRequestEvent()
 
 void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
+    HandleRendererEvent(event);
+    HandleCapturerEvent(event);
+}
+
+void AudioServiceClient::HandleRendererEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
     uint32_t eventId = event->GetInnerEventId();
     uint64_t mFrameMarkPosition;
     uint64_t mFramePeriodNumber;
     std::shared_ptr<RendererPositionCallback> renderPositionCb;
     std::shared_ptr<RendererPeriodPositionCallback> renderPeriodPositionCb;
-    std::shared_ptr<CapturerPositionCallback> capturePositionCb;
-    std::shared_ptr<CapturerPeriodPositionCallback> capturePeriodPositionCb;
 
     switch (eventId) {
         case WRITE_BUFFER_REQUEST:
@@ -2645,6 +2648,24 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
             break;
         case UNSET_RENDERER_PERIOD_REACHED_REQUEST:
             HandleUnsetRenderPeriodReachedEvent();
+            break;
+
+        default:
+            break;
+    }
+}
+
+void AudioServiceClient::HandleCapturerEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    uint32_t eventId = event->GetInnerEventId();
+    uint64_t mFrameMarkPosition;
+    uint64_t mFramePeriodNumber;
+    std::shared_ptr<CapturerPositionCallback> capturePositionCb;
+    std::shared_ptr<CapturerPeriodPositionCallback> capturePeriodPositionCb;
+
+    switch (eventId) {
+        case READ_BUFFER_REQUEST:
+            HandleReadRequestEvent();
             break;
 
         // CapturerMarkReach

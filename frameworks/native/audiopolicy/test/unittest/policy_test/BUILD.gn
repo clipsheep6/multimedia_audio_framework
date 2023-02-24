@@ -47,8 +47,9 @@ ohos_unittest("audio_policy_unit_test") {
   ]
   sources = [ "src/audio_policy_unit_test.cpp" ]
   deps = [
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_service",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "../../../../../../services/audio_policy:audio_policy_client",
+    "../../../../../../services/audio_policy:audio_policy_service",
+    "../../../../../../services/audio_service:audio_service_client",
+    "../../../../../../services/audio_service:audio_stream_client",
   ]
 }

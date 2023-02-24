@@ -70,11 +70,11 @@ ohos_shared_library("audio") {
   ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
-    "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "../../../frameworks/native/audiocapturer:audio_capturer",
+    "../../../frameworks/native/audiorenderer:audio_renderer",
+    "../../../frameworks/native/toneplayer:audio_toneplayer",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_service_client",
   ]
 
   external_deps = [

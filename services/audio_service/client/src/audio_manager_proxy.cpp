@@ -14,8 +14,9 @@
  */
 
 #include "audio_manager_proxy.h"
-#include "audio_system_manager.h"
+
 #include "audio_log.h"
+#include "audio_system_manager.h"
 
 using namespace std;
 

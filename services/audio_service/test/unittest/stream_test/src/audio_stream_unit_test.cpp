@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
-#include <thread>
-#include "audio_errors.h"
-#include "audio_info.h"
 #include "audio_stream_unit_test.h"
+
+#include <thread>
+#include "audio_info.h"
+#include "audio_errors.h"
 
 using namespace std;
 using namespace testing::ext;
