@@ -242,18 +242,19 @@ static void ParseAudioRendererInfo(napi_env env, napi_value root, AudioRendererI
     napi_value tempValue = nullptr;
     int32_t intValue = {0};
 
-    if (napi_get_named_property(env, root, "contentType", &tempValue) == napi_ok) {
+    if (napi_get_named_property(env, root, "content", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
         rendererInfo->contentType = static_cast<ContentType>(intValue);
     }
 
-    if (napi_get_named_property(env, root, "streamUsage", &tempValue) == napi_ok) {
+    if (napi_get_named_property(env, root, "usage", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
         rendererInfo->streamUsage = static_cast<StreamUsage>(intValue);
     }
 
     if (napi_get_named_property(env, root, "rendererFlags", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &(rendererInfo->rendererFlags));
+        rendererInfo->rendererFlags = static_cast<int32_t>(intValue);
     }
 }
 

@@ -1637,7 +1637,7 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId)
 }
 
 int32_t AudioPolicyService::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
-    const sptr<IRemoteObject> &object)
+    AudioRendererInfo &rendererInfo, const sptr<IRemoteObject> &object)
 {
     AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
 
