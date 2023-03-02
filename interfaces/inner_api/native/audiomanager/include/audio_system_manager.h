@@ -245,7 +245,7 @@ public:
                                   const std::shared_ptr<AudioRingerModeCallback> &callback);
     int32_t UnsetRingerModeCallback(const int32_t clientId) const;
     int32_t RegisterVolumeKeyEventCallback(const int32_t clientPid,
-                                           const std::shared_ptr<VolumeKeyEventCallback> &callback);
+        const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
     int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid);
 
     // Below APIs are added to handle compilation error in call manager
@@ -268,7 +268,7 @@ public:
                                     AudioStreamType audioStreamType);
     AudioPin GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const;
     DeviceType GetTypeValueFromPin(AudioPin pin) const;
-    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroups(std::string networkId);
+    int32_t GetVolumeGroups(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &info);
     std::shared_ptr<AudioGroupManager> GetGroupManager(int32_t groupId);
     std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
 private:
