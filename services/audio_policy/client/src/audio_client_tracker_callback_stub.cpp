@@ -20,6 +20,8 @@ namespace OHOS {
 namespace AudioStandard {
 AudioClientTrackerCallbackStub::AudioClientTrackerCallbackStub()
 {
+    auto runner = AppExecFwk::EventRunner::Create(true);
+    handler_ = std::make_shared<AppExecFwk::EventHandler>(runner);
 }
 
 AudioClientTrackerCallbackStub::~AudioClientTrackerCallbackStub()
@@ -88,10 +90,13 @@ void AudioClientTrackerCallbackStub::PausedStreamImpl(
 {
     AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub PausedStreamImpl start");
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
-    if (cb != nullptr) {
-        cb->PausedStreamImpl(streamSetStateEventInternal);
+    if (cb != nullptr && handler_ != nullptr) {
+        auto task = [cb, &streamSetStateEventInternal] {
+            cb->PausedStreamImpl(streamSetStateEventInternal);
+        };
+        handler_->PostTask(task);
     } else {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: PausedStreamImpl callback_ is nullptr");
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: PausedStreamImpl callback_ is nullptr or handler_ is nullptr");
     }
 }
 
@@ -111,10 +116,13 @@ void AudioClientTrackerCallbackStub::ResumeStreamImpl(
 {
     AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub ResumeStreamImpl start");
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
-    if (cb != nullptr) {
-        cb->ResumeStreamImpl(streamSetStateEventInternal);
+    if (cb != nullptr && handler_ != nullptr) {
+        auto task = [cb, &streamSetStateEventInternal] {
+            cb->ResumeStreamImpl(streamSetStateEventInternal);
+        };
+        handler_->PostTask(task);
     } else {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ResumeStreamImpl callback_ is nullptr");
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ResumeStreamImpl callback_ is nullptr or handler is nullptr");
     }
 }
 

@@ -16,6 +16,8 @@
 #ifndef ST_AUDIO_CLIENT_TRACKER_CALLBACK_STUB_H
 #define ST_AUDIO_CLIENT_TRACKER_CALLBACK_STUB_H
 
+#include "event_handler.h"
+#include "event_runner.h"
 #include "audio_stream_manager.h"
 #include "i_standard_client_tracker.h"
 
@@ -38,6 +40,7 @@ public:
 
 private:
     std::weak_ptr<AudioClientTracker> callback_;
+    std::shared_ptr<AppExecFwk::EventHandler> handler_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
