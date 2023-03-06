@@ -470,8 +470,11 @@ int32_t BluetoothRendererSinkInner::Start(void)
     AUDIO_INFO_LOG("Start.");
 
     if (mKeepRunningLock == nullptr) {
-        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioBluetoothBackgroundPlay",
+        auto runningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioBluetoothBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
+        if (runningLock.IsOk()) {
+            mKeepRunningLock = runningLock.GetData();
+        }
     }
 
     if (mKeepRunningLock != nullptr) {

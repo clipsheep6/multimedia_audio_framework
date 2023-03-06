@@ -41,6 +41,7 @@ ohos_shared_library("audio_renderer_sink") {
   deps += [ multimedia_audio_framework_hdi_audio_client ]
 
   external_deps = [
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "power_manager:powermgr_client",
   ]
@@ -114,6 +115,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "power_manager:powermgr_client",
   ]
