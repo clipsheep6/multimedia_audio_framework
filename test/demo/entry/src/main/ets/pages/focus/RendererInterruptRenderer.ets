@@ -19,7 +19,7 @@ import fs from '@ohos.file.fs';
 
 @Entry
 @Component
-struct Interrupt {
+struct RendererInterruptRenderer {
   private audioRendererOptions  = [
     {
       streamInfo: {
@@ -59,6 +59,8 @@ struct Interrupt {
   @State selectedStreamUsageKeys: Array<string> = ["STREAM_USAGE_MEDIA","STREAM_USAGE_MEDIA"]
   private volumeTypeList = []
   @State selectedVolumeTypeKeys: Array<string> = ["请选择流类型","请选择流类型"]
+
+  private writeArr=[0,0]
 
   private renderInfo = {
     'RINGTONE': {
@@ -115,16 +117,84 @@ struct Interrupt {
         selectedContentTypeKey:'CONTENT_TYPE_SPEECH',
         selectedStreamUsageKey:'STREAM_USAGE_MEDIA'
       }
+    },
+    'ALARM': {
+      main:{
+        content: audio.ContentType.CONTENT_TYPE_MUSIC,
+        usage: audio.StreamUsage.STREAM_USAGE_ALARM,
+        rendererFlags: 0
+      },
+      info:{
+        selectedContentTypeKey:'CONTENT_TYPE_MUSIC',
+        selectedStreamUsageKey:'STREAM_USAGE_ALARM'
+      }
+    },
+    'ACCESSIBILITY': {
+      main:{
+        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        usage: audio.StreamUsage.STREAM_USAGE_ACCESSIBILITY,
+        rendererFlags: 0
+      },
+      info:{
+        selectedContentTypeKey:'CONTENT_TYPE_SPEECH',
+        selectedStreamUsageKey:'STREAM_USAGE_ACCESSIBILITY'
+      }
+    },
+    'ULTRASONIC': {
+      main:{
+        content: audio.ContentType.CONTENT_TYPE_ULTRASONIC,
+        usage: audio.StreamUsage.STREAM_USAGE_SYSTEM,
+        rendererFlags: 0
+      },
+      info:{
+        selectedContentTypeKey:'CONTENT_TYPE_ULTRASONIC',
+        selectedStreamUsageKey:'STREAM_USAGE_SYSTEM'
+      }
+    },
+    '__SPEECH': {
+      main:{
+        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info:{
+        selectedContentTypeKey:'CONTENT_TYPE_SPEECH',
+        selectedStreamUsageKey:'STREAM_USAGE_MEDIA'
+      }
+    },
+    '__MOVIE': {
+      main:{
+        content: audio.ContentType.CONTENT_TYPE_MOVIE,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info:{
+        selectedContentTypeKey:'CONTENT_TYPE_MOVIE',
+        selectedStreamUsageKey:'STREAM_USAGE_MEDIA'
+      }
+    },
+    '__UNKNOW': {
+      main:{
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_UNKNOWN,
+        rendererFlags: 0
+      },
+      info:{
+        selectedContentTypeKey:'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey:'STREAM_USAGE_UNKNOWN'
+      }
     }
   }
 
   //@State mode:number=1
   aboutToAppear() {
-
-
     for (let key in audio.AudioVolumeType) {
       this.volumeTypeList.push({ value: key })
     }
+    //实际volumetype没有，这三个流类型与music的流类型策略一致
+    this.volumeTypeList.push({ value: '__SPEECH' })
+    this.volumeTypeList.push({ value: '__MOVIE' })
+    this.volumeTypeList.push({ value: '__UNKNOW' })
   }
   async onBackPress(){
     if (this.audioRenderers[0] !== null) {
@@ -187,6 +257,10 @@ struct Interrupt {
   }
 
   async writeRenderer(index) {
+    if(this.writeArr[index]==1){
+      this.returnMsg += `audioRenderer ${index} write already clicked`
+      return
+    }
     if (this.audioRenderers[index] == null) {
       this.returnMsg += `audioRenderer ${index} instance had not created,dont‘t allow to read\n`
       return
@@ -194,6 +268,9 @@ struct Interrupt {
     if (this.bufferSize == 0) {
       this.bufferSize = await this.audioRenderers[index].getBufferSize()
     }
+
+
+    this.writeArr[index]=1
 
     let _this = this
     let path = this.paths[index]
@@ -262,6 +339,7 @@ struct Interrupt {
       } else {
         _this.returnMsg = `audioRenderer ${index} release SUCCESS,state:${_this.audioRenderers[index].state}\n`
         _this.audioRenderers[index] = null
+        _this.writeArr[index]=0
       }
     })
   }

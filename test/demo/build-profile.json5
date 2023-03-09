@@ -1,31 +1,16 @@
-/*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
-
 {
   "app": {
     "signingConfigs": [
       {
         "name": "default",
         "material": {
-          "certpath": "C:\\Users\\lenovo\\.ohos\\config\\openharmony\\auto_ohos_default_test0116_com.example.test.system.cer",
-          "storePassword": "0000001BA6E740442A990441789EA24E1190C804B3EA99EC474F3855D1395CF304076EC5AB7480A626CE24",
+          "certpath": "C:\\Users\\lenovo\\.ohos\\config\\openharmony\\auto_ohos_default_AudioSample_com.sample.rocketer.system.cer",
+          "storePassword": "0000001A8382FBF0EA624B6ED21F010F8A3156E45622DD3A796A94D9C5986DC33D4106B66B11667A1A2B",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BE67F31D5421F5CD2CA928D9713D02EF103530E1822B25F22C6DFB301F65429B9E9774416CBC3E9",
-          "profile": "C:\\Users\\lenovo\\.ohos\\config\\openharmony\\auto_ohos_default_test0116_com.example.test.system.p7b",
+          "keyPassword": "0000001A58CCB2B29B93EFBD968C44BF0F8EE3B0EEE8FA361F9A1764FAD0AEC53C74C06D98DE47C09B72",
+          "profile": "C:\\Users\\lenovo\\.ohos\\config\\openharmony\\auto_ohos_default_AudioSample_com.sample.rocketer.system.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\lenovo\\.ohos\\config\\openharmony\\auto_ohos_default_test0116_com.example.test.system.p12"
+          "storeFile": "C:\\Users\\lenovo\\.ohos\\config\\openharmony\\auto_ohos_default_AudioSample_com.sample.rocketer.system.p12"
         }
       }
     ],
