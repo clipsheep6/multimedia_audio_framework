@@ -19,7 +19,7 @@ import fs from '@ohos.file.fs';
 
 @Entry
 @Component
-struct Interrupt {
+struct RendererInterruptRenderer {
   private audioRendererOptions  = [
     {
       streamInfo: {
@@ -150,6 +150,39 @@ struct Interrupt {
         selectedContentTypeKey:'CONTENT_TYPE_ULTRASONIC',
         selectedStreamUsageKey:'STREAM_USAGE_SYSTEM'
       }
+    },
+    '__SPEECH': {
+      main:{
+        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info:{
+        selectedContentTypeKey:'CONTENT_TYPE_SPEECH',
+        selectedStreamUsageKey:'STREAM_USAGE_MEDIA'
+      }
+    },
+    '__MOVIE': {
+      main:{
+        content: audio.ContentType.CONTENT_TYPE_MOVIE,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info:{
+        selectedContentTypeKey:'CONTENT_TYPE_MOVIE',
+        selectedStreamUsageKey:'STREAM_USAGE_MEDIA'
+      }
+    },
+    '__UNKNOW': {
+      main:{
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_UNKNOWN,
+        rendererFlags: 0
+      },
+      info:{
+        selectedContentTypeKey:'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey:'STREAM_USAGE_UNKNOWN'
+      }
     }
   }
 
@@ -158,6 +191,10 @@ struct Interrupt {
     for (let key in audio.AudioVolumeType) {
       this.volumeTypeList.push({ value: key })
     }
+    //实际volumetype没有，这三个流类型与music的流类型策略一致
+    this.volumeTypeList.push({ value: '__SPEECH' })
+    this.volumeTypeList.push({ value: '__MOVIE' })
+    this.volumeTypeList.push({ value: '__UNKNOW' })
   }
   async onBackPress(){
     if (this.audioRenderers[0] !== null) {
