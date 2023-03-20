@@ -295,7 +295,6 @@ int32_t RingtonePlayer::Release()
 
 RingtoneState RingtonePlayer::GetRingtoneState()
 {
-    AUDIO_INFO_LOG("RingtonePlayer::%{public}s", __func__);
     return ringtoneState_;
 }
 
