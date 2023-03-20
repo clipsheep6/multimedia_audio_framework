@@ -654,11 +654,13 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
 
 std::string AudioPolicyService::GetPortName(InternalDeviceType deviceType)
 {
+    AUDIO_INFO_LOG("AudioPolicyService::GetPortName deviceType: %{public}d", deviceType);
     std::string portName = PORT_NONE;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
             portName = BLUETOOTH_SPEAKER;
             break;
+        case InternalDeviceType::DEVICE_TYPE_EARPIECE:
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
@@ -809,20 +811,25 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = tru
 {
     AUDIO_DEBUG_LOG("Entered AudioPolicyService::%{public}s", __func__);
     DeviceType priorityDevice = isOutputDevice ? DEVICE_TYPE_SPEAKER : DEVICE_TYPE_MIC;
+    AUDIO_INFO_LOG("AudioPolicyService::FetchHighPriorityDevice priorityDevice: %{public}d", priorityDevice);
     std::vector<DeviceType> priorityList = isOutputDevice ? outputPriorityList_ : inputPriorityList_;
     for (const auto &device : priorityList) {
+        AUDIO_INFO_LOG("AudioPolicyService::FetchHighPriorityDevice device: %{public}d", device);
         auto isPresent = [&device] (const sptr<AudioDeviceDescriptor> &desc) {
             CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+            AUDIO_INFO_LOG("AudioPolicyService::FetchHighPriorityDevice desc->deviceType_: %{public}d", desc->deviceType_);
             return desc->deviceType_ == device;
         };
 
         auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
         if (itr != connectedDevices_.end()) {
+            
             priorityDevice = (*itr)->deviceType_;
+            AUDIO_INFO_LOG("AudioPolicyService::FetchHighPriorityDevice priorityDevice11: %{public}d", priorityDevice);
             break;
         }
     }
-
+    AUDIO_INFO_LOG("AudioPolicyService::FetchHighPriorityDevice return priorityDevice11: %{public}d", priorityDevice);
     return priorityDevice;
 }
 
@@ -867,12 +874,15 @@ void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
             break;
         }
         case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER: {
+            AUDIO_DEBUG_LOG("UpdateActiveDeviceRoute speaker Device type[%{public}d] DeviceFlag : %{public}d", deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
             ret = g_adProxy->UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}d", deviceType);
             break;
         }
         case DEVICE_TYPE_MIC: {
+            AUDIO_DEBUG_LOG("UpdateActiveDeviceRoute mic Device type[%{public}d] DeviceFlag : %{public}d", deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
             ret = g_adProxy->UpdateActiveDeviceRoute(deviceType, DeviceFlag::INPUT_DEVICES_FLAG);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}d", deviceType);
             break;
@@ -916,6 +926,7 @@ static uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat)
 
 int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType)
 {
+    AUDIO_INFO_LOG("AudioPolicyService::SelectNewDevice deviceType: %{public}s, deviceRole: %{public}d", deviceType, deviceRole);
     int32_t result = SUCCESS;
 
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
@@ -949,13 +960,16 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
 
 int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isSceneActivation = false)
 {
+    AUDIO_INFO_LOG("AudioPolicyService::ActivateNewDevice deviceType: %{public}s", deviceType);
     int32_t result = SUCCESS;
 
     if (currentActiveDevice_ == deviceType) {
+        AUDIO_INFO_LOG("AudioPolicyService::ActivateNewDevice currentActiveDevice_: %{public}d", currentActiveDevice_);
         return result;
     }
 
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        AUDIO_INFO_LOG("AudioPolicyService::ActivateNewDevice deviceType11: %{public}d", deviceType);
         auto primaryModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
         if (primaryModulesPos != deviceClassInfo_.end()) {
             auto moduleInfoList = primaryModulesPos->second;
@@ -986,6 +1000,7 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
             }
         }
     } else if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        AUDIO_INFO_LOG("AudioPolicyService::ActivateNewDevice currentActiveDevice_11: %{public}s", currentActiveDevice_);
         std::string activePort = GetPortName(currentActiveDevice_);
         audioPolicyManager_.SuspendAudioDevice(activePort, true);
     }
@@ -998,14 +1013,17 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "SetDeviceActive failed %{public}d", result);
     audioPolicyManager_.SuspendAudioDevice(portName, false);
 
+    AUDIO_INFO_LOG("AudioPolicyService::ActivateNewDevice isUpdateRouteSupported_: %{public}d, isSceneActivation: %{public}d", isUpdateRouteSupported_, isSceneActivation);
     if (isUpdateRouteSupported_ && !isSceneActivation) {
         if (deviceType == DEVICE_TYPE_SPEAKER && currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
             AUDIO_INFO_LOG("Delay for device: [%{public}d]-->[%{public}d]", currentActiveDevice_, deviceType);
             usleep(switchVolumeDelay_);
         }
+        AUDIO_INFO_LOG("UpdateActiveDeviceRoute deviceType-->[%{public}d]", deviceType);
         UpdateActiveDeviceRoute(deviceType);
     }
 
+    AUDIO_INFO_LOG("UpdateInputDeviceInfo deviceType-->[%{public}d]", deviceType);
     UpdateInputDeviceInfo(deviceType);
 
     return SUCCESS;
@@ -1013,12 +1031,14 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
 
 int32_t AudioPolicyService::ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote)
 {
+    AUDIO_INFO_LOG("AudioPolicyService::ActivateNewDevice networkId : %{public}s, deviceType: %{public}d", networkId, deviceType);
     if (isRemote) {
         AudioModuleInfo moduleInfo = ConstructRemoteAudioModuleInfo(networkId, GetDeviceRole(deviceType), deviceType);
         AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
         CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
             "OpenAudioPort failed %{public}d", ioHandle);
         std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceType));
+        AUDIO_INFO_LOG("AudioPolicyService::ActivateNewDevice moduleName : %{public}s, GetDeviceRole: %{public}d", moduleName, GetDeviceRole(deviceType));
         IOHandles_[moduleName] = ioHandle;
     }
     return SUCCESS;
@@ -1048,12 +1068,18 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     };
 
     auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
-    if (itr == connectedDevices_.end()) {
+    if (itr == connectedDevices_.end() && deviceType != DEVICE_TYPE_EARPIECE) {
         AUDIO_ERR_LOG("Requested device not available %{public}d ", deviceType);
         return ERR_OPERATION_FAILED;
     }
 
     switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE:
+            result = ActivateNewDevice(DEVICE_TYPE_EARPIECE);
+            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Earpiece activation err %{public}d", result);
+            result = ActivateNewDevice(DEVICE_TYPE_MIC);
+            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Microphone activation err %{public}d", result);
+            break;
         case DEVICE_TYPE_SPEAKER:
             result = ActivateNewDevice(DEVICE_TYPE_SPEAKER);
             CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Speaker activation err %{public}d", result);
@@ -1105,6 +1131,7 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
 
 int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 {
+    AUDIO_ERR_LOG("AudioPolicyService::SetAudioScene: =%{public}d", audioScene);
     const sptr<IStandardAudioService> gsp = GetAudioPolicyServiceProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     audioScene_ = audioScene;
@@ -1113,12 +1140,16 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     AUDIO_INFO_LOG("Priority device for setAudioScene: %{public}d", priorityDev);
 
     int32_t result = ActivateNewDevice(priorityDev, true);
+    AUDIO_INFO_LOG("ActivateNewDevice for priorityDev result: %{public}d, currentActiveDevice_: %{public}d", result, currentActiveDevice_);
+
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Device activation failed [%{public}d]", result);
 
     currentActiveDevice_ = priorityDev;
+    AUDIO_INFO_LOG("currentActiveDevice_: %{public}d", currentActiveDevice_);
     OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
 
     result = gsp->SetAudioScene(audioScene, priorityDev);
+    AUDIO_INFO_LOG("SetAudioScene result: %{public}d", result);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
 
     return SUCCESS;
@@ -1908,6 +1939,7 @@ AudioIOHandle AudioPolicyService::GetAudioIOHandle(InternalDeviceType deviceType
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
+        case InternalDeviceType::DEVICE_TYPE_EARPIECE:
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
             ioHandle = IOHandles_[PRIMARY_SPEAKER];
@@ -2249,9 +2281,10 @@ uint32_t AudioPolicyService::GetSinkLatencyFromXml() const
 
 void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
 {
-    AUDIO_DEBUG_LOG("Current input device is %{public}d", activeInputDevice_);
+    AUDIO_DEBUG_LOG("Current input device is %{public}d deviceType : %{public}d", activeInputDevice_, deviceType);
 
     switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             activeInputDevice_ = DEVICE_TYPE_MIC;

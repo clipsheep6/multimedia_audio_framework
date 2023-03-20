@@ -133,6 +133,7 @@ AudioRingerMode AudioPolicyManager::GetRingerMode()
 
 int32_t AudioPolicyManager::SetAudioScene(AudioScene scene)
 {
+    AUDIO_ERR_LOG("AudioPolicyManager::SetAudioScene: =%{public}d", scene);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetAudioScene: audio policy manager proxy is NULL.");

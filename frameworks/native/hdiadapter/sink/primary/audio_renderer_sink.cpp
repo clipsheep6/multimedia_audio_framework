@@ -650,9 +650,15 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
 
 static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 {
+    AUDIO_DEBUG_LOG("AudioRendererSink::SetOutputPortPinAudio outputDevice : %{public}d", outputDevice);
     int32_t ret = SUCCESS;
 
     switch (outputDevice) {
+        case DEVICE_TYPE_EARPIECE:
+            AUDIO_DEBUG_LOG("AudioRendererSink::SetOutputPortPinAudio earpiece outputDevice : %{public}d", outputDevice);
+            sink.ext.device.type = PIN_OUT_EARPIECE;
+            sink.ext.device.desc = (char *)"pin_out_earpiece";
+            break;
         case DEVICE_TYPE_SPEAKER:
             sink.ext.device.type = PIN_OUT_SPEAKER;
             sink.ext.device.desc = (char *)"pin_out_speaker";
@@ -679,15 +685,18 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 
 int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
 {
+    AUDIO_ERR_LOG("AudioRendererSink: SetOutputRoute outputDevice: %{public}d", outputDevice);
     AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
     return SetOutputRoute(outputDevice, outputPortPin);
 }
 
 int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
 {
+    AUDIO_ERR_LOG("AudioRendererSink: SetOutputRoute11 outputDevice: %{public}d, outputPortPin : %{public}d Output PIN is: 0x%{public}X", outputDevice,outputPortPin );
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
 
+    AUDIO_ERR_LOG("AudioRendererSink: SetOutputPortPin outputDevice: %{public}d", outputDevice);
     int32_t ret = SetOutputPortPin(outputDevice, sink);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("AudioRendererSink: SetOutputRoute FAILED: %{public}d", ret);

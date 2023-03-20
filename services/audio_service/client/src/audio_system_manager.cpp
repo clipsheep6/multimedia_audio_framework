@@ -189,12 +189,14 @@ int32_t AudioSystemManager::SetAudioScene(const AudioScene &scene)
 
 AudioScene AudioSystemManager::GetAudioScene() const
 {
+    AUDIO_DEBUG_LOG("GetAudioScene audioScene_=%{public}d done", AudioPolicyManager::GetInstance().GetAudioScene());
     return AudioPolicyManager::GetInstance().GetAudioScene();
 }
 
 int32_t AudioSystemManager::SetDeviceActive(ActiveDeviceType deviceType, bool flag) const
 {
     switch (deviceType) {
+        case EARPIECE:
         case SPEAKER:
         case BLUETOOTH_SCO:
         case FILE_SINK_DEVICE:
@@ -211,6 +213,7 @@ int32_t AudioSystemManager::SetDeviceActive(ActiveDeviceType deviceType, bool fl
 bool AudioSystemManager::IsDeviceActive(ActiveDeviceType deviceType) const
 {
     switch (deviceType) {
+        case EARPIECE:
         case SPEAKER:
         case BLUETOOTH_SCO:
         case FILE_SINK_DEVICE:
