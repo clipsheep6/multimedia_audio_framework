@@ -692,7 +692,7 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
 
 int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
 {
-    AUDIO_ERR_LOG("AudioRendererSink: SetOutputRoute11 outputDevice: %{public}d, outputPortPin : %{public}d Output PIN is: 0x%{public}X", outputDevice,outputPortPin );
+    AUDIO_ERR_LOG("AudioRendererSink: SetOutputRoute11 outputDevice: %{public}d, outputPortPin: 0x%{public}X", outputDevice,outputPortPin );
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
 
