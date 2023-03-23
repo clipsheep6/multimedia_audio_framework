@@ -861,7 +861,7 @@ struct StreamSetStateEventInternal {
 struct AudioRendererChangeInfo {
     int32_t clientUID;
     int32_t sessionId;
-    int32_t tokenId
+    int32_t tokenId;
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
     DeviceInfo outputDeviceInfo;
