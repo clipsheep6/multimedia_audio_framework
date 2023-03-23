@@ -845,6 +845,7 @@ struct DeviceInfo {
     std::string macAddress;
     AudioStreamInfo audioStreamInfo;
     std::string networkId;
+    std::string networkName;
 };
 
 enum StreamSetState {
@@ -860,6 +861,7 @@ struct StreamSetStateEventInternal {
 struct AudioRendererChangeInfo {
     int32_t clientUID;
     int32_t sessionId;
+    int32_t tokenId;
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
     DeviceInfo outputDeviceInfo;

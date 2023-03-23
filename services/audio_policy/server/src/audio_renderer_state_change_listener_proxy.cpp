@@ -38,6 +38,7 @@ void AudioRendererStateChangeListenerProxy::WriteRendererChangeInfo(MessageParce
     data.WriteInt32(rendererChangeInfo->sessionId);
     data.WriteInt32(rendererChangeInfo->rendererState);
     data.WriteInt32(rendererChangeInfo->clientUID);
+    data.WriteInt32(rendererChangeInfo->tokenId);
     data.WriteInt32(rendererChangeInfo->rendererInfo.contentType);
     data.WriteInt32(rendererChangeInfo->rendererInfo.streamUsage);
     data.WriteInt32(rendererChangeInfo->rendererInfo.rendererFlags);
@@ -114,6 +115,7 @@ void AudioRendererStateChangeListenerCallback::UpdateDeviceInfo(
             audioRendererChangeInfos[i]->clientUID = 0;
             audioRendererChangeInfos[i]->rendererState = RENDERER_INVALID;
             audioRendererChangeInfos[i]->outputDeviceInfo.networkId = "";
+            audioRendererChangeInfos[i]->outputDeviceInfo.networkName = "";
         }
     }
 }
