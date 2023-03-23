@@ -26,6 +26,9 @@
 #endif
 
 #include "audio_policy_service.h"
+#include "device_manager.h"
+
+using OHOS::DistributedHardware::DeviceManager;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,6 +39,7 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+const std::string DAUDIO_HDI_SERVICE_NAME = "daudio_primary_service";
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 static int32_t startDeviceId = 1;
 mutex g_adProxyMutex;
@@ -1271,7 +1275,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d]", devType, isConnected);
     int32_t result = ERROR;
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
-    deviceDesc.SetDeviceInfo(deviceName, macAddress);
+    deviceDesc.SetDeviceInfo(deviceName, macAddress, nullptr);
     deviceDesc.SetDeviceCapability(streamInfo, 0);
 
     UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, LOCAL_NETWORK_ID, isConnected,
@@ -1412,7 +1416,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
 
                     sptr<AudioDeviceDescriptor> audioDescriptor
                         = new(std::nothrow) AudioDeviceDescriptor(deviceType, OUTPUT_DEVICE);
-                    audioDescriptor->SetDeviceInfo(deviceName, macAddress);
+                    audioDescriptor->SetDeviceInfo(deviceName, macAddress, nullptr);
                     audioDescriptor->SetDeviceCapability(streamInfo, 0);
                     std::replace_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent, audioDescriptor);
                     break;
@@ -1435,6 +1439,26 @@ inline void RemoveDeviceInRouterMap(std::string networkId,
     }
 }
 
+std::string AudioPolicyService::GetNetworkName(std::string networkId)
+{
+    const std::string pkgName = DAUDIO_HDI_SERVICE_NAME;
+    std::vector<DistributedHardware::DmDeviceInfo> deviceList = {};
+    int32_t ret = DeviceManager::GetInstance().GetTrustedDeviceList(pkgName, nullptr, deviceList);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetNetworkName:GetTrustedDeviceList failed.");
+        return nullptr;
+    }
+
+    std::string networkName = nullptr;
+    for (auto deviceInfo : deviceList) {
+        AUDIO_INFO_LOG("GetNetworkName deviceInfo [%{public}s] deviceName [%{public}s]", deviceInfo.networkId, deviceInfo.deviceName);
+        if ((deviceInfo.networkId)==networkId.c_str()) {
+            networkName = deviceInfo.deviceName;
+        }
+    }
+    return networkName;
+}
+
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
 {
     AUDIO_INFO_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d] NETWORKID[%{public}s]",
@@ -1442,7 +1466,8 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
-    deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
+    const std::string networkName = GetNetworkName(networkId);
+    deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress, networkName);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
     deviceDesc.networkId_ = networkId;
 
