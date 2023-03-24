@@ -369,6 +369,7 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 
     switch (flag) {
         case DeviceFlag::INPUT_DEVICES_FLAG: {
+            AUDIO_INFO_LOG("UpdateActiveDeviceRoute deviceType: %{public}d, flag: %{public}d", type, flag);
             if (audioScene_ != AUDIO_SCENE_DEFAULT) {
                 audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
             } else {
@@ -377,6 +378,7 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
             break;
         }
         case DeviceFlag::OUTPUT_DEVICES_FLAG: {
+            AUDIO_INFO_LOG("UpdateActiveDeviceRoute deviceType: %{public}d, flag: %{public}d, audioScene_: %{public}d", type, flag, audioScene_);
             if (audioScene_ != AUDIO_SCENE_DEFAULT) {
                 audioRendererSinkInstance->SetAudioScene(audioScene_, type);
             } else {

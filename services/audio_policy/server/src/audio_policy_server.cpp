@@ -597,6 +597,7 @@ AudioRingerMode AudioPolicyServer::GetRingerMode()
 
 int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
 {
+    AUDIO_ERR_LOG("AudioPolicyServer::SetAudioScene: =%{public}d", audioScene);
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("SetAudioScene: No system permission");
         return ERR_PERMISSION_DENIED;
