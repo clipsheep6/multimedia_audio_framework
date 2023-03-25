@@ -43,7 +43,9 @@ std::string AudioCommonNapi::getMessageByCode(int32_t &code)
     std::string err_message;
     switch (code) {
         case NAPI_ERR_INVALID_PARAM:
+        case ERR_INVALID_PARAM:
             err_message = NAPI_ERR_INVALID_PARAM_INFO;
+            code = NAPI_ERR_INVALID_PARAM;
             break;
         case NAPI_ERR_NO_MEMORY:
             err_message = NAPI_ERR_NO_MEMORY_INFO;

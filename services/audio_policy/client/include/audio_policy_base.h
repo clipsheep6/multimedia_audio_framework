@@ -166,7 +166,7 @@ public:
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) = 0;
 
-    virtual int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+    virtual int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, AudioRendererInfo &rendererInfo,
         const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId) = 0;

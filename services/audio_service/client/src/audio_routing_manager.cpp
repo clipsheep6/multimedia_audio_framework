@@ -52,7 +52,15 @@ int32_t AudioRoutingManager::SetMicStateChangeCallback(
 int32_t AudioRoutingManager::GetPreferOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
     std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    AUDIO_DEBUG_LOG("[contentType] %{public}d,[streamUsage] %{public}d,[rendererFlags] %{public}d",
+        rendererInfo.contentType, rendererInfo.streamUsage, rendererInfo.rendererFlags);
+    ContentType contentType = rendererInfo.contentType;
+    CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_UNKNOWN && contentType <= CONTENT_TYPE_RINGTONE,
+        ERR_INVALID_PARAM, "Invalid content type");
+
+    StreamUsage streamUsage = rendererInfo.streamUsage;
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
+        ERR_INVALID_PARAM, "Invalid stream usage");
 
     desc = AudioPolicyManager::GetInstance().GetPreferOutputDeviceDescriptors(rendererInfo);
 
@@ -62,14 +70,21 @@ int32_t AudioRoutingManager::GetPreferOutputDeviceForRendererInfo(AudioRendererI
 int32_t AudioRoutingManager::SetPreferOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
     const std::shared_ptr<AudioPreferOutputDeviceChangeCallback>& callback)
 {
-    AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    AUDIO_DEBUG_LOG("[contentType] %{public}d,[streamUsage] %{public}d,[rendererFlags] %{public}d",
+        rendererInfo.contentType, rendererInfo.streamUsage, rendererInfo.rendererFlags);
+    ContentType contentType = rendererInfo.contentType;
+    CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_UNKNOWN && contentType <= CONTENT_TYPE_RINGTONE,
+        ERR_INVALID_PARAM, "Invalid content type");
+    StreamUsage streamUsage = rendererInfo.streamUsage;
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
+        ERR_INVALID_PARAM, "Invalid stream usage");
     if (callback == nullptr) {
         AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
 
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
-    return AudioPolicyManager::GetInstance().SetPreferOutputDeviceChangeCallback(clientId, callback);
+    return AudioPolicyManager::GetInstance().SetPreferOutputDeviceChangeCallback(clientId, rendererInfo, callback);
 }
 
 int32_t AudioRoutingManager::UnsetPreferOutputDeviceChangeCallback()

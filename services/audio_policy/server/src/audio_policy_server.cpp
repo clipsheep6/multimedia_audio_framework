@@ -696,11 +696,11 @@ int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t /* clientId *
 }
 
 int32_t AudioPolicyServer::SetPreferOutputDeviceChangeCallback(const int32_t /* clientId */,
-    const sptr<IRemoteObject> &object)
+    AudioRendererInfo &rendererInfo, const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return mPolicyService.SetPreferOutputDeviceChangeCallback(clientPid, object);
+    return mPolicyService.SetPreferOutputDeviceChangeCallback(clientPid, rendererInfo, object);
 }
 
 int32_t AudioPolicyServer::UnsetPreferOutputDeviceChangeCallback(const int32_t /* clientId */)
