@@ -1478,7 +1478,9 @@ int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, si
     readSize += l;
 
     if (!internalRdBufLen) {
+        pa_threaded_mainloop_lock(mainLoop);
         int retVal = pa_stream_drop(paStream);
+        pa_threaded_mainloop_unlock(mainLoop);
         internalReadBuffer = nullptr;
         internalRdBufLen = 0;
         internalRdBufIndex = 0;
