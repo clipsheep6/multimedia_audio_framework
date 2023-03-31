@@ -513,12 +513,14 @@ int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
 
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioServer: listener obj cast failed");
 
+    std::unique_lock<std::mutex> lock(setParameterCallbackMutex_);
     std::shared_ptr<AudioParameterCallback> callback = std::make_shared<AudioManagerListenerCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
 
     callback_ = callback;
     AUDIO_INFO_LOG("AudioServer:: SetParameterCallback  done");
 
+    lock.unlock();
     return SUCCESS;
 }
 
