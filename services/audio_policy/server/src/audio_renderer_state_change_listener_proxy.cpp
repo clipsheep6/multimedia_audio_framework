@@ -38,6 +38,7 @@ void AudioRendererStateChangeListenerProxy::WriteRendererChangeInfo(MessageParce
     data.WriteInt32(rendererChangeInfo->sessionId);
     data.WriteInt32(rendererChangeInfo->rendererState);
     data.WriteInt32(rendererChangeInfo->clientUID);
+    data.WriteInt32(rendererChangeInfo->tokenId);
     data.WriteInt32(rendererChangeInfo->rendererInfo.contentType);
     data.WriteInt32(rendererChangeInfo->rendererInfo.streamUsage);
     data.WriteInt32(rendererChangeInfo->rendererInfo.rendererFlags);
@@ -52,6 +53,7 @@ void AudioRendererStateChangeListenerProxy::WriteRendererChangeInfo(MessageParce
     data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels);
     data.WriteString(rendererChangeInfo->outputDeviceInfo.deviceName);
     data.WriteString(rendererChangeInfo->outputDeviceInfo.macAddress);
+    data.WriteString(rendererChangeInfo->outputDeviceInfo.displayName);
 }
 
 void AudioRendererStateChangeListenerProxy::OnRendererStateChange(
@@ -62,7 +64,7 @@ void AudioRendererStateChangeListenerProxy::OnRendererStateChange(
     MessageOption option;
 
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerProxy OnRendererStateChange entered");
-
+    
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioRendererStateChangeListener: WriteInterfaceToken failed");
         return;
@@ -114,6 +116,7 @@ void AudioRendererStateChangeListenerCallback::UpdateDeviceInfo(
             audioRendererChangeInfos[i]->clientUID = 0;
             audioRendererChangeInfos[i]->rendererState = RENDERER_INVALID;
             audioRendererChangeInfos[i]->outputDeviceInfo.networkId = "";
+            audioRendererChangeInfos[i]->outputDeviceInfo.displayName = "";
         }
     }
 }
