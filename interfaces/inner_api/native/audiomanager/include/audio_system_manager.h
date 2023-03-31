@@ -46,6 +46,7 @@ public:
     int32_t interruptGroupId_;
     int32_t volumeGroupId_;
     std::string networkId_;
+    std::string displayName_;
     AudioStreamInfo audioStreamInfo_ = {};
     AudioDeviceDescriptor();
     AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId, int32_t volumeGroupId,
@@ -55,7 +56,6 @@ public:
     virtual ~AudioDeviceDescriptor();
     bool Marshalling(Parcel &parcel) const override;
     static sptr<AudioDeviceDescriptor> Unmarshalling(Parcel &parcel);
-
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
     void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask);
 };

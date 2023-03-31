@@ -741,6 +741,7 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels);
         reply.WriteString(rendererChangeInfo->outputDeviceInfo.deviceName);
         reply.WriteString(rendererChangeInfo->outputDeviceInfo.macAddress);
+        reply.WriteString(rendererChangeInfo->outputDeviceInfo.displayName);
     }
 
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Renderer change info internal exit");
@@ -781,6 +782,7 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels);
         reply.WriteString(capturerChangeInfo->inputDeviceInfo.deviceName);
         reply.WriteString(capturerChangeInfo->inputDeviceInfo.macAddress);
+        reply.WriteString(capturerChangeInfo->inputDeviceInfo.displayName);
     }
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }

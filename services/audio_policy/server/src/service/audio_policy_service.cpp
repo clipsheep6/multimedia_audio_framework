@@ -24,6 +24,8 @@
 #include "audio_log.h"
 #include "audio_focus_parser.h"
 #include "audio_manager_listener_stub.h"
+#include "device_manager.h"
+#include "device_init_callback.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_bluetooth_manager.h"
@@ -38,6 +40,8 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+const std::string DAUDIO_HDI_SERVICE_NAME = "daudio_primary_service";
+const std::string AUDIO_HDI_SERVICE_NAME = "audio_manager_service";
 const uint32_t PRIORITY_LIST_OFFSET_POSTION = 1;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 static int32_t startDeviceId = 1;
@@ -697,7 +701,7 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
     DeviceType deviceType)
 {
     AudioModuleInfo audioModuleInfo = {};
-
+    audioModuleInfo.disPlayName = GetRemoteDisplayName (networkId);
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
         audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
         audioModuleInfo.format = "s16le"; // 16bit little endian
@@ -777,6 +781,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
         if (filterAllLocal || filterLocalOutput || filterLocalInput || filterAllRemote || filterRemoteOutput
             || filterRemoteInput) {
             sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+            if (device->networkId_ != LOCAL_NETWORK_ID) {
+                devDesc->displayName_ = GetRemoteDisplayName(device->networkId_);
+            } else {
+                devDesc->displayName_ = GetLocalDisplayName();
+            }
             deviceList.push_back(devDesc);
         }
     }
@@ -1259,6 +1268,7 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
 {
     sptr<AudioDeviceDescriptor> audioDescriptor = nullptr;
 
+    audioDescriptor->displayName_ = GetLocalDisplayName();
     if (std::find(ioDeviceList.begin(), ioDeviceList.end(), deviceDescriptor.deviceType_) != ioDeviceList.end()) {
         AUDIO_INFO_LOG("Filling io device list for %{public}d", deviceDescriptor.deviceType_);
         audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
@@ -1498,6 +1508,50 @@ inline void RemoveDeviceInRouterMap(std::string networkId,
             it++;
         }
     }
+}
+
+std::string AudioPolicyService::GetLocalDisplayName()
+{
+    // set packName not null
+    const std::string pkgName = AUDIO_HDI_SERVICE_NAME;
+    DistributedHardware::DmDeviceInfo info;
+    std::string extra = "";
+    std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
+    int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(pkgName, callback);
+    ret = DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(pkgName, info);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetLocalDisplayName:GetLocalDeviceInfo failed.");
+        return nullptr;
+    }
+
+    AUDIO_INFO_LOG("GetNetworkName deviceInfo [%{public}s] deviceName [%{public}s]", info.networkId, info.deviceName);
+    return info.deviceName;
+}
+
+std::string AudioPolicyService::GetRemoteDisplayName(std::string networkId)
+{
+    // set packName not null
+    std::string packName = DAUDIO_HDI_SERVICE_NAME;
+    std::string extra = "";
+    std::vector<DistributedHardware::DmDeviceInfo> deviceList;
+    std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
+    int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(packName, callback);
+    ret = DistributedHardware::DeviceManager::GetInstance().GetTrustedDeviceList(packName, extra, deviceList);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetRemoteDisplayName:GetTrustedDeviceList failed.");
+        //return nullptr;
+    }
+
+    AUDIO_INFO_LOG("GetRemoteDisplayName GetRemoteDisplayName 111111111111111111");
+
+    std::string networkName = nullptr;
+    for (auto deviceInfo : deviceList) {
+        AUDIO_INFO_LOG("GetNetworkName deviceInfo [%{public}s] deviceName [%{public}s]", deviceInfo.networkId, deviceInfo.deviceName);
+        if ((deviceInfo.networkId)==networkId.c_str()) {
+            networkName = deviceInfo.deviceName;
+        }
+    }
+    return networkName;
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
@@ -1791,10 +1845,13 @@ static void UpdateCapturerInfoWhenNoPermission(const unique_ptr<AudioCapturerCha
 static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
     bool hasSystemPermission)
 {
+    AUDIO_INFO_LOG("Entered AudioPolicyService2222222222222223333333::%{public}s", __func__);
     deviceInfo.deviceType = desc->deviceType_;
     deviceInfo.deviceRole = desc->deviceRole_;
     deviceInfo.deviceId = desc->deviceId_;
     deviceInfo.channelMasks = desc->channelMasks_;
+    deviceInfo.displayName = desc->displayName_;
+    AUDIO_INFO_LOG("Entered AudioPolicyService222222222UpdateDeviceInfo2222223333333::%{public}s",(deviceInfo.displayName).c_str());
 
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;
