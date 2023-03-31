@@ -498,6 +498,7 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
 void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
+    std::lock_guard<std::mutex> lockSet(setParameterCallbackMutex_);
     AUDIO_INFO_LOG("OnAudioParameterChange Callback from networkId: %s", netWorkId.c_str());
 
     if (callback_ != nullptr) {
@@ -507,20 +508,19 @@ void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParam
 
 int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
+    std::lock_guard<std::mutex> lockSet(setParameterCallbackMutex_);
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioServer:set listener object is nullptr");
 
     sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);
 
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioServer: listener obj cast failed");
 
-    std::unique_lock<std::mutex> lock(setParameterCallbackMutex_);
     std::shared_ptr<AudioParameterCallback> callback = std::make_shared<AudioManagerListenerCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
 
     callback_ = callback;
     AUDIO_INFO_LOG("AudioServer:: SetParameterCallback  done");
 
-    lock.unlock();
     return SUCCESS;
 }
 
