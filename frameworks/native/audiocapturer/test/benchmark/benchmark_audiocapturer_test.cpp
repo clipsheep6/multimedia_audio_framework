@@ -80,6 +80,7 @@ namespace {
             {
                 state.SkipWithError("StartAbilityTestCase audioCapturer start failed.");
             }
+            sleep(1);
             state.ResumeTiming();
         }
     }
@@ -97,6 +98,7 @@ namespace {
             {
                 state.SkipWithError("StopAbilityTestCase audioCapturer start failed.");
             }
+            sleep(1);
             state.ResumeTiming();
 
             bool isStopped = audioCapturer->Stop();
