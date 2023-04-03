@@ -141,7 +141,6 @@ void AudioPolicyService::Deinit(void)
     });
 
     IOHandles_.clear();
-    accessibilityConfigListener_->UnsubscribeObserver();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
 
     if (isBtListenerRegistered) {
@@ -2435,7 +2434,6 @@ void AudioPolicyService::UnregisterBluetoothListener()
 
 void AudioPolicyService::SubscribeAccessibilityConfigObserver()
 {
-    accessibilityConfigListener_->SubscribeObserver();
 }
 } // namespace AudioStandard
 } // namespace OHOS
