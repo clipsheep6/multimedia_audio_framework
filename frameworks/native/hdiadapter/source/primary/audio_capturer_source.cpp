@@ -220,13 +220,6 @@ int32_t AudioCapturerSource::Init(IAudioSourceAttr &attr)
     }
     capturerInited_ = true;
 
-#ifdef CAPTURE_DUMP
-    pfd = fopen(g_audioOutTestFilePath, "wb+");
-    if (pfd == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif // CAPTURE_DUMP
-
     return SUCCESS;
 }
 
@@ -264,6 +257,12 @@ int32_t AudioCapturerSource::Start(void)
     int32_t ret;
     if (!started_) {
         ret = audioCapture_->control.Start((AudioHandle)audioCapture_);
+#ifdef CAPTURE_DUMP
+    pfd = fopen(g_audioOutTestFilePath, "wb+");
+    if (pfd == nullptr) {
+        AUDIO_ERR_LOG("Error opening pcm test file!");
+    }
+#endif // CAPTURE_DUMP
         if (ret < 0) {
             return ERR_NOT_STARTED;
         }
