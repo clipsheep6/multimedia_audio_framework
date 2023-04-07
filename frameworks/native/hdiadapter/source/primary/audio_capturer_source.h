@@ -16,12 +16,12 @@
 #ifndef AUDIO_CAPTURER_SOURCE_H
 #define AUDIO_CAPTURER_SOURCE_H
 
+#include <cstdio>
+#include <list>
+#include "running_lock.h"
 #include "audio_info.h"
 #include "audio_manager.h"
 #include "i_audio_capturer_source.h"
-
-#include <cstdio>
-#include <list>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -84,6 +84,8 @@ private:
     struct AudioAdapter *audioAdapter_;
     struct AudioCapture *audioCapture_;
     struct AudioPort audioPort;
+
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 
     int32_t CreateCapture(struct AudioPort &capturePort);
     int32_t InitAudioManager();
