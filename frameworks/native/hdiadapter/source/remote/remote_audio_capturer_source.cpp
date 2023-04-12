@@ -296,7 +296,6 @@ int32_t RemoteAudioCapturerSource::Start(void)
             AUDIO_ERR_LOG("Remote audio capturer start fail, error code %{public}d", ret);
             return ERR_NOT_STARTED;
         }
-        started_ = true;
     }
     started_ = true;
     return SUCCESS;
