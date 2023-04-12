@@ -280,7 +280,8 @@ private:
     DeviceType FetchHighPriorityDevice(bool isOutputDevice);
 
     void UpdateConnectedDevices(const AudioDeviceDescriptor& deviceDescriptor,
-        std::vector<sptr<AudioDeviceDescriptor>>& desc, bool status);
+        std::vector<sptr<AudioDeviceDescriptor>>& desc, bool status,
+        std::vector<sptr<AudioDeviceDescriptor>>& recordEraseDescriptor);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
  

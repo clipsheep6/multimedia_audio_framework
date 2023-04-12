@@ -1262,7 +1262,8 @@ bool AudioPolicyService::IsConfigurationUpdated(DeviceType deviceType, const Aud
 }
 
 void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &deviceDescriptor,
-    std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
+    std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected,
+    std::vector<sptr<AudioDeviceDescriptor>> &recordEraseDescriptor)
 {
     sptr<AudioDeviceDescriptor> audioDescriptor = nullptr;
 
@@ -1288,6 +1289,8 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
             audioDescriptor->deviceId_ = startDeviceId++;
             UpdateDisplayName(audioDescriptor);
             connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+        } else if (recordEraseDescriptor.size() > 0) {
+            desc = recordEraseDescriptor;
         }
 
         audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
@@ -1310,6 +1313,8 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
             audioDescriptor->deviceId_ = startDeviceId++;
             UpdateDisplayName(audioDescriptor);
             connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+        } else if (recordEraseDescriptor.size() > 0) {
+            desc = recordEraseDescriptor;
         }
     } else {
         AUDIO_INFO_LOG("Filling non-io device list for %{public}d", deviceDescriptor.deviceType_);
@@ -1320,6 +1325,8 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
             audioDescriptor->deviceId_ = startDeviceId++;
             UpdateDisplayName(audioDescriptor);
             connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+        } else if (recordEraseDescriptor.size() > 0) {
+            desc = recordEraseDescriptor;
         }
     }
 }
@@ -1357,8 +1364,14 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
     // fill device change action for callback
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
-    auto isPresent = [&devType] (const sptr<AudioDeviceDescriptor> &descriptor) {
-        return descriptor->deviceType_ == devType;
+    std::vector<sptr<AudioDeviceDescriptor>> recordEraseDescriptor = {};
+    auto isPresent = [&devType, &recordEraseDescriptor] (const sptr<AudioDeviceDescriptor> &descriptor) {
+        if (descriptor->deviceType_ == devType) {
+            recordEraseDescriptor.push_back(descriptor);
+            return true;
+        } else {
+            return false;
+        }
     };
 
     // If device already in list, remove it else do not modify the list
@@ -1376,7 +1389,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     } else if ((devType == DEVICE_TYPE_BLUETOOTH_SCO) && isConnected && (GetAudioScene() == AUDIO_SCENE_DEFAULT)) {
         // For SCO device, add to connected device and donot activate now
         AUDIO_INFO_LOG("BT SCO device detected in non-call mode [%{public}d]", GetAudioScene());
-        UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, isConnected);
+        UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, isConnected, recordEraseDescriptor);
         TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
         UpdateTrackerDeviceChange(deviceChangeDescriptor);
         return;
@@ -1387,9 +1400,9 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         result = ActivateNewDevice(devType);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device %{public}d", devType);
         currentActiveDevice_ = devType;
-        UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, isConnected);
+        UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, isConnected, recordEraseDescriptor);
     } else {
-        UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, isConnected);
+        UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, isConnected, recordEraseDescriptor);
 
         auto priorityDev = FetchHighPriorityDevice();
         AUDIO_INFO_LOG("Priority device is [%{public}d]", priorityDev);
@@ -1591,7 +1604,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
         statusInfo.mappingVolumeId);
     UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingInterruptId);
-    UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
+    UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected, deviceChangeDescriptor);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
     if (GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
         remoteCapturerSwitch_ = true;
