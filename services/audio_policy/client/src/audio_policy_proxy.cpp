@@ -152,7 +152,7 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode, API_VERSION ap
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
+    MessageOption option(MessageOption::TF_ASYNC);
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -715,7 +715,7 @@ int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId,
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
+    MessageOption option(MessageOption::TF_ASYNC);
 
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyProxy: SetRingerModeCallback object is null");

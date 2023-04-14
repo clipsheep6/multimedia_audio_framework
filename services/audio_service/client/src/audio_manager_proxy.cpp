@@ -349,7 +349,7 @@ int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& objec
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
+    MessageOption option(MessageOption::TF_ASYNC);
 
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioManagerProxy: SetParameterCallback object is null");
