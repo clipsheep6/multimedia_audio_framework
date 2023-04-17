@@ -1677,6 +1677,34 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
     gsp->SetAudioBalanceValue(audioBalance);
 }
 
+void AudioPolicyService::LoadEffectLibrary()
+{
+    // IPC -> audioservice load library
+    const sptr<IStandardAudioService> gsp = GetAudioPolicyServiceProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("Service proxy unavailable: g_adProxy null");
+        return;
+    }
+    OriginalEffectConfig oriEffectConfig = audioEffectManager_.GetOriginalEffectConfig();
+    vector<Effect> successLoadedEffects;
+    bool loadSuccess = gsp->LoadAudioEffectLibraries(oriEffectConfig.libraries, oriEffectConfig.effects, successLoadedEffects);
+    if(!loadSuccess){
+        AUDIO_ERR_LOG("Load audio effect failed, please check log");
+    }
+    audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
+
+    // LYP-audioframework LOG debug
+    vector<Effect> tmp =  audioEffectManager_.GetAvailableEffects();
+    AUDIO_INFO_LOG("LYP-audioframework policy get successEffects: %{public}d", tmp.size());
+}
+
+void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
+                                              std::vector<Effect>& availableEffects)
+{
+    oriEffectConfig = audioEffectManager_.GetOriginalEffectConfig();
+    availableEffects = audioEffectManager_.GetAvailableEffects();
+}
+
 void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)
 {
     // add new device into active device list

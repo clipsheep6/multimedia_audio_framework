@@ -49,6 +49,7 @@ config("audio_policy_public_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/common",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/config",
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/effect",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/interface",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/listener",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/manager",
@@ -146,6 +147,8 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/config/audio_focus_parser.cpp",
     "server/src/service/config/audio_tone_parser.cpp",
     "server/src/service/config/xml_parser.cpp",
+    "server/src/service/effect/audio_effect_config_parser.cpp",
+    "server/src/service/effect/audio_effect_manager.cpp",
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
   ]
@@ -229,6 +232,14 @@ ohos_prebuilt_etc("audio_interrupt_policy_config") {
 
 ohos_prebuilt_etc("audio_tone_dtmf_config") {
   source = "server/config/audio_tone_dtmf_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "multimedia_audio_framework"
+}
+
+ohos_prebuilt_etc("audio_effect_config") {
+  source = "server/config/audio_effect_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
