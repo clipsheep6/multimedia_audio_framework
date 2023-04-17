@@ -101,7 +101,17 @@ int32_t AudioProcessInServer::Resume()
 int32_t AudioProcessInServer::Stop()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
-    // todo
+    if (streamStatus_->load() != STREAM_RUNNING) {
+        AUDIO_ERR_LOG("Stop failed, invalid status.");
+        return ERR_ILLEGAL_STATE;
+    }
+
+    for (size_t i = 0; i < listenerList_.size(); i++) {
+        listenerList_[i]->OnStop(this);
+    }
+
+    StreamStatus_ -> store(STREAM_IDEL);
+    AUDIO_INFO_LOG("Stop in server success");
     return SUCCESS;
 }
 

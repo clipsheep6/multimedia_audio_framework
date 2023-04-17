@@ -28,6 +28,7 @@
 
 #include "audio_utils.h"
 #include "fast_audio_renderer_sink.h"
+#include "remote_fast_audio_renderer_sink.h"
 #include "linear_pos_time_model.h"
 
 // DUMP_PROCESS_FILE // define it for dump file
@@ -44,15 +45,18 @@ public:
     explicit AudioEndpointInner(EndpointType type);
     ~AudioEndpointInner();
 
-    bool Config(AudioStreamInfo streamInfo);
+    bool Config(AudioStreamInfo streamInfo, const std::string &deviceName);
     int32_t PrepareDeviceBuffer();
 
     bool StartDevice();
+    bool StopDevice();
 
     // when audio process start.
     int32_t OnStart(IAudioProcessStream *processStream) override;
     // when audio process pause.
     int32_t OnPause(IAudioProcessStream *processStream) override;
+    // when audio process stop.
+    int32_t OnStop(IAudioProcessStream *processStream) override;
     // when audio process request update handle info.
     int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) override;
 
@@ -106,7 +110,7 @@ private:
     bool isThreadEnd_ = false;
     int64_t lastHandleProcessTime_ = 0;
 
-    bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
+    // bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
     void ReSyncPosition();
 
@@ -138,12 +142,12 @@ private:
 #endif
 };
 
-std::shared_ptr<AudioEndpoint> AudioEndpoint::GetInstance(EndpointType type, AudioStreamInfo streamInfo)
+std::shared_ptr<AudioEndpoint> AudioEndpoint::GetInstance(EndpointType type, AudioStreamInfo streamInfo, const std::string &networkId)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpoint = std::make_shared<AudioEndpointInner>(type);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
-    if (!audioEndpoint->Config(streamInfo)) {
+    if (!audioEndpoint->Config(streamInfo, networkId)) {
         AUDIO_ERR_LOG("Config AudioEndpoint failed.");
         audioEndpoint = nullptr;
     }
@@ -188,15 +192,22 @@ AudioEndpointInner::~AudioEndpointInner()
     AUDIO_INFO_LOG("~AudioEndpoint()");
 }
 
-bool AudioEndpointInner::Config(AudioStreamInfo streamInfo)
+bool AudioEndpointInner::Config(AudioStreamInfo streamInfo, const std::string &networkId)
 {
     dstStreamInfo_ = streamInfo;
-    fastSink_ = FastAudioRendererSink::GetInstance();
+    AUDIO_INFO_LOG("config dev networkId: %{public}s", networkId.c_str());
+    if (networkId != "" && networkId != LOCAL_NETWORK_ID) {
+        fastSink_ = RemoteFastAudioRendererSink::GetInstance();
+    } else {
+        fastSink_ = FastAudioRendererSink::GetInstance();
+    }
     IAudioSinkAttr attr = {};
     attr.adapterName = "primary";
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
     attr.format = dstStreamInfo_.format; // SAMPLE_S16LE = 1
+    attr.sampleFmt = dstStreamInfo_.format;
+    attr.deviceNetworkId = networkId.c_str();
 
     fastSink_->Init(attr);
     if (!fastSink_->IsInited()) {
@@ -353,7 +364,7 @@ void AudioEndpointInner::ReSyncPosition()
 
 bool AudioEndpointInner::StartDevice()
 {
-    AUDIO_INFO_LOG("StartDevice in.");
+    AUDIO_INFO_LOG("StartDevice in. endpoint status: %{public}s.", GetStatusStr(endpointStatus_).c_str());
     // how to modify the status while unlinked and started?
     if (endpointStatus_ != IDEL) {
         AUDIO_ERR_LOG("Endpoint status is not IDEL");
@@ -366,18 +377,39 @@ bool AudioEndpointInner::StartDevice()
     }
     std::unique_lock<std::mutex> lock(loopThreadLock_);
     needReSyncPosition_ = true;
-    endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
+    endpointStatus_ = RUNNING;
     workThreadCV_.notify_all();
     AUDIO_INFO_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
     return true;
 }
 
+bool AudioEndpointInner::StopDevice()
+{
+    AUDIO_INFO_LOG("StopDevice in. endpoint status: %{public}s.", GetStatusStr(endpointStatus_).c_str());
+    // how to modify the status while unlinked and started?
+    if (endpointStatus_ != RUNNING) {
+        AUDIO_ERR_LOG("Endpoint status is not RUNNING");
+        return false;
+    }
+    endpointStatus_ = STOPPING;
+    if (fastSink_->Stop() != SUCCESS) {
+        AUDIO_ERR_LOG("Sink stop failed.");
+        return false;
+    }
+    std::unique_lock<std::mutex> lock(loopThreadLock_);
+    needReSyncPosition_ = true;
+    endpointStatus_ = IDEL;
+    workThreadCV_.notify_all();
+    AUDIO_INFO_LOG("StopDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
+    return true;
+}
+
 int32_t AudioEndpointInner::OnStart(IAudioProcessStream *stream)
 {
+    AUDIO_INFO_LOG("OnStart. endpoint status: %{public}s.", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == IDEL && !isDeviceRunningInIdel_) {
         // call sink start
         StartDevice();
-        endpointStatus_ = RUNNING;
     }
     return SUCCESS;
 }
@@ -385,6 +417,15 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *stream)
 int32_t AudioEndpointInner::OnPause(IAudioProcessStream *stream)
 {
     // todo
+    return SUCCESS;
+}
+
+int32_t AudioEndpointInner::OnStop(IAudioProcessStream *stream)
+{
+    AUDIO_INFO_LOG("OnStop. endpoint status: %{public}s.", GetStatusStr(endpointStatus_).c_str());
+    if (endpointStatus_ == RUNNING) {
+        StopDevice();
+    }
     return SUCCESS;
 }
 
@@ -416,13 +457,15 @@ int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *stream)
 
 int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream)
 {
+    AUDIO_INFO_LOG("LinkProcessStream enter");
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBuffer> processBuffer = processStream->GetStreamBuffer();
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
 
     CHECK_AND_RETURN_RET_LOG(processList_.size() < MAX_LINKED_PROCESS, ERR_OPERATION_FAILED, "reach link limit.");
 
-    AUDIO_INFO_LOG("LinkProcessStream success in status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
+    AUDIO_INFO_LOG("LinkProcessStream endpoint status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
+    AUDIO_INFO_LOG("LinkProcessStream process status:%{public}s.", processBuffer->GetStreamStatus()->Load());
 
     bool needEndpointRunning = processBuffer->GetStreamStatus()->load() == STREAM_RUNNING;
 
@@ -450,6 +493,15 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         }
     }
 
+    if (endpointStatus_ == STOPPING) {
+        AUDIO_INFO_LOG("LinkProcessStream wait stop begin");
+        std::unique_lock<std::mutex> lock(loopThreadLock_);
+        workThreadCV_.wait(lock, [this] {
+            return endpointStatus_ != STOPPING;
+        });
+        AUDIO_INFO_LOG("LinkProcessStream wait stop end");
+    }
+
     if (endpointStatus_ == IDEL) {
         {
             std::lock_guard<std::mutex> lock(listLock_);
@@ -472,14 +524,24 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         return SUCCESS;
     }
 
+    AUDIO_INFO_LOG("LinkProcessStream exit");
     return SUCCESS;
 }
 
 int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStream)
 {
+    AUDIO_INFO_LOG("UnLinkProcessStream enter");
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBuffer> processBuffer = processStream->GetStreamBuffer();
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
+
+    StreamStatus curStreamStatus = processBuffer->GetStreamStatus()->Load();
+    AUDIO_INFO_LOG("UnLinkProcessStream endpoint status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
+    AUDIO_INFO_LOG("UnLinkProcessStream process status:%{public}s.", curStreamStatus);
+
+    if (curStreamStatus == STREAM_RUNNING) {
+        processBuffer->GetStreamStatus()->store(STREAM_IDEL);
+    }
 
     // todo
     bool isFind = false;
@@ -499,6 +561,12 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     }
 
     AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
+
+    // if (!IsAnyProcessRunning()) {
+        StopDevice();
+    // }
+
+    AUDIO_INFO_LOG("UnlinkProcessStream exit");
     return SUCCESS;
 }
 
@@ -752,7 +820,7 @@ bool AudioEndpointInner::KeepWorkloopRunning()
             targetStatus = RUNNING;
             break;
         case STOPPING:
-            targetStatus = STOPPED;
+            targetStatus = IDEL;
             break;
         default:
             break;

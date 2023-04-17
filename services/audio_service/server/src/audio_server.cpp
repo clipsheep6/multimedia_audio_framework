@@ -492,6 +492,37 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     return remoteObject;
 }
 
+int32_t AudioServer::ChangeEndPoint(const AudioProcessConfig &config)
+{
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    AUDIO_INFO_LOG("ChangeEndPoint uid: %{public}d.", callerUid);
+    AUDIO_INFO_LOG("ChangeEndPoint pid: %{public}d.", callerPid);
+
+    AudioProcessConfig resetConfig(config);
+    if (callerUid == MEDIA_SERVICE_UID) {
+        AUDIO_INFO_LOG("Create process for media service");
+    } else if (resetConfig.appInfo.appPid != callerPid || resetConfig.appInfo.appUid != callerUid ||
+        resetConfig.appInfo.appTokenId != IPCSkeleton::GetCallingTokenID()) {
+        AUDIO_INFO_LOG("Use true client appInfo instead.");
+        resetConfig.appInfo.appPid = callerPid;
+        resetConfig.appInfo.appUid = callerUid;
+        resetConfig.appInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
+    }
+
+    // check MICROPHONE_PERMISSION
+    if (config.audioMode == AUDIO_MODE_RECORD &&
+        !VerifyClientPermission(MICROPHONE_PERMISSION, resetConfig.appInfo.appTokenId)) {
+            AUDIO_ERR_LOG("AudioServer::ChangeEndPoint for record failed:No permission.");
+        return nullptr;
+    }
+
+    AUDIO_INFO_LOG("ChangeEndPoint ChangeProcessToEndPoint enter.");
+    AudioService::GetInstance()->ChangeProcessToEndPoint(nullptr, resetConfig);
+    AUDIO_INFO_LOG("ChangeEndPoint ChangeProcessToEndPoint exit.");
+    return SUCCESS;
+}
+
 int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
 {
     AUDIO_INFO_LOG("CheckRemoteDeviceState: device[%{public}s] deviceRole[%{public}d] isStartDevice[%{public}s]",

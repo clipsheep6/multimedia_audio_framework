@@ -60,6 +60,8 @@ public:
     virtual int32_t Stop() = 0;
 
     virtual int32_t Release() = 0;
+
+    virtual int32_t ChangeEndPoint(const AudioProcessConfig &config) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

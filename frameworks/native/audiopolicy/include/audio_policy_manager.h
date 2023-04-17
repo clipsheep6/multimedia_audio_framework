@@ -147,7 +147,7 @@ public:
 
     bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
         AudioPermissionState state);
-    
+
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
     int32_t GetAudioLatencyFromXml();

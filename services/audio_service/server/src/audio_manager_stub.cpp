@@ -180,6 +180,14 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteRemoteObject(process);
             return AUDIO_OK;
         }
+        case CHANGE_ENDPOINT: {
+            AUDIO_INFO_LOG("CHANGE_ENDPOINT AudioManagerStub");
+            AudioProcessConfig config;
+            IAudioProcess::ReadConfigFromParcel(config, data);
+            int32_t ret = ChangeEndPoint(config);
+            reply.WriteInt32(ret);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

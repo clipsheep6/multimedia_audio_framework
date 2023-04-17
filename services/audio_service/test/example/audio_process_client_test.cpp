@@ -176,6 +176,33 @@ public:
         return true;
     }
 
+    bool ChangeEndPoint()
+    {
+        AudioProcessConfig config;
+        config.appInfo.appPid = getpid();
+        config.appInfo.appUid = getuid();
+
+        config.audioMode = AUDIO_MODE_PLAYBACK;
+
+        config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+        config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+        config.rendererInfo.rendererFlags = 4; // 4 for test
+
+        config.streamInfo.channels = STEREO;
+        config.streamInfo.encoding = ENCODING_PCM;
+        config.streamInfo.format = SAMPLE_S16LE;
+        config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+        int32_t ret = processClient_->ChangeEndPoint(config);
+        if (ret != SUCCESS) {
+            return false;
+        }
+        ret = processClient_->Start();
+        if(ret != SUCCESS) {
+            return false;
+        }
+        return true;
+    }
+
 private:
     std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
     bool gIsInited = false;
@@ -298,6 +325,14 @@ string CallRelease()
         return "Release failed";
     }
     return "Release SUCCESS";
+}
+
+string CallChangeEndPoint()
+{
+    if (!g_audioProcessTest->ChangeEndPoint()) {
+        return "ChangeEndPoint failed";
+    }
+    return "ChangeEndPoint SUCEESS";
 }
 
 void InteractiveRun()

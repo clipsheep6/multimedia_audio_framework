@@ -17,6 +17,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "remote_audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,7 +47,8 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 {
     DumpProcessConfig(config);
 
-    DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
+    curInRemote_ = true;
+    DeviceInfo deviceInfo = GetDeviceInfoForProcess(config, curInRemote_);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
 
@@ -63,27 +65,72 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     ret = LinkProcessToEndpoint(process, audioEndpoint);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "LinkProcessToEndpoint failed");
 
+    process_ = process;
     return process;
 }
 
 int32_t AudioService::LinkProcessToEndpoint(sptr<AudioProcessInServer> process,
     std::shared_ptr<AudioEndpoint> endpoint)
 {
+    AUDIO_INFO_LOG("linkProcessToEndpoint enter");
     int32_t ret = endpoint->LinkProcessStream(process);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "LinkProcessStream failed");
 
     ret = process->AddProcessStatusListener(endpoint);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "AddProcessStatusListener failed");
-
+    AUDIO_INFO_LOG("linkProcessToEndpoint exit");
     return SUCCESS;
 }
 
-DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config)
+int32_t AudioService::UnLinkProcessToEndpoint(sptr<AudioProcessInServer> process,
+    std::shared_ptr<AudioEndpoint> endpoint)
+{
+    AUDIO_INFO_LOG("UnlinkProcessToEndpoint enter");
+    int32_t ret = endpoint->UnLinkProcessStream(process);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UnLinkProcessStream failed");
+
+    ret = process->RemoveProcessStatusListener(endpoint);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "RemoveProcessStatusListener failed");
+    AUDIO_INFO_LOG("UnlinkProcessToEndpoint exit");
+    return SUCCESS;
+}
+
+int32_t AduioService::ChangeProcessToEndPoint(sptr<AudioProcessInServer> process, const AudioProcessConfig &config)
+{
+    std::shared_ptr<AudioEndpoint> oldEndpoint = nullptr;
+    std::shared_ptr<AudioEndpoint> newEndpoint = nullptr;
+    if (!curInRemote_) {
+        oldEndpoint = GetAudioEndpointForDevice(GetDeviceInfoForProcess(config, false));
+        newEndpoint = GetAudioEndpointForDevice(GetDeviceInfoForProcess(config, true));
+    } else {
+        oldEndpoint = GetAudioEndpointForDevice(GetDeviceInfoForProcess(config, true));
+        newEndpoint = GetAudioEndpointForDevice(GetDeviceInfoForProcess(config, false));
+    }
+    AUDIO_INFO_LOG("Change Unlink oldEndpoint enter");
+    int32_t ret = UnLinkProcessToEndpoint(process_, oldEndpoint);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UnLinkProcessStream oldEndpoint failed.");
+    AUDIO_INFO_LOG("Change Unlink oldEndpoint exit");
+
+    ret = LinkProcessToEndpoint(process_, newEndpoint);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "LinkProcessStream newEndpoint failed.");
+
+    AUDIO_INFO_LOG("Change Link newEndpoint exit");
+    curInRemote_ = !curInRemote_;
+    return SUCCESS;
+}
+
+DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isRemote)
 {
     // send the config to AudioPolicyServera and get the device info.
     DeviceInfo deviceInfo;
     deviceInfo.deviceId = 6; // 6 for test
-    deviceInfo.networkId = LOCAL_NETWORK_ID;
+    if (isRemote) {
+        std::string networkId = RemoteAudioRendererSink::GetDeviceNetworkId();
+        AUDIO_INFO_LOG("get device network Id: %{public}s.", networkId.c_str());
+        deviceInfo.networkId = networkId;
+    } else {
+        deviceInfo.networkId = LOCAL_NETWORK_ID;
+    }
     deviceInfo.deviceRole = OUTPUT_DEVICE;
     deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
     deviceInfo.audioStreamInfo = config.streamInfo;
@@ -93,17 +140,18 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInfo deviceInfo)
 {
-    if (endpointList_.find(deviceInfo.deviceId) != endpointList_.end()) {
-        AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceId:%{public}d", deviceInfo.deviceId);
-        return endpointList_[deviceInfo.deviceId];
+    std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId);
+    if (endpointList_.find(deviceKey) != endpointList_.end()) {
+        AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
+        return endpointList_[deviceKey];
     }
     std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::GetInstance(AudioEndpoint::EndpointType::TYPE_MMAP,
-        deviceInfo.audioStreamInfo);
+        deviceInfo.audioStreamInfo, deviceInfo.networkId);
     if (endpoint == nullptr) {
         AUDIO_ERR_LOG("Find no endpoint for the process");
         return nullptr;
     }
-    endpointList_[deviceInfo.deviceId] = endpoint;
+    endpointList_[deviceKey] = endpoint;
     return endpoint;
 }
 

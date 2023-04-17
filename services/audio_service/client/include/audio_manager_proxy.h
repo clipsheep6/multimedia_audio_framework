@@ -46,6 +46,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;
+    int32_t ChangeEndPoint(const AudioProcessConfig &config) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

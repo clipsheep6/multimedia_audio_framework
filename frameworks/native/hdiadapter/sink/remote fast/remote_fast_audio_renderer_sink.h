@@ -13,23 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef REMOTE_AUDIO_RENDERER_SINK_H
-#define REMOTE_AUDIO_RENDERER_SINK_H
+#ifndef REMOTE_FAST_AUDIO_RENDERER_SINK_H
+#define REMOTE_FAST_AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
-#include "i_audio_renderer_sink.h"
+#include "fast_audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class RemoteAudioRendererSink : public IAudioRendererSink {
+class RemoteFastAudioRendererSink : public FastAudioRendererSink {
 public:
-    static RemoteAudioRendererSink *GetInstance(const char *deviceNetworkId);
+    static RemoteFastAudioRendererSink *GetInstance(const char *deviceNetworkId);
 
-    RemoteAudioRendererSink() = default;
-    ~RemoteAudioRendererSink() = default;
-
-    static std::string GetDeviceNetworkId();
+    RemoteFastAudioRendererSink() = default;
+    ~RemoteFastAudioRendererSink() = default;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // REMOTE_AUDIO_RENDERER_SINK_H
+#endif // REMOTE_FAST_AUDIO_RENDERER_SINK_H
