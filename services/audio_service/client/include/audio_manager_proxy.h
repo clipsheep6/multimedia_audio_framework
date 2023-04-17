@@ -26,6 +26,9 @@ class AudioManagerProxy : public IRemoteProxy<IStandardAudioService> {
 public:
     explicit AudioManagerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioManagerProxy() = default;
+    
+    bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
+                                  std::vector<Effect> &successEffects) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
