@@ -86,7 +86,7 @@ int32_t AudioService::UnLinkProcessToEndpoint(sptr<AudioProcessInServer> process
     std::shared_ptr<AudioEndpoint> endpoint)
 {
     AUDIO_INFO_LOG("UnlinkProcessToEndpoint enter");
-    int32_t ret = endpoint->UnLinkProcessStream(process);
+    int32_t ret = endpoint->UnlinkProcessStream(process);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UnLinkProcessStream failed");
 
     ret = process->RemoveProcessStatusListener(endpoint);
@@ -95,7 +95,7 @@ int32_t AudioService::UnLinkProcessToEndpoint(sptr<AudioProcessInServer> process
     return SUCCESS;
 }
 
-int32_t AduioService::ChangeProcessToEndPoint(sptr<AudioProcessInServer> process, const AudioProcessConfig &config)
+int32_t AudioService::ChangeProcessToEndpoint(sptr<AudioProcessInServer> process, const AudioProcessConfig &config)
 {
     std::shared_ptr<AudioEndpoint> oldEndpoint = nullptr;
     std::shared_ptr<AudioEndpoint> newEndpoint = nullptr;
@@ -108,11 +108,11 @@ int32_t AduioService::ChangeProcessToEndPoint(sptr<AudioProcessInServer> process
     }
     AUDIO_INFO_LOG("Change Unlink oldEndpoint enter");
     int32_t ret = UnLinkProcessToEndpoint(process_, oldEndpoint);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UnLinkProcessStream oldEndpoint failed.");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UnLinkProcessStream oldEndpoint failed.");
     AUDIO_INFO_LOG("Change Unlink oldEndpoint exit");
 
     ret = LinkProcessToEndpoint(process_, newEndpoint);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "LinkProcessStream newEndpoint failed.");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "LinkProcessStream newEndpoint failed.");
 
     AUDIO_INFO_LOG("Change Link newEndpoint exit");
     curInRemote_ = !curInRemote_;

@@ -110,7 +110,7 @@ int32_t AudioProcessInServer::Stop()
         listenerList_[i]->OnStop(this);
     }
 
-    StreamStatus_ -> store(STREAM_IDEL);
+    streamStatus_ -> store(STREAM_IDEL);
     AUDIO_INFO_LOG("Stop in server success");
     return SUCCESS;
 }

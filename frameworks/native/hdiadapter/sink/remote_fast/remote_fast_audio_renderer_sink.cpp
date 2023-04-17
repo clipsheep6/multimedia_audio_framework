@@ -397,7 +397,7 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
     struct AudioMmapBufferDescriptor desc = {0};
     int32_t ret = audioRender_->attr.ReqMmapBuffer((AudioHandle)audioRender_, reqBufferFrameSize, &desc);
     CHECK_AND_RETURN_RET_LOG((ret == SUCCESS), ERR_OPERATION_FAILED,
-        "%{public}s require mmap buffer failed, ret:%{public}d.", ret);
+        "%{public}s require mmap buffer failed, ret:%{public}d.", __func__, ret);
 
     AUDIO_INFO_LOG("AudioMmapBufferDescriptor memoryAddress[%{private}p] memoryFd[%{public}d] totalBufferFrames"
         "[%{public}d] transferFrameSize[%{public}d] isShareable[%{public}d] offset[%{public}d]",desc.memoryAddress,

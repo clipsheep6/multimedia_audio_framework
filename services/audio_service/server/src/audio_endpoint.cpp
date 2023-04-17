@@ -110,7 +110,7 @@ private:
     bool isThreadEnd_ = false;
     int64_t lastHandleProcessTime_ = 0;
 
-    // bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
+    bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
     void ReSyncPosition();
 
@@ -197,7 +197,7 @@ bool AudioEndpointInner::Config(AudioStreamInfo streamInfo, const std::string &n
     dstStreamInfo_ = streamInfo;
     AUDIO_INFO_LOG("config dev networkId: %{public}s", networkId.c_str());
     if (networkId != "" && networkId != LOCAL_NETWORK_ID) {
-        fastSink_ = RemoteFastAudioRendererSink::GetInstance();
+        fastSink_ = RemoteFastAudioRendererSink::GetInstance(networkId.c_str());
     } else {
         fastSink_ = FastAudioRendererSink::GetInstance();
     }
@@ -465,7 +465,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     CHECK_AND_RETURN_RET_LOG(processList_.size() < MAX_LINKED_PROCESS, ERR_OPERATION_FAILED, "reach link limit.");
 
     AUDIO_INFO_LOG("LinkProcessStream endpoint status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
-    AUDIO_INFO_LOG("LinkProcessStream process status:%{public}s.", processBuffer->GetStreamStatus()->Load());
+    AUDIO_INFO_LOG("LinkProcessStream process status:%{public}d.", processBuffer->GetStreamStatus()->load());
 
     bool needEndpointRunning = processBuffer->GetStreamStatus()->load() == STREAM_RUNNING;
 
@@ -535,9 +535,9 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     std::shared_ptr<OHAudioBuffer> processBuffer = processStream->GetStreamBuffer();
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
 
-    StreamStatus curStreamStatus = processBuffer->GetStreamStatus()->Load();
+    StreamStatus curStreamStatus = processBuffer->GetStreamStatus()->load();
     AUDIO_INFO_LOG("UnLinkProcessStream endpoint status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
-    AUDIO_INFO_LOG("UnLinkProcessStream process status:%{public}s.", curStreamStatus);
+    AUDIO_INFO_LOG("UnLinkProcessStream process status:%{public}d.", curStreamStatus);
 
     if (curStreamStatus == STREAM_RUNNING) {
         processBuffer->GetStreamStatus()->store(STREAM_IDEL);

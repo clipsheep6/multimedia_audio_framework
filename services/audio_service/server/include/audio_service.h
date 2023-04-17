@@ -36,7 +36,7 @@ public:
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnLinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
 
-    int32_t ChangeProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
+    int32_t ChangeProcessToEndpoint(sptr<AudioProcessInServer> process, const AudioProcessConfig &config);
 private:
     AudioService();
     void Dump();

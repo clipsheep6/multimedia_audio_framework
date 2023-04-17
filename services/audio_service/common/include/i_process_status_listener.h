@@ -27,6 +27,8 @@ class IProcessStatusListener {
 public:
     virtual int32_t OnStart(IAudioProcessStream *processStream) = 0;
 
+    virtual int32_t OnStop(IAudioProcessStream *processStream) = 0;
+
     virtual int32_t OnPause(IAudioProcessStream *processStream) = 0;
 
     virtual int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) = 0;

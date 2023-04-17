@@ -514,12 +514,12 @@ int32_t AudioServer::ChangeEndPoint(const AudioProcessConfig &config)
     if (config.audioMode == AUDIO_MODE_RECORD &&
         !VerifyClientPermission(MICROPHONE_PERMISSION, resetConfig.appInfo.appTokenId)) {
             AUDIO_ERR_LOG("AudioServer::ChangeEndPoint for record failed:No permission.");
-        return nullptr;
+        return -1;
     }
 
-    AUDIO_INFO_LOG("ChangeEndPoint ChangeProcessToEndPoint enter.");
-    AudioService::GetInstance()->ChangeProcessToEndPoint(nullptr, resetConfig);
-    AUDIO_INFO_LOG("ChangeEndPoint ChangeProcessToEndPoint exit.");
+    AUDIO_INFO_LOG("ChangeEndPoint ChangeProcessToEndpoint enter.");
+    AudioService::GetInstance()->ChangeProcessToEndpoint(nullptr, resetConfig);
+    AUDIO_INFO_LOG("ChangeEndPoint ChangeProcessToEndpoint exit.");
     return SUCCESS;
 }
 

@@ -178,6 +178,15 @@ public:
     */
     virtual sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) = 0;
 
+    /**
+     * ChangeEndPoint.
+     *
+     * @param config the config of the AudioProcess
+     *
+     * @return Returns AudioProcess client.
+    */
+    virtual int32_t ChangeEndPoint(const AudioProcessConfig &config) = 0;
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -199,6 +208,7 @@ public:
         SET_AUDIO_MONO_STATE = 17,
         SET_AUDIO_BALANCE_VALUE = 18,
         CREATE_AUDIOPROCESS = 19,
+        CHANGE_ENDPOINT= 20,
     };
 
 public:

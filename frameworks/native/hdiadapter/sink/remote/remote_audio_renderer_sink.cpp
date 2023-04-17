@@ -159,9 +159,9 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *device
     return audioRenderer_;
 }
 
-std:string RemoteAudioRendererSink::GetDeviceNetworkId()
+std::string RemoteAudioRendererSink::GetDeviceNetworkId()
 {
-    std::map<std::string RemoteAudioRendererSinkInner *>::iterator iter;
+    std::map<std::string, RemoteAudioRendererSinkInner *>::iterator iter;
     iter = allsinks.begin();
     while(iter != allsinks.end()) {
         AUDIO_INFO_LOG("Remote get device networkId: %{public}s.", iter->first.c_str());
