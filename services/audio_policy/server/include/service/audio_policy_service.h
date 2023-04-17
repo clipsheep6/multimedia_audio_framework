@@ -28,7 +28,6 @@
 #include "audio_stream_collector.h"
 #include "audio_tone_parser.h"
 
-#include "accessibility_config_listener.h"
 #include "device_status_listener.h"
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
@@ -36,8 +35,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
-    public IAudioAccessibilityConfigObserver {
+class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver {
 public:
     static AudioPolicyService& GetAudioPolicyService()
     {
@@ -222,7 +220,6 @@ private:
           configParser_(ParserFactory::GetInstance().CreateParser(*this)),
           streamCollector_(AudioStreamCollector::GetAudioStreamCollector())
     {
-        accessibilityConfigListener_ = std::make_shared<AccessibilityConfigListener>(*this);
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
 
@@ -330,7 +327,6 @@ private:
     Parser& configParser_;
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
     AudioStreamCollector& streamCollector_;
-    std::shared_ptr<AccessibilityConfigListener> accessibilityConfigListener_;
     std::unique_ptr<DeviceStatusListener> deviceStatusListener_;
     std::vector<sptr<AudioDeviceDescriptor>> connectedDevices_;
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
