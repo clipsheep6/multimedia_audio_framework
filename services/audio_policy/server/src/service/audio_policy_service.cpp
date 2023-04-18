@@ -57,6 +57,8 @@ bool AudioPolicyService::Init(void)
     AUDIO_INFO_LOG("AudioPolicyService init");
     serviceFlag_.reset();
     audioPolicyManager_.Init();
+    audioEffectManager_.EffectManagerInit();
+
     if (!configParser_.LoadConfiguration()) {
         AUDIO_ERR_LOG("Audio Config Load Configuration failed");
         return false;

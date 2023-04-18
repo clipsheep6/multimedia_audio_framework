@@ -91,7 +91,6 @@ void AudioPolicyServer::OnStart()
 {
     AUDIO_INFO_LOG("AudioPolicyService OnStart");
     mPolicyService.Init();
-
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
