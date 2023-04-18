@@ -1512,12 +1512,6 @@ inline void RemoveDeviceInRouterMap(std::string networkId,
 
 void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
-    std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
-    int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("UpdateDisplayName init device failed");
-        return;
-    }
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
         char localName[100] = {0}; // 100 for system parameter get
         int res = GetParameter("const.product.name", "", localName, sizeof(localName));
@@ -1527,8 +1521,15 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
             deviceDescriptor->displayName_ = strLocalName;
         };
     } else {
+        std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
+        int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("UpdateDisplayName init device failed");
+            return;
+        }
         std::vector<DistributedHardware::DmDeviceInfo> deviceList;
-        if (DistributedHardware::DeviceManager::GetInstance().GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
+        if (DistributedHardware::DeviceManager::GetInstance()
+            .GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
             for (auto deviceInfo : deviceList) {
                 std::string strNetworkId(deviceInfo.networkId);
                 if (strNetworkId == deviceDescriptor->networkId_) {
