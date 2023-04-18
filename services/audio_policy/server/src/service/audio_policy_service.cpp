@@ -15,6 +15,7 @@
 
 #include "audio_policy_service.h"
 
+#include "parameter.h"
 #include "ipc_skeleton.h"
 #include "hisysevent.h"
 #include "iservice_registry.h"
@@ -1518,10 +1519,12 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
         return;
     }
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
-        DistributedHardware::DmDeviceInfo localDevice;
-        if (DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(AUDIO_SERVICE_PKG, localDevice) == SUCCESS) {
-            AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", localDevice.deviceName);
-            deviceDescriptor->displayName_ = localDevice.deviceName;
+        char localName[100] = {0}; // 100 for system parameter get
+        int res = GetParameter("const.product.name", "", localName, sizeof(localName));
+        if (res > 0) {
+            std::string strLocalName(localName);
+            AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", strLocalName.c_str());
+            deviceDescriptor->displayName_ = strLocalName;
         };
     } else {
         std::vector<DistributedHardware::DmDeviceInfo> deviceList;
