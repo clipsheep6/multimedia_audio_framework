@@ -19,7 +19,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "audio_effect_config_parser.h"
+#include "audio_info.h"
 
 #ifndef ST_AUDIO_EFFECT_SERVER_H
 #define ST_AUDIO_EFFECT_SERVER_H
