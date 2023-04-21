@@ -1521,15 +1521,13 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
     }
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
         DistributedHardware::DmDeviceInfo localDevice;
-        if (DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(AUDIO_SERVICE_PKG, localDevice) ==
-            SUCCESS) {
+        if (DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(AUDIO_SERVICE_PKG, localDevice) == SUCCESS) {
             AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", localDevice.deviceName);
             deviceDescriptor->displayName_ = localDevice.deviceName;
         };
     } else {
         std::vector<DistributedHardware::DmDeviceInfo> deviceList;
-        if (DistributedHardware::DeviceManager::GetInstance().GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) ==
-            SUCCESS) {
+        if (DistributedHardware::DeviceManager::GetInstance().GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
             for (auto deviceInfo : deviceList) {
                 std::string strNetworkId(deviceInfo.networkId);
                 if (strNetworkId == deviceDescriptor->networkId_) {
