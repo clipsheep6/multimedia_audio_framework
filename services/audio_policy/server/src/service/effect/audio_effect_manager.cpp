@@ -36,7 +36,7 @@ void AudioEffectManager::EffectManagerInit()
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioEffectManager->effectConfigParser failed: %{public}d", ret);
         return;
-    } 
+    }
 }
 
 std::vector<Effect> AudioEffectManager::GetAvailableEffects()
@@ -44,7 +44,7 @@ std::vector<Effect> AudioEffectManager::GetAvailableEffects()
     return availableEffects_;
 }
 
-OriginalEffectConfig AudioEffectManager:: GetOriginalEffectConfig()
+OriginalEffectConfig AudioEffectManager::GetOriginalEffectConfig()
 {
     return oriEffectConfig_;
 }

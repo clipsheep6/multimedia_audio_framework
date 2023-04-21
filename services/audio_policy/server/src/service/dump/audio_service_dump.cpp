@@ -542,6 +542,40 @@ void AudioServiceDump::DevicesInfoDump(string& dumpString)
         GetDeviceTypeName(audioData_.policyData.priorityInputDevice).c_str());
 }
 
+static void EffectManagerInfoDumpPart(string& dumpString)
+{
+    int32_t count;
+   // xml -- Preprocess
+    for (Preprocess x : audioData_.policyData.oriEffectConfig.preprocess) {
+        AppendFormat(dumpString, "preprocess stream = %s \n", x.stream.c_str());
+        count = 0;
+        for (string modeName : x.mode) {
+            count++;
+            AppendFormat(dumpString, "  modeName%d = %s \n", count, modeName.c_str());
+            for (Device deviceInfo : x.device[count - 1]) {
+                AppendFormat(dumpString, "      device type = %s \n", deviceInfo.type.c_str());
+                AppendFormat(dumpString, "      device address = %s \n", deviceInfo.address.c_str());
+                AppendFormat(dumpString, "      device chain = %s \n", deviceInfo.chain.c_str());
+            }
+        }
+    }
+
+    // xml -- Postprocess
+    for (Postprocess x : audioData_.policyData.oriEffectConfig.postprocess) {
+        AppendFormat(dumpString, "postprocess stream = %s \n", x.stream.c_str());
+        count = 0;
+        for (string modeName : x.mode) {
+            count++;
+            AppendFormat(dumpString, "  modeName%d = %s \n", count, modeName.c_str());
+            for (Device deviceInfo : x.device[count - 1]) {
+                AppendFormat(dumpString, "      device type = %s \n", deviceInfo.type.c_str());
+                AppendFormat(dumpString, "      device address = %s \n", deviceInfo.address.c_str());
+                AppendFormat(dumpString, "      device chain = %s \n", deviceInfo.chain.c_str());
+            }
+        }
+    }
+}
+
 void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
 {
     int count = 0;
@@ -572,35 +606,7 @@ void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
         }
     }
 
-    // xml -- Preprocess
-    for (Preprocess x : audioData_.policyData.oriEffectConfig.preprocess) {
-        AppendFormat(dumpString, "preprocess stream = %s \n", x.stream.c_str());
-        count = 0;
-        for (string modeName : x.mode) {
-            count++;
-            AppendFormat(dumpString, "  modeName%d = %s \n", count, modeName.c_str());
-            for (Device deviceInfo : x.device[count - 1]) {
-                AppendFormat(dumpString, "      device type = %s \n", deviceInfo.type.c_str());
-                AppendFormat(dumpString, "      device address = %s \n", deviceInfo.address.c_str());
-                AppendFormat(dumpString, "      device chain = %s \n", deviceInfo.chain.c_str());
-            }
-        }
-    }
-
-    // xml -- Postprocess
-    for (Postprocess x : audioData_.policyData.oriEffectConfig.postprocess) {
-        AppendFormat(dumpString, "postprocess stream = %s \n", x.stream.c_str());
-        count = 0;
-        for (string modeName : x.mode) {
-            count++;
-            AppendFormat(dumpString, "  modeName%d = %s \n", count, modeName.c_str());
-            for (Device deviceInfo : x.device[count - 1]) {
-                AppendFormat(dumpString, "      device type = %s \n", deviceInfo.type.c_str());
-                AppendFormat(dumpString, "      device address = %s \n", deviceInfo.address.c_str());
-                AppendFormat(dumpString, "      device chain = %s \n", deviceInfo.chain.c_str());
-            }
-        }
-    }
+    EffectManagerInfoDumpPart(dumpString);
 
     // successful lib
     count = 0;

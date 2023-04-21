@@ -134,7 +134,7 @@ ohos_shared_library("audio_client") {
     "$pulseaudio_dir/include",
     "$pulseaudio_build_path/include",
     "//third_party/bounds_checking_function/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/server/include",
+    "${audio_fwk_path}/services/audio_service/server/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
@@ -182,7 +182,7 @@ config("audio_service_config") {
     "${fwk_native_hdiadapter_path}/source/common",
     "${fwk_native_hdiadapter_path}/source/primary",
     "//drivers/peripheral/audio/interfaces/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/effect",
+    "${audio_fwk_path}/services/audio_policy/server/include/service/effect",
   ]
 
   if (target_cpu == "arm") {

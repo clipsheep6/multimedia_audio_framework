@@ -73,8 +73,10 @@ bool loadLibrary(const char *relativePath, std::unique_ptr<libEntryT>& libEntry)
         AUDIO_INFO_LOG("<log info> dlopen lib successful");
     }
 
-    audioEffectLibraryT *description = static_cast<audioEffectLibraryT *>(dlsym(handle, AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
-    if ((error = dlerror()) != NULL) {
+    audioEffectLibraryT *description = static_cast<audioEffectLibraryT *>(dlsym(handle, 
+        AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
+    error = dlerror()
+    if (!error) {
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s, %{public}p", error, description);
     } else {
         AUDIO_INFO_LOG("<log info> dlsym lib successful");
@@ -93,7 +95,7 @@ void loadLibraries(const std::vector<Library> &libs,
     for (Library library: libs) {
         AUDIO_INFO_LOG("<log info> loading %{public}s : %{public}s", library.name.c_str(), library.path.c_str());
 
-        std::unique_ptr<libEntryT> libEntry(new libEntryT());
+        std::unique_ptr<libEntryT> libEntry = std::make_unique<libEntryT>();
         libEntry->name = strdup(library.name.c_str());
 
         bool loadLibrarySuccess = loadLibrary(library.path.c_str(), libEntry);
@@ -110,8 +112,8 @@ void loadLibraries(const std::vector<Library> &libs,
 
 libEntryT *findLibrary(const std::string name, std::vector<std::unique_ptr<libEntryT>> &glibList)
 {
-    for(const std::unique_ptr<libEntryT>& lib : glibList){
-        if ( lib->name == name ) {
+    for (const std::unique_ptr<libEntryT>& lib : glibList) {
+        if (lib->name == name) {
             return lib.get();
         }
     }
@@ -119,13 +121,15 @@ libEntryT *findLibrary(const std::string name, std::vector<std::unique_ptr<libEn
     return nullptr;
 }
 
-LoadEffectResult loadEffect(const Effect &effect, const std::string &name, std::vector<std::unique_ptr<libEntryT>> &glibList)
+LoadEffectResult loadEffect(const Effect &effect, const std::string &name, 
+                            std::vector<std::unique_ptr<libEntryT>> &glibList)
 {
     LoadEffectResult result;
 
     result.lib = findLibrary(effect.libraryName, glibList);
     if (result.lib == nullptr) {
-        AUDIO_ERR_LOG("<log error> could not find library %{public}s to load effect %{public}s", effect.libraryName.c_str(), effect.name.c_str());
+        AUDIO_ERR_LOG("<log error> could not find library %{public}s to load effect %{public}s",
+                      effect.libraryName.c_str(), effect.name.c_str());
         result.success = false;
         return result;
     }
@@ -141,7 +145,6 @@ void loadEffects(const std::vector<Effect> &effects,
                  std::vector<std::unique_ptr<effectDescriptorT>> &gSkippedEffectList,
                  std::vector<Effect> &successEffectList)
 {
-
     for (Effect effect: effects) {
         std::cout << effect.name << std::endl;
         LoadEffectResult effectLoadResult = loadEffect(effect, effect.name, glibList);
@@ -167,8 +170,8 @@ AudioEffectServer::~AudioEffectServer()  // 析构函数
 }
 
 bool AudioEffectServer::LoadAudioEffects(std::vector<Library> libraries, std::vector<Effect> effects,
-                                         std::vector<Effect>& successEffectList) {
-
+                                         std::vector<Effect>& successEffectList)
+{
     // load library
     AUDIO_INFO_LOG("<log info> load library");
     loadLibraries(libraries, effectLibraryList, effectLibraryFailedList);
@@ -176,7 +179,7 @@ bool AudioEffectServer::LoadAudioEffects(std::vector<Library> libraries, std::ve
     // load effect
     AUDIO_INFO_LOG("<log info> load effect");
     loadEffects(effects, effectLibraryList, effectSkippedEffects, successEffectList);
-    if(successEffectList.size()>0) {
+    if (successEffectList.size()>0) {
         return true;
     } else {
         return false;

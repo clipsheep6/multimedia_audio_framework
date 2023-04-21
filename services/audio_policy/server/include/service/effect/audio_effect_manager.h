@@ -32,7 +32,7 @@ public:
     }
     void EffectManagerInit();
     OriginalEffectConfig GetOriginalEffectConfig();
-    std::vector<Effect> GetAvailableEffects(); 
+    std::vector<Effect> GetAvailableEffects();
     void UpdateAvailableEffects(std::vector<Effect> newAvailableEffects);
 
 private:

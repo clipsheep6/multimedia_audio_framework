@@ -27,12 +27,12 @@ static void LoadEffectLibrariesReadData(vector<Library>& libList, vector<Effect>
                                         int32_t countLib, int32_t countEff)
 {
     int32_t i;
-    for(i = 0; i < countLib; i++) {
+    for (i = 0; i < countLib; i++) {
         string libName = data.ReadString();
         string libPath = data.ReadString();
         libList.push_back({libName, libPath});
     }
-    for(i = 0; i < countEff; i++) {
+    for (i = 0; i < countEff; i++) {
         string effectName = data.ReadString();
         string libName = data.ReadString();
         string effectId = data.ReadString();
@@ -43,7 +43,7 @@ static void LoadEffectLibrariesReadData(vector<Library>& libList, vector<Effect>
 static void LoadEffectLibrariesWriteReply(vector<Effect>& successEffectList, MessageParcel &reply)
 {
     reply.WriteInt32(successEffectList.size());
-    for(Effect effect: successEffectList){
+    for (Effect effect: successEffectList){
         reply.WriteString(effect.name);
         reply.WriteString(effect.libraryName);
         reply.WriteString(effect.effectId);
@@ -201,17 +201,16 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             vector<Effect> effectList = {};
             int32_t countLib = data.ReadInt32();
             int32_t countEff = data.ReadInt32();
-            if((countLib < 0) || (countLib > COUNT_UPPER_LIMIT) || (countEff < 0) || (countEff > COUNT_UPPER_LIMIT)) {
+            if ((countLib < 0) || (countLib > COUNT_UPPER_LIMIT) || (countEff < 0) || (countEff > COUNT_UPPER_LIMIT)) {
                 AUDIO_ERR_LOG("LOAD_AUDIO_EFFECT_LIBRARIES read data failed");
                 return AUDIO_ERR;
             }
-            LoadEffectLibrariesReadData(libList,effectList, data, countLib, countEff);
-            AUDIO_DEBUG_LOG("LOAD_AUDIO_EFFECT_LIBRARIES, countLib =  %{public}d, countEff = %{public}d", countLib, countEff);
-            if(countLib > 0) {
+            LoadEffectLibrariesReadData(libList, effectList, data, countLib, countEff);
+            if (countLib > 0) {
                 //load lib and reply success list
                 vector<Effect> successEffectList = {};
                 bool loadSuccess = LoadAudioEffectLibraries(libList, effectList, successEffectList);
-                if(!loadSuccess){
+                if (!loadSuccess) {
                     AUDIO_ERR_LOG("Load audio effect libraries failed, please check log");
                     return AUDIO_ERR;
                 }

@@ -83,22 +83,14 @@ typedef struct audioEffectLibraryS {
     const char *name;
     const char *implementor;
 
-    int32_t (*create_effect)(const std::string *id,
-                                int32_t sessionId,
-                                int32_t ioId,
-                                effectHandleT *pHandle);
+    int32_t (*create_effect)(const std::string *id, int32_t sessionId, int32_t ioId, effectHandleT *pHandle);
 
     int32_t (*release_effect)(effectHandleT handle);
 
-    int32_t (*get_descriptor)(const std::string *id,
-                                effectDescriptorT *pDescriptor);
+    int32_t (*get_descriptor)(const std::string *id, effectDescriptorT *pDescriptor);
 
-    int32_t (*create_effect_3_1)(const std::string *id,
-                                    int32_t sessionId,
-                                    int32_t ioId,
-                                    int32_t deviceId,
-                                    effectHandleT *pHandle);
-
+    int32_t (*create_effect_3_1)(const std::string *id, int32_t sessionId, int32_t ioId, int32_t deviceId,
+                                 effectHandleT *pHandle);
 } audioEffectLibraryT;
 
 typedef struct listNodeS {

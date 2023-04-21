@@ -90,7 +90,7 @@ private:
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::shared_ptr<AudioParameterCallback> callback_;
     bool isGetProcessEnabled_ = false;
-	std::unique_ptr<AudioEffectServer> audioEffectServer_;
+    std::unique_ptr<AudioEffectServer> audioEffectServer_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

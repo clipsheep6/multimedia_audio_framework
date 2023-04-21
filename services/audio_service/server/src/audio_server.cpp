@@ -293,7 +293,7 @@ bool AudioServer::LoadAudioEffectLibraries(std::vector<Library> libraries, std::
         return false;
     }
     bool loadSuccess = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
-    if(!loadSuccess){
+    if (!loadSuccess) {
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
     return loadSuccess;

@@ -426,7 +426,7 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
     return process;
 }
 
-bool AudioManagerProxy::LoadAudioEffectLibraries(vector<Library> libraries, vector<Effect> effects, 
+bool AudioManagerProxy::LoadAudioEffectLibraries(vector<Library> libraries, vector<Effect> effects,
                                                  vector<Effect> &successEffects)
 {
     int32_t error, i;
@@ -462,7 +462,7 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(vector<Library> libraries, vect
     }
         
     int32_t successEffSize = replyParcel.ReadInt32();
-    if((successEffSize < 0) || (successEffSize > COUNT_UPPER_LIMIT)) {
+    if ((successEffSize < 0) || (successEffSize > COUNT_UPPER_LIMIT)) {
         AUDIO_ERR_LOG("LOAD_AUDIO_EFFECT_LIBRARIES read replyParcel failed");
         return false;
     }
