@@ -44,15 +44,16 @@ typedef struct audioBufferS {
     };
 } audioBufferT;
 
+// for initial version
 typedef struct effectDescriptorS {
-    std::string type;     //ID of to the OpenSL ES interface implemented by this effect
-    std::string id;     // ID for this particular implementation
-    uint32_t apiVersion;    // Version of the effect control API implemented
-    uint32_t flags;         // effect engine capabilities/requirements flags (see below)
-    uint16_t cpuLoad;       // CPU load indication (see below)
-    uint16_t memoryUsage;   // Data Memory usage (see below)
-    char name[EFFECT_STRING_LEN_MAX];   // human readable effect name
-    char implementor[EFFECT_STRING_LEN_MAX];    // human readable effect implementor name
+    std::string type;
+    std::string id;
+    uint32_t apiVersion;
+    uint32_t flags;
+    uint16_t cpuLoad;
+    uint16_t memoryUsage;
+    char name[EFFECT_STRING_LEN_MAX];
+    char implementor[EFFECT_STRING_LEN_MAX];
 } effectDescriptorT;
 
 struct effectInterfaceS {
@@ -75,14 +76,11 @@ struct effectInterfaceS {
                                 audioBufferT *outBuffer);
 };
 
+// for initial version
 typedef struct audioEffectLibraryS {
-    // tag must be initialized to AUDIO_EFFECT_LIBRARY_TAG
     uint32_t tag;
-    // Version of the effect library API : 0xMMMMmmmm MMMM: Major, mmmm: minor
     uint32_t version;
-    // Name of this library
     const char *name;
-    // Author/owner/implementor of the library
     const char *implementor;
 
     int32_t (*create_effect)(const std::string *id,

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <iostream>
 #include <vector>
 #include "functional"
@@ -22,7 +37,8 @@ struct LoadEffectResult {
     std::unique_ptr<effectDescriptorT> effectDesc;
 };
 
-bool resolveLibrary(const std::string &path, std::string &resovledPath) {
+bool ResolveLibrary(const std::string &path, std::string &resovledPath)
+{
     for (auto *libDir: LD_EFFECT_LIBRARY_PATH) {
         std::string candidatePath = std::string(libDir) + "/" + path;
         if (access(candidatePath.c_str(), R_OK) == 0) {
@@ -34,10 +50,11 @@ bool resolveLibrary(const std::string &path, std::string &resovledPath) {
     return false;
 }
 
-bool loadLibrary(const char *relativePath, std::unique_ptr<libEntryT>& libEntry) noexcept {
+bool loadLibrary(const char *relativePath, std::unique_ptr<libEntryT>& libEntry) noexcept
+{
     std::string absolutePath;
     // find library in adsolutePath
-    if (!resolveLibrary(relativePath, absolutePath)) {
+    if (!ResolveLibrary(relativePath, absolutePath)) {
         AUDIO_ERR_LOG("<log error> find library falied in effect directories: %{public}s", relativePath);
         libEntry->path = strdup(relativePath);
         return false;
@@ -51,17 +68,17 @@ bool loadLibrary(const char *relativePath, std::unique_ptr<libEntryT>& libEntry)
     void* handle = dlopen(path, 1);
     if (!handle) {
         AUDIO_ERR_LOG("<log error> Open lib Fail");
-    }else{
+        return false;
+    } else {
         AUDIO_INFO_LOG("<log info> dlopen lib successful");
     }
 
     audioEffectLibraryT *description = static_cast<audioEffectLibraryT *>(dlsym(handle, AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
     if ((error = dlerror()) != NULL) {
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s, %{public}p", error, description);
-    }else{
+    } else {
         AUDIO_INFO_LOG("<log info> dlsym lib successful");
     }
-
 
     libEntry->handle = handle;
     libEntry->desc = description;
@@ -71,7 +88,8 @@ bool loadLibrary(const char *relativePath, std::unique_ptr<libEntryT>& libEntry)
 
 void loadLibraries(const std::vector<Library> &libs,
                    std::vector<std::unique_ptr<libEntryT>> &libList,
-                   std::vector<std::unique_ptr<libEntryT>> &glibFailedList) {
+                   std::vector<std::unique_ptr<libEntryT>> &glibFailedList)
+{
     for (Library library: libs) {
         AUDIO_INFO_LOG("<log info> loading %{public}s : %{public}s", library.name.c_str(), library.path.c_str());
 
@@ -90,7 +108,8 @@ void loadLibraries(const std::vector<Library> &libs,
     }
 }
 
-libEntryT *findLibrary(const std::string name, std::vector<std::unique_ptr<libEntryT>> &glibList) {
+libEntryT *findLibrary(const std::string name, std::vector<std::unique_ptr<libEntryT>> &glibList)
+{
     for(const std::unique_ptr<libEntryT>& lib : glibList){
         if ( lib->name == name ) {
             return lib.get();
@@ -100,7 +119,8 @@ libEntryT *findLibrary(const std::string name, std::vector<std::unique_ptr<libEn
     return nullptr;
 }
 
-LoadEffectResult loadEffect(const Effect &effect, const std::string &name, std::vector<std::unique_ptr<libEntryT>> &glibList) {
+LoadEffectResult loadEffect(const Effect &effect, const std::string &name, std::vector<std::unique_ptr<libEntryT>> &glibList)
+{
     LoadEffectResult result;
 
     result.lib = findLibrary(effect.libraryName, glibList);
@@ -111,10 +131,6 @@ LoadEffectResult loadEffect(const Effect &effect, const std::string &name, std::
     }
 
     result.effectDesc = std::make_unique<effectDescriptorT>();
-    // if (result.lib->desc->get_descriptor(&effect.effectId, result.effectDesc.get()) != 0) {
-    //     AUDIO_ERR_LOG("<log error> Error querying effect %{public}s on lib %{public}s", effect.effectId.c_str(), effect.libraryName.c_str());
-    //     return result;
-    // }
 
     result.success = true;
     return result;
@@ -123,7 +139,8 @@ LoadEffectResult loadEffect(const Effect &effect, const std::string &name, std::
 void loadEffects(const std::vector<Effect> &effects,
                  std::vector<std::unique_ptr<libEntryT>> &glibList,
                  std::vector<std::unique_ptr<effectDescriptorT>> &gSkippedEffectList,
-                 std::vector<Effect> &successEffectList) {
+                 std::vector<Effect> &successEffectList)
+{
 
     for (Effect effect: effects) {
         std::cout << effect.name << std::endl;

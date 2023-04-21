@@ -1,7 +1,4 @@
 /*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
-*/
-/*
  * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -566,7 +563,7 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
     int i = 0;
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
-    AUDIO_ERR_LOG("AudioEffectParser::LoadConfig");
+    AUDIO_INFO_LOG("AudioEffectParser::LoadConfig");
     if ((doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, (1<<5) | (1<<6))) == nullptr) { // 5, 6: arguments
         AUDIO_ERR_LOG("error: could not parse file %{public}s", AUDIO_EFFECT_CONFIG_FILE);
         return FILE_PARSE_ERROR;
@@ -609,6 +606,9 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
             AUDIO_ERR_LOG("missing information: %{public}s", EFFECT_CONFIG_NAME[i].c_str());
         }
     }
+
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
     return 0;
 }
 
