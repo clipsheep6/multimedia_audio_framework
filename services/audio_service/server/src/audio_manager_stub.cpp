@@ -43,7 +43,7 @@ static void LoadEffectLibrariesReadData(vector<Library>& libList, vector<Effect>
 static void LoadEffectLibrariesWriteReply(vector<Effect>& successEffectList, MessageParcel &reply)
 {
     reply.WriteInt32(successEffectList.size());
-    for (Effect effect: successEffectList){
+    for (Effect effect: successEffectList) {
         reply.WriteString(effect.name);
         reply.WriteString(effect.libraryName);
         reply.WriteString(effect.effectId);

@@ -73,9 +73,9 @@ bool loadLibrary(const char *relativePath, std::unique_ptr<libEntryT>& libEntry)
         AUDIO_INFO_LOG("<log info> dlopen lib successful");
     }
 
-    audioEffectLibraryT *description = static_cast<audioEffectLibraryT *>(dlsym(handle, 
+    audioEffectLibraryT *description = static_cast<audioEffectLibraryT *>(dlsym(handle,
         AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
-    error = dlerror()
+    error = dlerror();
     if (!error) {
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s, %{public}p", error, description);
     } else {
@@ -121,7 +121,7 @@ libEntryT *findLibrary(const std::string name, std::vector<std::unique_ptr<libEn
     return nullptr;
 }
 
-LoadEffectResult loadEffect(const Effect &effect, const std::string &name, 
+LoadEffectResult loadEffect(const Effect &effect, const std::string &name,
                             std::vector<std::unique_ptr<libEntryT>> &glibList)
 {
     LoadEffectResult result;

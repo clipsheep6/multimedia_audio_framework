@@ -542,7 +542,7 @@ void AudioServiceDump::DevicesInfoDump(string& dumpString)
         GetDeviceTypeName(audioData_.policyData.priorityInputDevice).c_str());
 }
 
-static void EffectManagerInfoDumpPart(string& dumpString)
+static void EffectManagerInfoDumpPart(string& dumpString, AudioData &audioData_)
 {
     int32_t count;
    // xml -- Preprocess
@@ -606,7 +606,7 @@ void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
         }
     }
 
-    EffectManagerInfoDumpPart(dumpString);
+    EffectManagerInfoDumpPart(dumpString, audioData_);
 
     // successful lib
     count = 0;
