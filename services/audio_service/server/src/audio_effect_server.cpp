@@ -18,7 +18,6 @@
 #include "memory"
 #include <dlfcn.h>
 #include "unistd.h"
-#include <string.h>
 #include "audio_effect_server.h"
 #include "audio_log.h"
 #include "audio_effect_server.h"
@@ -50,19 +49,20 @@ bool ResolveLibrary(const std::string &path, std::string &resovledPath)
     return false;
 }
 
-bool loadLibrary(const char *relativePath, std::unique_ptr<libEntryT>& libEntry) noexcept
+static bool loadLibrary(const std::string relativePath, std::unique_ptr<libEntryT>& libEntry) noexcept
 {
     std::string absolutePath;
     // find library in adsolutePath
     if (!ResolveLibrary(relativePath, absolutePath)) {
-        AUDIO_ERR_LOG("<log error> find library falied in effect directories: %{public}s", relativePath);
-        libEntry->path = strdup(relativePath);
+        AUDIO_ERR_LOG("<log error> find library falied in effect directories: %{public}s",
+                       relativePath.c_str());
+        libEntry->path = relativePath;
         return false;
     }
 
     // load hundle
     const char *path = absolutePath.c_str();
-    libEntry->path = strdup(path);
+    libEntry->path = absolutePath;
 
     char *error;
     void* handle = dlopen(path, 1);
@@ -96,9 +96,9 @@ void loadLibraries(const std::vector<Library> &libs,
         AUDIO_INFO_LOG("<log info> loading %{public}s : %{public}s", library.name.c_str(), library.path.c_str());
 
         std::unique_ptr<libEntryT> libEntry = std::make_unique<libEntryT>();
-        libEntry->name = strdup(library.name.c_str());
+        libEntry->name = library.name;
 
-        bool loadLibrarySuccess = loadLibrary(library.path.c_str(), libEntry);
+        bool loadLibrarySuccess = loadLibrary(library.path, libEntry);
         if (!loadLibrarySuccess) {
             // Register library load failure
             glibFailedList.emplace_back(std::move(libEntry));
