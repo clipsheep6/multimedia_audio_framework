@@ -12,9 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include <iostream>
+#include <vector>
+#include "functional"
+#include "memory"
+#include <dlfcn.h>
+#include "unistd.h"
+#include <string.h>
 #include "audio_effect_server.h"
 #include "audio_log.h"
+#include "audio_effect_server.h"
 
 # define AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR "AELI"
 # define EFFECT_STRING_LEN_MAX 64

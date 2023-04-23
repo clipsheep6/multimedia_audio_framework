@@ -26,6 +26,7 @@ group("audio_policy_packages") {
     ":audio_policy_init",
     ":audio_policy_service",
     ":audio_tone_dtmf_config",
+    ":audio_effect_config",
   ]
 }
 
