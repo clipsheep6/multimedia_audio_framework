@@ -1521,8 +1521,7 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
     }
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
         DistributedHardware::DmDeviceInfo localDevice;
-        if (DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(AUDIO_SERVICE_PKG, localDevice) ==
-            SUCCESS) {
+        if (DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(AUDIO_SERVICE_PKG, localDevice) == SUCCESS) {
             AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", localDevice.deviceName);
             deviceDescriptor->displayName_ = localDevice.deviceName;
         };
