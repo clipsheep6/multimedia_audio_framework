@@ -14,6 +14,7 @@
  */
 
 #include "audio_effect_server.h"
+#include "audio_log.h"
 
 # define AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR "AELI"
 # define EFFECT_STRING_LEN_MAX 64

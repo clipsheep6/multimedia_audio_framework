@@ -23,7 +23,6 @@
 #include <string>
 #include <vector>
 #include "audio_info.h"
-#include "audio_log.h"
 
 #ifndef ST_AUDIO_EFFECT_SERVER_H
 #define ST_AUDIO_EFFECT_SERVER_H
