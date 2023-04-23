@@ -12,14 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <iostream>
+#include "functional"
+#include <dlfcn.h>
+#include "unistd.h"
 #include <cassert>
 #include <cstdint>
 #include <stddef.h>
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 #include "audio_info.h"
+#include "audio_log.h"
 
 #ifndef ST_AUDIO_EFFECT_SERVER_H
 #define ST_AUDIO_EFFECT_SERVER_H
@@ -111,8 +115,8 @@ public:
     explicit AudioEffectServer();
     ~AudioEffectServer();
 
-    bool LoadAudioEffects(std::vector<Library> libraries, std::vector<Effect> effects,
-                                std::vector<Effect>& successEffectList);
+    bool LoadAudioEffects(const std::vector<Library> libraries, const std::vector<Effect> effects,
+                          std::vector<Effect>& successEffectList);
 
     std::vector<std::unique_ptr<libEntryT>>& GetAvailableEffects();
                                 

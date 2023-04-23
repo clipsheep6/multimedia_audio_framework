@@ -426,7 +426,7 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
     return process;
 }
 
-bool AudioManagerProxy::LoadAudioEffectLibraries(vector<Library> libraries, vector<Effect> effects,
+bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries, const vector<Effect> effects,
                                                  vector<Effect> &successEffects)
 {
     int32_t error, i;

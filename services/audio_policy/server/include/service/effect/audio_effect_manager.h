@@ -31,9 +31,9 @@ public:
         return audioEffectManager;
     }
     void EffectManagerInit();
-    OriginalEffectConfig GetOriginalEffectConfig();
-    std::vector<Effect> GetAvailableEffects();
-    void UpdateAvailableEffects(std::vector<Effect> newAvailableEffects);
+    void GetOriginalEffectConfig(OriginalEffectConfig& oriEffectConfig);
+    void GetAvailableEffects(std::vector<Effect>& availableEffects);
+    void UpdateAvailableEffects(std::vector<Effect>& newAvailableEffects);
 
 private:
     OriginalEffectConfig oriEffectConfig_;

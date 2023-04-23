@@ -283,7 +283,7 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
     return transactionId;
 }
 
-bool AudioServer::LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
+bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
                                            std::vector<Effect>& successEffectList)
 {
     int32_t audio_policy_server_id = 1041;

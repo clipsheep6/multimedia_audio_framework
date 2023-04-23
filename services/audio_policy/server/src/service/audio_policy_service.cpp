@@ -1687,7 +1687,8 @@ void AudioPolicyService::LoadEffectLibrary()
         AUDIO_ERR_LOG("Service proxy unavailable: g_adProxy null");
         return;
     }
-    OriginalEffectConfig oriEffectConfig = audioEffectManager_.GetOriginalEffectConfig();
+    OriginalEffectConfig oriEffectConfig = {};
+    audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
     vector<Effect> successLoadedEffects;
     bool loadSuccess = gsp->LoadAudioEffectLibraries(oriEffectConfig.libraries,
                                                      oriEffectConfig.effects,
@@ -1701,8 +1702,8 @@ void AudioPolicyService::LoadEffectLibrary()
 void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
                                               std::vector<Effect>& availableEffects)
 {
-    oriEffectConfig = audioEffectManager_.GetOriginalEffectConfig();
-    availableEffects = audioEffectManager_.GetAvailableEffects();
+    audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
+    audioEffectManager_.GetAvailableEffects(availableEffects);
 }
 
 void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)

@@ -53,6 +53,11 @@ static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
 
 static void LoadConfigVersion(OriginalEffectConfig &result, xmlNode* currNode)
 {
+    if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("version")))) {
+        AUDIO_ERR_LOG("missing information: audio_effects_conf node has no version attribute");
+        return;
+    }
+
     float pVersion = atof(reinterpret_cast<char*>
     (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("version")))));
     result.version = pVersion;
@@ -357,7 +362,7 @@ static void LoadPreProcess(OriginalEffectConfig &result, xmlNode* secondNode)
     int32_t streamNum = 0;
     while (currNode != nullptr) {
         if (countPreprocess >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of preprocess nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+            AUDIO_ERR_LOG("the number of stream nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -366,7 +371,7 @@ static void LoadPreProcess(OriginalEffectConfig &result, xmlNode* secondNode)
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("stream"))) {
             if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("scene")))) {
-                AUDIO_ERR_LOG("missing information: preprocess has no scene attribute");
+                AUDIO_ERR_LOG("missing information: stream has no scene attribute");
             } else {
                 std::string pStreamType = reinterpret_cast<char*>
                                          (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("scene"))));
@@ -500,7 +505,7 @@ static void LoadPostProcess(OriginalEffectConfig &result, xmlNode* secondNode)
     int32_t streamNum = 0;
     while (currNode != nullptr) {
         if (countPostprocess >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of postprocess nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+            AUDIO_ERR_LOG("the number of stream nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -509,7 +514,7 @@ static void LoadPostProcess(OriginalEffectConfig &result, xmlNode* secondNode)
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("stream"))) {
             if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("scene")))) {
-                AUDIO_ERR_LOG("missing information: postprocess has no scene attribute");
+                AUDIO_ERR_LOG("missing information: stream has no scene attribute");
             } else {
                 std::string pStreamType = reinterpret_cast<char*>
                                          (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("scene"))));
@@ -610,8 +615,10 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
         }
     }
 
+    if (doc) {
     xmlFreeDoc(doc);
     xmlCleanupParser();
+    }
     return 0;
 }
 

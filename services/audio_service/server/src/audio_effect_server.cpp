@@ -13,15 +13,7 @@
  * limitations under the License.
  */
 
-#include <iostream>
-#include <vector>
-#include "functional"
-#include "memory"
-#include <dlfcn.h>
-#include "unistd.h"
-#include <string.h>
 #include "audio_effect_server.h"
-#include "audio_log.h"
 
 # define AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR "AELI"
 # define EFFECT_STRING_LEN_MAX 64
@@ -160,16 +152,16 @@ void loadEffects(const std::vector<Effect> &effects,
     }
 }
 
-AudioEffectServer::AudioEffectServer() // 构造函数
+AudioEffectServer::AudioEffectServer()
 {
     AUDIO_INFO_LOG("AudioEffectServer ctor");
 }
 
-AudioEffectServer::~AudioEffectServer()  // 析构函数
+AudioEffectServer::~AudioEffectServer()
 {
 }
 
-bool AudioEffectServer::LoadAudioEffects(std::vector<Library> libraries, std::vector<Effect> effects,
+bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, const std::vector<Effect> effects,
                                          std::vector<Effect>& successEffectList)
 {
     // load library

@@ -19,12 +19,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
-AudioEffectManager::AudioEffectManager() // 构造函数
+AudioEffectManager::AudioEffectManager()
 {
     AUDIO_INFO_LOG("AudioEffectManager ctor");
 }
 
-AudioEffectManager::~AudioEffectManager()  // 析构函数
+AudioEffectManager::~AudioEffectManager()
 {
 }
 
@@ -39,17 +39,17 @@ void AudioEffectManager::EffectManagerInit()
     }
 }
 
-std::vector<Effect> AudioEffectManager::GetAvailableEffects()
+void AudioEffectManager::GetAvailableEffects(std::vector<Effect>& availableEffects)
 {
-    return availableEffects_;
+    availableEffects = availableEffects_;
 }
 
-OriginalEffectConfig AudioEffectManager::GetOriginalEffectConfig()
+void AudioEffectManager::GetOriginalEffectConfig(OriginalEffectConfig& oriEffectConfig)
 {
-    return oriEffectConfig_;
+    oriEffectConfig = oriEffectConfig_;
 }
 
-void AudioEffectManager::UpdateAvailableEffects(std::vector<Effect> newAvailableEffects)
+void AudioEffectManager::UpdateAvailableEffects(std::vector<Effect>& newAvailableEffects)
 {
     availableEffects_ = newAvailableEffects;
 }
