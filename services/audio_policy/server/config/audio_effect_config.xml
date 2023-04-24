@@ -14,43 +14,27 @@
      limitations under the License.
 -->
 <audio_effects_conf version="1.0">
-
     <libraries>
-        <library name="effect_units" path="libeffectunits.so"/>
         <library name="histen" path="libhisten.so"/>
-        <library name="hvs_spk" path="libhvsspk.so"/>
-        <library name="2d3d" path="lib2d3d.so"/>
+        <library name="hvs" path="libhvsprocessing.z.so"/>
     </libraries>
 
     <effects>
-        <effect name="bassboost" library="effect_units" effect_id="8631f300-72e2-11df-b57e-0002a5d5c51b"/>
-        <effect name="drc" library="effect_units" effect_id="1d4033c0-8557-11df-9f2d-0002a5d5c51b"/>
-        <effect name="equalizer" library="effect_units" effect_id="ce772f20-847d-11df-bb17-0002a5d5c51b"/>
         <effect name="histen" library="histen" effect_id="4a387fc0-8ab3-11df-8bad-0002a5d5c51b"/>
-        <effect name="hvs_spk" library="hvs_spk" effect_id="c7a511a0-a3bb-11df-860e-0002a5d5c51b"/>
-        <effect name="2d3d_upmix" library="2d3d" effect_id="f29a1400-a3bb-11df-8ddc-0002a5d5c51b"/>
-        <effect name="2d3d_downupmix" library="2d3d" effect_id="172cdf00-a3bc-11df-a72f-0002a5d5c51b"/>
+        <effect name="hvs" library="hvs" effect_id="c7a511a0-a3bb-11df-860e-0002a5d5c51b"/>
     </effects>
 
     <effectChains>
         <effectChain name="EFFECTCHAIN_SPK_MUSIC">
-            <apply effect="2d3d_upmix"/>
-            <apply effect="hvs_spk"/>
             <apply effect="histen"/>
         </effectChain>
         <effectChain name="EFFECTCHAIN_SPK_MOVIE">
-            <apply effect="2d3d_downupmix"/>
-            <apply effect="hvs_spk"/>
+            <apply effect="hvs"/>
             <apply effect="histen"/>
         </effectChain>
     </effectChains>
 
     <preprocess>
-        <stream scene="STREAM_VOICE_CALL">
-            <streamAE_mode mode="defult">
-                <devicePort type="AUDIO_DEVICE_IN3232_BUILTIN_MIC" address="bottom" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-            </streamAE_mode>
-        </stream>
     </preprocess>
 
     <postprocess>
