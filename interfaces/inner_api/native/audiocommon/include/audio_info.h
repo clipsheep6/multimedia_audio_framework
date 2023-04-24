@@ -996,7 +996,7 @@ struct Postprocess {
     std::vector<std::vector<Device>> device;
 };
 
-struct OriginalEffectConfig{
+struct OriginalEffectConfig {
     float version;
     std::vector<Library> libraries;
     std::vector<Effect> effects;
