@@ -22,11 +22,11 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 group("audio_policy_packages") {
   deps = [
     ":audio_dump",
+    ":audio_effect_config",
     ":audio_interrupt_policy_config",
     ":audio_policy_init",
     ":audio_policy_service",
     ":audio_tone_dtmf_config",
-    ":audio_effect_config",
   ]
 }
 
