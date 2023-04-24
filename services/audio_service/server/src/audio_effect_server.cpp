@@ -55,7 +55,7 @@ static bool loadLibrary(const std::string relativePath, std::unique_ptr<libEntry
     // find library in adsolutePath
     if (!ResolveLibrary(relativePath, absolutePath)) {
         AUDIO_ERR_LOG("<log error> find library falied in effect directories: %{public}s",
-                       relativePath.c_str());
+            relativePath.c_str());
         libEntry->path = relativePath;
         return false;
     }
