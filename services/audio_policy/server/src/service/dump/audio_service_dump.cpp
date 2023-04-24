@@ -579,7 +579,7 @@ static void EffectManagerInfoDumpPart(string& dumpString, AudioData &audioData_)
 void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
 {
     int count = 0;
-    dumpString += "\nEffect Manager INFO:\n";
+    dumpString += "\n****Effect Manager INFO:****\n";
     AppendFormat(dumpString, "XML version:%f \n", audioData_.policyData.oriEffectConfig.version);
     // xml -- Library
     for (Library x : audioData_.policyData.oriEffectConfig.libraries) {
