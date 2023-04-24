@@ -61,11 +61,10 @@ static bool loadLibrary(const std::string relativePath, std::unique_ptr<libEntry
     }
 
     // load hundle
-    const char *path = absolutePath.c_str();
     libEntry->path = absolutePath;
 
     char *error;
-    void* handle = dlopen(path, 1);
+    void* handle = dlopen((const char*)absolutePath.c_str(), 1);
     if (!handle) {
         AUDIO_ERR_LOG("<log error> Open lib Fail");
         return false;

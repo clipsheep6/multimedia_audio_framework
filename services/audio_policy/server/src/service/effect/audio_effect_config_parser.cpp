@@ -53,13 +53,13 @@ static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
 
 static void LoadConfigVersion(OriginalEffectConfig &result, xmlNode* currNode)
 {
-    if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("version")))) {
+    if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("version"))) {
         AUDIO_ERR_LOG("missing information: audio_effects_conf node has no version attribute");
         return;
     }
 
     float pVersion = atof(reinterpret_cast<char*>
-    (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("version")))));
+    (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("version"))));
     result.version = pVersion;
 }
 
@@ -77,15 +77,15 @@ static void LoadLibrary(OriginalEffectConfig &result, xmlNode* secondNode)
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("library"))) {
-            if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("name")))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("name"))) {
                 AUDIO_ERR_LOG("missing information: library has no name attribute");
-            } else if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("path")))) {
+            } else if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("path"))) {
                 AUDIO_ERR_LOG("missing information: library has no path attribute");
             } else {
                 std::string pLibName = reinterpret_cast<char*>
-                                      (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
+                                      (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name")));
                 std::string pLibPath = reinterpret_cast<char*>
-                                      (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("path"))));
+                                      (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("path")));
                 Library tmp = {pLibName, pLibPath};
                 result.libraries.push_back(tmp);
             }
@@ -131,19 +131,19 @@ static void LoadEffect(OriginalEffectConfig &result, xmlNode* secondNode)
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("effect"))) {
-            if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("name")))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("name"))) {
                 AUDIO_ERR_LOG("missing information: effect has no name attribute");
-            } else if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("library")))) {
+            } else if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("library"))) {
                 AUDIO_ERR_LOG("missing information: effect has no library attribute");
-            } else if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("effect_id")))) {
+            } else if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("effect_id"))) {
                 AUDIO_ERR_LOG("missing information: effect has no effect_id attribute");
             } else {
                 std::string pEffectName = reinterpret_cast<char*>
-                              (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
+                              (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name")));
                 std::string pEffectLib = reinterpret_cast<char*>
-                             (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("library"))));
+                             (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("library")));
                 std::string pEffectID = reinterpret_cast<char*>
-                            (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("effect_id"))));
+                            (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("effect_id")));
                 Effect tmp = {pEffectName, pEffectLib, pEffectID};
                 result.effects.push_back(tmp);
             }
@@ -193,11 +193,11 @@ static void LoadApply(OriginalEffectConfig &result, const xmlNode* thirdNode, co
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("apply"))) {
-            if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("effect")))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("effect"))) {
                 AUDIO_ERR_LOG("missing information: apply has no effect attribute");
             } else {
                 std::string ppValue = reinterpret_cast<char*>
-                                     (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("effect"))));
+                                     (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("effect")));
                 result.effectChains[segInx].apply.push_back(ppValue);
             }
         } else {
@@ -227,11 +227,11 @@ static void LoadEffectChain(OriginalEffectConfig &result, xmlNode* secondNode)
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("effectChain"))) {
-            if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("name")))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("name"))) {
                 AUDIO_ERR_LOG("missing information: effectChain has no name attribute");
             } else {
                 std::string peffectChainName = reinterpret_cast<char*>
-                                   (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
+                                   (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name")));
                 effectChain tmp = {peffectChainName, apply};
                 result.effectChains.push_back(tmp);
                 LoadApply(result, currNode, segInx);
@@ -284,19 +284,19 @@ static void LoadPreDevice(OriginalEffectConfig &result, const xmlNode* fourthNod
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("devicePort"))) {
-            if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("type")))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("type"))) {
                 AUDIO_ERR_LOG("missing information: devicePort has no type attribute");
-            } else if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("address")))) {
+            } else if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("address"))) {
                 AUDIO_ERR_LOG("missing information: devicePort has no address attribute");
-            } else if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("effectChain")))) {
+            } else if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("effectChain"))) {
                 AUDIO_ERR_LOG("missing information: devicePort has no effectChain attribute");
             } else {
                 std::string pDevType = reinterpret_cast<char*>
-                           (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("type"))));
+                           (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("type")));
                 std::string pDevAddress = reinterpret_cast<char*>
-                              (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("address"))));
+                              (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("address")));
                 std::string pChain = reinterpret_cast<char*>
-                         (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("effectChain"))));
+                         (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("effectChain")));
                 Device tmpdev = {pDevType, pDevAddress, pChain};
                 result.preprocess[streamNum].device[modeNum].push_back(tmpdev);
             }
@@ -330,11 +330,11 @@ static void LoadPreMode(OriginalEffectConfig &result, const xmlNode* thirdNode, 
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("streamAE_mode"))) {
-            if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("mode")))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("mode"))) {
                 AUDIO_ERR_LOG("missing information: streamAE_mode has no mode attribute");
             } else {
                 std::string pStreamAEMode = reinterpret_cast<char*>
-                                (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("mode"))));
+                                (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("mode")));
                 result.preprocess[streamNum].mode.push_back(pStreamAEMode);
                 result.preprocess[streamNum].device.push_back({});
                 LoadPreDevice(result, currNode, modeNum, streamNum);
@@ -370,11 +370,11 @@ static void LoadPreProcess(OriginalEffectConfig &result, xmlNode* secondNode)
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("stream"))) {
-            if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("scene")))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("scene"))) {
                 AUDIO_ERR_LOG("missing information: stream has no scene attribute");
             } else {
                 std::string pStreamType = reinterpret_cast<char*>
-                                         (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("scene"))));
+                                         (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("scene")));
                 tmp.stream = pStreamType;
                 result.preprocess.push_back(tmp);
                 LoadPreMode(result, currNode, streamNum);
@@ -427,19 +427,19 @@ static void LoadPostDevice(OriginalEffectConfig &result, const xmlNode* fourthNo
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("devicePort"))) {
-            if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("type")))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("type"))) {
                 AUDIO_ERR_LOG("missing information: devicePort has no type attribute");
-            } else if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("address")))) {
+            } else if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("address"))) {
                 AUDIO_ERR_LOG("missing information: devicePort has no address attribute");
-            } else if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("effectChain")))) {
+            } else if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("effectChain"))) {
                 AUDIO_ERR_LOG("missing information: devicePort has no effectChain attribute");
             } else {
                 std::string pDevType = reinterpret_cast<char*>
-                           (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("type"))));
+                           (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("type")));
                 std::string pDevAddress = reinterpret_cast<char*>
-                              (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("address"))));
+                              (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("address")));
                 std::string pChain = reinterpret_cast<char*>
-                         (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("effectChain"))));
+                         (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("effectChain")));
                 Device tmpdev = {pDevType, pDevAddress, pChain};
                 result.postprocess[streamNum].device[modeNum].push_back(tmpdev);
             }
@@ -473,11 +473,11 @@ static void LoadPostMode(OriginalEffectConfig &result, const xmlNode* thirdNode,
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("streamAE_mode"))) {
-            if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("mode")))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("mode"))) {
                 AUDIO_ERR_LOG("missing information: streamAE_mode has no mode attribute");
             } else {
                 std::string pStreamAEMode = reinterpret_cast<char*>
-                                (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("mode"))));
+                                (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("mode")));
                 result.postprocess[streamNum].mode.push_back(pStreamAEMode);
                 result.postprocess[streamNum].device.push_back({});
                 LoadPostDevice(result, currNode, modeNum, streamNum);
@@ -513,11 +513,11 @@ static void LoadPostProcess(OriginalEffectConfig &result, xmlNode* secondNode)
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("stream"))) {
-            if (!xmlHasProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("scene")))) {
+            if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("scene"))) {
                 AUDIO_ERR_LOG("missing information: stream has no scene attribute");
             } else {
                 std::string pStreamType = reinterpret_cast<char*>
-                                         (xmlGetProp(currNode, reinterpret_cast<xmlChar*>(const_cast<char*>("scene"))));
+                                         (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("scene")));
                 tmp.stream = pStreamType;
                 result.postprocess.push_back(tmp);
                 LoadPostMode(result, currNode, streamNum);
