@@ -63,8 +63,7 @@ static bool loadLibrary(const std::string relativePath, std::unique_ptr<libEntry
     // load hundle
     libEntry->path = absolutePath;
 
-    char *error;
-    void* handle = dlopen((const char*)absolutePath.c_str(), 1);
+    void* handle = dlopen(absolutePath.c_str(), 1);
     if (!handle) {
         AUDIO_ERR_LOG("<log error> Open lib Fail");
         return false;
@@ -74,7 +73,7 @@ static bool loadLibrary(const std::string relativePath, std::unique_ptr<libEntry
 
     audioEffectLibraryT *description = static_cast<audioEffectLibraryT *>(dlsym(handle,
         AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
-    error = dlerror();
+    const char* error = dlerror();
     if (!error) {
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s, %{public}p", error, description);
     } else {
