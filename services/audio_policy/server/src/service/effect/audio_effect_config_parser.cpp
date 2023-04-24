@@ -22,6 +22,14 @@ static constexpr char AUDIO_EFFECT_CONFIG_FILE[] = "system/etc/audio/audio_effec
 static const std::string EFFECT_CONFIG_NAME[5] = {"libraries", "effects", "effectChains", "preprocess", "postprocess"};
 static constexpr int32_t FILE_CONTENT_ERROR = -2;
 static constexpr int32_t FILE_PARSE_ERROR = -3;
+static constexpr int32_t INDEX_LIBRARIES = 0;
+static constexpr int32_t INDEX_EFFECS = 1;
+static constexpr int32_t INDEX_EFFECTCHAINE = 2;
+static constexpr int32_t INDEX_PREPROCESS = 3;
+static constexpr int32_t INDEX_POSTPROCESS = 4;
+static constexpr int32_t INDEX_EXCEPTION = 5;
+static constexpr int32_t NODE_SIZE = 6;
+
 AudioEffectConfigParser::AudioEffectConfigParser()
 {
     AUDIO_INFO_LOG("AudioEffectConfigParser created");
@@ -40,7 +48,6 @@ static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
         return FILE_CONTENT_ERROR;
     }
     
-    // 获取下一个节点
     if (currNode->xmlChildrenNode) {
         return 0;
     } else {
@@ -101,19 +108,19 @@ static void LoadLibrary(OriginalEffectConfig &result, xmlNode* secondNode)
 }
 
 static void LoadEffectConfigLibraries(OriginalEffectConfig &result, const xmlNode* currNode,
-                                      int32_t (&countFirstNode)[6]) // 6: size
+                                      int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[0] >= COUNT_FIRST_NODE_UPPER_LIMIT) {     // 0: index for libraries
-        if (countFirstNode[0] == COUNT_FIRST_NODE_UPPER_LIMIT) { // 0: index for libraries
-            countFirstNode[0]++;                      // 0: index for libraries
+    if (countFirstNode[INDEX_LIBRARIES] >= COUNT_FIRST_NODE_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_LIBRARIES] == COUNT_FIRST_NODE_UPPER_LIMIT) {
+            countFirstNode[INDEX_LIBRARIES]++;
             AUDIO_ERR_LOG("the number of libraries nodes exceeds limit: %{public}d", COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
         LoadLibrary(result, currNode->xmlChildrenNode);
-        countFirstNode[0]++;                          // 0: index for libraries
+        countFirstNode[INDEX_LIBRARIES]++;
     } else {
         AUDIO_ERR_LOG("missing information: libraries have no child library");
-        countFirstNode[0]++;                          // 0: index for libraries
+        countFirstNode[INDEX_LIBRARIES]++;
     }
 }
 
@@ -159,19 +166,19 @@ static void LoadEffect(OriginalEffectConfig &result, xmlNode* secondNode)
 }
 
 static void LoadEffectConfigEffects(OriginalEffectConfig &result, const xmlNode* currNode,
-                                    int32_t (&countFirstNode)[6]) // 6: size
+                                    int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[1] >= COUNT_FIRST_NODE_UPPER_LIMIT) {     // 1: index for effects
-        if (countFirstNode[1] == COUNT_FIRST_NODE_UPPER_LIMIT) { // 1: index for effects
-            countFirstNode[1]++;                      // 1: index for effects
+    if (countFirstNode[INDEX_EFFECS] >= COUNT_FIRST_NODE_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_EFFECS] == COUNT_FIRST_NODE_UPPER_LIMIT) {
+            countFirstNode[INDEX_EFFECS]++;
             AUDIO_ERR_LOG("the number of effects nodes exceeds limit: %{public}d", COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
         LoadEffect(result, currNode->xmlChildrenNode);
-        countFirstNode[1]++;                          // 1: index for effects
+        countFirstNode[INDEX_EFFECS]++;
     } else {
         AUDIO_ERR_LOG("missing information: effects have no child effect");
-        countFirstNode[1]++;                          // 1: index for effects
+        countFirstNode[INDEX_EFFECS]++;
     }
 }
 
@@ -232,7 +239,7 @@ static void LoadEffectChain(OriginalEffectConfig &result, xmlNode* secondNode)
             } else {
                 std::string peffectChainName = reinterpret_cast<char*>
                                    (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name")));
-                effectChain tmp = {peffectChainName, apply};
+                EffectChain tmp = {peffectChainName, apply};
                 result.effectChains.push_back(tmp);
                 LoadApply(result, currNode, segInx);
                 segInx++;
@@ -249,19 +256,19 @@ static void LoadEffectChain(OriginalEffectConfig &result, xmlNode* secondNode)
 }
 
 static void LoadEffectConfigEffectChains(OriginalEffectConfig &result, const xmlNode* currNode,
-                                         int32_t (&countFirstNode)[6]) // 6: size
+                                         int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[2] >= COUNT_FIRST_NODE_UPPER_LIMIT) {     // 2: index for effectChains
-        if (countFirstNode[2] == COUNT_FIRST_NODE_UPPER_LIMIT) { // 2: index for effectChains
-            countFirstNode[2]++;                      // 2: index for effectChains
+    if (countFirstNode[INDEX_EFFECTCHAINE] >= COUNT_FIRST_NODE_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_EFFECTCHAINE] == COUNT_FIRST_NODE_UPPER_LIMIT) {
+            countFirstNode[INDEX_EFFECTCHAINE]++;
             AUDIO_ERR_LOG("the number of effectChains nodes exceeds limit: %{public}d", COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
         LoadEffectChain(result, currNode->xmlChildrenNode);
-        countFirstNode[2]++;                          // 2: index for effectChains
+        countFirstNode[INDEX_EFFECTCHAINE]++;
     } else {
         AUDIO_ERR_LOG("missing information: effectChains have no child effectChain");
-        countFirstNode[2]++;                          // 2: index for effectChains
+        countFirstNode[INDEX_EFFECTCHAINE]++;
     }
 }
 
@@ -392,19 +399,19 @@ static void LoadPreProcess(OriginalEffectConfig &result, xmlNode* secondNode)
 }
 
 static void LoadEffectConfigPreProcess(OriginalEffectConfig &result, const xmlNode* currNode,
-                                       int32_t (&countFirstNode)[6]) // 6: size
+                                       int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[3] >= COUNT_FIRST_NODE_UPPER_LIMIT) {     // 3: index for preprocess
-        if (countFirstNode[3] == COUNT_FIRST_NODE_UPPER_LIMIT) { // 3: index for preprocess
-            countFirstNode[3]++;                      // 3: index for preprocess
+    if (countFirstNode[INDEX_PREPROCESS] >= COUNT_FIRST_NODE_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_PREPROCESS] == COUNT_FIRST_NODE_UPPER_LIMIT) {
+            countFirstNode[INDEX_PREPROCESS]++;
             AUDIO_ERR_LOG("the number of preprocess nodes exceeds limit: %{public}d", COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
         LoadPreProcess(result, currNode->xmlChildrenNode);
-        countFirstNode[3]++;                          // 3: index for preprocess
+        countFirstNode[INDEX_PREPROCESS]++;
     } else {
         AUDIO_ERR_LOG("missing information: preprocess has no child stream");
-        countFirstNode[3]++;                          // 3: index for preprocess
+        countFirstNode[INDEX_PREPROCESS]++;
     }
 }
 
@@ -535,39 +542,39 @@ static void LoadPostProcess(OriginalEffectConfig &result, xmlNode* secondNode)
 }
 
 static void LoadEffectConfigPostProcess(OriginalEffectConfig &result, const xmlNode* currNode,
-                                        int32_t (&countFirstNode)[6]) // 6: size
+                                        int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[4] >= COUNT_FIRST_NODE_UPPER_LIMIT) {     // 4: index for postprocess
-        if (countFirstNode[4] == COUNT_FIRST_NODE_UPPER_LIMIT) { // 4: index for postprocess
-            countFirstNode[4]++;                      // 4: index for postprocess
+    if (countFirstNode[INDEX_POSTPROCESS] >= COUNT_FIRST_NODE_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_POSTPROCESS] == COUNT_FIRST_NODE_UPPER_LIMIT) {
+            countFirstNode[INDEX_POSTPROCESS]++;
             AUDIO_ERR_LOG("the number of postprocess nodes exceeds limit: %{public}d", COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
         LoadPostProcess(result, currNode->xmlChildrenNode);
-        countFirstNode[4]++;                          // 4: index for postprocess
+        countFirstNode[INDEX_POSTPROCESS]++;
     } else {
         AUDIO_ERR_LOG("missing information: postprocess has no child stream");
-        countFirstNode[4]++;                          // 4: index for postprocess
+        countFirstNode[INDEX_POSTPROCESS]++;
     }
 }
 
 static void LoadEffectConfigException(OriginalEffectConfig &result, const xmlNode* currNode,
-                                      int32_t (&countFirstNode)[6]) // 6: size
+                                      int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[5] >= COUNT_UPPER_LIMIT) {     // 5: index for exception
-        if (countFirstNode[5] == COUNT_UPPER_LIMIT) { // 5: index for exception
-            countFirstNode[5]++;                      // 5: index for exception
+    if (countFirstNode[INDEX_EXCEPTION] >= COUNT_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_EXCEPTION] == COUNT_UPPER_LIMIT) {
+            countFirstNode[INDEX_EXCEPTION]++;
             AUDIO_ERR_LOG("the number of nodes with wrong name exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
         }
     } else {
         AUDIO_ERR_LOG("wrong name: %{public}s", currNode->name);
-        countFirstNode[5]++;                          // 5: index for exception
+        countFirstNode[INDEX_EXCEPTION]++;
     }
 }
 
 int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
 {
-    int32_t countFirstNode[6] = {0}; // 6 size
+    int32_t countFirstNode[NODE_SIZE] = {0};
     int32_t i = 0;
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
@@ -609,7 +616,8 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
 
         currNode = currNode->next;
     }
-    for (i = 0; i < 5; i++) { // 5: the number of modules
+
+    for (i = 0; i < 5; i++) {  // 5: the number of modules
         if (countFirstNode[i] == 0) {
             AUDIO_ERR_LOG("missing information: %{public}s", EFFECT_CONFIG_NAME[i].c_str());
         }
@@ -619,8 +627,8 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
     xmlFreeDoc(doc);
     xmlCleanupParser();
     }
+    
     return 0;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

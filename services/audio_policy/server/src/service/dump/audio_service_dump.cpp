@@ -597,7 +597,7 @@ void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
     }
 
     // xml -- effectChain
-    for (effectChain x : audioData_.policyData.oriEffectConfig.effectChains) {
+    for (EffectChain x : audioData_.policyData.oriEffectConfig.effectChains) {
         AppendFormat(dumpString, "effectChain name = %s \n", x.name.c_str());
         count = 0;
         for (string effectUnit : x.apply) {

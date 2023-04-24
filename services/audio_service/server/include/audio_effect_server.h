@@ -31,9 +31,9 @@
 namespace OHOS {
 namespace AudioStandard {
 
-typedef struct effectInterfaceS **effectHandleT;
+typedef struct EffectInterfaceS **EffectHandleT;
 
-typedef struct audioBufferS {
+typedef struct AudioBufferS {
     size_t frameCount;        // number of frames in buffer
     union {
         void *raw;        // raw pointer to start of buffer
@@ -42,10 +42,10 @@ typedef struct audioBufferS {
         int16_t *s16;        // pointer to signed 16 bit data at start of buffer
         uint8_t *u8;         // pointer to unsigned 8 bit data at start of buffer
     };
-} audioBufferT;
+} AudioBufferT;
 
 // for initial version
-typedef struct effectDescriptorS {
+typedef struct EffectDescriptorS {
     std::string type;
     std::string id;
     uint32_t apiVersion;
@@ -54,26 +54,17 @@ typedef struct effectDescriptorS {
     uint16_t memoryUsage;
     char name[EFFECT_STRING_LEN_MAX];
     char implementor[EFFECT_STRING_LEN_MAX];
-} effectDescriptorT;
+} EffectDescriptorT;
 
-struct effectInterfaceS {
-    int32_t (*process)(effectHandleT self,
-                        audioBufferT *inBuffer,
-                        audioBufferT *outBuffer);
+struct EffectInterfaceS {
+    int32_t (*Process)(EffectHandleT self, AudioBufferT *inBuffer, AudioBufferT *outBuffer);
 
-    int32_t (*command)(effectHandleT self,
-                        uint32_t cmdCode,
-                        uint32_t cmdSize,
-                        void *pCmdData,
-                        uint32_t *replySize,
-                        void *pReplyData);
+    int32_t (*Command)(EffectHandleT self, uint32_t cmdCode, uint32_t cmdSize, void *pCmdData, uint32_t *replySize,
+        void *pReplyData);
 
-    int32_t (*get_descriptor)(effectHandleT self,
-                                effectDescriptorT *pDescriptor);
+    int32_t (*GetDescriptor)(EffectHandleT self, EffectDescriptorT *pDescriptor);
 
-    int32_t (*process_reverse)(effectHandleT self,
-                                audioBufferT *inBuffer,
-                                audioBufferT *outBuffer);
+    int32_t (*ProcessReverse)(EffectHandleT self, AudioBufferT *inBuffer, AudioBufferT *outBuffer);
 };
 
 // for initial version
@@ -83,28 +74,25 @@ typedef struct audioEffectLibraryS {
     const char *name;
     const char *implementor;
 
-    int32_t (*create_effect)(const std::string *id, int32_t sessionId, int32_t ioId, effectHandleT *pHandle);
+    int32_t (*CreateEffect)(const std::string *id, int32_t sessionId, int32_t ioId, EffectHandleT *pHandle);
 
-    int32_t (*release_effect)(effectHandleT handle);
+    int32_t (*ReleaseEffect)(EffectHandleT handle);
 
-    int32_t (*get_descriptor)(const std::string *id, effectDescriptorT *pDescriptor);
-
-    int32_t (*create_effect_3_1)(const std::string *id, int32_t sessionId, int32_t ioId, int32_t deviceId,
-                                 effectHandleT *pHandle);
+    int32_t (*GetDescriptor)(const std::string *id, EffectDescriptorT *pDescriptor);
 } audioEffectLibraryT;
 
-typedef struct listNodeS {
+typedef struct ListNodeS {
     void *object;
-    struct listNodeS *next;
-} listNodeT;
+    struct ListNodeS *next;
+} ListNodeT;
 
-typedef struct libEntryS {
+typedef struct LibEntryS {
     audioEffectLibraryT *desc;
     std::string name;
     std::string path;
     void *handle;
-    std::vector<std::unique_ptr<effectDescriptorT>> effects;
-} libEntryT;
+    std::vector<std::unique_ptr<EffectDescriptorT>> effects;
+} LibEntryT;
 
 class AudioEffectServer {
 public:
@@ -114,12 +102,12 @@ public:
     bool LoadAudioEffects(const std::vector<Library> libraries, const std::vector<Effect> effects,
                           std::vector<Effect>& successEffectList);
 
-    std::vector<std::unique_ptr<libEntryT>>& GetAvailableEffects();
+    std::vector<std::unique_ptr<LibEntryT>>& GetAvailableEffects();
                                 
 private:
-    std::vector<std::unique_ptr<libEntryT>> effectLibraryList;
-    std::vector<std::unique_ptr<libEntryT>> effectLibraryFailedList;
-    std::vector<std::unique_ptr<effectDescriptorT>> effectSkippedEffects;
+    std::vector<std::unique_ptr<LibEntryT>> effectLibraryList;
+    std::vector<std::unique_ptr<LibEntryT>> effectLibraryFailedList;
+    std::vector<std::unique_ptr<EffectDescriptorT>> effectSkippedEffects;
 };
 
 } // namespce AudioStandard

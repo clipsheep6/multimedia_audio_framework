@@ -39,17 +39,17 @@ void AudioEffectManager::EffectManagerInit()
     }
 }
 
-void AudioEffectManager::GetAvailableEffects(std::vector<Effect>& availableEffects)
+void AudioEffectManager::GetAvailableEffects(std::vector<Effect> &availableEffects)
 {
     availableEffects = availableEffects_;
 }
 
-void AudioEffectManager::GetOriginalEffectConfig(OriginalEffectConfig& oriEffectConfig)
+void AudioEffectManager::GetOriginalEffectConfig(OriginalEffectConfig &oriEffectConfig)
 {
     oriEffectConfig = oriEffectConfig_;
 }
 
-void AudioEffectManager::UpdateAvailableEffects(std::vector<Effect>& newAvailableEffects)
+void AudioEffectManager::UpdateAvailableEffects(std::vector<Effect> &newAvailableEffects)
 {
     availableEffects_ = newAvailableEffects;
 }

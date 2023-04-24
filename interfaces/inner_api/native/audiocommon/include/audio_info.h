@@ -961,48 +961,49 @@ enum StateChangeCmdType {
 // audio effect manager info
 constexpr int32_t COUNT_UPPER_LIMIT = 20;
 constexpr int32_t COUNT_FIRST_NODE_UPPER_LIMIT = 1;
-typedef struct {
+
+struct Library {
     std::string name;
     std::string path;
-}Library;
+};
 
-typedef struct {
+struct Effect {
     std::string name;
     std::string libraryName;
     std::string effectId;
-}Effect;
+};
 
-typedef struct {
+struct EffectChain {
     std::string name;
     std::vector<std::string> apply;
-}effectChain;
+};
 
-typedef struct {
+struct Device {
     std::string type;
     std::string address;
     std::string chain;
-}Device;
+};
 
-typedef struct {
+struct Preprocess {
     std::string stream;
     std::vector<std::string> mode;
     std::vector<std::vector<Device>> device;
-}Preprocess;
+};
 
-typedef struct {
+struct Postprocess {
     std::string stream;
     std::vector<std::string> mode;
     std::vector<std::vector<Device>> device;
-}Postprocess;
+};
 
-typedef struct {
+struct OriginalEffectConfig{
     float version;
     std::vector<Library> libraries;
     std::vector<Effect> effects;
-    std::vector<effectChain> effectChains;
+    std::vector<EffectChain> effectChains;
     std::vector<Preprocess> preprocess;
     std::vector<Postprocess> postprocess;
-}OriginalEffectConfig;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H
