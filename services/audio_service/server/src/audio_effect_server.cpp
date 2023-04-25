@@ -71,7 +71,7 @@ static bool LoadLibrary(const std::string relativePath, std::unique_ptr<LibEntry
         AUDIO_INFO_LOG("<log info> dlopen lib successful");
     }
 
-    audioEffectLibraryT *description = static_cast<audioEffectLibraryT *>(dlsym(handle,
+    AudioEffectLibraryT *description = static_cast<AudioEffectLibraryT *>(dlsym(handle,
         AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
     const char* error = dlerror();
     if (!error) {

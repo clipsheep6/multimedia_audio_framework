@@ -68,7 +68,7 @@ struct EffectInterfaceS {
 };
 
 // for initial version
-typedef struct audioEffectLibraryS {
+typedef struct AudioEffectLibraryS {
     uint32_t tag;
     uint32_t version;
     const char *name;
@@ -79,7 +79,7 @@ typedef struct audioEffectLibraryS {
     int32_t (*ReleaseEffect)(EffectHandleT handle);
 
     int32_t (*GetDescriptor)(const std::string *id, EffectDescriptorT *pDescriptor);
-} audioEffectLibraryT;
+} AudioEffectLibraryT;
 
 typedef struct ListNodeS {
     void *object;
@@ -87,7 +87,7 @@ typedef struct ListNodeS {
 } ListNodeT;
 
 typedef struct LibEntryS {
-    audioEffectLibraryT *desc;
+    AudioEffectLibraryT *desc;
     std::string name;
     std::string path;
     void *handle;
