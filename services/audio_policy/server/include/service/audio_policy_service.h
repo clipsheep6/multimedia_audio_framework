@@ -312,6 +312,10 @@ private:
 
     void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
 
+    void SetDeviceChangeDesc(std::vector<sptr<AudioDeviceDescriptor>>& connectedDevices_,
+        std::vector<sptr<AudioDeviceDescriptor>>& deviceChangeDescriptor, bool isConnected,
+        DeviceType devType, std::string networkId);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

@@ -1283,8 +1283,8 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
             }
         }
 
-        desc.push_back(audioDescriptor);
         if (isConnected) {
+            desc.push_back(audioDescriptor);
             audioDescriptor->deviceId_ = startDeviceId++;
             UpdateDisplayName(audioDescriptor);
             connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
@@ -1305,8 +1305,9 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
                 audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
             }
         }
-        desc.push_back(audioDescriptor);
+
         if (isConnected) {
+            desc.push_back(audioDescriptor);
             audioDescriptor->deviceId_ = startDeviceId++;
             UpdateDisplayName(audioDescriptor);
             connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
@@ -1315,8 +1316,9 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
         AUDIO_INFO_LOG("Filling non-io device list for %{public}d", deviceDescriptor.deviceType_);
         audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
         audioDescriptor->deviceRole_ = GetDeviceRole(deviceDescriptor.deviceType_);
-        desc.push_back(audioDescriptor);
+
         if (isConnected) {
+            desc.push_back(audioDescriptor);
             audioDescriptor->deviceId_ = startDeviceId++;
             UpdateDisplayName(audioDescriptor);
             connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
@@ -1340,6 +1342,29 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isCon
     OnDeviceStatusUpdated(devType, isConnected, "", "", streamInfo);
 }
 
+void AudioPolicyService::SetDeviceChangeDesc(std::vector<sptr<AudioDeviceDescriptor>>& connectedDevices_,
+    std::vector<sptr<AudioDeviceDescriptor>>& deviceChangeDescriptor, bool isConnected,
+    DeviceType devType, std::string networkId)
+{
+    auto isPresent = [&devType, &networkId](const sptr<AudioDeviceDescriptor>& descriptor) {
+        return descriptor->deviceType_ == devType && descriptor->networkId_ == networkId;
+    };
+
+    // If the device is disconnected, remember the disconnected device descriptor
+    if (!isConnected) {
+        for (auto it = connectedDevices_.begin(); it != connectedDevices_.end();) {
+            it = find_if(it, connectedDevices_.end(), isPresent);
+            if (it != connectedDevices_.end()) {
+                deviceChangeDescriptor.push_back(*it);
+                it++;
+            }
+        }
+    }
+    // If device already in list, remove it else do not modify the list
+    connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
+                            connectedDevices_.end());
+}
+
 void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const AudioStreamInfo& streamInfo)
 {
@@ -1357,13 +1382,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
     // fill device change action for callback
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
-    auto isPresent = [&devType] (const sptr<AudioDeviceDescriptor> &descriptor) {
-        return descriptor->deviceType_ == devType;
-    };
-
-    // If device already in list, remove it else do not modify the list
-    connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
-                            connectedDevices_.end());
+    SetDeviceChangeDesc(connectedDevices_, deviceChangeDescriptor, isConnected, devType, LOCAL_NETWORK_ID);
 
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         if (isConnected) {
@@ -1560,13 +1579,8 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
             return;
         }
     }
-
-    auto isPresent = [&devType, &networkId](const sptr<AudioDeviceDescriptor>& descriptor) {
-        return descriptor->deviceType_ == devType && descriptor->networkId_ == networkId;
-    };
-    // If device already in list, remove it else do not modify the list
-    connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
-                            connectedDevices_.end());
+    SetDeviceChangeDesc(connectedDevices_, deviceChangeDescriptor, statusInfo.isConnected,
+        devType, networkId);
     // new device found. If connected, add into active device list
     if (statusInfo.isConnected) {
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
