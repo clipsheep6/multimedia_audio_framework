@@ -1391,18 +1391,23 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     } else {
         UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, isConnected);
 
-        auto priorityDev = FetchHighPriorityDevice();
-        AUDIO_INFO_LOG("Priority device is [%{public}d]", priorityDev);
+        if (currentActiveDevice_ == devType) {
+            auto priorityDev = FetchHighPriorityDevice();
+            AUDIO_INFO_LOG("CurrentActiveDevice disconnected. Priority device is [%{public}d]", priorityDev);
 
-        if (priorityDev == DEVICE_TYPE_SPEAKER) {
-            result = ActivateNewDevice(DEVICE_TYPE_SPEAKER);
-            CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device [%{public}d]", result);
+            if (priorityDev == DEVICE_TYPE_SPEAKER) {
+                result = ActivateNewDevice(DEVICE_TYPE_SPEAKER);
+                CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device [%{public}d]", result);
 
-            result = ActivateNewDevice(DEVICE_TYPE_MIC);
-            CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device [%{public}d]", result);
+                result = ActivateNewDevice(DEVICE_TYPE_MIC);
+                CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device [%{public}d]", result);
+            } else {
+                result = ActivateNewDevice(priorityDev);
+                CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device [%{public}d]", result);
+            }
+            currentActiveDevice_ = priorityDev;
         } else {
-            result = ActivateNewDevice(priorityDev);
-            CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device [%{public}d]", result);
+            AUDIO_INFO_LOG("CurrentActiveDevice [%{public}d], no need to update", currentActiveDevice_);
         }
 
         if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -1411,8 +1416,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
                 IOHandles_.erase(BLUETOOTH_SPEAKER);
             }
         }
-
-        currentActiveDevice_ = priorityDev;
     }
 
     OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
