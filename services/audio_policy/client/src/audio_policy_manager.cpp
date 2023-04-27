@@ -358,6 +358,7 @@ int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clie
     return gsp->UnregisterFocusInfoChangeCallback(clientId);
 }
 
+#ifdef FEATURE_DTMF_TONE
 std::vector<int32_t> AudioPolicyManager::GetSupportedTones()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -380,6 +381,7 @@ std::shared_ptr<ToneInfo> AudioPolicyManager::GetToneConfig(int32_t ltonetype)
     }
     return gsp->GetToneConfig(ltonetype);
 }
+#endif
 
 int32_t AudioPolicyManager::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {

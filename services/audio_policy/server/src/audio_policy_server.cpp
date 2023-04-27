@@ -526,6 +526,7 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
     return ret;
 }
 
+#ifdef FEATURE_DTMF_TONE
 std::shared_ptr<ToneInfo> AudioPolicyServer::GetToneConfig(int32_t ltonetype)
 {
     return mPolicyService.GetToneConfig(ltonetype);
@@ -535,6 +536,7 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
 {
     return mPolicyService.GetSupportedTones();
 }
+#endif
 
 int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_v)
 {
