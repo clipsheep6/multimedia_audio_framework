@@ -631,6 +631,7 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
                 return jsThis;
             }
         }
+        managerNapi.reset();
     }
     HiLog::Error(LABEL, "Failed in AudioManagerNapi::Construct()!");
 
