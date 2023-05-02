@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 opensles_dir = "//third_party/openSLES"
@@ -41,7 +40,6 @@ config("audio_config") {
     "-Werror",
   ]
 }
-
 
 opensles_version = "1.0.1"
 
@@ -178,4 +176,3 @@ ohos_executable("audio_opensles_recorder_test") {
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
-
