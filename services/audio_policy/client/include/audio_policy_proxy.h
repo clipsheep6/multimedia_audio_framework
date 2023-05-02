@@ -67,10 +67,11 @@ public:
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
 
     int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v) override;
-
+#ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones() override;
 
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) override;
+#endif
 
     AudioRingerMode GetRingerMode() override;
 
