@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 opensles_dir = "//third_party/openSLES"
