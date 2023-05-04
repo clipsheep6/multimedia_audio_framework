@@ -367,7 +367,6 @@ int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clie
     return gsp->UnregisterFocusInfoChangeCallback(clientId);
 }
 
-#ifdef FEATURE_DTMF_TONE
 std::vector<int32_t> AudioPolicyManager::GetSupportedTones()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -390,7 +389,6 @@ std::shared_ptr<ToneInfo> AudioPolicyManager::GetToneConfig(int32_t ltonetype)
     }
     return gsp->GetToneConfig(ltonetype);
 }
-#endif
 
 int32_t AudioPolicyManager::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
@@ -1070,6 +1068,17 @@ int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clie
         rendererCBMap_.erase(getpid());
     }
     return SUCCESS;
+}
+
+int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("QueryEffectSceneMode: audio policy manager proxy is NULL.");
+        return -1;
+    }
+    int error = gsp->QueryEffectSceneMode(supportedEffectConfig); // audio_policy_proxy
+    return error;
 }
 } // namespace AudioStandard
 } // namespace OHOS

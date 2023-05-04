@@ -165,6 +165,16 @@ public:
      * @since 9
      */
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
+
+    /**
+     * @brief Get Audio Effect Infos.
+     *
+     * @param AudioSceneEffectInfo  AudioSceneEffectInfo
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
+    int32_t GetEffectInfoArray(std::vector<std::unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfos);
 };
 } // namespace AudioStandard
 } // namespace OHOS

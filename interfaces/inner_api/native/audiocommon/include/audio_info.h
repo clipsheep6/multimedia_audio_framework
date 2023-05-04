@@ -45,7 +45,6 @@ const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCES
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 
-#ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
 constexpr uint32_t TONEINFO_MAX_WAVES = 3;
 
@@ -68,7 +67,6 @@ public:
     uint32_t repeatSegment;
     ToneInfo() {}
 };
-#endif
 
 enum DeviceFlag {
     /**
@@ -520,6 +518,26 @@ enum AudioFocuState {
     STOP
 };
 
+/**
+* Enumerates the audio scene effect type.
+*/
+enum StreamType {
+    SCENE_OTHERS = 0,
+    SCENE_MUSIC = 1,
+    SCENE_MOVIE = 2,
+    SCENE_GAME = 3,
+    SCENE_SPEECH = 4,
+    SCENE_RING = 5
+};
+
+/**
+* Enumerates the audio scene effct mode.
+*/
+enum EffectMode {
+    EFFECT_NONE = 0,
+    PLAYBACK_DEFAULT = 1
+};
+
 struct InterruptEvent {
     /**
      * Interrupt event type, begin or end
@@ -888,6 +906,11 @@ struct StreamSetStateEventInternal {
     AudioStreamType audioStreamType;
 };
 
+struct AudioSceneEffectInfo {
+    StreamType scene;
+    std::vector<EffectMode> mode;
+};
+
 struct AudioRendererChangeInfo {
     int32_t clientUID;
     int32_t sessionId;
@@ -1012,6 +1035,26 @@ struct OriginalEffectConfig {
     std::vector<Preprocess> preprocess;
     std::vector<Postprocess> postprocess;
 };
+
+typedef struct{
+    std::string mode;
+    std::vector<Device> devicePort;
+}StreamAE_mode;
+
+typedef struct{
+    std::string scene;
+    std::vector<StreamAE_mode> streamAE_mode;
+}Stream;
+
+typedef struct{
+    std::vector<Stream> stream;
+}ProcessNew;
+
+typedef struct {
+    std::vector<EffectChain> effectChains;
+    ProcessNew preProcessNew;
+    ProcessNew postProcessNew;
+}SupportedEffectConfig;
 
 class AudioRendererPolicyServiceDiedCallback {
 public:

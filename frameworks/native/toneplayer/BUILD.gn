@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 
@@ -40,69 +39,53 @@ config("audio_toneplayer_config") {
   ]
 }
 
-if (!audio_framework_feature_dtmf_tone) {
-  group("audio_toneplayer") {
-    deps = []
+ohos_shared_library("audio_toneplayer") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
   }
-} else {
-  ohos_shared_library("audio_toneplayer") {
-    sanitize = {
-      cfi = true
-      debug = false
-      blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
-    }
-    install_enable = true
+  install_enable = true
 
-    configs = [ ":audio_toneplayer_config" ]
+  configs = [ ":audio_toneplayer_config" ]
 
-    sources = [ "src/toneplayer.cpp" ]
+  sources = [ "src/toneplayer.cpp" ]
 
-    defines = [ "FEATURE_DTMF_TONE" ]
+  deps = [
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
+    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+  ]
 
-    deps = [
-      "${audio_fwk_path}/frameworks/native/audiorenderer:audio_renderer",
-      "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
-      "${audio_fwk_path}/services/audio_policy:audio_policy_client",
-      "${audio_fwk_path}/services/audio_service:audio_client",
-    ]
+  public_configs = [ ":audio_external_library_config" ]
 
-    public_configs = [ ":audio_external_library_config" ]
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_single",
+  ]
 
-    external_deps = [
-      "c_utils:utils",
-      "hiviewdfx_hilog_native:libhilog",
-      "ipc:ipc_single",
-    ]
+  version_script = "../../../audio_framework.versionscript"
+  innerapi_tags = [ "platformsdk" ]
 
-    version_script = "../../../audio_framework.versionscript"
-    innerapi_tags = [ "platformsdk" ]
-
-    part_name = "audio_framework"
-    subsystem_name = "multimedia"
-  }
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
 }
 
-if (!audio_framework_feature_dtmf_tone) {
-  group("audio_toneplayer_test") {
-    deps = []
-  }
-} else {
-  ohos_executable("audio_toneplayer_test") {
-    install_enable = false
+ohos_executable("audio_toneplayer_test") {
+  install_enable = false
 
-    sources = [ "test/example/audio_toneplayer_test.cpp" ]
+  sources = [ "test/example/audio_toneplayer_test.cpp" ]
 
-    configs = [ ":audio_toneplayer_config" ]
+  configs = [ ":audio_toneplayer_config" ]
 
-    defines = [ "FEATURE_DTMF_TONE" ]
+  deps = [ ":audio_toneplayer" ]
 
-    deps = [ ":audio_toneplayer" ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-
-    part_name = "audio_framework"
-    subsystem_name = "multimedia"
-  }
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
 }
 
 config("audio_external_library_config") {
