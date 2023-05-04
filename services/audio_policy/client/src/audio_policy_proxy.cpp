@@ -524,6 +524,13 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferOutputDevice
     }
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     audioRendererFilter->uid = -1;
+    audioRendererFilter->rendererInfo.contentType = rendererInfo.contentType;
+    audioRendererFilter->rendererInfo.streamUsage = rendererInfo.streamUsage;
+    audioRendererFilter->rendererInfo.rendererFlags = rendererInfo.rendererFlags;
+    if (!audioRendererFilter->Marshalling(data)) {
+        AUDIO_ERR_LOG("AudioRendererFilter Marshalling() failed");
+        return deviceInfo;
+    }
     int32_t error = Remote()->SendRequest(GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("Get out devices failed, error: %d", error);
@@ -833,7 +840,7 @@ int32_t AudioPolicyProxy::UnsetDeviceChangeCallback(const int32_t clientId)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clientId, AudioRendererInfo &rendererInfo,
     const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
@@ -850,6 +857,15 @@ int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clie
     }
 
     data.WriteInt32(clientId);
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = -1;
+    audioRendererFilter->rendererInfo.contentType = rendererInfo.contentType;
+    audioRendererFilter->rendererInfo.streamUsage = rendererInfo.streamUsage;
+    audioRendererFilter->rendererInfo.rendererFlags = rendererInfo.rendererFlags;
+    if (!audioRendererFilter->Marshalling(data)) {
+        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback: AudioRendererFilter Marshalling() failed");
+        return -1;
+    }
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {

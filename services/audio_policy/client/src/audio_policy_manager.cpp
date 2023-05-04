@@ -517,7 +517,7 @@ int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId)
 }
 
 int32_t AudioPolicyManager::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
-    const std::shared_ptr<AudioPreferOutputDeviceChangeCallback> &callback)
+    AudioRendererInfo &rendererInfo, const std::shared_ptr<AudioPreferOutputDeviceChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -545,7 +545,7 @@ int32_t AudioPolicyManager::SetPreferOutputDeviceChangeCallback(const int32_t cl
         return ERROR;
     }
 
-    return gsp->SetPreferOutputDeviceChangeCallback(clientId, object);
+    return gsp->SetPreferOutputDeviceChangeCallback(clientId, rendererInfo, object);
 }
 
 int32_t AudioPolicyManager::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
