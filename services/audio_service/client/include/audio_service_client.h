@@ -486,10 +486,10 @@ public:
      *
      * @return  Returns current audio effect mode.
      */
-    AudioRenderMode GetAudioRenderEffectMode();
+    AudioEffectMode GetAudioRenderEffectMode();
 
     /**
-     * @brief Sets the audio effect mode. By default the mode is EFFECT_NONE.
+     * @brief Sets the audio effect mode. By default the mode is EFFECT_DEFAULT.
      *
      * * @param effectMode The mode of audio effect.
      * @return  Returns {@link SUCCESS} if audio effect mode is successfully set; returns an error code
