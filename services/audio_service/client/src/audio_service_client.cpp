@@ -294,7 +294,12 @@ AudioRenderMode AudioServiceClient::GetAudioRenderMode()
     return renderMode_;
 }
 
-int32_t AudioServiceClient::SetAudioRenderEffectMode(AudioRenderMode effectMode)
+AudioEffectMode AudioServiceClient::GetAudioRenderEffectMode()
+{
+    return effectMode_;
+}
+
+int32_t AudioServiceClient::SetAudioRenderEffectMode(AudioEffectMode effectMode)
 {
     AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioRenderEffectMode begin");
     effectMode_ = effectMode;
@@ -321,11 +326,6 @@ int32_t AudioServiceClient::SetAudioRenderEffectMode(AudioRenderMode effectMode)
     AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioRenderEffectMode end");
 
     return AUDIO_CLIENT_SUCCESS;
-}
-
-AudioEffectMode AudioServiceClient::GetAudioRenderEffectMode()
-{
-    return effectMode_;
 }
 
 int32_t AudioServiceClient::SetAudioCaptureMode(AudioCaptureMode captureMode)

@@ -970,6 +970,11 @@ void AudioStream::SubmitAllFreeBuffers()
     }
 }
 
+AudioEffectMode AudioStream::GetAudioEffectMode()
+{
+    return GetAudioRenderEffectMode();
+}
+
 int32_t AudioStream::SetAudioEffectMode(AudioEffectMode effectMode)
 {
     int32_t ret = SetAudioRenderEffectMode(effectMode);
@@ -1000,11 +1005,6 @@ int32_t AudioStream::SetAudioEffectMode(AudioEffectMode effectMode)
     }
 
     return SUCCESS;
-}
-
-AudioEffectMode AudioStream::GetAudioEffectMode()
-{
-    return GetAudioRenderEffectMode();
 }
 } // namespace AudioStandard
 } // namespace OHOS

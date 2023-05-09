@@ -941,14 +941,14 @@ void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
     }
 }
 
-int32_t AudioRendererPrivate::SetAudioEffectMode(AudioEffectMode effectMode) const
-{
-    return audioStream_->SetAudioEffectMode(effectMode);
-}
-
 AudioEffectMode AudioRendererPrivate::GetAudioEffectMode() const
 {
     return audioStream_->GetAudioEffectMode();
+}
+
+int32_t AudioRendererPrivate::SetAudioEffectMode(AudioEffectMode effectMode) const
+{
+    return audioStream_->SetAudioEffectMode(effectMode);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
