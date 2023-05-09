@@ -537,7 +537,8 @@ enum StreamType {
 */
 enum EffectMode {
     EFFECT_NONE = 0,
-    PLAYBACK_DEFAULT = 1
+    EFFECT_DEFAULT = 1,
+    EFFECT_TEST = 2
 };
 
 struct InterruptEvent {

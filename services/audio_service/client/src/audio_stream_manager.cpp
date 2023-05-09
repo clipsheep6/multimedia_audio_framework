@@ -111,8 +111,8 @@ int32_t AudioStreamManager::GetEffectInfoArray(vector<unique_ptr<AudioSceneEffec
                 for (j = 0; j < supportedEffectConfig.preProcessNew.stream[i].streamAE_mode.size(); j++) {
                     if (supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode == "EFFECT_NONE") {
                         tmp.mode.push_back(EFFECT_NONE);
-                    } else if (supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode == "PLAYBACK_DEFAULT") {
-                        tmp.mode.push_back(PLAYBACK_DEFAULT);
+                    } else if (supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode == "EFFECT_DEFAULT") {
+                        tmp.mode.push_back(EFFECT_DEFAULT);
                     } else {
                         AUDIO_INFO_LOG("[supportedEffectConfig LOG10]:mode-> The %{public}s mode of %{public}s scene is unsupported, and this mode is setted to EFFECT_NONE!", supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode.c_str(), supportedEffectConfig.preProcessNew.stream[i].scene.c_str());
                         tmp.mode.push_back(EFFECT_NONE);
