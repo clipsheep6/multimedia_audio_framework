@@ -940,5 +940,15 @@ void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
         cb->OnStateChange(deviceInfo);
     }
 }
+
+int32_t AudioRendererPrivate::SetAudioEffectMode(AudioEffectMode effectMode) const
+{
+    return audioStream_->SetAudioEffectMode(effectMode);
+}
+
+AudioEffectMode AudioRendererPrivate::GetAudioEffectMode() const
+{
+    return audioStream_->GetAudioEffectMode();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

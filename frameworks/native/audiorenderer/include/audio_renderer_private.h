@@ -85,6 +85,8 @@ public:
         const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback) override;
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid) override;
     void DestroyAudioRendererStateCallback() override;
+    int32_t SetAudioEffectMode(AudioEffectMode effectMode) const override;
+    AudioEffectMode GetAudioEffectMode() const override;
 
     AudioRendererInfo rendererInfo_ = {};
 

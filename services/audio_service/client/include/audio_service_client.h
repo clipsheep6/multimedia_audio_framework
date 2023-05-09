@@ -475,6 +475,22 @@ public:
     int32_t SetAudioRenderMode(AudioRenderMode renderMode);
 
     /**
+     * @brief Gets the audio effect mode.
+     *
+     * @return  Returns current audio effect mode.
+     */
+    AudioRenderMode GetAudioEffectMode();
+
+    /**
+     * @brief Sets the audio effect mode. By default the mode is EFFECT_NONE.
+     *
+     * * @param effectMode The mode of audio effect.
+     * @return  Returns {@link SUCCESS} if audio effect mode is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAudioEffectMode(AudioEffectMode effectMode);
+
+    /**
      * @brief Obtains the render mode.
      *
      * @return  Returns current render mode.

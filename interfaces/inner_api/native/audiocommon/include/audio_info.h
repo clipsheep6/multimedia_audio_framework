@@ -1023,6 +1023,11 @@ public:
      */
     virtual void OnAudioPolicyServiceDied() = 0;
 };
+
+enum AudioEffectMode {
+    EFFECT_NONE = 0,
+    EFFECT_DEFAULT = 1,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H
