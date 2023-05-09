@@ -295,6 +295,7 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
     }
 
     switch (deviceType) {
+        case InternalDeviceType::DEVICE_TYPE_EARPIECE:
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
@@ -642,6 +643,7 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
     AppId appId;
     appId.appId = "audio_policy_manager";
 
+    options.securityLevel = S1;
     options.createIfMissing = true;
     options.encrypt = false;
     options.autoSync = false;

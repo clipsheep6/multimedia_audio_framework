@@ -80,49 +80,5 @@ bool AudioStreamManager::IsAudioRendererLowLatencySupported(const AudioStreamInf
     AUDIO_DEBUG_LOG("IsAudioRendererLowLatencySupported");
     return AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
 }
-
-int32_t AudioStreamManager::GetEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo)
-{
-    int i, j, isSupported;
-    SupportedEffectConfig supportedEffectConfig; // 创建一个 supportedEffectConfig ， 将把信息存在 supportedEffectConfig
-    int ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig); // audio_policy_manager.cpp
-    int streamNum = supportedEffectConfig.preProcessNew.stream.size();
-    if (streamNum > 0) {
-        for (i = 0; i < streamNum; i++) {
-            isSupported = 1;
-            AudioSceneEffectInfo tmp;
-            if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_MUSIC") {
-                tmp.scene = SCENE_MUSIC;
-            } else if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_MOVIE") {
-                tmp.scene = SCENE_MOVIE;
-            } else if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_GAME") {
-                tmp.scene = SCENE_GAME;
-            } else if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_SPEECH") {
-                tmp.scene = SCENE_SPEECH;
-            } else if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_RING") {
-                tmp.scene = SCENE_RING;
-            } else if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_OTHERS") {
-                tmp.scene = SCENE_OTHERS;
-            } else {
-                AUDIO_INFO_LOG("[supportedEffectConfig LOG9]:stream-> The scene of %{public}s is unsupported, and this scene is deleted!", supportedEffectConfig.preProcessNew.stream[i].scene.c_str());
-                isSupported = -1;
-            }
-            if (isSupported == 1) {
-                for (j = 0; j < supportedEffectConfig.preProcessNew.stream[i].streamAE_mode.size(); j++) {
-                    if (supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode == "EFFECT_NONE") {
-                        tmp.mode.push_back(EFFECT_NONE);
-                    } else if (supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode == "PLAYBACK_DEFAULT") {
-                        tmp.mode.push_back(PLAYBACK_DEFAULT);
-                    } else {
-                        AUDIO_INFO_LOG("[supportedEffectConfig LOG10]:mode-> The %{public}s mode of %{public}s scene is unsupported, and this mode is setted to EFFECT_NONE!", supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode.c_str(), supportedEffectConfig.preProcessNew.stream[i].scene.c_str());
-                        tmp.mode.push_back(EFFECT_NONE);
-                    }
-                }
-                audioSceneEffectInfo.push_back(make_unique<AudioSceneEffectInfo>(tmp));
-            }
-        }
-    }
-    return ret;
-}
 } // namespace AudioStandard
 } // namespace OHOS

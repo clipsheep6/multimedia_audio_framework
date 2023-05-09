@@ -531,6 +531,7 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
     return ret;
 }
 
+#ifdef FEATURE_DTMF_TONE
 std::shared_ptr<ToneInfo> AudioPolicyServer::GetToneConfig(int32_t ltonetype)
 {
     return mPolicyService.GetToneConfig(ltonetype);
@@ -540,9 +541,11 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
 {
     return mPolicyService.GetSupportedTones();
 }
+#endif
 
 int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_v)
 {
+    std::lock_guard<std::mutex> lock(micStateChangeMutex_);
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     bool isMicrophoneMute = IsMicrophoneMute(api_v);
     int32_t ret = mPolicyService.SetMicrophoneMute(isMute);
@@ -1971,12 +1974,6 @@ float AudioPolicyServer::GetMinStreamVolume()
 float AudioPolicyServer::GetMaxStreamVolume()
 {
     return mPolicyService.GetMaxStreamVolume();
-}
-
-int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
-{
-    int32_t ret = mPolicyService.QueryEffectManagerSceneMode(supportedEffectConfig);
-    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

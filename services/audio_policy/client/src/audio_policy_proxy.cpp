@@ -169,6 +169,7 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode, API_VERSION ap
     return reply.ReadInt32();
 }
 
+#ifdef FEATURE_DTMF_TONE
 std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
 {
     MessageParcel data;
@@ -231,6 +232,7 @@ std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
     AUDIO_DEBUG_LOG("get rGetToneConfig returned,");
     return spToneInfo;
 }
+#endif
 
 int32_t AudioPolicyProxy::SetMicrophoneMute(bool isMute)
 {
@@ -1777,132 +1779,6 @@ float AudioPolicyProxy::GetMaxStreamVolume()
         return error;
     }
     return reply.ReadFloat();
-}
-
-static void EffectChainApplyProcess(EffectChain &tmp, MessageParcel &reply, int countApply)
-{
-	int j;
-    for (j = 0; j < countApply; j++) {
-        string ECapply = reply.ReadString();
-        tmp.apply.push_back(ECapply);
-    }
-}
-
-static void EffectChainProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply)
-{
-    EffectChain tmp;
-    string ECname = reply.ReadString();
-    tmp.name = ECname;
-    int countApply = reply.ReadInt32();
-    if (countApply > 0) {
-        EffectChainApplyProcess(tmp, reply, countApply);
-    }
-    supportedEffectConfig.effectChains.push_back(tmp);
-}
-
-static void PreprocessMode(Stream &stream, MessageParcel &reply, int countMode)
-{
-	int j;
-    for (j = 0; j < countMode; j++) {
-        StreamAE_mode streamAE_mode;
-        streamAE_mode.mode = reply.ReadString();
-        int countDev = reply.ReadInt32();
-        if (countDev > 0) {
-            for (int k=0; k<countDev; k++) {
-                string type = reply.ReadString();
-                string address = reply.ReadString();
-                string chain = reply.ReadString();
-                streamAE_mode.devicePort.push_back({type, address, chain});
-            }
-        }
-        stream.streamAE_mode.push_back(streamAE_mode);
-    }
-}
-
-static Stream PreprocessProcess(MessageParcel &reply)
-{
-    Stream stream;
-    stream.scene = reply.ReadString();
-    int countMode = reply.ReadInt32();
-    if (countMode > 0) {
-        PreprocessMode(stream, reply, countMode);
-    }
-    return stream;
-}
-
-static void PostprocessMode(Stream &stream, MessageParcel &reply, int countMode)
-{
-	int j, k;
-    for (j = 0; j < countMode; j++) {
-        StreamAE_mode streamAE_mode;
-        streamAE_mode.mode = reply.ReadString();
-        int countDev = reply.ReadInt32();
-        if (countDev > 0) {
-            for (k = 0; k < countDev; k++) {
-                string type = reply.ReadString();
-                string address = reply.ReadString();
-                string chain = reply.ReadString();
-                streamAE_mode.devicePort.push_back({type, address, chain});
-            }
-        }
-        stream.streamAE_mode.push_back(streamAE_mode);
-    }
-} 
-
-static Stream PostprocessProcess(MessageParcel &reply)
-{
-    Stream stream;
-    stream.scene = reply.ReadString();
-    int countMode = reply.ReadInt32();
-    if (countMode > 0) {
-        PostprocessMode(stream, reply, countMode);
-    }
-    return stream;
-}
-
-int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("QueryEffectSceneMode: WriteInterfaceToken failed");
-        return -1;
-    }
-    int32_t error = Remote()->SendRequest(QUERY_EFFECT_SCENEMODE, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);
-        return error;
-    }
-    int countEC = reply.ReadInt32();
-    int countPre = reply.ReadInt32();
-    int countPost = reply.ReadInt32();
-    // effectChain
-    if (countEC > 0) {
-        for (int i=0; i<countEC; i++) {
-            EffectChainProcess(supportedEffectConfig, reply);
-        }
-    }
-    // preprocess
-    Stream stream;
-    if (countPre > 0) {
-        ProcessNew preProcessNew;
-        for (int i=0; i<countPre; i++) {
-            stream = PreprocessProcess(reply);
-            preProcessNew.stream.push_back(stream);
-        }
-        supportedEffectConfig.preProcessNew = preProcessNew;
-    }
-    // postprocess
-    if (countPost > 0) {
-        ProcessNew postProcessNew;
-        for (int i=0; i<countPost; i++) {
-            stream = PostprocessProcess(reply);
-            postProcessNew.stream.push_back(stream);
-        }
-        supportedEffectConfig.postProcessNew = postProcessNew;
-    }
-    return 0;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -111,6 +111,7 @@ void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageP
     reply.WriteInt32(result);
 }
 
+#ifdef FEATURE_DTMF_TONE
 void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(data.ReadInt32());
@@ -141,6 +142,7 @@ void AudioPolicyManagerStub::GetSupportedTonesInternal(MessageParcel &data, Mess
         reply.WriteInt32(lToneList[i]);
     }
 }
+#endif
 
 void AudioPolicyManagerStub::GetRingerModeInternal(MessageParcel &reply)
 {
@@ -866,107 +868,6 @@ void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, Mes
     reply.WriteFloat(volume);
 }
 
-static void EffectChainProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
-{
-	int j;
-    reply.WriteString(supportedEffectConfig.effectChains[i].name);
-    int countApply = supportedEffectConfig.effectChains[i].apply.size();
-    reply.WriteInt32(countApply);
-    if (countApply > 0) {
-        for (j = 0; j < countApply; j++) {
-            // i th EffectChain's j th apply
-            reply.WriteString(supportedEffectConfig.effectChains[i].apply[j]);
-        }
-    }
-}
-static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
-{
-	int k;
-    reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode);
-    int countDev = supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].devicePort.size();
-    reply.WriteInt32(countDev);
-    if (countDev > 0) {
-        for (k = 0; k < countDev; k++) {
-            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].devicePort[k].type);
-            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].devicePort[k].address);
-            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].devicePort[k].chain);
-        }
-    }
-}
-static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
-{
-	int j;
-    reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].scene);
-    int countMode = supportedEffectConfig.preProcessNew.stream[i].streamAE_mode.size();
-    reply.WriteInt32(countMode);
-    if (countMode > 0) {
-        for (j = 0; j < countMode; j++) {
-            PreprocessMode(supportedEffectConfig, reply, i, j);
-        }
-    }
-}
-static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
-{
-	int k;
-    reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].mode);
-    int countDev = supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].devicePort.size();
-    reply.WriteInt32(countDev);
-    if (countDev > 0) {
-        for (k = 0; k < countDev; k++) {
-            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].devicePort[k].type);
-            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].devicePort[k].address);
-            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].devicePort[k].chain);
-        }
-    }
-}
-static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
-{
-	int j;
-    // i th stream
-    reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].scene);
-    int countMode = supportedEffectConfig.preProcessNew.stream[i].streamAE_mode.size();
-    reply.WriteInt32(countMode);
-    if (countMode > 0) {
-        for (j = 0; j < countMode; j++) {
-            PostprocessMode(supportedEffectConfig, reply, i, j);
-        }
-    }
-}
-
-void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int i;
-    SupportedEffectConfig supportedEffectConfig;
-    int32_t ret = QueryEffectSceneMode(supportedEffectConfig); // audio_policy_server.cpp
-    if (ret == -1) {
-        AUDIO_ERR_LOG("default mode is unavailable !");
-        return;
-    }
-
-    int countEC = supportedEffectConfig.effectChains.size();
-    int countPre = supportedEffectConfig.preProcessNew.stream.size();
-    int countPost = supportedEffectConfig.postProcessNew.stream.size();
-    reply.WriteInt32(countEC);
-    reply.WriteInt32(countPre);
-    reply.WriteInt32(countPost);
-
-    if (countEC > 0) {
-        for (i = 0; i < countEC; i++) {
-            EffectChainProcess(supportedEffectConfig, reply, i);
-        }
-    }
-    if (countPre > 0) {
-        for (i = 0; i < countPre; i++) {
-            PreprocessProcess(supportedEffectConfig, reply, i);
-        }
-    }
-    if (countPost > 0) {
-        for (i = 0; i < countPost; i++) {
-            PostprocessProcess(supportedEffectConfig, reply, i);
-        }
-    }
-}
-
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1134,12 +1035,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case SELECT_INPUT_DEVICE:
             SelectInputDeviceInternal(data, reply);
             break;
+#ifdef FEATURE_DTMF_TONE
         case GET_TONEINFO:
             GetToneInfoInternal(data, reply);
             break;
         case GET_SUPPORTED_TONES:
             GetSupportedTonesInternal(data, reply);
             break;
+#endif
         case RECONFIGURE_CHANNEL:
             ReconfigureAudioChannelInternal(data, reply);
             break;
@@ -1250,10 +1153,6 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_MAX_VOLUME_STREAM:
             GetMaxStreamVolumeInternal(data, reply);
-            break;
-
-        case QUERY_EFFECT_SCENEMODE:
-            QueryEffectSceneModeInternal(data, reply);
             break;
 
         default:

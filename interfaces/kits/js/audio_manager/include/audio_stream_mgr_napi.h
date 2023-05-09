@@ -53,7 +53,6 @@ private:
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static bool ParseAudioStreamInfo(napi_env env, napi_value root, AudioStreamInfo &audioStreamInfo);
     static void IsLowLatencySupportedCallback(napi_env env, napi_status status, void *data);
-    static napi_value GetEffectInfoArray(napi_env env, napi_callback_info info);
     napi_env env_;
     AudioStreamManager *audioStreamMngr_;
     AudioSystemManager *audioMngr_;
