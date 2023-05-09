@@ -88,6 +88,7 @@ private:
         AudioRendererNapi *objectInfo;
         AudioRendererOptions rendererOptions;
         DeviceInfo deviceInfo;
+        AudioEffectMode effectMode;
     };
 
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
@@ -118,6 +119,8 @@ private:
     static napi_value GetMaxStreamVolume(napi_env env, napi_callback_info info);
     static napi_value GetCurrentOutputDevices(napi_env env, napi_callback_info info);
     static napi_value GetUnderflowCount(napi_env env, napi_callback_info info);
+    static napi_value GetAudioEffectMode(napi_env env, napi_callback_info info);
+    static napi_value SetAudioEffectMode(napi_env env, napi_callback_info info);
 
     static void JudgeFuncDrain(napi_env &env, napi_value &result,
         std::unique_ptr<AudioRendererAsyncContext> &asyncContext);
@@ -152,6 +155,8 @@ private:
     static void GetUnderflowCountAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void AsyncSetSamplingRate(napi_env env, void *data);
     static void AsyncGetCurrentOutputDevices(napi_env env, void *data);
+    static void GetAudioEffectModeAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AsyncSetAudioEffectMode(napi_env env, void *data);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
                                        napi_value* argv, const std::string& cbName);
@@ -190,6 +195,7 @@ private:
     StreamUsage streamUsage_;
     DeviceRole deviceRole_;
     DeviceType deviceType_;
+    AudioEffectMode effectMode_;
     int32_t rendererFlags_;
     napi_env env_;
     std::queue<napi_async_work> writeRequestQ_;

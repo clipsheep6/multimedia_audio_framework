@@ -294,6 +294,40 @@ AudioRenderMode AudioServiceClient::GetAudioRenderMode()
     return renderMode_;
 }
 
+AudioEffectMode AudioServiceClient::GetAudioRenderEffectMode()
+{
+    return effectMode_;
+}
+
+int32_t AudioServiceClient::SetAudioRenderEffectMode(AudioEffectMode effectMode)
+{
+    AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioRenderEffectMode begin");
+    effectMode_ = effectMode;
+
+    if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_ERR) < 0) {
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_threaded_mainloop_lock(mainLoop);
+    pa_buffer_attr bufferAttr;
+    bufferAttr.fragsize = static_cast<uint32_t>(-1);
+    bufferAttr.prebuf = AlignToAudioFrameSize(pa_usec_to_bytes(MIN_BUF_DURATION_IN_USEC, &sampleSpec), sampleSpec);
+    bufferAttr.maxlength = bufferAttr.prebuf * MAX_LENGTH_FACTOR;
+    bufferAttr.tlength = bufferAttr.prebuf * T_LENGTH_FACTOR;
+    bufferAttr.minreq = bufferAttr.prebuf;
+    pa_operation *operation = pa_stream_set_buffer_attr(paStream, &bufferAttr,
+        PAStreamSetBufAttrSuccessCb, (void *)this);
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mainLoop);
+    }
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioRenderEffectMode end");
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 int32_t AudioServiceClient::SetAudioCaptureMode(AudioCaptureMode captureMode)
 {
     AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioCaptureMode.");
