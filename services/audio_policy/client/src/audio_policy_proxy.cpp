@@ -1783,7 +1783,7 @@ float AudioPolicyProxy::GetMaxStreamVolume()
 
 static void EffectChainApplyProcess(EffectChain &tmp, MessageParcel &reply, int countApply)
 {
-	int j;
+    int j;
     for (j = 0; j < countApply; j++) {
         string ECapply = reply.ReadString();
         tmp.apply.push_back(ECapply);
@@ -1804,13 +1804,13 @@ static void EffectChainProcess(SupportedEffectConfig &supportedEffectConfig, Mes
 
 static void PreprocessMode(Stream &stream, MessageParcel &reply, int countMode)
 {
-	int j;
+    int j, k;
     for (j = 0; j < countMode; j++) {
         StreamAE_mode streamAE_mode;
         streamAE_mode.mode = reply.ReadString();
         int countDev = reply.ReadInt32();
         if (countDev > 0) {
-            for (int k=0; k<countDev; k++) {
+            for (k = 0; k < countDev; k++) {
                 string type = reply.ReadString();
                 string address = reply.ReadString();
                 string chain = reply.ReadString();
@@ -1834,7 +1834,7 @@ static Stream PreprocessProcess(MessageParcel &reply)
 
 static void PostprocessMode(Stream &stream, MessageParcel &reply, int countMode)
 {
-	int j, k;
+    int j, k;
     for (j = 0; j < countMode; j++) {
         StreamAE_mode streamAE_mode;
         streamAE_mode.mode = reply.ReadString();
@@ -1849,7 +1849,7 @@ static void PostprocessMode(Stream &stream, MessageParcel &reply, int countMode)
         }
         stream.streamAE_mode.push_back(streamAE_mode);
     }
-} 
+}
 
 static Stream PostprocessProcess(MessageParcel &reply)
 {
@@ -1862,8 +1862,27 @@ static Stream PostprocessProcess(MessageParcel &reply)
     return stream;
 }
 
+static int32_t QueryEffectSceneModeChkReply(int countEC, int countPre, int countPost)
+{
+    if ((countEC < 0) || (countEC > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
+        AUDIO_ERR_LOG("QUERY_EFFECT_SCENEMODE read replyParcel failed");
+        return -1;
+    }
+    if ((countPre < 0) || (countPre > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
+        AUDIO_ERR_LOG("QUERY_EFFECT_SCENEMODE read replyParcel failed");
+        return -1;
+    }
+    if ((countPost < 0) || (countPost > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
+        AUDIO_ERR_LOG("QUERY_EFFECT_SCENEMODE read replyParcel failed");
+        return -1;
+    }
+    return 0;
+}
+
 int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
+    int i;
+    int32_t error;
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -1871,7 +1890,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
         AUDIO_ERR_LOG("QueryEffectSceneMode: WriteInterfaceToken failed");
         return -1;
     }
-    int32_t error = Remote()->SendRequest(QUERY_EFFECT_SCENEMODE, data, reply, option);
+    error = Remote()->SendRequest(QUERY_EFFECT_SCENEMODE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);
         return error;
@@ -1879,9 +1898,14 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     int countEC = reply.ReadInt32();
     int countPre = reply.ReadInt32();
     int countPost = reply.ReadInt32();
+    error = QueryEffectSceneModeChkReply(countEC, countPre, countPost);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);
+        return error;
+    }
     // effectChain
     if (countEC > 0) {
-        for (int i=0; i<countEC; i++) {
+        for (i = 0; i < countEC; i++) {
             EffectChainProcess(supportedEffectConfig, reply);
         }
     }
@@ -1889,7 +1913,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     Stream stream;
     if (countPre > 0) {
         ProcessNew preProcessNew;
-        for (int i=0; i<countPre; i++) {
+        for (i = 0; i < countPre; i++) {
             stream = PreprocessProcess(reply);
             preProcessNew.stream.push_back(stream);
         }
@@ -1898,7 +1922,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     // postprocess
     if (countPost > 0) {
         ProcessNew postProcessNew;
-        for (int i=0; i<countPost; i++) {
+        for (i = 0; i < countPost; i++) {
             stream = PostprocessProcess(reply);
             postProcessNew.stream.push_back(stream);
         }

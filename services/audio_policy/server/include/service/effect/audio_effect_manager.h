@@ -55,6 +55,7 @@ private:
     int32_t UpdateUnsupportedScene(std::string &scene);
     void UpdateUnsupportedModePre(Preprocess &pp, Stream &stream, std::string &mode, int i);
     void UpdateUnsupportedModePost(Postprocess &pp, Stream &stream, std::string &mode, int i);
+    int32_t DeleteUnavailableMode(std::vector<int> &modeDelIdx, Stream &stream);
 };
 } // namespce AudioStandard
 } // namespace OHOS

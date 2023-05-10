@@ -884,12 +884,12 @@ napi_value AudioStreamMgrNapi::IsStreamActive(napi_env env, napi_callback_info i
 
 static void GetEffectInfoArrayCallbackComplete(napi_env env, napi_status status, void *data)
 {
+    int i;
     auto asyncContext = static_cast<AudioStreamMgrAsyncContext*>(data);
     napi_value result[ARGS_TWO] = {0};
     napi_value jsEffectInofObj = nullptr;
     napi_value retVal;
     size_t size = asyncContext->audioSceneEffectInfos.size();
-
     int32_t position = 0;
 
     napi_create_array_with_length(env, size, &result[PARAM1]);
@@ -902,7 +902,7 @@ static void GetEffectInfoArrayCallbackComplete(napi_env env, napi_status status,
         napi_create_object(env, &jsEffectInofObj);
         SetValueInt32(env, "scene", effectInfo->scene, jsEffectInofObj);
 
-        for (int i=0; i<effectInfo->mode.size(); i++) {
+        for (i = 0; i < effectInfo->mode.size(); i++) {
             SetValueInt32(env, "mode"+to_string(i), effectInfo->mode[i], jsEffectInofObj);
         }
 
@@ -928,10 +928,7 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
-
-
     GET_PARAMS(env, info, ARGS_ONE);
-
     unique_ptr<AudioStreamMgrAsyncContext> asyncContext = make_unique<AudioStreamMgrAsyncContext>();
 
     if (!asyncContext) {
@@ -963,11 +960,11 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "getEffectInfoArray", NAPI_AUTO_LENGTH, &resource);
         status = napi_create_async_work(
-            env, nullptr, resource, 
+            env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioStreamMgrAsyncContext *>(data);
                 if (context->status == SUCCESS) {
-                    context->objectInfo->audioStreamMngr_->GetEffectInfoArray(context->audioSceneEffectInfos); // audio_stream_manager
+                    context->objectInfo->audioStreamMngr_->GetEffectInfoArray(context->audioSceneEffectInfos);
                     context->status = SUCCESS;
                 }
             },

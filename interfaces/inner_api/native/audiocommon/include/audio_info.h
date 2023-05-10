@@ -1039,21 +1039,21 @@ struct OriginalEffectConfig {
     std::vector<Postprocess> postprocess;
 };
 
-struct StreamAE_mode{
+struct StreamAE_mode {
     std::string mode;
     std::vector<Device> devicePort;
 };
 
-struct Stream{
+struct Stream {
     std::string scene;
     std::vector<StreamAE_mode> streamAE_mode;
 };
 
-struct ProcessNew{
+struct ProcessNew {
     std::vector<Stream> stream;
 };
 
-struct SupportedEffectConfig{
+struct SupportedEffectConfig {
     std::vector<EffectChain> effectChains;
     ProcessNew preProcessNew;
     ProcessNew postProcessNew;
