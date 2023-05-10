@@ -694,9 +694,9 @@ public:
     virtual AudioEffectMode GetAudioEffectMode() const = 0;
 
     /**
-     * @brief Sets the audio effect mode. By default the mode is EFFECT_DEFAULT.
+     * @brief Sets the audio effect mode.
      *
-     * * @param effectMode The mode of audio effect mode.
+     * * @param effectMode The audio effect mode at which the stream needs to be rendered.
      * @return  Returns {@link SUCCESS} if audio effect mode is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 10

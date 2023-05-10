@@ -586,6 +586,7 @@ private:
     uint32_t rendererSampleRate;
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
+    AudioEffectMode effectMode;
     std::shared_ptr<AudioCapturerReadCallback> readCallback_;
     std::shared_ptr<AudioRendererWriteCallback> writeCallback_;
     int64_t mWriteCbStamp = 0; // used to measure callback duration
