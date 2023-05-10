@@ -1780,13 +1780,26 @@ int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     return mPolicyService.UpdateStreamState(clientUid, setStateEvent);
 }
 
-int32_t AudioPolicyServer::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision)
+int32_t AudioPolicyServer::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos)
 {
-    if (needVerifyPermision && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("GetVolumeGroupInfos: No system permission");
+    infos = mPolicyService.GetVolumeGroupInfos();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetVolumeGroupInfoByNetworkId(std::string networkId,
+    std::vector<sptr<VolumeGroupInfo>> &infos)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("GetVolumeGroupInfoByNetworkId: No system permission");
         return ERR_PERMISSION_DENIED;
     }
+
     infos = mPolicyService.GetVolumeGroupInfos();
+    auto filter = [&networkId](const sptr<VolumeGroupInfo>& info) {
+        return networkId != info->networkId_;
+    };
+    infos.erase(std::remove_if(infos.begin(), infos.end(), filter), infos.end());
+
     return SUCCESS;
 }
 

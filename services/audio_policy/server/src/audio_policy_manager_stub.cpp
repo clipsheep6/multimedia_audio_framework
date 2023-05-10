@@ -812,9 +812,8 @@ void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, Mess
 void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply)
 {
     AUDIO_DEBUG_LOG("GetVolumeGroupInfoInternal entered");
-    bool needVerifyPermision = data.ReadBool();
     std::vector<sptr<VolumeGroupInfo>> groupInfos;
-    int32_t ret = GetVolumeGroupInfos(groupInfos, needVerifyPermision);
+    int32_t ret = GetVolumeGroupInfos(groupInfos);
     int32_t size = static_cast<int32_t>(groupInfos.size());
     AUDIO_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
     
@@ -828,6 +827,27 @@ void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, Mes
     }
     
     AUDIO_DEBUG_LOG("GetVolumeGroups internal exit");
+}
+
+void AudioPolicyManagerStub::GetVolumeGroupInfoByNetworkIdInternal(MessageParcel& data, MessageParcel& reply)
+{
+    AUDIO_DEBUG_LOG("GetVolumeGroupInfoByNetworkIdInternal entered");
+    std::string networkId = data.ReadString();
+    std::vector<sptr<VolumeGroupInfo>> groupInfos;
+    int32_t ret = GetVolumeGroupInfoByNetworkId(networkId, groupInfos);
+    int32_t size = static_cast<int32_t>(groupInfos.size());
+    AUDIO_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
+
+    if (ret == SUCCESS && size > 0) {
+        reply.WriteInt32(size);
+        for (int i = 0; i < size; i++) {
+            groupInfos[i]->Marshalling(reply);
+        }
+    } else {
+        reply.WriteInt32(ret);
+    }
+
+    AUDIO_DEBUG_LOG("GetVolumeGroupInfoByNetworkId internal exit");
 }
 
 void AudioPolicyManagerStub::IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply)
@@ -1105,6 +1125,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_VOLUME_GROUP_INFO:
             GetVolumeGroupInfoInternal(data, reply);
+            break;
+            
+        case GET_VOLUME_GROUP_INFO_BY_NETWORKID:
+            GetVolumeGroupInfoByNetworkIdInternal(data, reply);
             break;
 
         case IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED:

@@ -180,7 +180,9 @@ public:
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
                                     AudioStreamType audioStreamType);
 
-    int32_t GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision = true);
+    int32_t GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
+
+    int32_t GetVolumeGroupInfoByNetworkId(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos);
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 
