@@ -1658,7 +1658,7 @@ int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetSt
     return SUCCESS;
 }
 
-int32_t AudioPolicyProxy::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision)
+int32_t AudioPolicyProxy::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1668,10 +1668,38 @@ int32_t AudioPolicyProxy::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>>
         AUDIO_ERR_LOG(" GetVolumeGroupById WriteInterfaceToken failed");
         return ERROR;
     }
-    data.WriteBool(needVerifyPermision);
     int32_t error = Remote()->SendRequest(GET_VOLUME_GROUP_INFO, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("GetVolumeGroupInfo, error: %d", error);
+        return error;
+    }
+
+    int32_t ret = reply.ReadInt32();
+    if (ret > 0) {
+        for (int32_t i = 0; i < ret; i++) {
+            infos.push_back(VolumeGroupInfo::Unmarshalling(reply));
+        }
+        return SUCCESS;
+    } else {
+        return ret;
+    }
+}
+
+int32_t AudioPolicyProxy::GetVolumeGroupInfoByNetworkId(std::string networkId,
+    std::vector<sptr<VolumeGroupInfo>> &infos)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG(" GetVolumeGroupInfoByNetworkId WriteInterfaceToken failed");
+        return ERROR;
+    }
+    data.WriteString(networkId);
+    int32_t error = Remote()->SendRequest(GET_VOLUME_GROUP_INFO_BY_NETWORKID, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetVolumeGroupInfoByNetworkId, error: %d", error);
         return error;
     }
 

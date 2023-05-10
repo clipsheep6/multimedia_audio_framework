@@ -288,7 +288,7 @@ int32_t AudioGroupManager::Init()
     // init networkId_
     int32_t groupId = groupId_;
     std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
-    int32_t ret = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(volumeGroupInfos, false);
+    int32_t ret = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(volumeGroupInfos);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioGroupManager::Init filed");
     auto filter = [&groupId](const sptr<VolumeGroupInfo>& info) {
         return groupId != info->volumeGroupId_;
