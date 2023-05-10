@@ -43,6 +43,31 @@ inline void DumpProcessConfig(const AudioProcessConfig &config)
     AUDIO_INFO_LOG("Dump AudioProcessConfig: sample rate:%{public}d", config.streamInfo.samplingRate);
 }
 
+int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
+{
+    std::lock_guard<std::mutex> lock(processListMutex_);
+    bool isFind = false;
+    int32_t ret = ERROR;
+    auto paired = linkedPairedList_.begin();
+    while (paired != linkedPairedList_.end()) {
+        if ((*paired).first == process) {
+            ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
+            linkedPairedList_.erase(paired);
+            isFind = true;
+            break;
+        } else {
+            paired++;
+        }
+    }
+    if (isFind) {
+        AUDIO_INFO_LOG("OnProcessRelease find and release process result %{public}d", ret);
+    } else {
+        AUDIO_WARNING_LOG("OnProcessRelease can not find target process");
+    }
+
+    return SUCCESS;
+}
+
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
     DumpProcessConfig(config);
@@ -56,7 +81,8 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
 
-    sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config);
+    std::lock_guard<std::mutex> lock(processListMutex_);
+    sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
 
     int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe);
@@ -66,6 +92,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "LinkProcessToEndpoint failed");
 
     process_ = process;
+    linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
     return process;
 }
 
@@ -92,6 +119,18 @@ int32_t AudioService::UnLinkProcessToEndpoint(sptr<AudioProcessInServer> process
     ret = process->RemoveProcessStatusListener(endpoint);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "RemoveProcessStatusListener failed");
     AUDIO_INFO_LOG("UnlinkProcessToEndpoint exit");
+    return SUCCESS;
+}
+
+int32_t AudioService::UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process,
+    std::shared_ptr<AudioEndpoint> endpoint)
+{
+    int32_t ret = endpoint->UnlinkProcessStream(process);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UnlinkProcessStream failed");
+
+    ret = process->RemoveProcessStatusListener(endpoint);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "RemoveProcessStatusListener failed");
+
     return SUCCESS;
 }
 
@@ -155,9 +194,18 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
     return endpoint;
 }
 
-void AudioService::Dump()
+void AudioService::Dump(std::stringstream &dumpStringStream)
 {
     AUDIO_INFO_LOG("AudioService dump begin");
+    // dump process
+    for (auto paired : linkedPairedList_) {
+        paired.first->Dump(dumpStringStream);
+    }
+    // dump endpoint
+    for (auto item : endpointList_) {
+        dumpStringStream << std::endl << "Endpoint device id:" << item.first << std::endl;
+        item.second->Dump(dumpStringStream);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

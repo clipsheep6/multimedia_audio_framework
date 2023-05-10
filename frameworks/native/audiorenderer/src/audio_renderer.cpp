@@ -99,11 +99,13 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
                              "Invalid content type");
 
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_SYSTEM,
-                             nullptr, "Invalid stream usage");
-    if (contentType == CONTENT_TYPE_ULTRASONIC || streamUsage == STREAM_USAGE_SYSTEM) {
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN &&
+        streamUsage <= STREAM_USAGE_VOICE_MODEM_COMMUNICATION, nullptr, "Invalid stream usage");
+    if (contentType == CONTENT_TYPE_ULTRASONIC || streamUsage == STREAM_USAGE_SYSTEM ||
+        streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
         if (!PermissionUtil::VerifySelfPermission()) {
-            AUDIO_ERR_LOG("Create: CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM No system permission");
+            AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
+                "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
             return nullptr;
         }
     }
@@ -198,12 +200,14 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
         return ERR_INVALID_INDEX;
     }
     sessionID_ = audioInterrupt_.sessionID;
+    audioInterrupt_.streamUsage = rendererInfo_.streamUsage;
+    audioInterrupt_.contentType = rendererInfo_.contentType;
 
     AUDIO_INFO_LOG("InitAudioInterruptCallback::interruptMode %{public}d, streamType %{public}d, sessionID %{public}d",
         audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionID);
 
     if (audioInterruptCallback_ == nullptr) {
-        audioInterruptCallback_ = std::make_shared<AudioInterruptCallbackImpl>(audioStream_, audioInterrupt_);
+        audioInterruptCallback_ = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream_, audioInterrupt_);
         if (audioInterruptCallback_ == nullptr) {
             AUDIO_ERR_LOG("InitAudioInterruptCallback::Failed to allocate memory for audioInterruptCallback_");
             return ERROR;
@@ -301,8 +305,8 @@ int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRen
         AUDIO_ERR_LOG("AudioRendererPrivate::SetRendererCallback audioInterruptCallback_ == nullptr");
         return ERROR;
     }
-    std::shared_ptr<AudioInterruptCallbackImpl> cbInterrupt =
-        std::static_pointer_cast<AudioInterruptCallbackImpl>(audioInterruptCallback_);
+    std::shared_ptr<AudioRendererInterruptCallbackImpl> cbInterrupt =
+        std::static_pointer_cast<AudioRendererInterruptCallbackImpl>(audioInterruptCallback_);
     cbInterrupt->SaveCallback(callback);
 
     // Save and Set reference for stream callback. Order is important here.
@@ -503,6 +507,16 @@ AudioRendererRate AudioRendererPrivate::GetRenderRate() const
     return audioStream_->GetRenderRate();
 }
 
+int32_t AudioRendererPrivate::SetRendererSamplingRate(uint32_t sampleRate) const
+{
+    return audioStream_->SetRendererSamplingRate(sampleRate);
+}
+
+uint32_t AudioRendererPrivate::GetRendererSamplingRate() const
+{
+    return audioStream_->GetRendererSamplingRate();
+}
+
 int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
 {
     if (bufferDuration < MINIMUM_BUFFER_SIZE_MSEC || bufferDuration > MAXIMUM_BUFFER_SIZE_MSEC) {
@@ -513,34 +527,34 @@ int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
     return audioStream_->SetBufferSizeInMsec(bufferDuration);
 }
 
-AudioInterruptCallbackImpl::AudioInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
+AudioRendererInterruptCallbackImpl::AudioRendererInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
     const AudioInterrupt &audioInterrupt)
     : audioStream_(audioStream), audioInterrupt_(audioInterrupt)
 {
-    AUDIO_INFO_LOG("AudioInterruptCallbackImpl constructor");
+    AUDIO_INFO_LOG("AudioRendererInterruptCallbackImpl constructor");
 }
 
-AudioInterruptCallbackImpl::~AudioInterruptCallbackImpl()
+AudioRendererInterruptCallbackImpl::~AudioRendererInterruptCallbackImpl()
 {
-    AUDIO_DEBUG_LOG("AudioInterruptCallbackImpl: instance destroy");
+    AUDIO_DEBUG_LOG("AudioRendererInterruptCallbackImpl: instance destroy");
 }
 
-void AudioInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback)
+void AudioRendererInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback)
 {
     callback_ = callback;
 }
 
-void AudioInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
+void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
     if (cb_ != nullptr) {
         cb_->OnInterrupt(interruptEvent);
-        AUDIO_INFO_LOG("AudioInterruptCallbackImpl::NotifyEvent: Send interruptEvent to app successfully");
+        AUDIO_INFO_LOG("AudioRendererInterruptCallbackImpl::NotifyEvent: Send interruptEvent to app successfully");
     } else {
-        AUDIO_ERR_LOG("AudioInterruptCallbackImpl::NotifyEvent: cb_==nullptr, failed to send interruptEvent to app");
+        AUDIO_ERR_LOG("AudioRendererInterruptCallbackImpl::NotifyEvent: cb_==nullptr, failed to send interruptEvent");
     }
 }
 
-bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
+bool AudioRendererInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
 {
     int32_t systemVolumeLevel =
         AudioPolicyManager::GetInstance().GetSystemVolumeLevel(audioInterrupt_.audioFocusType.streamType);
@@ -571,7 +585,7 @@ bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal
     return true;
 }
 
-void AudioInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent)
+void AudioRendererInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent)
 {
     // Change InterruptForceType to Share, Since app will take care of resuming
     InterruptEvent interruptEventResume {interruptEvent.eventType, INTERRUPT_SHARE,
@@ -579,7 +593,7 @@ void AudioInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEventI
     NotifyEvent(interruptEventResume);
 }
 
-void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
+void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
 {
     // ForceType: INTERRUPT_FORCE. Handle the event forcely and notify the app.
     AUDIO_DEBUG_LOG("HandleAndNotifyForcedEvent in");
@@ -632,11 +646,11 @@ void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEvent
     NotifyEvent(interruptEventForced);
 }
 
-void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
+void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
-    AUDIO_INFO_LOG("AudioInterruptCallbackImpl::OnInterrupt: forceType %{public}d, hintType: %{public}d",
+    AUDIO_INFO_LOG("AudioRendererInterruptCallbackImpl::OnInterrupt: forceType %{public}d, hintType: %{public}d",
         forceType, interruptEvent.hintType);
 
     if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
@@ -648,7 +662,7 @@ void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &inter
     }
 
     if (audioStream_ == nullptr) {
-        AUDIO_ERR_LOG("AudioInterruptCallbackImpl::OnInterrupt stream is not alive. No need to take forced action");
+        AUDIO_ERR_LOG("AudioRendererInterruptCallbackImpl::Stream is not alive. No need to take forced action");
         return;
     }
 
@@ -756,6 +770,175 @@ float AudioRendererPrivate::GetLowPowerVolume() const
 float AudioRendererPrivate::GetSingleStreamVolume() const
 {
     return audioStream_->GetSingleStreamVolume();
+}
+
+float AudioRendererPrivate::GetMinStreamVolume() const
+{
+    return AudioPolicyManager::GetInstance().GetMinStreamVolume();
+}
+
+float AudioRendererPrivate::GetMaxStreamVolume() const
+{
+    return AudioPolicyManager::GetInstance().GetMaxStreamVolume();
+}
+
+int32_t AudioRendererPrivate::GetCurrentOutputDevices(DeviceInfo &deviceInfo) const
+{
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamId(sessionId);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::GetCurrentOutputDevices Get sessionId failed");
+        return ret;
+    }
+
+    ret = AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::GetCurrentOutputDevices Get Current Renderer devices failed");
+        return ret;
+    }
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        if ((*it)->sessionId == sessionId) {
+            deviceInfo = (*it)->outputDeviceInfo;
+        }
+    }
+    return SUCCESS;
+}
+
+uint32_t AudioRendererPrivate::GetUnderflowCount() const
+{
+    return audioStream_->GetUnderflowCount();
+}
+
+int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t clientPid,
+    const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("RegisterAudioRendererEventListener client id: %{public}d", clientPid);
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (GetCurrentOutputDevices(currentDeviceInfo) != SUCCESS) {
+        AUDIO_ERR_LOG("get current device info failed");
+        return ERROR;
+    }
+
+    if (!audioDeviceChangeCallback_) {
+        audioDeviceChangeCallback_ = std::make_shared<AudioRendererStateChangeCallbackImpl>();
+        if (!audioDeviceChangeCallback_) {
+            AUDIO_ERR_LOG("AudioRendererPrivate: Memory Allocation Failed !!");
+            return ERROR;
+        }
+    }
+
+    int32_t ret =
+        AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid, audioDeviceChangeCallback_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener failed");
+        return ERROR;
+    }
+
+    audioDeviceChangeCallback_->setAudioRendererObj(this);
+    audioDeviceChangeCallback_->SaveCallback(callback);
+    AUDIO_INFO_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener successful!");
+    return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+    const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
+{
+    AUDIO_INFO_LOG("RegisterAudioPolicyServerDiedCb client id: %{public}d", clientPid);
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    return AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid, callback);
+}
+
+int32_t AudioRendererPrivate::UnregisterAudioPolicyServerDiedCb(const int32_t clientPid)
+{
+    AUDIO_INFO_LOG("AudioRendererPrivate:: UnregisterAudioPolicyServerDiedCb client id: %{public}d", clientPid);
+    return AudioPolicyManager::GetInstance().UnregisterAudioPolicyServerDiedCb(clientPid);
+}
+
+void AudioRendererPrivate::DestroyAudioRendererStateCallback()
+{
+    if (audioDeviceChangeCallback_ != nullptr) {
+        audioDeviceChangeCallback_.reset();
+        audioDeviceChangeCallback_ = nullptr;
+    }
+}
+
+int32_t AudioRendererPrivate::UnregisterAudioRendererEventListener(const int32_t clientPid)
+{
+    AUDIO_INFO_LOG("AudioRendererPrivate::UnregisterAudioCapturerEventListener client id: %{public}d", clientPid);
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientPid);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::UnregisterAudioRendererEventListener failed");
+        return ERROR;
+    }
+
+    DestroyAudioRendererStateCallback();
+    return SUCCESS;
+}
+
+AudioRendererStateChangeCallbackImpl::AudioRendererStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl instance create");
+}
+
+AudioRendererStateChangeCallbackImpl::~AudioRendererStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl instance destory");
+}
+
+void AudioRendererStateChangeCallbackImpl::SaveCallback(
+    const std::weak_ptr<AudioRendererDeviceChangeCallback> &callback)
+{
+    callback_ = callback;
+}
+
+void AudioRendererStateChangeCallbackImpl::setAudioRendererObj(AudioRendererPrivate *rendererObj)
+{
+    renderer = rendererObj;
+}
+
+bool AudioRendererPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
+{
+    bool deviceUpdated = false;
+    DeviceInfo deviceInfo = {};
+
+    if (GetCurrentOutputDevices(deviceInfo) != SUCCESS) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::GetCurrentOutputDevices failed");
+        return deviceUpdated;
+    }
+
+    AUDIO_INFO_LOG("newDeviceInfo type: %{public}d, currentDeviceInfo type: %{public}d ",
+        deviceInfo.deviceType, currentDeviceInfo.deviceType);
+    if (currentDeviceInfo.deviceType != deviceInfo.deviceType) {
+        currentDeviceInfo = deviceInfo;
+        newDeviceInfo = currentDeviceInfo;
+        deviceUpdated = true;
+    }
+    return deviceUpdated;
+}
+
+void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
+    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    std::shared_ptr<AudioRendererDeviceChangeCallback> cb = callback_.lock();
+    if (cb == nullptr) {
+        AUDIO_ERR_LOG("AudioRendererStateChangeCallbackImpl::OnStateChange cb == nullptr.");
+        return;
+    }
+    AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl OnRendererStateChange");
+    DeviceInfo deviceInfo = {};
+    if (renderer->IsDeviceChanged(deviceInfo)) {
+        cb->OnStateChange(deviceInfo);
+    }
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

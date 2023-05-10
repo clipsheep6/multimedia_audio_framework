@@ -98,9 +98,11 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9) override;
 
+#ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones() override;
 
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) override;
+#endif
 
     AudioRingerMode GetRingerMode() override;
 
@@ -218,6 +220,9 @@ public:
 
     std::string GetSystemSoundUri(const std::string &key) override;
 
+    float GetMinStreamVolume(void) override;
+
+    float GetMaxStreamVolume(void) override;
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -276,6 +281,7 @@ private:
     void NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt);
     int32_t NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt);
     void OnAudioFocusInfoChange();
+    void UpdateAudioScene(const AudioInterrupt &audioInterrupt, AudioInterruptChangeType changeType);
 
     // for audio volume
     int32_t SetSystemVolumeLevelForKey(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
@@ -290,6 +296,7 @@ private:
     void SubscribeKeyEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
+    void LoadEffectLibrary();
     void RegisterBluetoothListener();
     void SubscribeAccessibilityConfigObserver();
 

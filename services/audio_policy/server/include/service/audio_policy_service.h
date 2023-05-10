@@ -26,13 +26,20 @@
 #include "audio_manager_base.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
+#ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
+#endif
 
+#ifdef ACCESSIBILITY_ENABLE
 #include "accessibility_config_listener.h"
+#else
+#include "iaudio_accessibility_config_observer.h"
+#endif
 #include "device_status_listener.h"
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "parser_factory.h"
+#include "audio_effect_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -134,9 +141,11 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
+#ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+#endif
 
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
@@ -157,6 +166,8 @@ public:
     void OnMonoAudioConfigChanged(bool audioMono);
 
     void OnAudioBalanceChanged(float audioBalance);
+
+    void LoadEffectLibrary();
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
@@ -216,13 +227,22 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(AudioRendererInfo &rendererInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
+    void GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig, std::vector<Effect>& availableEffects);
+
+    float GetMinStreamVolume(void);
+
+    float GetMaxStreamVolume(void);
+
 private:
     AudioPolicyService()
-        : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-          configParser_(ParserFactory::GetInstance().CreateParser(*this)),
-          streamCollector_(AudioStreamCollector::GetAudioStreamCollector())
+        :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+        configParser_(ParserFactory::GetInstance().CreateParser(*this)),
+        streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+        audioEffectManager_(AudioEffectManager::GetAudioEffectManager())
     {
+#ifdef ACCESSIBILITY_ENABLE
         accessibilityConfigListener_ = std::make_shared<AccessibilityConfigListener>(*this);
+#endif
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
 
@@ -273,8 +293,11 @@ private:
 
     DeviceType FetchHighPriorityDevice(bool isOutputDevice);
 
-    void UpdateConnectedDevices(const AudioDeviceDescriptor& deviceDescriptor,
-        std::vector<sptr<AudioDeviceDescriptor>>& desc, bool status);
+    void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& deviceDescriptor,
+        std::vector<sptr<AudioDeviceDescriptor>>& desc);
+
+    void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& deviceDescriptor,
+        std::vector<sptr<AudioDeviceDescriptor>> &desc);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
  
@@ -306,6 +329,14 @@ private:
 
     void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
 
+    void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
+        const std::string& deviceName, const AudioStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);
+
+    int32_t HandleLocalDeviceConnected(DeviceType devType, const std::string& macAddress, const std::string& deviceName,
+        const AudioStreamInfo& streamInfo);
+
+    int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -328,9 +359,13 @@ private:
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     IAudioPolicyInterface& audioPolicyManager_;
     Parser& configParser_;
+#ifdef FEATURE_DTMF_TONE
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
+#endif
     AudioStreamCollector& streamCollector_;
+#ifdef ACCESSIBILITY_ENABLE
     std::shared_ptr<AccessibilityConfigListener> accessibilityConfigListener_;
+#endif
     std::unique_ptr<DeviceStatusListener> deviceStatusListener_;
     std::vector<sptr<AudioDeviceDescriptor>> connectedDevices_;
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
@@ -371,6 +406,7 @@ private:
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
+    AudioEffectManager& audioEffectManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
