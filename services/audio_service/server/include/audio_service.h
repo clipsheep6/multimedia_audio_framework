@@ -16,6 +16,7 @@
 #ifndef AUDIO_SERVICE_H
 #define AUDIO_SERVICE_H
 
+#include <set>
 #include <sstream>
 #include <map>
 #include <mutex>
@@ -38,7 +39,7 @@ public:
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(DeviceInfo deviceInfo);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
+    int32_t UnLinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     void Dump(std::stringstream &dumpString);
     int32_t ChangeProcessToEndpoint(sptr<AudioProcessInServer> process, const AudioProcessConfig &config);
 private:

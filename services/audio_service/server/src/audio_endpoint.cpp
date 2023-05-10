@@ -70,7 +70,7 @@ public:
      *   case5: endpointStatus_ = RUNNING; RUNNING-->RUNNING
     */
     int32_t LinkProcessStream(IAudioProcessStream *processStream) override;
-    int32_t UnlinkProcessStream(IAudioProcessStream *processStream) override;
+    int32_t UnLinkProcessStream(IAudioProcessStream *processStream) override;
 
     int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) override;
 
@@ -220,7 +220,7 @@ void AudioEndpointInner::Dump(std::stringstream &dumpStringStream)
     dumpStringStream << std::endl;
 }
 
-bool AudioEndpointInner::Config(AudioStreamInfo streamInfo)
+bool AudioEndpointInner::Config(AudioStreamInfo streamInfo, const std::string &networkId)
 {
     dstStreamInfo_ = streamInfo;
     AUDIO_INFO_LOG("config dev networkId: %{public}s", networkId.c_str());
@@ -472,7 +472,7 @@ int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *stream)
     std::lock_guard<std::mutex> lock(listLock_);
     auto processItr = processList_.begin();
     while (processItr != processList_.end()) {
-        if (*processItr != processStream) {
+        if (*processItr != stream) {
             processItr++;
             continue;
         }
@@ -564,9 +564,9 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     return SUCCESS;
 }
 
-int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStream)
+int32_t AudioEndpointInner::UnLinkProcessStream(IAudioProcessStream *processStream)
 {
-    AUDIO_INFO_LOG("UnlinkProcessStream in status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
+    AUDIO_INFO_LOG("UnLinkProcessStream in status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBuffer> processBuffer = processStream->GetStreamBuffer();
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
@@ -600,13 +600,13 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         endpointStatus_ = UNLINKED;
     }
 
-    AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
+    AUDIO_INFO_LOG("UnLinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
 
     // if (!IsAnyProcessRunning()) {
         StopDevice();
     // }
 
-    AUDIO_INFO_LOG("UnlinkProcessStream exit");
+    AUDIO_INFO_LOG("UnLinkProcessStream exit");
     return SUCCESS;
 }
 

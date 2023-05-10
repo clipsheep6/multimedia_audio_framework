@@ -51,7 +51,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
     auto paired = linkedPairedList_.begin();
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
-            ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
+            ret = UnLinkProcessToEndpoint((*paired).first, (*paired).second);
             linkedPairedList_.erase(paired);
             isFind = true;
             break;
@@ -112,25 +112,13 @@ int32_t AudioService::LinkProcessToEndpoint(sptr<AudioProcessInServer> process,
 int32_t AudioService::UnLinkProcessToEndpoint(sptr<AudioProcessInServer> process,
     std::shared_ptr<AudioEndpoint> endpoint)
 {
-    AUDIO_INFO_LOG("UnlinkProcessToEndpoint enter");
-    int32_t ret = endpoint->UnlinkProcessStream(process);
+    AUDIO_INFO_LOG("UnLinkProcessToEndpoint enter");
+    int32_t ret = endpoint->UnLinkProcessStream(process);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UnLinkProcessStream failed");
 
     ret = process->RemoveProcessStatusListener(endpoint);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "RemoveProcessStatusListener failed");
-    AUDIO_INFO_LOG("UnlinkProcessToEndpoint exit");
-    return SUCCESS;
-}
-
-int32_t AudioService::UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process,
-    std::shared_ptr<AudioEndpoint> endpoint)
-{
-    int32_t ret = endpoint->UnlinkProcessStream(process);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UnlinkProcessStream failed");
-
-    ret = process->RemoveProcessStatusListener(endpoint);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "RemoveProcessStatusListener failed");
-
+    AUDIO_INFO_LOG("UnLinkProcessToEndpoint exit");
     return SUCCESS;
 }
 
@@ -145,10 +133,10 @@ int32_t AudioService::ChangeProcessToEndpoint(sptr<AudioProcessInServer> process
         oldEndpoint = GetAudioEndpointForDevice(GetDeviceInfoForProcess(config, true));
         newEndpoint = GetAudioEndpointForDevice(GetDeviceInfoForProcess(config, false));
     }
-    AUDIO_INFO_LOG("Change Unlink oldEndpoint enter");
+    AUDIO_INFO_LOG("Change UnLink oldEndpoint enter");
     int32_t ret = UnLinkProcessToEndpoint(process_, oldEndpoint);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UnLinkProcessStream oldEndpoint failed.");
-    AUDIO_INFO_LOG("Change Unlink oldEndpoint exit");
+    AUDIO_INFO_LOG("Change UnLink oldEndpoint exit");
 
     ret = LinkProcessToEndpoint(process_, newEndpoint);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "LinkProcessStream newEndpoint failed.");

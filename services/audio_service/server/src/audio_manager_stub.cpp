@@ -215,6 +215,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             int32_t ret = ChangeEndPoint(config);
             reply.WriteInt32(ret);
             return AUDIO_OK;
+        }
         case LOAD_AUDIO_EFFECT_LIBRARIES: {
             vector<Library> libList = {};
             vector<Effect> effectList = {};
