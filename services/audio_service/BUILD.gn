@@ -258,6 +258,7 @@ ohos_shared_library("audio_service") {
     "${fwk_native_hdiadapter_path}/sink:renderer_sink_adapter",
     "${fwk_native_hdiadapter_path}/source:audio_capturer_source",
     "${fwk_native_hdiadapter_path}/source:capturer_source_adapter",
+    "${fwk_native_ecadapter_path}:audio_effect_chain_adapter",
   ]
 
   external_deps = [
