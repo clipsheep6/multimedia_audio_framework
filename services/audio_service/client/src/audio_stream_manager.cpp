@@ -81,7 +81,7 @@ bool AudioStreamManager::IsAudioRendererLowLatencySupported(const AudioStreamInf
     return AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
 }
 
-static void UpdateEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo, 
+static void UpdateEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo,
     SupportedEffectConfig &supportedEffectConfig, AudioSceneEffectInfo &audioSceneEffectInfoTmp, int isSupported, int i)
 {
     int j;

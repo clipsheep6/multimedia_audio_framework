@@ -870,7 +870,7 @@ void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, Mes
 
 static void EffectChainProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
 {
-	int j;
+    int j;
     reply.WriteString(supportedEffectConfig.effectChains[i].name);
     int countApply = supportedEffectConfig.effectChains[i].apply.size();
     reply.WriteInt32(countApply);
@@ -883,7 +883,7 @@ static void EffectChainProcess(SupportedEffectConfig &supportedEffectConfig, Mes
 }
 static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
 {
-	int k;
+    int k;
     reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode);
     int countDev = supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].devicePort.size();
     reply.WriteInt32(countDev);
@@ -909,7 +909,7 @@ static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mess
 }
 static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
 {
-	int k;
+    int k;
     reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].mode);
     int countDev = supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].devicePort.size();
     reply.WriteInt32(countDev);
@@ -923,7 +923,7 @@ static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, Messag
 }
 static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
 {
-	int j;
+    int j;
     // i th stream
     reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].scene);
     int countMode = supportedEffectConfig.preProcessNew.stream[i].streamAE_mode.size();
