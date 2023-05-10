@@ -37,6 +37,7 @@ ohos_shared_library("audio_effect_chain_adapter") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//drivers/peripheral/audio/interfaces/include",
+    #"//foundation/multimedia/audio_framework/services/audio_service/server/include",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

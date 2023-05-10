@@ -16,15 +16,24 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <cassert>
+#include <cstdint>
+#include <stddef.h>
+#include <map>
+#include <memory>
+#include <vector>
 
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_info.h"
 
 using namespace OHOS::AudioStandard;
 
-int32_t FillinEffectChainWapper(struct EffectChainAdapter *adapter) {    
+int32_t FillinEffectChainWapper(struct EffectChainAdapter *adapter) {
     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null EffectChainAdapter");
     AudioEffectChainManager *instance = AudioEffectChainManager::GetInstance();
     if (instance != nullptr) {
@@ -47,17 +56,102 @@ int32_t AudioEffectChainProcess(struct EffectChainAdapter *adapter, char *stream
 }
 
 namespace OHOS {
-namespace AudioStandard {
-AudioEffectChainManager *AudioEffectChainManager::GetInstance()
-{
-    static AudioEffectChainManager audioEffectChainManager;
-    return &audioEffectChainManager;
-}
+    namespace AudioStandard {
+        AudioEffectChain::AudioEffectChain(std::string scene) {
+            streamType = scene;
+        }
 
-int32_t AudioEffectChainManager::ProcessEffectChain(char *streamType, void* bufIn, void *bufOut)
-{
-    return SUCCESS;
-}
+        AudioEffectChain::~AudioEffectChain() {}
 
-}
+        void AudioEffectChain::SetEffectChain(std::vector<EffectHandleT *> effectHandles) {
+            standByEffectHandles.clear();
+            for (EffectHandleT *handleT: effectHandles) {
+                standByEffectHandles.emplace_back(handleT);
+            }
+        }
+
+        void AudioEffectChain::ApplyEffectChain(void *bufIn, void *bufOut) {
+//            AUDIO_ERR_LOG("<log error> could not find library %{public}s to load effect %{public}s",
+//                          effect.libraryName.c_str(), effect.name.c_str());
+
+            AUDIO_INFO_LOG("apply effect chain beginning");
+            for (EffectHandleT *handle: standByEffectHandles) {
+                AUDIO_INFO_LOG("run effect: %{public}p", handle);
+//                handle(bufIn, bufOut));
+            }
+        }
+
+        LibEntryT *findlibOfEffect(Effect effect, std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList) {
+            for (const std::unique_ptr <LibEntryT> &lib : effectLibraryList) {
+                for (std::unique_ptr <EffectDescriptorT> &e: lib->effects) {
+                    if (e->name == effect.name) {
+                        return lib.get();
+                    }
+                }
+            }
+            return nullptr;
+        }
+
+        void AudioEffectChainManager::InitAudioEffectChain(OriginalEffectConfig &audioConfig,
+                                                           std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList) {
+
+            // make EffectToLibraryEntryMap
+            for (Effect effect: audioConfig.effects) {
+                auto *libEntry = findlibOfEffect(effect, effectLibraryList);
+                if (!libEntry) {
+//                    std::cout << "libEntry is nil while find effect:" << effect.name << std::endl;
+                }
+
+                EffectToLibraryEntryMap[effect.name] = libEntry;
+            }
+
+            // make EffectChainToEffectsMap
+            for (EffectChain efc: audioConfig.effectChains) {
+                std::string key = efc.name;
+                std::vector <std::string> effects;
+                for (std::string effectName: efc.apply) {
+                    effects.emplace_back(effectName);
+                }
+                EffectChainToEffectsMap[key] = effects;
+            }
+        }
+
+        int32_t AudioEffectChainManager::SetAudioEffectChain(std::string streamType, std::string effectChain) {
+            AudioEffectChain *audioEffectChain = new AudioEffectChain(streamType);
+            StreamTypeToEffectChainMap[streamType] = audioEffectChain;
+
+            std::vector <std::string> effectNames = EffectChainToEffectsMap[effectChain];
+
+            std::vector < EffectHandleT * > effectHandles;
+//            std::cout << "create effectchain:" << effectChain << std::endl;
+            for (std::string effect: effectNames) {
+                EffectHandleT handle;
+                EffectToLibraryEntryMap[effect]->desc->CreateEffect(&effect, 0, 0, &handle);
+                effectHandles.emplace_back(&handle);
+            }
+
+            audioEffectChain->SetEffectChain(effectHandles);
+            return 0;
+        }
+
+        int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string streamType, void *bufIn, void *bufOut) {
+            auto *audioEffectChain = StreamTypeToEffectChainMap[streamType];
+            audioEffectChain->ApplyEffectChain(bufIn, bufOut);
+            return 0;
+        }
+
+        AudioEffectChainManager::AudioEffectChainManager() {}
+
+        AudioEffectChainManager::~AudioEffectChainManager() {}
+
+        AudioEffectChainManager *AudioEffectChainManager::GetInstance() {
+            static AudioEffectChainManager audioEffectChainManager;
+            return &audioEffectChainManager;
+        }
+
+        int32_t AudioEffectChainManager::ProcessEffectChain(char *streamType, void *bufIn, void *bufOut) {
+            return SUCCESS;
+        }
+
+    }
 }
