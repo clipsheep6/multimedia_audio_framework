@@ -486,7 +486,7 @@ public:
      *
      * @return  Returns current audio effect mode.
      */
-    AudioEffectMode GetAudioRenderEffectMode();
+    AudioEffectMode GetStreamAudioEffectMode();
 
     /**
      * @brief Sets the audio effect mode. By default the mode is EFFECT_DEFAULT.
@@ -495,7 +495,7 @@ public:
      * @return  Returns {@link SUCCESS} if audio effect mode is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
-    int32_t SetAudioRenderEffectMode(AudioEffectMode effectMode);
+    int32_t SetStreamAudioEffectMode(AudioEffectMode effectMode);
 
     int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);
     AudioCaptureMode GetAudioCaptureMode();
