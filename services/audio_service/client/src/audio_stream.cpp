@@ -970,41 +970,14 @@ void AudioStream::SubmitAllFreeBuffers()
     }
 }
 
-AudioEffectMode AudioStream::GetAudioEffectMode()
-{
-    return GetAudioRenderEffectMode();
-}
-
 int32_t AudioStream::SetAudioEffectMode(AudioEffectMode effectMode)
 {
-    int32_t ret = SetAudioRenderEffectMode(effectMode);
-    if (ret) {
-        AUDIO_ERR_LOG("AudioStream::SetAudioEffectMode: effectMode: %{public}d failed", effectMode);
-        return ERR_OPERATION_FAILED;
-    }
-    effectMode_ = effectMode;
+    return SetStreamAudioEffectMode(effectMode);
+}
 
-    lock_guard<mutex> lock(bufferQueueLock_);
-
-    for (int32_t i = 0; i < MAX_WRITECB_NUM_BUFFERS; ++i) {
-        size_t length;
-        GetMinimumBufferSize(length);
-        AUDIO_INFO_LOG("AudioServiceClient:: GetMinimumBufferSize: %{public}zu", length);
-
-        writeBufferPool_[i] = std::make_unique<uint8_t[]>(length);
-        if (writeBufferPool_[i] == nullptr) {
-            AUDIO_INFO_LOG(
-            "AudioServiceClient::GetBufferDescriptor writeBufferPool_[i]==nullptr. Allocate memory failed.");
-            return ERR_OPERATION_FAILED;
-        }
-
-        BufferDesc bufDesc {};
-        bufDesc.buffer = writeBufferPool_[i].get();
-        bufDesc.bufLength = length;
-        freeBufferQ_.emplace(bufDesc);
-    }
-
-    return SUCCESS;
+AudioEffectMode AudioStream::GetAudioEffectMode()
+{
+    return GetStreamAudioEffectMode();
 }
 } // namespace AudioStandard
 } // namespace OHOS
