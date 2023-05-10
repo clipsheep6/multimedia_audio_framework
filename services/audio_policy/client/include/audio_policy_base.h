@@ -186,6 +186,8 @@ public:
     virtual float GetMinStreamVolume(void) = 0;
 
     virtual float GetMaxStreamVolume(void) = 0;
+
+    virtual int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

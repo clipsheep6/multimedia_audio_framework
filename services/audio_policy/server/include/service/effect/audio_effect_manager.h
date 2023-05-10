@@ -34,10 +34,22 @@ public:
     void GetOriginalEffectConfig(OriginalEffectConfig &oriEffectConfig);
     void GetAvailableEffects(std::vector<Effect> &availableEffects);
     void UpdateAvailableEffects(std::vector<Effect> &newAvailableEffects);
+    void GetSupportedEffectConfig(SupportedEffectConfig &supportedEffectConfig);
+    void GetAvailableAEConfig();
+    int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
 private:
     OriginalEffectConfig oriEffectConfig_;
     std::vector<Effect> availableEffects_;
+    SupportedEffectConfig supportedEffectConfig_;
+    int32_t existDefault_ = 0;
+
+    void UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig);
+    void UpdateEffectChains(std::vector<std::string> &availableLayout);
+    void UpdateDuplicateBypassMode(ProcessNew &preProcessNew);
+    void UpdateDuplicateMode(ProcessNew &preProcessNew);
+    void UpdateDuplicateDevice(ProcessNew &preProcessNew);
+    int32_t UpdateUnavailableEffectChains(std::vector<std::string> &availableLayout, ProcessNew &preProcessNew);
 };
 } // namespce AudioStandard
 } // namespace OHOS

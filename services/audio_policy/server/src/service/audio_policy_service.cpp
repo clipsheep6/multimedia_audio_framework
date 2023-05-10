@@ -1755,6 +1755,7 @@ void AudioPolicyService::LoadEffectLibrary()
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
     audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
+    audioEffectManager_.GetAvailableAEConfig();
 }
 
 void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
@@ -2581,5 +2582,12 @@ float AudioPolicyService::GetMaxStreamVolume()
 {
     return audioPolicyManager_.GetMaxStreamVolume();
 }
+
+int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& supportedEffectConfig)
+{
+    int32_t ret = audioEffectManager_.QueryEffectManagerSceneMode(supportedEffectConfig);
+    return ret;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
