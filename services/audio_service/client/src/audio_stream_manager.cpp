@@ -106,7 +106,7 @@ static void UpdateEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audi
 int32_t AudioStreamManager::GetEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo)
 {
     int i, isSupported;
-    // SupportedEffectConfig supportedEffectConfig_;
+    SupportedEffectConfig supportedEffectConfig;
     int ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
     int streamNum = supportedEffectConfig.preProcessNew.stream.size();
     if (streamNum > 0) {
