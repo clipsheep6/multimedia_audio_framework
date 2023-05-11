@@ -41,6 +41,7 @@
 #include "audio_ringermode_update_listener_proxy.h"
 #include "audio_volume_key_event_callback_proxy.h"
 #include "i_standard_audio_policy_manager_listener.h"
+#include "hisysevent.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using namespace std;
@@ -1994,11 +1995,21 @@ std::string AudioPolicyServer::GetSystemSoundUri(const std::string &key)
 
 float AudioPolicyServer::GetMinStreamVolume()
 {
+    Trace trace("AudioPolicyServer::GetMinStreamVolume");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", mPolicyService.GetMinStreamVolume());
     return mPolicyService.GetMinStreamVolume();
 }
 
 float AudioPolicyServer::GetMaxStreamVolume()
 {
+    Trace trace("AudioPolicyServer::GetMaxStreamVolume");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", mPolicyService.GetMaxStreamVolume());
     return mPolicyService.GetMaxStreamVolume();
 }
 

@@ -48,3 +48,23 @@ HEADSET_CHANGE:
   ISCONNECT: {type: INT32, desc: is plugged in}
   HASMIC: {type: INT32, desc: mic available}
   DEVICETYPE: {type: INT32, desc: device type}
+
+SAMPLERATE_CHANGE:
+  __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: capturer state change}
+  ISOUTPUT: {type: INT32, desc: output device}
+  SAMPLERATE: {type: UINT32, desc: sample rate}
+
+SAMPLERATE_ERR_CHANGE:
+  __BASE: {type: FAULT, level: MINOR, tag: PowerStats, desc: capturer state change}
+  ISOUTPUT: {type: INT32, desc: output device}
+  SAMPLERATE: {type: UINT32, desc: erro sample rate}
+
+UDERFLOW_CHANGE:
+  __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: capturer state change}
+  ISOUTPUT: {type: INT32, desc: output device}
+  UNDERFLOWCOUNT: {type: INT32, desc: underflow count}
+
+DEVICE_CALLBACK_CHANGE:
+  __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: capturer state change}
+  ISOUTPUT: {type: INT32, desc: output device}
+  CALLBACK: {type: STRING, desc: callback name}

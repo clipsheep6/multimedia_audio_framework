@@ -31,6 +31,8 @@
 #include "xpower_event_js.h"
 #include "audio_renderer_device_change_callback_napi.h"
 #include "audio_renderer_policy_service_died_callback_napi.h"
+#include "hisysevent.h"
+#include "audio_utils.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
@@ -1060,6 +1062,7 @@ void AudioRendererNapi::AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_
 
 void AudioRendererNapi::GetUnderflowCountAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
+    Trace trace("AudioRendererNapi::GetUnderflowCountAsyncCallbackComplete");
     auto asyncContext = static_cast<AudioRendererAsyncContext *>(data);
     napi_value valueParam = nullptr;
 
@@ -1154,6 +1157,7 @@ void AudioRendererNapi::AsyncSetSamplingRate(napi_env env, void *data)
     if (!CheckContextStatus(context)) {
         return;
     }
+    WriteSampleRateSysEvent(env, context->rendererSampleRate);
     if (context->status == SUCCESS) {
         if (context->rendererSampleRate <= 0) {
             context->status = NAPI_ERR_UNSUPPORTED;
@@ -1166,6 +1170,7 @@ void AudioRendererNapi::AsyncSetSamplingRate(napi_env env, void *data)
 
 napi_value AudioRendererNapi::SetRendererSamplingRate(napi_env env, napi_callback_info info)
 {
+    Trace trace("udioRendererNapi::AsyncSetSamplingRate");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -1275,6 +1280,7 @@ napi_value AudioRendererNapi::GetRenderRate(napi_env env, napi_callback_info inf
 
 napi_value AudioRendererNapi::GetRendererSamplingRate(napi_env env, napi_callback_info info)
 {
+    Trace trace("udioRendererNapi::GetRendererSamplingRate");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -1309,6 +1315,7 @@ napi_value AudioRendererNapi::GetRendererSamplingRate(napi_env env, napi_callbac
                     return;
                 }
                 context->rendererSampleRate = context->objectInfo->audioRenderer_->GetRendererSamplingRate();
+                WriteSampleRateSysEvent(env, context->rendererSampleRate);
                 context->status = SUCCESS;
             },
             GetRendererSampleRateAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
@@ -2223,6 +2230,7 @@ napi_value AudioRendererNapi::RegisterDataRequestCallback(napi_env env, napi_val
 napi_value AudioRendererNapi::RegisterCallback(napi_env env, napi_value jsThis,
                                                napi_value* argv, const std::string& cbName)
 {
+    Trace trace("AudioRendererNapi::RegisterCallback");
     AudioRendererNapi *rendererNapi = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
     THROW_ERROR_ASSERT(env, status == napi_ok, NAPI_ERR_SYSTEM);
@@ -2255,6 +2263,7 @@ napi_value AudioRendererNapi::RegisterCallback(napi_env env, napi_value jsThis,
 
 napi_value AudioRendererNapi::On(napi_env env, napi_callback_info info)
 {
+    Trace trace("AudioRendererNapi::On");
     const size_t requireArgc = 2;
     size_t argc = 3;
 
@@ -2270,6 +2279,7 @@ napi_value AudioRendererNapi::On(napi_env env, napi_callback_info info)
 
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, argv[0]);
     AUDIO_DEBUG_LOG("AudioRendererNapi: On callbackName: %{public}s", callbackName.c_str());
+    WriteCallbackSysEvent(env, callbackName);
 
     napi_valuetype handler = napi_undefined;
     if (argc == requireArgc) {
@@ -2292,6 +2302,7 @@ napi_value AudioRendererNapi::On(napi_env env, napi_callback_info info)
 napi_value AudioRendererNapi::UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value* argv,
     const std::string& cbName)
 {
+    Trace trace("AudioRendererNapi::UnregisterCallback");
     AudioRendererNapi *rendererNapi = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
     THROW_ERROR_ASSERT(env, status == napi_ok, NAPI_ERR_SYSTEM);
@@ -2318,6 +2329,7 @@ napi_value AudioRendererNapi::UnregisterCallback(napi_env env, napi_value jsThis
 
 napi_value AudioRendererNapi::Off(napi_env env, napi_callback_info info)
 {
+    Trace trace("AudioRendererNapi::Off");
     const size_t requireArgc = 2;
     size_t argc = 3;
 
@@ -2333,6 +2345,7 @@ napi_value AudioRendererNapi::Off(napi_env env, napi_callback_info info)
 
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, argv[0]);
     AUDIO_DEBUG_LOG("AudioRendererNapi: Off callbackName: %{public}s", callbackName.c_str());
+    WriteCallbackSysEvent(env, callbackName);
 
     return UnregisterCallback(env, jsThis, argc, argv, callbackName);
 }
@@ -2513,6 +2526,7 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
 
 napi_value AudioRendererNapi::GetMinStreamVolume(napi_env env, napi_callback_info info)
 {
+    Trace trace("AudioRendererNapi::GetMinStreamVolume");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -2547,6 +2561,7 @@ napi_value AudioRendererNapi::GetMinStreamVolume(napi_env env, napi_callback_inf
                     return;
                 }
                 context->volLevel = context->objectInfo->audioRenderer_->GetMinStreamVolume();
+                WriteVolumeSysEvent(env, context->volLevel);
                 context->status = SUCCESS;
             },
             GetStreamVolumeAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
@@ -2566,6 +2581,7 @@ napi_value AudioRendererNapi::GetMinStreamVolume(napi_env env, napi_callback_inf
 
 napi_value AudioRendererNapi::GetMaxStreamVolume(napi_env env, napi_callback_info info)
 {
+    Trace trace("AudioRendererNapi::GetMaxStreamVolume");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -2600,6 +2616,7 @@ napi_value AudioRendererNapi::GetMaxStreamVolume(napi_env env, napi_callback_inf
                     return;
                 }
                 context->volLevel = context->objectInfo->audioRenderer_->GetMaxStreamVolume();
+                WriteVolumeSysEvent(env, context->volLevel);
                 context->status = SUCCESS;
             },
             GetStreamVolumeAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
@@ -2629,11 +2646,13 @@ void AudioRendererNapi::AsyncGetCurrentOutputDevices(napi_env env, void *data)
         context->status = NAPI_ERROR_INVALID_PARAM;
     } else if (context->status == SUCCESS) {
         context->deviceInfo = deviceInfo;
+        WriteCurrentDeviceSysEvent(env, context->deviceInfo);
     }
 }
 
 napi_value AudioRendererNapi::GetCurrentOutputDevices(napi_env env, napi_callback_info info)
 {
+    Trace trace("AudioRendererNapi::GetCurrentOutputDevices");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -2679,6 +2698,7 @@ napi_value AudioRendererNapi::GetCurrentOutputDevices(napi_env env, napi_callbac
 
 napi_value AudioRendererNapi::GetUnderflowCount(napi_env env, napi_callback_info info)
 {
+    Trace trace("AudioRendererNapi::GetUnderflowCount");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -2713,6 +2733,7 @@ napi_value AudioRendererNapi::GetUnderflowCount(napi_env env, napi_callback_info
                     return;
                 }
                 context->underflowCount = context->objectInfo->audioRenderer_->GetUnderflowCount();
+                WriteUnderFlowSysEvent(env, context->underflowCount);
                 context->status = SUCCESS;
             },
             GetUnderflowCountAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
@@ -2733,6 +2754,7 @@ napi_value AudioRendererNapi::GetUnderflowCount(napi_env env, napi_callback_info
 void AudioRendererNapi::RegisterRendererDeviceChangeCallback(napi_env env, napi_value* argv,
     AudioRendererNapi *rendererNapi)
 {
+    Trace trace("AudioRendererNapi::RegisterRendererDeviceChangeCallback");
     if (!rendererNapi->rendererDeviceChangeCallbackNapi_) {
         rendererNapi->rendererDeviceChangeCallbackNapi_ = std::make_shared<AudioRendererDeviceChangeCallbackNapi>(env);
         if (!rendererNapi->rendererDeviceChangeCallbackNapi_) {
@@ -2776,6 +2798,7 @@ void AudioRendererNapi::RegisterRendererDeviceChangeCallback(napi_env env, napi_
 void AudioRendererNapi::UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc,
     napi_value* argv, AudioRendererNapi *rendererNapi)
 {
+    Trace trace("AudioRendererNapi::UnregisterRendererDeviceChangeCallback");
     napi_value callback = nullptr;
 
     if (argc == ARGS_TWO) {
@@ -2816,6 +2839,7 @@ void AudioRendererNapi::UnregisterRendererDeviceChangeCallback(napi_env env, siz
 
 void AudioRendererNapi::DestroyNAPICallbacks()
 {
+    Trace trace("AudioRendererNapi::DestroyNAPICallbacks");
     if (rendererDeviceChangeCallbackNapi_ != nullptr) {
         rendererDeviceChangeCallbackNapi_.reset();
         rendererDeviceChangeCallbackNapi_ = nullptr;
@@ -2829,9 +2853,57 @@ void AudioRendererNapi::DestroyNAPICallbacks()
 
 void AudioRendererNapi::DestroyCallbacks()
 {
+    Trace trace("AudioRendererNapi::DestroyCallbacks");
     rendererDeviceChangeCallbackNapi_->RemoveAllCallbacks();
     audioRenderer_->DestroyAudioRendererStateCallback();
     DestroyNAPICallbacks();
+}
+
+void AudioRendererNapi::WriteSampleRateSysEvent(napi_env env, uint32_t sampleRateValue)
+{
+        if (sampleRateValue <= 0) {
+            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+                "SAMPLERATE_ERR_CHANGE", HiviewDFX::HiSysEvent::EventType::FAULT,
+                "ISOUTPUT", 1,
+                "SAMPLERATE", sampleRateValue);
+        } else {
+            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+                "SAMPLERATE_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+                "ISOUTPUT", 1,
+                "SAMPLERATE", sampleRateValue);
+        }
+}
+
+void AudioRendererNapi::WriteCallbackSysEvent(napi_env env, const std::string& cbNameValue)
+{
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "DEVICE_CALLBACK_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "CALLBACK", cbNameValue);
+}
+
+void AudioRendererNapi::WriteVolumeSysEvent(napi_env env, uint32_t volumeValue)
+{
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", volumeValue);
+}
+
+void AudioRendererNapi::WriteCurrentDeviceSysEvent(napi_env env, DeviceInfo deviceInfo)
+{
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "DEVICE_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "DEVICETYPE", deviceInfo.deviceType);
+}
+
+void AudioRendererNapi::WriteUnderFlowSysEvent(napi_env env, uint32_t underFlowValue)
+{
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "UDERFLOW_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "UNDERFLOWCOUNT", underFlowValue);
 }
 } // namespace AudioStandard
 } // namespace OHOS

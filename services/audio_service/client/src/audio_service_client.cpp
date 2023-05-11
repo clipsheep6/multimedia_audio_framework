@@ -1008,6 +1008,11 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
 uint32_t AudioServiceClient::GetUnderflowCount() const
 {
+    Trace trace("AudioServiceClient::GetUnderflowCount");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "UDERFLOW_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "UNDERFLOWCOUNT", underFlowCount);
     return underFlowCount;
 }
 
@@ -2213,6 +2218,7 @@ int32_t AudioServiceClient::SetStreamRenderRate(AudioRendererRate audioRendererR
 
 int32_t AudioServiceClient::SetRendererSamplingRate(uint32_t sampleRate)
 {
+    Trace trace("AudioServiceClient::SetRendererSamplingRate");
     AUDIO_INFO_LOG("SetStreamRendererSamplingRate %{public}d", sampleRate);
     if (!paStream) {
         return AUDIO_CLIENT_SUCCESS;
@@ -2223,6 +2229,7 @@ int32_t AudioServiceClient::SetRendererSamplingRate(uint32_t sampleRate)
     }
     rendererSampleRate = sampleRate;
 
+    WriteSampleRateSysEvent(rendererSampleRate);
     pa_threaded_mainloop_lock(mainLoop);
     pa_operation *operation = pa_stream_update_sample_rate(paStream, sampleRate, nullptr, nullptr);
     pa_operation_unref(operation);
@@ -2233,9 +2240,11 @@ int32_t AudioServiceClient::SetRendererSamplingRate(uint32_t sampleRate)
 
 uint32_t AudioServiceClient::GetRendererSamplingRate()
 {
+    Trace trace("AudioServiceClient::GetRendererSamplingRate");
     if (rendererSampleRate == 0) {
         return sampleSpec.rate;
     }
+    WriteSampleRateSysEvent(rendererSampleRate);
     return rendererSampleRate;
 }
 
@@ -2720,6 +2729,14 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
         default:
             break;
     }
+}
+
+void AudioServiceClient::WriteSampleRateSysEvent(uint32_t sampleRateValue)
+{
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "SAMPLERATE_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "SAMPLERATE", sampleRateValue);
 }
 
 } // namespace AudioStandard
