@@ -34,10 +34,28 @@ public:
     void GetOriginalEffectConfig(OriginalEffectConfig &oriEffectConfig);
     void GetAvailableEffects(std::vector<Effect> &availableEffects);
     void UpdateAvailableEffects(std::vector<Effect> &newAvailableEffects);
+    void GetSupportedEffectConfig(SupportedEffectConfig &supportedEffectConfig);
+    void GetAvailableAEConfig();
+    int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
 private:
     OriginalEffectConfig oriEffectConfig_;
     std::vector<Effect> availableEffects_;
+    SupportedEffectConfig supportedEffectConfig_;
+    int32_t existDefault_ = 0;
+
+    int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &pp);
+    int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, Postprocess &pp);
+    void UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig);
+    void UpdateEffectChains(std::vector<std::string> &availableLayout);
+    void UpdateDuplicateBypassMode(ProcessNew &preProcessNew);
+    void UpdateDuplicateMode(ProcessNew &preProcessNew);
+    void UpdateDuplicateDevice(ProcessNew &preProcessNew);
+    int32_t UpdateUnavailableEffectChains(std::vector<std::string> &availableLayout, ProcessNew &preProcessNew);
+    int32_t UpdateUnsupportedScene(std::string &scene);
+    void UpdateUnsupportedModePre(Preprocess &pp, Stream &stream, std::string &mode, int i);
+    void UpdateUnsupportedModePost(Postprocess &pp, Stream &stream, std::string &mode, int i);
+    int32_t DeleteUnavailableMode(std::vector<int> &modeDelIdx, Stream &stream);
 };
 } // namespce AudioStandard
 } // namespace OHOS

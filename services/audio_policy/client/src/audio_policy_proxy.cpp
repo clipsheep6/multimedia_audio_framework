@@ -1780,5 +1780,155 @@ float AudioPolicyProxy::GetMaxStreamVolume()
     }
     return reply.ReadFloat();
 }
+
+static void EffectChainApplyProcess(EffectChain &tmp, MessageParcel &reply, int countApply)
+{
+    int j;
+    for (j = 0; j < countApply; j++) {
+        string ECapply = reply.ReadString();
+        tmp.apply.push_back(ECapply);
+    }
+}
+
+static void EffectChainProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply)
+{
+    EffectChain tmp;
+    string ECname = reply.ReadString();
+    tmp.name = ECname;
+    int countApply = reply.ReadInt32();
+    if (countApply > 0) {
+        EffectChainApplyProcess(tmp, reply, countApply);
+    }
+    supportedEffectConfig.effectChains.push_back(tmp);
+}
+
+static void PreprocessMode(Stream &stream, MessageParcel &reply, int countMode)
+{
+    int j, k;
+    for (j = 0; j < countMode; j++) {
+        StreamAE_mode streamAE_mode;
+        streamAE_mode.mode = reply.ReadString();
+        int countDev = reply.ReadInt32();
+        if (countDev > 0) {
+            for (k = 0; k < countDev; k++) {
+                string type = reply.ReadString();
+                string address = reply.ReadString();
+                string chain = reply.ReadString();
+                streamAE_mode.devicePort.push_back({type, address, chain});
+            }
+        }
+        stream.streamAE_mode.push_back(streamAE_mode);
+    }
+}
+
+static Stream PreprocessProcess(MessageParcel &reply)
+{
+    Stream stream;
+    stream.scene = reply.ReadString();
+    int countMode = reply.ReadInt32();
+    if (countMode > 0) {
+        PreprocessMode(stream, reply, countMode);
+    }
+    return stream;
+}
+
+static void PostprocessMode(Stream &stream, MessageParcel &reply, int countMode)
+{
+    int j, k;
+    for (j = 0; j < countMode; j++) {
+        StreamAE_mode streamAE_mode;
+        streamAE_mode.mode = reply.ReadString();
+        int countDev = reply.ReadInt32();
+        if (countDev > 0) {
+            for (k = 0; k < countDev; k++) {
+                string type = reply.ReadString();
+                string address = reply.ReadString();
+                string chain = reply.ReadString();
+                streamAE_mode.devicePort.push_back({type, address, chain});
+            }
+        }
+        stream.streamAE_mode.push_back(streamAE_mode);
+    }
+}
+
+static Stream PostprocessProcess(MessageParcel &reply)
+{
+    Stream stream;
+    stream.scene = reply.ReadString();
+    int countMode = reply.ReadInt32();
+    if (countMode > 0) {
+        PostprocessMode(stream, reply, countMode);
+    }
+    return stream;
+}
+
+static int32_t QueryEffectSceneModeChkReply(int countEC, int countPre, int countPost)
+{
+    if ((countEC < 0) || (countEC > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
+        AUDIO_ERR_LOG("QUERY_EFFECT_SCENEMODE read replyParcel failed");
+        return -1;
+    }
+    if ((countPre < 0) || (countPre > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
+        AUDIO_ERR_LOG("QUERY_EFFECT_SCENEMODE read replyParcel failed");
+        return -1;
+    }
+    if ((countPost < 0) || (countPost > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
+        AUDIO_ERR_LOG("QUERY_EFFECT_SCENEMODE read replyParcel failed");
+        return -1;
+    }
+    return 0;
+}
+
+int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
+{
+    int i;
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("QueryEffectSceneMode: WriteInterfaceToken failed");
+        return -1;
+    }
+    error = Remote()->SendRequest(QUERY_EFFECT_SCENEMODE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);
+        return error;
+    }
+    int countEC = reply.ReadInt32();
+    int countPre = reply.ReadInt32();
+    int countPost = reply.ReadInt32();
+    error = QueryEffectSceneModeChkReply(countEC, countPre, countPost);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);
+        return error;
+    }
+    // effectChain
+    if (countEC > 0) {
+        for (i = 0; i < countEC; i++) {
+            EffectChainProcess(supportedEffectConfig, reply);
+        }
+    }
+    // preprocess
+    Stream stream;
+    if (countPre > 0) {
+        ProcessNew preProcessNew;
+        for (i = 0; i < countPre; i++) {
+            stream = PreprocessProcess(reply);
+            preProcessNew.stream.push_back(stream);
+        }
+        supportedEffectConfig.preProcessNew = preProcessNew;
+    }
+    // postprocess
+    if (countPost > 0) {
+        ProcessNew postProcessNew;
+        for (i = 0; i < countPost; i++) {
+            stream = PostprocessProcess(reply);
+            postProcessNew.stream.push_back(stream);
+        }
+        supportedEffectConfig.postProcessNew = postProcessNew;
+    }
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS
