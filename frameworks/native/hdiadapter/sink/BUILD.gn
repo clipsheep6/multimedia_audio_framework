@@ -210,7 +210,7 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
     "hiviewdfx_hilog_native:libhilog",
   ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
