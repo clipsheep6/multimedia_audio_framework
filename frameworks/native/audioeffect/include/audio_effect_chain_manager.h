@@ -62,8 +62,7 @@ namespace OHOS {
             ~AudioEffectChainManager();
 
             // 初始化 StreamTypeToEffectChainMap, mode和device与effectchain一一对应
-            void InitAudioEffectChain(OriginalEffectConfig &audioConfig,
-                                      std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList);
+            void InitAudioEffectChain(std::vector<EffectChain> effectChains, std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList);
 
             // 设置根据mdInfo创建effect handle
             int32_t SetAudioEffectChain(std::string streamType, std::string effectChain);

@@ -31,6 +31,7 @@
 #include "i_audio_renderer_sink.h"
 #include "audio_effect_server.h"
 
+
 namespace OHOS {
 namespace AudioStandard {
 class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback {
@@ -46,6 +47,7 @@ public:
 
     bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
         std::vector<Effect>& successEffectList) override;
+    bool CreateEffectChainManager(std::vector<EffectChain> effectChains) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
