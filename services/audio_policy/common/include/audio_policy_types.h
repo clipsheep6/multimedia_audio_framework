@@ -91,6 +91,7 @@ enum AudioPolicyCommand {
     GET_SYSTEM_SOUND_URI,
     GET_MIN_VOLUME_STREAM,
     GET_MAX_VOLUME_STREAM,
+    QUERY_EFFECT_SCENEMODE,
 };
 } // namespace AudioStandard
 } // namespace OHOS

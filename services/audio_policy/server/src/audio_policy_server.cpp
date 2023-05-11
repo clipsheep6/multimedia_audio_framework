@@ -1975,5 +1975,11 @@ float AudioPolicyServer::GetMaxStreamVolume()
 {
     return mPolicyService.GetMaxStreamVolume();
 }
+
+int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
+{
+    int32_t ret = mPolicyService.QueryEffectManagerSceneMode(supportedEffectConfig);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

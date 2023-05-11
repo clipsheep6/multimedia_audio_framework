@@ -233,6 +233,8 @@ public:
 
     float GetMaxStreamVolume(void);
 
+    int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
