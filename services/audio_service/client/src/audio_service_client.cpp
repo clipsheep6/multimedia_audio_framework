@@ -787,9 +787,10 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
     sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
-    std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
-        mStreamType);
-    const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
+    // std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
+    //     mStreamType);
+    // const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
+    const char *deviceName = "mixer";
 
     pa_threaded_mainloop_lock(mainLoop);
 
@@ -918,6 +919,11 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     // for remote audio device router filter.
     pa_proplist_sets(propList, "stream.client.uid", std::to_string(clientUid_).c_str());
     pa_proplist_sets(propList, "stream.client.pid", std::to_string(clientPid_).c_str());
+
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
+        pa_proplist_sets(propList, "scene.type", "MUSIC");
+        pa_proplist_sets(propList, "scene.mode", "default");
+    }
 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());

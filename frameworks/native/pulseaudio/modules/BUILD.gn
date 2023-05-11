@@ -17,5 +17,7 @@ group("pa_extend_modules") {
   deps = [
     "hdi:module-hdi-sink",
     "hdi:module-hdi-source",
+    "effect:module-effect-sink",
+    "mixer:module-mixer-sink",
   ]
 }

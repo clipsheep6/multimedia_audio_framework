@@ -130,6 +130,32 @@ Fail:
     return false;
 }
 
+// BEGIN CHANGE
+void PulseAudioServiceAdapterImpl::CreateSink(string sinkName, string libName, void *ud)
+{
+    pa_threaded_mainloop_lock(mMainLoop);
+    /* BEGIN create sink */
+    std::string arg = "rate=44100 channels=2 sink_name=" + sinkName;
+    pa_operation *operation = pa_context_load_module(
+        mContext,
+        libName.c_str(),
+        arg.c_str(),
+        PaModuleLoadCb,
+        ud
+    );
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] create sink in pa_context_load_module returned nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return;
+    }
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mMainLoop);
+    }
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+}
+// END CHANGE
+
 uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
 {
     unique_ptr<UserData> userData = make_unique<UserData>();
@@ -150,6 +176,19 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
 
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
+
+    // BEGIN CHANGE
+    if (createSinkFlag == 1) {
+        void *ud = reinterpret_cast<void*>(userData.get());
+        CreateSink("MIXER", "libmodule-mixer-sink.z.so", ud);
+        CreateSink("MUSIC", "libmodule-effect-sink.z.so", ud);
+    }
+    createSinkFlag += 1;
+    
+    // CreateSink("MOVIE", "libmodule-effect-sink.z.so", ud);
+    // CreateSink("GAME", "libmodule-effect-sink.z.so", ud);
+    // CreateSink("VOICE", "libmodule-effect-sink.z.so", ud);
+    // END CHANGE
 
     if (userData->idx == PA_INVALID_INDEX) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] OpenAudioPort returned invalid index");
