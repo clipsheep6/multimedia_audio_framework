@@ -777,7 +777,7 @@ const std::string AudioServiceClient::GetStreamName(AudioStreamType audioType)
     return streamName;
 }
 
-int32_t AudioServiceClient::ConnectStreamToPA()
+int32_t AudioServiceClient::ConnectStreamToPA(const char *deviceName)
 {
     AUDIO_INFO_LOG("Enter AudioServiceClient::ConnectStreamToPA");
     int error, result;
@@ -790,7 +790,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     // std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
     //     mStreamType);
     // const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
-    const char *deviceName = "mixer";
+    // const char *deviceName = "mixer";
 
     pa_threaded_mainloop_lock(mainLoop);
 
@@ -920,6 +920,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_sets(propList, "stream.client.uid", std::to_string(clientUid_).c_str());
     pa_proplist_sets(propList, "stream.client.pid", std::to_string(clientPid_).c_str());
 
+    const char *deviceName = "MIXER";
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         pa_proplist_sets(propList, "scene.type", "MUSIC");
         pa_proplist_sets(propList, "scene.mode", "default");
@@ -980,7 +981,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     pa_threaded_mainloop_unlock(mainLoop);
 
-    error = ConnectStreamToPA();
+    error = ConnectStreamToPA(deviceName);
     streamInfoUpdated = false;
     if (error < 0) {
         AUDIO_ERR_LOG("Create Stream Failed");

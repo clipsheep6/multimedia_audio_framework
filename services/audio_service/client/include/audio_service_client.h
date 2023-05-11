@@ -610,7 +610,7 @@ private:
     ASClientType eAudioClientType;
 
     uint32_t underFlowCount;
-    int32_t ConnectStreamToPA();
+    int32_t ConnectStreamToPA(const char *deviceName);
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();

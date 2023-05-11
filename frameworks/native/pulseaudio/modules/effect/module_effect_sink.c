@@ -352,11 +352,11 @@ int pa__init(pa_module*m) {
         goto fail;
     }
 
-    // if (!(master = pa_namereg_get(m->core, pa_modargs_get_value(ma, "master", NULL), PA_NAMEREG_SINK))) {
-    //     pa_log("Master sink not found");
-    //     goto fail;
-    // }
-    master = m->core->default_sink;
+    if (!(master = pa_namereg_get(m->core, pa_modargs_get_value(ma, "master", NULL), PA_NAMEREG_SINK))) {
+        pa_log("Master sink not found");
+        goto fail;
+    }
+    // master = m->core->default_sink;
 
     ss = master->sample_spec;
     sink_map = master->channel_map;
