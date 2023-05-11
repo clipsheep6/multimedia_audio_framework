@@ -24,6 +24,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <set>
 
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect_chain_manager.h"
@@ -81,10 +82,10 @@ namespace OHOS {
             }
         }
 
-        LibEntryT *findlibOfEffect(Effect effect, std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList) {
+        LibEntryT *findlibOfEffect(std::string effect, std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList) {
             for (const std::unique_ptr <LibEntryT> &lib : effectLibraryList) {
                 for (std::unique_ptr <EffectDescriptorT> &e: lib->effects) {
-                    if (e->name == effect.name) {
+                    if (e->name == effect) {
                         return lib.get();
                     }
                 }
@@ -92,21 +93,28 @@ namespace OHOS {
             return nullptr;
         }
 
-        void AudioEffectChainManager::InitAudioEffectChain(OriginalEffectConfig &audioConfig,
+        void AudioEffectChainManager::InitAudioEffectChain(std::vector<EffectChain> effectChains,
                                                            std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList) {
 
+            std::set<std::string> effectSet;
+            for (EffectChain efc: effectChains){
+                for(std::string effect: efc.apply){
+                    effectSet.insert(effect);
+                }
+            }
+
             // make EffectToLibraryEntryMap
-            for (Effect effect: audioConfig.effects) {
+            for (std::string effect: effectSet) {
                 auto *libEntry = findlibOfEffect(effect, effectLibraryList);
                 if (!libEntry) {
 //                    std::cout << "libEntry is nil while find effect:" << effect.name << std::endl;
                 }
 
-                EffectToLibraryEntryMap[effect.name] = libEntry;
+                EffectToLibraryEntryMap[effect] = libEntry;
             }
 
             // make EffectChainToEffectsMap
-            for (EffectChain efc: audioConfig.effectChains) {
+            for (EffectChain efc: effectChains) {
                 std::string key = efc.name;
                 std::vector <std::string> effects;
                 for (std::string effectName: efc.apply) {

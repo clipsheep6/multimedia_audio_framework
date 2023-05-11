@@ -1754,8 +1754,21 @@ void AudioPolicyService::LoadEffectLibrary()
     if (!loadSuccess) {
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
+
     audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
     audioEffectManager_.GetAvailableAEConfig();
+
+    AUDIO_INFO_LOG("<zyl debug> 1.get supported effect config");
+    SupportedEffectConfig supportedEffectConfig;
+    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
+
+    AUDIO_INFO_LOG("<zyl debug> 2.availiable effectChain:%{public}d", supportedEffectConfig.effectChains.size());
+
+    bool createSuccess = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains);
+    if(!createSuccess){
+        AUDIO_ERR_LOG("create audio effect chain manager failed, please check log");
+    }
+
 }
 
 void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
