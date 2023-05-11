@@ -594,7 +594,6 @@ bool AudioStream::ReleaseAudioStream(bool releaseRunner)
     ReleaseStream(releaseRunner);
     state_ = RELEASED;
     AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS");
-
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);

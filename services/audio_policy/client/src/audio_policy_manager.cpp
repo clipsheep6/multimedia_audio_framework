@@ -1082,9 +1082,21 @@ int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clie
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::CheckMaxRendererInstancesNum()
+{
+    AUDIO_INFO_LOG("CheckMaxRendererInstancesNum");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("CheckMaxRendererInstancesNum: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->CheckMaxRendererInstancesNum();
+}
+
 int32_t AudioPolicyManager::GetMaxRendererInstances()
 {
-    AUDIO_INFO_LOG("AudioPolicyManager::GetMaxRendererInstances");
+    AUDIO_INFO_LOG("GetMaxRendererInstances");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetMaxRendererInstances: audio policy manager proxy is NULL.");
@@ -1092,6 +1104,30 @@ int32_t AudioPolicyManager::GetMaxRendererInstances()
     }
 
     return gsp->GetMaxRendererInstances();
+}
+
+int32_t AudioPolicyManager::GetCurrentRendererInstances()
+{
+    AUDIO_DEBUG_LOG("GetCurrentRendererInstances");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetCurrentRendererInstances: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->GetCurrentRendererInstances();
+}
+
+int32_t AudioPolicyManager::UpdateCurrentRendererInstancesNum(int32_t changeSize)
+{
+    AUDIO_DEBUG_LOG("UpdateCurrentRendererInstancesNum");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("UpdateCurrentRendererInstancesNum: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->UpdateCurrentRendererInstancesNum(changeSize);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -68,6 +68,7 @@ bool AudioPolicyService::Init(void)
         AUDIO_ERR_LOG("Audio Config Parse failed");
         return false;
     }
+    MaxRendererInstancesInit();
 
 #ifdef FEATURE_DTMF_TONE
     std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
@@ -1982,6 +1983,9 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
 {
     AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
     UpdateStreamChangeDeviceInfo(mode, streamChangeInfo);
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
+        UpdateCurrentRendererInstancesNum(-1); // -1 for reducing the number of renderer instances
+    }
     return streamCollector_.UpdateTracker(mode, streamChangeInfo);
 }
 
@@ -2542,8 +2546,7 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     gsp->SetParameterCallback(object);
 }
 
-
-int32_t AudioPolicyService::GetMaxRendererInstances()
+int32_t AudioPolicyService::MaxRendererInstancesInit()
 {
     // init max renderer instances before kvstore start by local prop for bootanimation
     char currentMaxRendererInstances[100] = {0}; // 100 for system parameter usage
@@ -2555,7 +2558,36 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
     } else {
         AUDIO_ERR_LOG("Get max renderer instances failed %{public}d", ret);
     }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::CheckMaxRendererInstancesNum()
+{
+    lock_guard<mutex> lock(rendererInstancesNumMutex_);
+    CHECK_AND_RETURN_RET_LOG(rendererInstancesNum_ < maxRendererInstances_, ERROR,
+        "The current number of audio renderer streams is greater than the maximum number of configured instances");
+
+    rendererInstancesNum_ ++;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::GetMaxRendererInstances()
+{
     return maxRendererInstances_;
+}
+
+int32_t AudioPolicyService::GetCurrentRendererInstances()
+{
+    return rendererInstancesNum_;
+}
+
+int32_t AudioPolicyService::UpdateCurrentRendererInstancesNum(int32_t changeSize)
+{
+    AUDIO_INFO_LOG("UpdateCurrentRendererInstancesNum changeSize: %{public}d", changeSize);
+    lock_guard<mutex> lock(rendererInstancesNumMutex_);
+    rendererInstancesNum_ += changeSize;
+    return SUCCESS;
 }
 
 void AudioPolicyService::RegisterBluetoothListener()

@@ -879,9 +879,29 @@ void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, Mes
     reply.WriteFloat(volume);
 }
 
+void AudioPolicyManagerStub::CheckMaxRendererInstancesNumInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result =  CheckMaxRendererInstancesNum();
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t result =  GetMaxRendererInstances();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetCurrentRendererInstancesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result =  GetCurrentRendererInstances();
+    reply.WriteInt32(result);
+}
+
+
+void AudioPolicyManagerStub::UpdateCurrentRendererInstancesNumInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t changeSize = data.ReadInt32();
+    int32_t result =  UpdateCurrentRendererInstancesNum(changeSize);
     reply.WriteInt32(result);
 }
 
@@ -1175,8 +1195,20 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_MAX_VOLUME_STREAM:
             GetMaxStreamVolumeInternal(data, reply);
 
+        case CHECK_MAX_RENDERER_INSTANCES:
+            CheckMaxRendererInstancesNumInternal(data, reply);
+            break;
+
         case GET_MAX_RENDERER_INSTANCES:
             GetMaxRendererInstancesInternal(data, reply);
+            break;
+        
+        case GET_CURRENT_RENDERER_INSTANCES:
+            GetCurrentRendererInstancesInternal(data, reply);
+            break;
+
+        case UPDATE_CURRENT_RENDERER_INSTANCES_NUM:
+            UpdateCurrentRendererInstancesNumInternal(data, reply);
             break;
 
         default:

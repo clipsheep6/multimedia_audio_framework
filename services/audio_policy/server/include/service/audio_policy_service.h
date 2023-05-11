@@ -233,7 +233,13 @@ public:
 
     float GetMaxStreamVolume(void);
 
+    int32_t CheckMaxRendererInstancesNum();
+
     int32_t GetMaxRendererInstances();
+
+    int32_t GetCurrentRendererInstances();
+
+    int32_t UpdateCurrentRendererInstancesNum(int32_t changeSize);
 
 private:
     AudioPolicyService()
@@ -339,6 +345,8 @@ private:
 
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
+    int32_t MaxRendererInstancesInit();
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -351,11 +359,13 @@ private:
     int32_t dAudioClientUid = 3055;
     int32_t switchVolumeDelay_ = 500000; // us
     int32_t maxRendererInstances_ = 16;
+    int32_t rendererInstancesNum_ = 0; // Total number of current renderer instances
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
+    std::mutex rendererInstancesNumMutex_;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     DeviceType pnpDevice_ = DEVICE_TYPE_NONE;

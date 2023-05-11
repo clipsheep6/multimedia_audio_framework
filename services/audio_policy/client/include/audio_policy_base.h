@@ -189,7 +189,13 @@ public:
 
     virtual float GetMaxStreamVolume(void) = 0;
 
+    virtual int32_t CheckMaxRendererInstancesNum() = 0;
+
     virtual int32_t GetMaxRendererInstances() = 0;
+    
+    virtual int32_t GetCurrentRendererInstances() = 0;
+
+    virtual int32_t UpdateCurrentRendererInstancesNum(int32_t changeSize) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
