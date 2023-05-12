@@ -21,6 +21,8 @@
 #include "parameter.h"
 
 #include "audio_adapter_manager.h"
+#include "hisysevent.h"
+#include "audio_utils.h"
 
 using namespace std;
 
@@ -1094,11 +1096,21 @@ std::string AudioAdapterManager::LoadSystemSoundUriFromKvStore(const std::string
 
 float AudioAdapterManager::GetMinStreamVolume() const
 {
+    Trace trace("AudioAdapterManager::GetMinStreamVolume");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", MIN_STREAM_VOLUME);
     return MIN_STREAM_VOLUME;
 }
 
 float AudioAdapterManager::GetMaxStreamVolume() const
 {
+    Trace trace("AudioAdapterManager::GetMaxStreamVolume");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", MAX_STREAM_VOLUME);
     return MAX_STREAM_VOLUME;
 }
 } // namespace AudioStandard

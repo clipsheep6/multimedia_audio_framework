@@ -18,6 +18,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_policy_types.h"
+#include "hisysevent.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -869,13 +871,23 @@ void AudioPolicyManagerStub::GetSystemSoundUriInternal(MessageParcel &data, Mess
 
 void AudioPolicyManagerStub::GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
+    Trace trace("AudioPolicyManagerStub::GetMinStreamVolumeInternal");
     float volume = GetMinStreamVolume();
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", volume);
     reply.WriteFloat(volume);
 }
 
 void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
+    Trace trace("AudioPolicyManagerStub::GetMaxStreamVolumeInternal");
     float volume = GetMaxStreamVolume();
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", volume);
     reply.WriteFloat(volume);
 }
 

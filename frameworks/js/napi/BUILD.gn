@@ -37,6 +37,7 @@ ohos_shared_library("audio") {
     "${ability_runtime_path}/interfaces/kits/native/ability/native",
     "//foundation/arkui/napi/interfaces/kits",
     "//third_party/libuv/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
   ]
 
   sources = [
@@ -74,6 +75,7 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
   ]
 
   defines = []
@@ -100,6 +102,8 @@ ohos_shared_library("audio") {
     "hiviewdfx_hilog_native:libhilog",
     "napi:ace_napi",
     "resource_management:global_resmgr",
+    "hisysevent_native:libhisysevent",
+    "hitrace_native:hitrace_meter"
   ]
   relative_install_dir = "module/multimedia"
   part_name = "audio_framework"

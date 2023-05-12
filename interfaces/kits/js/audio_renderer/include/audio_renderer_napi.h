@@ -152,6 +152,11 @@ private:
     static void GetUnderflowCountAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void AsyncSetSamplingRate(napi_env env, void *data);
     static void AsyncGetCurrentOutputDevices(napi_env env, void *data);
+    static void WriteSampleRateSysEvent(napi_env env, uint32_t sampleRateValue);
+    static void WriteUnderFlowSysEvent(napi_env env, uint32_t underFlowValue);
+    static void WriteVolumeSysEvent(napi_env env, uint32_t volumeValue);
+    static void WriteCallbackSysEvent(napi_env env, const std::string& cbNameValue);
+    static void WriteCurrentDeviceSysEvent(napi_env env, DeviceInfo deviceInfo);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
                                        napi_value* argv, const std::string& cbName);
