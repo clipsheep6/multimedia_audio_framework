@@ -196,7 +196,7 @@ static int sink_input_pop_cb(pa_sink_input *i, size_t nbytes, pa_memchunk *chunk
     // for (size_t i = 0; i < chunk->length; i++) {
     //     src[i] /= 5;
     // }
-    
+
     const char *sceneMode = pa_proplist_gets(i->proplist, "scene.mode");
     AUDIO_INFO_LOG("effect_sink: sink-input %{public}s pop in sink %{public}s", sceneMode, i->origin_sink->name);
     EffectChainManagerProcess(u->effectChainAdapter, i->origin_sink->name);
@@ -204,11 +204,11 @@ static int sink_input_pop_cb(pa_sink_input *i, size_t nbytes, pa_memchunk *chunk
     short *src = pa_memblock_acquire_chunk(chunk);
     if (pa_streq(i->origin_sink->name, "SCENE_MUSIC")) {
         for (size_t i = 0; i < chunk->length; i++) {
-            src[i] *= 3;
+            src[i] *= 2;
         }
     } else {
         for (size_t i = 0; i < chunk->length; i++) {
-            src[i] /= 3;
+            src[i] /= 2;
         }
     }    
     
