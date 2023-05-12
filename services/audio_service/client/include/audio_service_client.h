@@ -524,6 +524,14 @@ public:
 
     void SetClientID(int32_t clientPid, int32_t clientUid);
 
+    /**
+    * Gets the audio effect scene name
+    *
+    * @param audioType indicate the stream type like music, system, ringtone etc
+    * @return Returns the audio effect scene name.
+    */
+    const std::string GetEffectSceneName(AudioStreamType audioType);
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -586,6 +594,7 @@ private:
     uint32_t rendererSampleRate;
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
+    std::string effectSceneName = "";
     AudioEffectMode effectMode;
     std::shared_ptr<AudioCapturerReadCallback> readCallback_;
     std::shared_ptr<AudioRendererWriteCallback> writeCallback_;
@@ -662,6 +671,7 @@ private:
     static const std::string GetStreamName(AudioStreamType audioType);
     static pa_sample_spec ConvertToPAAudioParams(AudioStreamParams audioParams);
     static AudioStreamParams ConvertFromPAAudioParams(pa_sample_spec paSampleSpec);
+    static const std::string GetEffectModeName(AudioEffectMode effectMode);
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
