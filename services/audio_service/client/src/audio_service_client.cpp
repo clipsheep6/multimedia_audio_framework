@@ -2730,17 +2730,14 @@ const std::string AudioServiceClient::GetEffectSceneName(AudioStreamType audioTy
 {
     std::string name;
     switch (audioType) {
+        case STREAM_DEFAULT:
+            name = "SCENE_MUSIC";
+            break;
         case STREAM_MUSIC:
             name = "SCENE_MUSIC";
             break;
-        case STREAM_MOVIE:
+        case STREAM_MEDIA:
             name = "SCENE_MOVIE";
-            break;
-        case STREAM_GAME:
-            name = "SCENE_GAME";
-            break;
-        case STREAM_SPEECH:
-            name = "SCENE_SPEECH";
             break;
         case STREAM_TTS:
             name = "SCENE_SPEECH";
