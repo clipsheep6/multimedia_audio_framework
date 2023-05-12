@@ -56,6 +56,10 @@ struct userdata {
     pa_sink *sink;
     pa_sink_input *sink_input;
     struct EffectChainAdapter *effectChainAdapter;
+    float *bufIn; // input buffer, output of the effect sink
+    float *bufOut; // output buffer for the final processed output
+    size_t currIdx;
+    size_t processSize;
 
     bool auto_desc;
 };
@@ -183,14 +187,32 @@ static int sink_input_pop_cb(pa_sink_input *i, size_t nbytes, pa_memchunk *chunk
     pa_sink_render(u->sink, nbytes, chunk);
 
     // adapter take chunk to process
-    short *src = pa_memblock_acquire_chunk(chunk);
-    for (size_t i = 0; i < chunk->length; i++) {
-        src[i] /= 5;
-    }
-
+    // short *src = pa_memblock_acquire_chunk(chunk);
+    // size_t unprocessedLen = chunk->length;
+    // while (unprocessedLen < u->processSize) {
+    //     EffectChainManagerProcess(u->effectChainAdapter, i->sink->name);
+    //     unprocessedLen -= u->processSize
+    // }
+    // for (size_t i = 0; i < chunk->length; i++) {
+    //     src[i] /= 5;
+    // }
+    
     const char *sceneMode = pa_proplist_gets(i->proplist, "scene.mode");
-    AUDIO_INFO_LOG("effect_sink: sink-input %{public}s pop", sceneMode);
+    AUDIO_INFO_LOG("effect_sink: sink-input %{public}s pop in sink %{public}s", sceneMode, i->origin_sink->name);
+    EffectChainManagerProcess(u->effectChainAdapter, i->origin_sink->name);
 
+    short *src = pa_memblock_acquire_chunk(chunk);
+    if (pa_streq(i->origin_sink->name, "SCENE_MUSIC")) {
+        for (size_t i = 0; i < chunk->length; i++) {
+            src[i] *= 3;
+        }
+    } else {
+        for (size_t i = 0; i < chunk->length; i++) {
+            src[i] /= 3;
+        }
+    }    
+    
+    
 
 
     return 0;
@@ -487,8 +509,13 @@ int pa__init(pa_module*m) {
     AUDIO_INFO_LOG("xyq: effect_sink EffectChainReturnValue, value=%{public}d", idx);
 
     int32_t frameLen = EffectChainManagerGetFrameLen(u->effectChainAdapter);
-    pa_memzero(u->effectChainAdapter->bufIn, ss.channels * frameLen * sizeof(float));
-    pa_memzero(u->effectChainAdapter->bufOut, ss.channels * frameLen * sizeof(float));
+    AUDIO_INFO_LOG("xyq: effect_sink FrameLen, value=%{public}d", frameLen);
+    AUDIO_INFO_LOG("xyq: effect_sink bufferSize, value=%{public}d", ss.channels * frameLen * sizeof(float));
+    u->currIdx = 0;
+    u->processSize = ss.channels * frameLen * sizeof(float);
+    pa_assert_se(u->effectChainAdapter->bufIn = (float *)malloc(u->processSize));
+    pa_assert_se(u->effectChainAdapter->bufOut = (float *)malloc(u->processSize));
+    
 
     /* The order here is important. The input must be put first,
      * otherwise streams might attach to the sink before the sink
@@ -503,6 +530,7 @@ int pa__init(pa_module*m) {
     return 0;
 
 fail:
+    AUDIO_INFO_LOG("xyq: effect_sink create fail");
     if (ma)
         pa_modargs_free(ma);
 

@@ -46,7 +46,7 @@ int32_t FillinEffectChainWapper(struct EffectChainAdapter *adapter) {
     return SUCCESS;
 }
 
-int32_t AudioEffectChainProcess(struct EffectChainAdapter *adapter, char *sceneType) {
+int32_t EffectChainManagerProcess(struct EffectChainAdapter *adapter, char *sceneType) {
     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null EffectChainAdapter");
     AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
@@ -59,7 +59,9 @@ int32_t AudioEffectChainProcess(struct EffectChainAdapter *adapter, char *sceneT
 
 int32_t EffectChainManagerGetFrameLen(struct EffectChainAdapter *adapter)
 {
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null EffectChainAdapter");
     AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     return audioEffectChainManager->GetFrameLen();
 }
 
@@ -191,8 +193,21 @@ namespace OHOS {
         }
 
         int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, void *bufIn, void *bufOut) {
-            auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
-            audioEffectChain->ApplyEffectChain(bufIn, bufOut);
+            float *bufferIn = (float *)bufIn;
+            float *bufferOut = (float *)bufOut;
+            if (sceneType == "SCENE_MUSIC") {
+                for (int i = 0; i < frameLen * 2; i++) {
+                    bufferOut[i] = bufferIn[i] * 3;
+                }
+            }
+            else if (sceneType == "SCENE_MOVIE") {
+                for (int i = 0; i < frameLen * 2; i++) {
+                    bufferOut[i] = bufferIn[i] / 3;
+                }
+            }
+            AUDIO_INFO_LOG("xjl: ApplyAudioEffectChain running %{public}s", sceneType.c_str());
+            // auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
+            // audioEffectChain->ApplyEffectChain(bufIn, bufOut);
             return 0;
         }
 
