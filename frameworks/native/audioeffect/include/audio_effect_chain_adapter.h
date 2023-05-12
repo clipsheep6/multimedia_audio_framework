@@ -28,14 +28,16 @@ struct EffectChainAdapter {
     void *bufIn; // input buffer, output of the effect sink
     void *bufOut; // output buffer for the final processed output
     int32_t (*EffectChainProcess)(struct EffectChainAdapter *adapter, char *streamType);
+    int (*EffectChainReturnValue)(struct EffectChainAdapter *adapter, int i);
 };
 
-int32_t LoadEffectChainAdapter(struct EffectChainAdapter **ecAdapter);
-int32_t UnLoadEffectChainAdapter(struct EffectChainAdapter *ecAdapter);
+int32_t LoadEffectChainAdapter(struct EffectChainAdapter *adapter);
+int32_t UnLoadEffectChainAdapter(struct EffectChainAdapter *adapter);
 
 // functions for cpp
 int32_t FillinEffectChainWapper(struct EffectChainAdapter *adapter);
 int32_t AudioEffectChainProcess(struct EffectChainAdapter *adapter, char *streamType);
+int AdapterReturnValue(struct EffectChainAdapter *adapter, int i);
 
 #ifdef __cplusplus
 }

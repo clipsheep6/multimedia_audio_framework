@@ -46,20 +46,30 @@ int32_t FillinEffectChainWapper(struct EffectChainAdapter *adapter) {
     return SUCCESS;
 }
 
-int32_t AudioEffectChainProcess(struct EffectChainAdapter *adapter, char *streamType) {
+int32_t AudioEffectChainProcess(struct EffectChainAdapter *adapter, char *sceneType) {
     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null EffectChainAdapter");
     AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    if (!audioEffectChainManager->ProcessEffectChain(streamType, adapter->bufIn, adapter->bufOut)) {
+    std::string sceneTypeString(sceneType);
+    if (!audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, adapter->bufIn, adapter->bufOut)) {
         return ERROR;
     }
     return SUCCESS;
 }
 
+int AdapterReturnValue(struct EffectChainAdapter *adapter, int i)
+{
+    AUDIO_INFO_LOG("xjl: AdapterReturnValue start, value=%{public}d", i);
+    AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
+    int j = audioEffectChainManager->ReturnValue(i);
+    AUDIO_INFO_LOG("xjl: AdapterReturnValue end, value=%{public}d", i);
+    return j;
+}
+
 namespace OHOS {
     namespace AudioStandard {
         AudioEffectChain::AudioEffectChain(std::string scene) {
-            streamType = scene;
+            sceneType = scene;
         }
 
         AudioEffectChain::~AudioEffectChain() {}
@@ -93,9 +103,16 @@ namespace OHOS {
             return nullptr;
         }
 
+        int AudioEffectChainManager::ReturnValue(int i)
+        {
+            AUDIO_INFO_LOG("xyq: come into AudioEffectChainManager::ReturnValue, value=%{public}d", i);
+            return i;
+        }
+
         void AudioEffectChainManager::InitAudioEffectChain(std::vector<EffectChain> effectChains,
                                                            std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList) {
 
+            AUDIO_INFO_LOG("xjl: init audio effect chain in AudioEffectChainManager step1");
             std::set<std::string> effectSet;
             for (EffectChain efc: effectChains){
                 for(std::string effect: efc.apply){
@@ -103,6 +120,7 @@ namespace OHOS {
                 }
             }
 
+            AUDIO_INFO_LOG("xjl: init audio effect chain in AudioEffectChainManager step2");
             // make EffectToLibraryEntryMap
             for (std::string effect: effectSet) {
                 auto *libEntry = findlibOfEffect(effect, effectLibraryList);
@@ -113,6 +131,7 @@ namespace OHOS {
                 EffectToLibraryEntryMap[effect] = libEntry;
             }
 
+            AUDIO_INFO_LOG("xjl: init audio effect chain in AudioEffectChainManager step3");
             // make EffectChainToEffectsMap
             for (EffectChain efc: effectChains) {
                 std::string key = efc.name;
@@ -122,11 +141,23 @@ namespace OHOS {
                 }
                 EffectChainToEffectsMap[key] = effects;
             }
+            AUDIO_INFO_LOG("xjl: init audio effect chain in AudioEffectChainManager step4");
+
+            SetAudioEffectChain("MUSIC", "default");
+            SetAudioEffectChain("MOVIE", "default");
+            SetAudioEffectChain("GAME", "default");
+            SetAudioEffectChain("SPEECH", "default");
+            SetAudioEffectChain("RING", "default");
+            SetAudioEffectChain("OTHERS", "default");
+
+            AUDIO_INFO_LOG("xjl: EffectToLibraryEntryMap size %{public}d", EffectToLibraryEntryMap.size());
+            AUDIO_INFO_LOG("xjl: EffectChainToEffectsMap size %{public}d", EffectChainToEffectsMap.size());
+            AUDIO_INFO_LOG("xjl: SceneTypeToEffectChainMap size %{public}d", SceneTypeToEffectChainMap.size());
         }
 
-        int32_t AudioEffectChainManager::SetAudioEffectChain(std::string streamType, std::string effectChain) {
-            AudioEffectChain *audioEffectChain = new AudioEffectChain(streamType);
-            StreamTypeToEffectChainMap[streamType] = audioEffectChain;
+        int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std::string effectChain) {
+            AudioEffectChain *audioEffectChain = new AudioEffectChain(sceneType);
+            SceneTypeToEffectChainMap[sceneType] = audioEffectChain;
 
             std::vector <std::string> effectNames = EffectChainToEffectsMap[effectChain];
 
@@ -142,8 +173,8 @@ namespace OHOS {
             return 0;
         }
 
-        int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string streamType, void *bufIn, void *bufOut) {
-            auto *audioEffectChain = StreamTypeToEffectChainMap[streamType];
+        int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, void *bufIn, void *bufOut) {
+            auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
             audioEffectChain->ApplyEffectChain(bufIn, bufOut);
             return 0;
         }
@@ -156,10 +187,5 @@ namespace OHOS {
             static AudioEffectChainManager audioEffectChainManager;
             return &audioEffectChainManager;
         }
-
-        int32_t AudioEffectChainManager::ProcessEffectChain(char *streamType, void *bufIn, void *bufOut) {
-            return SUCCESS;
-        }
-
     }
 }

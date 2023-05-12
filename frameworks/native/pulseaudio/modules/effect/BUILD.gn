@@ -26,6 +26,7 @@ config("effect_config") {
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioeffect/include",
     "//commonlibrary/c_utils/base/include",
   ]
 
@@ -61,6 +62,7 @@ ohos_shared_library("module-effect-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioeffect:audio_effect",    
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

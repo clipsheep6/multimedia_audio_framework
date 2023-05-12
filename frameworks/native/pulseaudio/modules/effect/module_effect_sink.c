@@ -31,6 +31,7 @@
 #include <pulsecore/log.h>
 #include <pulsecore/rtpoll.h>
 
+#include "audio_effect_chain_adapter.h"
 #include "audio_log.h"
 
 PA_MODULE_AUTHOR("Lennart Poettering");
@@ -54,7 +55,7 @@ struct userdata {
 
     pa_sink *sink;
     pa_sink_input *sink_input;
-    // adapter *u;
+    struct EffectChainAdapter *effectChainAdapter;
 
     bool auto_desc;
 };
@@ -468,12 +469,29 @@ int pa__init(pa_module*m) {
 
     u->sink->input_to_master = u->sink_input;
 
+    // LoadEffectChainAdapter
+    u->effectChainAdapter = pa_xnew0(struct EffectChainAdapter, 1);
+    int32_t ret = LoadEffectChainAdapter(u->effectChainAdapter);
+    if (ret < 0) {
+        AUDIO_INFO_LOG("Load adapter failed");
+        goto fail;
+    }
+
+    // Test adapter function
+    int idx = AdapterReturnValue(u->effectChainAdapter, 2);
+    AUDIO_INFO_LOG("xyq: effect_sink EffectChainReturnValue, value=%{public}d", idx);
+
+    // idx = u->effectChainAdapter->EffectChainReturnValue(u->effectChainAdapter, 2);
+    // AUDIO_INFO_LOG("xyq: effect_sink EffectChainReturnValue, value=%{public}d", idx);
+
+
     /* The order here is important. The input must be put first,
      * otherwise streams might attach to the sink before the sink
      * input is attached to the master. */
     pa_sink_input_put(u->sink_input);
     pa_sink_put(u->sink);
     pa_sink_input_cork(u->sink_input, false);
+
 
     pa_modargs_free(ma);
 

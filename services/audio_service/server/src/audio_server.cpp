@@ -312,6 +312,7 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> effectChains
         return false;
     }
 
+    AUDIO_INFO_LOG("xjl: init audio effect chain manager in audio server");
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     audioEffectChainManager->InitAudioEffectChain(effectChains, audioEffectServer_->GetAvailableEffects());
     return true;

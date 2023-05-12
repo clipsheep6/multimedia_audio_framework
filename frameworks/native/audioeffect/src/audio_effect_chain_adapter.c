@@ -27,18 +27,18 @@ extern "C" {
 const int32_t SUCCESS = 0;
 const int32_t ERROR = -1;
 
-int32_t LoadEffectChainAdapter(struct EffectChainAdapter **ecAdapter)
+int32_t LoadEffectChainAdapter(struct EffectChainAdapter *adapter)
 {
-    if (ecAdapter == NULL) {
+    if (adapter == NULL) {
         AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
         return ERROR;
     }
 
-    struct EffectChainAdapter *adapter = (struct EffectChainAdapter *)calloc(1, sizeof(*ecAdapter));
-    if (adapter == NULL) {
-        AUDIO_ERR_LOG("%{public}s: alloc sink adapter failed", __func__);
-        return ERROR;
-    }
+    // struct EffectChainAdapter *adapter = (struct EffectChainAdapter *)calloc(1, sizeof(*ecAdapter));
+    // if (adapter == NULL) {
+    //     AUDIO_ERR_LOG("%{public}s: alloc sink adapter failed", __func__);
+    //     return ERROR;
+    // }
 
     if (FillinEffectChainWapper(adapter) != SUCCESS) {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
@@ -46,8 +46,12 @@ int32_t LoadEffectChainAdapter(struct EffectChainAdapter **ecAdapter)
         return ERROR;
     }
 
-    adapter->EffectChainProcess = AudioEffectChainProcess;
-    *ecAdapter = adapter;
+    adapter->EffectChainProcess = &AudioEffectChainProcess;
+    adapter->EffectChainReturnValue = &AdapterReturnValue;
+
+    AUDIO_INFO_LOG("xyq: LoadEffectChainAdapter");
+    int idx = adapter->EffectChainReturnValue(adapter, 2);
+    AUDIO_INFO_LOG("xyq: EffectChainReturnValue, value=%{public}d", idx);
 
     return SUCCESS;
 }

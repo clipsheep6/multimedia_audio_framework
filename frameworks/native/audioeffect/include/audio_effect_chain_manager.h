@@ -34,7 +34,7 @@ namespace OHOS {
     namespace AudioStandard {
         class AudioEffectChain {
         private:
-            std::string streamType;
+            std::string sceneType;
             std::vector<EffectHandleT *> standByEffectHandles;
 
         public:
@@ -53,25 +53,18 @@ namespace OHOS {
         private:
             std::map<std::string, LibEntryT *> EffectToLibraryEntryMap;  // {"hvs": libEntryT}
             std::map <std::string, std::vector<std::string>> EffectChainToEffectsMap; // {"EFFECTCHAIN_SPK_MUSIC": [hvs, eq, histen]}
-            std::map<std::string, AudioEffectChain *> StreamTypeToEffectChainMap; // {"STREAM_MUSIC": AudioEffectChain}  init时创建AudioEffectChain对象
+            std::map<std::string, AudioEffectChain *> SceneTypeToEffectChainMap; // {"STREAM_MUSIC": AudioEffectChain}  init时创建AudioEffectChain对象
 
         public:
-
             AudioEffectChainManager();
-
             ~AudioEffectChainManager();
-
-            // 初始化 StreamTypeToEffectChainMap, mode和device与effectchain一一对应
-            void InitAudioEffectChain(std::vector<EffectChain> effectChains, std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList);
-
-            // 设置根据mdInfo创建effect handle
-            int32_t SetAudioEffectChain(std::string streamType, std::string effectChain);
-
-            int32_t ApplyAudioEffectChain(std::string streamType, void *bufIn, void *bufOut);
-
             static AudioEffectChainManager *GetInstance();
-
-            int32_t ProcessEffectChain(char *streamType, void *bufIn, void *bufOut);
+            // 初始化 SceneTypeToEffectChainMap, mode和device与effectchain一一对应
+            void InitAudioEffectChain(std::vector<EffectChain> effectChains, std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList);
+            // 设置根据mdInfo创建effect handle
+            int32_t SetAudioEffectChain(std::string sceneType, std::string effectChain);
+            int32_t ApplyAudioEffectChain(std::string sceneType, void *bufIn, void *bufOut);
+            int ReturnValue(int i);
         };
 
 
