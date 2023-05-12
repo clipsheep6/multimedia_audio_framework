@@ -671,6 +671,7 @@ private:
     static const std::string GetStreamName(AudioStreamType audioType);
     static pa_sample_spec ConvertToPAAudioParams(AudioStreamParams audioParams);
     static AudioStreamParams ConvertFromPAAudioParams(pa_sample_spec paSampleSpec);
+    static const std::string GetEffectModeName(AudioEffectMode effectMode);
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
