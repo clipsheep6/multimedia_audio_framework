@@ -27,8 +27,6 @@ struct EffectChainAdapter {
     void *wapper; // AudioEffectChainManager instance
     void *bufIn; // input buffer, output of the effect sink
     void *bufOut; // output buffer for the final processed output
-    int32_t (*EffectChainProcess)(struct EffectChainAdapter *adapter, char *streamType);
-    int (*EffectChainReturnValue)(struct EffectChainAdapter *adapter, int i);
 };
 
 int32_t LoadEffectChainAdapter(struct EffectChainAdapter *adapter);
@@ -36,8 +34,9 @@ int32_t UnLoadEffectChainAdapter(struct EffectChainAdapter *adapter);
 
 // functions for cpp
 int32_t FillinEffectChainWapper(struct EffectChainAdapter *adapter);
-int32_t AudioEffectChainProcess(struct EffectChainAdapter *adapter, char *streamType);
-int AdapterReturnValue(struct EffectChainAdapter *adapter, int i);
+int32_t EffectChainManagerProcess(struct EffectChainAdapter *adapter, char *streamType);
+int32_t EffectChainManagerGetFrameLen(struct EffectChainAdapter *adapter);
+int32_t EffectChainManagerReturnValue(struct EffectChainAdapter *adapter, int32_t i);
 
 #ifdef __cplusplus
 }

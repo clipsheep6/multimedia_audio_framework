@@ -183,6 +183,11 @@ static int sink_input_pop_cb(pa_sink_input *i, size_t nbytes, pa_memchunk *chunk
     pa_sink_render(u->sink, nbytes, chunk);
 
     // adapter take chunk to process
+    short *src = pa_memblock_acquire_chunk(chunk);
+    for (size_t i = 0; i < chunk->length; i++) {
+        src[i] /= 5;
+    }
+
     const char *sceneMode = pa_proplist_gets(i->proplist, "scene.mode");
     AUDIO_INFO_LOG("effect_sink: sink-input %{public}s pop", sceneMode);
 
@@ -478,12 +483,12 @@ int pa__init(pa_module*m) {
     }
 
     // Test adapter function
-    int idx = AdapterReturnValue(u->effectChainAdapter, 2);
+    int idx = EffectChainManagerReturnValue(u->effectChainAdapter, 2);
     AUDIO_INFO_LOG("xyq: effect_sink EffectChainReturnValue, value=%{public}d", idx);
 
-    // idx = u->effectChainAdapter->EffectChainReturnValue(u->effectChainAdapter, 2);
-    // AUDIO_INFO_LOG("xyq: effect_sink EffectChainReturnValue, value=%{public}d", idx);
-
+    int32_t frameLen = EffectChainManagerGetFrameLen(u->effectChainAdapter);
+    pa_memzero(u->effectChainAdapter->bufIn, ss.channels * frameLen * sizeof(float));
+    pa_memzero(u->effectChainAdapter->bufOut, ss.channels * frameLen * sizeof(float));
 
     /* The order here is important. The input must be put first,
      * otherwise streams might attach to the sink before the sink

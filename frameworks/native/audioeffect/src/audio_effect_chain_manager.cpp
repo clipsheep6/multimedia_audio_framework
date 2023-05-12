@@ -57,7 +57,13 @@ int32_t AudioEffectChainProcess(struct EffectChainAdapter *adapter, char *sceneT
     return SUCCESS;
 }
 
-int AdapterReturnValue(struct EffectChainAdapter *adapter, int i)
+int32_t EffectChainManagerGetFrameLen(struct EffectChainAdapter *adapter)
+{
+    AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
+    return audioEffectChainManager->GetFrameLen();
+}
+
+int32_t EffectChainManagerReturnValue(struct EffectChainAdapter *adapter, int32_t i)
 {
     AUDIO_INFO_LOG("xjl: AdapterReturnValue start, value=%{public}d", i);
     AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
@@ -103,10 +109,21 @@ namespace OHOS {
             return nullptr;
         }
 
-        int AudioEffectChainManager::ReturnValue(int i)
+        int32_t AudioEffectChainManager::ReturnValue(int32_t i)
         {
             AUDIO_INFO_LOG("xyq: come into AudioEffectChainManager::ReturnValue, value=%{public}d", i);
             return i;
+        }
+
+        int32_t AudioEffectChainManager::SetFrameLen(int32_t frameLength)
+        {
+            frameLen = frameLength;
+            return SUCCESS;
+        }
+
+        int32_t AudioEffectChainManager::GetFrameLen()
+        {
+            return frameLen;
         }
 
         void AudioEffectChainManager::InitAudioEffectChain(std::vector<EffectChain> effectChains,

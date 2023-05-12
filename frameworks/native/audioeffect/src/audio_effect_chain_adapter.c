@@ -46,12 +46,12 @@ int32_t LoadEffectChainAdapter(struct EffectChainAdapter *adapter)
         return ERROR;
     }
 
-    adapter->EffectChainProcess = &AudioEffectChainProcess;
-    adapter->EffectChainReturnValue = &AdapterReturnValue;
+    // adapter->EffectChainProcess = &AudioEffectChainProcess;
+    // adapter->EffectChainReturnValue = &AdapterReturnValue;
 
-    AUDIO_INFO_LOG("xyq: LoadEffectChainAdapter");
-    int idx = adapter->EffectChainReturnValue(adapter, 2);
-    AUDIO_INFO_LOG("xyq: EffectChainReturnValue, value=%{public}d", idx);
+    // AUDIO_INFO_LOG("xyq: LoadEffectChainAdapter");
+    // int idx = adapter->EffectChainReturnValue(adapter, 2);
+    // AUDIO_INFO_LOG("xyq: EffectChainReturnValue, value=%{public}d", idx);
 
     return SUCCESS;
 }

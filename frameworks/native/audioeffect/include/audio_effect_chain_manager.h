@@ -54,6 +54,7 @@ namespace OHOS {
             std::map<std::string, LibEntryT *> EffectToLibraryEntryMap;  // {"hvs": libEntryT}
             std::map <std::string, std::vector<std::string>> EffectChainToEffectsMap; // {"EFFECTCHAIN_SPK_MUSIC": [hvs, eq, histen]}
             std::map<std::string, AudioEffectChain *> SceneTypeToEffectChainMap; // {"STREAM_MUSIC": AudioEffectChain}  init时创建AudioEffectChain对象
+            int32_t frameLen = 1024;
 
         public:
             AudioEffectChainManager();
@@ -64,7 +65,9 @@ namespace OHOS {
             // 设置根据mdInfo创建effect handle
             int32_t SetAudioEffectChain(std::string sceneType, std::string effectChain);
             int32_t ApplyAudioEffectChain(std::string sceneType, void *bufIn, void *bufOut);
-            int ReturnValue(int i);
+            int32_t GetFrameLen();
+            int32_t SetFrameLen(int32_t frameLen);
+            int32_t ReturnValue(int32_t i);
         };
 
 

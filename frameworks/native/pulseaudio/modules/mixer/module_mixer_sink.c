@@ -91,44 +91,6 @@ static const char* const valid_modargs[] = {
     NULL
 };
 
-// static pa_hook_result_t sink_input_new_hook_callback(pa_core *c, pa_sink_input_new_data *new_data, struct userdata *u) {
-//     pa_sink *s;
-//     uint32_t idx;
-//     AUDIO_INFO_LOG("blank_sink: sink_input_new_hook_callback");
-//     pa_assert(c);
-//     pa_assert(new_data);
-//     pa_assert(u);
-
-//     if (!new_data->proplist) {
-//         AUDIO_INFO_LOG("blank_sink: New stream lacks property data.");
-//         return PA_HOOK_OK;
-//     }
-
-//     // if (new_data->sink) {
-//     //     AUDIO_INFO_LOG("blank_sink: Not setting device for stream %{public}s, because already set.", pa_strnull(pa_proplist_gets(new_data->proplist, PA_PROP_MEDIA_NAME)));
-//     //     return PA_HOOK_OK;
-//     // }
-
-//     /* Prefer the default sink over any other sink, just in case... */
-//     if (c->default_sink)
-//         if (pa_sink_input_new_data_set_sink(new_data, c->default_sink, false, false))
-//             return PA_HOOK_OK;
-
-//     /* @todo: favour the highest priority device, not the first one we find? */
-//     PA_IDXSET_FOREACH(s, c->sinks, idx) {
-//         if (s == c->default_sink)
-//             continue;
-
-//         if (!PA_SINK_IS_LINKED(s->state))
-//             continue;
-
-//         if (pa_sink_input_new_data_set_sink(new_data, s, false, false))
-//             return PA_HOOK_OK;
-//     }
-
-//     return PA_HOOK_OK;
-// }
-
 // mixer
 static pa_hook_result_t sink_input_put_cb(pa_core *c, pa_sink_input *si, struct userdata *u) {
     uint32_t idx;
