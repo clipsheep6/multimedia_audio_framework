@@ -151,10 +151,10 @@ static pa_hook_result_t sink_input_put_cb(pa_core *c, pa_sink_input *si, struct 
         return PA_HOOK_OK;
     }
 
-    // check default/none
-    if(pa_streq(sceneMode, "none")){
+    // check EFFECT_NONE or EFFECT_DEFAULT
+    if(pa_streq(sceneMode, "EFFECT_NONE")){
         pa_sink_input_move_to(si, c->default_sink, false);
-        AUDIO_INFO_LOG("blank_sink: sceneMode = none move sinkinputs %{public}s to sink %{public}s",sceneType,c->default_sink->name);
+        AUDIO_INFO_LOG("blank_sink: sceneMode = EFFECT_NONE move sinkinputs %{public}s to sink %{public}s",sceneType,c->default_sink->name);
         return PA_HOOK_OK;
     }
     // classfy sinkinput to effect sink 
@@ -191,10 +191,10 @@ static pa_hook_result_t sink_input_put_cb_proplist_changed(pa_core *c, pa_sink_i
 
     AUDIO_INFO_LOG("blank_sink_proplist: before move sinkinputs %{public}s, %{public}s, name %{public}s, index %{public}d",
      sceneType, sceneMode, si->sink->name, si->sink->index);
-    // check default/none
-    if(pa_streq(sceneMode, "none")){
+    // check EFFECT_NONE or EFFECT_DEFAULT
+    if(pa_streq(sceneMode, "EFFECT_NONE")){
         pa_sink_input_move_to(si, c->default_sink, false);
-        AUDIO_INFO_LOG("blank_sink_proplist: sceneMode = none move sinkinputs %{public}s to sink %{public}s",sceneType,c->default_sink->name);
+        AUDIO_INFO_LOG("blank_sink_proplist: sceneMode = EFFECT_NONE move sinkinputs %{public}s to sink %{public}s",sceneType,c->default_sink->name);
         return PA_HOOK_OK;
     }
     // classfy sinkinput to effect sink 

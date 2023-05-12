@@ -143,12 +143,12 @@ namespace OHOS {
             }
             AUDIO_INFO_LOG("xjl: init audio effect chain in AudioEffectChainManager step4");
 
-            SetAudioEffectChain("MUSIC", "default");
-            SetAudioEffectChain("MOVIE", "default");
-            SetAudioEffectChain("GAME", "default");
-            SetAudioEffectChain("SPEECH", "default");
-            SetAudioEffectChain("RING", "default");
-            SetAudioEffectChain("OTHERS", "default");
+            SetAudioEffectChain("SCENE_MUSIC", "default");
+            SetAudioEffectChain("SCENE_MOVIE", "default");
+            SetAudioEffectChain("SCENE_GAME", "default");
+            SetAudioEffectChain("SCENE_SPEECH", "default");
+            SetAudioEffectChain("SCENE_RING", "default");
+            SetAudioEffectChain("SCENE_OTHERS", "default");
 
             AUDIO_INFO_LOG("xjl: EffectToLibraryEntryMap size %{public}d", EffectToLibraryEntryMap.size());
             AUDIO_INFO_LOG("xjl: EffectChainToEffectsMap size %{public}d", EffectChainToEffectsMap.size());

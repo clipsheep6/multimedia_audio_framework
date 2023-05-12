@@ -922,8 +922,8 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     const char *deviceName = "MIXER";
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        pa_proplist_sets(propList, "scene.type", "MUSIC");
-        pa_proplist_sets(propList, "scene.mode", "default");
+        pa_proplist_sets(propList, "scene.type", "SCENE_MUSIC");
+        pa_proplist_sets(propList, "scene.mode", "EFFECT_DEFAULT");
     }
 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());

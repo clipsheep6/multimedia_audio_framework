@@ -181,7 +181,12 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
     if (createSinkFlag == 1) {
         void *ud = reinterpret_cast<void*>(userData.get());
         CreateSink("MIXER", "libmodule-mixer-sink.z.so", ud);
-        CreateSink("MUSIC", "libmodule-effect-sink.z.so", ud);
+        CreateSink("SCENE_MUSIC", "libmodule-effect-sink.z.so", ud);
+        CreateSink("SCENE_MOVIE", "libmodule-effect-sink.z.so", ud);
+        CreateSink("SCENE_GAME", "libmodule-effect-sink.z.so", ud);
+        CreateSink("SCENE_SPEECH", "libmodule-effect-sink.z.so", ud);
+        CreateSink("SCENE_RING", "libmodule-effect-sink.z.so", ud);
+        CreateSink("SCENE_OTHERS", "libmodule-effect-sink.z.so", ud);
     }
     createSinkFlag += 1;
     
