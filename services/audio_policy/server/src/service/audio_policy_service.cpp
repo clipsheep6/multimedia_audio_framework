@@ -1735,8 +1735,51 @@ void AudioPolicyService::LoadEffectLibrary()
     if (!loadSuccess) {
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
+
     audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
     audioEffectManager_.GetAvailableAEConfig();
+
+    AUDIO_INFO_LOG("<zyl debug> 1.get supported effect config");
+    SupportedEffectConfig supportedEffectConfig;
+    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
+
+    AUDIO_INFO_LOG("<zyl debug> 2.availiable effectChain:%{public}d", supportedEffectConfig.effectChains.size());
+
+    bool createSuccess = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains);
+    CHECK_AND_RETURN_LOG(createSuccess, "EffectChainManager create failed");
+    // if(!createSuccess){
+    //     AUDIO_ERR_LOG("create audio effect chain manager failed, please check log");
+    // }
+
+    // Create sink for each effect
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-mixer-sink.z.so";
+    moduleInfo.channels = "2";
+    moduleInfo.rate = "48000";
+    moduleInfo.format = "s16le"; // 16bit little endian
+    moduleInfo.name = "MIXER";
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
+        "OpenAudioPort failed %{public}d", ioHandle);
+    IOHandles_[moduleInfo.name] = ioHandle;
+
+    moduleInfo.lib = "libmodule-effect-sink.z.so";
+    std::vector<std::string> allSceneTypes;
+    allSceneTypes.push_back("SCENE_MUSIC");
+    allSceneTypes.push_back("SCENE_MOVIE");
+    allSceneTypes.push_back("SCENE_GAME");
+    allSceneTypes.push_back("SCENE_SPEECH");
+    allSceneTypes.push_back("SCENE_RING");
+    allSceneTypes.push_back("SCENE_OTHERS");
+    AUDIO_INFO_LOG("cjw: stream size %{public}d", supportedEffectConfig.postProcessNew.stream.size());
+    for (std::string sceneType : allSceneTypes) {
+        AUDIO_INFO_LOG("cjw: scene name %{public}s", sceneType.c_str());
+        moduleInfo.name = sceneType;
+        ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
+            "OpenAudioPort failed %{public}d", ioHandle);
+        IOHandles_[moduleInfo.name] = ioHandle;
+    }
 }
 
 void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
