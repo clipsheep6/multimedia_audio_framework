@@ -523,7 +523,7 @@ enum AudioFocuState {
 /**
 * Enumerates the audio scene effect type.
 */
-enum StreamType {
+enum AudioEffectScene {
     SCENE_OTHERS = 0,
     SCENE_MUSIC = 1,
     SCENE_MOVIE = 2,
@@ -535,7 +535,7 @@ enum StreamType {
 /**
 * Enumerates the audio scene effct mode.
 */
-enum EffectMode {
+enum AudioEffectMode {
     EFFECT_NONE = 0,
     EFFECT_DEFAULT = 1,
     EFFECT_TEST = 2
@@ -910,8 +910,7 @@ struct StreamSetStateEventInternal {
 };
 
 struct AudioSceneEffectInfo {
-    StreamType scene;
-    std::vector<EffectMode> mode;
+    std::vector<std::string> mode;
 };
 
 struct AudioRendererChangeInfo {
@@ -1068,11 +1067,6 @@ public:
      * @since 10
      */
     virtual void OnAudioPolicyServiceDied() = 0;
-};
-
-enum AudioEffectMode {
-    EFFECT_NONE = 0,
-    EFFECT_DEFAULT = 1,
 };
 } // namespace AudioStandard
 } // namespace OHOS
