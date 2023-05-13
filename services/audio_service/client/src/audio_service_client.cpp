@@ -2011,6 +2011,7 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
     mStreamType = audioStreamType;
     const std::string streamName = GetStreamName(audioStreamType);
+    effectSceneName = GetEffectSceneName(audioStreamType);
 
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
@@ -2021,6 +2022,7 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "media.name", streamName.c_str());
+    pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);

@@ -530,7 +530,7 @@ public:
     * @param audioType indicate the stream type like music, system, ringtone etc
     * @return Returns the audio effect scene name.
     */
-    const std::string GetEffectSceneName(AudioStreamType audioType);
+    static const std::string GetEffectSceneName(AudioStreamType audioType);
 
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
