@@ -185,6 +185,9 @@ public:
     virtual bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
                                           std::vector<Effect> &successEffects) = 0;
 
+    virtual bool CreateEffectChainManager(std::vector<EffectChain> effectChains) = 0;
+
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -207,6 +210,7 @@ public:
         SET_AUDIO_BALANCE_VALUE = 18,
         CREATE_AUDIOPROCESS = 19,
         LOAD_AUDIO_EFFECT_LIBRARIES = 20,
+        CREATE_AUDIO_EFFECT_CHAIN_MANAGER = 21,
     };
 
 public:

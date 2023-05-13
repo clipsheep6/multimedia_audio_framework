@@ -173,6 +173,7 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioeffect/include",
     "${audio_fwk_path}/frameworks/native/audioutils/include",
     "${fwk_native_hdiadapter_path}/sink/bluetooth",
     "${fwk_native_hdiadapter_path}/sink/common",
@@ -258,6 +259,7 @@ ohos_shared_library("audio_service") {
     "${fwk_native_hdiadapter_path}/sink:renderer_sink_adapter",
     "${fwk_native_hdiadapter_path}/source:audio_capturer_source",
     "${fwk_native_hdiadapter_path}/source:capturer_source_adapter",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioeffect:audio_effect",
   ]
 
   external_deps = [
