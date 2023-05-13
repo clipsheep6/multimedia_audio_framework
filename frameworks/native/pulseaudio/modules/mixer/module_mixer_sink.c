@@ -41,6 +41,7 @@
 #include <pulsecore/thread.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/rtpoll.h>
+#include <pulsecore/namereg.h>
 
 #include "audio_log.h"
 
@@ -92,58 +93,103 @@ static const char* const valid_modargs[] = {
 };
 
 // mixer
-static pa_hook_result_t sink_input_put_cb(pa_core *c, pa_sink_input *si, struct userdata *u) {
-    uint32_t idx;
-    AUDIO_INFO_LOG("blank_sink: sink_put_hook_callback");
-    pa_sink	*s;
-    pa_assert(c);
-    pa_assert(u);    
+// static pa_hook_result_t sink_input_put_cb(pa_core *c, pa_sink_input *si, struct userdata *u) {
+//     uint32_t idx;
+//     AUDIO_INFO_LOG("blank_sink: sink_put_hook_callback");
+//     pa_sink	*s;
+//     pa_assert(c);
+//     pa_assert(u);    
 
-    // get proplist attribute
-	// const char *streamType = pa_proplist_gets(si->proplist, "stream.type");
-    const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
-    const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
+//     // get proplist attribute
+// 	// const char *streamType = pa_proplist_gets(si->proplist, "stream.type");
+//     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
+//     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
 
-    AUDIO_INFO_LOG("blank_sink: before move sinkinputs %{public}s, %{public}s, name %{public}s, index %{public}d",
-     sceneType, sceneMode, si->sink->name, si->sink->index);
-    // check is effectsink
-    const char *effectSinkInputList = "effect";
-    if (pa_str_in_list_spaces(effectSinkInputList, sceneMode)){
-        AUDIO_INFO_LOG("blank_sink: in effect sink list sceneMode %{public}s ", sceneMode);
-        return PA_HOOK_OK;
-    }
+//     if (sceneType) {
 
-    // check EFFECT_NONE or EFFECT_DEFAULT
-    if(pa_streq(sceneMode, "EFFECT_NONE")){
-        pa_sink_input_move_to(si, c->default_sink, false);
-        AUDIO_INFO_LOG("blank_sink: sceneMode = EFFECT_NONE move sinkinputs %{public}s to sink %{public}s",sceneType,c->default_sink->name);
-        return PA_HOOK_OK;
-    }
-    // classfy sinkinput to effect sink 
-    int flag = 0;
-    PA_IDXSET_FOREACH(s, c->sinks, idx) {
-        AUDIO_INFO_LOG("blank_sink: check sinkinput sceneType %{public}s and sink %{public}s", sceneType, s->name);
-        if(pa_streq(s->name, sceneType)) {
-            pa_sink_input_move_to(si, s, false);
-            AUDIO_INFO_LOG("blank_sink: flag = 1 move sinkinputs %{public}s to sink %{public}s", sceneType, s->name);
-            flag = 1;
-            break;
-        } 
-    }
-    // classfy sinkinput to default sink 
-    if (flag == 0) {
-        pa_sink_input_move_to(si, c->default_sink, false);
-        AUDIO_INFO_LOG("blank_sink: flag = 0 move sinkinputs %{public}s to sink %{public}s", sceneType, c->default_sink->name);
-    }
-	AUDIO_INFO_LOG("blank_sink: after move sinkinputs %{public}s, name %{public}s, index %{public}d", sceneType, si->sink->name, si->sink->index);
+    
 
-    return PA_HOOK_OK;
-}
+//     AUDIO_INFO_LOG("blank_sink: before move sinkinputs %{public}s, %{public}s, name %{public}s, index %{public}d",
+//      sceneType, sceneMode, si->sink->name, si->sink->index);
+//     // check is effectsink
+//     const char *effectSinkInputList = "effect";
+//     if (pa_str_in_list_spaces(effectSinkInputList, sceneMode)){
+//         AUDIO_INFO_LOG("blank_sink: in effect sink list sceneMode %{public}s ", sceneMode);
+//         return PA_HOOK_OK;
+//     }
+
+//     // check EFFECT_NONE or EFFECT_DEFAULT
+//     if(pa_safe_streq(sceneMode, "EFFECT_NONE")){
+//         pa_sink_input_move_to(si, c->default_sink, false);
+//         AUDIO_INFO_LOG("blank_sink: sceneMode = EFFECT_NONE move sinkinputs %{public}s to sink %{public}s",sceneType,c->default_sink->name);
+//         return PA_HOOK_OK;
+//     }
+//     // classfy sinkinput to effect sink 
+//     int flag = 0;
+//     PA_IDXSET_FOREACH(s, c->sinks, idx) {
+//         AUDIO_INFO_LOG("blank_sink: check sinkinput sceneType %{public}s and sink %{public}s", sceneType, s->name);
+//         if(pa_safe_streq(s->name, sceneType)) {
+//             pa_sink_input_move_to(si, s, false);
+//             AUDIO_INFO_LOG("blank_sink: flag = 1 move sinkinputs %{public}s to sink %{public}s", sceneType, s->name);
+//             flag = 1;
+//             break;
+//         } 
+//     }
+//     // classfy sinkinput to default sink 
+//     if (flag == 0) {
+//         pa_sink_input_move_to(si, c->default_sink, false);
+//         AUDIO_INFO_LOG("blank_sink: flag = 0 move sinkinputs %{public}s to sink %{public}s", sceneType, c->default_sink->name);
+//     }
+// 	AUDIO_INFO_LOG("blank_sink: after move sinkinputs %{public}s, name %{public}s, index %{public}d", sceneType, si->sink->name, si->sink->index);
+
+//     }
+//     return PA_HOOK_OK;
+// }
 
 static pa_hook_result_t sink_input_put_cb_proplist_changed(pa_core *c, pa_sink_input *si, struct userdata *u) {
-    uint32_t idx;
+    // uint32_t idx;
+    // AUDIO_INFO_LOG("blank_sink: sink_input_put_cb_proplist_changed");
+    // pa_sink	*s;
+    // pa_assert(c);
+    // pa_assert(u);   
+    // // get proplist attribute 
+	// // const char *streamType = pa_proplist_gets(si->proplist, "stream.type");
+    // const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
+    // const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
+
+    // AUDIO_INFO_LOG("blank_sink_proplist: before move sinkinputs %{public}s, %{public}s, name %{public}s, index %{public}d",
+    //  sceneType, sceneMode, si->sink->name, si->sink->index);
+    // // check EFFECT_NONE or EFFECT_DEFAULT
+    // if(pa_safe_streq(sceneMode, "EFFECT_NONE")){
+    //     pa_sink_input_move_to(si, c->default_sink, false);
+    //     AUDIO_INFO_LOG("blank_sink_proplist: sceneMode = EFFECT_NONE move sinkinputs %{public}s to sink %{public}s",sceneType,c->default_sink->name);
+    //     return PA_HOOK_OK;
+    // }
+    // // classfy sinkinput to effect sink 
+    // int flag = 0;
+    // PA_IDXSET_FOREACH(s, c->sinks, idx) {
+    //     AUDIO_INFO_LOG("blank_sink_proplist: check sinkinput sceneType %{public}s and sink %{public}s", sceneType, s->name);
+    //     if(pa_safe_streq(s->name, sceneType)) {
+    //         pa_sink_input_move_to(si, s, false);
+    //         AUDIO_INFO_LOG("blank_sink_proplist: flag = 1 move sinkinputs %{public}s to sink %{public}s", sceneType, s->name);
+    //         flag = 1;
+    //         break;
+    //     } 
+    // }
+    // // classfy sinkinput to default sink 
+    // if (flag == 0) {
+    //     pa_sink_input_move_to(si, c->default_sink, false);
+    //     AUDIO_INFO_LOG("blank_sink_proplist: flag = 0 move sinkinputs %{public}s to sink %{public}s", sceneType, c->default_sink->name);
+    // }
+	// AUDIO_INFO_LOG("blank_sink_proplist: after move sinkinputs %{public}s, name %{public}s, index %{public}d", sceneType, si->sink->name, si->sink->index);
+
+    // return PA_HOOK_OK;
+
+
+    // uint32_t idx;
     AUDIO_INFO_LOG("blank_sink: sink_input_put_cb_proplist_changed");
-    pa_sink	*s;
+    // pa_sink	*s;
+    pa_sink *effect_sink;
     pa_assert(c);
     pa_assert(u);   
     // get proplist attribute 
@@ -153,28 +199,42 @@ static pa_hook_result_t sink_input_put_cb_proplist_changed(pa_core *c, pa_sink_i
 
     AUDIO_INFO_LOG("blank_sink_proplist: before move sinkinputs %{public}s, %{public}s, name %{public}s, index %{public}d",
      sceneType, sceneMode, si->sink->name, si->sink->index);
-    // check EFFECT_NONE or EFFECT_DEFAULT
-    if(pa_streq(sceneMode, "EFFECT_NONE")){
+    // check default/none
+    if(pa_safe_streq(sceneMode, "EFFECT_NONE")){
         pa_sink_input_move_to(si, c->default_sink, false);
-        AUDIO_INFO_LOG("blank_sink_proplist: sceneMode = EFFECT_NONE move sinkinputs %{public}s to sink %{public}s",sceneType,c->default_sink->name);
+        AUDIO_INFO_LOG("blank_sink_proplist: sceneMode = EFFECT_NONE move sinkinputs %{public}s to sink %{public}s", sceneType, c->default_sink->name);
         return PA_HOOK_OK;
     }
+
     // classfy sinkinput to effect sink 
-    int flag = 0;
-    PA_IDXSET_FOREACH(s, c->sinks, idx) {
-        AUDIO_INFO_LOG("blank_sink_proplist: check sinkinput sceneType %{public}s and sink %{public}s", sceneType, s->name);
-        if(pa_streq(s->name, sceneType)) {
-            pa_sink_input_move_to(si, s, false);
-            AUDIO_INFO_LOG("blank_sink_proplist: flag = 1 move sinkinputs %{public}s to sink %{public}s", sceneType, s->name);
-            flag = 1;
-            break;
-        } 
-    }
-    // classfy sinkinput to default sink 
-    if (flag == 0) {
+    // int flag = 0;
+    // pa_sink *effect_sink;
+    effect_sink = pa_namereg_get(c, sceneType, PA_NAMEREG_SINK);
+    if (!effect_sink) {
+        AUDIO_INFO_LOG("blank_sink: effect_sink sink not found.");
+        // classfy sinkinput to default sink 
         pa_sink_input_move_to(si, c->default_sink, false);
-        AUDIO_INFO_LOG("blank_sink_proplist: flag = 0 move sinkinputs %{public}s to sink %{public}s", sceneType, c->default_sink->name);
+        AUDIO_INFO_LOG("blank_sink:  move sinkinputs %{public}s to sink %{public}s", sceneType, c->default_sink->name);
+    } else{
+        // classfy sinkinput to effect sink 
+        pa_sink_input_move_to(si, effect_sink, false);
+        AUDIO_INFO_LOG("blank_sink:  move sinkinputs %{public}s to sink %{public}s", sceneType, effect_sink->name);
     }
+    // PA_IDXSET_FOREACH(s, c->sinks, idx) {
+    //     AUDIO_INFO_LOG("blank_sink: check sinkinput sceneType %{public}s and sink %{public}s", sceneType, s->name);
+    //     if(pa_streq(s->name, sceneType)) {
+    //         pa_sink_input_move_to(si, s, false);
+    //         AUDIO_INFO_LOG("blank_sink: flag = 1 move sinkinputs %{public}s to sink %{public}s", sceneType, s->name);
+    //         flag = 1;
+    //         break;
+    //     } 
+    // }
+    
+    // classfy sinkinput to default sink 
+    // if (flag == 0) {
+    //     pa_sink_input_move_to(si, c->default_sink, false);
+    //     AUDIO_INFO_LOG("blank_sink: flag = 0 move sinkinputs %{public}s to sink %{public}s", sceneType, c->default_sink->name);
+    // }
 	AUDIO_INFO_LOG("blank_sink_proplist: after move sinkinputs %{public}s, name %{public}s, index %{public}d", sceneType, si->sink->name, si->sink->index);
 
     return PA_HOOK_OK;
@@ -519,7 +579,7 @@ int pa__init(pa_module*m) {
 
     pa_sink_set_latency_range(u->sink, 0, u->block_usec);
 
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_LATE, (pa_hook_cb_t) sink_input_put_cb, u);
+    // pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_LATE, (pa_hook_cb_t) sink_input_put_cb, u);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE, (pa_hook_cb_t) sink_input_put_cb_proplist_changed, u);
 
     pa_sink_put(u->sink);

@@ -64,7 +64,7 @@ void AudioEffectManager::GetSupportedEffectConfig(SupportedEffectConfig &support
     supportedEffectConfig = supportedEffectConfig_;
 }
 
-int32_t AudioEffectManager::UpdateUnsupportedScene(std::string &scene)
+static int32_t UpdateUnsupportedScene(std::string &scene)
 {
     int isSupported = 0;
     if ((scene != "SCENE_MUSIC") &&
@@ -80,9 +80,27 @@ int32_t AudioEffectManager::UpdateUnsupportedScene(std::string &scene)
     return isSupported;
 }
 
-void AudioEffectManager::UpdateUnsupportedModePre(Preprocess &pp, Stream &stream, std::string &mode, int i)
+static void UpdateUnsupportedDevicePre(Preprocess &pp, Stream &stream, std::string &mode, int i, int j)
 {
-    int j;
+    StreamAE_mode streamAE_mode;
+    streamAE_mode.mode = mode;
+    j = 0;
+    for (auto &device: pp.device) {
+        if (i == j) {
+            for (auto &eachDevice: device) {
+                streamAE_mode.devicePort.push_back(eachDevice);
+            }
+            break;
+        }
+        j += 1;
+    }
+    i += 1;
+    stream.streamAE_mode.push_back(streamAE_mode);
+}
+
+static void UpdateUnsupportedModePre(Preprocess &pp, Stream &stream, std::string &mode, int i)
+{
+    int j = 0;
     int isSupported = 0;
     if ((mode != "EFFECT_NONE") &&
         (mode != "EFFECT_DEFAULT") &&
@@ -92,26 +110,31 @@ void AudioEffectManager::UpdateUnsupportedModePre(Preprocess &pp, Stream &stream
         isSupported = -1;
     }
     if (isSupported == 0) {
-        StreamAE_mode streamAE_mode;
-        streamAE_mode.mode = mode;
-        j = 0;
-        for (auto &device: pp.device) {
-            if (i == j) {
-                for (auto &a: device) {
-                    streamAE_mode.devicePort.push_back(a);
-                }
-                break;
-            }
-            j += 1;
-        }
-        i += 1;
-        stream.streamAE_mode.push_back(streamAE_mode);
+        UpdateUnsupportedDevicePre(pp, stream, mode, i, j);
     }
 }
 
-void AudioEffectManager::UpdateUnsupportedModePost(Postprocess &pp, Stream &stream, std::string &mode, int i)
+static void UpdateUnsupportedDevicePost(Postprocess &pp, Stream &stream, std::string &mode, int i, int j)
 {
-    int j;
+    StreamAE_mode streamAE_mode;
+    streamAE_mode.mode = mode;
+    j = 0;
+    for (auto &device: pp.device) {
+        if (i == j) {
+            for (auto &a: device) {
+                streamAE_mode.devicePort.push_back(a);
+            }
+            break;
+        }
+        j += 1;
+    }
+    i += 1;
+    stream.streamAE_mode.push_back(streamAE_mode);
+}
+
+static void UpdateUnsupportedModePost(Postprocess &pp, Stream &stream, std::string &mode, int i)
+{
+    int j = 0;
     int isSupported = 0;
     if ((mode != "EFFECT_NONE") &&
         (mode != "EFFECT_DEFAULT") &&
@@ -121,29 +144,15 @@ void AudioEffectManager::UpdateUnsupportedModePost(Postprocess &pp, Stream &stre
         isSupported = -1;
     }
     if (isSupported == 0) {
-        StreamAE_mode streamAE_mode;
-        streamAE_mode.mode = mode;
-        j = 0;
-        for (auto &device: pp.device) {
-            if (i == j) {
-                for (auto &a: device) {
-                    streamAE_mode.devicePort.push_back(a);
-                }
-                break;
-            }
-            j += 1;
-        }
-        i += 1;
-        stream.streamAE_mode.push_back(streamAE_mode);
+        UpdateUnsupportedDevicePost(pp, stream, mode, i, j);
     }
 }
 
-int32_t AudioEffectManager::UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &pp)
+static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &pp)
 {
     int i;
     int32_t isDuplicate = 0;
-    int32_t isSupported;
-    isSupported = UpdateUnsupportedScene(pp.stream);
+    int32_t isSupported = UpdateUnsupportedScene(pp.stream);
     auto it = std::find_if(preProcessNew.stream.begin(), preProcessNew.stream.end(), [&pp](const Stream& x) {
         return x.scene == pp.stream;
     });
@@ -151,7 +160,7 @@ int32_t AudioEffectManager::UpdateAvailableStreamPre(ProcessNew &preProcessNew, 
         Stream stream;
         stream.scene = pp.stream;
         i = 0;
-        for(auto &mode: pp.mode) {
+        for (auto &mode: pp.mode) {
             UpdateUnsupportedModePre(pp, stream, mode, i);
         }
         preProcessNew.stream.push_back(stream);
@@ -161,12 +170,11 @@ int32_t AudioEffectManager::UpdateAvailableStreamPre(ProcessNew &preProcessNew, 
     return isDuplicate;
 }
 
-int32_t AudioEffectManager::UpdateAvailableStreamPost(ProcessNew &postProcessNew, Postprocess &pp)
+static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, Postprocess &pp)
 {
     int i;
     int32_t isDuplicate = 0;
-    int32_t isSupported;
-    isSupported = UpdateUnsupportedScene(pp.stream);
+    int32_t isSupported = UpdateUnsupportedScene(pp.stream);
     auto it = std::find_if(postProcessNew.stream.begin(), postProcessNew.stream.end(), [&pp](const Stream& x) {
         return x.scene == pp.stream;
     });
@@ -174,7 +182,7 @@ int32_t AudioEffectManager::UpdateAvailableStreamPost(ProcessNew &postProcessNew
         Stream stream;
         stream.scene = pp.stream;
         i = 0;
-        for(auto &mode: pp.mode) {
+        for (auto &mode: pp.mode) {
             UpdateUnsupportedModePost(pp, stream, mode, i);
         }
         postProcessNew.stream.push_back(stream);
@@ -266,19 +274,19 @@ void AudioEffectManager::UpdateDuplicateBypassMode(ProcessNew &preProcessNew)
 void AudioEffectManager::UpdateDuplicateMode(ProcessNew &preProcessNew)
 {
     std::unordered_set<std::string> seen;
-    std::vector<int> to_remove;
+    std::vector<int> toRemove;
     uint32_t i;
-    for (auto &stream: preProcessNew.stream) { 
+    for (auto &stream: preProcessNew.stream) {
         seen.clear();
-        to_remove.clear();
+        toRemove.clear();
         for (i = 0; i < stream.streamAE_mode.size(); i++) {
             if (seen.count(stream.streamAE_mode[i].mode)) {
-                to_remove.push_back(i);
+                toRemove.push_back(i);
             } else {
                 seen.insert(stream.streamAE_mode[i].mode);
             }
         }
-        for (auto it = to_remove.rbegin(); it != to_remove.rend(); ++it) {
+        for (auto it = toRemove.rbegin(); it != toRemove.rend(); ++it) {
             AUDIO_INFO_LOG("[supportedEffectConfig LOG4]:mode-> The duplicate mode of %{public}s configuration \
                 is deleted, and the first configuration is retained!", stream.scene.c_str());
             stream.streamAE_mode.erase(stream.streamAE_mode.begin() + *it);
@@ -286,41 +294,46 @@ void AudioEffectManager::UpdateDuplicateMode(ProcessNew &preProcessNew)
     }
 }
 
+static void UpdateDuplicateDeviceRecord(StreamAE_mode &streamAE_mode, Stream &stream)
+{
+    uint32_t i;
+    std::unordered_set<std::string> seen;
+    std::vector<int> toRemove;
+    seen.clear();
+    toRemove.clear();
+    for (i = 0; i < streamAE_mode.devicePort.size(); i++) {
+        if (streamAE_mode.devicePort[i].address != "") {
+            if (seen.count(streamAE_mode.devicePort[i].address)) {
+                toRemove.push_back(i);
+            } else {
+                seen.insert(streamAE_mode.devicePort[i].address);
+            }
+        } else {
+            if (seen.count(streamAE_mode.devicePort[i].type)) {
+                toRemove.push_back(i);
+            } else {
+                seen.insert(streamAE_mode.devicePort[i].type);
+            }
+        }
+    }
+    for (auto it = toRemove.rbegin(); it != toRemove.rend(); ++it) {
+        AUDIO_INFO_LOG("[supportedEffectConfig LOG5]:device-> The duplicate device of %{public}s's %{public}s \
+            mode configuration is deleted, and the first configuration is retained!",
+            stream.scene.c_str(), streamAE_mode.mode.c_str());
+        streamAE_mode.devicePort.erase(streamAE_mode.devicePort.begin() + *it);
+    }
+}
+
 void AudioEffectManager::UpdateDuplicateDevice(ProcessNew &preProcessNew)
 {
-    std::unordered_set<std::string> seen;
-    std::vector<int> to_remove;
-    uint32_t i;
-    for (auto &stream: preProcessNew.stream) { 
+    for (auto &stream: preProcessNew.stream) {
         for (auto &streamAE_mode: stream.streamAE_mode) {
-            seen.clear();
-            to_remove.clear();
-            for (i = 0; i < streamAE_mode.devicePort.size(); i++) {
-                if (streamAE_mode.devicePort[i].address != "") {
-                    if (seen.count(streamAE_mode.devicePort[i].address)) {
-                        to_remove.push_back(i);
-                    } else {
-                        seen.insert(streamAE_mode.devicePort[i].address);
-                    }
-                } else {
-                    if (seen.count(streamAE_mode.devicePort[i].type)) {
-                        to_remove.push_back(i);
-                    } else {
-                        seen.insert(streamAE_mode.devicePort[i].type);
-                    }
-                } 
-            }
-            for (auto it = to_remove.rbegin(); it != to_remove.rend(); ++it) {
-                AUDIO_INFO_LOG("[supportedEffectConfig LOG5]:device-> The duplicate device of %{public}s's %{public}s \
-                    mode configuration is deleted, and the first configuration is retained!",
-                    stream.scene.c_str(), streamAE_mode.mode.c_str());
-                streamAE_mode.devicePort.erase(streamAE_mode.devicePort.begin() + *it);
-            }
+            UpdateDuplicateDeviceRecord(streamAE_mode, stream);
         }
     }
 }
 
-int32_t AudioEffectManager::DeleteUnavailableMode(std::vector<int> &modeDelIdx, Stream &stream)
+static int32_t UpdateUnavailableMode(std::vector<int> &modeDelIdx, Stream &stream)
 {
     int ret = 0;
     for (auto it = modeDelIdx.rbegin(); it != modeDelIdx.rend(); ++it) {
@@ -348,46 +361,53 @@ int32_t AudioEffectManager::DeleteUnavailableMode(std::vector<int> &modeDelIdx, 
     return ret;
 }
 
-int32_t AudioEffectManager::UpdateUnavailableEffectChains(std::vector<std::string> &availableLayout, 
+static void UpdateUnavailableEffectChainsRecord(std::vector<std::string> &availableLayout, Stream &stream,
+    StreamAE_mode &streamAE_mode, std::vector<int> &modeDelIdx, int modeCount)
+{
+    std::vector<int> deviceDelIdx;
+    deviceDelIdx.clear();
+    int deviceCount = 0;
+    if (streamAE_mode.devicePort.empty()) {
+        modeDelIdx.push_back(modeCount);
+    }
+    for (auto &devicePort: streamAE_mode.devicePort) {
+        auto index = std::find(availableLayout.begin(), availableLayout.end(), devicePort.chain);
+        if (index == availableLayout.end()) {
+            deviceDelIdx.push_back(deviceCount);
+        }
+        deviceCount += 1;
+    }
+    if (streamAE_mode.devicePort.size() != deviceDelIdx.size() && deviceDelIdx.size() != 0) {
+        AUDIO_INFO_LOG("[supportedEffectConfig LOG6]:device-> The unavailable effectChain \
+            of %{public}s's %{public}s mode are set to LAYOUT_BYPASS!",
+            stream.scene.c_str(), streamAE_mode.mode.c_str());
+        for (auto it = deviceDelIdx.rbegin(); it != deviceDelIdx.rend(); ++it) {
+            streamAE_mode.devicePort[*it].chain = "LAYOUT_BYPASS";
+        }
+    } else {
+        for (auto it = deviceDelIdx.rbegin(); it != deviceDelIdx.rend(); ++it) {
+            streamAE_mode.devicePort.erase(streamAE_mode.devicePort.begin() + *it);
+            if (streamAE_mode.devicePort.empty()) {
+                modeDelIdx.push_back(modeCount);
+            }
+        }
+    }
+    modeCount += 1;
+}
+
+int32_t AudioEffectManager::UpdateUnavailableEffectChains(std::vector<std::string> &availableLayout,
     ProcessNew &processNew)
 {
-    int count, count1, ret;
-    std::vector<int> deviceDelIdx;
+    int modeCount, ret;
+    
     std::vector<int> modeDelIdx;
-    for (auto &stream: processNew.stream) { 
+    for (auto &stream: processNew.stream) {
         modeDelIdx.clear();
-        count1 = 0;
+        modeCount = 0;
         for (auto &streamAE_mode: stream.streamAE_mode) {
-            deviceDelIdx.clear();
-            count = 0;
-            if (streamAE_mode.devicePort.empty()) {
-                modeDelIdx.push_back(count1);
-            }
-            for (auto &devicePort: streamAE_mode.devicePort) {
-                auto index = std::find(availableLayout.begin(), availableLayout.end(), devicePort.chain);
-                if (index == availableLayout.end()) {
-                    deviceDelIdx.push_back(count);
-                }
-                count += 1;
-            }
-            if (streamAE_mode.devicePort.size() != deviceDelIdx.size() && deviceDelIdx.size() != 0) {
-                AUDIO_INFO_LOG("[supportedEffectConfig LOG6]:device-> The unavailable effectChain \
-                    of %{public}s's %{public}s mode are set to LAYOUT_BYPASS!",
-                    stream.scene.c_str(), streamAE_mode.mode.c_str());
-                for (auto it = deviceDelIdx.rbegin(); it != deviceDelIdx.rend(); ++it) {
-                    streamAE_mode.devicePort[*it].chain = "LAYOUT_BYPASS";
-                }
-            } else {
-                for (auto it = deviceDelIdx.rbegin(); it != deviceDelIdx.rend(); ++it) {
-                    streamAE_mode.devicePort.erase(streamAE_mode.devicePort.begin() + *it);
-                    if (streamAE_mode.devicePort.empty()) {
-                        modeDelIdx.push_back(count1);
-                    }
-                }
-            }
-            count1 += 1;
+            UpdateUnavailableEffectChainsRecord(availableLayout, stream, streamAE_mode, modeDelIdx, modeCount);
         }
-        ret = DeleteUnavailableMode(modeDelIdx, stream);
+        ret = UpdateUnavailableMode(modeDelIdx, stream);
     }
     return ret;
 }

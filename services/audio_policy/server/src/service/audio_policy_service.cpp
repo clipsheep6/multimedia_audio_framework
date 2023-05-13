@@ -831,14 +831,9 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = tru
     DeviceType priorityDevice = isOutputDevice ? DEVICE_TYPE_SPEAKER : DEVICE_TYPE_MIC;
     std::vector<DeviceType> priorityList = isOutputDevice ? outputPriorityList_ : inputPriorityList_;
     for (const auto &device : priorityList) {
-        auto isPresent = [&device, this] (const sptr<AudioDeviceDescriptor> &desc) {
+        auto isPresent = [&device] (const sptr<AudioDeviceDescriptor> &desc) {
             CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-            if ((audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT) &&
-                (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) {
-                return false;
-            } else {
-                return desc->deviceType_ == device;
-            }
+            return desc->deviceType_ == device;
         };
 
         auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
@@ -1166,32 +1161,25 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 void AudioPolicyService::SetEarpieceState()
 {
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
-        char devicesType[100] = {0}; // 100 for system parameter usage
-        int res = GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
-        std::string strLocalDevicesType(devicesType);
-        AUDIO_INFO_LOG("SetEarpieceState local devicetype [%{public}s]", strLocalDevicesType.c_str());
-        if (res > 0 && strLocalDevicesType.compare("phone") == 0) {
-            // add earpiece to connectedDevices_
-            auto isPresent = [](const sptr<AudioDeviceDescriptor> &desc) {
-                CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-                return desc->deviceType_ == DEVICE_TYPE_EARPIECE;
-            };
-            auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
-            if (itr == connectedDevices_.end()) {
-                sptr<AudioDeviceDescriptor> audioDescriptor =
-                    new (std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
-                UpdateDisplayName(audioDescriptor);
-                connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
-                AUDIO_INFO_LOG("SetAudioScene: Add earpiece to connectedDevices_");
-            }
-
-            // add earpiece to outputPriorityList_
-            auto earpiecePos = find(outputPriorityList_.begin(), outputPriorityList_.end(), DEVICE_TYPE_EARPIECE);
-            if (earpiecePos == outputPriorityList_.end()) {
-                outputPriorityList_.insert(outputPriorityList_.end() - PRIORITY_LIST_OFFSET_POSTION,
-                    DEVICE_TYPE_EARPIECE);
-                AUDIO_INFO_LOG("SetAudioScene: Add earpiece to outputPriorityList_");
-            }
+        // add earpiece to connectedDevices_
+        auto isPresent = [] (const sptr<AudioDeviceDescriptor> &desc) {
+            CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+            return desc->deviceType_ == DEVICE_TYPE_EARPIECE;
+        };
+        auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+        if (itr == connectedDevices_.end()) {
+            sptr<AudioDeviceDescriptor> audioDescriptor =
+                new(std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
+            UpdateDisplayName(audioDescriptor);
+            connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+            AUDIO_INFO_LOG("SetAudioScene: Add earpiece to connectedDevices_");
+        }
+        // add earpiece to outputPriorityList_
+        auto earpiecePos = find(outputPriorityList_.begin(), outputPriorityList_.end(), DEVICE_TYPE_EARPIECE);
+        if (earpiecePos == outputPriorityList_.end()) {
+            outputPriorityList_.insert(outputPriorityList_.end() - PRIORITY_LIST_OFFSET_POSTION,
+                DEVICE_TYPE_EARPIECE);
+            AUDIO_INFO_LOG("SetAudioScene: Add earpiece to outputPriorityList_");
         }
     } else {
         // remove earpiece from connectedDevices_
@@ -1403,28 +1391,20 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(DeviceType devType, const
 int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress)
 {
     int32_t result = ERROR;
-    if (currentActiveDevice_ == devType) {
-        auto priorityDev = FetchHighPriorityDevice();
-        AUDIO_INFO_LOG("Priority device is [%{public}d]", priorityDev);
+    auto priorityDev = FetchHighPriorityDevice();
+    AUDIO_INFO_LOG("Priority device is [%{public}d]", priorityDev);
 
-        if (priorityDev == DEVICE_TYPE_SPEAKER) {
-            result = ActivateNewDevice(DEVICE_TYPE_SPEAKER);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]",
-                DEVICE_TYPE_SPEAKER);
-            result = ActivateNewDevice(DEVICE_TYPE_MIC);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]",
-                DEVICE_TYPE_MIC);
-        } else {
-            result = ActivateNewDevice(priorityDev);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]",
-                priorityDev);
-        }
+    if (priorityDev == DEVICE_TYPE_SPEAKER) {
+        result = ActivateNewDevice(DEVICE_TYPE_SPEAKER);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]",
+            DEVICE_TYPE_SPEAKER);
 
-        currentActiveDevice_ = priorityDev;
+        result = ActivateNewDevice(DEVICE_TYPE_MIC);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]",
+            DEVICE_TYPE_MIC);
     } else {
-        // The disconnected device is not current acitve device. No need to change active device.
-        AUDIO_INFO_LOG("Current acitve device: %{public}d. No need to change", currentActiveDevice_);
-        result = SUCCESS;
+        result = ActivateNewDevice(priorityDev);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]", priorityDev);
     }
 
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -1437,6 +1417,7 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
         }
     }
 
+    currentActiveDevice_ = priorityDev;
     return result;
 }
 

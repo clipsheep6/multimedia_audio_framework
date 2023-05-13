@@ -61,6 +61,8 @@ struct userdata {
     size_t currIdx;
     size_t processSize;
 
+    pa_memblockq *bufInQ;
+
     bool auto_desc;
 };
 
@@ -170,13 +172,103 @@ static void sink_update_requested_latency(pa_sink *s) {
             pa_sink_get_requested_latency_within_thread(s));
 }
 
+#define MAX_16BIT 32768
+// /* Called from I/O thread context */
+// static int sink_input_pop_cb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) {
+//     struct userdata *u;
+//     size_t bytesMissing;
+
+//     pa_sink_input_assert_ref(si);
+//     pa_assert(chunk);
+//     pa_assert_se(u = si->userdata);
+
+//     if (!PA_SINK_IS_LINKED(u->sink->thread_info.state))
+//         return -1;
+
+//     /* Hmm, process any rewind request that might be queued up */
+//     pa_sink_process_rewind(u->sink, 0);
+
+//     while ((bytesMissing = memblockq_missing(u->bufInQ)) != 0) {
+//         pa_memchunk nchunk;
+
+//         pa_sink_render(u->sink, bytesMissing, &nchunk);
+//         pa_memblockq_push(u->bufInQ, &nchunk);
+//         pa_memblock_unref(nchunk.memblock);
+//     }
+
+//     pa_memblockq_rewind(u->bufInQ, sink_bytes(u, u->fftlen - BLOCK_SIZE));
+//     pa_memblockq_peek_fixed_size(u->bufInQ, sink_bytes(u, u->fftlen), &tchunk);
+
+//     pa_memblockq_drop(u->bufInQ, tchunk.length);
+
+//     // // adapter take chunk to process
+//     // // short *src = pa_memblock_acquire_chunk(chunk);
+//     // size_t unprocessedLen = chunk->length;
+//     // float *bufIn = (float *)u->effectChainAdapter->bufIn;
+//     // float *bufOut = (float *)u->effectChainAdapter->bufOut;
+//     // short *src = pa_memblock_acquire_chunk(chunk);
+//     // size_t offset = 0;
+//     // int i, j, tmp;
+//     // while (unprocessedLen + u->currIdx > u->processSize) {
+//     //     j = offset;
+//     //     for (i = u->currIdx; i < (int)(u->processSize); i++) {
+//     //         bufIn[i] = (float)(src[j]) / MAX_16BIT;
+//     //         j++;
+//     //     }
+//     //     EffectChainManagerProcess(u->effectChainAdapter, si->sink->name);
+//     //     j = offset;
+//     //     for (i = 0; i < (int)u->processSize; i++) {
+//     //         tmp = (int)(bufOut[i] * MAX_16BIT);
+//     //         if (tmp >= MAX_16BIT) {
+//     //             src[j] = MAX_16BIT - 1;
+//     //         } else if (tmp <= -MAX_16BIT) {
+//     //             src[j] = -MAX_16BIT;
+//     //         } else {
+//     //             src[j] = (short)tmp;
+//     //         }
+//     //         j++;
+//     //     }
+//     //     unprocessedLen -= u->processSize;
+//     //     offset += u->processSize;
+//     // }
+
+//     // j = offset;
+//     // for (i = 0; j < (int)chunk->length; i++) {
+//     //     bufIn[i] = (float)(src[j]) / MAX_16BIT;
+//     //     j++;
+//     // }
+//     // u->currIdx = chunk->length - offset;
+    
+
+//     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
+//     AUDIO_INFO_LOG("effect_sink: sink-input %{public}s pop in sink %{public}s", sceneMode, si->origin_sink->name);
+//     EffectChainManagerProcess(u->effectChainAdapter, si->origin_sink->name);
+
+//     short *src = pa_memblock_acquire_chunk(chunk);
+//     int i = 0;
+//     if (pa_streq(si->origin_sink->name, "SCENE_MUSIC")) {
+//         for (i = 0; i < (int)chunk->length; i++) {
+//             src[i] *= 2;
+//         }
+//     } else {
+//         for (i = 0; i < (int)chunk->length; i++) {
+//             src[i] /= 2;
+//         }
+//     }    
+    
+    
+
+
+//     return 0;
+// }
+
 /* Called from I/O thread context */
-static int sink_input_pop_cb(pa_sink_input *i, size_t nbytes, pa_memchunk *chunk) {
+static int sink_input_pop_cb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) {
     struct userdata *u;
 
-    pa_sink_input_assert_ref(i);
+    pa_sink_input_assert_ref(si);
     pa_assert(chunk);
-    pa_assert_se(u = i->userdata);
+    pa_assert_se(u = si->userdata);
 
     if (!PA_SINK_IS_LINKED(u->sink->thread_info.state))
         return -1;
@@ -186,31 +278,62 @@ static int sink_input_pop_cb(pa_sink_input *i, size_t nbytes, pa_memchunk *chunk
 
     pa_sink_render(u->sink, nbytes, chunk);
 
-    // adapter take chunk to process
-    // short *src = pa_memblock_acquire_chunk(chunk);
+    // // adapter take chunk to process
+    // // short *src = pa_memblock_acquire_chunk(chunk);
     // size_t unprocessedLen = chunk->length;
-    // while (unprocessedLen < u->processSize) {
-    //     EffectChainManagerProcess(u->effectChainAdapter, i->sink->name);
-    //     unprocessedLen -= u->processSize
-    // }
-    // for (size_t i = 0; i < chunk->length; i++) {
-    //     src[i] /= 5;
+    // float *bufIn = (float *)u->effectChainAdapter->bufIn;
+    // float *bufOut = (float *)u->effectChainAdapter->bufOut;
+    // short *src = pa_memblock_acquire_chunk(chunk);
+    // size_t offset = 0;
+    // int i, j, tmp;
+    // while (unprocessedLen + u->currIdx > u->processSize) {
+    //     j = offset;
+    //     for (i = u->currIdx; i < (int)(u->processSize); i++) {
+    //         bufIn[i] = (float)(src[j]) / MAX_16BIT;
+    //         j++;
+    //     }
+    //     EffectChainManagerProcess(u->effectChainAdapter, si->sink->name);
+    //     j = offset;
+    //     for (i = 0; i < (int)u->processSize; i++) {
+    //         tmp = (int)(bufOut[i] * MAX_16BIT);
+    //         if (tmp >= MAX_16BIT) {
+    //             src[j] = MAX_16BIT - 1;
+    //         } else if (tmp <= -MAX_16BIT) {
+    //             src[j] = -MAX_16BIT;
+    //         } else {
+    //             src[j] = (short)tmp;
+    //         }
+    //         j++;
+    //     }
+    //     unprocessedLen -= u->processSize;
+    //     offset += u->processSize;
     // }
 
-    const char *sceneMode = pa_proplist_gets(i->proplist, "scene.mode");
-    AUDIO_INFO_LOG("effect_sink: sink-input %{public}s pop in sink %{public}s", sceneMode, i->origin_sink->name);
-    EffectChainManagerProcess(u->effectChainAdapter, i->origin_sink->name);
+    // j = offset;
+    // for (i = 0; j < (int)chunk->length; i++) {
+    //     bufIn[i] = (float)(src[j]) / MAX_16BIT;
+    //     j++;
+    // }
+    // u->currIdx = chunk->length - offset;
+    
+
+    const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
+    // AUDIO_INFO_LOG("effect_sink: sink-input %{public}s pop in sink %{public}s", sceneMode, si->origin_sink->name);
+    EffectChainManagerProcess(u->effectChainAdapter, si->origin_sink->name);
 
     short *src = pa_memblock_acquire_chunk(chunk);
-    if (pa_streq(i->origin_sink->name, "SCENE_MUSIC")) {
-        for (size_t i = 0; i < chunk->length; i++) {
-            src[i] *= 2;
+    int i = 0;
+    // if (pa_streq(si->origin_sink->name, "SCENE_MUSIC")) {
+        AUDIO_INFO_LOG("effect_sink: sink-input %{public}s pop in sink %{public}s", sceneMode, si->origin_sink->name);
+        for (i = 0; i < (int)chunk->length; i++) {
+            src[i] *= 3;
         }
-    } else {
-        for (size_t i = 0; i < chunk->length; i++) {
-            src[i] /= 2;
-        }
-    }    
+    // }
+    // } else {
+    //     for (i = 0; i < (int)chunk->length; i++) {
+    //         src[i] /= 2;
+    //     }
+    // }    
     
     
 
@@ -505,12 +628,12 @@ int pa__init(pa_module*m) {
     }
 
     // Test adapter function
-    int idx = EffectChainManagerReturnValue(u->effectChainAdapter, 2);
-    AUDIO_INFO_LOG("xyq: effect_sink EffectChainReturnValue, value=%{public}d", idx);
+    // int idx = EffectChainManagerReturnValue(u->effectChainAdapter, 2);
+    // AUDIO_INFO_LOG("xyq: effect_sink EffectChainReturnValue, value=%{public}d", idx);
 
     int32_t frameLen = EffectChainManagerGetFrameLen(u->effectChainAdapter);
-    AUDIO_INFO_LOG("xyq: effect_sink FrameLen, value=%{public}d", frameLen);
-    AUDIO_INFO_LOG("xyq: effect_sink bufferSize, value=%{public}d", ss.channels * frameLen * sizeof(float));
+    AUDIO_INFO_LOG("xyq: effect_sink (%{public}s) FrameLen, value=%{public}d", u->sink->name, frameLen);
+    AUDIO_INFO_LOG("xyq: effect_sink (%{public}s) bufferSize, value=%{public}d", u->sink->name, ss.channels * frameLen * sizeof(float));
     u->currIdx = 0;
     u->processSize = ss.channels * frameLen * sizeof(float);
     pa_assert_se(u->effectChainAdapter->bufIn = (float *)malloc(u->processSize));
@@ -520,13 +643,15 @@ int pa__init(pa_module*m) {
     /* The order here is important. The input must be put first,
      * otherwise streams might attach to the sink before the sink
      * input is attached to the master. */
+    AUDIO_INFO_LOG("xyq: effect_sink (%{public}s) sink input put before", u->sink->name);
     pa_sink_input_put(u->sink_input);
+    AUDIO_INFO_LOG("xyq: effect_sink (%{public}s) sink input put done", u->sink->name);
     pa_sink_put(u->sink);
     pa_sink_input_cork(u->sink_input, false);
 
 
     pa_modargs_free(ma);
-
+    AUDIO_INFO_LOG("xyq: effect_sink (%{public}s) create done", u->sink->name);
     return 0;
 
 fail:

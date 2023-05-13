@@ -450,6 +450,8 @@ AudioServiceClient::AudioServiceClient()
     captureMode_ = CAPTURE_MODE_NORMAL;
 
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
+    effectSceneName = "SCENE_MUSIC";
+    effectMode = EFFECT_DEFAULT;
 
     mFrameSize = 0;
     mFrameMarkPosition = 0;
@@ -777,7 +779,7 @@ const std::string AudioServiceClient::GetStreamName(AudioStreamType audioType)
     return streamName;
 }
 
-int32_t AudioServiceClient::ConnectStreamToPA(const char *deviceName)
+int32_t AudioServiceClient::ConnectStreamToPA()
 {
     AUDIO_INFO_LOG("Enter AudioServiceClient::ConnectStreamToPA");
     int error, result;
@@ -787,10 +789,9 @@ int32_t AudioServiceClient::ConnectStreamToPA(const char *deviceName)
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
     sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
-    // std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
-    //     mStreamType);
-    // const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
-    // const char *deviceName = "mixer";
+    std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
+        mStreamType);
+    const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
 
     pa_threaded_mainloop_lock(mainLoop);
 
@@ -920,17 +921,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_sets(propList, "stream.client.uid", std::to_string(clientUid_).c_str());
     pa_proplist_sets(propList, "stream.client.pid", std::to_string(clientPid_).c_str());
 
-    const char *deviceName = "MIXER";
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        if (audioType == STREAM_MUSIC) {
-            pa_proplist_sets(propList, "scene.type", "SCENE_MUSIC");
-        } else {
-            pa_proplist_sets(propList, "scene.type", "SCENE_SPEECH");
-        }
-        pa_proplist_sets(propList, "scene.mode", "EFFECT_DEFAULT");
-        AUDIO_INFO_LOG("cjw: pa_proplist_set scene %{public}s", streamName.c_str());
-    }
-
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
     pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
@@ -985,8 +975,8 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *)this);
 
     pa_threaded_mainloop_unlock(mainLoop);
-
-    error = ConnectStreamToPA(deviceName);
+    
+    error = ConnectStreamToPA();
     streamInfoUpdated = false;
     if (error < 0) {
         AUDIO_ERR_LOG("Create Stream Failed");
@@ -1004,6 +994,11 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
         if (SetStreamRenderRate(renderRate) != AUDIO_CLIENT_SUCCESS) {
             AUDIO_ERR_LOG("Set render rate failed");
+        }
+
+        effectSceneName = GetEffectSceneName(audioType);
+        if (SetStreamAudioEffectMode(effectMode) != AUDIO_CLIENT_SUCCESS) {
+            AUDIO_ERR_LOG("Set audio effect mode failed");
         }
     }
 
@@ -2731,5 +2726,86 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
     }
 }
 
+const std::string AudioServiceClient::GetEffectSceneName(AudioStreamType audioType)
+{
+    std::string name;
+    switch (audioType) {
+        case STREAM_DEFAULT:
+            name = "SCENE_MUSIC";
+            break;
+        case STREAM_MUSIC:
+            name = "SCENE_MUSIC";
+            break;
+        case STREAM_MEDIA:
+            name = "SCENE_MOVIE";
+            break;
+        case STREAM_TTS:
+            name = "SCENE_SPEECH";
+            break;
+        case STREAM_RING:
+            name = "SCENE_RING";
+            break;
+        case STREAM_ALARM:
+            name = "SCENE_RING";
+            break;
+        default:
+            name = "SCENE_OTHERS";
+    }
+
+    const std::string sceneName = name;
+    return sceneName;
+}
+
+const std::string AudioServiceClient::GetEffectModeName(AudioEffectMode effectMode)
+{
+    std::string name;
+    switch (effectMode) {
+        case EFFECT_NONE:
+            name = "EFFECT_NONE";
+            break;
+        default:
+            name = "EFFECT_DEFAULT";
+    }
+
+    const std::string modeName = name;
+    return modeName;
+}
+
+AudioEffectMode AudioServiceClient::GetStreamAudioEffectMode()
+{
+    return effectMode;
+}
+
+int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffectMode)
+{
+    AUDIO_INFO_LOG("SetStreamAudioEffectMode: %{public}d", audioEffectMode);
+
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("context is null");
+        return AUDIO_CLIENT_ERR;
+    }
+    pa_threaded_mainloop_lock(mainLoop);
+
+    effectMode = audioEffectMode;
+    const std::string effectModeName = GetEffectModeName(audioEffectMode);
+
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
+    pa_proplist_sets(propList, "scene.mode", effectModeName.c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return AUDIO_CLIENT_SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

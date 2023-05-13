@@ -20,7 +20,6 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-
 #include "audio_stream.h"
 
 using namespace std;
@@ -968,6 +967,16 @@ void AudioStream::SubmitAllFreeBuffers()
     for (size_t i = 0; i < freeBufferQ_.size(); ++i) {
         SendWriteBufferRequestEvent();
     }
+}
+
+int32_t AudioStream::SetAudioEffectMode(AudioEffectMode effectMode)
+{
+    return SetStreamAudioEffectMode(effectMode);
+}
+
+AudioEffectMode AudioStream::GetAudioEffectMode()
+{
+    return GetStreamAudioEffectMode();
 }
 } // namespace AudioStandard
 } // namespace OHOS

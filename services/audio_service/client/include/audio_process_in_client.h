@@ -18,6 +18,7 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 
 #include "audio_info.h"
 
@@ -35,17 +36,6 @@ public:
     virtual void OnHandleData(size_t length) = 0;
 };
 
-class ClientUnderrunCallBack {
-    virtual ~ClientUnderrunCallBack() = default;
-
-    /**
-     * Callback function when underrun occurs.
-     *
-     * @param posInFrames Indicates the postion when client handle underrun in frames.
-     */
-    virtual void OnUnderrun(size_t posInFrames) = 0;
-};
-
 class AudioProcessInClient {
 public:
     static constexpr int32_t PROCESS_VOLUME_MAX = 1 << 16; // 0 ~ 65536
@@ -54,8 +44,6 @@ public:
     virtual ~AudioProcessInClient() = default;
 
     virtual int32_t SaveDataCallback(const std::shared_ptr<AudioDataCallback> &dataCallback) = 0;
-
-    virtual int32_t SaveUnderrunCallback(const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback) = 0;
 
     virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
 

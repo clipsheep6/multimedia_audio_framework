@@ -205,7 +205,7 @@ namespace OHOS {
                     bufferOut[i] = bufferIn[i] / 3;
                 }
             }
-            AUDIO_INFO_LOG("xjl: ApplyAudioEffectChain running %{public}s", sceneType.c_str());
+            // AUDIO_INFO_LOG("xjl: ApplyAudioEffectChain running %{public}s", sceneType.c_str());
             // auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
             // audioEffectChain->ApplyEffectChain(bufIn, bufOut);
             return 0;

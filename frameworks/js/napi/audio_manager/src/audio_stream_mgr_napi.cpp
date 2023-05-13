@@ -37,6 +37,7 @@ namespace {
 
     const int ARGS_ONE = 1;
     const int ARGS_TWO = 2;
+    const int ARGS_THREE = 3;
 
     const int PARAM0 = 0;
     const int PARAM1 = 1;
@@ -60,6 +61,8 @@ struct AudioStreamMgrAsyncContext {
     napi_ref callbackRef = nullptr;
     int32_t status = SUCCESS;
     int32_t volType;
+    int32_t contentType;
+    int32_t streamUsage;
     bool isTrue;
     bool isLowLatencySupported;
     bool isActive;
@@ -884,7 +887,7 @@ napi_value AudioStreamMgrNapi::IsStreamActive(napi_env env, napi_callback_info i
 
 static void GetEffectInfoArrayCallbackComplete(napi_env env, napi_status status, void *data)
 {
-    int i;
+    uint32_t i;
     auto asyncContext = static_cast<AudioStreamMgrAsyncContext*>(data);
     napi_value result[ARGS_TWO] = {0};
     napi_value jsEffectInofObj = nullptr;
@@ -900,10 +903,9 @@ static void GetEffectInfoArrayCallbackComplete(napi_env env, napi_status status,
         }
 
         napi_create_object(env, &jsEffectInofObj);
-        SetValueInt32(env, "scene", effectInfo->scene, jsEffectInofObj);
 
         for (i = 0; i < effectInfo->mode.size(); i++) {
-            SetValueInt32(env, "mode"+to_string(i), effectInfo->mode[i], jsEffectInofObj);
+            SetValueString(env, "mode" + to_string(i), effectInfo->mode[i], jsEffectInofObj);
         }
 
         napi_set_element(env, result[PARAM1], position, jsEffectInofObj);
@@ -928,7 +930,7 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
-    GET_PARAMS(env, info, ARGS_ONE);
+    GET_PARAMS(env, info, ARGS_THREE);
     unique_ptr<AudioStreamMgrAsyncContext> asyncContext = make_unique<AudioStreamMgrAsyncContext>();
 
     if (!asyncContext) {
@@ -942,7 +944,19 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
 
-            if (i == PARAM0) {
+            if (i == PARAM0 && valueType == napi_number) {
+                napi_get_value_int32(env, argv[i], &asyncContext->contentType);
+                if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->contentType)) {
+                    asyncContext->status = (asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+                }
+            } else if (i == PARAM1 && valueType == napi_number) {
+                napi_get_value_int32(env, argv[i], &asyncContext->streamUsage);
+                if (!AudioCommonNapi::IsLegalInputArgumentVolLevel(asyncContext->streamUsage)) {
+                    asyncContext->status = (asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+                }
+            } else if (i == PARAM2) {
                 if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 }
@@ -957,6 +971,7 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
         } else {
             napi_get_undefined(env, &result);
         }
+       
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "getEffectInfoArray", NAPI_AUTO_LENGTH, &resource);
         status = napi_create_async_work(
@@ -964,12 +979,12 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioStreamMgrAsyncContext *>(data);
                 if (context->status == SUCCESS) {
-                    context->objectInfo->audioStreamMngr_->GetEffectInfoArray(context->audioSceneEffectInfos);
+                    context->objectInfo->audioStreamMngr_->GetEffectInfoArray(context->audioSceneEffectInfos,
+                        context->contentType, context->streamUsage);
                     context->status = SUCCESS;
                 }
             },
             GetEffectInfoArrayCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        
         if (status != napi_ok) {
             result = nullptr;
         } else {

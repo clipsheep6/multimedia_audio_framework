@@ -73,6 +73,8 @@ public:
     int32_t SetLowPowerVolume(float volume);
     float GetLowPowerVolume();
     float GetSingleStreamVolume();
+    AudioEffectMode GetAudioEffectMode();
+    int32_t SetAudioEffectMode(AudioEffectMode effectMode);
 
     std::vector<AudioSampleFormat> GetSupportedFormats() const;
     std::vector<AudioEncodingType> GetSupportedEncodingTypes() const;
@@ -123,6 +125,9 @@ private:
 
     std::mutex bufferQueueLock_;
     std::condition_variable bufferQueueCV_;
+
+    static const std::map<std::pair<ContentType, StreamUsage>, AudioEffectScene> sceneTypeMap_;
+    static std::map<std::pair<ContentType, StreamUsage>, AudioEffectScene> CreateSceneMap();
 };
 } // namespace AudioStandard
 } // namespace OHOS
