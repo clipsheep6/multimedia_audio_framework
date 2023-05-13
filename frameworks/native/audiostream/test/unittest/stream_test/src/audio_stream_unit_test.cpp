@@ -404,7 +404,7 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_SetStreamRenderRate_002, TestSize.Level
 }
 
 /**
-* @tc.name  : Test Audio_Stream_SetAudioEffectMode_001 via legal input EFFECT_NONE
+* @tc.name  : Test Audio_Stream_SetAudioEffectMode_001 via legal input, EFFECT_NONE
 * @tc.number: Audio_Stream_SetAudioEffectMode_001
 * @tc.desc  : Test SetAudioEffectMode interface. Returns SUCCESS, if the effect mode is successfully set.
 */
@@ -418,7 +418,7 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_SetAudioEffectMode_001, TestSize.Level1
 }
 
 /**
-* @tc.name  : Test Audio_Stream_SetAudioEffectMode_002 via legal input EFFECT_DEFAULT
+* @tc.name  : Test Audio_Stream_SetAudioEffectMode_002 via legal input, EFFECT_DEFAULT
 * @tc.number: Audio_Stream_SetAudioEffectMode_002
 * @tc.desc  : Test SetAudioEffectMode interface. Returns SUCCESS, if the effect mode is successfully set.
 */
