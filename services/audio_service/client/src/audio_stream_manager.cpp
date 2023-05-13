@@ -17,6 +17,7 @@
 #include "audio_policy_manager.h"
 #include "audio_log.h"
 #include "audio_stream_manager.h"
+#include "audio_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -82,55 +83,35 @@ bool AudioStreamManager::IsAudioRendererLowLatencySupported(const AudioStreamInf
 }
 
 static void UpdateEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo,
-    SupportedEffectConfig &supportedEffectConfig, AudioSceneEffectInfo &audioSceneEffectInfoTmp, int isSupported, int i)
+    SupportedEffectConfig &supportedEffectConfig, AudioSceneEffectInfo &audioSceneEffectInfoTmp, int i)
 {
-    int j;
-    if (isSupported == 1) {
-        for (j = 0; j < supportedEffectConfig.preProcessNew.stream[i].streamAE_mode.size(); j++) {
-            if (supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode == "EFFECT_NONE") {
-                audioSceneEffectInfoTmp.mode.push_back(EFFECT_NONE);
-            } else if (supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode == "EFFECT_DEFAULT") {
-                audioSceneEffectInfoTmp.mode.push_back(EFFECT_DEFAULT);
-            } else {
-                AUDIO_INFO_LOG("[supportedEffectConfig LOG10]:mode-> The %{public}s mode of %{public}s scene is \
-                    unsupported, and this mode is setted to EFFECT_NONE!",
-                    supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode.c_str(),
-                    supportedEffectConfig.preProcessNew.stream[i].scene.c_str());
-                audioSceneEffectInfoTmp.mode.push_back(EFFECT_NONE);
-            }
-        }
-        audioSceneEffectInfo.push_back(make_unique<AudioSceneEffectInfo>(audioSceneEffectInfoTmp));
+    uint32_t j;
+    for (j = 0; j < supportedEffectConfig.postProcessNew.stream[i].streamAE_mode.size(); j++) {
+        audioSceneEffectInfoTmp.mode.push_back(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].mode);
     }
+    audioSceneEffectInfo.push_back(make_unique<AudioSceneEffectInfo>(audioSceneEffectInfoTmp));
 }
 
-int32_t AudioStreamManager::GetEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo)
+int32_t AudioStreamManager::GetEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo,
+    int32_t contentType, int32_t streamUsage)
 {
-    int i, isSupported;
+    int i;
+
+    ContentType ct = static_cast<ContentType>(contentType);
+    StreamUsage su = static_cast<StreamUsage>(streamUsage);
+    AudioStreamType streamType =  AudioStream::GetStreamType(ct, su);
+    std::string effectScene = AudioServiceClient::GetEffectSceneName(streamType);
+
     SupportedEffectConfig supportedEffectConfig;
     int ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
-    int streamNum = supportedEffectConfig.preProcessNew.stream.size();
+    int streamNum = supportedEffectConfig.postProcessNew.stream.size();
     if (streamNum > 0) {
         for (i = 0; i < streamNum; i++) {
-            isSupported = 1;
             AudioSceneEffectInfo audioSceneEffectInfoTmp;
-            if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_MUSIC") {
-                audioSceneEffectInfoTmp.scene = SCENE_MUSIC;
-            } else if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_MOVIE") {
-                audioSceneEffectInfoTmp.scene = SCENE_MOVIE;
-            } else if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_GAME") {
-                audioSceneEffectInfoTmp.scene = SCENE_GAME;
-            } else if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_SPEECH") {
-                audioSceneEffectInfoTmp.scene = SCENE_SPEECH;
-            } else if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_RING") {
-                audioSceneEffectInfoTmp.scene = SCENE_RING;
-            } else if (supportedEffectConfig.preProcessNew.stream[i].scene == "SCENE_OTHERS") {
-                audioSceneEffectInfoTmp.scene = SCENE_OTHERS;
-            } else {
-                AUDIO_INFO_LOG("[supportedEffectConfig LOG9]:stream-> The scene of %{public}s is unsupported, \
-                    and this scene is deleted!", supportedEffectConfig.preProcessNew.stream[i].scene.c_str());
-                isSupported = -1;
+            std::string scene = supportedEffectConfig.postProcessNew.stream[i].scene;
+            if (scene == effectScene) {
+                UpdateEffectInfoArray(audioSceneEffectInfo, supportedEffectConfig, audioSceneEffectInfoTmp, i);
             }
-            UpdateEffectInfoArray(audioSceneEffectInfo, supportedEffectConfig, audioSceneEffectInfoTmp, isSupported, i);
         }
     }
     return ret;

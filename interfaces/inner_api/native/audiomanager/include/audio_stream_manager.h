@@ -174,9 +174,8 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t GetEffectInfoArray(std::vector<std::unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfos);
-private:
-    SupportedEffectConfig supportedEffectConfig_;
+    int32_t GetEffectInfoArray(std::vector<std::unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfos,
+        int32_t contentType, int32_t streamUsage);
 };
 } // namespace AudioStandard
 } // namespace OHOS
