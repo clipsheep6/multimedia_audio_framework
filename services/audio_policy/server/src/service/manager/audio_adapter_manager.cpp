@@ -531,6 +531,18 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
             args = "file=";
             args.append(audioModuleInfo.fileName);
         }
+    } else if (audioModuleInfo.lib == MIXER_SINK) {
+        UpdateCommonArgs(audioModuleInfo, args);
+        if (!audioModuleInfo.name.empty()) {
+            args.append(" sink_name=");
+            args.append(audioModuleInfo.name);
+        }
+    } else if (audioModuleInfo.lib == EFFECT_SINK) {
+        UpdateCommonArgs(audioModuleInfo, args);
+        if (!audioModuleInfo.name.empty()) {
+            args.append(" sink_name=");
+            args.append(audioModuleInfo.name);
+        }
     }
     return args;
 }

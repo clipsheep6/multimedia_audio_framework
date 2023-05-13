@@ -485,7 +485,7 @@ static void sink_input_moving_cb(pa_sink_input *i, pa_sink *dest) {
     }
 }
 
-int pa__init(pa_module*m) {
+int pa__init(pa_module *m) {
     struct userdata *u;
     pa_sample_spec ss;
     pa_resample_method_t resample_method = PA_RESAMPLER_INVALID;
