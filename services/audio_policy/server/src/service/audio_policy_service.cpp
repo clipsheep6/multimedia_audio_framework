@@ -1755,6 +1755,7 @@ void AudioPolicyService::LoadEffectLibrary()
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
     audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
+    audioEffectManager_.GetAvailableAEConfig();
 }
 
 void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,

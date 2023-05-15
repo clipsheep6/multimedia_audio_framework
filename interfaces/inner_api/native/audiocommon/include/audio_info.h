@@ -520,6 +520,27 @@ enum AudioFocuState {
     STOP
 };
 
+/**
+* Enumerates the audio scene effect type.
+*/
+enum AudioEffectScene {
+    SCENE_OTHERS = 0,
+    SCENE_MUSIC = 1,
+    SCENE_MOVIE = 2,
+    SCENE_GAME = 3,
+    SCENE_SPEECH = 4,
+    SCENE_RING = 5
+};
+
+/**
+* Enumerates the audio scene effct mode.
+*/
+enum AudioEffectMode {
+    EFFECT_NONE = 0,
+    EFFECT_DEFAULT = 1,
+    EFFECT_TEST = 2
+};
+
 struct InterruptEvent {
     /**
      * Interrupt event type, begin or end
@@ -888,6 +909,10 @@ struct StreamSetStateEventInternal {
     AudioStreamType audioStreamType;
 };
 
+struct AudioSceneEffectInfo {
+    std::vector<std::string> mode;
+};
+
 struct AudioRendererChangeInfo {
     int32_t clientUID;
     int32_t sessionId;
@@ -1011,6 +1036,26 @@ struct OriginalEffectConfig {
     std::vector<EffectChain> effectChains;
     std::vector<Preprocess> preprocess;
     std::vector<Postprocess> postprocess;
+};
+
+struct StreamAE_mode {
+    std::string mode;
+    std::vector<Device> devicePort;
+};
+
+struct Stream {
+    std::string scene;
+    std::vector<StreamAE_mode> streamAE_mode;
+};
+
+struct ProcessNew {
+    std::vector<Stream> stream;
+};
+
+struct SupportedEffectConfig {
+    std::vector<EffectChain> effectChains;
+    ProcessNew preProcessNew;
+    ProcessNew postProcessNew;
 };
 
 class AudioRendererPolicyServiceDiedCallback {
