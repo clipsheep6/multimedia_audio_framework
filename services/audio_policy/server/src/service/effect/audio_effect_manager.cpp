@@ -87,8 +87,8 @@ static void UpdateUnsupportedDevicePre(Preprocess &pp, Stream &stream, std::stri
     j = 0;
     for (auto &device: pp.device) {
         if (i == j) {
-            for (auto &a: device) {
-                streamAE_mode.devicePort.push_back(a);
+            for (auto &eachDevice: device) {
+                streamAE_mode.devicePort.push_back(eachDevice);
             }
             break;
         }
