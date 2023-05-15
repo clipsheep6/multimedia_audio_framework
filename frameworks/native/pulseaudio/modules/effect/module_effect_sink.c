@@ -59,8 +59,6 @@ struct userdata {
     struct BufferAttr *bufferAttr;
     float *bufIn; // input buffer, output of the effect sink
     float *bufOut; // output buffer for the final processed output
-    size_t currIdx;
-    size_t processSize;
 
     pa_memblockq *bufInQ;
     int32_t frameLen;
@@ -571,44 +569,26 @@ int pa__init(pa_module *m) {
 
     u->sink->input_to_master = u->sink_input;
 
-    // LoadEffectChainAdapter
-    // u->effectChainAdapter = pa_xnew0(struct EffectChainAdapter, 1);
-    // int32_t ret = LoadEffectChainAdapter(u->effectChainAdapter);
-    // if (ret < 0) {
-    //     AUDIO_INFO_LOG("Load adapter failed");
-    //     goto fail;
-    // }    
-
-    // Test adapter function
-    // int idx = EffectChainManagerReturnValue(u->effectChainAdapter, 2);
-    // AUDIO_INFO_LOG("xyq: effect_sink EffectChainReturnValue, value=%{public}d", idx);
-
-    // int32_t frameLen = EffectChainManagerGetFrameLen(u->effectChainAdapter);
+    // Set buffer attributes
     int32_t frameLen = EffectChainManagerGetFrameLen();
     u->frameLen = frameLen;
+    size_t processSize = ss.channels * frameLen * sizeof(float);
     AUDIO_INFO_LOG("xyq: effect_sink (%{public}s) FrameLen, value=%{public}d", u->sink->name, frameLen);
-    AUDIO_INFO_LOG("xyq: effect_sink (%{public}s) bufferSize, value=%{public}d", u->sink->name, ss.channels * frameLen * sizeof(float));
-    u->currIdx = 0;
-    u->processSize = ss.channels * frameLen * sizeof(float);
-    // pa_assert_se(u->effectChainAdapter->bufIn = (float *)malloc(u->processSize));
-    // pa_assert_se(u->effectChainAdapter->bufOut = (float *)malloc(u->processSize));
-
+    AUDIO_INFO_LOG("xyq: effect_sink (%{public}s) bufferSize, value=%{public}d", u->sink->name, processSize);
     u->bufferAttr = pa_xnew0(struct BufferAttr, 1);
-    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
-    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
+    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(processSize));
+    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(processSize));
     u->bufferAttr->frameLen = frameLen;
-    u->bufferAttr->numChan = 2;
+    u->bufferAttr->numChan = ss.channels;
     
     AUDIO_INFO_LOG("xyq: bufInQ initialized begin");
-    u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, u->frameLen * 4, &ss, 1, 1, 0, NULL);
+    u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, ss.channels * frameLen * 2, &ss, 1, 1, 0, NULL);
     AUDIO_INFO_LOG("xyq: bufInQ initialized end");
 
     /* The order here is important. The input must be put first,
      * otherwise streams might attach to the sink before the sink
      * input is attached to the master. */
-    AUDIO_INFO_LOG("xyq: effect_sink (%{public}s) sink input put before", u->sink->name);
     pa_sink_input_put(u->sink_input);
-    AUDIO_INFO_LOG("xyq: effect_sink (%{public}s) sink input put done", u->sink->name);
     pa_sink_put(u->sink);
     pa_sink_input_cork(u->sink_input, false);
 
