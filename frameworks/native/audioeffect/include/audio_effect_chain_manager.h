@@ -55,7 +55,7 @@ namespace OHOS {
             std::map <std::string, std::vector<std::string>> EffectChainToEffectsMap; // {"EFFECTCHAIN_SPK_MUSIC": [hvs, eq, histen]}
             std::map<std::string, AudioEffectChain *> SceneTypeToEffectChainMap; // {"STREAM_MUSIC": AudioEffectChain}  init时创建AudioEffectChain对象
             int32_t frameLen = 1024;
-
+            int32_t initValue = 1;
         public:
             AudioEffectChainManager();
             ~AudioEffectChainManager();

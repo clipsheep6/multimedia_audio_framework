@@ -1755,7 +1755,7 @@ void AudioPolicyService::LoadEffectLibrary()
     AudioModuleInfo moduleInfo = {};
     moduleInfo.lib = "libmodule-mixer-sink.z.so";
     moduleInfo.channels = "2";
-    moduleInfo.rate = "48000";
+    moduleInfo.rate = "44100";
     moduleInfo.format = "s16le"; // 16bit little endian
     moduleInfo.name = "MIXER";
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);

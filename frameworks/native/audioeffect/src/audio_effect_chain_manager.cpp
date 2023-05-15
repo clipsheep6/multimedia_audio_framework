@@ -34,44 +34,62 @@
 
 using namespace OHOS::AudioStandard;
 
-int32_t FillinEffectChainWapper(struct EffectChainAdapter *adapter) {
-    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null EffectChainAdapter");
-    AudioEffectChainManager *instance = AudioEffectChainManager::GetInstance();
-    if (instance != nullptr) {
-        adapter->wapper = static_cast<void *>(instance);
-    } else {
-        adapter->wapper = nullptr;
-        return ERROR;
-    }
-    return SUCCESS;
-}
+// int32_t FillinEffectChainWapper(struct EffectChainAdapter *adapter) {
+//     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null EffectChainAdapter");
+//     AudioEffectChainManager *instance = AudioEffectChainManager::GetInstance();
+//     if (instance != nullptr) {
+//         adapter->wapper = static_cast<void *>(instance);
+//     } else {
+//         adapter->wapper = nullptr;
+//         return ERROR;
+//     }
+//     return SUCCESS;
+// }
 
-int32_t EffectChainManagerProcess(struct EffectChainAdapter *adapter, char *sceneType) {
-    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null EffectChainAdapter");
-    AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sceneTypeString(sceneType);
-    if (!audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, adapter->bufIn, adapter->bufOut)) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
+// int32_t EffectChainManagerProcess(struct EffectChainAdapter *adapter, char *sceneType) {
+//     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null EffectChainAdapter");
+//     AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
+//     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+//     std::string sceneTypeString(sceneType);
+//     if (!audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, adapter->bufIn, adapter->bufOut)) {
+//         return ERROR;
+//     }
+//     return SUCCESS;
+// }
 
-int32_t EffectChainManagerGetFrameLen(struct EffectChainAdapter *adapter)
+// int32_t EffectChainManagerGetFrameLen(struct EffectChainAdapter *adapter)
+// {
+//     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null EffectChainAdapter");
+//     AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
+//     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+//     return audioEffectChainManager->GetFrameLen();
+// }
+
+// int32_t EffectChainManagerReturnValue(struct EffectChainAdapter *adapter, int32_t i)
+// {
+//     AUDIO_INFO_LOG("xjl: AdapterReturnValue start, value=%{public}d", i);
+//     AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
+//     int j = audioEffectChainManager->ReturnValue(i);
+//     AUDIO_INFO_LOG("xjl: AdapterReturnValue end, value=%{public}d", i);
+//     return j;
+// }
+
+int32_t EffectChainManagerProcess(void *bufferAttrVoid, char *sceneType)
 {
-    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null EffectChainAdapter");
-    AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
+    BufferAttr *bufferAttr = (BufferAttr *)bufferAttrVoid;
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    std::string sceneTypeString(sceneType);
+    if (!audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, bufferAttr->bufIn, bufferAttr->bufOut)) {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t EffectChainManagerGetFrameLen()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     return audioEffectChainManager->GetFrameLen();
-}
-
-int32_t EffectChainManagerReturnValue(struct EffectChainAdapter *adapter, int32_t i)
-{
-    AUDIO_INFO_LOG("xjl: AdapterReturnValue start, value=%{public}d", i);
-    AudioEffectChainManager *audioEffectChainManager = static_cast<AudioEffectChainManager *>(adapter->wapper);
-    int j = audioEffectChainManager->ReturnValue(i);
-    AUDIO_INFO_LOG("xjl: AdapterReturnValue end, value=%{public}d", i);
-    return j;
 }
 
 namespace OHOS {
@@ -172,6 +190,8 @@ namespace OHOS {
             AUDIO_INFO_LOG("xjl: EffectToLibraryEntryMap size %{public}d", EffectToLibraryEntryMap.size());
             AUDIO_INFO_LOG("xjl: EffectChainToEffectsMap size %{public}d", EffectChainToEffectsMap.size());
             AUDIO_INFO_LOG("xjl: SceneTypeToEffectChainMap size %{public}d", SceneTypeToEffectChainMap.size());
+
+            initValue = 2;
         }
 
         int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std::string effectChain) {
@@ -200,12 +220,12 @@ namespace OHOS {
                     bufferOut[i] = bufferIn[i] * 3;
                 }
             }
-            else if (sceneType == "SCENE_MOVIE") {
+            else {
                 for (int i = 0; i < frameLen * 2; i++) {
                     bufferOut[i] = bufferIn[i] / 3;
                 }
             }
-            // AUDIO_INFO_LOG("xjl: ApplyAudioEffectChain running %{public}s", sceneType.c_str());
+            AUDIO_INFO_LOG("xjl: ApplyAudioEffectChain running %{public}s, initValue=%{public}d", sceneType.c_str(), initValue);
             // auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
             // audioEffectChain->ApplyEffectChain(bufIn, bufOut);
             return 0;

@@ -427,7 +427,7 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         AUDIO_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
     }
 
-    if (!audioModuleInfo.fixedLatency.empty()) {
+    if (!audioModuleInfo.fixedLatency.empty()) {        
         args.append(" fixed_latency=");
         args.append(audioModuleInfo.fixedLatency);
     }

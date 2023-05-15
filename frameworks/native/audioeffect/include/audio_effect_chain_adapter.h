@@ -23,20 +23,29 @@
 extern "C" {
 #endif
 
-struct EffectChainAdapter {
-    void *wapper; // AudioEffectChainManager instance
-    void *bufIn; // input buffer, output of the effect sink
-    void *bufOut; // output buffer for the final processed output
+// struct EffectChainAdapter {
+//     void *wapper; // AudioEffectChainManager instance
+//     void *bufIn; // input buffer, output of the effect sink
+//     void *bufOut; // output buffer for the final processed output
+// };
+
+struct BufferAttr {
+    float *bufIn;
+    float *bufOut;
+    int numChan;
+    int frameLen;
 };
 
-int32_t LoadEffectChainAdapter(struct EffectChainAdapter *adapter);
-int32_t UnLoadEffectChainAdapter(struct EffectChainAdapter *adapter);
+// int32_t LoadEffectChainAdapter(struct EffectChainAdapter *adapter);
+// int32_t UnLoadEffectChainAdapter(struct EffectChainAdapter *adapter);
 
 // functions for cpp
-int32_t FillinEffectChainWapper(struct EffectChainAdapter *adapter);
-int32_t EffectChainManagerProcess(struct EffectChainAdapter *adapter, char *streamType);
-int32_t EffectChainManagerGetFrameLen(struct EffectChainAdapter *adapter);
-int32_t EffectChainManagerReturnValue(struct EffectChainAdapter *adapter, int32_t i);
+// int32_t FillinEffectChainWapper(struct EffectChainAdapter *adapter);
+// int32_t EffectChainManagerProcess(struct EffectChainAdapter *adapter, char *sceneType);
+// int32_t EffectChainManagerGetFrameLen(struct EffectChainAdapter *adapter);
+// int32_t EffectChainManagerReturnValue(struct EffectChainAdapter *adapter, int32_t i);
+int32_t EffectChainManagerProcess(void *bufferAttrVoid, char *sceneType);
+int32_t EffectChainManagerGetFrameLen();
 
 #ifdef __cplusplus
 }
