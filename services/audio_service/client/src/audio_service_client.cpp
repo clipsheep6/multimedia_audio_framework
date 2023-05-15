@@ -2782,9 +2782,9 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
 {
     AUDIO_INFO_LOG("SetStreamAudioEffectMode: %{public}d", audioEffectMode);
 
-    if (context == nullptr) {
-        AUDIO_ERR_LOG("context is null");
-        return AUDIO_CLIENT_ERR;
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("set stream audio effect mode: invalid stream state");
+        return AUDIO_CLIENT_PA_ERR;
     }
 
     pa_threaded_mainloop_lock(mainLoop);
