@@ -108,6 +108,7 @@ int32_t AudioEffectChainManager::GetFrameLen()
     return frameLen;
 }
 
+// Boot initialize
 void AudioEffectChainManager::InitAudioEffectChain(std::vector<EffectChain> effectChains,
                                                     std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList) {
 
@@ -177,24 +178,25 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
     return SUCCESS;
 }
 
+// Every play 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, void *bufIn, void *bufOut) {
-    if (!SceneTypeToEffectChainMap.count(sceneType)) {
-        AUDIO_INFO_LOG("Scene type [%{public}s] does not exist", sceneType.c_str());
-        return ERROR;
-    }
+    // if (!SceneTypeToEffectChainMap.count(sceneType)) {
+    //     AUDIO_INFO_LOG("Scene type [%{public}s] does not exist", sceneType.c_str());
+    //     return ERROR;
+    // }
 
-    float *bufferIn = (float *)bufIn;
-    float *bufferOut = (float *)bufOut;
-    if (sceneType == "SCENE_MUSIC") {
-        for (int i = 0; i < frameLen * 2; i++) {
-            bufferOut[i] = bufferIn[i] * 3;
-        }
-    }
-    else {
-        for (int i = 0; i < frameLen * 2; i++) {
-            bufferOut[i] = bufferIn[i] / 3;
-        }
-    }
+    // float *bufferIn = (float *)bufIn;
+    // float *bufferOut = (float *)bufOut;
+    // if (sceneType == "SCENE_MUSIC") {
+    //     for (int i = 0; i < frameLen * 2; i++) {
+    //         bufferOut[i] = bufferIn[i] * 3;
+    //     }
+    // }
+    // else {
+    //     for (int i = 0; i < frameLen * 2; i++) {
+    //         bufferOut[i] = bufferIn[i] / 3;
+    //     }
+    // }
     AUDIO_INFO_LOG("xjl: ApplyAudioEffectChain running %{public}s", sceneType.c_str());
     // auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
     // audioEffectChain->ApplyEffectChain(bufIn, bufOut);

@@ -125,9 +125,6 @@ private:
 
     std::mutex bufferQueueLock_;
     std::condition_variable bufferQueueCV_;
-
-    // static const std::map<std::pair<ContentType, StreamUsage>, AudioEffectScene> sceneTypeMap_;
-    // static std::map<std::pair<ContentType, StreamUsage>, AudioEffectScene> CreateSceneMap();
 };
 } // namespace AudioStandard
 } // namespace OHOS

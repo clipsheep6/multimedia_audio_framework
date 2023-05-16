@@ -1890,6 +1890,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
         AUDIO_ERR_LOG("QueryEffectSceneMode: WriteInterfaceToken failed");
         return -1;
     }
+    
     error = Remote()->SendRequest(QUERY_EFFECT_SCENEMODE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);

@@ -1747,9 +1747,6 @@ void AudioPolicyService::LoadEffectLibrary()
 
     bool createSuccess = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains);
     CHECK_AND_RETURN_LOG(createSuccess, "EffectChainManager create failed");
-    // if(!createSuccess){
-    //     AUDIO_ERR_LOG("create audio effect chain manager failed, please check log");
-    // }
 
     // Create sink for each effect
     AudioModuleInfo moduleInfo = {};
@@ -1759,8 +1756,7 @@ void AudioPolicyService::LoadEffectLibrary()
     moduleInfo.format = "s16le"; // 16bit little endian
     moduleInfo.name = "MIXER";
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
-        "OpenAudioPort failed %{public}d", ioHandle);
+    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
     IOHandles_[moduleInfo.name] = ioHandle;
 
     moduleInfo.lib = "libmodule-effect-sink.z.so";
@@ -1773,11 +1769,10 @@ void AudioPolicyService::LoadEffectLibrary()
     allSceneTypes.push_back("SCENE_OTHERS");
     AUDIO_INFO_LOG("cjw: stream size %{public}d", supportedEffectConfig.postProcessNew.stream.size());
     for (std::string sceneType : allSceneTypes) {
-        AUDIO_INFO_LOG("cjw: scene name %{public}s", sceneType.c_str());
+        AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType.c_str());
         moduleInfo.name = sceneType;
         ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
-            "OpenAudioPort failed %{public}d", ioHandle);
+        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
         IOHandles_[moduleInfo.name] = ioHandle;
     }
 }

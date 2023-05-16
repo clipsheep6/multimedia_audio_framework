@@ -44,6 +44,7 @@ inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 
         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
         if (object == nullptr) {
+            AUDIO_INFO_LOG("lxy2 ==================");
             AUDIO_ERR_LOG("GetAudioPolicyManagerProxy Object is NULL.");
             return nullptr;
         }
@@ -1074,8 +1075,10 @@ int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clie
 
 int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
+    AUDIO_INFO_LOG("lxy1 ==================");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
+        AUDIO_INFO_LOG("lxy3 ==================");
         AUDIO_ERR_LOG("QueryEffectSceneMode: audio policy manager proxy is NULL.");
         return -1;
     }

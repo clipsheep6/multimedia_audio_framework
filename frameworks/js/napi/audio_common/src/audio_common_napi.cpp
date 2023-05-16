@@ -177,5 +177,63 @@ bool AudioCommonNapi::IsLegalInputArgumentRingMode(int32_t ringerMode)
     return result;
 }
 
+bool AudioCommonNapi::IsLegalInputArgumentContentType(int32_t contentType)
+{
+    bool result = false;
+    switch (contentType) {
+        case AudioManagerNapi::CONTENT_TYPE_UNKNOWN:
+        case AudioManagerNapi::CONTENT_TYPE_SPEECH:
+        case AudioManagerNapi::CONTENT_TYPE_MUSIC:
+        case AudioManagerNapi::CONTENT_TYPE_MOVIE:
+        case AudioManagerNapi::CONTENT_TYPE_SONIFICATION:
+        case AudioManagerNapi::CONTENT_TYPE_RINGTONE:
+        case AudioManagerNapi::CONTENT_TYPE_ULTRASONIC:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool AudioCommonNapi::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
+{
+    bool result = false;
+    switch (streamUsage) {
+        case AudioManagerNapi::STREAM_USAGE_UNKNOWN:
+        case AudioManagerNapi::STREAM_USAGE_MEDIA:
+        case AudioManagerNapi::STREAM_USAGE_VOICE_COMMUNICATION:
+        case AudioManagerNapi::STREAM_USAGE_VOICE_ASSISTANT:
+        case AudioManagerNapi::STREAM_USAGE_ALARM:
+        case AudioManagerNapi::STREAM_USAGE_NOTIFICATION_RINGTONE:
+        case AudioManagerNapi::STREAM_USAGE_RANGING:
+        case AudioManagerNapi::STREAM_USAGE_ACCESSIBILITY:
+        case AudioManagerNapi::STREAM_USAGE_SYSTEM:
+        case AudioManagerNapi::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool AudioCommonNapi::IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode)
+{
+    bool result = false;
+    switch (audioEffectMode) {
+        case AudioEffectMode::EFFECT_NONE:
+        case AudioEffectMode::EFFECT_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

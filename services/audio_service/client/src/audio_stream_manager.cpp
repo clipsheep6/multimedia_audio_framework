@@ -93,18 +93,16 @@ static void UpdateEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audi
 }
 
 int32_t AudioStreamManager::GetEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo,
-    int32_t contentType, int32_t streamUsage)
+    ContentType contentType, StreamUsage streamUsage)
 {
     int i;
-
-    ContentType ct = static_cast<ContentType>(contentType);
-    StreamUsage su = static_cast<StreamUsage>(streamUsage);
-    AudioStreamType streamType =  AudioStream::GetStreamType(ct, su);
+    AudioStreamType streamType =  AudioStream::GetStreamType(contentType, streamUsage);
     std::string effectScene = AudioServiceClient::GetEffectSceneName(streamType);
 
     SupportedEffectConfig supportedEffectConfig;
     int ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
     int streamNum = supportedEffectConfig.postProcessNew.stream.size();
+    AUDIO_INFO_LOG("lxy20 ==================%{public}d, %{public}d, %{public}s, %{public}d", contentType, streamUsage, effectScene.c_str(), streamNum);
     if (streamNum > 0) {
         for (i = 0; i < streamNum; i++) {
             AudioSceneEffectInfo audioSceneEffectInfoTmp;

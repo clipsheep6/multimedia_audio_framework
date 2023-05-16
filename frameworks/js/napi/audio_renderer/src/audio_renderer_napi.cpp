@@ -2206,9 +2206,12 @@ napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_inf
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
-
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[PARAM0], &asyncContext->audioEffectMode);
+                if (!AudioCommonNapi::IsLegalInputArgumentAudioEffectMode(asyncContext->audioEffectMode)) {
+                    asyncContext->status = asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+                }
             } else if (i == PARAM1) {
                 if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);

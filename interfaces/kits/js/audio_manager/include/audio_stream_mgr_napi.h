@@ -16,6 +16,7 @@
 #ifndef AUDIO_STREAM_MGR_NAPI_H_
 #define AUDIO_STREAM_MGR_NAPI_H_
 
+#include "audio_errors.h"
 #include "audio_renderer.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
