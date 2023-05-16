@@ -182,6 +182,7 @@ config("audio_service_config") {
     "${fwk_native_hdiadapter_path}/sink/remote",
     "${fwk_native_hdiadapter_path}/source/common",
     "${fwk_native_hdiadapter_path}/source/primary",
+    "${fwk_native_hdiadapter_path}/source/remote_fast",
     "//drivers/peripheral/audio/interfaces/include",
     "${audio_fwk_path}/services/audio_policy/server/include/service/effect",
   ]

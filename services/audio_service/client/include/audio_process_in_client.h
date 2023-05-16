@@ -61,6 +61,8 @@ public:
 
     virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
 
+    virtual int32_t dequeue(const BufferDesc &bufDesc) const = 0;
+
     virtual int32_t SetVolume(int32_t vol) = 0;
 
     virtual int32_t Start() = 0;

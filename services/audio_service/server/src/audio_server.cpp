@@ -21,6 +21,8 @@
 #include <sstream>
 #include <thread>
 
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
 
@@ -30,9 +32,8 @@
 #include "audio_log.h"
 #include "audio_manager_listener_proxy.h"
 #include "i_audio_capturer_source.h"
+#include "i_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
 
 #define PA
 #ifdef PA
@@ -70,13 +71,9 @@ void *AudioServer::paDaemonThread(void *arg)
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-      audioEffectServer_(std::make_unique<AudioEffectServer>())
-{
-}
+      audioEffectServer_(std::make_unique<AudioEffectServer>()) {}
 
-void AudioServer::OnDump()
-{
-}
+void AudioServer::OnDump() {}
 int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
     AUDIO_INFO_LOG("AudioServer: Dump Process Invoked");

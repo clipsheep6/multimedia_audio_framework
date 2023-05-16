@@ -36,8 +36,6 @@ namespace {
     static const uint32_t ARGC_NUM_TWO = 2;
     static const uint32_t ARGC_NUM_THREE = 3;
     static const long WAV_HEADER_SIZE = 42;
-    static const int32_t SUCCESS = 0;
-    static const int32_t ERROR = -1;
     enum OperationCode : int32_t {
         INVALID_OPERATION = -1,
         INIT_PROCESS = 0,
@@ -49,6 +47,7 @@ namespace {
         RELEASE_PROCESS
     };
 }
+
 std::map<int32_t, std::string> g_operationStringMap = {
     {INIT_PROCESS, "call init process"},
     {START_PROCESS, "call start process"},
@@ -68,140 +67,196 @@ public:
     AudioProcessTest() = default;
     ~AudioProcessTest() = default;
 
-    void OnHandleData(size_t length) override
-    {
-        Trace callBack("client_n");
-        int32_t ret = processClient_->GetBufferDesc(buffer_);
-        if (ret != SUCCESS || buffer_.buffer == nullptr || buffer_.bufLength ==0) {
-            cout << "GetBufferDesc failed." << endl;
-            return;
-        }
-        if (needSkipWavHeader_) {
-            fseek(g_wavFile, WAV_HEADER_SIZE, SEEK_SET);
-            needSkipWavHeader_ = false;
-        }
-        if (feof(g_wavFile)) {
-            if (loopCount_ < 0) {
-                fseek(g_wavFile, WAV_HEADER_SIZE, SEEK_SET); // infinite loop
-            } else if (loopCount_ == 0) {
-                renderFinish_ = true;
-                g_autoRunCV.notify_all();
-            } else {
-                loopCount_--;
-                fseek(g_wavFile, WAV_HEADER_SIZE, SEEK_SET);
-            }
-        }
-        if (renderFinish_) {
-            return;
-        }
-        fread(buffer_.buffer, 1, buffer_.bufLength, g_wavFile);
-        processClient_->Enqueue(buffer_);
-        callBack.End();
-    }
+    void OnHandleData(size_t length) override;
 
-    int32_t Init(int32_t loopCount)
-    {
-        if (loopCount < 0) {
-            loopCount_ = 1; // loop once
-        } else if (loopCount == 0) {
-            loopCount_ = -1; // infinite loop
-        } else {
-            loopCount_ = loopCount;
-        }
+    int32_t Init(int32_t loopCount);
+    bool Start();
+    bool Pause();
+    bool Resume();
+    bool SetVolume(int32_t vol);
+    bool Stop();
+    bool Release();
 
-        AudioProcessConfig config;
-        config.appInfo.appPid = getpid();
-        config.appInfo.appUid = getuid();
-
-        config.audioMode = AUDIO_MODE_PLAYBACK;
-
-        config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-        config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-        config.rendererInfo.rendererFlags = 4; // 4 for test
-
-        config.streamInfo.channels = STEREO;
-        config.streamInfo.encoding = ENCODING_PCM;
-        config.streamInfo.format = SAMPLE_S16LE;
-        config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-
-        processClient_ = AudioProcessInClient::Create(config);
-        if (processClient_ == nullptr) {
-            return ERROR;
-        }
-        processClient_->SaveDataCallback(shared_from_this());
-        gIsInited = true;
-        return SUCCESS;
-    }
-
-    bool Start()
-    {
-        int32_t ret = processClient_->Start();
-        if (ret != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    bool Pause()
-    {
-        int32_t ret = processClient_->Pause();
-        if (ret != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    bool Resume()
-    {
-        int32_t ret = processClient_->Resume();
-        if (ret != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    bool SetVolume(int32_t vol)
-    {
-        int32_t ret = processClient_->SetVolume(vol);
-        if (ret != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    bool Stop()
-    {
-        int32_t ret = processClient_->Stop();
-        if (ret != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    bool Release()
-    {
-        if (processClient_ == nullptr) {
-            return true;
-        }
-        int32_t ret = processClient_->Release();
-        if (ret != SUCCESS) {
-            return false;
-        }
-        AUDIO_INFO_LOG("client test set nullptr!");
-        processClient_ = nullptr;
-        return true;
-    }
+private:
+    int32_t RenderFromFile(const BufferDesc &bufDesc);
+    int32_t CaptureToFile(const BufferDesc &bufDesc);
 
 private:
     std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
-    bool gIsInited = false;
+    bool isInit_ = false;
     int32_t loopCount_ = -1; // for loop
-    BufferDesc buffer_ = {nullptr, 0, 0};
     bool needSkipWavHeader_ = true;
     bool renderFinish_ = false;
+    AudioMode ClientMode_ = AUDIO_MODE_PLAYBACK;
 };
 
-inline int32_t GetArgs(const std::string &args)
+int32_t AudioProcessTest::RenderFromFile(const BufferDesc &bufDesc)
+{
+    if (g_wavFile == nullptr) {
+        AUDIO_ERR_LOG("%{public}s g_wavFile is null.", __func__);
+        return;
+    }
+
+    if (needSkipWavHeader_) {
+        fseek(g_wavFile, WAV_HEADER_SIZE, SEEK_SET);
+        needSkipWavHeader_ = false;
+    }
+    if (feof(g_wavFile)) {
+        if (loopCount_ < 0) {
+            fseek(g_wavFile, WAV_HEADER_SIZE, SEEK_SET);
+        } else if (loopCount_ == 0) {
+            renderFinish_ = true;
+            g_autoRunCV.notify_all();
+        } else {
+            loopCount_--;
+            fseek(g_wavFile, WAV_HEADER_SIZE, SEEK_SET);
+        }
+    }
+    if (renderFinish_) {
+        return;
+    }
+    fread(bufDesc.buffer, 1, bufDesc.bufLength, g_wavFile);
+    processClient_->Enqueue(bufDesc);
+}
+
+int32_t AudioProcessTest::CaptureToFile(const BufferDesc &bufDesc)
+{
+    if (g_wavFile == nullptr) {
+        AUDIO_ERR_LOG("%{public}s g_wavFile is null.", __func__);
+        return ERR_INVALID_HANDLE;
+    }
+
+    size_t cnt = fwrite(bufDesc.buffer, 1, bufDesc.bufLength, g_wavFile);
+    if (cnt != length) {
+        AUDIO_ERR_LOG("%{public}s fwrite fail, cnt %{public}d, length %{public}d.", __func__, cnt, length);
+        return ERR_WRITE_FAILED;
+    }
+    ret = dequeue(bufDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "%{public}s dequeue buf fail, ret %{public}d.",
+        __func__, ret);
+    return SUCCESS;
+}
+
+void AudioProcessTest::OnHandleData(size_t length) override
+{
+    Trace callBack("client_n");
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    BufferDesc bufDesc = {nullptr, 0, 0};
+    int32_t ret = processClient_->GetBufferDesc(bufDesc);
+    if (ret != SUCCESS || bufDesc.buffer == nullptr || bufDesc.bufLength ==0) {
+        cout << "GetBufferDesc failed." << endl;
+        return;
+    }
+    if (ClientMode_ == AUDIO_MODE_RECORD) {
+        ret = CaptureToFile(bufDesc);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_BUFFER, "%{public}s capture to file fail, ret %{public}d.",
+            __func__, ret);
+    } else {
+        ret = RenderFromFile(bufDesc);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_BUFFER, "%{public}s render from file fail, ret %{public}d.",
+            __func__, ret);
+    }
+    AUDIO_INFO_LOG("%{public}s end.", __func__);
+    callBack.End();
+}
+
+int32_t AudioProcessTest::Init(int32_t loopCount)
+{
+    if (loopCount < 0) {
+        loopCount_ = 1; // loop once
+    } else if (loopCount == 0) {
+        loopCount_ = -1; // infinite loop
+    } else {
+        loopCount_ = loopCount;
+    }
+
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    // config.audioMode = AUDIO_MODE_PLAYBACK;
+    // config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    // config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    // config.rendererInfo.rendererFlags = 4; // 4 for test
+
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.capturerInfo.capturerFlags = 7; // 7 for test
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+
+    ClientMode_ = config.audioMode;
+
+    processClient_ = AudioProcessInClient::Create(config);
+    if (processClient_ == nullptr) {
+        AUDIO_ERR_LOG("%{public}s create process client fail.", __func__);
+        return ERR_INVALID_HANDLE;
+    }
+    processClient_->SaveDataCallback(shared_from_this());
+    isInit_ = true;
+    return SUCCESS;
+}
+
+bool AudioProcessTest::Start()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = processClient_->Start();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s process client start fail, ret %{public}d.",
+        __func__, ret);
+    return true;
+}
+
+bool AudioProcessTest::Pause()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = processClient_->Pause();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s process client pause fail, ret %{public}d.",
+        __func__, ret);
+    return true;
+}
+
+bool AudioProcessTest::Resume()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = processClient_->Resume();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s process client resume fail, ret %{public}d.",
+        __func__, ret);
+    return true;
+}
+
+bool AudioProcessTest::SetVolume(int32_t vol)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = processClient_->SetVolume(vol);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s process client set volume fail, ret %{public}d.",
+        __func__, ret);
+    return true;
+}
+
+bool AudioProcessTest::Stop()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = processClient_->Stop();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s process client stop fail, ret %{public}d.",
+        __func__, ret);
+    return true;
+}
+
+bool AudioProcessTest::Release()
+{
+    if (processClient_ == nullptr) {
+        return true;
+    }
+    int32_t ret = processClient_->Release();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s process client release fail, ret %{public}d.",
+        __func__, ret);
+    return true;
+}
+
+inline int32_t GetArgs(char *args)
 {
     int32_t value = 0;
     stringstream valueStr;
@@ -370,10 +425,19 @@ bool OpenFile()
 {
     char path[PATH_MAX] = { 0x00 };
     if ((strlen(g_filePath.c_str()) > PATH_MAX) || (realpath(g_filePath.c_str(), path) == nullptr)) {
+        AUDIO_ERR_LOG("File not exit, path = %{public}s.", path);
         return false;
     }
     AUDIO_INFO_LOG("path = %{public}s", path);
-    g_wavFile = fopen(path, "rb");
+    std::string micExtension = ".pcm";
+    std::string mode = "";
+    if (g_filePath.rfind(micExtension)) {
+        mode = "ab+";
+    } else {
+        mode = "rb";
+    }
+
+    g_wavFile = fopen(path, mode.c_str());
     if (g_wavFile == nullptr) {
         AUDIO_ERR_LOG("Unable to open wave file");
         return false;
