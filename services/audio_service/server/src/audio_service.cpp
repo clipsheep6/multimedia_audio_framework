@@ -123,10 +123,10 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
     // send the config to AudioPolicyServera and get the device info.
     DeviceInfo deviceInfo;
     if (config.audioMode == AUDIO_MODE_RECORD) {
-        deviceInfo.deviceId = 7; // 7 for test 低时延mic
-        deviceInfo.networkId = RemoteAudioRendererSink::GetDeviceNetworkId();  // TYJ这个西安借用remoteSink上线时的networkId
-        deviceInfo.deviceRole = INPUT_DEVICE;     // TYJ 低时延mic
-        deviceInfo.deviceType = DEVICE_TYPE_MIC;  // TYJ 低时延mic
+        deviceInfo.deviceId = 7;
+        deviceInfo.networkId = RemoteAudioRendererSink::GetDeviceNetworkId();
+        deviceInfo.deviceRole = INPUT_DEVICE;
+        deviceInfo.deviceType = DEVICE_TYPE_MIC;
     } else {
         deviceInfo.deviceId = 6; // 6 for test
         deviceInfo.networkId = LOCAL_NETWORK_ID;

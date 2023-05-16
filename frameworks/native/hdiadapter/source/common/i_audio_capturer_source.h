@@ -41,7 +41,7 @@ class IAudioCapturerSource {
 public:
     static IAudioCapturerSource *GetInstance(const char *devceClass, const char *deviceNetworkId);
 
-    virtual int32_t Init(IAudioSourceAttr &atrr) = 0;
+    virtual int32_t Init(IAudioSourceAttr &attr) = 0;
     virtual bool IsInited(void) = 0;
     virtual void DeInit(void) = 0;
 

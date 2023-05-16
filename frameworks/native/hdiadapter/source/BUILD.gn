@@ -80,6 +80,46 @@ ohos_shared_library("remote_audio_capturer_source") {
   subsystem_name = "multimedia"
 }
 
+ohos_shared_library("remote_fast_audio_capturer_source") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
+  install_enable = true
+  sources = [ "remote_fast/remote_fast_audio_capturer_source.cpp" ]
+  cflags = [ "-fPIC" ]
+  cflags += [ "-Wall" ]
+  cflags_cc = cflags
+  if ("${product_name}" == "m40") {
+    cflags += [ "-DPRODUCT_M40" ]
+  }
+
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
+    "//drivers/peripheral/audio/interfaces/include",
+  ]
+
+  if ("${product_name}" == "m40") {
+    deps = [
+      "//foundation/distributedhardware/distributed_audio/services/hdfaudioclient:daudio_client",
+      "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
+    ]
+  } else {
+    deps = [ multimedia_audio_framework_hdi_audio_client ]
+  }
+
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog"
+  ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
 ohos_shared_library("audio_capturer_file_source") {
   sanitize = {
     cfi = true
@@ -138,6 +178,7 @@ ohos_shared_library("capturer_source_adapter") {
     ":audio_capturer_file_source",
     ":audio_capturer_source",
     ":remote_audio_capturer_source",
+    ":remote_fast_audio_capturer_source",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
