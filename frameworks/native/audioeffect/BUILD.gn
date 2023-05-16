@@ -55,7 +55,6 @@ ohos_shared_library("audio_effect") {
   # include_dirs += [ multimedia_audio_framework_pulse_audio ]
 
   sources = [
-    "src/audio_effect_chain_adapter.c",
     "src/audio_effect_chain_manager.cpp",
   ]
 
