@@ -78,7 +78,6 @@ public:
     void Dump(std::stringstream &dumpStringStream) override;
 
 private:
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
     bool ConfigInputPoint(const DeviceInfo &deviceInfo);
     int32_t PrepareInputDeviceBuffer(const DeviceInfo &deviceInfo);
     int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
@@ -245,29 +244,6 @@ void AudioEndpointInner::Dump(std::stringstream &dumpStringStream)
     dumpStringStream << std::endl;
 }
 
-AudioFormat AudioEndpointInner::ConverToHdiFormat(AudioSampleFormat format)
-{
-    AudioFormat hdiFormat;
-    switch (format) {
-        case SAMPLE_U8:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
-            break;
-        case SAMPLE_S16LE:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
-            break;
-        case SAMPLE_S24LE:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
-            break;
-        case SAMPLE_S32LE:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
-            break;
-        default:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
-            break;
-    }
-    return hdiFormat;
-}
-
 bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
@@ -374,10 +350,10 @@ int32_t AudioEndpointInner::PrepareInputDeviceBuffer(const DeviceInfo &deviceInf
         return ERR_ILLEGAL_STATE;
     }
 
-    // spanDuration_ may be less than the correct time of dstSpanSizeInframe_.Ã¿240µã¶ÔÓ¦µÄnsÊ±¼ä = 5ms
+    // spanDuration_ may be less than the correct time of dstSpanSizeInframe_.Ã¿240ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½nsÊ±ï¿½ï¿½ = 5ms
     spanDuration_ = dstSpanSizeInframe_ * AUDIO_NS_PER_SECOND / dstStreamInfo_.samplingRate;
     int64_t temp = spanDuration_ / 4 * 3; // 3/4 spanDuration
-    serverAheadReadTime_ = temp < ONE_MILLISECOND_DURATION ? ONE_MILLISECOND_DURATION : temp; // ·þÎñÆ÷ÌáÇ°¶ÁÈ¡Ê±¼ä at least 1ms ahead.
+    serverAheadReadTime_ = temp < ONE_MILLISECOND_DURATION ? ONE_MILLISECOND_DURATION : temp; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½È¡Ê±ï¿½ï¿½ at least 1ms ahead.
     AUDIO_INFO_LOG("Span input duration: %{public}ld ns, server will wake up and handle %{public}ld ns ahead.",
         spanDuration_, serverAheadReadTime_);
 
@@ -950,7 +926,7 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
 
     {
         std::lock_guard<std::mutex> lock(listLock_);
-        for (size_t i = 0; i < processBufferList_.size(); i++) {          // processBufferList_ÊÇprocess clientµÄbuf
+        for (size_t i = 0; i < processBufferList_.size(); i++) {          // processBufferList_ï¿½ï¿½process clientï¿½ï¿½buf
             if (processBufferList_[i] == nullptr) {
                 AUDIO_ERR_LOG("%{public}s process buffer %{public}zu is null.", __func__, i);
                 continue;
