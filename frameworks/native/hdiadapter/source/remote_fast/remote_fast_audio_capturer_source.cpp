@@ -278,7 +278,7 @@ void RemoteFastAudioCapturerSource::InitAttrs(struct AudioSampleAttributes &attr
     /* Initialization of audio parameters for playback */
     attrs.type = AUDIO_MMAP_NOIRQ;
     attrs.interleaved = CAPTURE_INTERLEAVED;
-    attrs.format = attr_.format;
+    attrs.format = ConverToHdiFormat(attr_.format);
     attrs.sampleRate = attr_.sampleRate;
     attrs.channelCount = attr_.channel;
     attrs.period = DEEP_BUFFER_CAPTURER_PERIOD_SIZE;
@@ -289,6 +289,29 @@ void RemoteFastAudioCapturerSource::InitAttrs(struct AudioSampleAttributes &attr
     attrs.stopThreshold = INT_32_MAX;
     attrs.silenceThreshold = attr_.bufferSize;
     attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
+}
+
+AudioFormat RemoteFastAudioCapturerSource::ConverToHdiFormat(AudioSampleFormat format)
+{
+    AudioFormat hdiFormat;
+    switch (format) {
+        case SAMPLE_U8:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
+            break;
+        case SAMPLE_S16LE:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            break;
+        case SAMPLE_S24LE:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
+            break;
+        case SAMPLE_S32LE:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            break;
+        default:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            break;
+    }
+    return hdiFormat;
 }
 
 inline std::string printRemoteAttr(IAudioSourceAttr attr_)
@@ -537,6 +560,24 @@ int32_t RemoteFastAudioCapturerSource::SetAudioScene(AudioScene audioScene, Devi
     return SUCCESS;
 }
 
+uint32_t RemoteFastAudioCapturerSource::PcmFormatToBits(AudioSampleFormat format)
+{
+    switch (format) {
+        case SAMPLE_U8:
+            return PCM_8_BIT;
+        case SAMPLE_S16LE:
+            return PCM_16_BIT;
+        case SAMPLE_S24LE:
+            return PCM_24_BIT;
+        case SAMPLE_S32LE:
+            return PCM_32_BIT;
+        case SAMPLE_F32LE:
+            return PCM_32_BIT;
+        default:
+            return PCM_24_BIT;
+    }
+}
+
 int32_t RemoteFastAudioCapturerSource::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe,
     uint32_t &spanSizeInframe, uint32_t &byteSizePerFrame)
 {
@@ -547,7 +588,7 @@ int32_t RemoteFastAudioCapturerSource::GetMmapBufferInfo(int &fd, uint32_t &tota
     fd = bufferFd_;
     totalSizeInframe = bufferTotalFrameSize_;
     spanSizeInframe = eachReadFrameSize_;
-    byteSizePerFrame = attr_.format * attr_.channel;
+    byteSizePerFrame = PcmFormatToBits(attr_.format) * attr_.channel;
     return SUCCESS;
 }
 

@@ -24,6 +24,7 @@ namespace AudioStandard {
 class RemoteAudioRendererSink : public IAudioRendererSink {
 public:
     static RemoteAudioRendererSink *GetInstance(const char *deviceNetworkId);
+    static std::string GetDeviceNetworkId();
 
     RemoteAudioRendererSink() = default;
     ~RemoteAudioRendererSink() = default;

@@ -61,9 +61,11 @@ private:
     int32_t GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size, const char *networkId);
     int32_t CreateCapture(const struct AudioPort &capturePort);
     void InitAttrs(struct AudioSampleAttributes &attrs);
+    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
     int32_t InitAshmem(const struct AudioSampleAttributes &attrs);
     AudioCategory GetAudioCategory(AudioScene audioScene);
     int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source);
+    uint32_t PcmFormatToBits(AudioSampleFormat format);
 
 private:
     static constexpr int32_t INVALID_FD = -1;
@@ -77,6 +79,10 @@ private:
     static constexpr uint32_t INTERNAL_INPUT_STREAM_ID = 1;
     static constexpr int32_t EVENT_DES_SIZE = 60;
     static constexpr int64_t SECOND_TO_NANOSECOND = 1000000000;
+    static constexpr  uint32_t PCM_8_BIT = 8;
+    static constexpr  uint32_t PCM_16_BIT = 16;
+    static constexpr  uint32_t PCM_24_BIT = 24;
+    static constexpr  uint32_t PCM_32_BIT = 32;
 #ifdef PRODUCT_M40
     static constexpr uint32_t PARAM_VALUE_LENTH = 20;
 #endif
