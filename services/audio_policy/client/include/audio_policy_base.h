@@ -161,7 +161,9 @@ public:
     virtual int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
 
-    virtual int32_t GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision) = 0;
+    virtual int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) = 0;
+
+    virtual int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) = 0;
 
     virtual bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) = 0;
 
@@ -186,6 +188,8 @@ public:
     virtual float GetMinStreamVolume(void) = 0;
 
     virtual float GetMaxStreamVolume(void) = 0;
+
+    virtual int32_t GetMaxRendererInstances() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

@@ -812,9 +812,9 @@ void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, Mess
 void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply)
 {
     AUDIO_DEBUG_LOG("GetVolumeGroupInfoInternal entered");
-    bool needVerifyPermision = data.ReadBool();
+    std::string networkId = data.ReadString();
     std::vector<sptr<VolumeGroupInfo>> groupInfos;
-    int32_t ret = GetVolumeGroupInfos(groupInfos, needVerifyPermision);
+    int32_t ret = GetVolumeGroupInfos(networkId, groupInfos);
     int32_t size = static_cast<int32_t>(groupInfos.size());
     AUDIO_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
     
@@ -828,6 +828,17 @@ void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, Mes
     }
     
     AUDIO_DEBUG_LOG("GetVolumeGroups internal exit");
+}
+
+void AudioPolicyManagerStub::GetNetworkIdByGroupIdInternal(MessageParcel& data, MessageParcel& reply)
+{
+    AUDIO_DEBUG_LOG("GetNetworkIdByGroupId entered");
+    int32_t groupId = data.ReadInt32();
+    std::string networkId;
+    int32_t ret = GetNetworkIdByGroupId(groupId, networkId);
+
+    reply.WriteString(networkId);
+    reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply)
@@ -866,6 +877,12 @@ void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, Mes
 {
     float volume = GetMaxStreamVolume();
     reply.WriteFloat(volume);
+}
+
+void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result =  GetMaxRendererInstances();
+    reply.WriteInt32(result);
 }
 
 int AudioPolicyManagerStub::OnRemoteRequest(
@@ -1106,6 +1123,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_VOLUME_GROUP_INFO:
             GetVolumeGroupInfoInternal(data, reply);
             break;
+            
+        case GET_NETWORKID_BY_GROUP_ID:
+            GetNetworkIdByGroupIdInternal(data, reply);
+            break;
 
         case IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED:
              IsAudioRendererLowLatencySupportedInternal(data, reply);
@@ -1153,6 +1174,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_MAX_VOLUME_STREAM:
             GetMaxStreamVolumeInternal(data, reply);
+
+        case GET_MAX_RENDERER_INSTANCES:
+            GetMaxRendererInstancesInternal(data, reply);
             break;
 
         default:
