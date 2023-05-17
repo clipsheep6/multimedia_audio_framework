@@ -405,7 +405,7 @@ bool AudioEndpointInner::StartDevice()
     }
     std::unique_lock<std::mutex> lock(loopThreadLock_);
     needReSyncPosition_ = true;
-    endpointStatus_ = RUNNING;
+    endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
     workThreadCV_.notify_all();
     AUDIO_INFO_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
     return true;
