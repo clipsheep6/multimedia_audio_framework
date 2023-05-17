@@ -406,6 +406,7 @@ void AudioManagerProxy::SetAudioBalanceValue(float audioBalance)
         return;
     }
 }
+
 sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConfig &config)
 {
     MessageParcel data;
@@ -475,6 +476,25 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     }
 
     return true;
+}
+
+int32_t AudioManagerProxy::ChangeEndPoint(const AudioProcessConfig &config)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    IAudioProcess::WriteConfigToParcel(config, data);
+    int error = Remote()->SendRequest(CHANGE_ENDPOINT, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: ChangeEndPoint failed, error: %{public}d", error);
+        return -1;
+    }
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

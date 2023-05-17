@@ -69,6 +69,7 @@ public:
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
 
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;
+    int32_t ChangeEndPoint(const AudioProcessConfig &config) override;
 
     // ISinkParameterCallback
     void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key,

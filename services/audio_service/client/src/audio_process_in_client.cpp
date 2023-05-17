@@ -63,6 +63,8 @@ public:
 
     int32_t Release() override;
 
+    int32_t ChangeEndPoint(const AudioProcessConfig &config) override;
+
     bool Init(const AudioProcessConfig &config);
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
@@ -538,6 +540,18 @@ void AudioProcessInClientInner::UpdateHandleInfo()
     audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
 
     handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
+}
+
+int32_t AudioProcessInClientInner::ChangeEndPoint(const AudioProcessConfig &config)
+{
+    AUDIO_INFO_LOG("AudioProcessInClientInner ChangeEndPoint enter.");
+    sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "ChangeEndPoint failed, can not get service");
+    int32_t ret = gasp->ChangeEndPoint(config);
+
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ChangeEndPoint failed, ret error.");
+    AUDIO_INFO_LOG("AudioProcessInClientInner ChangeEndPoint exit");
+    return SUCCESS;
 }
 
 int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame)

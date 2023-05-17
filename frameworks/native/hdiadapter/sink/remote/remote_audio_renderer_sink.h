@@ -27,6 +27,8 @@ public:
 
     RemoteAudioRendererSink() = default;
     ~RemoteAudioRendererSink() = default;
+
+    static std::string GetDeviceNetworkId();
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

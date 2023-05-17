@@ -16,6 +16,7 @@
 #ifndef AUDIO_SERVICE_H
 #define AUDIO_SERVICE_H
 
+#include <set>
 #include <sstream>
 #include <map>
 #include <mutex>
@@ -34,17 +35,24 @@ public:
     // override for ProcessReleaseCallback, do release process work.
     int32_t OnProcessRelease(IAudioProcessStream *process) override;
 
-    DeviceInfo GetDeviceInfoForProcess(const AudioProcessConfig &config);
+    DeviceInfo GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isRemote);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(DeviceInfo deviceInfo);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
+    int32_t UnLinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     void Dump(std::stringstream &dumpString);
+    int32_t ChangeProcessToEndpoint(sptr<AudioProcessInServer> process, const AudioProcessConfig &config);
 private:
     AudioService();
+    void Dump();
     std::mutex processListMutex_;
+    std::set<sptr<AudioProcessInServer>> processList_;
     std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
-    std::map<int32_t, std::shared_ptr<AudioEndpoint>> endpointList_;
+    std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
+
+    // for change endpoint.. 
+    sptr<AudioProcessInServer> process_;
+    bool curInRemote_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

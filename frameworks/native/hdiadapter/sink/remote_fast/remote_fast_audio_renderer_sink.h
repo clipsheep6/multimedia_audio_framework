@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,28 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef I_PROCESS_STATUS_LISTENER_H
-#define I_PROCESS_STATUS_LISTENER_H
-
-#include <memory>
+#ifndef REMOTE_FAST_AUDIO_RENDERER_SINK_H
+#define REMOTE_FAST_AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
-#include "i_audio_process_stream.h"
+#include "fast_audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class IProcessStatusListener {
+class RemoteFastAudioRendererSink : public FastAudioRendererSink {
 public:
-    virtual int32_t OnStart(IAudioProcessStream *processStream) = 0;
+    static RemoteFastAudioRendererSink *GetInstance(const char *deviceNetworkId);
 
-    virtual int32_t OnStop(IAudioProcessStream *processStream) = 0;
-
-    virtual int32_t OnPause(IAudioProcessStream *processStream) = 0;
-
-    virtual int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) = 0;
-
-    virtual ~IProcessStatusListener() = default;
+    RemoteFastAudioRendererSink() = default;
+    ~RemoteFastAudioRendererSink() = default;
 };
-} // namespace AudioStandard
-} // namespace OHOS
-#endif // I_PROCESS_STATUS_LISTENER_H
+}  // namespace AudioStandard
+}  // namespace OHOS
+#endif // REMOTE_FAST_AUDIO_RENDERER_SINK_H

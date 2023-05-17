@@ -49,6 +49,7 @@ public:
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;
     bool LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
                                   std::vector<Effect> &successEffects) override;
+    int32_t ChangeEndPoint(const AudioProcessConfig &config) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

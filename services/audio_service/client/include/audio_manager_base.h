@@ -185,6 +185,15 @@ public:
     virtual bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
                                           std::vector<Effect> &successEffects) = 0;
 
+    /**
+     * ChangeEndPoint.
+     *
+     * @param config the config of the AudioProcess
+     *
+     * @return Returns AudioProcess client.
+    */
+    virtual int32_t ChangeEndPoint(const AudioProcessConfig &config) = 0;
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -207,6 +216,7 @@ public:
         SET_AUDIO_BALANCE_VALUE = 18,
         CREATE_AUDIOPROCESS = 19,
         LOAD_AUDIO_EFFECT_LIBRARIES = 20,
+        CHANGE_ENDPOINT= 21,
     };
 
 public:

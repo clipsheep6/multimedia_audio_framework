@@ -167,6 +167,53 @@ ohos_shared_library("remote_audio_renderer_sink") {
   subsystem_name = "multimedia"
 }
 
+ohos_shared_library("remote_fast_audio_renderer_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
+  install_enable = true
+
+  sources = [ "remote_fast/remote_fast_audio_renderer_sink.cpp" ]
+
+  cflags = [ "-fPIC" ]
+  cflags += [ "-Wall" ]
+  cflags_cc = cflags
+  if ("${product_name}" == "m40") {
+    cflags += [ "-DPRODUCT_M40" ]
+  }
+
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/fast",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/remote_fast",
+    "//drivers/peripheral/audio/interfaces/include",
+  ]
+
+  deps = [
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
+    "//third_party/bounds_checking_function:libsec_shared",
+  ]
+
+  if ("${product_name}" == "m40") {
+    deps += [ "//foundation/distributedhardware/distributed_audio/services/hdfaudioclient:daudio_client" ]
+  } else {
+    deps +=
+        [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
+  }
+
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
 ohos_shared_library("audio_renderer_file_sink") {
   sanitize = {
     cfi = true
@@ -227,6 +274,7 @@ ohos_shared_library("renderer_sink_adapter") {
     ":bluetooth_renderer_sink",
     ":fast_audio_renderer_sink",
     ":remote_audio_renderer_sink",
+    ":remote_fast_audio_renderer_sink",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
