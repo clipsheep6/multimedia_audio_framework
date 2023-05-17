@@ -185,19 +185,19 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, vo
     //     return ERROR;
     // }
 
-    // float *bufferIn = (float *)bufIn;
-    // float *bufferOut = (float *)bufOut;
-    // if (sceneType == "SCENE_MUSIC") {
-    //     for (int i = 0; i < frameLen * 2; i++) {
-    //         bufferOut[i] = bufferIn[i] * 3;
-    //     }
-    // }
-    // else {
-    //     for (int i = 0; i < frameLen * 2; i++) {
-    //         bufferOut[i] = bufferIn[i] / 3;
-    //     }
-    // }
-    AUDIO_INFO_LOG("xjl: ApplyAudioEffectChain running %{public}s", sceneType.c_str());
+    float *bufferIn = (float *)bufIn;
+    float *bufferOut = (float *)bufOut;
+    if (sceneType == "SCENE_MUSIC") {
+        for (int i = 0; i < frameLen * 2; i++) {
+            bufferOut[i] = bufferIn[i] * 3;
+        }
+    }
+    else {
+        for (int i = 0; i < frameLen * 2; i++) {
+            bufferOut[i] = bufferIn[i] / 3;
+        }
+    }
+    // AUDIO_INFO_LOG("xjl: ApplyAudioEffectChain running %{public}s", sceneType.c_str());
     // auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
     // audioEffectChain->ApplyEffectChain(bufIn, bufOut);
     return SUCCESS;

@@ -36,9 +36,7 @@ class AudioEffectChain {
 public:
     AudioEffectChain(std::string scene);
     ~AudioEffectChain();
-    // 设置standByEffectChain
     void SetEffectChain(std::vector<EffectHandleT *> effectHandles);
-    // 依次执行stanbyEffectChain中的handle
     void ApplyEffectChain(void *bufIn, void *bufOut);
 private:
     std::string sceneType;
@@ -50,9 +48,7 @@ public:
     AudioEffectChainManager();
     ~AudioEffectChainManager();
     static AudioEffectChainManager *GetInstance();
-    // 初始化 SceneTypeToEffectChainMap, mode和device与effectchain一一对应
-    void InitAudioEffectChain(std::vector<EffectChain> effectChains, std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList);
-    // 设置根据mdInfo创建effect handle
+    void InitAudioEffectChain(std::vector<EffectChain> effectChains, std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList);    
     int32_t SetAudioEffectChain(std::string sceneType, std::string effectChain);
     int32_t ApplyAudioEffectChain(std::string sceneType, void *bufIn, void *bufOut);
     int32_t GetFrameLen();
@@ -60,7 +56,7 @@ public:
 private:
     std::map<std::string, LibEntryT *> EffectToLibraryEntryMap;  // {"hvs": libEntryT}
     std::map <std::string, std::vector<std::string>> EffectChainToEffectsMap; // {"EFFECTCHAIN_SPK_MUSIC": [hvs, eq, histen]}
-    std::map<std::string, AudioEffectChain *> SceneTypeToEffectChainMap; // {"STREAM_MUSIC": AudioEffectChain}  init时创建AudioEffectChain对象
+    std::map<std::string, AudioEffectChain *> SceneTypeToEffectChainMap; // {"STREAM_MUSIC": AudioEffectChain}  Create AudioEffectChain when init
     int32_t frameLen = 960;
 };
 

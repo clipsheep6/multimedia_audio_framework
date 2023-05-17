@@ -18,6 +18,6 @@ group("pa_extend_modules") {
     "hdi:module-hdi-sink",
     "hdi:module-hdi-source",
     "effect:module-effect-sink",
-    "mixer:module-mixer-sink",
+    "cluster:module-cluster-sink",
   ]
 }

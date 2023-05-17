@@ -35,7 +35,7 @@ public:
     static constexpr std::string_view HDI_SOURCE = "libmodule-hdi-source.z.so";
     static constexpr std::string_view PIPE_SINK = "libmodule-pipe-sink.z.so";
     static constexpr std::string_view PIPE_SOURCE = "libmodule-pipe-source.z.so";
-    static constexpr std::string_view MIXER_SINK = "libmodule-mixer-sink.z.so";
+    static constexpr std::string_view CLUSTER_SINK = "libmodule-cluster-sink.z.so";
     static constexpr std::string_view EFFECT_SINK = "libmodule-effect-sink.z.so";
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_COUNT = 5;
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_DELAY_TIME = 200000;

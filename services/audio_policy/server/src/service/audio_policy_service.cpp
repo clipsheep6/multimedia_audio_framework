@@ -1739,27 +1739,22 @@ void AudioPolicyService::LoadEffectLibrary()
     audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
     audioEffectManager_.GetAvailableAEConfig();
 
-    AUDIO_INFO_LOG("<zyl debug> 1.get supported effect config");
+    // Initialize EffectChainManager in audio service through IPC
     SupportedEffectConfig supportedEffectConfig;
     audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
-
-    AUDIO_INFO_LOG("<zyl debug> 2.availiable effectChain:%{public}d", supportedEffectConfig.effectChains.size());
-
     bool createSuccess = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains);
     CHECK_AND_RETURN_LOG(createSuccess, "EffectChainManager create failed");
 
     // Create sink for each effect
     AudioModuleInfo moduleInfo = {};
-    moduleInfo.lib = "libmodule-mixer-sink.z.so";
-    moduleInfo.channels = "2";
-    moduleInfo.rate = "44100";
-    moduleInfo.format = "s16le"; // 16bit little endian
-    moduleInfo.name = "MIXER";
+    moduleInfo.lib = "libmodule-cluster-sink.z.so";
+    moduleInfo.name = "CLUSTER";
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
     IOHandles_[moduleInfo.name] = ioHandle;
 
     moduleInfo.lib = "libmodule-effect-sink.z.so";
+    moduleInfo.rate = "48000";
     std::vector<std::string> allSceneTypes;
     allSceneTypes.push_back("SCENE_MUSIC");
     allSceneTypes.push_back("SCENE_MOVIE");
@@ -1767,7 +1762,7 @@ void AudioPolicyService::LoadEffectLibrary()
     allSceneTypes.push_back("SCENE_SPEECH");
     allSceneTypes.push_back("SCENE_RING");
     allSceneTypes.push_back("SCENE_OTHERS");
-    AUDIO_INFO_LOG("cjw: stream size %{public}d", supportedEffectConfig.postProcessNew.stream.size());
+    // AUDIO_INFO_LOG("cjw: stream size %{public}d", supportedEffectConfig.postProcessNew.stream.size());
     for (std::string sceneType : allSceneTypes) {
         AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType.c_str());
         moduleInfo.name = sceneType;

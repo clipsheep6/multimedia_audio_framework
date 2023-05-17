@@ -531,7 +531,7 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
             args = "file=";
             args.append(audioModuleInfo.fileName);
         }
-    } else if (audioModuleInfo.lib == MIXER_SINK) {
+    } else if (audioModuleInfo.lib == CLUSTER_SINK) {
         UpdateCommonArgs(audioModuleInfo, args);
         if (!audioModuleInfo.name.empty()) {
             args.append(" sink_name=");
