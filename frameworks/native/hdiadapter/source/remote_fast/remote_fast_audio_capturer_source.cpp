@@ -165,7 +165,6 @@ int32_t RemoteFastAudioCapturerSource::InitAudioManager()
 #endif
     struct AudioManager *(*GetAudioManagerFuncs)() = nullptr;
 
-    // void *handle_ = dlopen(resolvedPath, 1);
     void *handle_ = dlopen(resolvedPath, RTLD_LAZY);
     if (handle_ == nullptr) {
         AUDIO_ERR_LOG("dlopen %{public}s fail.", resolvedPath);
@@ -216,7 +215,6 @@ int32_t RemoteFastAudioCapturerSource::CreateCapture(const struct AudioPort &cap
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
     CHECK_AND_RETURN_RET_LOG((audioAdapter_ != nullptr), ERR_INVALID_HANDLE,
         "%{public}s: audio adapter is null.", __func__);
-    // int64_t start = GetNowTimeMs();
     struct AudioSampleAttributes captureAttr;
     InitAttrs(captureAttr);
     AUDIO_INFO_LOG("RemoteFastAudioCapturerSource Create capture format: %{public}d", captureAttr.format);
@@ -234,8 +232,6 @@ int32_t RemoteFastAudioCapturerSource::CreateCapture(const struct AudioPort &cap
     }
 
     isCapturerCreated_.store(true);
-    // int64_t cost = GetNowTimeMs() - start;
-    // AUDIO_INFO_LOG("%{public}s OK, cost[%{public}" PRId64 "]ms", __func__, cost);
     return SUCCESS;
 }
 
@@ -347,7 +343,6 @@ int32_t RemoteFastAudioCapturerSource::Start(void)
 
 int32_t RemoteFastAudioCapturerSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
-    // int64_t start = GetNowTimeMs();
     CHECK_AND_RETURN_RET_LOG(isCapturerCreated_.load(), ERR_ILLEGAL_STATE,
         "%{public}s: capture state error, isCapturerCreated %{public}d.", __func__, isCapturerCreated_.load());
     CHECK_AND_RETURN_RET_LOG((ashmemSource_ != nullptr), ERR_INVALID_HANDLE, "Audio capture ashmem is nullptr!");
@@ -370,9 +365,6 @@ int32_t RemoteFastAudioCapturerSource::CaptureFrame(char *frame, uint64_t reques
         AUDIO_ERR_LOG("Failed to read the file.");
     }
 #endif // DEBUG_CAPTURE_DUMP
-
-    // int64_t cost = GetNowTimeMs() - start;
-    // AUDIO_DEBUG_LOG("%{public}s: cost[%{public}" PRId64 "]ms.", __func__, cost);
     return SUCCESS;
 }
 
