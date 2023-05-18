@@ -101,14 +101,14 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
   include_dirs += [ multimedia_audio_framework_drivers ]
 
   deps = [
-    multimedia_audio_framework_hdi_audio_client,
-    "${multimedia_distributed_audio}/services/hdfaudioclient:daudio_client",
     "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
+    "${multimedia_distributed_audio}/services/hdfaudioclient:daudio_client",
+    multimedia_audio_framework_hdi_audio_client,
   ]
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog"
+    "hiviewdfx_hilog_native:libhilog",
   ]
 
   part_name = "audio_framework"
