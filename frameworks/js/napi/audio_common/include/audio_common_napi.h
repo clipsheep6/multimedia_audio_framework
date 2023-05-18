@@ -70,7 +70,9 @@ public:
     static bool IsLegalInputArgumentActiveDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentRingMode(int32_t ringerMode);
-    static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
+    static bool IsLegalInputArgumentContentType(int32_t contentType);
+    static bool IsLegalInputArgumentStreamUsage(int32_t streamUsage);
+	static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
 private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;

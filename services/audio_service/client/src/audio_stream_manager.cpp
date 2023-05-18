@@ -82,35 +82,36 @@ bool AudioStreamManager::IsAudioRendererLowLatencySupported(const AudioStreamInf
     return AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
 }
 
-static void UpdateEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo,
-    SupportedEffectConfig &supportedEffectConfig, AudioSceneEffectInfo &audioSceneEffectInfoTmp, int i)
+static void UpdateEffectInfoArray(SupportedEffectConfig &supportedEffectConfig,
+    AudioSceneEffectInfo &audioSceneEffectInfo, int i)
 {
     uint32_t j;
-    for (j = 0; j < supportedEffectConfig.postProcessNew.stream[i].streamAE_mode.size(); j++) {
-        audioSceneEffectInfoTmp.mode.push_back(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].mode);
+    AudioEffectMode audioEffectMode;
+    for (j = 0; j < supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size(); j++) {
+        audioEffectMode = effectModeMap.at(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].mode);
+        audioSceneEffectInfo.mode.push_back(audioEffectMode);
     }
-    audioSceneEffectInfo.push_back(make_unique<AudioSceneEffectInfo>(audioSceneEffectInfoTmp));
+    auto index = std::find(audioSceneEffectInfo.mode.begin(), audioSceneEffectInfo.mode.end(), 0);
+    if (index == audioSceneEffectInfo.mode.end()) {
+        audioEffectMode = effectModeMap.at("EFFECT_NONE");
+        audioSceneEffectInfo.mode.push_back(audioEffectMode);
+    }
 }
 
-int32_t AudioStreamManager::GetEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo,
-    int32_t contentType, int32_t streamUsage)
+int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo,
+    ContentType contentType, StreamUsage streamUsage)
 {
     int i;
-
-    ContentType ct = static_cast<ContentType>(contentType);
-    StreamUsage su = static_cast<StreamUsage>(streamUsage);
-    AudioStreamType streamType =  AudioStream::GetStreamType(ct, su);
+    AudioStreamType streamType =  AudioStream::GetStreamType(contentType, streamUsage);
     std::string effectScene = AudioServiceClient::GetEffectSceneName(streamType);
-
     SupportedEffectConfig supportedEffectConfig;
     int ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
     int streamNum = supportedEffectConfig.postProcessNew.stream.size();
     if (streamNum > 0) {
         for (i = 0; i < streamNum; i++) {
-            AudioSceneEffectInfo audioSceneEffectInfoTmp;
-            std::string scene = supportedEffectConfig.postProcessNew.stream[i].scene;
-            if (scene == effectScene) {
-                UpdateEffectInfoArray(audioSceneEffectInfo, supportedEffectConfig, audioSceneEffectInfoTmp, i);
+            if (effectScene == supportedEffectConfig.postProcessNew.stream[i].scene) {
+                UpdateEffectInfoArray(supportedEffectConfig, audioSceneEffectInfo, i);
+                break;
             }
         }
     }

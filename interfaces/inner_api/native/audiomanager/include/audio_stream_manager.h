@@ -17,7 +17,7 @@
 #define ST_AUDIO_STREAM_MANAGER_H
 
 #include <iostream>
-
+#include <map>
 #include "audio_info.h"
 
 namespace OHOS {
@@ -174,8 +174,13 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t GetEffectInfoArray(std::vector<std::unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfos,
-        int32_t contentType, int32_t streamUsage);
+    int32_t GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo,
+        ContentType contentType, StreamUsage streamUsage);
+};
+
+static const std::map<std::string, AudioEffectMode> effectModeMap = {
+    {"EFFECT_NONE", EFFECT_NONE},
+    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
 };
 } // namespace AudioStandard
 } // namespace OHOS
