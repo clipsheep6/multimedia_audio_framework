@@ -2659,35 +2659,40 @@ HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_003, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
     ret = AudioStreamManager::GetInstance()->GetEffectInfoArray(audioSceneEffectInfo, contentType, streamUsage);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_DEFAULT, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[1]);
 
     audioSceneEffectInfo = {};
     contentType = CONTENT_TYPE_RINGTONE;
     streamUsage = STREAM_USAGE_UNKNOWN;
     ret = AudioStreamManager::GetInstance()->GetEffectInfoArray(audioSceneEffectInfo, contentType, streamUsage);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_DEFAULT, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[1]);
 
     audioSceneEffectInfo = {};
     contentType = CONTENT_TYPE_RINGTONE;
     streamUsage = STREAM_USAGE_MEDIA;
     ret = AudioStreamManager::GetInstance()->GetEffectInfoArray(audioSceneEffectInfo, contentType, streamUsage);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_DEFAULT, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[1]);
 
     audioSceneEffectInfo = {};
     contentType = CONTENT_TYPE_RINGTONE;
     streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
     ret = AudioStreamManager::GetInstance()->GetEffectInfoArray(audioSceneEffectInfo, contentType, streamUsage);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_DEFAULT, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[1]);
 
     audioSceneEffectInfo = {};
     contentType = CONTENT_TYPE_SONIFICATION;
     streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
     ret = AudioStreamManager::GetInstance()->GetEffectInfoArray(audioSceneEffectInfo, contentType, streamUsage);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_DEFAULT, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[1]);
 }
 
 /**
@@ -2800,6 +2805,7 @@ HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_008, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_ALARM;
     ret = AudioStreamManager::GetInstance()->GetEffectInfoArray(audioSceneEffectInfo, contentType, streamUsage);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_DEFAULT, audioSceneEffectInfo.mode[0]);
+    EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[1]);
 } // namespace AudioStandard
 } // namespace OHOS
