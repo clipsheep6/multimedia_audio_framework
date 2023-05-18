@@ -252,7 +252,7 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
     attr.adapterName = "remote";
     attr.sampleRate = dstStreamInfo_.samplingRate;
     attr.channel = dstStreamInfo_.channels;
-    attr.format = ConverToHdiFormat(dstStreamInfo_.format);
+    attr.format = dstStreamInfo_.format;
 
     int32_t err = fastSource_->Init(attr);
     if (err != SUCCESS || !fastSource_->IsInited()) {
@@ -350,15 +350,15 @@ int32_t AudioEndpointInner::PrepareInputDeviceBuffer(const DeviceInfo &deviceInf
         return ERR_ILLEGAL_STATE;
     }
 
-    // spanDuration_ may be less than the correct time of dstSpanSizeInframe_.ÿ240���Ӧ��nsʱ�� = 5ms
+
     spanDuration_ = dstSpanSizeInframe_ * AUDIO_NS_PER_SECOND / dstStreamInfo_.samplingRate;
     int64_t temp = spanDuration_ / 4 * 3; // 3/4 spanDuration
-    serverAheadReadTime_ = temp < ONE_MILLISECOND_DURATION ? ONE_MILLISECOND_DURATION : temp; // ��������ǰ��ȡʱ�� at least 1ms ahead.
-    AUDIO_INFO_LOG("Span input duration: %{public}ld ns, server will wake up and handle %{public}ld ns ahead.",
-        spanDuration_, serverAheadReadTime_);
+    serverAheadReadTime_ = temp < ONE_MILLISECOND_DURATION ? ONE_MILLISECOND_DURATION : temp;
+    AUDIO_INFO_LOG("%{public}s spanDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",
+        __func__, spanDuration_, serverAheadReadTime_);
 
     if (spanDuration_ <= 0 || spanDuration_ >= MAX_SPAN_DURATION_IN_NANO) {
-        AUDIO_ERR_LOG("Get input mmap buffer info error, spanDuration %{public}ld.", spanDuration_);
+        AUDIO_ERR_LOG("Get input mmap buffer info error, spanDuration %{public}" PRIu64".", spanDuration_);
         return ERR_INVALID_PARAM;
     }
     srcAudioBuffer_ = OHAudioBuffer::CreateFromRemote(dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
@@ -492,11 +492,11 @@ void AudioEndpointInner::RecordReSyncPosition()
         ClockTime::RelativeSleep(RECORD_RESYNC_SLEEP_NANO);
     }
 
-    AUDIO_INFO_LOG("%{public}s get capturer info, curHdiWritePos %{public}lu, writeTime %{public}ld.",
+    AUDIO_INFO_LOG("%{public}s get capturer info, curHdiWritePos %{public}" PRIu64", writeTime %{public}" PRIu64".",
         __func__, curHdiWritePos, writeTime);
     int64_t temp = ClockTime::GetCurNano() - writeTime;
     if (temp > spanDuration_) {
-        AUDIO_ERR_LOG("%{public}s GetDeviceHandleInfo cost long time %{public}ld.", __func__, temp);
+        AUDIO_ERR_LOG("%{public}s GetDeviceHandleInfo cost long time %{public}" PRIu64".", __func__, temp);
     }
 
     uint64_t followSpanCnt = curHdiWritePos % dstSpanSizeInframe_;
@@ -892,7 +892,7 @@ int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
 
 int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
 {
-    AUDIO_INFO_LOG("%{public}s enter, posInFrame %{public}lu.", __func__, posInFrame);
+    AUDIO_INFO_LOG("%{public}s enter, posInFrame %{public}" PRIu64".", __func__, posInFrame);
     uint64_t handleSpanCout = posInFrame / dstSpanSizeInframe_;
     uint32_t startPeriodCount = 20;
     uint32_t oneBigPeriodCount = 40;
@@ -926,7 +926,7 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
 
     {
         std::lock_guard<std::mutex> lock(listLock_);
-        for (size_t i = 0; i < processBufferList_.size(); i++) {          // processBufferList_��process client��buf
+        for (size_t i = 0; i < processBufferList_.size(); i++) {
             if (processBufferList_[i] == nullptr) {
                 AUDIO_ERR_LOG("%{public}s process buffer %{public}zu is null.", __func__, i);
                 continue;
@@ -940,7 +940,7 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
                 tempSpan->spanStatus.store(SpanStatus::SPAN_WRITE_DONE);
             }
             lastHandleProcessTime_ = ClockTime::GetCurNano();
-            processBufferList_[i]->SetHandleInfo(eachCurWritePos, lastHandleProcessTime_); // update info for each process
+            processBufferList_[i]->SetHandleInfo(eachCurWritePos, lastHandleProcessTime_);
 
             ret = processBufferList_[i]->SetCurWriteFrame(eachCurWritePos+ dstSpanSizeInframe_);
             if (ret != SUCCESS) {

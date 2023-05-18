@@ -118,10 +118,11 @@ private:
     void UpdateHandleInfo();
     int64_t GetPredictNextHandleTime(uint64_t posInFrame);
     bool PrepareNext(uint64_t curWritePos, int64_t &wakeUpTime);
-    bool RecordPrepareNext(uint64_t curReadPos, int64_t &wakeUpTime);
+    bool RecordPrepareNext(int64_t &wakeUpTime);
     std::string GetStatusInfo(StreamStatus status);
     bool KeepLoopRunning();
     void RecordClientSyncPosition();
+    int32_t ReadFromProcessClient();
     void ProcessCallbackFuc();
     void RecordProcessCallbackFuc();
 #ifdef DUMP_CLIENT
@@ -187,7 +188,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 {
     AUDIO_INFO_LOG("Create with config: render flag %{public}d, capturer flag %{public}d.",
         config.rendererInfo.rendererFlags, config.capturerInfo.capturerFlags);
-    sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();  // 获取到AudioServer的客户端AudioManagerProxy
+    sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config);
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
@@ -264,14 +265,14 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
         CHECK_AND_RETURN_RET_LOG(ret != false, false, "Init LinearPosTimeModel failed.");
         uint64_t handlePos = 0;
         int64_t handleTime = 0;
-        audioBuffer_->GetHandleInfo(handlePos, handleTime);  // buf Info中的当前Read结束位置和Read结束时间，初始化时均为0
+        audioBuffer_->GetHandleInfo(handlePos, handleTime);
         handleTimeModel_.ResetFrameStamp(handlePos, handleTime);
     } else {
         ret = recordTimeModel_.ConfigSampleRate(processConfig_.streamInfo.samplingRate);
         CHECK_AND_RETURN_RET_LOG(ret != false, false, "Init record time model fail, ret %{public}d.", ret);
         uint64_t handlePos = 0;
         int64_t handleTime = 0;
-        audioBuffer_->GetHandleInfo(handlePos, handleTime);  // buf Info中的当前Read结束位置和Read结束时间，初始化时均为0
+        audioBuffer_->GetHandleInfo(handlePos, handleTime);
         recordTimeModel_.ResetFrameStamp(handlePos, handleTime);
     }
 
@@ -415,9 +416,6 @@ int32_t AudioProcessInClientInner::dequeue(const BufferDesc &bufDesc) const
     curReadSpan->spanStatus.store(SpanStatus::SPAN_READ_DONE);
     curReadSpan->readDoneTime = ClockTime::GetCurNano();
 
-    ret = audioBuffer_->SetCurReadFrame(curReadPos + spanSizeInFrame_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "%{public}s set next read frame fail, \
-        ret %{public}d.", __func__, ret);
     ret = memset_s(bufferReadDone.buffer, bufferReadDone.bufLength, 0, bufferReadDone.bufLength);
     CHECK_AND_BREAK_LOG(ret == EOK, "%{public}s reset buffer fail, ret %{public}d.", __func__, ret);
     ret = memset_s(callbackBuffer_.get(), spanSizeInByte_, 0, spanSizeInByte_);
@@ -580,7 +578,6 @@ int32_t AudioProcessInClientInner::Release()
     return SUCCESS;
 }
 
-// client should call GetBufferDesc and Enqueue in OnHandleData
 void AudioProcessInClientInner::CallClientHandleCurrent()
 {
     Trace trace("AudioProcessInClient::CallClientHandleCurrent");
@@ -639,13 +636,16 @@ bool AudioProcessInClientInner::PrepareNext(uint64_t curWritePos, int64_t &wakeU
     return true;
 }
 
-bool AudioProcessInClientInner::RecordPrepareNext(uint64_t curReadPos, int64_t &wakeUpTime)
+bool AudioProcessInClientInner::RecordPrepareNext(int64_t &wakeUpTime)
 {
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_INVALID_HANDLE,
+        "%{public}s audio buffer is null.", __func__);
+    uint64_t curReadPos = audioBuffer_->GetCurReadFrame();
     uint64_t nextReadPos = curReadPos + spanSizeInFrame_;
     int32_t ret = audioBuffer_->SetCurReadFrame(nextReadPos);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s set next read frame %{public}lu fail, ret %{public}d.",
-        __func__, nextReadPos, ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s set next read frame %{public}" PRIu64" fail, \
+        ret %{public}d.", __func__, nextReadPos, ret);
 
     uint64_t serverHandlePos = 0;
     int64_t serverHandleTime = 0;
@@ -656,7 +656,7 @@ bool AudioProcessInClientInner::RecordPrepareNext(uint64_t curReadPos, int64_t &
         CHECK_AND_BREAK_LOG(ret == SUCCESS, "%{public}s request handle info fail, ret %{public}d, tryCount %{public}d.",
             __func__, ret, tryCount);
 
-        bool isInfoGot = audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);  // 获取当前buf Info中的当前Read结束位置和Read结束时间
+        bool isInfoGot = audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
         if (isInfoGot) {
             recordTimeModel_.ResetFrameStamp(serverHandlePos, serverHandleTime);
         }
@@ -666,12 +666,13 @@ bool AudioProcessInClientInner::RecordPrepareNext(uint64_t curReadPos, int64_t &
     int64_t nextClientReadTime = recordTimeModel_.GetTimeOfPos(nextReadPos) + ONE_MILLISECOND_DURATION * 3;
     AUDIO_INFO_LOG("Record prepare nextReadPos %{public}" PRIu64" old wakeUpTime %{public}" PRIu64""
         "nextClientReadTime %{public}" PRIu64".", nextReadPos, wakeUpTime, nextClientReadTime);
-    if (nextClientReadTime < ClockTime::GetCurNano()) {  // 本次读取时间过长，导致无需睡眠
-        wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION; // make sure less than duration
+    if (nextClientReadTime < ClockTime::GetCurNano()) {
+        wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION; // make sure more than duration
     } else {
         wakeUpTime = nextClientReadTime;
     }
-    AUDIO_INFO_LOG("%{public}s end.", __func__);
+    AUDIO_INFO_LOG("%{public}s end, curReadPos %{public}" PRIu64", wakeUpTime %{public}" PRIu64".",
+        __func__, curReadPos, wakeUpTime);
     return true;
 }
 
@@ -761,6 +762,37 @@ void AudioProcessInClientInner::RecordClientSyncPosition()
     AUDIO_INFO_LOG("%{public}s end.", __func__);
 }
 
+int32_t AudioProcessInClientInner::ReadFromProcessClient()
+{
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_INVALID_HANDLE,
+        "%{public}s audio buffer is null.", __func__);
+    uint64_t curReadPos = audioBuffer_->GetCurReadFrame();
+    SpanInfo *curReadSpan = audioBuffer_->GetSpanInfo(curReadPos);
+    CHECK_AND_RETURN_RET_LOG(curReadSpan != nullptr, ERR_INVALID_HANDLE,
+        "%{public}s get read span info of process client fail.", __func__);
+
+    if (curReadSpan->spanStatus.load() != SpanStatus::SPAN_WRITE_DONE) {
+        AUDIO_ERR_LOG("%{public}s SpanStatus invalid: %{public}d", __func__, curReadSpan->spanStatus.load());
+        ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION + ONE_MILLISECOND_DURATION);
+        return ERR_INVALID_READ;
+    }
+
+    curReadSpan->readStartTime = ClockTime::GetCurNano();
+    curReadSpan->spanStatus.store(SpanStatus::SPAN_READING);
+    AUDIO_INFO_LOG("Record process, curTime %{public}" PRIu64", curReadPos %{public}" PRIu64".",
+        curReadSpan->readStartTime, curReadPos);
+    CallClientHandleCurrent();
+    curReadSpan->spanStatus.store(SpanStatus::SPAN_READ_DONE); // mark status read-done and then client can read
+    curReadSpan->readDoneTime = ClockTime::GetCurNano();
+
+    int64_t clientReadCost = curReadSpan->readDoneTime - curReadSpan->readStartTime;
+    if (clientReadCost > ONE_MILLISECOND_DURATION) {
+        AUDIO_WARNING_LOG("Client read cost too long...");
+        // todo handle read time out.
+    }
+    return SUCCESS;
+}
+
 void AudioProcessInClientInner::RecordProcessCallbackFuc()
 {
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
@@ -781,38 +813,19 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
             wakeUpTime = curTime;
         }
 
-        uint64_t curReadPos = audioBuffer_->GetCurReadFrame();
-        SpanInfo *curSpanInfo = audioBuffer_->GetSpanInfo(curReadPos);
-        if (curSpanInfo == nullptr) {
-            AUDIO_ERR_LOG("GetSpanInfo failed!");
+        if (ReadFromProcessClient() != SUCCESS) {
+            AUDIO_ERR_LOG("%{public}s read from process client fail.", __func__);
             break;
         }
-        AUDIO_INFO_LOG("Record process, curTime %{public}ld, curReadPos %{public}lu.", curTime, curReadPos);
-        if (curSpanInfo->spanStatus.load() != SpanStatus::SPAN_WRITE_DONE) {
-            AUDIO_ERR_LOG("SpanStatus invalid: %{public}d", curSpanInfo->spanStatus.load());
-            ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION + ONE_MILLISECOND_DURATION);
-            continue;
-        }
-
-        curSpanInfo->spanStatus.store(SpanStatus::SPAN_READING);
-        curSpanInfo->readStartTime = curTime;
-        CallClientHandleCurrent();
-        curTime = ClockTime::GetCurNano();  // client read done, check if time out
-        curSpanInfo->spanStatus.store(SpanStatus::SPAN_READ_DONE); // mark status read-done and then server can read
-        curSpanInfo->readDoneTime = curTime;
-        int64_t clientReadCost = curSpanInfo->readDoneTime - curSpanInfo->readStartTime;
-        if (clientReadCost > ONE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("Client read cost too long...");
-            // todo handle read time out.
-        }
-
-        if (!RecordPrepareNext(curReadPos, wakeUpTime)) {
+    
+        if (!RecordPrepareNext(wakeUpTime)) {
             AUDIO_ERR_LOG("PrepareNextLoop in process failed!");
             break;
         }
 
         threadStatus_ = SLEEPING;
-        AUDIO_INFO_LOG("Record process, wakeUpTime %{public}ld, curReadPos %{public}lu.", wakeUpTime, curReadPos);
+        int64_t clientReadCost = ClockTime::GetCurNano() - curTime;
+        curTime = ClockTime::GetCurNano();
         if (wakeUpTime > curTime && wakeUpTime - curTime < MAX_READ_COST_DUTATION_NANO + clientReadCost) {
             ClockTime::AbsoluteSleep(wakeUpTime);
         } else {
