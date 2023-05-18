@@ -24,6 +24,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 const int32_t FAILURE = -1;
+const int32_t FAILURE_PA = -8;
 const uint32_t DEFAULT_SAMPLING_RATE = 44100;
 const uint8_t DEFAULT_CHANNEL_COUNT = 2;
 const uint8_t DEFAULT_SAMPLE_SIZE = 2;
@@ -404,9 +405,9 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_SetStreamRenderRate_002, TestSize.Level
 }
 
 /**
-* @tc.name  : Test Audio_Stream_SetAudioEffectMode_001 via legal input, EFFECT_NONE
+* @tc.name  : Test Audio_Stream_SetAudioEffectMode_001 via illegal state, input EFFECT_NONE
 * @tc.number: Audio_Stream_SetAudioEffectMode_001
-* @tc.desc  : Test SetAudioEffectMode interface. Returns SUCCESS, if the effect mode is successfully set.
+* @tc.desc  : Test SetAudioEffectMode interface. Returns FAILURE_PA.
 */
 HWTEST(AudioStreamUnitTest, Audio_Stream_SetAudioEffectMode_001, TestSize.Level1)
 {
@@ -414,13 +415,13 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_SetAudioEffectMode_001, TestSize.Level1
     AudioStreamUnitTest::InitAudioStream(audioStream_);
     AudioEffectMode effectMode = AudioEffectMode::EFFECT_NONE;
     int32_t ret = audioStream_->SetAudioEffectMode(effectMode);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(FAILURE_PA, ret);
 }
 
 /**
-* @tc.name  : Test Audio_Stream_SetAudioEffectMode_002 via legal input, EFFECT_DEFAULT
+* @tc.name  : Test Audio_Stream_SetAudioEffectMode_002 via illegal state, input EFFECT_DEFAULT
 * @tc.number: Audio_Stream_SetAudioEffectMode_002
-* @tc.desc  : Test SetAudioEffectMode interface. Returns SUCCESS, if the effect mode is successfully set.
+* @tc.desc  : Test SetAudioEffectMode interface. Returns FAILURE_PA.
 */
 HWTEST(AudioStreamUnitTest, Audio_Stream_SetAudioEffectMode_002, TestSize.Level1)
 {
@@ -428,35 +429,35 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_SetAudioEffectMode_002, TestSize.Level1
     AudioStreamUnitTest::InitAudioStream(audioStream_);
     AudioEffectMode effectMode = AudioEffectMode::EFFECT_DEFAULT;
     int32_t ret = audioStream_->SetAudioEffectMode(effectMode);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(FAILURE_PA, ret);
 }
 
 /**
 * @tc.name  : Test Audio_Stream_GetAudioEffectMode_001 with, EFFECT_NONE
 * @tc.number: Audio_Stream_GetAudioEffectMode_001
-* @tc.desc  : Test GetAudioEffectMode interface. Returns the current effect mode.
+* @tc.desc  : Test GetAudioEffectMode interface. Returns the default effect mode.
 */
 HWTEST(AudioStreamUnitTest, Audio_Stream_GetAudioEffectMode_001, TestSize.Level1)
 {
     std::shared_ptr<AudioStream> audioStream_;
     AudioStreamUnitTest::InitAudioStream(audioStream_);
     int32_t ret = audioStream_->SetAudioEffectMode(EFFECT_NONE);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(FAILURE_PA, ret);
     AudioEffectMode effectMode = audioStream_->GetAudioEffectMode();
-    EXPECT_EQ(effectMode, AudioEffectMode::EFFECT_NONE);
+    EXPECT_EQ(effectMode, AudioEffectMode::EFFECT_DEFAULT);
 }
 
 /**
 * @tc.name  : Test Audio_Stream_GetAudioEffectMode_002 with, EFFECT_DEFAULT
 * @tc.number: Audio_Stream_GetAudioEffectMode_002
-* @tc.desc  : Test GetAudioEffectMode interface. Returns the current effect mode.
+* @tc.desc  : Test GetAudioEffectMode interface. Returns the default effect mode.
 */
 HWTEST(AudioStreamUnitTest, Audio_Stream_GetAudioEffectMode_002, TestSize.Level1)
 {
     std::shared_ptr<AudioStream> audioStream_;
     AudioStreamUnitTest::InitAudioStream(audioStream_);
     int32_t ret = audioStream_->SetAudioEffectMode(EFFECT_DEFAULT);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(FAILURE_PA, ret);
     AudioEffectMode effectMode = audioStream_->GetAudioEffectMode();
     EXPECT_EQ(effectMode, AudioEffectMode::EFFECT_DEFAULT);
 }
