@@ -16,34 +16,28 @@
 #ifndef AUDIO_SERVICE_H
 #define AUDIO_SERVICE_H
 
-#include <sstream>
+#include <set>
 #include <map>
-#include <mutex>
-#include <vector>
 
 #include "audio_process_in_server.h"
 #include "audio_endpoint.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioService : public ProcessReleaseCallback {
+class AudioService {
 public:
     static AudioService *GetInstance();
     ~AudioService();
     sptr<AudioProcessInServer> GetAudioProcess(const AudioProcessConfig &config);
-    // override for ProcessReleaseCallback, do release process work.
-    int32_t OnProcessRelease(IAudioProcessStream *process) override;
 
     DeviceInfo GetDeviceInfoForProcess(const AudioProcessConfig &config);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(DeviceInfo deviceInfo);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    void Dump(std::stringstream &dumpString);
 private:
     AudioService();
-    std::mutex processListMutex_;
-    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
+    void Dump();
+    std::set<sptr<AudioProcessInServer>> processList_;
     std::map<int32_t, std::shared_ptr<AudioEndpoint>> endpointList_;
 };
 } // namespace AudioStandard

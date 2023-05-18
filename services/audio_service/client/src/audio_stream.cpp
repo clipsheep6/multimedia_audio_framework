@@ -420,7 +420,6 @@ int32_t AudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 
 size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
 {
-    Trace trace("AudioStream::Write");
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         AUDIO_ERR_LOG("AudioStream::Write not supported. RenderMode is callback");
         return ERR_INCORRECT_MODE;
@@ -547,7 +546,6 @@ bool AudioStream::StopAudioStream()
 
 bool AudioStream::FlushAudioStream()
 {
-    Trace trace("AudioStream::FlushAudioStream");
     if ((state_ != RUNNING) && (state_ != PAUSED) && (state_ != STOPPED)) {
         AUDIO_ERR_LOG("FlushAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
         return false;
@@ -970,6 +968,16 @@ void AudioStream::SubmitAllFreeBuffers()
     for (size_t i = 0; i < freeBufferQ_.size(); ++i) {
         SendWriteBufferRequestEvent();
     }
+}
+
+int32_t AudioStream::SetAudioEffectMode(AudioEffectMode effectMode)
+{
+    return SetStreamAudioEffectMode(effectMode);
+}
+
+AudioEffectMode AudioStream::GetAudioEffectMode()
+{
+    return GetStreamAudioEffectMode();
 }
 } // namespace AudioStandard
 } // namespace OHOS

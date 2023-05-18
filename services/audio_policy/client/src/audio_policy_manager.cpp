@@ -990,24 +990,14 @@ int32_t AudioPolicyManager::UpdateStreamState(const int32_t clientUid,
     return  gsp->UpdateStreamState(clientUid, streamSetState, audioStreamType);
 }
 
-int32_t AudioPolicyManager::GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
+int32_t AudioPolicyManager::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetVolumeGroupInfos failed, g_apProxy is nullptr.");
         return ERROR;
     }
-    return gsp->GetVolumeGroupInfos(networkId, infos);
-}
-
-int32_t AudioPolicyManager::GetNetworkIdByGroupId(int32_t groupId, std::string &networkId)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("GetNetworkIdByGroupId failed, g_apProxy is nullptr.");
-        return ERROR;
-    }
-    return gsp->GetNetworkIdByGroupId(groupId, networkId);
+    return gsp->GetVolumeGroupInfos(infos, needVerifyPermision);
 }
 
 bool AudioPolicyManager::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
@@ -1082,16 +1072,15 @@ int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clie
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::GetMaxRendererInstances()
+int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
-    AUDIO_INFO_LOG("AudioPolicyManager::GetMaxRendererInstances");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("GetMaxRendererInstances: audio policy manager proxy is NULL.");
-        return ERROR;
+        AUDIO_ERR_LOG("QueryEffectSceneMode: audio policy manager proxy is NULL.");
+        return -1;
     }
-
-    return gsp->GetMaxRendererInstances();
+    int error = gsp->QueryEffectSceneMode(supportedEffectConfig); // audio_policy_proxy
+    return error;
 }
 } // namespace AudioStandard
 } // namespace OHOS

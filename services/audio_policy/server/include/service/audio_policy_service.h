@@ -233,7 +233,7 @@ public:
 
     float GetMaxStreamVolume(void);
 
-    int32_t GetMaxRendererInstances();
+    int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
 private:
     AudioPolicyService()
@@ -352,7 +352,6 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t switchVolumeDelay_ = 500000; // us
-    int32_t maxRendererInstances_ = 16;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
 

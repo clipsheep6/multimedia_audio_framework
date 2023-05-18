@@ -989,7 +989,13 @@ int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, Devic
 
 int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
-    return AudioPolicyManager::GetInstance().GetVolumeGroupInfos(networkId, infos);
+    int32_t result = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(infos);
+
+    auto filter = [&networkId](const sptr<VolumeGroupInfo>& info) {
+        return networkId != info->networkId_;
+    };
+    infos.erase(std::remove_if(infos.begin(), infos.end(), filter), infos.end());
+    return result;
 }
 
 std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
