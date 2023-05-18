@@ -15,6 +15,7 @@
 
 #include "audio_common_napi.h"
 #include "audio_log.h"
+#include "audio_info.h"
 #include "audio_manager_napi.h"
 
 namespace OHOS {
@@ -181,13 +182,13 @@ bool AudioCommonNapi::IsLegalInputArgumentContentType(int32_t contentType)
 {
     bool result = false;
     switch (contentType) {
-        case AudioManagerNapi::CONTENT_TYPE_UNKNOWN:
-        case AudioManagerNapi::CONTENT_TYPE_SPEECH:
-        case AudioManagerNapi::CONTENT_TYPE_MUSIC:
-        case AudioManagerNapi::CONTENT_TYPE_MOVIE:
-        case AudioManagerNapi::CONTENT_TYPE_SONIFICATION:
-        case AudioManagerNapi::CONTENT_TYPE_RINGTONE:
-        case AudioManagerNapi::CONTENT_TYPE_ULTRASONIC:
+        case CONTENT_TYPE_UNKNOWN:
+        case CONTENT_TYPE_SPEECH:
+        case CONTENT_TYPE_MUSIC:
+        case CONTENT_TYPE_MOVIE:
+        case CONTENT_TYPE_SONIFICATION:
+        case CONTENT_TYPE_RINGTONE:
+        case CONTENT_TYPE_ULTRASONIC:
             result = true;
             break;
         default:
@@ -201,16 +202,16 @@ bool AudioCommonNapi::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
 {
     bool result = false;
     switch (streamUsage) {
-        case AudioManagerNapi::STREAM_USAGE_UNKNOWN:
-        case AudioManagerNapi::STREAM_USAGE_MEDIA:
-        case AudioManagerNapi::STREAM_USAGE_VOICE_COMMUNICATION:
-        case AudioManagerNapi::STREAM_USAGE_VOICE_ASSISTANT:
-        case AudioManagerNapi::STREAM_USAGE_ALARM:
-        case AudioManagerNapi::STREAM_USAGE_NOTIFICATION_RINGTONE:
-        case AudioManagerNapi::STREAM_USAGE_RANGING:
-        case AudioManagerNapi::STREAM_USAGE_ACCESSIBILITY:
-        case AudioManagerNapi::STREAM_USAGE_SYSTEM:
-        case AudioManagerNapi::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MEDIA:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_NOTIFICATION_RINGTONE:
+        case STREAM_USAGE_RANGING:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
             result = true;
             break;
         default:
