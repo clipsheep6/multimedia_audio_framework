@@ -75,6 +75,9 @@ public:
         const std::string& condition, const std::string& value) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
+
+    void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 private:
@@ -91,6 +94,7 @@ private:
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::shared_ptr<AudioParameterCallback> callback_;
     std::mutex setParameterCallbackMutex_;
+    std::mutex setAudioParameterMutex_;
     bool isGetProcessEnabled_ = false;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
 };
