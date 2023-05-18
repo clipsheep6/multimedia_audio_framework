@@ -884,14 +884,13 @@ static void EffectChainProcess(SupportedEffectConfig &supportedEffectConfig, Mes
 static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
 {
     int k;
-    reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].mode);
-    int countDev = supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].devicePort.size();
+    reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].mode);
+    int countDev = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
         for (k = 0; k < countDev; k++) {
-            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].devicePort[k].type);
-            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].devicePort[k].address);
-            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamAE_mode[j].devicePort[k].chain);
+            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
+            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
         }
     }
 }
@@ -899,7 +898,7 @@ static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mess
 {
 	int j;
     reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].scene);
-    int countMode = supportedEffectConfig.preProcessNew.stream[i].streamAE_mode.size();
+    int countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
         for (j = 0; j < countMode; j++) {
@@ -910,14 +909,13 @@ static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mess
 static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
 {
     int k;
-    reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].mode);
-    int countDev = supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].devicePort.size();
+    reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].mode);
+    int countDev = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
         for (k = 0; k < countDev; k++) {
-            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].devicePort[k].type);
-            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].devicePort[k].address);
-            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].devicePort[k].chain);
+            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
+            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
         }
     }
 }
@@ -926,7 +924,7 @@ static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mes
     int j;
     // i th stream
     reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].scene);
-    int countMode = supportedEffectConfig.postProcessNew.stream[i].streamAE_mode.size();
+    int countMode = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
         for (j = 0; j < countMode; j++) {

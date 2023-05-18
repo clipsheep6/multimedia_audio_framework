@@ -537,8 +537,7 @@ enum AudioEffectScene {
 */
 enum AudioEffectMode {
     EFFECT_NONE = 0,
-    EFFECT_DEFAULT = 1,
-    EFFECT_TEST = 2
+    EFFECT_DEFAULT = 1
 };
 
 struct InterruptEvent {
@@ -910,7 +909,7 @@ struct StreamSetStateEventInternal {
 };
 
 struct AudioSceneEffectInfo {
-    std::vector<std::string> mode;
+    std::vector<AudioEffectMode> mode;
 };
 
 struct AudioRendererChangeInfo {
@@ -989,73 +988,6 @@ enum AudioPermissionState {
 enum StateChangeCmdType {
     CMD_FROM_CLIENT = 0,
     CMD_FROM_SYSTEM = 1
-};
-
-// audio effect manager info
-constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
-constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
-
-struct Library {
-    std::string name;
-    std::string path;
-};
-
-struct Effect {
-    std::string name;
-    std::string libraryName;
-    std::string effectId;
-};
-
-struct EffectChain {
-    std::string name;
-    std::vector<std::string> apply;
-};
-
-struct Device {
-    std::string type;
-    std::string address;
-    std::string chain;
-};
-
-struct Preprocess {
-    std::string stream;
-    std::vector<std::string> mode;
-    std::vector<std::vector<Device>> device;
-};
-
-struct Postprocess {
-    std::string stream;
-    std::vector<std::string> mode;
-    std::vector<std::vector<Device>> device;
-};
-
-struct OriginalEffectConfig {
-    float version;
-    std::vector<Library> libraries;
-    std::vector<Effect> effects;
-    std::vector<EffectChain> effectChains;
-    std::vector<Preprocess> preprocess;
-    std::vector<Postprocess> postprocess;
-};
-
-struct StreamAE_mode {
-    std::string mode;
-    std::vector<Device> devicePort;
-};
-
-struct Stream {
-    std::string scene;
-    std::vector<StreamAE_mode> streamAE_mode;
-};
-
-struct ProcessNew {
-    std::vector<Stream> stream;
-};
-
-struct SupportedEffectConfig {
-    std::vector<EffectChain> effectChains;
-    ProcessNew preProcessNew;
-    ProcessNew postProcessNew;
 };
 
 class AudioRendererPolicyServiceDiedCallback {
