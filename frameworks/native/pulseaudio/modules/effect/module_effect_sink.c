@@ -320,7 +320,8 @@ int pa__init(pa_module *m) {
     const char *name = pa_sprintf_malloc("%s effected Stream", sinkData.name);
     pa_proplist_sets(sinkInputData.proplist, PA_PROP_MEDIA_NAME, name);
     pa_proplist_sets(sinkInputData.proplist, PA_PROP_MEDIA_ROLE, "filter");
-    pa_proplist_sets(sinkInputData.proplist, "scene.mode", "effect");
+    pa_proplist_sets(sinkInputData.proplist, "scene.type", "N/A");
+    pa_proplist_sets(sinkInputData.proplist, "scene.mode", "N/A");
     pa_sink_input_new_data_set_sample_spec(&sinkInputData, &ss);
     pa_sink_input_new_data_set_channel_map(&sinkInputData, &stream_map);
     sinkInputData.flags = (remix ? 0 : PA_SINK_INPUT_NO_REMIX) | PA_SINK_INPUT_START_CORKED;

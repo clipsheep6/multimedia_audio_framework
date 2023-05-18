@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <unistd.h>
+#include <unordered_map>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -739,6 +740,21 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_48000,
     SAMPLE_RATE_64000,
     SAMPLE_RATE_96000
+};
+
+const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES {
+    {SCENE_OTHERS, "SCENE_OTHERS"},
+    {SCENE_MUSIC, "SCENE_MUSIC"},
+    {SCENE_MOVIE, "SCENE_MOVIE"},
+    {SCENE_GAME, "SCENE_GAME"},
+    {SCENE_SPEECH, "SCENE_SPEECH"},
+    {SCENE_RING, "SCENE_RING"}
+};
+
+const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
+    {EFFECT_NONE, "EFFECT_NONE"},
+    {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
+    {EFFECT_TEST, "EFFECT_TEST"}
 };
 
 struct BufferDesc {

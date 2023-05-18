@@ -1755,17 +1755,9 @@ void AudioPolicyService::LoadEffectLibrary()
 
     moduleInfo.lib = "libmodule-effect-sink.z.so";
     moduleInfo.rate = "48000";
-    std::vector<std::string> allSceneTypes;
-    allSceneTypes.push_back("SCENE_MUSIC");
-    allSceneTypes.push_back("SCENE_MOVIE");
-    allSceneTypes.push_back("SCENE_GAME");
-    allSceneTypes.push_back("SCENE_SPEECH");
-    allSceneTypes.push_back("SCENE_RING");
-    allSceneTypes.push_back("SCENE_OTHERS");
-    // AUDIO_INFO_LOG("cjw: stream size %{public}d", supportedEffectConfig.postProcessNew.stream.size());
-    for (std::string sceneType : allSceneTypes) {
-        AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType.c_str());
-        moduleInfo.name = sceneType;
+    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end(); ++sceneType) {
+        AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType->second.c_str());
+        moduleInfo.name = sceneType->second;
         ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
         CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
         IOHandles_[moduleInfo.name] = ioHandle;
