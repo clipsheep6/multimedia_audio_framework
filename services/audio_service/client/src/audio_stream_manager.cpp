@@ -96,6 +96,7 @@ static void UpdateEffectInfoArray(SupportedEffectConfig &supportedEffectConfig,
         audioEffectMode = effectModeMap.at("EFFECT_NONE");
         audioSceneEffectInfo.mode.push_back(audioEffectMode);
     }
+    std::sort(audioSceneEffectInfo.mode.begin(), audioSceneEffectInfo.mode.end());
 }
 
 int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo,
