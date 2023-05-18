@@ -40,13 +40,32 @@ PA_MODULE_USAGE(
 
 struct userdata {
     pa_core *core;
-    pa_module *module;
+    pa_module *module;    
 };
 
 static const char* const valid_modargs[] = {
     "sink_name",
     NULL
 };
+
+static int IsPrimarySink(pa_sink *sink) {
+    const char *deviceString = pa_proplist_gets(sink->proplist, PA_PROP_DEVICE_STRING);
+    return pa_safe_streq(deviceString, "primary") && !pa_safe_streq(sink->name, "file_sink");
+}
+
+static pa_hook_result_t SinkPutHookCb(pa_core *c, pa_sink *sink, struct userdata *u) {
+    pa_assert(c);
+    pa_assert(sink);
+    pa_assert(u);
+
+    if (!IsPrimarySink(sink)) {
+        return PA_HOOK_OK;
+    }
+
+    pa_core_set_configured_default_sink(c, sink->name);
+
+    return PA_HOOK_OK;
+}
 
 static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
 {    
@@ -91,6 +110,7 @@ int pa__init(pa_module *m)
     u->module = m;
     
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE, (pa_hook_cb_t) SinkInputProplistChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_PUT], PA_HOOK_LATE, (pa_hook_cb_t) SinkPutHookCb, u);
 
     pa_modargs_free(ma);
 
@@ -121,8 +141,9 @@ void pa__done(pa_module *m)
 
     pa_assert(m);
 
-    if (!(u = m->userdata))
+    if (!(u = m->userdata)) {
         return;
+    }
 
     pa_xfree(u);
 }

@@ -34,28 +34,19 @@
 #include "audio_effect_chain_adapter.h"
 #include "audio_log.h"
 
-PA_MODULE_AUTHOR("Lennart Poettering");
-PA_MODULE_DESCRIPTION("Virtual channel effecting sink");
+PA_MODULE_AUTHOR("OpenHarmony");
+PA_MODULE_DESCRIPTION(_("Effect sink"));
 PA_MODULE_VERSION(PACKAGE_VERSION);
 PA_MODULE_LOAD_ONCE(false);
 PA_MODULE_USAGE(
         "sink_name=<name for the sink> "
-        // "sink_properties=<properties for the sink> "
-        // "master=<name of sink to effect> "
-        // "master_channel_map=<channel map> "
-        // "format=<sample format> "
         "rate=<sample rate> "
-        // "channels=<number of channels> "
-        // "channel_map=<channel map> "
-        // "resample_method=<resampler> "
-        // "remix=<remix channels?>"
 );
-
 
 struct userdata {
     pa_module *module;
     pa_sink *sink;
-    pa_sink_input *sink_input;
+    pa_sink_input *sinkInput;
     struct BufferAttr *bufferAttr;
     pa_memblockq *bufInQ;
     int32_t frameLen;
@@ -64,20 +55,12 @@ struct userdata {
 
 static const char* const valid_modargs[] = {
     "sink_name",
-    // "sink_properties",
-    // "master",
-    // "master_channel_map",
-    // "format",
     "rate",
-    // "channels",
-    // "channel_map",
-    // "resample_method",
-    // "remix",
     NULL
 };
 
 /* Called from I/O thread context */
-static int sink_process_msg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk) {
+static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk) {
     struct userdata *u = PA_SINK(o)->userdata;
 
     switch (code) {
@@ -87,17 +70,17 @@ static int sink_process_msg(pa_msgobject *o, int code, void *data, int64_t offse
             /* The sink is _put() before the sink input is, so let's
              * make sure we don't access it yet */
             if (!PA_SINK_IS_LINKED(u->sink->thread_info.state) ||
-                !PA_SINK_INPUT_IS_LINKED(u->sink_input->thread_info.state)) {
+                !PA_SINK_INPUT_IS_LINKED(u->sinkInput->thread_info.state)) {
                 *((int64_t*) data) = 0;
                 return 0;
             }
 
             *((int64_t*) data) =
                 /* Get the latency of the master sink */
-                pa_sink_get_latency_within_thread(u->sink_input->sink, true) +
+                pa_sink_get_latency_within_thread(u->sinkInput->sink, true) +
 
                 /* Add the latency internal to our sink input on top */
-                pa_bytes_to_usec(pa_memblockq_get_length(u->sink_input->thread_info.render_memblockq), &u->sink_input->sink->sample_spec);
+                pa_bytes_to_usec(pa_memblockq_get_length(u->sinkInput->thread_info.render_memblockq), &u->sinkInput->sink->sample_spec);
 
             return 0;
     }
@@ -106,22 +89,22 @@ static int sink_process_msg(pa_msgobject *o, int code, void *data, int64_t offse
 }
 
 /* Called from main context */
-static int sink_set_state_in_main_thread(pa_sink *s, pa_sink_state_t state, pa_suspend_cause_t suspend_cause) {
+static int SinkSetStateInMainThread(pa_sink *s, pa_sink_state_t state, pa_suspend_cause_t suspend_cause) {
     struct userdata *u;
 
     pa_sink_assert_ref(s);
     pa_assert_se(u = s->userdata);
 
     if (!PA_SINK_IS_LINKED(state) ||
-        !PA_SINK_INPUT_IS_LINKED(u->sink_input->state))
+        !PA_SINK_INPUT_IS_LINKED(u->sinkInput->state))
         return 0;
 
-    pa_sink_input_cork(u->sink_input, state == PA_SINK_SUSPENDED);
+    pa_sink_input_cork(u->sinkInput, state == PA_SINK_SUSPENDED);
     return 0;
 }
 
 /* Called from the IO thread. */
-static int sink_set_state_in_io_thread_cb(pa_sink *s, pa_sink_state_t new_state, pa_suspend_cause_t new_suspend_cause) {
+static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t new_state, pa_suspend_cause_t new_suspend_cause) {
     struct userdata *u;
 
     pa_assert(s);
@@ -131,40 +114,40 @@ static int sink_set_state_in_io_thread_cb(pa_sink *s, pa_sink_state_t new_state,
      * of the master sink to make sure we are heard immediately */
     if (PA_SINK_IS_OPENED(new_state) && s->thread_info.state == PA_SINK_INIT) {
         pa_log_debug("Requesting rewind due to state change.");
-        pa_sink_input_request_rewind(u->sink_input, 0, false, true, true);
+        pa_sink_input_request_rewind(u->sinkInput, 0, false, true, true);
     }
 
     return 0;
 }
 
 /* Called from I/O thread context */
-static void sink_request_rewind(pa_sink *s) {
+static void SinkRequestRewind(pa_sink *s) {
     struct userdata *u;
 
     pa_sink_assert_ref(s);
     pa_assert_se(u = s->userdata);
 
     if (!PA_SINK_IS_LINKED(u->sink->thread_info.state) ||
-        !PA_SINK_INPUT_IS_LINKED(u->sink_input->thread_info.state))
+        !PA_SINK_INPUT_IS_LINKED(u->sinkInput->thread_info.state))
         return;
 
-    pa_sink_input_request_rewind(u->sink_input, s->thread_info.rewind_nbytes, true, false, false);
+    pa_sink_input_request_rewind(u->sinkInput, s->thread_info.rewind_nbytes, true, false, false);
 }
 
 /* Called from I/O thread context */
-static void sink_update_requested_latency(pa_sink *s) {
+static void SinkUpdateRequestedLatency(pa_sink *s) {
     struct userdata *u;
 
     pa_sink_assert_ref(s);
     pa_assert_se(u = s->userdata);
 
     if (!PA_SINK_IS_LINKED(u->sink->thread_info.state) ||
-        !PA_SINK_INPUT_IS_LINKED(u->sink_input->thread_info.state))
+        !PA_SINK_INPUT_IS_LINKED(u->sinkInput->thread_info.state))
         return;
 
     /* Just hand this one over to the master sink */
     pa_sink_input_set_requested_latency_within_thread(
-            u->sink_input,
+            u->sinkInput,
             pa_sink_get_requested_latency_within_thread(s));
 }
 
@@ -172,7 +155,7 @@ static void sink_update_requested_latency(pa_sink *s) {
 #define MEMBLOCKQ_MAXLENGTH (16*1024*16)
 
 // BEGIN QUEUE
-static size_t memblockq_missing(pa_memblockq *bq) {
+static size_t MemblockqMissing(pa_memblockq *bq) {
     size_t l, tlength;
     pa_assert(bq);
 
@@ -185,9 +168,9 @@ static size_t memblockq_missing(pa_memblockq *bq) {
 }
 
 /* Called from I/O thread context */
-static int sink_input_pop_cb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) {
+static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) {
     struct userdata *u;
-    size_t bytes_missing;
+    size_t bytesMissing;
     pa_memchunk tchunk;
 
     pa_sink_input_assert_ref(si);
@@ -197,9 +180,9 @@ static int sink_input_pop_cb(pa_sink_input *si, size_t nbytes, pa_memchunk *chun
     if (!PA_SINK_IS_LINKED(u->sink->thread_info.state))
         return -1;
 
-    while ((bytes_missing = memblockq_missing(u->bufInQ)) != 0) {
+    while ((bytesMissing = MemblockqMissing(u->bufInQ)) != 0) {
         pa_memchunk nchunk;
-        pa_sink_render(u->sink, bytes_missing, &nchunk);
+        pa_sink_render(u->sink, bytesMissing, &nchunk);
         pa_memblockq_push(u->bufInQ, &nchunk);
         pa_memblock_release(nchunk.memblock);
         pa_memblock_unref(nchunk.memblock);
@@ -251,46 +234,15 @@ static int sink_input_pop_cb(pa_sink_input *si, size_t nbytes, pa_memchunk *chun
 }
 // END QUEUE
 
-/* Called from I/O thread context */
-// static int sink_input_pop_cb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) {
-//     struct userdata *u;
-
-//     pa_sink_input_assert_ref(si);
-//     pa_assert(chunk);
-//     pa_assert_se(u = si->userdata);
-
-//     if (!PA_SINK_IS_LINKED(u->sink->thread_info.state))
-//         return -1;
-
-//     /* Hmm, process any rewind request that might be queued up */
-//     pa_sink_process_rewind(u->sink, 0);
-
-//     pa_sink_render(u->sink, nbytes, chunk);
-
-//     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
-//     // AUDIO_INFO_LOG("effect_sink: sink-input %{public}s pop in sink %{public}s", sceneMode, si->origin_sink->name);
-//     // EffectChainManagerProcess(u->effectChainAdapter, si->origin_sink->name);
-
-//     short *src = pa_memblock_acquire_chunk(chunk);
-//     int i = 0;
-    
-//     AUDIO_INFO_LOG("effect_sink: sink-input %{public}s pop in sink %{public}s", sceneMode, si->origin_sink->name);
-//     for (i = 0; i < (int)chunk->length; i++) {
-//         src[i] *= 2;
-//     }
-
-//     return 0;
-// }
-
 int pa__init(pa_module *m) {
     struct userdata *u;
     pa_sample_spec ss;
-    pa_resample_method_t resample_method = PA_RESAMPLER_SRC_SINC_FASTEST; //PA_RESAMPLER_INVALID;
+    pa_resample_method_t resampleMethod = PA_RESAMPLER_SRC_SINC_FASTEST; //PA_RESAMPLER_INVALID;
     pa_channel_map sink_map, stream_map;
     pa_modargs *ma;
     pa_sink *master;
-    pa_sink_input_new_data sink_input_data;
-    pa_sink_new_data sink_data;
+    pa_sink_input_new_data sinkInputData;
+    pa_sink_new_data sinkData;
     bool remix = true;
 
     pa_assert(m);
@@ -313,11 +265,6 @@ int pa__init(pa_module *m) {
     }
 
     stream_map = sink_map;
-    // if (pa_modargs_get_channel_map(ma, "master_channel_map", &stream_map) < 0) {
-    //     pa_log("Invalid master channel map");
-    //     goto fail;
-    // }
-
     if (stream_map.channels != ss.channels) {
         pa_log("Number of channels doesn't match");
         goto fail;
@@ -326,85 +273,69 @@ int pa__init(pa_module *m) {
     if (pa_channel_map_equal(&stream_map, &master->channel_map))
         pa_log_warn("No effecting configured, proceeding nonetheless!");
 
-    // if (pa_modargs_get_value_boolean(ma, "remix", &remix) < 0) {
-    //     pa_log("Invalid boolean remix parameter");
-    //     goto fail;
-    // }
-
-    // if (pa_modargs_get_resample_method(ma, &resample_method) < 0) {
-    //     pa_log("Invalid resampling method");
-    //     goto fail;
-    // }
-
     u = pa_xnew0(struct userdata, 1);
     u->module = m;
     m->userdata = u;
 
     /* Create sink */
-    pa_sink_new_data_init(&sink_data);
-    sink_data.driver = __FILE__;
-    sink_data.module = m;
-    if (!(sink_data.name = pa_xstrdup(pa_modargs_get_value(ma, "sink_name", NULL))))
-        sink_data.name = pa_sprintf_malloc("%s.effected", master->name);
-    pa_sink_new_data_set_sample_spec(&sink_data, &ss);
-    pa_sink_new_data_set_channel_map(&sink_data, &sink_map);
-    pa_proplist_sets(sink_data.proplist, PA_PROP_DEVICE_MASTER_DEVICE, master->name);
-    pa_proplist_sets(sink_data.proplist, PA_PROP_DEVICE_CLASS, "filter");
+    pa_sink_new_data_init(&sinkData);
+    sinkData.driver = __FILE__;
+    sinkData.module = m;
+    if (!(sinkData.name = pa_xstrdup(pa_modargs_get_value(ma, "sink_name", NULL))))
+        sinkData.name = pa_sprintf_malloc("%s.effected", master->name);
+    pa_sink_new_data_set_sample_spec(&sinkData, &ss);
+    pa_sink_new_data_set_channel_map(&sinkData, &sink_map);
+    pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_MASTER_DEVICE, master->name);
+    pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_CLASS, "filter");
 
-    // if (pa_modargs_get_proplist(ma, "sink_properties", sink_data.proplist, PA_UPDATE_REPLACE) < 0) {
-    //     pa_log("Invalid properties");
-    //     pa_sink_new_data_done(&sink_data);
-    //     goto fail;
-    // }
-
-    if ((u->auto_desc = !pa_proplist_contains(sink_data.proplist, PA_PROP_DEVICE_DESCRIPTION))) {
+    if ((u->auto_desc = !pa_proplist_contains(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION))) {
         const char *k;
         k = pa_proplist_gets(master->proplist, PA_PROP_DEVICE_DESCRIPTION);
-        pa_proplist_setf(sink_data.proplist, PA_PROP_DEVICE_DESCRIPTION, "effected %s", k ? k : master->name);
+        pa_proplist_setf(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION, "effected %s", k ? k : master->name);
     }
 
-    u->sink = pa_sink_new(m->core, &sink_data, master->flags & (PA_SINK_LATENCY|PA_SINK_DYNAMIC_LATENCY));
-    pa_sink_new_data_done(&sink_data);
+    u->sink = pa_sink_new(m->core, &sinkData, master->flags & (PA_SINK_LATENCY|PA_SINK_DYNAMIC_LATENCY));
+    pa_sink_new_data_done(&sinkData);
 
     if (!u->sink) {
         pa_log("Failed to create sink.");
         goto fail;
     }
 
-    u->sink->parent.process_msg = sink_process_msg;
-    u->sink->set_state_in_main_thread = sink_set_state_in_main_thread;
-    u->sink->set_state_in_io_thread = sink_set_state_in_io_thread_cb;
-    u->sink->update_requested_latency = sink_update_requested_latency;
-    u->sink->request_rewind = sink_request_rewind;
+    u->sink->parent.process_msg = SinkProcessMsg;
+    u->sink->set_state_in_main_thread = SinkSetStateInMainThread;
+    u->sink->set_state_in_io_thread = SinkSetStateInIoThreadCb;
+    u->sink->update_requested_latency = SinkUpdateRequestedLatency;
+    u->sink->request_rewind = SinkRequestRewind;
     u->sink->userdata = u;
 
     pa_sink_set_asyncmsgq(u->sink, master->asyncmsgq);
 
     /* Create sink input */
-    pa_sink_input_new_data_init(&sink_input_data);
-    sink_input_data.driver = __FILE__;
-    sink_input_data.module = m;
-    pa_sink_input_new_data_set_sink(&sink_input_data, master, false, true);
-    sink_input_data.origin_sink = u->sink;
-    const char *name = pa_sprintf_malloc("%s effected Stream", sink_data.name);
-    pa_proplist_sets(sink_input_data.proplist, PA_PROP_MEDIA_NAME, name);
-    pa_proplist_sets(sink_input_data.proplist, PA_PROP_MEDIA_ROLE, "filter");
-    pa_proplist_sets(sink_input_data.proplist, "scene.mode", "effect");
-    pa_sink_input_new_data_set_sample_spec(&sink_input_data, &ss);
-    pa_sink_input_new_data_set_channel_map(&sink_input_data, &stream_map);
-    sink_input_data.flags = (remix ? 0 : PA_SINK_INPUT_NO_REMIX) | PA_SINK_INPUT_START_CORKED;
-    sink_input_data.resample_method = resample_method;
+    pa_sink_input_new_data_init(&sinkInputData);
+    sinkInputData.driver = __FILE__;
+    sinkInputData.module = m;
+    pa_sink_input_new_data_set_sink(&sinkInputData, master, false, true);
+    sinkInputData.origin_sink = u->sink;
+    const char *name = pa_sprintf_malloc("%s effected Stream", sinkData.name);
+    pa_proplist_sets(sinkInputData.proplist, PA_PROP_MEDIA_NAME, name);
+    pa_proplist_sets(sinkInputData.proplist, PA_PROP_MEDIA_ROLE, "filter");
+    pa_proplist_sets(sinkInputData.proplist, "scene.mode", "effect");
+    pa_sink_input_new_data_set_sample_spec(&sinkInputData, &ss);
+    pa_sink_input_new_data_set_channel_map(&sinkInputData, &stream_map);
+    sinkInputData.flags = (remix ? 0 : PA_SINK_INPUT_NO_REMIX) | PA_SINK_INPUT_START_CORKED;
+    sinkInputData.resample_method = resampleMethod;
 
-    pa_sink_input_new(&u->sink_input, m->core, &sink_input_data);
-    pa_sink_input_new_data_done(&sink_input_data);
+    pa_sink_input_new(&u->sinkInput, m->core, &sinkInputData);
+    pa_sink_input_new_data_done(&sinkInputData);
 
-    if (!u->sink_input)
+    if (!u->sinkInput)
         goto fail;
 
-    u->sink_input->pop = sink_input_pop_cb;
-    u->sink_input->userdata = u;
+    u->sinkInput->pop = SinkInputPopCb;
+    u->sinkInput->userdata = u;
 
-    u->sink->input_to_master = u->sink_input;
+    u->sink->input_to_master = u->sinkInput;
 
     // Set buffer attributes
     int32_t frameLen = EffectChainManagerGetFrameLen();
@@ -418,9 +349,9 @@ int pa__init(pa_module *m) {
     
     u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, ss.channels * frameLen * 2, &ss, 1, 1, 0, NULL);
 
-    pa_sink_input_put(u->sink_input);
+    pa_sink_input_put(u->sinkInput);
     pa_sink_put(u->sink);
-    pa_sink_input_cork(u->sink_input, false);
+    pa_sink_input_cork(u->sinkInput, false);
 
     pa_modargs_free(ma);
     return 0;
@@ -455,15 +386,15 @@ void pa__done(pa_module*m) {
     /* See comments in sink_input_kill_cb() above regarding
      * destruction order! */
 
-    if (u->sink_input)
-        pa_sink_input_cork(u->sink_input, true);
+    if (u->sinkInput)
+        pa_sink_input_cork(u->sinkInput, true);
 
     if (u->sink)
         pa_sink_unlink(u->sink);
 
-    if (u->sink_input) {
-        pa_sink_input_unlink(u->sink_input);
-        pa_sink_input_unref(u->sink_input);
+    if (u->sinkInput) {
+        pa_sink_input_unlink(u->sinkInput);
+        pa_sink_input_unref(u->sinkInput);
     }
 
     if (u->sink)
