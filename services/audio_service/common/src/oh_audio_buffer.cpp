@@ -209,8 +209,12 @@ OHAudioBuffer::OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeI
 OHAudioBuffer::~OHAudioBuffer()
 {
     AUDIO_INFO_LOG("enter ~OHAudioBuffer()");
-    basicBufferInfo_ = nullptr;
-    spanInfoList_ = nullptr;
+    if (basicBufferInfo_ != nullptr) {
+        basicBufferInfo_ = nullptr;
+    }
+    if (spanInfoList_ != nullptr) {
+        spanInfoList_ = nullptr;
+    }
     spanConut_ = 0;
 }
 

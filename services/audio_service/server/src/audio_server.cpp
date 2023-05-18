@@ -33,6 +33,8 @@
 #include "i_standard_audio_server_manager_listener.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "audio_effect_chain_manager.h"
+
 
 #define PA
 #ifdef PA
@@ -76,14 +78,6 @@ AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
 
 void AudioServer::OnDump()
 {
-}
-int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
-{
-    AUDIO_INFO_LOG("AudioServer: Dump Process Invoked");
-    std::stringstream dumpStringStream;
-    AudioService::GetInstance()->Dump(dumpStringStream);
-    std::string dumpString = dumpStringStream.str();
-    return write(fd, dumpString.c_str(), dumpString.size());
 }
 
 void AudioServer::OnStart()
@@ -302,6 +296,18 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
     return loadSuccess;
+}
+
+bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> effectChains){
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return false;
+    }
+
+    AUDIO_INFO_LOG("xjl: init audio effect chain manager in audio server");
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    audioEffectChainManager->InitAudioEffectChain(effectChains, audioEffectServer_->GetAvailableEffects());
+    return true;
 }
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)

@@ -1255,11 +1255,9 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
     while (length > 0) {
         size_t writableSize;
 
-        Trace trace1("PaWriteStream Wait");
         while (!(writableSize = pa_stream_writable_size(paStream))) {
             pa_threaded_mainloop_wait(mainLoop);
         }
-        Trace trace2("PaWriteStream Write");
 
         AUDIO_DEBUG_LOG("Write stream: writable size = %{public}zu, length = %{public}zu", writableSize, length);
         if (writableSize > length) {
@@ -1502,7 +1500,6 @@ int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, si
 
 int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
 {
-    Trace trace("RenderPrebuf");
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream);
     if (bufferAttr == nullptr) {
         AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
@@ -2014,6 +2011,7 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
     mStreamType = audioStreamType;
     const std::string streamName = GetStreamName(audioStreamType);
+    effectSceneName = GetEffectSceneName(audioStreamType);
 
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
@@ -2024,6 +2022,7 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "media.name", streamName.c_str());
+    pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);
@@ -2783,9 +2782,9 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
 {
     AUDIO_INFO_LOG("SetStreamAudioEffectMode: %{public}d", audioEffectMode);
 
-    if (context == nullptr) {
-        AUDIO_ERR_LOG("context is null");
-        return AUDIO_CLIENT_ERR;
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("set stream audio effect mode: invalid stream state");
+        return AUDIO_CLIENT_PA_ERR;
     }
 
     pa_threaded_mainloop_lock(mainLoop);

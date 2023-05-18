@@ -205,9 +205,7 @@ public:
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
         AudioStreamType audioStreamType) override;
 
-    int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
-
-    int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
+    int32_t GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision = true) override;
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) override;
@@ -225,9 +223,8 @@ public:
     float GetMinStreamVolume(void) override;
 
     float GetMaxStreamVolume(void) override;
-
-    int32_t GetMaxRendererInstances() override;
-
+    
+    int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

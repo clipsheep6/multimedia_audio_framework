@@ -110,11 +110,11 @@ private:
     DeviceInfo currentDeviceInfo = {};
 };
 
-class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
+class AudioInterruptCallbackImpl : public AudioInterruptCallback {
 public:
-    explicit AudioRendererInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
+    explicit AudioInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
         const AudioInterrupt &audioInterrupt);
-    virtual ~AudioRendererInterruptCallbackImpl();
+    virtual ~AudioInterruptCallbackImpl();
 
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);

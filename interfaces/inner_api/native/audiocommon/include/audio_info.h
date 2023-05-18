@@ -520,6 +520,26 @@ enum AudioFocuState {
     STOP
 };
 
+/**
+* Enumerates the audio scene effect type.
+*/
+enum AudioEffectScene {
+    SCENE_OTHERS = 0,
+    SCENE_MUSIC = 1,
+    SCENE_MOVIE = 2,
+    SCENE_GAME = 3,
+    SCENE_SPEECH = 4,
+    SCENE_RING = 5
+};
+
+/**
+* Enumerates the audio scene effct mode.
+*/
+enum AudioEffectMode {
+    EFFECT_NONE = 0,
+    EFFECT_DEFAULT = 1
+};
+
 struct InterruptEvent {
     /**
      * Interrupt event type, begin or end
@@ -888,6 +908,10 @@ struct StreamSetStateEventInternal {
     AudioStreamType audioStreamType;
 };
 
+struct AudioSceneEffectInfo {
+    std::vector<AudioEffectMode> mode;
+};
+
 struct AudioRendererChangeInfo {
     int32_t clientUID;
     int32_t sessionId;
@@ -966,53 +990,6 @@ enum StateChangeCmdType {
     CMD_FROM_SYSTEM = 1
 };
 
-// audio effect manager info
-constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
-constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
-
-struct Library {
-    std::string name;
-    std::string path;
-};
-
-struct Effect {
-    std::string name;
-    std::string libraryName;
-    std::string effectId;
-};
-
-struct EffectChain {
-    std::string name;
-    std::vector<std::string> apply;
-};
-
-struct Device {
-    std::string type;
-    std::string address;
-    std::string chain;
-};
-
-struct Preprocess {
-    std::string stream;
-    std::vector<std::string> mode;
-    std::vector<std::vector<Device>> device;
-};
-
-struct Postprocess {
-    std::string stream;
-    std::vector<std::string> mode;
-    std::vector<std::vector<Device>> device;
-};
-
-struct OriginalEffectConfig {
-    float version;
-    std::vector<Library> libraries;
-    std::vector<Effect> effects;
-    std::vector<EffectChain> effectChains;
-    std::vector<Preprocess> preprocess;
-    std::vector<Postprocess> postprocess;
-};
-
 class AudioRendererPolicyServiceDiedCallback {
 public:
     virtual ~AudioRendererPolicyServiceDiedCallback() = default;
@@ -1022,11 +999,6 @@ public:
      * @since 10
      */
     virtual void OnAudioPolicyServiceDied() = 0;
-};
-
-enum AudioEffectMode {
-    EFFECT_NONE = 0,
-    EFFECT_DEFAULT = 1,
 };
 } // namespace AudioStandard
 } // namespace OHOS

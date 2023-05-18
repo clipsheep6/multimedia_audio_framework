@@ -812,9 +812,9 @@ void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, Mess
 void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply)
 {
     AUDIO_DEBUG_LOG("GetVolumeGroupInfoInternal entered");
-    std::string networkId = data.ReadString();
+    bool needVerifyPermision = data.ReadBool();
     std::vector<sptr<VolumeGroupInfo>> groupInfos;
-    int32_t ret = GetVolumeGroupInfos(networkId, groupInfos);
+    int32_t ret = GetVolumeGroupInfos(groupInfos, needVerifyPermision);
     int32_t size = static_cast<int32_t>(groupInfos.size());
     AUDIO_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
     
@@ -828,17 +828,6 @@ void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, Mes
     }
     
     AUDIO_DEBUG_LOG("GetVolumeGroups internal exit");
-}
-
-void AudioPolicyManagerStub::GetNetworkIdByGroupIdInternal(MessageParcel& data, MessageParcel& reply)
-{
-    AUDIO_DEBUG_LOG("GetNetworkIdByGroupId entered");
-    int32_t groupId = data.ReadInt32();
-    std::string networkId;
-    int32_t ret = GetNetworkIdByGroupId(groupId, networkId);
-
-    reply.WriteString(networkId);
-    reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply)
@@ -879,10 +868,103 @@ void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, Mes
     reply.WriteFloat(volume);
 }
 
-void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply)
+static void EffectChainProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
 {
-    int32_t result =  GetMaxRendererInstances();
-    reply.WriteInt32(result);
+    int j;
+    reply.WriteString(supportedEffectConfig.effectChains[i].name);
+    int countApply = supportedEffectConfig.effectChains[i].apply.size();
+    reply.WriteInt32(countApply);
+    if (countApply > 0) {
+        for (j = 0; j < countApply; j++) {
+            // i th EffectChain's j th apply
+            reply.WriteString(supportedEffectConfig.effectChains[i].apply[j]);
+        }
+    }
+}
+static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
+{
+    int k;
+    reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].mode);
+    int countDev = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort.size();
+    reply.WriteInt32(countDev);
+    if (countDev > 0) {
+        for (k = 0; k < countDev; k++) {
+            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
+            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
+        }
+    }
+}
+static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
+{
+	int j;
+    reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].scene);
+    int countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
+    reply.WriteInt32(countMode);
+    if (countMode > 0) {
+        for (j = 0; j < countMode; j++) {
+            PreprocessMode(supportedEffectConfig, reply, i, j);
+        }
+    }
+}
+static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
+{
+    int k;
+    reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].mode);
+    int countDev = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort.size();
+    reply.WriteInt32(countDev);
+    if (countDev > 0) {
+        for (k = 0; k < countDev; k++) {
+            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
+            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
+        }
+    }
+}
+static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
+{
+    int j;
+    // i th stream
+    reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].scene);
+    int countMode = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size();
+    reply.WriteInt32(countMode);
+    if (countMode > 0) {
+        for (j = 0; j < countMode; j++) {
+            PostprocessMode(supportedEffectConfig, reply, i, j);
+        }
+    }
+}
+
+void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int i;
+    SupportedEffectConfig supportedEffectConfig;
+    int32_t ret = QueryEffectSceneMode(supportedEffectConfig); // audio_policy_server.cpp
+    if (ret == -1) {
+        AUDIO_ERR_LOG("default mode is unavailable !");
+        return;
+    }
+
+    int countEC = supportedEffectConfig.effectChains.size();
+    int countPre = supportedEffectConfig.preProcessNew.stream.size();
+    int countPost = supportedEffectConfig.postProcessNew.stream.size();
+    reply.WriteInt32(countEC);
+    reply.WriteInt32(countPre);
+    reply.WriteInt32(countPost);
+
+    if (countEC > 0) {
+        for (i = 0; i < countEC; i++) {
+            EffectChainProcess(supportedEffectConfig, reply, i);
+        }
+    }
+    if (countPre > 0) {
+        for (i = 0; i < countPre; i++) {
+            PreprocessProcess(supportedEffectConfig, reply, i);
+        }
+    }
+    if (countPost > 0) {
+        for (i = 0; i < countPost; i++) {
+            PostprocessProcess(supportedEffectConfig, reply, i);
+        }
+    }
 }
 
 int AudioPolicyManagerStub::OnRemoteRequest(
@@ -1123,10 +1205,6 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_VOLUME_GROUP_INFO:
             GetVolumeGroupInfoInternal(data, reply);
             break;
-            
-        case GET_NETWORKID_BY_GROUP_ID:
-            GetNetworkIdByGroupIdInternal(data, reply);
-            break;
 
         case IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED:
              IsAudioRendererLowLatencySupportedInternal(data, reply);
@@ -1174,9 +1252,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_MAX_VOLUME_STREAM:
             GetMaxStreamVolumeInternal(data, reply);
+            break;
 
-        case GET_MAX_RENDERER_INSTANCES:
-            GetMaxRendererInstancesInternal(data, reply);
+        case QUERY_EFFECT_SCENEMODE:
+            QueryEffectSceneModeInternal(data, reply);
             break;
 
         default:

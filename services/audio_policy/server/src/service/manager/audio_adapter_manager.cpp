@@ -295,7 +295,6 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
     }
 
     switch (deviceType) {
-        case InternalDeviceType::DEVICE_TYPE_EARPIECE:
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
@@ -531,6 +530,18 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         if (!audioModuleInfo.fileName.empty()) {
             args = "file=";
             args.append(audioModuleInfo.fileName);
+        }
+    } else if (audioModuleInfo.lib == MIXER_SINK) {
+        UpdateCommonArgs(audioModuleInfo, args);
+        if (!audioModuleInfo.name.empty()) {
+            args.append(" sink_name=");
+            args.append(audioModuleInfo.name);
+        }
+    } else if (audioModuleInfo.lib == EFFECT_SINK) {
+        UpdateCommonArgs(audioModuleInfo, args);
+        if (!audioModuleInfo.name.empty()) {
+            args.append(" sink_name=");
+            args.append(audioModuleInfo.name);
         }
     }
     return args;
