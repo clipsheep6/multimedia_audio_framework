@@ -1806,18 +1806,17 @@ static void PreprocessMode(Stream &stream, MessageParcel &reply, int countMode)
 {
     int j, k;
     for (j = 0; j < countMode; j++) {
-        StreamAE_mode streamAE_mode;
-        streamAE_mode.mode = reply.ReadString();
+        StreamEffectMode streamEffectMode;
+        streamEffectMode.mode = reply.ReadString();
         int countDev = reply.ReadInt32();
         if (countDev > 0) {
             for (k = 0; k < countDev; k++) {
                 string type = reply.ReadString();
-                string address = reply.ReadString();
                 string chain = reply.ReadString();
-                streamAE_mode.devicePort.push_back({type, address, chain});
+                streamEffectMode.devicePort.push_back({type, chain});
             }
         }
-        stream.streamAE_mode.push_back(streamAE_mode);
+        stream.streamEffectMode.push_back(streamEffectMode);
     }
 }
 
@@ -1836,18 +1835,17 @@ static void PostprocessMode(Stream &stream, MessageParcel &reply, int countMode)
 {
     int j, k;
     for (j = 0; j < countMode; j++) {
-        StreamAE_mode streamAE_mode;
-        streamAE_mode.mode = reply.ReadString();
+        StreamEffectMode streamEffectMode;
+        streamEffectMode.mode = reply.ReadString();
         int countDev = reply.ReadInt32();
         if (countDev > 0) {
             for (k = 0; k < countDev; k++) {
                 string type = reply.ReadString();
-                string address = reply.ReadString();
                 string chain = reply.ReadString();
-                streamAE_mode.devicePort.push_back({type, address, chain});
+                streamEffectMode.devicePort.push_back({type, chain});
             }
         }
-        stream.streamAE_mode.push_back(streamAE_mode);
+        stream.streamEffectMode.push_back(streamEffectMode);
     }
 }
 

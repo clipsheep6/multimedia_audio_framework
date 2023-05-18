@@ -30,6 +30,70 @@
 
 namespace OHOS {
 namespace AudioStandard {
+// audio effect manager info
+constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
+constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
+
+struct Library {
+    std::string name;
+    std::string path;
+};
+
+struct Effect {
+    std::string name;
+    std::string libraryName;
+};
+
+struct EffectChain {
+    std::string name;
+    std::vector<std::string> apply;
+};
+
+struct Device {
+    std::string type;
+    std::string chain;
+};
+
+struct Preprocess {
+    std::string stream;
+    std::vector<std::string> mode;
+    std::vector<std::vector<Device>> device;
+};
+
+struct Postprocess {
+    std::string stream;
+    std::vector<std::string> mode;
+    std::vector<std::vector<Device>> device;
+};
+
+struct OriginalEffectConfig {
+    float version;
+    std::vector<Library> libraries;
+    std::vector<Effect> effects;
+    std::vector<EffectChain> effectChains;
+    std::vector<Preprocess> preProcess;
+    std::vector<Postprocess> postProcess;
+};
+
+struct StreamEffectMode {
+    std::string mode;
+    std::vector<Device> devicePort;
+};
+
+struct Stream {
+    std::string scene;
+    std::vector<StreamEffectMode> streamEffectMode;
+};
+
+struct ProcessNew {
+    std::vector<Stream> stream;
+};
+
+struct SupportedEffectConfig {
+    std::vector<EffectChain> effectChains;
+    ProcessNew preProcessNew;
+    ProcessNew postProcessNew;
+};
 
 typedef struct EffectInterfaceS **EffectHandleT;
 

@@ -33,6 +33,7 @@
 #include "i_standard_renderer_state_change_listener.h"
 #include "i_standard_capturer_state_change_listener.h"
 #include "i_standard_client_tracker.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {

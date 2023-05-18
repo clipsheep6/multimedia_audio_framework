@@ -175,7 +175,7 @@ public:
      * @since 9
      */
     int32_t GetEffectInfoArray(std::vector<std::unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfos,
-        ContentType contentType, StreamUsage streamUsage);
+        int32_t contentType, int32_t streamUsage);
 };
 } // namespace AudioStandard
 } // namespace OHOS

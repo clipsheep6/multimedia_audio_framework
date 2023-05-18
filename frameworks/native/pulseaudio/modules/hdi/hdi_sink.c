@@ -187,7 +187,6 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 
     // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
     pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
-
     pa_assert(chunk.length > 0);
 
     pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER, NULL, 0, &chunk, NULL);

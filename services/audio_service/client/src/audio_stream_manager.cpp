@@ -86,23 +86,25 @@ static void UpdateEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audi
     SupportedEffectConfig &supportedEffectConfig, AudioSceneEffectInfo &audioSceneEffectInfoTmp, int i)
 {
     uint32_t j;
-    for (j = 0; j < supportedEffectConfig.postProcessNew.stream[i].streamAE_mode.size(); j++) {
-        audioSceneEffectInfoTmp.mode.push_back(supportedEffectConfig.postProcessNew.stream[i].streamAE_mode[j].mode);
+    for (j = 0; j < supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size(); j++) {
+        audioSceneEffectInfoTmp.mode.push_back(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].mode);
     }
     audioSceneEffectInfo.push_back(make_unique<AudioSceneEffectInfo>(audioSceneEffectInfoTmp));
 }
 
 int32_t AudioStreamManager::GetEffectInfoArray(vector<unique_ptr<AudioSceneEffectInfo>> &audioSceneEffectInfo,
-    ContentType contentType, StreamUsage streamUsage)
+    int32_t contentType, int32_t streamUsage)
 {
     int i;
-    AudioStreamType streamType =  AudioStream::GetStreamType(contentType, streamUsage);
+
+    ContentType ct = static_cast<ContentType>(contentType);
+    StreamUsage su = static_cast<StreamUsage>(streamUsage);
+    AudioStreamType streamType =  AudioStream::GetStreamType(ct, su);
     std::string effectScene = AudioServiceClient::GetEffectSceneName(streamType);
 
     SupportedEffectConfig supportedEffectConfig;
     int ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
     int streamNum = supportedEffectConfig.postProcessNew.stream.size();
-    AUDIO_INFO_LOG("lxy20 ==================%{public}d, %{public}d, %{public}s, %{public}d", contentType, streamUsage, effectScene.c_str(), streamNum);
     if (streamNum > 0) {
         for (i = 0; i < streamNum; i++) {
             AudioSceneEffectInfo audioSceneEffectInfoTmp;
