@@ -688,8 +688,6 @@ void AudioRendererNapi::PauseAsyncCallbackComplete(napi_env env, napi_status sta
             // set pause result to doNotScheduleWrite_
             asyncContext->objectInfo->doNotScheduleWrite_ = asyncContext->isTrue;
             napi_get_undefined(env, &valueParam);
-        }
-        if (!asyncContext->status) {
             napi_get_undefined(env, &result[PARAM0]);
             result[PARAM1] = valueParam;
         } else {
