@@ -143,7 +143,6 @@ private:
     uint32_t dstSpanSizeInframe_ = 0;
     uint32_t dstByteSizePerFrame_ = 0;
     std::shared_ptr<OHAudioBuffer> dstAudioBuffer_ = nullptr;
-    std::shared_ptr<OHAudioBuffer> srcAudioBuffer_ = nullptr;
 
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
 
@@ -335,7 +334,7 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
 int32_t AudioEndpointInner::PrepareInputDeviceBuffer(const DeviceInfo &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
-    if (srcAudioBuffer_ != nullptr) {
+    if (dstAudioBuffer_ != nullptr) {
         AUDIO_INFO_LOG("Endpoint input buffer is preapred, fd:%{public}d", dstBufferFd_);
         return SUCCESS;
     }
@@ -361,16 +360,16 @@ int32_t AudioEndpointInner::PrepareInputDeviceBuffer(const DeviceInfo &deviceInf
         AUDIO_ERR_LOG("Get input mmap buffer info error, spanDuration %{public}" PRIu64".", spanDuration_);
         return ERR_INVALID_PARAM;
     }
-    srcAudioBuffer_ = OHAudioBuffer::CreateFromRemote(dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
+    dstAudioBuffer_ = OHAudioBuffer::CreateFromRemote(dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
         dstBufferFd_);
-    if (srcAudioBuffer_ == nullptr || srcAudioBuffer_->GetBufferHolder() != AudioBufferHolder::AUDIO_SERVER_ONLY) {
+    if (dstAudioBuffer_ == nullptr || dstAudioBuffer_->GetBufferHolder() != AudioBufferHolder::AUDIO_SERVER_ONLY) {
         AUDIO_ERR_LOG("GetMmapBufferInfo failed.");
         return ERR_ILLEGAL_STATE;
     }
-    srcAudioBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_IDEL);
+    dstAudioBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_IDEL);
 
     // clear data buffer
-    ret = memset_s(srcAudioBuffer_->GetDataBase(), srcAudioBuffer_->GetDataSize(), 0, srcAudioBuffer_->GetDataSize());
+    ret = memset_s(dstAudioBuffer_->GetDataBase(), dstAudioBuffer_->GetDataSize(), 0, dstAudioBuffer_->GetDataSize());
     AUDIO_INFO_LOG("PrepareDeviceBuffer and clear buffer[fd:%{public}d] success, ret:%{public}d", dstBufferFd_, ret);
     InitAudiobuffer(true);
 
