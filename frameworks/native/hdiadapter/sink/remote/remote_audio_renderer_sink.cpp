@@ -159,17 +159,6 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *device
     return audioRenderer_;
 }
 
-std::string RemoteAudioRendererSink::GetDeviceNetworkId()
-{
-    AUDIO_INFO_LOG("%{public}s enter.", __func__);
-    if (allsinks.empty()) {
-        AUDIO_ERR_LOG("%{public}s allsinks is empty.", __func__);
-        return "";
-    }
-    AUDIO_INFO_LOG("%{public}s allsinks first device, networkId %{public}s.", __func__, (allsinks.begin()->first).c_str());
-    return allsinks.begin()->first;
-}
-
 void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: register params callback");

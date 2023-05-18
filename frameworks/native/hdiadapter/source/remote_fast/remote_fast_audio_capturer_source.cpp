@@ -199,10 +199,6 @@ int32_t RemoteFastAudioCapturerSource::GetTargetAdapterPort(struct AudioAdapterD
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
-        if (strcmp(desc->adapterName, networkId)) {
-            AUDIO_INFO_LOG("[%{public}d] is not target adapter", index);
-            continue;
-        }
         targetIdx = index;
         for (uint32_t port = 0; port < desc->portNum; port++) {
             // Only find out the port of out in the sound card
