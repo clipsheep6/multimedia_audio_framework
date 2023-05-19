@@ -22,7 +22,6 @@
 #include <iostream>
 #include <cstdio>
 #include "audio_log.h"
-//#include "audio_info.h"
 #include "audio_effect.h"
 
 namespace OHOS {

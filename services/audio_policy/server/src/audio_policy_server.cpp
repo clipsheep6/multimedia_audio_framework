@@ -89,7 +89,7 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
-    AUDIO_INFO_LOG("AudioPolicyService OnStart");
+    AUDIO_INFO_LOG("AudioPolicyServer OnStart");
     mPolicyService.Init();
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
@@ -98,8 +98,8 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
 
     bool res = Publish(this);
-    if (res) {
-        AUDIO_WARNING_LOG("AudioPolicyService OnStart res=%d", res);
+    if (!res) {
+        AUDIO_INFO_LOG("AudioPolicyServer start err");
     }
 
     Security::AccessToken::PermStateChangeScope scopeInfo;
@@ -515,6 +515,8 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
     }
 
     int32_t ret = mPolicyService.SetRingerMode(ringMode);
+    
+    std::lock_guard<std::mutex> lock(ringerModeMutex_);
     if (ret == SUCCESS) {
         for (auto it = ringerModeCbsMap_.begin(); it != ringerModeCbsMap_.end(); ++it) {
             std::shared_ptr<AudioRingerModeCallback> ringerModeListenerCb = it->second;
@@ -1540,8 +1542,8 @@ void AudioPolicyServer::GetDeviceInfo(PolicyData& policyData)
 void AudioPolicyServer::GetGroupInfo(PolicyData& policyData)
 {
     // Get group info
-    std::vector<sptr<VolumeGroupInfo>> groupInfos;
-    GetVolumeGroupInfos(groupInfos);
+    std::vector<sptr<VolumeGroupInfo>> groupInfos = mPolicyService.GetVolumeGroupInfos();
+
     for (auto volumeGroupInfo : groupInfos) {
         GroupInfo info;
         info.groupId = volumeGroupInfo->volumeGroupId_;
@@ -1702,6 +1704,7 @@ int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
 
 void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id)
 {
+    std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     AUDIO_INFO_LOG("Register clients death recipient!!");
     CHECK_AND_RETURN_LOG(object != nullptr, "Client proxy obj NULL!!");
 
@@ -1739,6 +1742,7 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
 
 void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid)
 {
+    std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, uid %{public}d", pid);
     mPolicyService.RegisteredTrackerClientDied(pid);
     auto filter = [&pid](int val) {
@@ -1780,13 +1784,39 @@ int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     return mPolicyService.UpdateStreamState(clientUid, setStateEvent);
 }
 
-int32_t AudioPolicyServer::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision)
+int32_t AudioPolicyServer::GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
-    if (needVerifyPermision && !PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("GetVolumeGroupInfos: No system permission");
         return ERR_PERMISSION_DENIED;
     }
+
     infos = mPolicyService.GetVolumeGroupInfos();
+    auto filter = [&networkId](const sptr<VolumeGroupInfo>& info) {
+        return networkId != info->networkId_;
+    };
+    infos.erase(std::remove_if(infos.begin(), infos.end(), filter), infos.end());
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetNetworkIdByGroupId(int32_t groupId, std::string &networkId)
+{
+    auto volumeGroupInfos = mPolicyService.GetVolumeGroupInfos();
+
+    auto filter = [&groupId](const sptr<VolumeGroupInfo>& info) {
+        return groupId != info->volumeGroupId_;
+    };
+    volumeGroupInfos.erase(std::remove_if(volumeGroupInfos.begin(), volumeGroupInfos.end(), filter),
+        volumeGroupInfos.end());
+    if (volumeGroupInfos.size() > 0) {
+        networkId = volumeGroupInfos[0]->networkId_;
+        AUDIO_INFO_LOG("GetNetworkIdByGroupId: get networkId %{public}s.", networkId.c_str());
+    } else {
+        AUDIO_ERR_LOG("GetNetworkIdByGroupId: has no valid group");
+        return ERROR;
+    }
+
     return SUCCESS;
 }
 
@@ -1974,6 +2004,12 @@ float AudioPolicyServer::GetMinStreamVolume()
 float AudioPolicyServer::GetMaxStreamVolume()
 {
     return mPolicyService.GetMaxStreamVolume();
+}
+
+int32_t AudioPolicyServer::GetMaxRendererInstances()
+{
+    AUDIO_INFO_LOG("GetMaxRendererInstances");
+    return mPolicyService.GetMaxRendererInstances();
 }
 
 int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)

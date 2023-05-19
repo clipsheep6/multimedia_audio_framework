@@ -1658,7 +1658,7 @@ int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetSt
     return SUCCESS;
 }
 
-int32_t AudioPolicyProxy::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision)
+int32_t AudioPolicyProxy::GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1668,7 +1668,7 @@ int32_t AudioPolicyProxy::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>>
         AUDIO_ERR_LOG(" GetVolumeGroupById WriteInterfaceToken failed");
         return ERROR;
     }
-    data.WriteBool(needVerifyPermision);
+    data.WriteString(networkId);
     int32_t error = Remote()->SendRequest(GET_VOLUME_GROUP_INFO, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("GetVolumeGroupInfo, error: %d", error);
@@ -1684,6 +1684,28 @@ int32_t AudioPolicyProxy::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>>
     } else {
         return ret;
     }
+}
+
+int32_t AudioPolicyProxy::GetNetworkIdByGroupId(int32_t groupId, std::string &networkId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG(" GetNetworkIdByGroupId WriteInterfaceToken failed");
+        return ERROR;
+    }
+    data.WriteInt32(groupId);
+    int32_t error = Remote()->SendRequest(GET_NETWORKID_BY_GROUP_ID, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetNetworkIdByGroupId, error: %d", error);
+        return error;
+    }
+
+    networkId = reply.ReadString();
+    int32_t ret = reply.ReadInt32();
+    return ret;
 }
 
 bool AudioPolicyProxy::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
@@ -1779,6 +1801,24 @@ float AudioPolicyProxy::GetMaxStreamVolume()
         return error;
     }
     return reply.ReadFloat();
+}
+
+int32_t AudioPolicyProxy::GetMaxRendererInstances()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetMaxRendererInstances WriteInterfaceToken failed");
+        return ERROR;
+    }
+    int32_t error = Remote()->SendRequest(GET_MAX_RENDERER_INSTANCES, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetMaxRendererInstances failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
 }
 
 static void EffectChainApplyProcess(EffectChain &tmp, MessageParcel &reply, int countApply)
@@ -1888,7 +1928,6 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
         AUDIO_ERR_LOG("QueryEffectSceneMode: WriteInterfaceToken failed");
         return -1;
     }
-    
     error = Remote()->SendRequest(QUERY_EFFECT_SCENEMODE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);

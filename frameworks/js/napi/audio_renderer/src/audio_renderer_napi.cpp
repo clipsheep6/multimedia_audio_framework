@@ -89,6 +89,7 @@ void AudioRendererNapi::Destructor(napi_env env, void *nativeObject, void *final
         delete obj;
         obj = nullptr;
     }
+    AUDIO_INFO_LOG("AudioRendererNapi::Destructor is successful");
 }
 
 napi_status AudioRendererNapi::AddNamedProperty(napi_env env, napi_value object,
@@ -2206,6 +2207,7 @@ napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_inf
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
+
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[PARAM0], &asyncContext->audioEffectMode);
                 if (!AudioCommonNapi::IsLegalInputArgumentAudioEffectMode(asyncContext->audioEffectMode)) {

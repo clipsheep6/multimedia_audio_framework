@@ -20,21 +20,22 @@
 #include <fstream>
 #include <sstream>
 #include <thread>
+#include <unordered_map>
 
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_service.h"
 #include "audio_log.h"
+#include "audio_schedule.h"
 #include "audio_manager_listener_proxy.h"
 #include "i_audio_capturer_source.h"
 #include "i_standard_audio_server_manager_listener.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
 #include "audio_effect_chain_manager.h"
-
 
 #define PA
 #ifdef PA
@@ -79,13 +80,21 @@ AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
 void AudioServer::OnDump()
 {
 }
+int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
+{
+    AUDIO_INFO_LOG("AudioServer: Dump Process Invoked");
+    std::stringstream dumpStringStream;
+    AudioService::GetInstance()->Dump(dumpStringStream);
+    std::string dumpString = dumpStringStream.str();
+    return write(fd, dumpString.c_str(), dumpString.size());
+}
 
 void AudioServer::OnStart()
 {
-    AUDIO_DEBUG_LOG("AudioService OnStart");
+    AUDIO_INFO_LOG("AudioServer OnStart");
     bool res = Publish(this);
-    if (res) {
-        AUDIO_DEBUG_LOG("AudioService OnStart res=%{public}d", res);
+    if (!res) {
+        AUDIO_ERR_LOG("AudioServer start err");
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
 #ifdef PA
@@ -119,6 +128,7 @@ void AudioServer::OnStop()
 
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
+    std::lock_guard<std::mutex> lockSet(setAudioParameterMutex_);
     int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
         TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AUDIO_DEBUG_LOG("server: set audio parameter");
@@ -303,8 +313,6 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> effectChains
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
         return false;
     }
-
-    AUDIO_INFO_LOG("xjl: init audio effect chain manager in audio server");
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     audioEffectChainManager->InitAudioEffectChain(effectChains, audioEffectServer_->GetAvailableEffects());
     return true;
@@ -645,5 +653,14 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
         }
     }
 }
+
+void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
+{
+    AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
+
+    uint32_t pid = IPCSkeleton::GetCallingPid();
+    ScheduleReportData(pid, tid, bundleName.c_str());
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

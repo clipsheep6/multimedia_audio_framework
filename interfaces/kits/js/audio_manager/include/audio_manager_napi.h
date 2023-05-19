@@ -62,29 +62,6 @@ public:
         FOCUS_TYPE_RECORDING
     };
 
-    enum ContentType {
-        CONTENT_TYPE_UNKNOWN = 0,
-        CONTENT_TYPE_SPEECH = 1,
-        CONTENT_TYPE_MUSIC = 2,
-        CONTENT_TYPE_MOVIE = 3,
-        CONTENT_TYPE_SONIFICATION = 4,
-        CONTENT_TYPE_RINGTONE = 5,
-        CONTENT_TYPE_ULTRASONIC = 9
-    };
-
-    enum StreamUsage {
-        STREAM_USAGE_UNKNOWN = 0,
-        STREAM_USAGE_MEDIA = 1,
-        STREAM_USAGE_VOICE_COMMUNICATION = 2,
-        STREAM_USAGE_VOICE_ASSISTANT = 3,
-        STREAM_USAGE_ALARM = 4,
-        STREAM_USAGE_NOTIFICATION_RINGTONE = 6,
-        STREAM_USAGE_RANGING = 7,
-        STREAM_USAGE_ACCESSIBILITY = 8,
-        STREAM_USAGE_SYSTEM = 9,
-        STREAM_USAGE_VOICE_MODEM_COMMUNICATION = 10
-    };
-
     static napi_value Init(napi_env env, napi_value exports);
 
 private:

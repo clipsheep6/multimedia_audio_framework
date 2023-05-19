@@ -54,25 +54,6 @@ namespace {
     napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
 }
 
-struct AudioStreamMgrAsyncContext {
-    napi_env env;
-    napi_async_work work;
-    napi_deferred deferred;
-    napi_ref callbackRef = nullptr;
-    int32_t status = SUCCESS;
-    int32_t volType;
-    int32_t contentType;
-    int32_t streamUsage;
-    bool isTrue;
-    bool isLowLatencySupported;
-    bool isActive;
-    AudioStreamInfo audioStreamInfo;
-    AudioStreamMgrNapi *objectInfo;
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-    vector<unique_ptr<AudioSceneEffectInfo>> audioSceneEffectInfos;
-};
-
 AudioStreamMgrNapi::AudioStreamMgrNapi()
     : env_(nullptr), audioStreamMngr_(nullptr) {}
 
@@ -171,7 +152,7 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &jsChangeInfoOb
     napi_set_named_property(env, jsChangeInfoObj, "deviceDescriptors", jsDeviceDescriptorsObj);
 }
 
-static void GetCurrentRendererChangeInfosCallbackComplete(napi_env env, napi_status status, void *data)
+void AudioStreamMgrNapi::GetCurrentRendererChangeInfosCallbackComplete(napi_env env, napi_status status, void *data)
 {
     auto asyncContext = static_cast<AudioStreamMgrAsyncContext*>(data);
     napi_value result[ARGS_TWO] = {0};
@@ -220,7 +201,7 @@ static void GetCurrentRendererChangeInfosCallbackComplete(napi_env env, napi_sta
     delete asyncContext;
 }
 
-static void GetCurrentCapturerChangeInfosCallbackComplete(napi_env env, napi_status status, void *data)
+void AudioStreamMgrNapi::GetCurrentCapturerChangeInfosCallbackComplete(napi_env env, napi_status status, void *data)
 {
     auto asyncContext = static_cast<AudioStreamMgrAsyncContext*>(data);
     napi_value result[ARGS_TWO] = {0};
@@ -744,7 +725,7 @@ bool AudioStreamMgrNapi::ParseAudioStreamInfo(napi_env env, napi_value root, Aud
     return true;
 }
 
-static void CommonCallbackRoutine(napi_env env, AudioStreamMgrAsyncContext* &asyncContext,
+void AudioStreamMgrNapi::CommonCallbackRoutine(napi_env env, AudioStreamMgrAsyncContext* &asyncContext,
     const napi_value &valueParam)
 {
     napi_value result[ARGS_TWO] = {0};
@@ -798,8 +779,7 @@ void AudioStreamMgrNapi::IsLowLatencySupportedCallback(napi_env env, napi_status
     }
 }
 
-
-static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+void AudioStreamMgrNapi::IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
     auto asyncContext = static_cast<AudioStreamMgrAsyncContext*>(data);
     napi_value valueParam = nullptr;
@@ -885,27 +865,19 @@ napi_value AudioStreamMgrNapi::IsStreamActive(napi_env env, napi_callback_info i
     return result;
 }
 
-static void GetEffectInfoArrayCallbackComplete(napi_env env, napi_status status, void *data)
+void AudioStreamMgrNapi::GetEffectInfoArrayCallbackComplete(napi_env env, napi_status status, void *data)
 {
     uint32_t i;
     auto asyncContext = static_cast<AudioStreamMgrAsyncContext*>(data);
     napi_value result[ARGS_TWO] = {0};
     napi_value jsEffectInofObj = nullptr;
     napi_value retVal;
-    int32_t position = 0;
     if (!asyncContext->status) {
-        napi_create_array_with_length(env, asyncContext->audioSceneEffectInfos.size(), &result[PARAM1]);
-        for (const unique_ptr<AudioSceneEffectInfo> &effectInfo: asyncContext->audioSceneEffectInfos) {
-            if (!effectInfo) {
-                AUDIO_ERR_LOG("AudioStreamMgrNapi:AudioSceneEffectInfo Null, something wrong!!");
-                continue;
-            }
-            napi_create_object(env, &jsEffectInofObj);
-            for (i = 0; i < effectInfo->mode.size(); i++) {
-                SetValueString(env, "mode" + to_string(i), effectInfo->mode[i], jsEffectInofObj);
-            }
-            napi_set_element(env, result[PARAM1], position, jsEffectInofObj);
-            position++;
+        napi_create_array_with_length(env, asyncContext->audioSceneEffectInfo.mode.size(), &result[PARAM1]);
+        napi_create_object(env, &jsEffectInofObj);
+        for (i = 0; i < asyncContext->audioSceneEffectInfo.mode.size(); i++) {
+            napi_create_uint32(env, asyncContext->audioSceneEffectInfo.mode[i], &jsEffectInofObj);
+            napi_set_element(env, result[PARAM1], i, jsEffectInofObj);
         }
         napi_get_undefined(env, &result[PARAM0]);
     } else {
@@ -951,7 +923,6 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
-
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->contentType);
                 if (!AudioCommonNapi::IsLegalInputArgumentContentType(asyncContext->contentType)) {
@@ -989,9 +960,8 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
                 if (context->status == SUCCESS) {
                     ContentType contentType = static_cast<ContentType>(context->contentType);
                     StreamUsage streamUsage = static_cast<StreamUsage>(context->streamUsage);
-                    context->objectInfo->audioStreamMngr_->GetEffectInfoArray(context->audioSceneEffectInfos,
+                    context->status = context->objectInfo->audioStreamMngr_->GetEffectInfoArray(context->audioSceneEffectInfo,
                         contentType, streamUsage);
-                    context->status = SUCCESS;
                 }
             },
             GetEffectInfoArrayCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);

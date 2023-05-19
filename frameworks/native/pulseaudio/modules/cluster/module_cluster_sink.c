@@ -64,7 +64,7 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
 
     effect_sink = pa_namereg_get(c, sceneType, PA_NAMEREG_SINK);
     if (!effect_sink) { // if sink does not exist
-        AUDIO_INFO_LOG("blank_sink: effect_sink sink not found.");
+        AUDIO_ERR_LOG("blank_sink: effect_sink sink not found.");
         // classify sinkinput to default sink 
         pa_sink_input_move_to(si, c->default_sink, false);
     } else{

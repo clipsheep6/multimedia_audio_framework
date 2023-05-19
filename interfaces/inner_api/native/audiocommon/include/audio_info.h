@@ -538,8 +538,7 @@ enum AudioEffectScene {
 */
 enum AudioEffectMode {
     EFFECT_NONE = 0,
-    EFFECT_DEFAULT = 1,
-    EFFECT_TEST = 2
+    EFFECT_DEFAULT = 1
 };
 
 struct InterruptEvent {
@@ -754,7 +753,6 @@ const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TY
 const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
     {EFFECT_NONE, "EFFECT_NONE"},
     {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
-    {EFFECT_TEST, "EFFECT_TEST"}
 };
 
 struct BufferDesc {
@@ -926,7 +924,7 @@ struct StreamSetStateEventInternal {
 };
 
 struct AudioSceneEffectInfo {
-    std::vector<std::string> mode;
+    std::vector<AudioEffectMode> mode;
 };
 
 struct AudioRendererChangeInfo {

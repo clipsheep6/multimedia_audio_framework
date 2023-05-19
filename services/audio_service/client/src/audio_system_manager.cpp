@@ -17,6 +17,7 @@
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "bundle_mgr_interface.h"
 
 #include "audio_log.h"
 #include "audio_errors.h"
@@ -988,13 +989,7 @@ int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, Devic
 
 int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
-    int32_t result = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(infos);
-
-    auto filter = [&networkId](const sptr<VolumeGroupInfo>& info) {
-        return networkId != info->networkId_;
-    };
-    infos.erase(std::remove_if(infos.begin(), infos.end(), filter), infos.end());
-    return result;
+    return AudioPolicyManager::GetInstance().GetVolumeGroupInfos(networkId, infos);
 }
 
 std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
@@ -1103,6 +1098,40 @@ int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
     
     result = AudioPolicyManager::GetInstance().UpdateStreamState(clientUid, streamSetState, audioStreamType);
     return result;
+}
+
+std::string AudioSystemManager::GetSelfBundleName()
+{
+    std::string bundleName = "";
+
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<OHOS::IRemoteObject> remoteObject =
+        systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    if (iBundleMgr == nullptr) {
+        AUDIO_ERR_LOG("bundlemgr interface is null");
+        return bundleName;
+    }
+
+    AppExecFwk::BundleInfo bundleInfo;
+    if (iBundleMgr->GetBundleInfoForSelf(0, bundleInfo) == ERR_OK) {
+        bundleName = bundleInfo.name;
+    } else {
+        AUDIO_ERR_LOG("Get bundle info failed");
+    }
+    return bundleName;
+}
+
+void AudioSystemManager::RequestThreadPriority(uint32_t tid)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("RequestThreadPriority Audio service unavailable.");
+        return;
+    }
+    std::string bundleName = GetSelfBundleName();
+    gasp->RequestThreadPriority(tid, bundleName);
 }
 
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const

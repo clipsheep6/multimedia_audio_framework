@@ -229,8 +229,13 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
             return AUDIO_OK;
         }
-
-        case CREATE_AUDIO_EFFECT_CHAIN_MANAGER: {
+        case REQUEST_THREAD_PRIORITY: {
+            uint32_t tid = data.ReadUint32();
+            string bundleName = data.ReadString();
+            RequestThreadPriority(tid, bundleName);
+            return AUDIO_OK;
+        }
+		case CREATE_AUDIO_EFFECT_CHAIN_MANAGER: {
             vector<EffectChain> effectChains = {};
             vector<int32_t> countEffect = {};
             int32_t countEffectChains = data.ReadInt32();

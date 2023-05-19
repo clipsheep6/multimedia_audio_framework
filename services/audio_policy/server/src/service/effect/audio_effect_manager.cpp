@@ -103,8 +103,7 @@ static void UpdateUnsupportedModePre(Preprocess &pp, Stream &stream, std::string
     int j = 0;
     int isSupported = 0;
     if ((mode != "EFFECT_NONE") &&
-        (mode != "EFFECT_DEFAULT") &&
-        (mode != "EFFECT_TEST")) {
+        (mode != "EFFECT_DEFAULT")) {
         AUDIO_INFO_LOG("[supportedEffectConfig LOG10]:mode-> The %{public}s mode of %{public}s is unsupported, \
             and this mode is deleted!", mode.c_str(), stream.scene.c_str());
         isSupported = -1;
@@ -137,8 +136,7 @@ static void UpdateUnsupportedModePost(Postprocess &pp, Stream &stream, std::stri
     int j = 0;
     int isSupported = 0;
     if ((mode != "EFFECT_NONE") &&
-        (mode != "EFFECT_DEFAULT") &&
-        (mode != "EFFECT_TEST")) {
+        (mode != "EFFECT_DEFAULT")) {
         AUDIO_INFO_LOG("[supportedEffectConfig LOG10]:mode-> The %{public}s mode of %{public}s is unsupported, \
             and this mode is deleted!", mode.c_str(), stream.scene.c_str());
         isSupported = -1;
@@ -441,4 +439,3 @@ void AudioEffectManager::GetAvailableAEConfig()
 
 } // namespce AudioStandard
 } // namespace OHOS
-  

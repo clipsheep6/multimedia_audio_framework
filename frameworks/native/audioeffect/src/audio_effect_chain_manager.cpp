@@ -158,7 +158,7 @@ void AudioEffectChainManager::InitAudioEffectChain(std::vector<EffectChain> effe
 
 int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std::string effectChain) {
     if (!EffectChainToEffectsMap.count(effectChain)) {
-        AUDIO_INFO_LOG("EffectChain's name [%{public}s] does not exist, auto set to EFFECT_NONE", effectChain.c_str());
+        AUDIO_ERR_LOG("EffectChain's name [%{public}s] does not exist, auto set to EFFECT_NONE", effectChain.c_str());
         effectChain = "EFFECT_NONE";
     }
 

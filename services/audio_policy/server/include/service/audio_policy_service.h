@@ -233,6 +233,8 @@ public:
 
     float GetMaxStreamVolume(void);
 
+    int32_t GetMaxRendererInstances();
+
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
 private:
@@ -329,6 +331,8 @@ private:
 
     void SetEarpieceState();
 
+    void RemoveDeviceInRouterMap(std::string networkId);
+
     void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
 
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
@@ -350,6 +354,7 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t switchVolumeDelay_ = 500000; // us
+    int32_t maxRendererInstances_ = 16;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
 
@@ -358,6 +363,8 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     DeviceType pnpDevice_ = DEVICE_TYPE_NONE;
+
+    std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     IAudioPolicyInterface& audioPolicyManager_;
     Parser& configParser_;
