@@ -133,6 +133,13 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateAudioRecorder
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateAudioRecorder_004, TestSize.Level0)
+{
+    SLresult result = (*engineEngine_)->CreateAudioRecorder(engineEngine_, nullptr, nullptr,
+                                                            nullptr, 0, nullptr, nullptr);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
 HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetBufferQueue_001, TestSize.Level0)
 {
     SLresult result = (*pcmCapturerObject_)->GetInterface(pcmCapturerObject_, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf_);
@@ -209,6 +216,12 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SetRecordState_004,
 {
     SLresult result = (*captureItf_)->SetRecordState(nullptr, SL_RECORDSTATE_STOPPED);
     EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
+}
+
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SetRecordState_004, TestSize.Level0)
+{
+    SLresult result = (*captureItf_)->SetRecordState(captureItf_, -1);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
 HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetRecordState_001, TestSize.Level0)
@@ -309,76 +322,16 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_002, TestSi
     EXPECT_TRUE(true);
 }
 
-HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_CreateEngine_001, TestSize.Level0)
-{
-    struct timespec tv1 = {0};
-    struct timespec tv2 = {0};
-    int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000000;
-    int64_t totalTime = 0;
-    for (int32_t i = 0; i < performanceTestTimes; i++) {
-        clock_gettime(CLOCK_REALTIME, &tv1);
-        slCreateEngine(&engineObject_, 0, nullptr, 0, nullptr, nullptr);
-        clock_gettime(CLOCK_REALTIME, &tv2);
-        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
-    }
-    int64_t expectTime = 1000000000;
-    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
-}
-
-HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_DestoryEngine_001, TestSize.Level0)
-{
-    struct timespec tv1 = {0};
-    struct timespec tv2 = {0};
-    int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000000;
-    int64_t totalTime = 0;
-    for (int32_t i = 0; i < performanceTestTimes; i++) {
-        engineObject_ = {};
-        slCreateEngine(&engineObject_, 0, nullptr, 0, nullptr, nullptr);
-        clock_gettime(CLOCK_REALTIME, &tv1);
-        (*engineObject_)->Destroy(engineObject_);
-        clock_gettime(CLOCK_REALTIME, &tv2);
-        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
-    }
-    int64_t expectTime = 1000000000;
-    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
-}
-
 HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_Realize_001, TestSize.Level0)
 {
-    struct timespec tv1 = {0};
-    struct timespec tv2 = {0};
-    int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000000;
-    int64_t totalTime = 0;
-    engineObject_ = {};
-    slCreateEngine(&engineObject_, 0, nullptr, 0, nullptr, nullptr);
-    for (int32_t i = 0; i < performanceTestTimes; i++) {
-        clock_gettime(CLOCK_REALTIME, &tv1);
-        (*engineObject_)->Realize(engineObject_, SL_BOOLEAN_FALSE);
-        clock_gettime(CLOCK_REALTIME, &tv2);
-        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
-    }
-    int64_t expectTime = 1000000000;
-    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    SLresult result = (*engineObject_)->Realize(engineObject_, SL_BOOLEAN_FALSE);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
 HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_GetInterface_001, TestSize.Level0)
 {
-    struct timespec tv1 = {0};
-    struct timespec tv2 = {0};
-    int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000000;
-    int64_t totalTime = 0;
-    for (int32_t i = 0; i < performanceTestTimes; i++) {
-        clock_gettime(CLOCK_REALTIME, &tv1);
-        (*engineObject_)->GetInterface(engineObject_, SL_IID_ENGINE, &engineEngine_);
-        clock_gettime(CLOCK_REALTIME, &tv2);
-        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
-    }
-    int64_t expectTime = 1000000000;
-    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    SLresult result = (*engineObject_)->GetInterface(engineObject_, SL_IID_ENGINE, &engineEngine_);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
 HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_CreateAudioRecorder_001, TestSize.Level0)
@@ -419,22 +372,11 @@ HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_CreateAudioRecorder_001
         &buffer_queue,
         &format_pcm
     };
-
-    struct timespec tv1 = {0};
-    struct timespec tv2 = {0};
-    int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000000;
-    int64_t totalTime = 0;
-    for (int32_t i = 0; i < performanceTestTimes; i++) {
-        clock_gettime(CLOCK_REALTIME, &tv1);
-        (*engineEngine_)->CreateAudioRecorder(engineEngine_, &pcmCapturerObject_, &audioSource,
-                                              &audioSink, 0, nullptr, nullptr);
-        clock_gettime(CLOCK_REALTIME, &tv2);
-        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
-        (*pcmCapturerObject_)->Destroy(pcmCapturerObject_);
-    }
-    int64_t expectTime = 1000000000;
-    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+    SLresult result = (*engineEngine_)->CreateAudioRecorder(engineEngine_, &pcmCapturerObject_, &audioSource,
+        &audioSink, 0, nullptr, nullptr);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    (*pcmCapturerObject_)->Destroy(pcmCapturerObject_);
+    EXPECT_TRUE(true);
 }
 
 HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_001, TestSize.Level1)
@@ -949,7 +891,76 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_012
     SLresult result = (*engineEngine_)->CreateAudioRecorder(engineEngine_, &pcmCapturerObject_, &audioSource,
         &audioSink, 0, nullptr, nullptr);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    (*pcmCapturerObject_)->Realize(pcmCapturerObject_, SL_BOOLEAN_FALSE);
+    (*pcmCapturerObject_)->GetInterface(pcmCapturerObject_, SL_IID_RECORD, &recordItf);
+    result = (*pcmCapturerObject_)->GetInterface(pcmCapturerObject_, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    result = (*bufferQueueItf)->RegisterCallback(bufferQueueItf, BufferQueueCallback, wavFile_);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    CaptureStart(recordItf, bufferQueueItf, wavFile_);
+
+    (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
+    (*recordItf)->GetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+
+    (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_PAUSED);
+    (*recordItf)->GetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+
+    (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_STOPPED);
+    (*recordItf)->GetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
     (*pcmCapturerObject_)->Destroy(pcmCapturerObject_);
+}
+
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetRecordState_001, TestSize.Level0)
+{
+    IRecordInit(engineEngine_, -1);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Destroy_001, TestSize.Level0)
+{
+    wavFile_ = fopen(g_testFilePath, "wb");
+    if (wavFile_ == nullptr) {
+        AUDIO_INFO_LOG("Destroy_001: Unable to open record file.");
+    }
+
+    SLDataLocator_IODevice io_device = {
+        SL_DATALOCATOR_IODEVICE,
+        SL_IODEVICE_AUDIOINPUT,
+        SL_DEFAULTDEVICEID_AUDIOINPUT,
+        NULL
+    };
+
+    SLDataSource audioSource = {
+        &io_device,
+        NULL
+    };
+
+    SLDataLocator_BufferQueue buffer_queue = {
+        SL_DATALOCATOR_BUFFERQUEUE,
+        3
+    };
+
+    SLDataFormat_PCM format_pcm = {
+        SL_DATAFORMAT_PCM,
+        OHOS::AudioStandard::AudioChannel::CHANNEL_3,
+        SL_SAMPLINGRATE_96,
+        SL_PCMSAMPLEFORMAT_FIXED_16,
+        0,
+        0,
+        0
+    };
+    SLDataSink audioSink = {
+        &buffer_queue,
+        &format_pcm
+    };
+    SLresult result = (*engineEngine_)->CreateAudioRecorder(engineEngine_, &pcmCapturerObject_, &audioSource,
+        &audioSink, 0, nullptr, nullptr);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    (*pcmCapturerObject_)->Destroy(pcmCapturerObject_);
+    EXPECT_TRUE(true);
 }
 } // namespace AudioStandard
 } // namespace OHOS

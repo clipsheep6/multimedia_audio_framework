@@ -489,13 +489,61 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_018, TestSize.Level0)
     capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
     capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.streamInfo.channels = AudioChannel::CHANNEL_3;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
     appInfo.appTokenId = VALUE_THOUSAND;
     appInfo.appUid = VALUE_HUNDRED;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, cachePath.c_str(), appInfo);
     ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test Create API via legal input.
+* @tc.number: Audio_Capturer_Create_019
+* @tc.desc  : Test Create interface with STREAM_MUSIC and appInfo. Returns audioCapturer instance, if successful.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_019, TestSize.Level0)
+{
+    AppInfo appInfo = {};
+    appInfo.appTokenId = VALUE_THOUSAND;
+    appInfo.appUid = VALUE_HUNDRED;
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_DEFAULT, appInfo);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S16LE;
+    capturerParams.samplingRate = SAMPLE_RATE_44100;
+    capturerParams.audioChannel = STEREO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    int32_t ret = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test Create API via legal input.
+* @tc.number: Audio_Capturer_Create_014
+* @tc.desc  : Test Create interface with STREAM_MUSIC and appInfo. Returns audioCapturer instance, if successful.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_014, TestSize.Level0)
+{
+    AppInfo appInfo = {};
+    appInfo.appTokenId = VALUE_THOUSAND;
+    appInfo.appUid = VALUE_HUNDRED;
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC, appInfo);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = -1;
+    capturerParams.samplingRate = SAMPLE_RATE_44100;
+    capturerParams.audioChannel = STEREO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    int32_t ret = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
     audioCapturer->Release();
 }
 

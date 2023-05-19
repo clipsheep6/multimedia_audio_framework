@@ -239,6 +239,20 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001,
 }
 
 /**
+* @tc.name  : Test Audio_Policy_SetSystemSoundUri_001 via legal state
+* @tc.number: Audio_Policy_SetSystemSoundUri_001
+* @tc.desc  : Test SetSystemSoundUri interface. Returns success.
+*/
+HWTEST(AudioPolicyUnitTest, Audio_Policy_SetSystemSoundUri_001, TestSize.Level1)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().SetSystemSoundUri("", "");
+    EXPECT_EQ(0, ret);
+    std::string result = AudioPolicyManager::GetInstance().GetSystemSoundUri("");
+    EXPECT_EQ("", result);
+}
+
+
+/**
 * @tc.name  : Test Audio_Policy_RegisterAudioRendererEventListener_001 via illegal state
 * @tc.number: Audio_Policy_RegisterAudioRendererEventListener_001
 * @tc.desc  : Test RegisterAudioRendererEventListener interface. Returns success.
@@ -747,11 +761,21 @@ HWTEST(AudioPolicyUnitTest, Audio_Rounting_Manager_Listener_001, TestSize.Level1
 
     routingManagerStub->OnMicStateUpdated(micStateChangeEvent);
 
+    AudioRendererInfo rendererInfo;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    deviceInfo = audioPolicyProxy->GetPreferOutputDeviceDescriptors(rendererInfo);
+    routingManagerStub->OnPreferOutputDeviceUpdated(deviceInfo);
+
     uint32_t code = routingManagerStub->ON_MIC_STATE_UPDATED;
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
     int ret = routingManagerStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(true, ret == AUDIO_OK);
+
+    code = routingManagerStub->ON_ACTIVE_OUTPUT_DEVICE_UPDATED;
+    ret = routingManagerStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(true, ret == AUDIO_OK);
 
     code = routingManagerStub->ON_ERROR;
     ret = routingManagerStub->OnRemoteRequest(code, data, reply, option);
