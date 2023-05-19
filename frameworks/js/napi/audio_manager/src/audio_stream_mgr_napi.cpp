@@ -961,7 +961,7 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
                     ContentType contentType = static_cast<ContentType>(context->contentType);
                     StreamUsage streamUsage = static_cast<StreamUsage>(context->streamUsage);
                     context->status =
-                        context->objectInfo->audioStreamMngr_->GetEffectInfoArray(context->audioSceneEffectInfo, 
+                        context->objectInfo->audioStreamMngr_->GetEffectInfoArray(context->audioSceneEffectInfo,
                         contentType, streamUsage);
                 }
             },
