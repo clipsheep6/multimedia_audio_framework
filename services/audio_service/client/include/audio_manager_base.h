@@ -187,6 +187,8 @@ public:
     virtual bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
         std::vector<Effect> &successEffects) = 0;
 
+    virtual bool CreateEffectChainManager(std::vector<EffectChain> effectChains) = 0;
+
     /**
      * Request thread priority for client thread.
      */
@@ -215,6 +217,7 @@ public:
         CREATE_AUDIOPROCESS = 19,
         LOAD_AUDIO_EFFECT_LIBRARIES = 20,
         REQUEST_THREAD_PRIORITY = 21,
+		CREATE_AUDIO_EFFECT_CHAIN_MANAGER = 22,
     };
 
 public:

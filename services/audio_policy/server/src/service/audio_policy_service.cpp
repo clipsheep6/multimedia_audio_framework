@@ -1765,8 +1765,33 @@ void AudioPolicyService::LoadEffectLibrary()
     if (!loadSuccess) {
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
+
     audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
     audioEffectManager_.GetAvailableAEConfig();
+
+    // Initialize EffectChainManager in audio service through IPC
+    SupportedEffectConfig supportedEffectConfig;
+    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
+    bool createSuccess = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains);
+    CHECK_AND_RETURN_LOG(createSuccess, "EffectChainManager create failed");
+
+    // Create sink for each effect
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-cluster-sink.z.so";
+    moduleInfo.name = "CLUSTER";
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+    IOHandles_[moduleInfo.name] = ioHandle;
+
+    moduleInfo.lib = "libmodule-effect-sink.z.so";
+    moduleInfo.rate = "48000";
+    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end(); ++sceneType) {
+        AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType->second.c_str());
+        moduleInfo.name = sceneType->second;
+        ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+        IOHandles_[moduleInfo.name] = ioHandle;
+    }
 }
 
 void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
@@ -2615,5 +2640,6 @@ int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& s
     int32_t ret = audioEffectManager_.QueryEffectManagerSceneMode(supportedEffectConfig);
     return ret;
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

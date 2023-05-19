@@ -235,6 +235,31 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             RequestThreadPriority(tid, bundleName);
             return AUDIO_OK;
         }
+		case CREATE_AUDIO_EFFECT_CHAIN_MANAGER: {
+            vector<EffectChain> effectChains = {};
+            vector<int32_t> countEffect = {};
+            int32_t countEffectChains = data.ReadInt32();
+            for(int i=0;i<countEffectChains;i++){
+                countEffect.emplace_back(data.ReadInt32());
+            }
+
+            for(int32_t count: countEffect){
+                EffectChain effectChain;
+                effectChain.name = data.ReadString();
+                for(int j=0;j<count;j++){
+                    effectChain.apply.emplace_back(data.ReadString());
+                }
+                effectChains.emplace_back(effectChain);
+            }
+
+            bool createSuccess = CreateEffectChainManager(effectChains);
+            if(!createSuccess){
+                AUDIO_ERR_LOG("create audio effect chain manager failed, please check log");
+                return AUDIO_ERR;
+            }
+
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
