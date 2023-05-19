@@ -468,8 +468,8 @@ int pa__init(pa_module *m) {
     u->ioBufferConfig->outputCfg.buffer.frameLength = frameLen;
     
     // u->bufferAttr = pa_xnew0(struct BufferAttr, 1);
-    // pa_assert_se(u->ioBufferConfig.inputCfg.buffer.raw = (float *)malloc(u->processSize));
-    // pa_assert_se(u->ioBufferConfig.outputCfg.buffer.raw = (float *)malloc(u->processSize));
+    pa_assert_se(u->ioBufferConfig->inputCfg.buffer.raw = (float *)malloc(u->processSize));
+    pa_assert_se(u->ioBufferConfig->outputCfg.buffer.raw = (float *)malloc(u->processSize));
     // u->bufferAttr->frameLen = frameLen;
     // u->bufferAttr->numChan = ss.channels;
     
