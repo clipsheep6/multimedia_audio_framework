@@ -33,6 +33,7 @@
 
 #include "securec.h"
 #include "audio_effect_chain_adapter.h"
+// #include "audio_effect.h"
 #include "audio_log.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");
@@ -48,7 +49,8 @@ struct userdata {
     pa_module *module;
     pa_sink *sink;
     pa_sink_input *sinkInput;
-    struct BufferAttr *bufferAttr;
+    // struct BufferAttr *bufferAttr;
+    struct AudioEffectConfigAdapter *ioBufferConfig;
     pa_memblockq *bufInQ;
     int32_t processLen;
     size_t processSize;
@@ -318,14 +320,16 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) 
         pa_memblockq_drop(u->bufInQ, tchunk.length);
 
         src = pa_memblock_acquire_chunk(&tchunk);
-        bufIn = u->bufferAttr->bufIn;
-        bufOut = u->bufferAttr->bufOut;
+        bufIn = u->ioBufferConfig->inputCfg.buffer.f32;
+        bufOut = u->ioBufferConfig->outputCfg.buffer.f32;
+        // bufIn = u->bufferAttr->bufIn;
+        // bufOut = u->bufferAttr->bufOut;
         
         ConvertToFloat(u->format, u->processLen, src, bufIn);
         pa_memblock_release(tchunk.memblock);
         pa_memblock_unref(tchunk.memblock);
 
-        EffectChainManagerProcess((void *)u->bufferAttr, si->origin_sink->name);
+        EffectChainManagerProcess(u->ioBufferConfig, si->origin_sink->name);
         
         ConvertFromFloat(u->format, u->processLen, bufOut, dst);
         
@@ -453,11 +457,21 @@ int pa__init(pa_module *m) {
     u->format = ss.format;
     u->processLen = ss.channels * frameLen;
     u->processSize = u->processLen * sizeof(float);
-    u->bufferAttr = pa_xnew0(struct BufferAttr, 1);
-    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
-    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
-    u->bufferAttr->frameLen = frameLen;
-    u->bufferAttr->numChan = ss.channels;
+    u->ioBufferConfig = pa_xnew0(struct AudioEffectConfigAdapter, 1);
+    u->ioBufferConfig->inputCfg.samplingRate = ss.rate;
+    u->ioBufferConfig->inputCfg.channels = ss.channels;
+    u->ioBufferConfig->inputCfg.format = 3; // auto set to float
+    u->ioBufferConfig->inputCfg.buffer.frameLength = frameLen;
+    u->ioBufferConfig->outputCfg.samplingRate = ss.rate;
+    u->ioBufferConfig->outputCfg.channels = ss.channels;
+    u->ioBufferConfig->outputCfg.format = 3; // auto set to float
+    u->ioBufferConfig->outputCfg.buffer.frameLength = frameLen;
+    
+    // u->bufferAttr = pa_xnew0(struct BufferAttr, 1);
+    // pa_assert_se(u->ioBufferConfig.inputCfg.buffer.raw = (float *)malloc(u->processSize));
+    // pa_assert_se(u->ioBufferConfig.outputCfg.buffer.raw = (float *)malloc(u->processSize));
+    // u->bufferAttr->frameLen = frameLen;
+    // u->bufferAttr->numChan = ss.channels;
     
     int32_t bitSize = pa_sample_size_of_format(ss.format);
     size_t targetSize = ss.channels * frameLen * bitSize;

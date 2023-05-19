@@ -95,66 +95,92 @@ struct SupportedEffectConfig {
     ProcessNew postProcessNew;
 };
 
-typedef struct EffectInterfaceS **EffectHandleT;
-
-typedef struct AudioBufferS {
-    size_t frameCount;       // number of frames in buffer
-    union {
-        void *raw;           // raw pointer to start of buffer
-        float *f32;          // pointer to float 32 bit data at start of buffer
-        int32_t *s32;        // pointer to signed 32 bit data at start of buffer
-        int16_t *s16;        // pointer to signed 16 bit data at start of buffer
-        uint8_t *u8;         // pointer to unsigned 8 bit data at start of buffer
-    };
-} AudioBufferT;
-
-// for initial version
-typedef struct EffectDescriptorS {
-    std::string type;
-    std::string id;
-    uint32_t apiVersion;
-    uint32_t flags;
-    uint16_t cpuLoad;
-    uint16_t memoryUsage;
-    char name[EFFECT_STRING_LEN_MAX];
-    char implementor[EFFECT_STRING_LEN_MAX];
-} EffectDescriptorT;
-
-struct EffectInterfaceS {
-    int32_t (*Process)(EffectHandleT self, AudioBufferT *inBuffer, AudioBufferT *outBuffer);
-
-    int32_t
-    (*Command)(EffectHandleT self, uint32_t cmdCode, uint32_t cmdSize, void *pCmdData, uint32_t *replySize,
-                void *pReplyData);
-
-    int32_t (*GetDescriptor)(EffectHandleT self, EffectDescriptorT *pDescriptor);
-
-    int32_t (*ProcessReverse)(EffectHandleT self, AudioBufferT *inBuffer, AudioBufferT *outBuffer);
+enum AudioEffectCommandCode {
+    EFFECT_CMD_INIT = 0,
+    EFFECT_CMD_SET_CONFIG = 1,
+    EFFECT_CMD_ENABLE = 2,
+    EFFECT_CMD_DISABLE = 3,
+    EFFECT_CMD_SET_PARAM = 4,
+    EFFECT_CMD_GET_PARAM = 5,
+    EFFECT_CMD_GET_CONFIG = 6,
 };
 
-// for initial version
-typedef struct AudioEffectLibraryS {
-    uint32_t tag;
+enum AudioEffectParamSetCode {
+    EFFECT_SET_BYPASS = 1,
+    EFFECT_SET_PARAM = 2,
+};
+
+enum AudioDataFormat {
+    DATA_FORMAT_S16 = SAMPLE_S16LE,
+    DATA_FORMAT_S24 = SAMPLE_S24LE,
+    DATA_FORMAT_S32 = SAMPLE_S32LE,
+    DATA_FORMAT_F32 = SAMPLE_F32LE,
+};
+
+struct AudioEffectParam {
+    int32_t status;
+    uint32_t paramSize;
+    uint32_t valueSize;
+    char data[];
+};
+
+struct AudioBuffer {
+    size_t frameLength;
+    union {
+        void*     raw;
+        float*    f32;
+        int32_t*  s32;
+        int16_t*  s16;
+        uint8_t*  u8;
+    };
+};
+
+struct AudioBufferConfig {
+    AudioBuffer buffer;
+    uint32_t samplingRate;
+    uint32_t channels;
+    uint8_t format;
+};
+
+struct AudioEffectConfig {
+    AudioBufferConfig inputCfg;
+    AudioBufferConfig outputCfg;
+};
+ 
+struct AudioEffectTransInfo {
+    uint32_t size;
+    void *data;
+};
+
+struct AudioEffectDescriptor {
+    std::string libraryName;
+    std::string effectName;
+};
+
+typedef struct AudioEffectInterface **AudioEffectHandle;
+
+struct AudioEffectInterface {
+    int32_t (*process) (AudioEffectHandle self, AudioBuffer *inBuffer, AudioBuffer *outBuffer);
+    int32_t (*command) (AudioEffectHandle self, uint32_t cmdCode,
+        AudioEffectTransInfo *cmdInfo, AudioEffectTransInfo *replyInfo);
+};
+
+struct AudioEffectLibrary {
     uint32_t version;
     const char *name;
     const char *implementor;
+    int32_t (*checkEffect) (const AudioEffectDescriptor descriptor);
+    int32_t (*createEffect) (const AudioEffectDescriptor descriptor, AudioEffectHandle *handle);
+    int32_t (*releaseEffect) (AudioEffectHandle handle);
+};
 
-    int32_t (*CreateEffect)(const std::string *id, int32_t sessionId, int32_t ioId, EffectHandleT *pHandle);
+struct AudioEffectLibEntry {
+    AudioEffectLibrary *audioEffectLibHandle;
+    std::string libraryName;
+    std::vector<std::string> effectName;
+};
 
-    int32_t (*ReleaseEffect)(EffectHandleT handle);
-
-    int32_t (*GetDescriptor)(const std::string *id, EffectDescriptorT *pDescriptor);
-} AudioEffectLibraryT;
-
-typedef struct LibEntryS {
-    AudioEffectLibraryT *desc;
-    std::string name;
-    std::string path;
-    void *handle;
-    std::vector <std::unique_ptr<EffectDescriptorT>> effects;
-} LibEntryT;
-
-} // namespce AudioStandard
+} // namespace AudioStandard
 } // namespace OHOS
 
 #endif //AUDIO_FRAMEWORK_AUDIO_EFFECT_H

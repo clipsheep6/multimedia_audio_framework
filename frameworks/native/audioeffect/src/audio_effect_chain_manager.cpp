@@ -35,12 +35,14 @@
 
 using namespace OHOS::AudioStandard;
 
-int32_t EffectChainManagerProcess(void *bufferAttrVoid, char *sceneType)
+int32_t EffectChainManagerProcess(void *ioBufferConfigAdapter, char *sceneType)
 {
-    BufferAttr *bufferAttr = (BufferAttr *)bufferAttrVoid;
+    AudioEffectConfig *ioBufferConfig = static_cast<AudioEffectConfig *>(ioBufferConfigAdapter);
+    AudioBuffer *bufIn = &(ioBufferConfig->inputCfg.buffer);
+    AudioBuffer *bufOut = &(ioBufferConfig->outputCfg.buffer);
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     std::string sceneTypeString(sceneType);
-    if (!audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, bufferAttr->bufIn, bufferAttr->bufOut)) {
+    if (!audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, bufIn, bufOut)) {
         return ERROR;
     }
     return SUCCESS;
@@ -62,25 +64,25 @@ AudioEffectChain::AudioEffectChain(std::string scene) {
 
 AudioEffectChain::~AudioEffectChain() {}
 
-void AudioEffectChain::SetEffectChain(std::vector<EffectHandleT *> effectHandles) {
+void AudioEffectChain::SetEffectChain(std::vector<AudioEffectHandle *> effectHandles) {
     standByEffectHandles.clear();
-    for (EffectHandleT *handleT: effectHandles) {
+    for (AudioEffectHandle *handleT: effectHandles) {
         standByEffectHandles.emplace_back(handleT);
     }
 }
 
-void AudioEffectChain::ApplyEffectChain(void *bufIn, void *bufOut) {
-    AUDIO_INFO_LOG("apply effect chain beginning");
-    for (EffectHandleT *handle: standByEffectHandles) {
-        AUDIO_INFO_LOG("run effect: %{public}p", handle);
-//                handle(bufIn, bufOut));
-    }
+void AudioEffectChain::ApplyEffectChain(AudioBuffer *bufIn, AudioBuffer *bufOut) {
+    // for (AudioEffectHandle *handle: standByEffectHandles) {
+    //     *handle->process(handle, bufIn, bufOut);
+    // }
 }
 
-int32_t FindEffectLib(std::string effect, std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList, LibEntryT *libEntry) {
-    for (const std::unique_ptr <LibEntryT> &lib : effectLibraryList) {
-        for (std::unique_ptr <EffectDescriptorT> &e: lib->effects) {
-            if (strcmp(e->name, effect.c_str())) {
+int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList, 
+    AudioEffectLibEntry *libEntry, std::string &libName) {
+    for (const std::unique_ptr<AudioEffectLibEntry> &lib : effectLibraryList) {
+        for (auto e: lib->effectName) {
+            if (e == effect) {
+                libName = lib->libraryName;
                 libEntry = lib.get();
                 return SUCCESS;
             }
@@ -111,7 +113,7 @@ int32_t AudioEffectChainManager::GetFrameLen()
 
 // Boot initialize
 void AudioEffectChainManager::InitAudioEffectChain(std::vector<EffectChain> effectChains,
-                                                    std::vector <std::unique_ptr<LibEntryT>> &effectLibraryList) {
+    std::vector <std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList) {
 
     std::set<std::string> effectSet;
     for (EffectChain efc: effectChains){
@@ -121,15 +123,17 @@ void AudioEffectChainManager::InitAudioEffectChain(std::vector<EffectChain> effe
     }
 
     // Construct EffectToLibraryEntryMap that stores libEntry for each effect name
-    LibEntryT libEntry;
+    AudioEffectLibEntry libEntry;
+    std::string libName;
     int32_t errorCode;
     for (std::string effect: effectSet) {
-        errorCode = FindEffectLib(effect, effectLibraryList, &libEntry);
+        errorCode = FindEffectLib(effect, effectLibraryList, &libEntry, libName);
         if (errorCode == ERROR) {
             AUDIO_INFO_LOG("Couldn't find libEntry of effect %{public}s", effect.c_str());
             continue;
         }
         EffectToLibraryEntryMap[effect] = &libEntry;
+        EffectToLibraryName[effect] = libName;
     }
     
     // Construct EffectChainToEffectsMap that stores all effect names of each effect chain
@@ -170,10 +174,13 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
         SceneTypeToEffectChainMap[sceneType] = audioEffectChain;
     }
 
-    std::vector<EffectHandleT *> effectHandles;
+    std::vector<AudioEffectHandle *> effectHandles;
     for (std::string effect: EffectChainToEffectsMap[effectChain]) {
-        EffectHandleT handle;
-        EffectToLibraryEntryMap[effect]->desc->CreateEffect(&effect, 0, 0, &handle);
+        AudioEffectHandle handle;
+        AudioEffectDescriptor descriptor;
+        descriptor.libraryName = EffectToLibraryName[effect];
+        descriptor.effectName = effect;
+        EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
         effectHandles.emplace_back(&handle);
     }
 
@@ -182,27 +189,28 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
 }
 
 // Every play 
-int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, void *bufIn, void *bufOut) {
-    // if (!SceneTypeToEffectChainMap.count(sceneType)) {
-    //     AUDIO_INFO_LOG("Scene type [%{public}s] does not exist", sceneType.c_str());
-    //     return ERROR;
-    // }
+int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, AudioBuffer *bufIn, AudioBuffer *bufOut) {
+    if (!SceneTypeToEffectChainMap.count(sceneType)) {
+        AUDIO_INFO_LOG("Scene type [%{public}s] does not exist", sceneType.c_str());
+        return ERROR;
+    }    
+    
+    auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
+    audioEffectChain->ApplyEffectChain(bufIn, bufOut);
 
-    float *bufferIn = (float *)bufIn;
-    float *bufferOut = (float *)bufOut;
-    if (sceneType == "SCENE_MUSIC") {
-        for (int i = 0; i < frameLen * 2; i++) {
-            bufferOut[i] = bufferIn[i] * 3;
-        }
-    }
-    else {
-        for (int i = 0; i < frameLen * 2; i++) {
-            bufferOut[i] = bufferIn[i] / 3;
-        }
-    }
-    // AUDIO_INFO_LOG("xjl: ApplyAudioEffectChain running %{public}s", sceneType.c_str());
-    // auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
-    // audioEffectChain->ApplyEffectChain(bufIn, bufOut);
+    // float *bufferIn = (float *)bufIn->buffer;
+    // float *bufferOut = (float *)bufOut->buffer;
+    // if (sceneType == "SCENE_MUSIC") {
+    //     for (int i = 0; i < frameLen * 2; i++) {
+    //         bufferOut[i] = bufferIn[i] * 3;
+    //     }
+    // }
+    // else {
+    //     for (int i = 0; i < frameLen * 2; i++) {
+    //         bufferOut[i] = bufferIn[i] / 3;
+    //     }
+    // }
+    
     return SUCCESS;
 }
 

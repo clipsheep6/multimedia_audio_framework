@@ -23,14 +23,37 @@
 extern "C" {
 #endif
 
-struct BufferAttr {
+struct BufferAttrAdapter {
     float *bufIn;
     float *bufOut;
     int numChan;
     int frameLen;
 };
 
-int32_t EffectChainManagerProcess(void *bufferAttrVoid, char *sceneType);
+struct AudioBufferAdapter {
+    size_t frameLength;
+    union {
+        void*     raw;
+        float*    f32;
+        int32_t*  s32;
+        int16_t*  s16;
+        uint8_t*  u8;
+    };
+};
+
+struct AudioBufferConfigAdapter {
+    struct AudioBufferAdapter buffer;
+    uint32_t samplingRate;
+    uint32_t channels;
+    uint8_t format;
+};
+
+struct AudioEffectConfigAdapter {
+    struct AudioBufferConfigAdapter inputCfg;
+    struct AudioBufferConfigAdapter outputCfg;
+};
+
+int32_t EffectChainManagerProcess(void *ioBufferConfig, char *sceneType);
 int32_t EffectChainManagerGetFrameLen();
 
 #ifdef __cplusplus

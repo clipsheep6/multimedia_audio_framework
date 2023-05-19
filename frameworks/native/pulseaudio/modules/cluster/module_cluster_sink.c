@@ -57,7 +57,7 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
 
     // check default/none
-    if(pa_safe_streq(sceneMode, "EFFECT_NONE")){
+    if (pa_safe_streq(sceneMode, "EFFECT_NONE")) {
         pa_sink_input_move_to(si, c->default_sink, false); //if bypass move to hdi sink
         return PA_HOOK_OK;
     }
