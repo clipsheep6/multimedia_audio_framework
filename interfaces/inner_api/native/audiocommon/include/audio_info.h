@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <unistd.h>
+#include <unordered_map>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -521,11 +522,23 @@ enum AudioFocuState {
 };
 
 /**
+* Enumerates the audio scene effect type.
+*/
+enum AudioEffectScene {
+    SCENE_OTHERS = 0,
+    SCENE_MUSIC = 1,
+    SCENE_MOVIE = 2,
+    SCENE_GAME = 3,
+    SCENE_SPEECH = 4,
+    SCENE_RING = 5
+};
+
+/**
 * Enumerates the audio scene effct mode.
 */
 enum AudioEffectMode {
     EFFECT_NONE = 0,
-    EFFECT_DEFAULT = 1,
+    EFFECT_DEFAULT = 1
 };
 
 struct InterruptEvent {
@@ -728,6 +741,20 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_96000
 };
 
+const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES {
+    {SCENE_OTHERS, "SCENE_OTHERS"},
+    {SCENE_MUSIC, "SCENE_MUSIC"},
+    {SCENE_MOVIE, "SCENE_MOVIE"},
+    {SCENE_GAME, "SCENE_GAME"},
+    {SCENE_SPEECH, "SCENE_SPEECH"},
+    {SCENE_RING, "SCENE_RING"}
+};
+
+const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
+    {EFFECT_NONE, "EFFECT_NONE"},
+    {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
+};
+
 struct BufferDesc {
     uint8_t* buffer;
     size_t bufLength;
@@ -896,6 +923,10 @@ struct StreamSetStateEventInternal {
     AudioStreamType audioStreamType;
 };
 
+struct AudioSceneEffectInfo {
+    std::vector<AudioEffectMode> mode;
+};
+
 struct AudioRendererChangeInfo {
     int32_t clientUID;
     int32_t sessionId;
@@ -972,53 +1003,6 @@ enum AudioPermissionState {
 enum StateChangeCmdType {
     CMD_FROM_CLIENT = 0,
     CMD_FROM_SYSTEM = 1
-};
-
-// audio effect manager info
-constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
-constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
-
-struct Library {
-    std::string name;
-    std::string path;
-};
-
-struct Effect {
-    std::string name;
-    std::string libraryName;
-    std::string effectId;
-};
-
-struct EffectChain {
-    std::string name;
-    std::vector<std::string> apply;
-};
-
-struct Device {
-    std::string type;
-    std::string address;
-    std::string chain;
-};
-
-struct Preprocess {
-    std::string stream;
-    std::vector<std::string> mode;
-    std::vector<std::vector<Device>> device;
-};
-
-struct Postprocess {
-    std::string stream;
-    std::vector<std::string> mode;
-    std::vector<std::vector<Device>> device;
-};
-
-struct OriginalEffectConfig {
-    float version;
-    std::vector<Library> libraries;
-    std::vector<Effect> effects;
-    std::vector<EffectChain> effectChains;
-    std::vector<Preprocess> preprocess;
-    std::vector<Postprocess> postprocess;
 };
 
 class AudioRendererPolicyServiceDiedCallback {
