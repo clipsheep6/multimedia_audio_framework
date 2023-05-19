@@ -150,6 +150,42 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSupportedChannels_001, TestSize.
 }
 
 /**
+ * @tc.name  : Test GetMinStreamVolume API
+ * @tc.number: Audio_Renderer_GetMinStreamVolume_001
+ * @tc.desc  : Test GetMinStreamVolume interface. Returns supported Channels on success.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMinStreamVolume_001, TestSize.Level0)
+{
+    float minStreamVolume = AudioRenderer::GetMinStreamVolume();
+    EXPECT_EQ(MIN_STREAM_VOLUME, minStreamVolume);
+}
+
+/**
+ * @tc.name  : Test GetMaxStreamVolume API
+ * @tc.number: Audio_Renderer_GetMaxStreamVolume_001
+ * @tc.desc  : Test GetMaxStreamVolume interface. Returns supported Channels on success.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMaxStreamVolume_001, TestSize.Level0)
+{
+    float maxStreamVolume = AudioRenderer::GetMaxStreamVolume();
+    EXPECT_EQ(MAX_STREAM_VOLUME, maxStreamVolume);
+}
+
+/**
+ * @tc.name  : Test RegisterAudioPolicyServerDiedCb API
+ * @tc.number: Audio_Renderer_RegisterAudioPolicyServerDiedCb_001
+ * @tc.desc  : Test RegisterAudioPolicyServerDiedCb interface. Returns supported Channels on success.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioPolicyServerDiedCb_001, TestSize.Level0)
+{
+    AudioRendererPolicyServiceDiedCallback callback = new AudioRendererPolicyServiceDiedCallback();
+    int32_t ret = AudioRenderer::RegisterAudioPolicyServerDiedCb(0, callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    int32_t ret = AudioRenderer::RegisterAudioPolicyServerDiedCb(0, nullptr);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
  * @tc.name  : Test GetSupportedEncodingTypes API
  * @tc.number: Audio_Renderer_GetSupportedEncodingTypes_001
  * @tc.desc  : Test GetSupportedEncodingTypes interface. Returns supported Encoding types on success.
