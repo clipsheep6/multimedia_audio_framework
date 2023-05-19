@@ -28,6 +28,7 @@ config("effect_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audioeffect/include",
     "//commonlibrary/c_utils/base/include",
+    "//third_party/bounds_checking_function/include",
   ]
 
   cflags = [
@@ -62,6 +63,7 @@ ohos_shared_library("module-effect-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
+    "//third_party/bounds_checking_function:libsec_shared",
     "//foundation/multimedia/audio_framework/frameworks/native/audioeffect:audio_effect",    
   ]
 

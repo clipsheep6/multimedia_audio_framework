@@ -31,6 +31,7 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_info.h"
+#include "audio_effect.h"
 
 using namespace OHOS::AudioStandard;
 
@@ -142,12 +143,14 @@ void AudioEffectChainManager::InitAudioEffectChain(std::vector<EffectChain> effe
     }
 
     // Construct SceneTypeToEffectChainMap that stores lib handles of current effect chain of each scene type
-    SetAudioEffectChain("SCENE_MUSIC", "EFFECT_DEFAULT");
-    SetAudioEffectChain("SCENE_MOVIE", "EFFECT_DEFAULT");
-    SetAudioEffectChain("SCENE_GAME", "EFFECT_DEFAULT");
-    SetAudioEffectChain("SCENE_SPEECH", "EFFECT_DEFAULT");
-    SetAudioEffectChain("SCENE_RING", "EFFECT_DEFAULT");
-    SetAudioEffectChain("SCENE_OTHERS", "EFFECT_DEFAULT");
+    std::string effectChain = "EFFECT_DEFAULT";
+    auto sceneMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT);
+    if (sceneMode != AUDIO_SUPPORTED_SCENE_MODES.end()) {
+        effectChain = sceneMode->second;
+    }
+    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end(); ++sceneType) {
+        SetAudioEffectChain(sceneType->second, effectChain);
+    }
     AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}d", EffectToLibraryEntryMap.size());
     AUDIO_INFO_LOG("EffectChainToEffectsMap size %{public}d", EffectChainToEffectsMap.size());
     AUDIO_INFO_LOG("SceneTypeToEffectChainMap size %{public}d", SceneTypeToEffectChainMap.size());
@@ -155,8 +158,8 @@ void AudioEffectChainManager::InitAudioEffectChain(std::vector<EffectChain> effe
 
 int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std::string effectChain) {
     if (!EffectChainToEffectsMap.count(effectChain)) {
-        effectChain = "EFFECT_NONE";
         AUDIO_INFO_LOG("EffectChain's name [%{public}s] does not exist, auto set to EFFECT_NONE", effectChain.c_str());
+        effectChain = "EFFECT_NONE";
     }
 
     AudioEffectChain *audioEffectChain;

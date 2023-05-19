@@ -31,6 +31,7 @@
 #include <pulsecore/log.h>
 #include <pulsecore/rtpoll.h>
 
+#include "securec.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_log.h"
 
@@ -49,7 +50,9 @@ struct userdata {
     pa_sink_input *sinkInput;
     struct BufferAttr *bufferAttr;
     pa_memblockq *bufInQ;
-    int32_t frameLen;
+    int32_t processLen;
+    size_t processSize;
+    pa_sample_format_t format;
     bool auto_desc;
 };
 
@@ -151,10 +154,117 @@ static void SinkUpdateRequestedLatency(pa_sink *s) {
             pa_sink_get_requested_latency_within_thread(s));
 }
 
-#define MAX_16BIT 32768
+// BEGIN Utility functions
+#define FLOAT_EPS 1e-9f;
 #define MEMBLOCKQ_MAXLENGTH (16*1024*16)
+static uint32_t Read24Bit(const uint8_t *p) {
+    return
+        ((uint32_t) p[2] << 16) |
+        ((uint32_t) p[1] << 8) |
+        ((uint32_t) p[0]);
+}
 
-// BEGIN QUEUE
+static void Write24Bit(uint8_t *p, uint32_t u) {
+    p[2] = (uint8_t) (u >> 16);
+    p[1] = (uint8_t) (u >> 8);
+    p[0] = (uint8_t) u;
+}
+
+void ConvertFrom16BitToFloat(unsigned n, const int16_t *a, float *b) {
+    for (; n > 0; n--) {
+        *(b++) = *(a++) * (1.0f / (1 << 15));
+    }
+}
+
+void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b) {
+    for (; n > 0; n--) {
+        int32_t s = Read24Bit(a) << 8;
+        *b = s * (1.0f / (1U << 31));
+        a += 3;
+        b++;
+    }
+}
+
+void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b) {
+    for (; n > 0; n--) {
+        *(b++) = *(a++) * (1.0f / (1U << 31));
+    }
+}
+
+float CapMax(float v) {
+    if (v > 1.0f) {
+        return 1.0f - FLOAT_EPS;
+    } else if (v < -1.0f) {
+        return -1.0f + FLOAT_EPS;
+    } else {
+        return v;
+    }
+}
+
+void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b) {
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1 << 15);
+        *(b++) = (int16_t) v;
+    }
+}
+
+void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b) {
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1U << 31);        
+        Write24Bit(b, ((uint32_t) v) >> 8);
+        a++;
+        b += 3;
+    }
+}
+
+void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b) {
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1U << 31);
+        *(b++) = (int32_t) v;
+    }
+}
+
+static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, float *dst) {
+    pa_assert(a);
+    pa_assert(b);
+    switch (format) {
+        case PA_SAMPLE_S16LE:
+            ConvertFrom16BitToFloat(n, src, dst);
+            break;
+        case PA_SAMPLE_S24LE:
+            ConvertFrom24BitToFloat(n, src, dst);
+            break;
+        case PA_SAMPLE_S32LE:
+            ConvertFrom32BitToFloat(n, src, dst);
+            break;
+        default:
+            memcpy_s(src, n, dst, n);
+            break;
+    }
+}
+
+static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, void *dst) {
+    pa_assert(a);
+    pa_assert(b);
+    switch (format) {
+        case PA_SAMPLE_S16LE:
+            ConvertFromFloatTo16Bit(n, src, dst);
+            break;
+        case PA_SAMPLE_S24LE:
+            ConvertFromFloatTo24Bit(n, src, dst);
+            break;
+        case PA_SAMPLE_S32LE:
+            ConvertFromFloatTo32Bit(n, src, dst);
+            break;
+        default:
+            memcpy_s(src, n, dst, n);
+            break;
+    }
+}
+
 static size_t MemblockqMissing(pa_memblockq *bq) {
     size_t l, tlength;
     pa_assert(bq);
@@ -166,6 +276,8 @@ static size_t MemblockqMissing(pa_memblockq *bq) {
     l = tlength - l;
     return l >= pa_memblockq_get_minreq(bq) ? l : 0;
 }
+
+// END Utility functions
 
 /* Called from I/O thread context */
 static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) {
@@ -188,14 +300,15 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) 
         pa_memblock_unref(nchunk.memblock);
     }
     
-    int offset = 0;
+    void *src;
+    float *bufIn, *bufOut;
     size_t targetLength = pa_memblockq_get_tlength(u->bufInQ);
     int iterNum = pa_memblockq_get_length(u->bufInQ) / targetLength;
     chunk->index = 0;
     chunk->length = targetLength * iterNum;
     chunk->memblock = pa_memblock_new(si->sink->core->mempool, chunk->length);
     short *dst = pa_memblock_acquire_chunk(chunk);
-    while (true) {
+    for (int k = 0; k < iterNum; k++) {
         if (pa_memblockq_peek_fixed_size(u->bufInQ, targetLength, &tchunk) != 0) {
             break;
         }
@@ -204,28 +317,19 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) 
         }
         pa_memblockq_drop(u->bufInQ, tchunk.length);
 
-        float *bufIn = (float *)u->bufferAttr->bufIn;
-        float *bufOut = (float *)u->bufferAttr->bufOut;
-        short *src = pa_memblock_acquire_chunk(&tchunk);
-        int i, tmp;
-        for (i = 0; i < u->frameLen * 2; i++) {
-            bufIn[i] = (float)(src[i]) / MAX_16BIT;
-        }
+        src = pa_memblock_acquire_chunk(&tchunk);
+        bufIn = u->bufferAttr->bufIn;
+        bufOut = u->bufferAttr->bufOut;
+        
+        ConvertToFloat(u->format, u->processLen, src, bufIn);
         pa_memblock_release(tchunk.memblock);
         pa_memblock_unref(tchunk.memblock);
+
         EffectChainManagerProcess((void *)u->bufferAttr, si->origin_sink->name);
         
-        for (i = 0; i < u->frameLen * 2; i++) {
-            tmp = (int)(bufOut[i] * MAX_16BIT);
-            if (tmp >= MAX_16BIT) {
-                dst[i + offset] = MAX_16BIT - 1;
-            } else if (tmp <= -MAX_16BIT) {
-                dst[i + offset] = -MAX_16BIT;
-            } else {
-                dst[i + offset] = (short)tmp;
-            }
-        }
-        offset += u->frameLen * 2;        
+        ConvertFromFloat(u->format, u->processLen, bufOut, dst);
+        
+        dst += u->processSize;
     }
 
     pa_memblock_release(chunk->memblock);
@@ -233,6 +337,15 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) 
     return 0;
 }
 // END QUEUE
+
+int InitFail(pa_module *m, pa_modargs *ma)
+{
+    AUDIO_ERR_LOG("Failed to create effect sink");
+    if (ma)
+        pa_modargs_free(ma);
+    pa__done(m);
+    return -1;
+}
 
 int pa__init(pa_module *m) {
     struct userdata *u;
@@ -248,30 +361,27 @@ int pa__init(pa_module *m) {
     pa_assert(m);
 
     if (!(ma = pa_modargs_new(m->argument, valid_modargs))) {
-        pa_log("Failed to parse module arguments.");
-        goto fail;
+        AUDIO_ERR_LOG("Failed to parse module arguments.");
+        return InitFail(m, ma);
     }
 
     if (!(master = pa_namereg_get(m->core, pa_modargs_get_value(ma, "master", NULL), PA_NAMEREG_SINK))) {
-        pa_log("Master sink not found");
-        goto fail;
+        AUDIO_ERR_LOG("Master sink not found");
+        return InitFail(m, ma);
     }
 	
     ss = m->core->default_sample_spec;
     sink_map = m->core->default_channel_map;
     if (pa_modargs_get_sample_spec_and_channel_map(ma, &ss, &sink_map, PA_CHANNEL_MAP_DEFAULT) < 0) {
-        pa_log("Invalid sample format specification or channel map");
-        goto fail;
+        AUDIO_ERR_LOG("Invalid sample format specification or channel map");
+        return InitFail(m, ma);
     }
 
     stream_map = sink_map;
     if (stream_map.channels != ss.channels) {
-        pa_log("Number of channels doesn't match");
-        goto fail;
+        AUDIO_ERR_LOG("Number of channels doesn't match");
+        return InitFail(m, ma);
     }
-
-    if (pa_channel_map_equal(&stream_map, &master->channel_map))
-        pa_log_warn("No effecting configured, proceeding nonetheless!");
 
     u = pa_xnew0(struct userdata, 1);
     u->module = m;
@@ -298,8 +408,7 @@ int pa__init(pa_module *m) {
     pa_sink_new_data_done(&sinkData);
 
     if (!u->sink) {
-        pa_log("Failed to create sink.");
-        goto fail;
+        return InitFail(m, ma);
     }
 
     u->sink->parent.process_msg = SinkProcessMsg;
@@ -330,8 +439,9 @@ int pa__init(pa_module *m) {
     pa_sink_input_new(&u->sinkInput, m->core, &sinkInputData);
     pa_sink_input_new_data_done(&sinkInputData);
 
-    if (!u->sinkInput)
-        goto fail;
+    if (!u->sinkInput) {
+        return InitFail(m, ma);
+    }
 
     u->sinkInput->pop = SinkInputPopCb;
     u->sinkInput->userdata = u;
@@ -340,15 +450,18 @@ int pa__init(pa_module *m) {
 
     // Set buffer attributes
     int32_t frameLen = EffectChainManagerGetFrameLen();
-    u->frameLen = frameLen;
-    size_t processSize = ss.channels * frameLen * sizeof(float);
+    u->format = ss.format;
+    u->processLen = ss.channels * frameLen;
+    u->processSize = u->processLen * sizeof(float);
     u->bufferAttr = pa_xnew0(struct BufferAttr, 1);
-    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(processSize));
-    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(processSize));
+    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
+    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
     u->bufferAttr->frameLen = frameLen;
     u->bufferAttr->numChan = ss.channels;
     
-    u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, ss.channels * frameLen * 2, &ss, 1, 1, 0, NULL);
+    int32_t bitSize = pa_sample_size_of_format(ss.format);
+    size_t targetSize = ss.channels * frameLen * bitSize;
+    u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, targetSize, &ss, 1, 1, 0, NULL);
 
     pa_sink_input_put(u->sinkInput);
     pa_sink_put(u->sink);
@@ -356,15 +469,6 @@ int pa__init(pa_module *m) {
 
     pa_modargs_free(ma);
     return 0;
-
-fail:
-    AUDIO_INFO_LOG("module_effect_sink: effect_sink create fail");
-    if (ma)
-        pa_modargs_free(ma);
-
-    pa__done(m);
-
-    return -1;
 }
 
 int pa__get_n_used(pa_module *m) {
@@ -376,7 +480,7 @@ int pa__get_n_used(pa_module *m) {
     return pa_sink_linked_by(u->sink);
 }
 
-void pa__done(pa_module*m) {
+void pa__done(pa_module *m) {
     struct userdata *u;
 
     pa_assert(m);
@@ -384,22 +488,22 @@ void pa__done(pa_module*m) {
     if (!(u = m->userdata))
         return;
 
-    /* See comments in sink_input_kill_cb() above regarding
-     * destruction order! */
-
-    if (u->sinkInput)
+    if (u->sinkInput) {
         pa_sink_input_cork(u->sinkInput, true);
+    }
 
-    if (u->sink)
+    if (u->sink) {
         pa_sink_unlink(u->sink);
+    }
 
     if (u->sinkInput) {
         pa_sink_input_unlink(u->sinkInput);
         pa_sink_input_unref(u->sinkInput);
     }
 
-    if (u->sink)
+    if (u->sink) {
         pa_sink_unref(u->sink);
+    }
 
     pa_xfree(u);
 }

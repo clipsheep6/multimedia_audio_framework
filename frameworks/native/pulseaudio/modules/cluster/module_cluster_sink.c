@@ -48,25 +48,6 @@ static const char* const valid_modargs[] = {
     NULL
 };
 
-static int IsPrimarySink(pa_sink *sink) {
-    const char *deviceString = pa_proplist_gets(sink->proplist, PA_PROP_DEVICE_STRING);
-    return pa_safe_streq(deviceString, "primary") && !pa_safe_streq(sink->name, "file_sink");
-}
-
-static pa_hook_result_t SinkPutHookCb(pa_core *c, pa_sink *sink, struct userdata *u) {
-    pa_assert(c);
-    pa_assert(sink);
-    pa_assert(u);
-
-    if (!IsPrimarySink(sink)) {
-        return PA_HOOK_OK;
-    }
-
-    pa_core_set_configured_default_sink(c, sink->name);
-
-    return PA_HOOK_OK;
-}
-
 static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
 {    
     pa_sink *effect_sink;
@@ -93,6 +74,15 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     return PA_HOOK_OK;
 }
 
+int InitFail(pa_module *m, pa_modargs *ma)
+{
+    AUDIO_ERR_LOG("Failed to create cluster module");
+    if (ma)
+        pa_modargs_free(ma);
+    pa__done(m);
+    return -1;
+}
+
 int pa__init(pa_module *m)
 {
     struct userdata *u = NULL;
@@ -101,8 +91,8 @@ int pa__init(pa_module *m)
     pa_assert(m);
 
     if (!(ma = pa_modargs_new(m->argument, valid_modargs))) {
-        pa_log("Failed to parse module arguments.");
-        goto fail;
+        AUDIO_ERR_LOG("Failed to parse module arguments.");
+        return InitFail(m, ma);
     }
 
     m->userdata = u = pa_xnew0(struct userdata, 1);
@@ -110,19 +100,10 @@ int pa__init(pa_module *m)
     u->module = m;
     
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE, (pa_hook_cb_t) SinkInputProplistChangedCb, u);
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_PUT], PA_HOOK_LATE, (pa_hook_cb_t) SinkPutHookCb, u);
 
     pa_modargs_free(ma);
 
     return 0;
-
-fail:
-    if (ma)
-        pa_modargs_free(ma);
-
-    pa__done(m);
-
-    return -1;
 }
 
 int pa__get_n_used(pa_module *m)
