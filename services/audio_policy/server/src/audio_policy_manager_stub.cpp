@@ -913,7 +913,7 @@ static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, Message
 }
 static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
 {
-	int j;
+    int j;
     reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].scene);
     int countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);

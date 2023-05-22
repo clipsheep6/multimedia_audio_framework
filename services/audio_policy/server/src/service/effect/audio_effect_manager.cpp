@@ -323,7 +323,7 @@ void AudioEffectManager::UpdateDuplicateDevice(ProcessNew &preProcessNew)
     }
 }
 
-static int32_t UpdateUnavailableMode(std::vector<int> &modeDelIdx, Stream &stream)
+static int32_t UpdateUnavailableModes(std::vector<int> &modeDelIdx, Stream &stream)
 {
     int ret = 0;
     for (auto it = modeDelIdx.rbegin(); it != modeDelIdx.rend(); ++it) {
@@ -397,7 +397,7 @@ int32_t AudioEffectManager::UpdateUnavailableEffectChains(std::vector<std::strin
         for (auto &streamEffectMode: stream.streamEffectMode) {
             UpdateUnavailableEffectChainsRecord(availableLayout, stream, streamEffectMode, modeDelIdx, modeCount);
         }
-        ret = UpdateUnavailableMode(modeDelIdx, stream);
+        ret = UpdateUnavailableModes(modeDelIdx, stream);
     }
     return ret;
 }
