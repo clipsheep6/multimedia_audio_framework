@@ -50,7 +50,7 @@ static const char* const valid_modargs[] = {
 
 static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
 {    
-    pa_sink *effect_sink;
+    pa_sink *effectSink;
     pa_assert(c);
     pa_assert(u);
     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
@@ -62,14 +62,14 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
         return PA_HOOK_OK;
     }
 
-    effect_sink = pa_namereg_get(c, sceneType, PA_NAMEREG_SINK);
-    if (!effect_sink) { // if sink does not exist
-        AUDIO_ERR_LOG("blank_sink: effect_sink sink not found.");
+    effectSink = pa_namereg_get(c, sceneType, PA_NAMEREG_SINK);
+    if (!effectSink) { // if sink does not exist
+        AUDIO_ERR_LOG("Effect sink [%{public}s] sink not found.", sceneType);
         // classify sinkinput to default sink 
         pa_sink_input_move_to(si, c->default_sink, false);
     } else{
         // classify sinkinput to effect sink 
-        pa_sink_input_move_to(si, effect_sink, false);
+        pa_sink_input_move_to(si, effectSink, false);
     }
     return PA_HOOK_OK;
 }

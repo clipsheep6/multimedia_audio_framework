@@ -136,7 +136,6 @@ struct AudioBuffer {
 };
 
 struct AudioBufferConfig {
-    AudioBuffer buffer;
     uint32_t samplingRate;
     uint32_t channels;
     uint8_t format;

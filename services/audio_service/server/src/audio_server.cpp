@@ -314,7 +314,7 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> effectChains
         return false;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->InitAudioEffectChain(effectChains, audioEffectServer_->GetEffectEntries());
+    audioEffectChainManager->InitAudioEffectChainManager(effectChains, audioEffectServer_->GetEffectEntries());
     return true;
 }
 

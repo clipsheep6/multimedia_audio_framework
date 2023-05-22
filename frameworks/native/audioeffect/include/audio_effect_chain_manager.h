@@ -26,6 +26,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "audio_effect_chain_adapter.h"
 #include "audio_info.h"
 #include "audio_effect.h"
 
@@ -36,11 +38,15 @@ class AudioEffectChain {
 public:
     AudioEffectChain(std::string scene);
     ~AudioEffectChain();
-    void SetEffectChain(std::vector<AudioEffectHandle *> effectHandles);
-    void ApplyEffectChain(AudioBuffer *bufIn, AudioBuffer *bufOut);
+    void SetEffectChain(std::vector<AudioEffectHandle *> &effectHandles);
+    void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
+    void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
 private:
     std::string sceneType;
     std::vector<AudioEffectHandle *> standByEffectHandles;
+    AudioEffectConfig ioBufferConfig;
+    AudioBuffer audioBufIn;
+    AudioBuffer audioBufOut;
 };
 
 class AudioEffectChainManager {
@@ -48,9 +54,11 @@ public:
     AudioEffectChainManager();
     ~AudioEffectChainManager();
     static AudioEffectChainManager *GetInstance();
-    void InitAudioEffectChain(std::vector<EffectChain> effectChains, std::vector <std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList);    
+    void InitAudioEffectChainManager(std::vector<EffectChain> effectChains,
+        std::vector <std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList);
+    int32_t CreateAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetAudioEffectChain(std::string sceneType, std::string effectChain);
-    int32_t ApplyAudioEffectChain(std::string sceneType, AudioBuffer *bufIn, AudioBuffer *bufOut);
+    int32_t ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
 private:
