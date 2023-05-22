@@ -64,6 +64,30 @@ void AudioEffectManager::GetSupportedEffectConfig(SupportedEffectConfig &support
     supportedEffectConfig = supportedEffectConfig_;
 }
 
+void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map)
+{
+    std::string sceneType;
+    std::string sceneMode;
+    std::string key;
+    for (auto &scene : supportedEffectConfig_.postProcessNew.stream) {
+        sceneType = scene.scene;
+        for (auto &mode : scene.streamEffectMode) {
+            sceneMode = mode.mode;
+            if (mode.devicePort.size() == 0) { // if no any device port
+                continue;
+            }
+            key = sceneType + "_&_" + sceneMode;
+            if (map.count(key)) { // if the key already register in map
+                continue;
+            }
+            map[key] = mode.devicePort[0].chain; // grab the first device port by default
+        }
+    }
+    // map["key1"] = "value1";
+    // map["key2"] = "value2";
+    AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEffectChainNameMap at policy, size is %{public}d", map.size());
+}
+
 static int32_t UpdateUnsupportedScene(std::string &scene)
 {
     int isSupported = 0;

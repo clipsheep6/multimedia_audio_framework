@@ -521,25 +521,25 @@ enum AudioFocuState {
     STOP
 };
 
-/**
-* Enumerates the audio scene effect type.
-*/
-enum AudioEffectScene {
-    SCENE_OTHERS = 0,
-    SCENE_MUSIC = 1,
-    SCENE_MOVIE = 2,
-    SCENE_GAME = 3,
-    SCENE_SPEECH = 4,
-    SCENE_RING = 5
-};
+// /**
+// * Enumerates the audio scene effect type.
+// */
+// enum AudioEffectScene {
+//     SCENE_OTHERS = 0,
+//     SCENE_MUSIC = 1,
+//     SCENE_MOVIE = 2,
+//     SCENE_GAME = 3,
+//     SCENE_SPEECH = 4,
+//     SCENE_RING = 5
+// };
 
-/**
-* Enumerates the audio scene effct mode.
-*/
-enum AudioEffectMode {
-    EFFECT_NONE = 0,
-    EFFECT_DEFAULT = 1
-};
+// /**
+// * Enumerates the audio scene effct mode.
+// */
+// enum AudioEffectMode {
+//     EFFECT_NONE = 0,
+//     EFFECT_DEFAULT = 1
+// };
 
 struct InterruptEvent {
     /**
@@ -741,19 +741,19 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_96000
 };
 
-const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES {
-    {SCENE_OTHERS, "SCENE_OTHERS"},
-    {SCENE_MUSIC, "SCENE_MUSIC"},
-    {SCENE_MOVIE, "SCENE_MOVIE"},
-    {SCENE_GAME, "SCENE_GAME"},
-    {SCENE_SPEECH, "SCENE_SPEECH"},
-    {SCENE_RING, "SCENE_RING"}
-};
+// const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES {
+//     {SCENE_OTHERS, "SCENE_OTHERS"},
+//     {SCENE_MUSIC, "SCENE_MUSIC"},
+//     {SCENE_MOVIE, "SCENE_MOVIE"},
+//     {SCENE_GAME, "SCENE_GAME"},
+//     {SCENE_SPEECH, "SCENE_SPEECH"},
+//     {SCENE_RING, "SCENE_RING"}
+// };
 
-const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
-    {EFFECT_NONE, "EFFECT_NONE"},
-    {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
-};
+// const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
+//     {EFFECT_NONE, "EFFECT_NONE"},
+//     {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
+// };
 
 struct BufferDesc {
     uint8_t* buffer;
@@ -923,9 +923,9 @@ struct StreamSetStateEventInternal {
     AudioStreamType audioStreamType;
 };
 
-struct AudioSceneEffectInfo {
-    std::vector<AudioEffectMode> mode;
-};
+// struct AudioSceneEffectInfo {
+//     std::vector<AudioEffectMode> mode;
+// };
 
 struct AudioRendererChangeInfo {
     int32_t clientUID;

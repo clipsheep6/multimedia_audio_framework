@@ -236,23 +236,36 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             return AUDIO_OK;
         }
 		case CREATE_AUDIO_EFFECT_CHAIN_MANAGER: {
+            AUDIO_INFO_LOG("cjw: CREATE_AUDIO_EFFECT_CHAIN_MANAGER");
+            int i;
             vector<EffectChain> effectChains = {};
             vector<int32_t> countEffect = {};
             int32_t countEffectChains = data.ReadInt32();
-            for(int i=0;i<countEffectChains;i++){
+            for (i = 0; i < countEffectChains; i++) {
                 countEffect.emplace_back(data.ReadInt32());
             }
 
-            for(int32_t count: countEffect){
+            for (int32_t count: countEffect) {
                 EffectChain effectChain;
                 effectChain.name = data.ReadString();
-                for(int j=0;j<count;j++){
+                for (i = 0; i < count; i++) {
                     effectChain.apply.emplace_back(data.ReadString());
                 }
                 effectChains.emplace_back(effectChain);
             }
 
-            bool createSuccess = CreateEffectChainManager(effectChains);
+            unordered_map<string, string> sceneTypeToEffectChainNameMap;
+            // string key, value;
+            // int32_t mapSize = data.ReadInt32();
+            // AUDIO_INFO_LOG("cjw: mapSize: %{public}d", mapSize);
+            // for (i = 0; i < mapSize; i++) {
+            //     key = data.ReadString();
+            //     value = data.ReadString();
+            //     AUDIO_INFO_LOG("cjw: sub map key: %{public}s, value: %{public}s", key.c_str(), value.c_str());
+            //     sceneTypeToEffectChainNameMap[key] = value;
+            // }
+
+            bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap);
             if(!createSuccess){
                 AUDIO_ERR_LOG("create audio effect chain manager failed, please check log");
                 return AUDIO_ERR;

@@ -19,7 +19,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "audio_info.h"
 #include "audio_effect.h"
 
 #ifndef ST_AUDIO_EFFECT_SERVER_H

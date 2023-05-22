@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "audio_effect_chain_adapter.h"
-#include "audio_info.h"
 #include "audio_effect.h"
 
 namespace OHOS {
@@ -54,18 +53,19 @@ public:
     AudioEffectChainManager();
     ~AudioEffectChainManager();
     static AudioEffectChainManager *GetInstance();
-    void InitAudioEffectChainManager(std::vector<EffectChain> effectChains,
-        std::vector <std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList);
+    void InitAudioEffectChainManager(std::vector<EffectChain> &effectChains, std::unordered_map<std::string, std::string> &map,
+        std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList);
     int32_t CreateAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetAudioEffectChain(std::string sceneType, std::string effectChain);
     int32_t ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
 private:
-    std::map<std::string, std::string> EffectToLibraryName; // {"EQ": "HISTEN"}
-    std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap;  // {"hvs": AudioEffectLibEntry}
-    std::map <std::string, std::vector<std::string>> EffectChainToEffectsMap; // {"EFFECTCHAIN_SPK_MUSIC": [hvs, eq, histen]}
-    std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap; // {"STREAM_MUSIC": AudioEffectChain}  Create AudioEffectChain when init
+    std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap;  // {"EQ": AudioEffectLibEntry}
+    std::map<std::string, std::string> EffectToLibraryNameMap; // {"EQ": "HISTEN"}
+    std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap; // {"EFFECTCHAIN_SPK_MUSIC": [hvs, eq, histen]}
+    std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap; // {"SCENE_MUSIC_&_EFFECT_DEFAULT": "EFFECTCHAIN_SPK_MUSIC"}
+    std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap; // {"SCENE_MUSIC": AudioEffectChain}  Create AudioEffectChain when init
     int32_t frameLen = 960;
 };
 

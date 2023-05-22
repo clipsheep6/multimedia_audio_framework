@@ -33,7 +33,6 @@
 
 #include "securec.h"
 #include "audio_effect_chain_adapter.h"
-// #include "audio_effect.h"
 #include "audio_log.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");

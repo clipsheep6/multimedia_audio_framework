@@ -1772,7 +1772,9 @@ void AudioPolicyService::LoadEffectLibrary()
     // Initialize EffectChainManager in audio service through IPC
     SupportedEffectConfig supportedEffectConfig;
     audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
-    bool createSuccess = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains);
+    std::unordered_map<std::string, std::string> sceneTypeToEffectChainNameMap;
+    audioEffectManager_.ConstructSceneTypeToEffectChainNameMap(sceneTypeToEffectChainNameMap);
+    bool createSuccess = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, sceneTypeToEffectChainNameMap);
     CHECK_AND_RETURN_LOG(createSuccess, "EffectChainManager create failed");
 
     // Create sink for each effect
