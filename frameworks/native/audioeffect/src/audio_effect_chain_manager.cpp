@@ -113,7 +113,7 @@ void AudioEffectChain::SetEffectChain(std::vector<AudioEffectHandle *> &effectHa
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen) {
     if (standByEffectHandles.empty()) {
-        AUDIO_INFO_LOG("cjw: standByEffectHandles size is zero during ApplyEffectChain, copy bufIn to bufOut");
+        // AUDIO_INFO_LOG("cjw: standByEffectHandles size is zero during ApplyEffectChain, copy bufIn to bufOut");
         for (uint32_t i = 0; i < frameLen * ioBufferConfig.outputCfg.channels; ++i) {
             bufOut[i] = bufIn[i];
         }
@@ -269,14 +269,14 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
     std::string effectChain;
     std::string effectChainKey = sceneType + "_&_" + effectMode;
     if (!SceneTypeAndModeToEffectChainNameMap.count(effectChainKey)) {
-        AUDIO_ERR_LOG("EffectChain's name [%{public}s] does not exist, auto set to EFFECT_NONE", effectChain.c_str());
+        AUDIO_ERR_LOG("EffectChain key [%{public}s] does not exist, auto set to EFFECT_NONE", effectChainKey.c_str());
         effectChain = "EFFECT_NONE";
     } else {
         effectChain = SceneTypeAndModeToEffectChainNameMap[effectChainKey];
     }
 
     if (!EffectChainToEffectsMap.count(effectChain)) {
-        AUDIO_ERR_LOG("EffectChain's name [%{public}s] does not exist, auto set to EFFECT_NONE", effectChain.c_str());
+        AUDIO_ERR_LOG("EffectChain name [%{public}s] does not exist, auto set to EFFECT_NONE", effectChain.c_str());
         effectChain = "EFFECT_NONE";
     }
 

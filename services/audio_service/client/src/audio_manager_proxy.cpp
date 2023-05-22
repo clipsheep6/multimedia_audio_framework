@@ -525,11 +525,11 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> effect
         }
     }
 
-    // dataParcel.WriteInt32(map.size());
-    // for (auto item = map.begin(); item != map.end(); ++item) {
-    //     dataParcel.WriteString(item->first);
-    //     dataParcel.WriteString(item->second);
-    // }
+    dataParcel.WriteInt32(map.size());
+    for (auto item = map.begin(); item != map.end(); ++item) {
+        dataParcel.WriteString(item->first);
+        dataParcel.WriteString(item->second);
+    }
 
     error = Remote()->SendRequest(CREATE_AUDIO_EFFECT_CHAIN_MANAGER, dataParcel, replyParcel, option);
     if (error != ERR_NONE) {
