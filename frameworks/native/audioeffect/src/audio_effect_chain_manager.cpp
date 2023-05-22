@@ -38,6 +38,7 @@ using namespace OHOS::AudioStandard;
 int32_t EffectChainManagerCreate(char *sceneType, BufferAttr *bufferAttr)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     std::string sceneTypeString(sceneType);
     if (!audioEffectChainManager->CreateAudioEffectChain(sceneTypeString, bufferAttr)) {
         return ERROR;
@@ -48,6 +49,7 @@ int32_t EffectChainManagerCreate(char *sceneType, BufferAttr *bufferAttr)
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     std::string sceneTypeString(sceneType);
     if (!audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, bufferAttr)) {
         return ERROR;
@@ -108,6 +110,14 @@ void AudioEffectChain::SetEffectChain(std::vector<AudioEffectHandle *> &effectHa
 }
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen) {
+    if (standByEffectHandles.size() == 0) {
+        // AUDIO_INFO_LOG("EffectChain size is zero, copy bufIn to bufOut");
+        for (int i = 0; i < frameLen * ioBufferConfig.outputCfg.channels; ++i) {
+            bufOut[i] = bufIn[i];
+        }
+        return;
+    }
+
     audioBufIn.frameLength = frameLen;
     audioBufOut.frameLength = frameLen;    
     AudioEffectHandle handle;
@@ -268,8 +278,8 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, Bu
         return ERROR;
     }
 
-    // auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
-    // audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen);
+    auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
+    audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen);
 
     float *bufferIn = bufferAttr->bufIn;
     float *bufferOut = bufferAttr->bufOut;
