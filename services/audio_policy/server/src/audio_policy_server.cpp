@@ -2010,10 +2010,24 @@ float AudioPolicyServer::GetMaxStreamVolume()
     return mPolicyService.GetMaxStreamVolume();
 }
 
+int32_t AudioPolicyServer::CheckMaxRendererInstancesNum()
+{
+    return mPolicyService.CheckMaxRendererInstancesNum();
+}
+
 int32_t AudioPolicyServer::GetMaxRendererInstances()
 {
-    AUDIO_INFO_LOG("GetMaxRendererInstances");
     return mPolicyService.GetMaxRendererInstances();
+}
+
+int32_t AudioPolicyServer::GetCurrentRendererInstances()
+{
+    return mPolicyService.GetCurrentRendererInstances();
+}
+
+int32_t AudioPolicyServer::UpdateCurrentRendererInstancesNum(int32_t changeSize)
+{
+    return mPolicyService.UpdateCurrentRendererInstancesNum(changeSize);
 }
 } // namespace AudioStandard
 } // namespace OHOS

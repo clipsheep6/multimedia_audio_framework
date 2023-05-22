@@ -1803,6 +1803,24 @@ float AudioPolicyProxy::GetMaxStreamVolume()
     return reply.ReadFloat();
 }
 
+int32_t AudioPolicyProxy::CheckMaxRendererInstancesNum()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("CheckMaxRendererInstancesNum WriteInterfaceToken failed");
+        return ERROR;
+    }
+    int32_t error = Remote()->SendRequest(CHECK_MAX_RENDERER_INSTANCES, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("CheckMaxRendererInstancesNum failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::GetMaxRendererInstances()
 {
     MessageParcel data;
@@ -1816,6 +1834,43 @@ int32_t AudioPolicyProxy::GetMaxRendererInstances()
     int32_t error = Remote()->SendRequest(GET_MAX_RENDERER_INSTANCES, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("GetMaxRendererInstances failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetCurrentRendererInstances()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetCurrentRendererInstances WriteInterfaceToken failed");
+        return ERROR;
+    }
+    int32_t error = Remote()->SendRequest(GET_CURRENT_RENDERER_INSTANCES, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetCurrentRendererInstances failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UpdateCurrentRendererInstancesNum(int32_t changeSize)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("UpdateCurrentRendererInstancesNum WriteInterfaceToken failed");
+        return ERROR;
+    }
+    data.WriteInt32(changeSize);
+    int32_t error = Remote()->SendRequest(UPDATE_CURRENT_RENDERER_INSTANCES_NUM, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UpdateCurrentRendererInstancesNum failed, error: %d", error);
         return ERROR;
     }
     return reply.ReadInt32();

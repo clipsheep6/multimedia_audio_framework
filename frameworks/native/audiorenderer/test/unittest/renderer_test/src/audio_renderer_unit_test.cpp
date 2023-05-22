@@ -4527,18 +4527,15 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Max_Renderer_Instances_001, TestSiz
     AudioRendererOptions rendererOptions;
     AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
     vector<unique_ptr<AudioRenderer>> rendererList;
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos = {};
-    AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    int32_t maxRendererInstances = 0;
-    maxRendererInstances = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
+    int32_t currentRendererInstancesNum = AudioPolicyManager::GetInstance().GetCurrentRendererInstances();
+    int32_t maxRendererInstances = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
 
     // Create renderer instance with the maximum number of configured instances
-    while (audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances)) {
+    while (currentRendererInstancesNum < maxRendererInstances) {
         auto audioRenderer = AudioRenderer::Create(rendererOptions);
         EXPECT_NE(nullptr, audioRenderer);
         rendererList.push_back(std::move(audioRenderer));
-        audioRendererChangeInfos.clear();
-        AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+        currentRendererInstancesNum = AudioPolicyManager::GetInstance().GetCurrentRendererInstances();
     }
 
     // When the number of renderer instances equals the number of configurations, creating another one should fail

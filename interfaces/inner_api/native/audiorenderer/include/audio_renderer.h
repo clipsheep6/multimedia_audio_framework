@@ -734,8 +734,6 @@ public:
      */
     virtual void DestroyAudioRendererStateCallback() = 0;
     virtual ~AudioRenderer();
-private:
-    static std::mutex createRendererMutex_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

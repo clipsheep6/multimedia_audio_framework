@@ -215,7 +215,13 @@ public:
         const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
 
+    int32_t CheckMaxRendererInstancesNum();
+
     int32_t GetMaxRendererInstances();
+
+    int32_t GetCurrentRendererInstances();
+
+    int32_t UpdateCurrentRendererInstancesNum(int32_t changeSize);
 private:
     AudioPolicyManager()
     {

@@ -41,8 +41,6 @@ static float VolumeToDb(int32_t volumeLevel)
     return static_cast<float>(roundValue) / CONST_FACTOR;
 }
 
-std::mutex AudioRenderer::createRendererMutex_;
-
 AudioRenderer::~AudioRenderer() = default;
 AudioRendererPrivate::~AudioRendererPrivate()
 {
@@ -56,17 +54,6 @@ AudioRendererPrivate::~AudioRendererPrivate()
         dcp_ = nullptr;
     }
 #endif
-}
-
-static int32_t CheckMaxRendererInstances()
-{
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    int32_t maxRendererInstances = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
-    CHECK_AND_RETURN_RET_LOG(audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances), ERR_OVERFLOW,
-        "The current number of audio renderer streams is greater than the maximum number of configured instances");
-
-    return SUCCESS;
 }
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStreamType)
@@ -107,8 +94,6 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     const AudioRendererOptions &rendererOptions, const AppInfo &appInfo)
 {
     Trace trace("AudioRenderer::Create");
-    std::lock_guard<std::mutex> lock(createRendererMutex_);
-    CHECK_AND_RETURN_RET_LOG(CheckMaxRendererInstances() == SUCCESS, nullptr, "Too many renderer instances");
     ContentType contentType = rendererOptions.rendererInfo.contentType;
     CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_UNKNOWN && contentType <= CONTENT_TYPE_ULTRASONIC, nullptr,
                              "Invalid content type");
@@ -125,6 +110,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
         }
     }
 
+    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().CheckMaxRendererInstancesNum() == SUCCESS, nullptr,
+        "Renderer instances exceeds the configuration, create failed");
     AudioStreamType audioStreamType = AudioStream::GetStreamType(contentType, streamUsage);
 #ifdef OHCORE
     auto audioRenderer = std::make_unique<AudioRendererGateway>(audioStreamType);
@@ -153,6 +140,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
+        AudioPolicyManager::GetInstance().UpdateCurrentRendererInstancesNum(-1); // -1 for reducing the number of renderer instances
         audioRenderer = nullptr;
         return nullptr;
     }

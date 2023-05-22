@@ -275,6 +275,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                 rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID,
                     audioRendererChangeInfo.sessionId));
                 clientTracker_.erase(audioRendererChangeInfo.sessionId);
+                rendererInstancesNum_ --;
             }
             return SUCCESS;
         }
