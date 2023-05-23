@@ -17,28 +17,34 @@
 
 namespace OHOS {
 namespace AudioStandard {
-int32_t HistenInit(int32_t &para_gain)
+
+struct HistenContext {
+    const struct AudioEffectInterface *aei;
+};
+
+int32_t HistenProcess (AudioEffectHandle self, AudioBuffer *inBuffer, AudioBuffer *outBuffer)
 {
-    para_gain = 0;
-    return 0;
+    return 1;
 }
-int32_t HistenSet(int32_t &input_gain, int32_t &para_gain)
+
+int32_t HistenCommand (AudioEffectHandle self, uint32_t cmdCode,
+        AudioEffectTransInfo *cmdInfo, AudioEffectTransInfo *replyInfo)
 {
-    para_gain = input_gain;
-    return 0;
+    return 1;
 }
-int32_t HistenApply(int32_t &input_signal, int32_t &para_gain)
-{
-    input_signal *= para_gain;
-    return 0;
-}
-// const struct HistenEffectInterface g_HistenInterface = {
-//     HistenInit,
-//     HistenSet,
-//     HistenApply,
-// };
+
+
+const struct AudioEffectInterface g_HistenInterface = {
+    HistenProcess,
+    HistenCommand,
+};
+
+
 extern "C" bool EffectCreate(const AudioEffectDescriptor descriptor, AudioEffectHandle *handle)
 {
+    auto *pContext = new HistenContext;
+    pContext->aei = &g_HistenInterface;
+    *handle = (AudioEffectHandle)pContext;
     // *pHandle = g_HistenInterface;
     // int32_t ret;
     // int32_t para_gain = 0;

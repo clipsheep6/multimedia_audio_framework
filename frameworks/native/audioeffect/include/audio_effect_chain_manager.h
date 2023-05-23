@@ -37,12 +37,16 @@ class AudioEffectChain {
 public:
     AudioEffectChain(std::string scene);
     ~AudioEffectChain();
-    void SetEffectChain(std::vector<AudioEffectHandle *> &effectHandles);
+    void AddEffectHandleBegin();
+    void AddEffectHandleEnd();
+    void AddEffectHandle(AudioEffectHandle effectHandle);
+    // void SetEffectChain(std::vector<AudioEffectHandle *> &effectHandles);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
+    void Dump();
 private:
     std::string sceneType;
-    std::vector<AudioEffectHandle *> standByEffectHandles;
+    std::vector<AudioEffectHandle> standByEffectHandles;
     AudioEffectConfig ioBufferConfig;
     AudioBuffer audioBufIn;
     AudioBuffer audioBufOut;
@@ -60,6 +64,7 @@ public:
     int32_t ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
+    void Dump();
 private:
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap;  // {"EQ": AudioEffectLibEntry}
     std::map<std::string, std::string> EffectToLibraryNameMap; // {"EQ": "HISTEN"}

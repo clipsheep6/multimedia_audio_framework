@@ -18,15 +18,16 @@
 
 #include <stdint.h>
 #include "audio_effect.h"
+// #include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-struct HistenEffectInterface {
-    int32_t (*HistenInit) (int32_t &para_gain);
-    int32_t (*HistenSet) (int32_t &input_gain, int32_t &para_gain);
-    int32_t (*HistenApply) (int32_t &input_signal, int32_t &para_gain);
-};
+// struct HistenEffectInterface {
+//     int32_t (*HistenInit) (int32_t &para_gain);
+//     int32_t (*HistenSet) (int32_t &input_gain, int32_t &para_gain);
+//     int32_t (*HistenApply) (int32_t &input_signal, int32_t &para_gain);
+// };
 
 
 // struct AudioEffectLibrary {

@@ -132,6 +132,7 @@ static bool LoadEffect(const Effect &effect, std::vector<std::unique_ptr<AudioEf
     } else {
         AUDIO_INFO_LOG("cjw: LoadEffect libName: %{public}s, effectName: %{public}s 2.2 handle is null", effect.libraryName.c_str(), effect.name.c_str());
     }
+    AUDIO_INFO_LOG("cjw: checkEffect libname %{public}s, address is %{public}p", currentLibEntry->libraryName.c_str(), currentLibEntry->audioEffectLibHandle);
     bool ret = currentLibEntry->audioEffectLibHandle->checkEffect(descriptor);
     // bool ret = true;
     AUDIO_INFO_LOG("cjw: LoadEffect libName: %{public}s, effectName: %{public}s 3", effect.libraryName.c_str(), effect.name.c_str());
@@ -191,7 +192,7 @@ bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, c
 std::vector<std::unique_ptr<AudioEffectLibEntry>>& AudioEffectServer::GetEffectEntries()
 {
     for (const std::unique_ptr<AudioEffectLibEntry>& lib : effectLibEntries) {
-        AUDIO_INFO_LOG("cjw: libname %{public}s", lib->libraryName.c_str());
+        AUDIO_INFO_LOG("cjw: GetEntries libname %{public}s, address is %{public}p", lib->libraryName.c_str(), lib->audioEffectLibHandle);
     }
     return effectLibEntries;
 }
