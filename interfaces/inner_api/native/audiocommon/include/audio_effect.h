@@ -160,7 +160,7 @@ struct AudioEffectParam {
     int32_t status;
     uint32_t paramSize;
     uint32_t valueSize;
-    char data[];
+    int32_t data[];
 };
 
 struct AudioBuffer {
@@ -207,8 +207,8 @@ struct AudioEffectLibrary {
     uint32_t version;
     const char *name;
     const char *implementor;
-    int32_t (*checkEffect) (const AudioEffectDescriptor descriptor);
-    int32_t (*createEffect) (const AudioEffectDescriptor descriptor, AudioEffectHandle *handle);
+    bool (*checkEffect) (const AudioEffectDescriptor descriptor);
+    bool (*createEffect) (const AudioEffectDescriptor descriptor, AudioEffectHandle *handle);
     int32_t (*releaseEffect) (AudioEffectHandle handle);
 };
 

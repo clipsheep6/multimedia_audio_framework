@@ -207,6 +207,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             return AUDIO_OK;
         }
         case LOAD_AUDIO_EFFECT_LIBRARIES: {
+            AUDIO_ERR_LOG("cjw: LOAD_AUDIO_EFFECT_LIBRARIES");
             vector<Library> libList = {};
             vector<Effect> effectList = {};
             int32_t countLib = data.ReadInt32();
@@ -236,6 +237,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             return AUDIO_OK;
         }
 		case CREATE_AUDIO_EFFECT_CHAIN_MANAGER: {
+            AUDIO_ERR_LOG("cjw: CREATE_AUDIO_EFFECT_CHAIN_MANAGER");
             int i;
             vector<EffectChain> effectChains = {};
             vector<int32_t> countEffect = {};

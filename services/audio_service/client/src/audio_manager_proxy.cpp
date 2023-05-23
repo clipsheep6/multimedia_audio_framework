@@ -495,7 +495,7 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
     }
 }
 
-bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> effectChains, std::unordered_map<std::string, std::string> map)
+bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effectChains, std::unordered_map<std::string, std::string> &map)
 {
     int32_t error;
 
@@ -533,7 +533,7 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> effect
 
     error = Remote()->SendRequest(CREATE_AUDIO_EFFECT_CHAIN_MANAGER, dataParcel, replyParcel, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("CreatAudioEffectChainManager failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("CreateAudioEffectChainManager failed, error: %{public}d", error);
         return false;
     }
     return true;

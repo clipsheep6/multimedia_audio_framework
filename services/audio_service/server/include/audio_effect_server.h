@@ -36,9 +36,10 @@ public:
                           std::vector<Effect>& successEffectList);
 
     std::vector<std::unique_ptr<AudioEffectLibEntry>>& GetEffectEntries();
-                                
+    // void AudioEffectServer::GetEffectEntries(std::vector<std::unique_ptr<AudioEffectLibEntry>> &libEntries);                                
 private:
     std::vector<std::unique_ptr<AudioEffectLibEntry>> effectLibEntries;
+    // std::vector<AudioEffectLibEntry*> effectLibEntries2;
 };
 
 } // namespce AudioStandard

@@ -399,6 +399,7 @@ int pa__init(pa_module *m) {
     pa_sink_new_data_set_channel_map(&sinkData, &sink_map);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_MASTER_DEVICE, master->name);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_CLASS, "filter");
+    pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_STRING, "N/A");    
 
     if ((u->auto_desc = !pa_proplist_contains(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION))) {
         const char *k;

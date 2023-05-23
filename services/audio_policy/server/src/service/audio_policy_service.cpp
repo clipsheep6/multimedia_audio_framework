@@ -1759,6 +1759,7 @@ void AudioPolicyService::LoadEffectLibrary()
     OriginalEffectConfig oriEffectConfig = {};
     audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
     vector<Effect> successLoadedEffects;
+    AUDIO_ERR_LOG("cjw: trigger LoadAudioEffectLibraries");
     bool loadSuccess = gsp->LoadAudioEffectLibraries(oriEffectConfig.libraries,
                                                      oriEffectConfig.effects,
                                                      successLoadedEffects);
