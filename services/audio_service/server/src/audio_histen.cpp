@@ -24,13 +24,19 @@ struct HistenContext {
 
 int32_t HistenProcess (AudioEffectHandle self, AudioBuffer *inBuffer, AudioBuffer *outBuffer)
 {
-    return 1;
+    float *bufferIn = inBuffer->f32;
+    float *bufferOut = outBuffer->f32;
+    int32_t frameLen = inBuffer->frameLength;
+    for (int i = 0; i < frameLen * 2; i++) {
+        bufferOut[i] = bufferIn[i] * 3;
+    }
+    return 0;
 }
 
 int32_t HistenCommand (AudioEffectHandle self, uint32_t cmdCode,
         AudioEffectTransInfo *cmdInfo, AudioEffectTransInfo *replyInfo)
 {
-    return 1;
+    return 0;
 }
 
 

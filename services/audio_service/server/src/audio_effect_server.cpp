@@ -114,7 +114,6 @@ AudioEffectLibEntry *FindLibrary(const std::string name, std::vector<std::unique
 
 static bool LoadEffect(const Effect &effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
 {
-    AUDIO_INFO_LOG("cjw: LoadEffect libName: %{public}s, effectName: %{public}s 1", effect.libraryName.c_str(), effect.name.c_str());
     AudioEffectLibEntry *currentLibEntry = FindLibrary(effect.libraryName, libList);
     if (currentLibEntry == nullptr) {
         AUDIO_ERR_LOG("<log error> could not find library %{public}s to load effect %{public}s",
@@ -126,27 +125,15 @@ static bool LoadEffect(const Effect &effect, std::vector<std::unique_ptr<AudioEf
     descriptor.libraryName = effect.libraryName;
     descriptor.effectName = effect.name;
 
-    AUDIO_INFO_LOG("cjw: LoadEffect libName: %{public}s, effectName: %{public}s 2", effect.libraryName.c_str(), effect.name.c_str());
-    if (currentLibEntry->audioEffectLibHandle) {
-        AUDIO_INFO_LOG("cjw: LoadEffect libName: %{public}s, effectName: %{public}s 2.1 handle not null", effect.libraryName.c_str(), effect.name.c_str());
-    } else {
-        AUDIO_INFO_LOG("cjw: LoadEffect libName: %{public}s, effectName: %{public}s 2.2 handle is null", effect.libraryName.c_str(), effect.name.c_str());
-    }
-    AUDIO_INFO_LOG("cjw: checkEffect libname %{public}s, address is %{public}p", currentLibEntry->libraryName.c_str(), currentLibEntry->audioEffectLibHandle);
-    bool ret = currentLibEntry->audioEffectLibHandle->checkEffect(descriptor);
-    // bool ret = true;
-    AUDIO_INFO_LOG("cjw: LoadEffect libName: %{public}s, effectName: %{public}s 3", effect.libraryName.c_str(), effect.name.c_str());
+    bool ret = currentLibEntry->audioEffectLibHandle->checkEffect(descriptor);    
     if (ret) {
-        AUDIO_INFO_LOG("cjw: LoadEffect libName: %{public}s, effectName: %{public}s 4", effect.libraryName.c_str(), effect.name.c_str());
         currentLibEntry->effectName.push_back(effect.name);
     } else {
-        AUDIO_INFO_LOG("cjw: LoadEffect libName: %{public}s, effectName: %{public}s 5", effect.libraryName.c_str(), effect.name.c_str());
         AUDIO_ERR_LOG("<log error> the effect %{public}s in lib %{public}s, open check file!",
             effect.name.c_str(), effect.libraryName.c_str());
         return false;
     }
 
-    AUDIO_INFO_LOG("cjw: LoadEffect libName: %{public}s, effectName: %{public}s 6", effect.libraryName.c_str(), effect.name.c_str());
     return true;
 }
 
@@ -181,7 +168,6 @@ bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, c
 
     // check effects
     CheckEffects(effects, effectLibEntries, successEffectList);
-    AUDIO_INFO_LOG("cjw: successEffectList.size=%{public}d", successEffectList.size());
     if (successEffectList.size() > 0) {
         return true;
     } else {
@@ -191,9 +177,6 @@ bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, c
 
 std::vector<std::unique_ptr<AudioEffectLibEntry>>& AudioEffectServer::GetEffectEntries()
 {
-    for (const std::unique_ptr<AudioEffectLibEntry>& lib : effectLibEntries) {
-        AUDIO_INFO_LOG("cjw: GetEntries libname %{public}s, address is %{public}p", lib->libraryName.c_str(), lib->audioEffectLibHandle);
-    }
     return effectLibEntries;
 }
 
