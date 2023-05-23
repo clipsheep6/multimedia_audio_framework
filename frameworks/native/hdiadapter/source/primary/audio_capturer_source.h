@@ -38,9 +38,12 @@ namespace AudioStandard {
 
 class AudioCapturerSource : public IAudioCapturerSource {
 public:
-    static AudioCapturerSource *GetInstance(void);
+    static AudioCapturerSource *GetInstance(std::string_view adapterName = "primary");
+    static AudioCapturerSource *GetMicInstance(void);
+    static AudioCapturerSource *GetWakeupInstance(void);
     static bool micMuteState_;
 
+protected:
     AudioCapturerSource() = default;;
     ~AudioCapturerSource() = default;;
 };

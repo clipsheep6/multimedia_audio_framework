@@ -112,7 +112,26 @@ AudioCapturerSourceInner::~AudioCapturerSourceInner()
     AUDIO_ERR_LOG("~AudioCapturerSourceInner");
 }
 
-AudioCapturerSource *AudioCapturerSource::GetInstance()
+AudioCapturerSource *AudioCapturerSource::GetInstance(std::string_view adapterName)
+{
+    static unordered_map<string_view, AudioCapturerSource*> adapterName2AudioCapturerSource{
+        {"primary"sv, GetMicInstance()},
+        {"wakeup"sv, GetWakeupInstance()}
+    };
+    AudioCapturerSource* resPtr = adapterName2AudioCapturerSource[adapterName];
+    if(resPtr == nullptr) {
+        AUDIO_ERR_LOG("AudioCapturerSource::GetInstance error, adapterName is: %{public}s", string(adapterName).c_str());
+    }
+    return resPtr;
+}
+
+AudioCapturerSource *AudioCapturerSource::GetMicInstance()
+{
+    static AudioCapturerSourceInner audioCapturer_;
+    return &audioCapturer_;
+}
+
+AudioCapturerSource *AudioCapturerSource::GetWakeupInstance()
 {
     static AudioCapturerSourceInner audioCapturer_;
     return &audioCapturer_;
