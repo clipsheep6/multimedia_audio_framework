@@ -163,6 +163,7 @@ void InitAttrsCapture(struct AudioSampleAttributes &attrs)
     attrs.stopThreshold = INT_32_MAX;
     /* 16 * 1024 */
     attrs.silenceThreshold = AUDIO_BUFF_SIZE;
+    attrs.sourceType = SOURCE_TYPE_MIC;
 }
 
 int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32_t size, const std::string &adapterNameCase,
@@ -217,6 +218,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
     param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    param.sourceType = attr_.source_type;
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
@@ -224,6 +226,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     deviceDesc.desc = (char *)"";
 
     ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
+    AUDIO_INFO_LOG("AudioCapturerSourceInner CreateCapture param.sourceType:%{public}d", param.sourceType);
     if (audioCapture_ == nullptr || ret < 0) {
         AUDIO_ERR_LOG("Create capture failed");
         return ERR_NOT_STARTED;

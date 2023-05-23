@@ -278,6 +278,10 @@ enum AudioStreamType {
      */
     STREAM_ULTRASONIC = 14,
     /**
+     * Indicates audio streams for wakeup.
+     */
+    STREAM_WAKEUP = 15,
+    /**
      * Indicates audio streams used for only one volume bar of a device.
      */
     STREAM_ALL = 100
@@ -474,6 +478,7 @@ enum SourceType {
     SOURCE_TYPE_INVALID = -1,
     SOURCE_TYPE_MIC,
     SOURCE_TYPE_VOICE_RECOGNITION = 1,
+    SOURCE_TYPE_WAKEUP = 2,
     SOURCE_TYPE_VOICE_COMMUNICATION = 7,
     SOURCE_TYPE_ULTRASONIC = 8
 };

@@ -445,6 +445,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
 
     return deviceDescs;
 }
+     
+bool AudioPolicyServer::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
+{
+    return mPolicyService.SetWakeUpAudioCapturer(options);
+}
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)

@@ -71,6 +71,17 @@ void AudioCapturerUnitTest::InitializeCapturerOptions(AudioCapturerOptions &capt
     return;
 }
 
+void AudioCapturerUnitTest::InitializeCapturerOptions_WakeUp(AudioCapturerOptions &capturerOptions)
+{
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_WAKEUP;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    return;
+}
+
 void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
 {
     int32_t ret = -1;
@@ -2827,6 +2838,97 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCaptureMode, TestSize.Level1)
 
     AudioCaptureMode captureMode = audioCapturer->GetCaptureMode();
     EXPECT_EQ(CAPTURE_MODE_CALLBACK, captureMode);
+}
+
+/**
+* @tc.name  : Test Create API via legal input.
+* @tc.number: Audio_WakeUp_Capturer_Create_001
+* @tc.desc  : Test Create interface with AudioCapturerOptions below.
+*             Returns audioCapturer instance, if create is successful.
+*             capturerOptions.streamInfo.samplingRate = SAMPLE_RATE_44100;
+*             capturerOptions.streamInfo.encoding = ENCODING_PCM;
+*             capturerOptions.streamInfo.format = SAMPLE_S16LE;
+*             capturerOptions.streamInfo.channels = STEREO;
+*             capturerOptions.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
+*             capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+*/
+HWTEST(AudioCapturerUnitTest, Audio_WakeUp_Capturer_Create_001, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions_WakeUp(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test Start API via legal state, CAPTURER_PREPARED.
+* @tc.number: Audio_WakeUp_Capturer_Start_001
+* @tc.desc  : Test Start interface. Returns true if start is successful.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_WakeUp_Capturer_Start_001, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions_WakeUp(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test Read API via isBlockingRead = true.
+* @tc.number: Audio_WakeUp_Capturer_Read_001
+* @tc.desc  : Test Read interface. Returns number of bytes read, if the read is successful.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_WakeUp_Capturer_Read_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    bool isBlockingRead = true;
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions_WakeUp(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioCapturer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+    FILE *capFile = fopen(AUDIO_CAPTURE_FILE1.c_str(), "wb");
+    ASSERT_NE(nullptr, capFile);
+
+    size_t size = 1;
+    int32_t bytesRead = 0;
+    int32_t numBuffersToCapture = READ_BUFFERS_COUNT;
+
+    while (numBuffersToCapture) {
+        bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
+        if (bytesRead <= 0) {
+            break;
+        } else if (bytesRead > 0) {
+            fwrite(buffer, size, bytesRead, capFile);
+            numBuffersToCapture--;
+        }
+    }
+
+    audioCapturer->Flush();
+    audioCapturer->Stop();
+    audioCapturer->Release();
+
+    free(buffer);
+    fclose(capFile);
 }
 } // namespace AudioStandard
 } // namespace OHOS

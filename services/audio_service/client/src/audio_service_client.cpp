@@ -773,6 +773,9 @@ const std::string AudioServiceClient::GetStreamName(AudioStreamType audioType)
         case STREAM_ULTRASONIC:
             name = "ultrasonic";
             break;
+        case STREAM_WAKEUP:
+            name = "wakeup";
+            break;
         default:
             name = "unknown";
     }

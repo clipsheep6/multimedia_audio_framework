@@ -144,6 +144,7 @@ int32_t RemoteAudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
     param.startThreshold = deepBufferCapturePeriodSize / (param.frameSize);
+    param.sourceType = attr_.source_type;
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;

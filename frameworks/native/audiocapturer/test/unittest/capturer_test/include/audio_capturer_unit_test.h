@@ -51,6 +51,8 @@ public:
     static int32_t InitializeCapturer(std::unique_ptr<AudioCapturer> &audioCapturer);
     // Init Capturer Options
     static void InitializeCapturerOptions(AudioCapturerOptions &capturerOptions);
+    // Init Wakeup Capturer Options
+    static void InitializeCapturerOptions_WakeUp(AudioCapturerOptions &capturerOptions);
 };
 } // namespace AudioStandard
 } // namespace OHOS
