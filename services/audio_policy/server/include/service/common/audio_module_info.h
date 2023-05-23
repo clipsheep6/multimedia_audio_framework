@@ -89,6 +89,7 @@ public:
     std::string fileName;
     std::string networkId;
     std::string deviceType;
+    std::string sourceType;
     std::list<AudioModuleInfo> ports;
 };
 } // namespace AudioStandard

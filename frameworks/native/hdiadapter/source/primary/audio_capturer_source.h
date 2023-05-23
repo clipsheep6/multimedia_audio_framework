@@ -34,6 +34,7 @@ namespace AudioStandard {
 #define PCM_8_BIT 8
 #define PCM_16_BIT 16
 #define INTERNAL_INPUT_STREAM_ID 1
+#define SOURCE_TYPE_MIC 0
 
 class AudioCapturerSource : public IAudioCapturerSource {
 public:

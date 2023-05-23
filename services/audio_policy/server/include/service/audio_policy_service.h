@@ -95,6 +95,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
+    bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType) const;
@@ -279,6 +281,8 @@ private:
 
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
+
+    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t sourceType);
 
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 

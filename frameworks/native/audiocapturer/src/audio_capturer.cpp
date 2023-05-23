@@ -73,7 +73,10 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         audioStreamType = STREAM_VOICE_CALL;
     }
-
+    
+    if (sourceType == SOURCE_TYPE_WAKEUP) {
+        audioStreamType = STREAM_WAKEUP;
+    }
     AudioCapturerParams params;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
     params.samplingRate = capturerOptions.streamInfo.samplingRate;
@@ -100,6 +103,16 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     }
 
     capturer->capturerInfo_.sourceType = sourceType;
+    //调用setwake方法：
+    if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
+        bool ret = AudioPolicyManager::GetInstance().SetWakeUpAudioCapturer(capturerOptions);
+        if (ret == SUCCESS) {
+            AUDIO_DEBUG_LOG("SetWakeUpAudioCapturer is running");
+        } else {
+            AUDIO_ERR_LOG("can not SetWakeUpAudioCapturer");
+            return capturer;
+        }
+    }
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
     if (capturer->SetParams(params) != SUCCESS) {
         capturer = nullptr;
