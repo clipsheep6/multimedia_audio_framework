@@ -36,6 +36,7 @@ public:
     void GetAvailableEffects(std::vector<Effect> &availableEffects);
     void UpdateAvailableEffects(std::vector<Effect> &newAvailableEffects);
     void GetSupportedEffectConfig(SupportedEffectConfig &supportedEffectConfig);
+    void ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map);
     void GetAvailableAEConfig();
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 

@@ -48,7 +48,7 @@ struct userdata {
     pa_module *module;
     pa_sink *sink;
     pa_sink_input *sinkInput;
-    struct BufferAttr *bufferAttr;
+    BufferAttr *bufferAttr;
     pa_memblockq *bufInQ;
     int32_t processLen;
     size_t processSize;
@@ -325,7 +325,7 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) 
         pa_memblock_release(tchunk.memblock);
         pa_memblock_unref(tchunk.memblock);
 
-        EffectChainManagerProcess((void *)u->bufferAttr, si->origin_sink->name);
+        EffectChainManagerProcess(si->origin_sink->name, u->bufferAttr);
         
         ConvertFromFloat(u->format, u->processLen, bufOut, dst);
         
@@ -397,6 +397,7 @@ int pa__init(pa_module *m) {
     pa_sink_new_data_set_channel_map(&sinkData, &sink_map);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_MASTER_DEVICE, master->name);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_CLASS, "filter");
+    pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_STRING, "N/A");    
 
     if ((u->auto_desc = !pa_proplist_contains(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION))) {
         const char *k;
@@ -453,11 +454,17 @@ int pa__init(pa_module *m) {
     u->format = ss.format;
     u->processLen = ss.channels * frameLen;
     u->processSize = u->processLen * sizeof(float);
-    u->bufferAttr = pa_xnew0(struct BufferAttr, 1);
+    
+    u->bufferAttr = pa_xnew0(BufferAttr, 1);
     pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
     pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
+    u->bufferAttr->samplingRate = ss.rate;
     u->bufferAttr->frameLen = frameLen;
-    u->bufferAttr->numChan = ss.channels;
+    u->bufferAttr->numChanIn = ss.channels;
+    u->bufferAttr->numChanOut = ss.channels;
+    if (EffectChainManagerCreate(u->sink->name, u->bufferAttr) != 0) {
+        return InitFail(m, ma);
+    }
     
     int32_t bitSize = pa_sample_size_of_format(ss.format);
     size_t targetSize = ss.channels * frameLen * bitSize;

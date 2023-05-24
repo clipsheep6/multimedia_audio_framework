@@ -1758,7 +1758,7 @@ void AudioPolicyService::LoadEffectLibrary()
     }
     OriginalEffectConfig oriEffectConfig = {};
     audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
-    vector<Effect> successLoadedEffects;
+    vector<Effect> successLoadedEffects;    
     bool loadSuccess = gsp->LoadAudioEffectLibraries(oriEffectConfig.libraries,
                                                      oriEffectConfig.effects,
                                                      successLoadedEffects);
@@ -1772,8 +1772,23 @@ void AudioPolicyService::LoadEffectLibrary()
     // Initialize EffectChainManager in audio service through IPC
     SupportedEffectConfig supportedEffectConfig;
     audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
-    bool createSuccess = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains);
+    std::unordered_map<std::string, std::string> sceneTypeToEffectChainNameMap;
+    audioEffectManager_.ConstructSceneTypeToEffectChainNameMap(sceneTypeToEffectChainNameMap);
+    bool createSuccess = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, sceneTypeToEffectChainNameMap);
     CHECK_AND_RETURN_LOG(createSuccess, "EffectChainManager create failed");
+
+    // Wait for master sink to activate
+    auto now = std::chrono::system_clock::now().time_since_epoch();
+    int32_t startTimeInMs = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+    while (audioPolicyManager_.GetAllSinks().empty()) {
+        now = std::chrono::system_clock::now().time_since_epoch();
+        int32_t currTimeInMs = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+        if (currTimeInMs - startTimeInMs > 5000) {
+            return; // wait more than 5000 milliseconds, master sink still does not activate, do not load effect sinks
+        }
+        AUDIO_INFO_LOG("Waiting for master sink to activate");
+        // keep waiting
+    }
 
     // Create sink for each effect
     AudioModuleInfo moduleInfo = {};

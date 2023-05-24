@@ -19,7 +19,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "audio_info.h"
 #include "audio_effect.h"
 
 #ifndef ST_AUDIO_EFFECT_SERVER_H
@@ -34,14 +33,12 @@ public:
     ~AudioEffectServer();
 
     bool LoadAudioEffects(const std::vector<Library> libraries, const std::vector<Effect> effects,
-                          std::vector<Effect>& successEffectList);
+                          std::vector<Effect> &successEffectList);
 
-    std::vector<std::unique_ptr<LibEntryT>>& GetAvailableEffects();
-                                
+    std::vector<std::unique_ptr<AudioEffectLibEntry>> &GetEffectEntries();
+    
 private:
-    std::vector<std::unique_ptr<LibEntryT>> effectLibraryList;
-    std::vector<std::unique_ptr<LibEntryT>> effectLibraryFailedList;
-    std::vector<std::unique_ptr<EffectDescriptorT>> effectSkippedEffects;
+    std::vector<std::unique_ptr<AudioEffectLibEntry>> effectLibEntries;
 };
 
 } // namespce AudioStandard

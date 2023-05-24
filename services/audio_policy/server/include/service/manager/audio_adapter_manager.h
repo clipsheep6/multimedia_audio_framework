@@ -74,6 +74,8 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType);
 
+    std::vector<SinkInfo> GetAllSinks();
+
     std::vector<SinkInput> GetAllSinkInputs();
 
     std::vector<SourceOutput> GetAllSourceOutputs();
