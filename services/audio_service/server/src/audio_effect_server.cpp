@@ -95,9 +95,7 @@ void LoadLibraries(const std::vector<Library> &libs, std::vector<std::unique_ptr
         }
 
         // Register library load success
-        AUDIO_INFO_LOG("<log info> loading %{public}s : %{public}s 2", library.name.c_str(), library.path.c_str());
         libList.emplace_back(std::move(libEntry));
-        AUDIO_INFO_LOG("<log info> loading %{public}s : %{public}s 3", library.name.c_str(), library.path.c_str());
     }
 }
 

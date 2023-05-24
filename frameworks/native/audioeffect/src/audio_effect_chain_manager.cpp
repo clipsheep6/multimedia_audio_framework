@@ -128,14 +128,21 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle) {
         return;
     }
     // Set param
-    int32_t sceneTypeEnum = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
-    int32_t effectModeEnum = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
-    int32_t params[NUM_SET_EFFECT_PARAM] = {(int32_t)EFFECT_SET_PARAM, sceneTypeEnum, effectModeEnum};
-    cmdInfo = {sizeof(int32_t) * NUM_SET_EFFECT_PARAM, &params};
+    AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) + NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
+    effectParam->status = 0;
+    effectParam->paramSize = sizeof(int32_t);
+    effectParam->valueSize = 0;
+    effectParam->data[0] = EFFECT_SET_PARAM;
+    effectParam->data[1] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
+    effectParam->data[2] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
+    AUDIO_INFO_LOG("cjw: data[0]: %{public}d, data[1]: %{public}d, data[2]: %{public}d", effectParam->data[0],  effectParam->data[1],  effectParam->data[2]);
+    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, &effectParam};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
+    delete[] effectParam;
     if (ret != 0) {
         AUDIO_ERR_LOG("EFFECT_CMD_SET_PARAM fail");
         return;
+        
     }
     standByEffectHandles.emplace_back(handle);
 }
