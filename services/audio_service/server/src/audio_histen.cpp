@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-#include "audio_histen.h"
+#include <stdint.h>
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,7 +47,7 @@ const struct AudioEffectInterface g_HistenInterface = {
 };
 
 
-extern "C" bool EffectCreate(const AudioEffectDescriptor descriptor, AudioEffectHandle *handle)
+extern "C" int32_t EffectCreate(const AudioEffectDescriptor descriptor, AudioEffectHandle *handle)
 {
     auto *pContext = new HistenContext;
     pContext->aei = &g_HistenInterface;

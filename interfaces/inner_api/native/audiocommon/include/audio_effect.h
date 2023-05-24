@@ -208,7 +208,7 @@ struct AudioEffectLibrary {
     const char *name;
     const char *implementor;
     bool (*checkEffect) (const AudioEffectDescriptor descriptor);
-    bool (*createEffect) (const AudioEffectDescriptor descriptor, AudioEffectHandle *handle);
+    int32_t (*createEffect) (const AudioEffectDescriptor descriptor, AudioEffectHandle *handle);
     int32_t (*releaseEffect) (AudioEffectHandle handle);
 };
 

@@ -33,13 +33,12 @@ public:
     ~AudioEffectServer();
 
     bool LoadAudioEffects(const std::vector<Library> libraries, const std::vector<Effect> effects,
-                          std::vector<Effect>& successEffectList);
+                          std::vector<Effect> &successEffectList);
 
-    std::vector<std::unique_ptr<AudioEffectLibEntry>>& GetEffectEntries();
-    // void AudioEffectServer::GetEffectEntries(std::vector<std::unique_ptr<AudioEffectLibEntry>> &libEntries);                                
+    std::vector<std::unique_ptr<AudioEffectLibEntry>> &GetEffectEntries();
+    
 private:
     std::vector<std::unique_ptr<AudioEffectLibEntry>> effectLibEntries;
-    // std::vector<AudioEffectLibEntry*> effectLibEntries2;
 };
 
 } // namespce AudioStandard

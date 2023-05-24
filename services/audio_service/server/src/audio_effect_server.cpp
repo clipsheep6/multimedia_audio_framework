@@ -103,7 +103,7 @@ void LoadLibraries(const std::vector<Library> &libs, std::vector<std::unique_ptr
 
 AudioEffectLibEntry *FindLibrary(const std::string name, std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
 {
-    for (const std::unique_ptr<AudioEffectLibEntry>& lib : libList) {
+    for (const std::unique_ptr<AudioEffectLibEntry> &lib : libList) {
         if (lib->libraryName == name) {
             return lib.get();
         }
@@ -161,7 +161,7 @@ AudioEffectServer::~AudioEffectServer()
 }
 
 bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, const std::vector<Effect> effects,
-                                         std::vector<Effect>& successEffectList)
+                                         std::vector<Effect> &successEffectList)
 {
     // load library
     LoadLibraries(libraries, effectLibEntries);
@@ -175,7 +175,7 @@ bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, c
     }
 }
 
-std::vector<std::unique_ptr<AudioEffectLibEntry>>& AudioEffectServer::GetEffectEntries()
+std::vector<std::unique_ptr<AudioEffectLibEntry>> &AudioEffectServer::GetEffectEntries()
 {
     return effectLibEntries;
 }

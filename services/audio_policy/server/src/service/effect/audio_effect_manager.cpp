@@ -83,9 +83,7 @@ void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_m
             map[key] = mode.devicePort[0].chain; // grab the first device port by default
         }
     }
-    // map["key1"] = "value1";
-    // map["key2"] = "value2";
-    AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEffectChainNameMap at policy, size is %{public}d", map.size());
+    AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEffectChainNameMap at policy, size is %{public}d", (int32_t)map.size());
 }
 
 static int32_t UpdateUnsupportedScene(std::string &scene)
