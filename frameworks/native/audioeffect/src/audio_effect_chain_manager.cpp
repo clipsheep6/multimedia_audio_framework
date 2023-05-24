@@ -68,6 +68,7 @@ namespace AudioStandard {
 
 AudioEffectChain::AudioEffectChain(std::string scene) {
     sceneType = scene;
+    effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
     audioBufIn.frameLength = 0;
     audioBufOut.frameLength = 0;
     ioBufferConfig.inputCfg.samplingRate = 48000;
@@ -87,12 +88,26 @@ void AudioEffectChain::Dump()
     }
 }
 
+void AudioEffectChain::SetEffectMode(std::string mode) {
+    effectMode = mode;
+}
+
 void AudioEffectChain::AddEffectHandleBegin() {
     standByEffectHandles.clear();
 }
 
+template <typename T>
+int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, std::string &value)
+{
+    for (auto it = map.begin(); it != map.end(); ++it) {
+        if (it->second == value) {
+            return it->first;
+        }
+    }
+    return -1;
+}
+
 void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle) {
-    
     int32_t ret;
     int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
@@ -112,7 +127,17 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle) {
         AUDIO_ERR_LOG("EFFECT_CMD_SET_CONFIG fail");
         return;
     }
-    standByEffectHandles.emplace_back(handle);    
+    // Set param
+    int32_t sceneTypeEnum = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
+    int32_t effectModeEnum = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
+    int32_t params[NUM_PARAM] = {sceneTypeEnum, effectModeEnum};
+    cmdInfo = {sizeof(int32_t) * NUM_PARAM, &params};
+    ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("EFFECT_CMD_SET_PARAM fail");
+        return;
+    }
+    standByEffectHandles.emplace_back(handle);
 }
 
 void AudioEffectChain::AddEffectHandleEnd() {
@@ -276,6 +301,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
         effectChain = effectNone;
     }
 
+    audioEffectChain->SetEffectMode(effectMode);
     audioEffectChain->AddEffectHandleBegin();
     for (std::string effect: EffectChainToEffectsMap[effectChain]) {
         AudioEffectHandle handle = nullptr;

@@ -318,8 +318,6 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) 
         pa_memblockq_drop(u->bufInQ, tchunk.length);
 
         src = pa_memblock_acquire_chunk(&tchunk);
-        // bufIn = u->ioBufferConfig->inputCfg.buffer.f32;
-        // bufOut = u->ioBufferConfig->outputCfg.buffer.f32;
         bufIn = u->bufferAttr->bufIn;
         bufOut = u->bufferAttr->bufOut;
         

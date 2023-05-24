@@ -65,7 +65,7 @@ static bool LoadLibrary(const std::string relativePath, std::unique_ptr<AudioEff
     }
 
     AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(handle,
-        AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));  // TODO:�뼯��Լ������ֵ
+        AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
     const char* error = dlerror();
     if (error) {
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s, %{public}p", error, audioEffectLibHandle);

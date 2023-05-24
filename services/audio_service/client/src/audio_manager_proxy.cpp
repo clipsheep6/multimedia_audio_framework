@@ -520,7 +520,7 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
 
     for (EffectChain &effectChain: effectChains) {
         dataParcel.WriteString(effectChain.name);
-        for (std::string applyName : effectChain.apply) {
+        for(std::string applyName: effectChain.apply){
             dataParcel.WriteString(applyName);
         }
     }

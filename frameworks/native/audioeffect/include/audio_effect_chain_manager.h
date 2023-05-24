@@ -33,19 +33,22 @@
 namespace OHOS {
 namespace AudioStandard {
 
+#define NUM_PARAM 2
+
 class AudioEffectChain {
 public:
     AudioEffectChain(std::string scene);
     ~AudioEffectChain();
+    void SetEffectMode(std::string mode);
     void AddEffectHandleBegin();
     void AddEffectHandleEnd();
-    void AddEffectHandle(AudioEffectHandle effectHandle);
-    // void SetEffectChain(std::vector<AudioEffectHandle *> &effectHandles);
+    void AddEffectHandle(AudioEffectHandle effectHandle);    
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     void Dump();
 private:
     std::string sceneType;
+    std::string effectMode;
     std::vector<AudioEffectHandle> standByEffectHandles;
     AudioEffectConfig ioBufferConfig;
     AudioBuffer audioBufIn;
