@@ -33,7 +33,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-#define NUM_PARAM 2
+#define NUM_SET_EFFECT_PARAM 3
 
 class AudioEffectChain {
 public:

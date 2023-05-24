@@ -21,15 +21,18 @@ namespace AudioStandard {
 
 struct HistenContext {
     const struct AudioEffectInterface *aei;
+    float gain;
 };
 
 int32_t HistenProcess (AudioEffectHandle self, AudioBuffer *inBuffer, AudioBuffer *outBuffer)
 {
+    HistenContext *pContext = (HistenContext *)self;
     float *bufferIn = inBuffer->f32;
     float *bufferOut = outBuffer->f32;
     int32_t frameLen = inBuffer->frameLength;
     for (int i = 0; i < frameLen * 2; i++) {
-        bufferOut[i] = bufferIn[i] * 3;
+        bufferOut[i] = bufferIn[i] * pContext->gain;
+        // bufferOut[i] = bufferIn[i] * 3.0f;
     }
     return 0;
 }
@@ -37,6 +40,20 @@ int32_t HistenProcess (AudioEffectHandle self, AudioBuffer *inBuffer, AudioBuffe
 int32_t HistenCommand (AudioEffectHandle self, uint32_t cmdCode,
         AudioEffectTransInfo *cmdInfo, AudioEffectTransInfo *replyInfo)
 {
+    HistenContext *pContext = (HistenContext *)self;
+    int *data;
+    switch (cmdCode) {
+        case EFFECT_CMD_SET_PARAM:
+            data = (int *)cmdInfo->data;
+            if (data[1] == SCENE_MUSIC) {
+                pContext->gain = 3.0f;
+            } else {
+                pContext->gain = 0.33f;
+            }
+            break;
+        default:
+            break;
+    }
     return 0;
 }
 
@@ -51,6 +68,7 @@ extern "C" int32_t EffectCreate(const AudioEffectDescriptor descriptor, AudioEff
 {
     auto *pContext = new HistenContext;
     pContext->aei = &g_HistenInterface;
+    pContext->gain = 3.0f;
     *handle = (AudioEffectHandle)pContext;
     // *pHandle = g_HistenInterface;
     // int32_t ret;

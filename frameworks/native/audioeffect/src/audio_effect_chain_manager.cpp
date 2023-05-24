@@ -130,8 +130,8 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle) {
     // Set param
     int32_t sceneTypeEnum = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
     int32_t effectModeEnum = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
-    int32_t params[NUM_PARAM] = {sceneTypeEnum, effectModeEnum};
-    cmdInfo = {sizeof(int32_t) * NUM_PARAM, &params};
+    int32_t params[NUM_SET_EFFECT_PARAM] = {(int32_t)EFFECT_SET_PARAM, sceneTypeEnum, effectModeEnum};
+    cmdInfo = {sizeof(int32_t) * NUM_SET_EFFECT_PARAM, &params};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     if (ret != 0) {
         AUDIO_ERR_LOG("EFFECT_CMD_SET_PARAM fail");
