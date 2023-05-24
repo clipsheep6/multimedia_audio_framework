@@ -96,6 +96,11 @@ static void UpdateEffectInfoArray(SupportedEffectConfig &supportedEffectConfig,
         audioEffectMode = effectModeMap.at("EFFECT_NONE");
         audioSceneEffectInfo.mode.push_back(audioEffectMode);
     }
+    index = std::find(audioSceneEffectInfo.mode.begin(), audioSceneEffectInfo.mode.end(), 1);
+    if (index == audioSceneEffectInfo.mode.end()) {
+        audioEffectMode = effectModeMap.at("EFFECT_DEFAULT");
+        audioSceneEffectInfo.mode.push_back(audioEffectMode);
+    }
     std::sort(audioSceneEffectInfo.mode.begin(), audioSceneEffectInfo.mode.end());
 }
 
