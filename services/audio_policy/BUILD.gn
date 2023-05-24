@@ -279,6 +279,7 @@ config("audio_policy_client_config") {
     "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
   ]
 
   cflags = [
@@ -318,7 +319,10 @@ ohos_shared_library("audio_policy_client") {
     "client/src/audio_volume_key_event_callback_stub.cpp",
   ]
 
-  deps = [ "../audio_service:audio_common" ]
+  deps = [
+    "../audio_service:audio_common",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
+  ]
 
   public_configs = [ ":audio_policy_client_config" ]
 

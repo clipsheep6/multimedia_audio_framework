@@ -20,6 +20,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 using namespace std;
 
@@ -38,6 +39,7 @@ AudioRendererPolicyServiceDiedCallbackNapi::~AudioRendererPolicyServiceDiedCallb
 
 void AudioRendererPolicyServiceDiedCallbackNapi::OnAudioPolicyServiceDied()
 {
+    Trace trace("AudioRendererPolicyServiceDiedCallbackNapi::OnAudioPolicyServiceDied");
     rendererNapi_->DestroyCallbacks();
     AUDIO_INFO_LOG("AudioRendererNapi::UnegisterRendererDeviceChangeCallback is successful");
 }

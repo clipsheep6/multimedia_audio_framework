@@ -27,6 +27,7 @@
 #include "audio_manager_listener_stub.h"
 #include "device_manager.h"
 #include "device_init_callback.h"
+#include "audio_utils.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_bluetooth_manager.h"
@@ -2731,11 +2732,21 @@ void AudioPolicyService::SubscribeAccessibilityConfigObserver()
 
 float AudioPolicyService::GetMinStreamVolume()
 {
+    Trace trace("AudioPolicyService::GetMinStreamVolume");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", audioPolicyManager_.GetMinStreamVolume());
     return audioPolicyManager_.GetMinStreamVolume();
 }
 
 float AudioPolicyService::GetMaxStreamVolume()
 {
+    Trace trace("AudioPolicyService::GetMaxStreamVolume");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", audioPolicyManager_.GetMaxStreamVolume());
     return audioPolicyManager_.GetMaxStreamVolume();
 }
 } // namespace AudioStandard

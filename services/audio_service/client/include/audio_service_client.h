@@ -432,6 +432,13 @@ public:
     AudioRendererRate GetStreamRenderRate();
 
     /**
+    * @brief Write samplerate change sysevent
+    *
+    * @param sampleRateValue the changed sampling rate
+    */
+    void WriteSampleRateSysEvent(uint32_t sampleRateValue);
+
+    /**
     * @brief Set stream render sampling rate
     *
     * @param sampleRate The sample rate at which the stream needs to be rendered.

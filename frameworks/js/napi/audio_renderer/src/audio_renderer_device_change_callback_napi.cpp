@@ -17,6 +17,7 @@
 #include <uv.h>
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 using namespace std;
 
@@ -35,6 +36,7 @@ AudioRendererDeviceChangeCallbackNapi::~AudioRendererDeviceChangeCallbackNapi()
 
 void AudioRendererDeviceChangeCallbackNapi::AddCallbackReference(napi_value args)
 {
+    Trace trace("AudioRendererDeviceChangeCallbackNapi::AddCallbackReference");
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
@@ -63,6 +65,7 @@ void AudioRendererDeviceChangeCallbackNapi::AddCallbackReference(napi_value args
 
 void AudioRendererDeviceChangeCallbackNapi::RemoveCallbackReference(napi_env env, napi_value args)
 {
+    Trace trace("AudioRendererDeviceChangeCallbackNapi::RemoveCallbackReference");
     std::lock_guard<std::mutex> lock(mutex_);
     bool isEquals = false;
     napi_value copyValue = nullptr;
@@ -103,6 +106,7 @@ void AudioRendererDeviceChangeCallbackNapi::RemoveCallbackReference(napi_env env
 
 void AudioRendererDeviceChangeCallbackNapi::RemoveAllCallbacks()
 {
+    Trace trace("AudioRendererDeviceChangeCallbackNapi::RemoveAllCallbacks");
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto ref = callbacks_.begin(); ref != callbacks_.end(); ++ref) {
         napi_status ret = napi_delete_reference(env_, *ref);
@@ -114,6 +118,7 @@ void AudioRendererDeviceChangeCallbackNapi::RemoveAllCallbacks()
 
 void AudioRendererDeviceChangeCallbackNapi::OnStateChange(const DeviceInfo &deviceInfo)
 {
+    Trace trace("AudioRendererDeviceChangeCallbackNapi::OnStateChange");
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto ref = callbacks_.begin(); ref != callbacks_.end(); ++ref) {
         OnJsCallbackRendererDeviceInfo(*ref, deviceInfo);
@@ -172,6 +177,7 @@ static void NativeRendererChangeInfoToJsObj(const napi_env &env, napi_value &jsC
 
 void AudioRendererDeviceChangeCallbackNapi::WorkCallbackCompleted(uv_work_t *work, int status)
 {
+    Trace trace("AudioRendererDeviceChangeCallbackNapi::WorkCallbackCompleted");
     // Js Thread
     std::shared_ptr<AudioRendererDeviceChangeJsCallback> context(
         static_cast<AudioRendererDeviceChangeJsCallback*>(work->data),
@@ -208,6 +214,7 @@ void AudioRendererDeviceChangeCallbackNapi::WorkCallbackCompleted(uv_work_t *wor
 void AudioRendererDeviceChangeCallbackNapi::OnJsCallbackRendererDeviceInfo(napi_ref method,
     const DeviceInfo &deviceInfo)
 {
+    Trace trace("AudioRendererDeviceChangeCallbackNapi::OnJsCallbackRendererDeviceInfo");
     uv_loop_s *loop = nullptr;
     napi_get_uv_event_loop(env_, &loop);
     if (loop == nullptr) {
@@ -239,6 +246,7 @@ void AudioRendererDeviceChangeCallbackNapi::OnJsCallbackRendererDeviceInfo(napi_
 
 int32_t AudioRendererDeviceChangeCallbackNapi::GetCallbackListSize() const
 {
+    Trace trace("AudioRendererDeviceChangeCallbackNapi::GetCallbackListSize");
     return callbacks_.size();
 }
 }  // namespace AudioStandard

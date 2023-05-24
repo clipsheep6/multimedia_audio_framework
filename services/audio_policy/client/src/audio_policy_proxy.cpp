@@ -16,6 +16,7 @@
 #include "audio_policy_manager.h"
 #include "audio_log.h"
 #include "audio_policy_proxy.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1769,6 +1770,7 @@ std::string AudioPolicyProxy::GetSystemSoundUri(const std::string &key)
 
 float AudioPolicyProxy::GetMinStreamVolume()
 {
+    Trace trace("AudioPolicyProxy::GetMinStreamVolume");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -1787,6 +1789,7 @@ float AudioPolicyProxy::GetMinStreamVolume()
 
 float AudioPolicyProxy::GetMaxStreamVolume()
 {
+    Trace trace("AudioPolicyProxy::GetMaxStreamVolume");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;

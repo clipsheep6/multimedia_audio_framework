@@ -21,6 +21,7 @@
 #include "iservice_registry.h"
 #include "audio_log.h"
 #include "system_ability_definition.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,6 +75,7 @@ inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
 {
+    Trace trace("AudioPolicyManager::AudioPolicyServerDied");
     lock_guard<mutex> lock(g_apProxyMutex);
     AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> cb;
@@ -1047,6 +1049,7 @@ std::string AudioPolicyManager::GetSystemSoundUri(const std::string &key)
 
 float AudioPolicyManager::GetMinStreamVolume()
 {
+    Trace trace("AudioPolicyManager::GetMinStreamVolume");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetMinStreamVolume: audio policy manager proxy is NULL.");
@@ -1057,6 +1060,7 @@ float AudioPolicyManager::GetMinStreamVolume()
 
 float AudioPolicyManager::GetMaxStreamVolume()
 {
+    Trace trace("AudioPolicyManager::GetMaxStreamVolume");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetMaxStreamVolume: audio policy manager proxy is NULL.");
@@ -1068,6 +1072,7 @@ float AudioPolicyManager::GetMaxStreamVolume()
 int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
     const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
 {
+    Trace trace("AudioPolicyManager::RegisterAudioPolicyServerDiedCb");
     lock_guard<mutex> lock(g_apProxyMutex);
     rendererCBMap_[clientPid] = callback;
     return SUCCESS;
@@ -1075,6 +1080,7 @@ int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t client
 
 int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clientPid)
 {
+    Trace trace("AudioPolicyManager::UnregisterAudioPolicyServerDiedCb");
     AUDIO_INFO_LOG("AudioPolicyManager::UnregisterAudioPolicyServerDiedCb client pid: %{public}d", clientPid);
     for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
         rendererCBMap_.erase(getpid());

@@ -26,6 +26,7 @@
 #ifdef OHCORE
 #include "audio_renderer_gateway.h"
 #endif
+#include "hisysevent.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -524,11 +525,21 @@ AudioRendererRate AudioRendererPrivate::GetRenderRate() const
 
 int32_t AudioRendererPrivate::SetRendererSamplingRate(uint32_t sampleRate) const
 {
+    Trace trace("AudioRenerer::SetRendererSamplingRate");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "SAMPLERATE_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "SAMPLERATE", sampleRate);
     return audioStream_->SetRendererSamplingRate(sampleRate);
 }
 
 uint32_t AudioRendererPrivate::GetRendererSamplingRate() const
 {
+    Trace trace("AudioRenerer::GetRendererSamplingRate");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "SAMPLERATE_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "SAMPLERATE", audioStream_->GetRendererSamplingRate());
     return audioStream_->GetRendererSamplingRate();
 }
 
@@ -789,16 +800,27 @@ float AudioRendererPrivate::GetSingleStreamVolume() const
 
 float AudioRendererPrivate::GetMinStreamVolume() const
 {
+    Trace trace("AudioRenderer::GetMinStreamVolume");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", AudioPolicyManager::GetInstance().GetMinStreamVolume());
     return AudioPolicyManager::GetInstance().GetMinStreamVolume();
 }
 
 float AudioRendererPrivate::GetMaxStreamVolume() const
 {
+    Trace trace("AudioRenderer::GetMinStreamVolume");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "VOLUME", AudioPolicyManager::GetInstance().GetMaxStreamVolume());
     return AudioPolicyManager::GetInstance().GetMaxStreamVolume();
 }
 
 int32_t AudioRendererPrivate::GetCurrentOutputDevices(DeviceInfo &deviceInfo) const
 {
+    Trace trace("AudioRenderer::GetMinStreamVolume");
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     uint32_t sessionId = static_cast<uint32_t>(-1);
     int32_t ret = GetAudioStreamId(sessionId);
@@ -816,6 +838,14 @@ int32_t AudioRendererPrivate::GetCurrentOutputDevices(DeviceInfo &deviceInfo) co
     for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
         if ((*it)->sessionId == sessionId) {
             deviceInfo = (*it)->outputDeviceInfo;
+            ContentType contentType = (*it)->rendererInfo.contentType;
+            StreamUsage streamUsage = (*it)->rendererInfo.streamUsage;
+            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+                "DEVICE_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+                "ISOUTPUT", 1,
+                "STREAMID", GetAudioStreamId(sessionId),
+                "STREAMTYPE", audioStream_->GetStreamType(contentType, streamUsage),
+                "DEVICETYPE", deviceInfo.deviceType);
         }
     }
     return SUCCESS;
@@ -823,12 +853,18 @@ int32_t AudioRendererPrivate::GetCurrentOutputDevices(DeviceInfo &deviceInfo) co
 
 uint32_t AudioRendererPrivate::GetUnderflowCount() const
 {
+    Trace trace("AudioRenderer::GetUnderflowCount");
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "UDERFLOW_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1,
+        "UNDERFLOWCOUNT", audioStream_->GetUnderflowCount());
     return audioStream_->GetUnderflowCount();
 }
 
 int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback)
 {
+    Trace trace("AudioRenderer::RegisterAudioRendererEventListener");
     AUDIO_INFO_LOG("RegisterAudioRendererEventListener client id: %{public}d", clientPid);
     if (callback == nullptr) {
         AUDIO_ERR_LOG("callback is null");
@@ -864,6 +900,7 @@ int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t c
 int32_t AudioRendererPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
     const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
 {
+    Trace trace("AudioRenderer::RegisterAudioPolicyServerDiedCb");
     AUDIO_INFO_LOG("RegisterAudioPolicyServerDiedCb client id: %{public}d", clientPid);
     if (callback == nullptr) {
         AUDIO_ERR_LOG("callback is null");
@@ -875,12 +912,14 @@ int32_t AudioRendererPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clie
 
 int32_t AudioRendererPrivate::UnregisterAudioPolicyServerDiedCb(const int32_t clientPid)
 {
+    Trace trace("AudioRenderer::UnregisterAudioPolicyServerDiedCb");
     AUDIO_INFO_LOG("AudioRendererPrivate:: UnregisterAudioPolicyServerDiedCb client id: %{public}d", clientPid);
     return AudioPolicyManager::GetInstance().UnregisterAudioPolicyServerDiedCb(clientPid);
 }
 
 void AudioRendererPrivate::DestroyAudioRendererStateCallback()
 {
+    Trace trace("AudioRenderer::DestroyAudioRendererStateCallback");
     if (audioDeviceChangeCallback_ != nullptr) {
         audioDeviceChangeCallback_.reset();
         audioDeviceChangeCallback_ = nullptr;
@@ -889,6 +928,7 @@ void AudioRendererPrivate::DestroyAudioRendererStateCallback()
 
 int32_t AudioRendererPrivate::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
+    Trace trace("AudioRenderer::UnregisterAudioRendererEventListener");
     AUDIO_INFO_LOG("AudioRendererPrivate::UnregisterAudioCapturerEventListener client id: %{public}d", clientPid);
     int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientPid);
     if (ret != 0) {
@@ -913,16 +953,19 @@ AudioRendererStateChangeCallbackImpl::~AudioRendererStateChangeCallbackImpl()
 void AudioRendererStateChangeCallbackImpl::SaveCallback(
     const std::weak_ptr<AudioRendererDeviceChangeCallback> &callback)
 {
+    Trace trace("AudioRendererStateChangeCallbackImpl::SaveCallback");
     callback_ = callback;
 }
 
 void AudioRendererStateChangeCallbackImpl::setAudioRendererObj(AudioRendererPrivate *rendererObj)
 {
+    Trace trace("AudioRendererStateChangeCallbackImpl::setAudioRendererObj");
     renderer = rendererObj;
 }
 
 bool AudioRendererPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
 {
+    Trace trace("AudioRenderer::IsDeviceChanged");
     bool deviceUpdated = false;
     DeviceInfo deviceInfo = {};
 
@@ -944,6 +987,7 @@ bool AudioRendererPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
 void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
     const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
+    Trace trace("AudioRendererStateChangeCallbackImpl::OnRendererStateChange");
     std::shared_ptr<AudioRendererDeviceChangeCallback> cb = callback_.lock();
     if (cb == nullptr) {
         AUDIO_ERR_LOG("AudioRendererStateChangeCallbackImpl::OnStateChange cb == nullptr.");

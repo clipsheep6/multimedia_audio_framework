@@ -27,6 +27,15 @@ public:
     void OnStateChange(const RendererState state, const StateChangeCmdType cmdType) override {}
 };
 
+class AudioRendererDeviceChangeCallbackTest : public AudioRendererDeviceChangeCallback {
+     void OnStateChange(const DeviceInfo &deviceInfo) override {}
+     void RemoveAllCallbacks() override {}
+};
+
+class AudioRendererPolicyServiceDiedCallbackTest : public AudioRendererPolicyServiceDiedCallback {
+    void OnAudioPolicyServiceDied() override {}
+};
+
 class RendererPositionCallbackTest : public RendererPositionCallback {
 public:
     void OnMarkReached(const int64_t &framePosition) override {}
