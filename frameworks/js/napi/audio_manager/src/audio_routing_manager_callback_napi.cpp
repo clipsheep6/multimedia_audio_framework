@@ -58,8 +58,8 @@ void AudioPreferOutputDeviceChangeCallbackNapi::SaveCallbackReference(AudioStrea
 void AudioPreferOutputDeviceChangeCallbackNapi::RemoveCallbackReference(napi_env env, napi_value callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    bool isEquals = false;
-    napi_value copyValue = nullptr;
+    // bool isEquals = false;
+    // napi_value copyValue = nullptr;
 
     if (callback == nullptr) {
         AUDIO_INFO_LOG("RemoveCallbackReference: js callback is nullptr, remove all callback reference");
@@ -83,7 +83,8 @@ void AudioPreferOutputDeviceChangeCallbackNapi::RemoveCallbackReference(napi_env
 void AudioPreferOutputDeviceChangeCallbackNapi::RemoveAllCallbacks()
 {
     for (auto it = preferOutputDeviceCbList_.begin(); it != preferOutputDeviceCbList_.end(); ++it) {
-        napi_status ret = napi_delete_reference(env_, (*it).first->cb_);
+        // napi_status ret = napi_delete_reference(env_, (*it).first->cb_);
+        napi_delete_reference(env_, (*it).first->cb_);
         (*it).first->cb_ = nullptr;
     }
     preferOutputDeviceCbList_.clear();
