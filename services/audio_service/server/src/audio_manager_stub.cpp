@@ -235,7 +235,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             RequestThreadPriority(tid, bundleName);
             return AUDIO_OK;
         }
-		case CREATE_AUDIO_EFFECT_CHAIN_MANAGER: {
+        case CREATE_AUDIO_EFFECT_CHAIN_MANAGER: {
             int i;
             vector<EffectChain> effectChains = {};
             vector<int32_t> countEffect = {};
@@ -263,7 +263,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
 
             bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap);
-            if(!createSuccess){
+            if (!createSuccess) {
                 AUDIO_ERR_LOG("create audio effect chain manager failed, please check log");
                 return AUDIO_ERR;
             }
