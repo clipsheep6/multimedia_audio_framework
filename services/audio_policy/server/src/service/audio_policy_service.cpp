@@ -1713,6 +1713,10 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         activeInputDevice_ = DEVICE_TYPE_MIC;
         OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
         OnPnpDeviceStatusUpdated(pnpDevice_, isPnpDeviceConnected);
+        audioEffectManager_.SetMasterSinkAvailable();
+        if (audioEffectManager_.CanLoadEffectSinks()) {
+            LoadEffectSinks();
+        }
     }
 }
 
@@ -1748,6 +1752,28 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
     gsp->SetAudioBalanceValue(audioBalance);
 }
 
+void AudioPolicyService::LoadEffectSinks()
+{
+    // Create sink for each effect
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-cluster-sink.z.so";
+    moduleInfo.name = "CLUSTER";
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+    IOHandles_[moduleInfo.name] = ioHandle;
+
+    moduleInfo.lib = "libmodule-effect-sink.z.so";
+    moduleInfo.rate = "48000";
+    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
+        ++sceneType) {
+        AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType->second.c_str());
+        moduleInfo.name = sceneType->second;
+        ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+        IOHandles_[moduleInfo.name] = ioHandle;
+    }
+}
+
 void AudioPolicyService::LoadEffectLibrary()
 {
     // IPC -> audioservice load library
@@ -1758,7 +1784,7 @@ void AudioPolicyService::LoadEffectLibrary()
     }
     OriginalEffectConfig oriEffectConfig = {};
     audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
-    vector<Effect> successLoadedEffects;    
+    vector<Effect> successLoadedEffects;
     bool loadSuccess = gsp->LoadAudioEffectLibraries(oriEffectConfig.libraries,
                                                      oriEffectConfig.effects,
                                                      successLoadedEffects);
@@ -1774,38 +1800,12 @@ void AudioPolicyService::LoadEffectLibrary()
     audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
     std::unordered_map<std::string, std::string> sceneTypeToEffectChainNameMap;
     audioEffectManager_.ConstructSceneTypeToEffectChainNameMap(sceneTypeToEffectChainNameMap);
-    bool createSuccess = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, sceneTypeToEffectChainNameMap);
-    CHECK_AND_RETURN_LOG(createSuccess, "EffectChainManager create failed");
+    bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, sceneTypeToEffectChainNameMap);
+    CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
 
-    // Wait for master sink to activate
-    auto now = std::chrono::system_clock::now().time_since_epoch();
-    int32_t startTimeInMs = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
-    while (audioPolicyManager_.GetAllSinks().empty()) {
-        now = std::chrono::system_clock::now().time_since_epoch();
-        int32_t currTimeInMs = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
-        if (currTimeInMs - startTimeInMs > 5000) {
-            return; // wait more than 5000 milliseconds, master sink still does not activate, do not load effect sinks
-        }
-        AUDIO_INFO_LOG("Waiting for master sink to activate");
-        // keep waiting
-    }
-
-    // Create sink for each effect
-    AudioModuleInfo moduleInfo = {};
-    moduleInfo.lib = "libmodule-cluster-sink.z.so";
-    moduleInfo.name = "CLUSTER";
-    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
-    IOHandles_[moduleInfo.name] = ioHandle;
-
-    moduleInfo.lib = "libmodule-effect-sink.z.so";
-    moduleInfo.rate = "48000";
-    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end(); ++sceneType) {
-        AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType->second.c_str());
-        moduleInfo.name = sceneType->second;
-        ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
-        IOHandles_[moduleInfo.name] = ioHandle;
+    audioEffectManager_.SetEffectChainManagerAvailable();
+    if (audioEffectManager_.CanLoadEffectSinks()) {
+        LoadEffectSinks();
     }
 }
 

@@ -97,7 +97,7 @@ void AudioEffectChain::AddEffectHandleBegin() {
 }
 
 template <typename T>
-int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, std::string &value)
+int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, std::string value)
 {
     for (auto it = map.begin(); it != map.end(); ++it) {
         if (it->second == value) {
@@ -114,17 +114,20 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle) {
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
     if (ret != 0) {
-        AUDIO_ERR_LOG("EFFECT_CMD_INIT fail");
+        AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_INIT fail",
+            sceneType.c_str(), effectMode.c_str());
         return;
     }
     ret = (*handle)->command(handle, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
     if (ret != 0) {
-        AUDIO_ERR_LOG("EFFECT_CMD_ENABLE fail");
+        AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
+            sceneType.c_str(), effectMode.c_str());
         return;
     }
     ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
     if (ret != 0) {
-        AUDIO_ERR_LOG("EFFECT_CMD_SET_CONFIG fail");
+        AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail",
+            sceneType.c_str(), effectMode.c_str());
         return;
     }
     // Set param
@@ -140,9 +143,9 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle) {
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
     if (ret != 0) {
-        AUDIO_ERR_LOG("EFFECT_CMD_SET_PARAM fail");
+        AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_PARAM fail",
+            sceneType.c_str(), effectMode.c_str());
         return;
-        
     }
     standByEffectHandles.emplace_back(handle);
 }
@@ -151,18 +154,24 @@ void AudioEffectChain::AddEffectHandleEnd() {
     // used for crossfading in the near future
 }
 
-void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen) {    
+void BypassAlgorithm(float *bufIn, float *bufOut, uint32_t totalLen) {
+    for (uint32_t i = 0; i < totalLen; ++i) {
+        bufOut[i] = bufIn[i];
+    }
+}
+
+void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen) {
     if (standByEffectHandles.empty()) {
         AUDIO_INFO_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
-        for (uint32_t i = 0; i < frameLen * ioBufferConfig.outputCfg.channels; ++i) {
-            bufOut[i] = bufIn[i];
-        }
+        BypassAlgorithm(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
         return;
     }
 
     audioBufIn.frameLength = frameLen;
     audioBufOut.frameLength = frameLen;
+    int ret;
     int count = 0;
+    bool writeToBufOutFlag = false;
     for (AudioEffectHandle handle: standByEffectHandles) {
         if (count % 2 == 0) {
             audioBufIn.raw = bufIn;
@@ -170,10 +179,21 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
         } else {
             audioBufOut.raw = bufIn;
             audioBufIn.raw = bufOut;
-        }        
-        (*handle)->process(handle, &audioBufIn, &audioBufOut);
+        }
+        ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs process fail",
+                sceneType.c_str(), effectMode.c_str());
+            continue;
+        }
+        writeToBufOutFlag = true;
+        count++;
     }
     bufOut = audioBufOut.f32;
+
+    if (!writeToBufOutFlag) {
+        BypassAlgorithm(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
+    }
 }
 
 void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels)
@@ -188,7 +208,7 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
 }
 
 int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList, 
-    AudioEffectLibEntry **libEntry, std::string &libName) {
+    AudioEffectLibEntry **libEntry, std::string libName) {
     for (const std::unique_ptr<AudioEffectLibEntry> &lib : effectLibraryList) {
         if (lib->libraryName == effect) {
             libName = lib->libraryName;
@@ -223,10 +243,10 @@ int32_t AudioEffectChainManager::GetFrameLen()
 void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
     std::unordered_map<std::string, std::string> &map,
     std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList) {
-    
+
     std::set<std::string> effectSet;
-    for (EffectChain efc: effectChains){
-        for(std::string effect: efc.apply){
+    for (EffectChain efc: effectChains) {
+        for (std::string effect: efc.apply) {
             effectSet.insert(effect);
         }
     }
@@ -308,6 +328,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
         effectChain = effectNone;
     }
 
+    int ret;
     audioEffectChain->SetEffectMode(effectMode);
     audioEffectChain->AddEffectHandleBegin();
     for (std::string effect: EffectChainToEffectsMap[effectChain]) {
@@ -321,9 +342,17 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
         }
         if (!EffectToLibraryEntryMap[effect]->audioEffectLibHandle) {
             AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s]->audioEffectLibHandle is nullptr", effect.c_str());
-            continue;               
+            continue;
         }
-        EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
+        if (!EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect) {
+            AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s]->audioEffectLibHandle->createEffect is nullptr", effect.c_str());
+            continue;
+        }
+        ret = EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
+            continue;
+        }
         audioEffectChain->AddEffectHandle(handle);
     }
     audioEffectChain->AddEffectHandleEnd();

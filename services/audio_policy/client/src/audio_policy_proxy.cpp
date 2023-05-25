@@ -1821,27 +1821,6 @@ int32_t AudioPolicyProxy::GetMaxRendererInstances()
     return reply.ReadInt32();
 }
 
-static void EffectChainApplyProcess(EffectChain &tmp, MessageParcel &reply, int countApply)
-{
-    int j;
-    for (j = 0; j < countApply; j++) {
-        string ECapply = reply.ReadString();
-        tmp.apply.push_back(ECapply);
-    }
-}
-
-static void EffectChainProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply)
-{
-    EffectChain tmp;
-    string ECname = reply.ReadString();
-    tmp.name = ECname;
-    int countApply = reply.ReadInt32();
-    if (countApply > 0) {
-        EffectChainApplyProcess(tmp, reply, countApply);
-    }
-    supportedEffectConfig.effectChains.push_back(tmp);
-}
-
 static void PreprocessMode(Stream &stream, MessageParcel &reply, int countMode)
 {
     int j, k;
@@ -1900,12 +1879,8 @@ static Stream PostprocessProcess(MessageParcel &reply)
     return stream;
 }
 
-static int32_t QueryEffectSceneModeChkReply(int countEC, int countPre, int countPost)
+static int32_t QueryEffectSceneModeChkReply(int countPre, int countPost)
 {
-    if ((countEC < 0) || (countEC > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
-        AUDIO_ERR_LOG("QUERY_EFFECT_SCENEMODE read replyParcel failed");
-        return -1;
-    }
     if ((countPre < 0) || (countPre > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
         AUDIO_ERR_LOG("QUERY_EFFECT_SCENEMODE read replyParcel failed");
         return -1;
@@ -1933,19 +1908,12 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
         AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);
         return error;
     }
-    int countEC = reply.ReadInt32();
     int countPre = reply.ReadInt32();
     int countPost = reply.ReadInt32();
-    error = QueryEffectSceneModeChkReply(countEC, countPre, countPost);
+    error = QueryEffectSceneModeChkReply(countPre, countPost);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);
         return error;
-    }
-    // effectChain
-    if (countEC > 0) {
-        for (i = 0; i < countEC; i++) {
-            EffectChainProcess(supportedEffectConfig, reply);
-        }
     }
     // preprocess
     Stream stream;

@@ -343,6 +343,8 @@ private:
 
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
+    void LoadEffectSinks();
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
