@@ -308,13 +308,13 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
     return loadSuccess;
 }
 
-bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> effectChains){
+bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains, std::unordered_map<std::string, std::string> &map){
     int32_t audio_policy_server_id = 1041;
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
         return false;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->InitAudioEffectChain(effectChains, audioEffectServer_->GetAvailableEffects());
+    audioEffectChainManager->InitAudioEffectChainManager(effectChains, map, audioEffectServer_->GetEffectEntries());
     return true;
 }
 

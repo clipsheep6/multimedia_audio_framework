@@ -23,14 +23,17 @@
 extern "C" {
 #endif
 
-struct BufferAttr {
+typedef struct BufferAttr {
     float *bufIn;
     float *bufOut;
-    int numChan;
+    int samplingRate;
+    int numChanIn;
+    int numChanOut;
     int frameLen;
-};
+} BufferAttr;
 
-int32_t EffectChainManagerProcess(void *bufferAttrVoid, char *sceneType);
+int32_t EffectChainManagerCreate(char *sceneType, BufferAttr *bufferAttr);
+int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
 int32_t EffectChainManagerGetFrameLen();
 
 #ifdef __cplusplus

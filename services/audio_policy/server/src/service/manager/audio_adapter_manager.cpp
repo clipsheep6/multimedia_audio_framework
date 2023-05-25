@@ -237,6 +237,17 @@ bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
     return audioServiceAdapter_->IsStreamActive(streamType);
 }
 
+vector<SinkInfo> AudioAdapterManager::GetAllSinks()
+{
+    if (!audioServiceAdapter_) {
+        AUDIO_ERR_LOG("GetAllSinks audio adapter null");
+        vector<SinkInfo> sinkInputList;
+        return sinkInputList;
+    }
+
+    return audioServiceAdapter_->GetAllSinks();
+}
+
 vector<SinkInput> AudioAdapterManager::GetAllSinkInputs()
 {
     if (!audioServiceAdapter_) {

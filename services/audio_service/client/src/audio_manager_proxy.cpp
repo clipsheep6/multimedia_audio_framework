@@ -495,7 +495,7 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
     }
 }
 
-bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> effectChains)
+bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effectChains, std::unordered_map<std::string, std::string> &map)
 {
     int32_t error;
 
@@ -509,25 +509,31 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> effect
     int32_t countEffectChains = effectChains.size();
     std::vector<int32_t> listCountEffects;
 
-    for(EffectChain &effectChain: effectChains){
+    for (EffectChain &effectChain: effectChains) {
         listCountEffects.emplace_back(effectChain.apply.size());
     }
 
     dataParcel.WriteInt32(countEffectChains);
-    for(int32_t countEffects: listCountEffects){
+    for (int32_t countEffects: listCountEffects) {
         dataParcel.WriteInt32(countEffects);
     }
 
-    for(EffectChain &effectChain: effectChains){
+    for (EffectChain &effectChain: effectChains) {
         dataParcel.WriteString(effectChain.name);
         for(std::string applyName: effectChain.apply){
             dataParcel.WriteString(applyName);
         }
     }
 
+    dataParcel.WriteInt32(map.size());
+    for (auto item = map.begin(); item != map.end(); ++item) {
+        dataParcel.WriteString(item->first);
+        dataParcel.WriteString(item->second);
+    }
+
     error = Remote()->SendRequest(CREATE_AUDIO_EFFECT_CHAIN_MANAGER, dataParcel, replyParcel, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("CreatAudioEffectChainManager failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("CreateAudioEffectChainManager failed, error: %{public}d", error);
         return false;
     }
     return true;
