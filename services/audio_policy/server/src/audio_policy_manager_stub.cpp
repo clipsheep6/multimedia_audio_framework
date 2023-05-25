@@ -885,19 +885,6 @@ void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data
     reply.WriteInt32(result);
 }
 
-static void EffectChainProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
-{
-    int j;
-    reply.WriteString(supportedEffectConfig.effectChains[i].name);
-    int countApply = supportedEffectConfig.effectChains[i].apply.size();
-    reply.WriteInt32(countApply);
-    if (countApply > 0) {
-        for (j = 0; j < countApply; j++) {
-            // i th EffectChain's j th apply
-            reply.WriteString(supportedEffectConfig.effectChains[i].apply[j]);
-        }
-    }
-}
 static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
 {
     int k;
@@ -913,7 +900,7 @@ static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, Message
 }
 static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
 {
-	int j;
+    int j;
     reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].scene);
     int countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
@@ -960,18 +947,11 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
         return;
     }
 
-    int countEC = supportedEffectConfig.effectChains.size();
     int countPre = supportedEffectConfig.preProcessNew.stream.size();
     int countPost = supportedEffectConfig.postProcessNew.stream.size();
-    reply.WriteInt32(countEC);
     reply.WriteInt32(countPre);
     reply.WriteInt32(countPost);
 
-    if (countEC > 0) {
-        for (i = 0; i < countEC; i++) {
-            EffectChainProcess(supportedEffectConfig, reply, i);
-        }
-    }
     if (countPre > 0) {
         for (i = 0; i < countPre; i++) {
             PreprocessProcess(supportedEffectConfig, reply, i);
