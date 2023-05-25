@@ -237,6 +237,8 @@ public:
 
     int32_t GetMaxRendererInstances();
 
+    int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -357,6 +359,8 @@ private:
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
     DeviceType FindConnectedHeadset();
+
+    void LoadEffectSinks();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
