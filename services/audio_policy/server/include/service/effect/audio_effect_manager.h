@@ -36,8 +36,11 @@ public:
     void GetAvailableEffects(std::vector<Effect> &availableEffects);
     void UpdateAvailableEffects(std::vector<Effect> &newAvailableEffects);
     void GetSupportedEffectConfig(SupportedEffectConfig &supportedEffectConfig);
-    void ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map);
     void GetAvailableAEConfig();
+    void SetMasterSinkAvailable();
+    void SetEffectChainManagerAvailable();
+    bool CanLoadEffectSinks();
+    void ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map);
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
 private:
@@ -45,6 +48,8 @@ private:
     std::vector<Effect> availableEffects_;
     SupportedEffectConfig supportedEffectConfig_;
     int32_t existDefault_ = 0;
+    bool isMasterSinkAvailable_ = false;
+    bool isEffectChainManagerAvailable_ = false;
 
     void UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig);
     void UpdateEffectChains(std::vector<std::string> &availableLayout);

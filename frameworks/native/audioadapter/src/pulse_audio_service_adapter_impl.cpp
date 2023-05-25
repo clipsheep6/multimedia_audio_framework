@@ -333,7 +333,7 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
         // the sink inputs connected to effect sink remain the same
         if (IsValidSceneType(sinkInput.sinkName)) {
             continue;
-        }         
+        }
         // move the remaining sink inputs to the default sink
         uint32_t invalidSinkId = PA_INVALID_INDEX;
         MoveSinkInputByIndexOrName(sinkInput.paStreamId, invalidSinkId, name);

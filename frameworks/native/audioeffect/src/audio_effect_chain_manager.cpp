@@ -97,7 +97,7 @@ void AudioEffectChain::AddEffectHandleBegin() {
 }
 
 template <typename T>
-int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, std::string &value)
+int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, std::string value)
 {
     for (auto it = map.begin(); it != map.end(); ++it) {
         if (it->second == value) {
@@ -208,7 +208,7 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
 }
 
 int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList, 
-    AudioEffectLibEntry **libEntry, std::string &libName) {
+    AudioEffectLibEntry **libEntry, std::string libName) {
     for (const std::unique_ptr<AudioEffectLibEntry> &lib : effectLibraryList) {
         if (lib->libraryName == effect) {
             libName = lib->libraryName;
@@ -243,10 +243,10 @@ int32_t AudioEffectChainManager::GetFrameLen()
 void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
     std::unordered_map<std::string, std::string> &map,
     std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList) {
-    
+
     std::set<std::string> effectSet;
-    for (EffectChain efc: effectChains){
-        for(std::string effect: efc.apply){
+    for (EffectChain efc: effectChains) {
+        for (std::string effect: efc.apply) {
             effectSet.insert(effect);
         }
     }

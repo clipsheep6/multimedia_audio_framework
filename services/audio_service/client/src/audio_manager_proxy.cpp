@@ -495,7 +495,8 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
     }
 }
 
-bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effectChains, std::unordered_map<std::string, std::string> &map)
+bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
+                                                 std::unordered_map<std::string, std::string> &map)
 {
     int32_t error;
 
@@ -520,7 +521,7 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
 
     for (EffectChain &effectChain: effectChains) {
         dataParcel.WriteString(effectChain.name);
-        for(std::string applyName: effectChain.apply){
+        for (std::string applyName: effectChain.apply) {
             dataParcel.WriteString(applyName);
         }
     }

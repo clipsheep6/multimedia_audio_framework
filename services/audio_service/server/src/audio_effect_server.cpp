@@ -21,9 +21,6 @@
 #include "audio_log.h"
 #include "audio_effect_server.h"
 
-#define AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR "AELI"
-#define EFFECT_STRING_LEN_MAX 64
-
 namespace OHOS {
 namespace AudioStandard {
 
@@ -123,7 +120,7 @@ static bool LoadEffect(const Effect &effect, std::vector<std::unique_ptr<AudioEf
     descriptor.libraryName = effect.libraryName;
     descriptor.effectName = effect.name;
 
-    bool ret = currentLibEntry->audioEffectLibHandle->checkEffect(descriptor);    
+    bool ret = currentLibEntry->audioEffectLibHandle->checkEffect(descriptor);
     if (ret) {
         currentLibEntry->effectName.push_back(effect.name);
     } else {

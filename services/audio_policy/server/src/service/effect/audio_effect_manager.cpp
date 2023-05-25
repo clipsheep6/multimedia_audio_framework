@@ -64,28 +64,6 @@ void AudioEffectManager::GetSupportedEffectConfig(SupportedEffectConfig &support
     supportedEffectConfig = supportedEffectConfig_;
 }
 
-void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map)
-{
-    std::string sceneType;
-    std::string sceneMode;
-    std::string key;
-    for (auto &scene : supportedEffectConfig_.postProcessNew.stream) {
-        sceneType = scene.scene;
-        for (auto &mode : scene.streamEffectMode) {
-            sceneMode = mode.mode;
-            if (mode.devicePort.size() == 0) { // if no any device port
-                continue;
-            }
-            key = sceneType + "_&_" + sceneMode;
-            if (map.count(key)) { // if the key already register in map
-                continue;
-            }
-            map[key] = mode.devicePort[0].chain; // grab the first device port by default
-        }
-    }
-    AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEffectChainNameMap at policy, size is %{public}d", (int32_t)map.size());
-}
-
 static int32_t UpdateUnsupportedScene(std::string &scene)
 {
     int isSupported = 0;
@@ -457,6 +435,44 @@ void AudioEffectManager::GetAvailableAEConfig()
     if (ret != 0) {
         existDefault_ = -1;
     }
+}
+
+void AudioEffectManager::SetMasterSinkAvailable()
+{
+    isMasterSinkAvailable_ = true;
+}
+
+void AudioEffectManager::SetEffectChainManagerAvailable()
+{
+    isEffectChainManagerAvailable_ = true;
+}
+
+bool AudioEffectManager::CanLoadEffectSinks()
+{
+    return (isMasterSinkAvailable_ && isEffectChainManagerAvailable_);
+}
+
+void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map)
+{
+    std::string sceneType;
+    std::string sceneMode;
+    std::string key;
+    for (auto &scene : supportedEffectConfig_.postProcessNew.stream) {
+        sceneType = scene.scene;
+        for (auto &mode : scene.streamEffectMode) {
+            sceneMode = mode.mode;
+            if (mode.devicePort.size() == 0) { // if no any device port
+                continue;
+            }
+            key = sceneType + "_&_" + sceneMode;
+            if (map.count(key)) { // if the key already register in map
+                continue;
+            }
+            map[key] = mode.devicePort[0].chain; // grab the first device port by default
+        }
+    }
+    AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEffectChainNameMap at policy, size is %{public}d",
+        (int32_t)map.size());
 }
 
 } // namespce AudioStandard
