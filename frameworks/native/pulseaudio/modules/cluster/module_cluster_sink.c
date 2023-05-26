@@ -40,7 +40,7 @@ PA_MODULE_USAGE(
 
 struct userdata {
     pa_core *core;
-    pa_module *module;    
+    pa_module *module;
 };
 
 static const char* const valid_modargs[] = {
@@ -79,7 +79,7 @@ static pa_hook_result_t SinkInputChangedCb(pa_core *c, pa_sink_input *si, struct
 }
 
 static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
-{    
+{
     pa_sink *effectSink;
     pa_assert(c);
     pa_assert(u);
@@ -97,10 +97,10 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     effectSink = pa_namereg_get(c, sceneType, PA_NAMEREG_SINK);
     if (!effectSink) { // if sink does not exist
         AUDIO_ERR_LOG("Effect sink [%{public}s] sink not found.", sceneType);
-        // classify sinkinput to default sink 
+        // classify sinkinput to default sink
         pa_sink_input_move_to(si, c->default_sink, false);
-    } else{
-        // classify sinkinput to effect sink 
+    } else {
+        // classify sinkinput to effect sink
         pa_sink_input_move_to(si, effectSink, false);
     }
 
@@ -134,11 +134,15 @@ int pa__init(pa_module *m)
     u->core = m->core;
     u->module = m;
     
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE, (pa_hook_cb_t) SinkInputProplistChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED],
+                           PA_HOOK_LATE, (pa_hook_cb_t) SinkInputProplistChangedCb, u);
 	// For Testing BEGIN
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK], PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK_POST], PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK],
+                           PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK_POST],
+                           PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED],
+                           PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
 	// For Testing END
 
     pa_modargs_free(ma);

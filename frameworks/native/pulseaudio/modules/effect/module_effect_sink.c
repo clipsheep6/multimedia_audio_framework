@@ -56,14 +56,15 @@ struct userdata {
     bool auto_desc;
 };
 
-static const char* const valid_modargs[] = {
+static const char * const valid_modargs[] = {
     "sink_name",
     "rate",
     NULL
 };
 
 /* Called from I/O thread context */
-static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk) {
+static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk)
+{
     struct userdata *u = PA_SINK(o)->userdata;
 
     switch (code) {
@@ -83,16 +84,20 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                 pa_sink_get_latency_within_thread(u->sinkInput->sink, true) +
 
                 /* Add the latency internal to our sink input on top */
-                pa_bytes_to_usec(pa_memblockq_get_length(u->sinkInput->thread_info.render_memblockq), &u->sinkInput->sink->sample_spec);
+                pa_bytes_to_usec(pa_memblockq_get_length(u->sinkInput->thread_info.render_memblockq),
+                                 &u->sinkInput->sink->sample_spec);
 
             return 0;
+        default:
+            break;
     }
 
     return pa_sink_process_msg(o, code, data, offset, chunk);
 }
 
 /* Called from main context */
-static int SinkSetStateInMainThread(pa_sink *s, pa_sink_state_t state, pa_suspend_cause_t suspend_cause) {
+static int SinkSetStateInMainThread(pa_sink *s, pa_sink_state_t state, pa_suspend_cause_t suspend_cause)
+{
     struct userdata *u;
 
     pa_sink_assert_ref(s);
@@ -107,7 +112,8 @@ static int SinkSetStateInMainThread(pa_sink *s, pa_sink_state_t state, pa_suspen
 }
 
 /* Called from the IO thread. */
-static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t new_state, pa_suspend_cause_t new_suspend_cause) {
+static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t new_state, pa_suspend_cause_t new_suspend_cause)
+{
     struct userdata *u;
 
     pa_assert(s);
@@ -124,7 +130,8 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t new_state, pa_su
 }
 
 /* Called from I/O thread context */
-static void SinkRequestRewind(pa_sink *s) {
+static void SinkRequestRewind(pa_sink *s)
+{
     struct userdata *u;
 
     pa_sink_assert_ref(s);
@@ -138,7 +145,8 @@ static void SinkRequestRewind(pa_sink *s) {
 }
 
 /* Called from I/O thread context */
-static void SinkUpdateRequestedLatency(pa_sink *s) {
+static void SinkUpdateRequestedLatency(pa_sink *s)
+{
     struct userdata *u;
 
     pa_sink_assert_ref(s);
@@ -157,79 +165,95 @@ static void SinkUpdateRequestedLatency(pa_sink *s) {
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f;
 #define MEMBLOCKQ_MAXLENGTH (16*1024*16)
-static uint32_t Read24Bit(const uint8_t *p) {
+#define BIT_DEPTH_TWO 2
+#define BIT_8 8
+#define BIT_16 16
+#define BIT_24 24
+#define BIT_32 32
+static uint32_t Read24Bit(const uint8_t *p)
+{
     return
-        ((uint32_t) p[2] << 16) |
-        ((uint32_t) p[1] << 8) |
+        ((uint32_t) p[BIT_DEPTH_TWO] << BIT_16) |
+        ((uint32_t) p[1] << BIT_8) |
         ((uint32_t) p[0]);
 }
 
-static void Write24Bit(uint8_t *p, uint32_t u) {
-    p[2] = (uint8_t) (u >> 16);
-    p[1] = (uint8_t) (u >> 8);
+static void Write24Bit(uint8_t *p, uint32_t u)
+{
+    p[BIT_DEPTH_TWO] = (uint8_t) (u >> BIT_16);
+    p[1] = (uint8_t) (u >> BIT_8);
     p[0] = (uint8_t) u;
 }
 
-void ConvertFrom16BitToFloat(unsigned n, const int16_t *a, float *b) {
+void ConvertFrom16BitToFloat(unsigned n, const int16_t *a, float *b)
+{
     for (; n > 0; n--) {
-        *(b++) = *(a++) * (1.0f / (1 << 15));
+        *(b++) = *(a++) * (1.0f / (1 << (BIT_16 - 1)));
     }
 }
 
-void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b) {
+void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b)
+{
     for (; n > 0; n--) {
-        int32_t s = Read24Bit(a) << 8;
-        *b = s * (1.0f / (1U << 31));
+        int32_t s = Read24Bit(a) << BIT_8;
+        *b = s * (1.0f / (1U << (BIT_32 - 1)));
         a += 3;
         b++;
     }
 }
 
-void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b) {
+void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
+{
     for (; n > 0; n--) {
-        *(b++) = *(a++) * (1.0f / (1U << 31));
+        *(b++) = *(a++) * (1.0f / (1U << (BIT_32 - 1)));
     }
 }
 
-float CapMax(float v) {
+float CapMax(float v)
+{
+    float value = v;    
     if (v > 1.0f) {
-        return 1.0f - FLOAT_EPS;
+        value = 1.0f - FLOAT_EPS;
     } else if (v < -1.0f) {
-        return -1.0f + FLOAT_EPS;
-    } else {
-        return v;
-    }
+        value = -1.0f + FLOAT_EPS;
+    } 
+    return value;
 }
 
-void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b) {
+void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b)
+{
     for (; n > 0; n--) {
         float tmp = *a++;
-        float v = CapMax(tmp) * (1 << 15);
+        float v = CapMax(tmp) * (1 << (BIT_16 - 1));
         *(b++) = (int16_t) v;
     }
 }
 
-void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b) {
+void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
+{
     for (; n > 0; n--) {
         float tmp = *a++;
-        float v = CapMax(tmp) * (1U << 31);        
-        Write24Bit(b, ((uint32_t) v) >> 8);
+        float v = CapMax(tmp) * (1U << (BIT_32 - 1));
+        Write24Bit(b, ((uint32_t) v) >> BIT_8);
         a++;
         b += 3;
     }
 }
 
-void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b) {
+void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
+{
     for (; n > 0; n--) {
         float tmp = *a++;
-        float v = CapMax(tmp) * (1U << 31);
+        float v = CapMax(tmp) * (1U << (BIT_32 - 1));
         *(b++) = (int32_t) v;
     }
 }
 
-static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, float *dst) {
+static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, float *dst)
+{
     pa_assert(a);
     pa_assert(b);
+    int ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
             ConvertFrom16BitToFloat(n, src, dst);
@@ -241,14 +265,22 @@ static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, flo
             ConvertFrom32BitToFloat(n, src, dst);
             break;
         default:
-            memcpy_s(src, n, dst, n);
+            ret = memcpy_s(src, n, dst, n);
+            if (ret != 0) {
+                float *srcFloat = (float *)src;
+                for (uint32_t i = 0; i < n; i++) {
+                    dst[i] = srcFloat[i];
+                }
+            }
             break;
     }
 }
 
-static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, void *dst) {
+static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, void *dst)
+{
     pa_assert(a);
     pa_assert(b);
+    int ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
             ConvertFromFloatTo16Bit(n, src, dst);
@@ -260,18 +292,26 @@ static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, 
             ConvertFromFloatTo32Bit(n, src, dst);
             break;
         default:
-            memcpy_s(src, n, dst, n);
+            ret = memcpy_s(src, n, dst, n);
+            if (ret != 0) {
+                float *dstFloat = (float *)dst;
+                for (uint32_t i = 0; i < n; i++) {
+                    dstFloat[i] = src[i];
+                }
+            }
             break;
     }
 }
 
-static size_t MemblockqMissing(pa_memblockq *bq) {
+static size_t MemblockqMissing(pa_memblockq *bq)
+{
     size_t l, tlength;
     pa_assert(bq);
 
     tlength = pa_memblockq_get_tlength(bq);
-    if ((l = pa_memblockq_get_length(bq)) >= tlength)
+    if ((l = pa_memblockq_get_length(bq)) >= tlength) {
         return 0;
+    }
 
     l = tlength - l;
     return l >= pa_memblockq_get_minreq(bq) ? l : 0;
@@ -280,7 +320,8 @@ static size_t MemblockqMissing(pa_memblockq *bq) {
 // END Utility functions
 
 /* Called from I/O thread context */
-static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk) {
+static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
+{
     struct userdata *u;
     size_t bytesMissing;
     pa_memchunk tchunk;
@@ -347,7 +388,8 @@ int InitFail(pa_module *m, pa_modargs *ma)
     return -1;
 }
 
-int pa__init(pa_module *m) {
+int pa__init(pa_module *m)
+{
     struct userdata *u;
     pa_sample_spec ss;
     pa_resample_method_t resampleMethod = PA_RESAMPLER_SRC_SINC_FASTEST; //PA_RESAMPLER_INVALID;
@@ -397,7 +439,7 @@ int pa__init(pa_module *m) {
     pa_sink_new_data_set_channel_map(&sinkData, &sink_map);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_MASTER_DEVICE, master->name);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_CLASS, "filter");
-    pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_STRING, "N/A");    
+    pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_STRING, "N/A");
 
     if ((u->auto_desc = !pa_proplist_contains(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION))) {
         const char *k;
@@ -478,7 +520,8 @@ int pa__init(pa_module *m) {
     return 0;
 }
 
-int pa__get_n_used(pa_module *m) {
+int pa__get_n_used(pa_module *m)
+{
     struct userdata *u;
 
     pa_assert(m);
@@ -487,7 +530,8 @@ int pa__get_n_used(pa_module *m) {
     return pa_sink_linked_by(u->sink);
 }
 
-void pa__done(pa_module *m) {
+void pa__done(pa_module *m)
+{
     struct userdata *u;
 
     pa_assert(m);

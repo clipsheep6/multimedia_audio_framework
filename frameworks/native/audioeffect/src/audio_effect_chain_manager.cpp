@@ -84,7 +84,8 @@ AudioEffectChain::~AudioEffectChain() {}
 void AudioEffectChain::Dump()
 {
     for (AudioEffectHandle handle: standByEffectHandles) {
-        AUDIO_INFO_LOG("Dump standByEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(), handle);
+        AUDIO_INFO_LOG("Dump standByEffectHandle for [%{public}s], handle address is %{public}p",
+                       sceneType.c_str(), handle);
     }
 }
 
@@ -131,14 +132,15 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle) {
         return;
     }
     // Set param
-    AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) + NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
+    AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
+                                                                NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
     effectParam->status = 0;
     effectParam->paramSize = sizeof(int32_t);
     effectParam->valueSize = 0;
-    effectParam->data[0] = EFFECT_SET_PARAM;
-    effectParam->data[1] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
-    effectParam->data[2] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
-    AUDIO_INFO_LOG("cjw: data[0]: %{public}d, data[1]: %{public}d, data[2]: %{public}d", effectParam->data[0],  effectParam->data[1],  effectParam->data[2]);
+    int32_t *data = &effectParam->data[0];
+    *data++ = EFFECT_SET_PARAM;
+    *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
+    *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, &effectParam};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
@@ -173,7 +175,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     int count = 0;
     bool writeToBufOutFlag = false;
     for (AudioEffectHandle handle: standByEffectHandles) {
-        if (count % 2 == 0) {
+        if (count % FACTOR_TWO == 0) {
             audioBufIn.raw = bufIn;
             audioBufOut.raw = bufOut;
         } else {
@@ -317,14 +319,16 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
     std::string effectChainKey = sceneType + "_&_" + effectMode;
     std::string effectNone = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_NONE)->second;
     if (!SceneTypeAndModeToEffectChainNameMap.count(effectChainKey)) {
-        AUDIO_ERR_LOG("EffectChain key [%{public}s] does not exist, auto set to %{public}s", effectChainKey.c_str(), effectNone.c_str());
+        AUDIO_ERR_LOG("EffectChain key [%{public}s] does not exist, auto set to %{public}s",
+                      effectChainKey.c_str(), effectNone.c_str());
         effectChain = effectNone;
     } else {
         effectChain = SceneTypeAndModeToEffectChainNameMap[effectChainKey];
     }
 
     if (effectChain != effectNone && !EffectChainToEffectsMap.count(effectChain)) {
-        AUDIO_ERR_LOG("EffectChain name [%{public}s] does not exist, auto set to %{public}s", effectChain.c_str(), effectNone.c_str());
+        AUDIO_ERR_LOG("EffectChain name [%{public}s] does not exist, auto set to %{public}s",
+                      effectChain.c_str(), effectNone.c_str());
         effectChain = effectNone;
     }
 
@@ -345,7 +349,8 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
             continue;
         }
         if (!EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect) {
-            AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s]->audioEffectLibHandle->createEffect is nullptr", effect.c_str());
+            AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s]->audioEffectLibHandle->createEffect is nullptr",
+                          effect.c_str());
             continue;
         }
         ret = EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
