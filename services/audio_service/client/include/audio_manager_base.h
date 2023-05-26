@@ -20,7 +20,7 @@
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
-#include "audio_info.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -186,6 +186,9 @@ public:
     virtual bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
         std::vector<Effect> &successEffects) = 0;
 
+    virtual bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
+                                          std::unordered_map<std::string, std::string> &map) = 0;
+
     /**
      * Request thread priority for client thread.
      */
@@ -214,6 +217,7 @@ public:
         CREATE_AUDIOPROCESS = 19,
         LOAD_AUDIO_EFFECT_LIBRARIES = 20,
         REQUEST_THREAD_PRIORITY = 21,
+		CREATE_AUDIO_EFFECT_CHAIN_MANAGER = 22,
     };
 
 public:
