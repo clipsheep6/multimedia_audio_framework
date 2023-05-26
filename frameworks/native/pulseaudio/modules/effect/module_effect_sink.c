@@ -1,21 +1,18 @@
-/***
-  This file is part of PulseAudio.
+/*
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-  Copyright 2004-2009 Lennart Poettering
-
-  PulseAudio is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published
-  by the Free Software Foundation; either version 2.1 of the License,
-  or (at your option) any later version.
-
-  PulseAudio is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-  General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public License
-  along with PulseAudio; if not, see <http://www.gnu.org/licenses/>.
-***/
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -138,8 +135,9 @@ static void SinkRequestRewind(pa_sink *s)
     pa_assert_se(u = s->userdata);
 
     if (!PA_SINK_IS_LINKED(u->sink->thread_info.state) ||
-        !PA_SINK_INPUT_IS_LINKED(u->sinkInput->thread_info.state))
-        return;
+        !PA_SINK_INPUT_IS_LINKED(u->sinkInput->thread_info.state)) {
+            return;
+    }
 
     pa_sink_input_request_rewind(u->sinkInput, s->thread_info.rewind_nbytes, true, false, false);
 }
@@ -153,8 +151,9 @@ static void SinkUpdateRequestedLatency(pa_sink *s)
     pa_assert_se(u = s->userdata);
 
     if (!PA_SINK_IS_LINKED(u->sink->thread_info.state) ||
-        !PA_SINK_INPUT_IS_LINKED(u->sinkInput->thread_info.state))
+        !PA_SINK_INPUT_IS_LINKED(u->sinkInput->thread_info.state)) {
         return;
+    }
 
     /* Just hand this one over to the master sink */
     pa_sink_input_set_requested_latency_within_thread(
@@ -165,6 +164,7 @@ static void SinkUpdateRequestedLatency(pa_sink *s)
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f;
 #define MEMBLOCKQ_MAXLENGTH (16*1024*16)
+#define OFFSET_BIT_24 3
 #define BIT_DEPTH_TWO 2
 #define BIT_8 8
 #define BIT_16 16
@@ -197,7 +197,7 @@ void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b)
     for (; n > 0; n--) {
         int32_t s = Read24Bit(a) << BIT_8;
         *b = s * (1.0f / (1U << (BIT_32 - 1)));
-        a += 3;
+        a += OFFSET_BIT_24;
         b++;
     }
 }
@@ -236,7 +236,7 @@ void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
         Write24Bit(b, ((uint32_t) v) >> BIT_8);
         a++;
-        b += 3;
+        b += OFFSET_BIT_24;
     }
 }
 
@@ -330,8 +330,9 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
     pa_assert(chunk);
     pa_assert_se(u = si->userdata);
 
-    if (!PA_SINK_IS_LINKED(u->sink->thread_info.state))
+    if (!PA_SINK_IS_LINKED(u->sink->thread_info.state)) {
         return -1;
+    }
 
     while ((bytesMissing = MemblockqMissing(u->bufInQ)) != 0) {
         pa_memchunk nchunk;
@@ -536,8 +537,9 @@ void pa__done(pa_module *m)
 
     pa_assert(m);
 
-    if (!(u = m->userdata))
+    if (!(u = m->userdata)) {
         return;
+    }
 
     if (u->sinkInput) {
         pa_sink_input_cork(u->sinkInput, true);
