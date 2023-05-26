@@ -573,6 +573,7 @@ private:
     AudioCaptureMode captureMode_;
     std::shared_ptr<AudioCapturerReadCallback> readCallback_;
     std::shared_ptr<AudioRendererWriteCallback> writeCallback_;
+    std::shared_ptr<AudioRendererWriteCallback> writeCallbackCopy_;
     int64_t mWriteCbStamp = 0; // used to measure callback duration
     uint32_t mFrameSize = 0;
     bool mMarkReached = false;
