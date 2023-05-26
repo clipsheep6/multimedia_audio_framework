@@ -21,10 +21,41 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 group("audio_service_packages") {
   deps = [
+    ":audio_histen",
     ":audio_common",
     ":audio_service",
     ":audio_service_init",
   ]
+}
+
+ohos_shared_library("audio_histen") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+  }
+
+  install_enable = true
+
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/services/audio_service/server/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  sources = [
+    "//foundation/multimedia/audio_framework/services/audio_service/server/src/audio_histen.cpp",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
 }
 
 ohos_shared_library("audio_common") {
@@ -176,6 +207,7 @@ config("audio_service_config") {
     "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
     "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
     "${audio_fwk_path}/frameworks/native/audiopolicy/include",
+    "${audio_fwk_path}/frameworks/native/audioeffect/include",
     "${audio_fwk_path}/frameworks/native/audioutils/include",
     "${audio_fwk_path}/frameworks/native/audioschedule/include",
     "${fwk_native_hdiadapter_path}/sink/bluetooth",
@@ -262,6 +294,7 @@ ohos_shared_library("audio_service") {
     ":audio_process_service",
     "$pulseaudio_build_path/src/daemon:pulseaudio",
     "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
+    "${audio_fwk_path}/frameworks/native/audioeffect:audio_effect",
     "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
     "${fwk_native_hdiadapter_path}/sink:audio_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:bluetooth_renderer_sink",
