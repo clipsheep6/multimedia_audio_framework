@@ -39,7 +39,7 @@ struct userdata {
     pa_module *module;
 };
 
-static const char* const VALID_MODARGS[] = {
+static const char * const VALID_MODARGS[] = {
     "sink_name",
     NULL
 };
