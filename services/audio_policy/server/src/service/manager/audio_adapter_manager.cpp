@@ -37,7 +37,7 @@ bool AudioAdapterManager::Init()
 
     // init volume before kvstore start by local prop for bootanimation
     char currentVolumeValue[3] = {0};
-    auto ret = GetParameter("persist.multimedia.audio.mediavolume", "15",
+    auto ret = GetParameter("persist.multimedia.audio.mediavolume", "7",
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
         int32_t mediaVolumeLevel = atoi(currentVolumeValue);
@@ -54,10 +54,6 @@ bool AudioAdapterManager::ConnectServiceAdapter()
 {
     std::shared_ptr<AudioAdapterManager> audioAdapterManager(this);
     std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(audioAdapterManager);
-    if (!policyCallbackImpl || !policyCallbackImpl.get()) {
-        AUDIO_ERR_LOG("[AudioAdapterManager] Error in audio adapter manager");
-        return false;
-    }
     audioServiceAdapter_ = AudioServiceAdapter::CreateAudioAdapter(std::move(policyCallbackImpl));
     if (!audioServiceAdapter_) {
         AUDIO_ERR_LOG("[AudioAdapterManager] Error in audio adapter initialization");
@@ -280,6 +276,16 @@ int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSu
     return audioServiceAdapter_->SuspendAudioDevice(portName, isSuspend);
 }
 
+bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute)
+{
+    if (!audioServiceAdapter_) {
+        AUDIO_ERR_LOG("SetSinkMute audio adapter null");
+        return false;
+    }
+
+    return audioServiceAdapter_->SetSinkMute(sinkName, isMute);
+}
+
 int32_t AudioAdapterManager::SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name)
 {
     if (!audioServiceAdapter_) {
@@ -290,7 +296,6 @@ int32_t AudioAdapterManager::SelectDevice(DeviceRole deviceRole, InternalDeviceT
         case DeviceRole::INPUT_DEVICE:
             return audioServiceAdapter_->SetDefaultSource(name);
         case DeviceRole::OUTPUT_DEVICE: {
-            SetVolumeForSwitchDevice(deviceType);
             AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
             return audioServiceAdapter_->SetDefaultSink(name);
         }
@@ -317,7 +322,6 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
         case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
-            SetVolumeForSwitchDevice(deviceType);
             AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
             return audioServiceAdapter_->SetDefaultSink(name);
         }

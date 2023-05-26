@@ -478,7 +478,8 @@ void AudioPolicyManagerStub::SetDeviceChangeCallbackInternal(MessageParcel &data
 void AudioPolicyManagerStub::UnsetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientId = data.ReadInt32();
-    int32_t result = UnsetDeviceChangeCallback(clientId);
+    DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
+    int32_t result = UnsetDeviceChangeCallback(clientId, flag);
     reply.WriteInt32(result);
 }
 
@@ -1253,6 +1254,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_MAX_VOLUME_STREAM:
             GetMaxStreamVolumeInternal(data, reply);
+            break;
 
         case GET_MAX_RENDERER_INSTANCES:
             GetMaxRendererInstancesInternal(data, reply);

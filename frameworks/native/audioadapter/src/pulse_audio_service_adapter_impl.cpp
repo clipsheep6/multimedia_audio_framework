@@ -38,6 +38,10 @@ PulseAudioServiceAdapterImpl::~PulseAudioServiceAdapterImpl() = default;
 
 unique_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(unique_ptr<AudioServiceAdapterCallback> cb)
 {
+    if (!cb) {
+        AUDIO_ERR_LOG("AudioServiceAdapter::CreateAudioAdapter cb is nullptr!");
+        return nullptr;
+    }
     return make_unique<PulseAudioServiceAdapterImpl>(cb);
 }
 
@@ -136,6 +140,12 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
     userData->thiz = this;
 
     pa_threaded_mainloop_lock(mMainLoop);
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("[OpenAudioPort] mContext is nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return ERROR;
+    }
+
     pa_operation *operation = pa_context_load_module(mContext, audioPortName.c_str(), moduleArgs.c_str(),
         PaModuleLoadCb, reinterpret_cast<void*>(userData.get()));
     if (operation == nullptr) {
@@ -162,6 +172,11 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
 int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
 {
     pa_threaded_mainloop_lock(mMainLoop);
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("[CloseAudioPort] mContext is nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return ERROR;
+    }
 
     pa_operation *operation = pa_context_unload_module(mContext, audioHandleIndex, nullptr, nullptr);
     if (operation == nullptr) {
@@ -179,6 +194,11 @@ int32_t PulseAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, 
 {
     AUDIO_INFO_LOG("SuspendAudioDevice: [%{public}s] : [%{public}d]", audioPortName.c_str(), isSuspend);
     pa_threaded_mainloop_lock(mMainLoop);
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("[SuspendAudioDevice] mContext is nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return ERROR;
+    }
 
     auto suspendFlag = isSuspend ? 1 : 0;
     pa_operation *operation = pa_context_suspend_sink_by_name(mContext, audioPortName.c_str(), suspendFlag,
@@ -195,9 +215,34 @@ int32_t PulseAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, 
     return SUCCESS;
 }
 
+bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool isMute)
+{
+    AUDIO_INFO_LOG("MuteAudioDevice: [%{public}s] : [%{public}d]", sinkName.c_str(), isMute);
+    pa_threaded_mainloop_lock(mMainLoop);
+
+    int muteFlag = isMute ? 1 : 0;
+    pa_operation *operation = pa_context_set_sink_mute_by_name(mContext, sinkName.c_str(), muteFlag, nullptr, nullptr);
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_suspend_sink_by_name failed!");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return false;
+    }
+
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+
+    return true;
+}
+
 int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
 {
     pa_threaded_mainloop_lock(mMainLoop);
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("[SetDefaultSink] mContext is nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return ERROR;
+    }
+
     pa_operation *operation = pa_context_set_default_sink(mContext, name.c_str(), nullptr, nullptr);
     if (operation == nullptr) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_set_default_sink failed!");
@@ -214,12 +259,19 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
 int32_t PulseAudioServiceAdapterImpl::SetDefaultSource(string name)
 {
     pa_threaded_mainloop_lock(mMainLoop);
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("[SetDefaultSource] mContext is nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return ERROR;
+    }
+
     pa_operation *operation = pa_context_set_default_source(mContext, name.c_str(), nullptr, nullptr);
     if (operation == nullptr) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_set_default_source failed!");
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERR_OPERATION_FAILED;
     }
+    isSetDefaultSource_ = true;
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
@@ -636,6 +688,11 @@ vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
         return userData->sourceOutputList;
     }
 
+    if (!isSetDefaultSource_) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] default source has not been set.");
+        return userData->sourceOutputList;
+    }
+
     pa_threaded_mainloop_lock(mMainLoop);
 
     pa_operation *operation = pa_context_get_source_output_info_list(mContext,
@@ -956,8 +1013,8 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
             pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, 0, nullptr, nullptr));
         }
     }
-    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume : %{public}f for stream : %{public}s, volumeInt%{public}d",
-        vol, i->name, volume);
+    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume %{public}f for stream uid %{public}d, volumeFactor %{public}f"
+        " volumeDbCb  %{public}f ", vol, uid, volumeFactor, volumeDbCb);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamID, "VOLUME", vol,

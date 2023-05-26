@@ -45,6 +45,7 @@ const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUD
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
+const std::string REMOTE_NETWORK_ID = "RemoteDevice";
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
@@ -178,6 +179,10 @@ enum DeviceType {
      * Indicates a debug source device
      */
     DEVICE_TYPE_FILE_SOURCE = 51,
+    /**
+     * Indicates any headset/headphone for disconnect
+     */
+    DEVICE_TYPE_EXTERN_CABLE = 100,
     /**
      * Indicates default device
      */
@@ -857,6 +862,8 @@ struct AudioProcessConfig {
     AudioRendererInfo rendererInfo;
 
     AudioCapturerInfo capturerInfo;
+
+    bool isRemote;
 };
 
 struct AudioStreamData {
@@ -891,6 +898,7 @@ struct StreamSetStateEventInternal {
 };
 
 struct AudioRendererChangeInfo {
+    int32_t createrUID;
     int32_t clientUID;
     int32_t sessionId;
     int32_t tokenId;
@@ -900,6 +908,7 @@ struct AudioRendererChangeInfo {
 };
 
 struct AudioCapturerChangeInfo {
+    int32_t createrUID;
     int32_t clientUID;
     int32_t sessionId;
     AudioCapturerInfo capturerInfo;

@@ -146,9 +146,9 @@ FastAudioRendererSinkInner::~FastAudioRendererSinkInner()
 
 FastAudioRendererSink *FastAudioRendererSink::GetInstance()
 {
-    static FastAudioRendererSinkInner audioRenderer_;
+    static FastAudioRendererSinkInner audioRenderer;
 
-    return &audioRenderer_;
+    return &audioRenderer;
 }
 
 bool FastAudioRendererSinkInner::IsInited()
@@ -686,7 +686,7 @@ int32_t FastAudioRendererSinkInner::Stop(void)
     if (started_) {
         int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret != 0) {
-            AUDIO_ERR_LOG("FastAudioRendererSink::Stop failed!");
+            AUDIO_ERR_LOG("FastAudioRendererSink::Stop failed! ret: %{public}d.", ret);
             return ERR_OPERATION_FAILED;
         }
     }

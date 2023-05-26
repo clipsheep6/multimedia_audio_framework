@@ -33,6 +33,7 @@
 #include "i_standard_renderer_state_change_listener.h"
 #include "i_standard_capturer_state_change_listener.h"
 #include "i_standard_client_tracker.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,6 +43,7 @@ class AudioPolicyManager {
 public:
     static AudioPolicyManager& GetInstance()
     {
+        AUDIO_INFO_LOG("Enter AudioPolicyManager::GetInstance");
         static AudioPolicyManager policyManager;
         return policyManager;
     }
@@ -107,7 +109,7 @@ public:
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId);
+    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag);
 
     int32_t SetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback, API_VERSION api_v = API_9);
@@ -149,7 +151,7 @@ public:
 
     bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
         AudioPermissionState state);
-    
+
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
     int32_t GetAudioLatencyFromXml();
@@ -217,7 +219,10 @@ public:
     
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
 private:
-    AudioPolicyManager() {}
+    AudioPolicyManager()
+    {
+        AUDIO_INFO_LOG("Enter AudioPolicyManager::AudioPolicyManager");
+    }
     ~AudioPolicyManager() {}
 
     void Init();

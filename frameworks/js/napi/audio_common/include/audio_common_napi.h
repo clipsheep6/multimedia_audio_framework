@@ -74,6 +74,7 @@ public:
     static bool IsLegalInputArgumentStreamUsage(int32_t streamUsage);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
+    static bool IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback);
 private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;

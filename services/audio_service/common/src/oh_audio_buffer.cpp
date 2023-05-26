@@ -138,7 +138,7 @@ int AudioSharedMemoryImpl::GetFd()
 std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFormLocal(size_t size, const std::string &name)
 {
     std::shared_ptr<AudioSharedMemoryImpl> sharedMemory = std::make_shared<AudioSharedMemoryImpl>(size, name);
-    if (sharedMemory == nullptr || sharedMemory->Init() != SUCCESS) {
+    if (sharedMemory->Init() != SUCCESS) {
         AUDIO_ERR_LOG("CreateFormLocal failed");
         return nullptr;
     }
@@ -150,7 +150,7 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFromRemote(int fd, s
     int minfd = 2; // ignore stdout, stdin and stderr.
     CHECK_AND_RETURN_RET_LOG(fd > minfd, nullptr, "CreateFromRemote failed: invalid fd: %{public}d", fd);
     std::shared_ptr<AudioSharedMemoryImpl> sharedMemory = std::make_shared<AudioSharedMemoryImpl>(fd, size, name);
-    if (sharedMemory == nullptr || sharedMemory->Init() != SUCCESS) {
+    if (sharedMemory->Init() != SUCCESS) {
         AUDIO_ERR_LOG("CreateFromRemote failed");
         return nullptr;
     }
@@ -294,7 +294,7 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFormLocal(uint32_t totalSize
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
     std::shared_ptr<OHAudioBuffer> buffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
-    if (buffer == nullptr || buffer->Init(INVALID_FD, INVALID_FD) != SUCCESS) {
+    if (buffer->Init(INVALID_FD, INVALID_FD) != SUCCESS) {
         AUDIO_ERR_LOG("failed to init.");
         return nullptr;
     }
@@ -316,7 +316,7 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromRemote(uint32_t totalSiz
     }
     std::shared_ptr<OHAudioBuffer> buffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
-    if (buffer == nullptr || buffer->Init(dataFd, infoFd) != SUCCESS) {
+    if (buffer->Init(dataFd, infoFd) != SUCCESS) {
         AUDIO_ERR_LOG("failed to init.");
         return nullptr;
     }
@@ -540,7 +540,6 @@ int32_t OHAudioBuffer::GetBufferByFrame(uint64_t posInFrame, BufferDesc &bufferD
     CHECK_AND_RETURN_RET_LOG(deltaToBase < UINT32_MAX && deltaToBase < totalSizeInFrame_, ERR_INVALID_PARAM,
         "invalid deltaToBase, posInFrame %{public}" PRIu64" basePos %{public}" PRIu64".", posInFrame, basePos);
     deltaToBase = (deltaToBase / spanSizeInFrame_) * spanSizeInFrame_;
-
     size_t offset = deltaToBase * byteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(offset < totalSizeInByte_, ERR_INVALID_PARAM, "invalid deltaToBase:%{public}zu", offset);
 

@@ -57,7 +57,7 @@ public:
     void InitKVStore();
     bool ConnectServiceAdapter();
 
-    const sptr<IStandardAudioService> GetAudioPolicyServiceProxy();
+    const sptr<IStandardAudioService> GetAudioServerProxy();
 
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) const;
 
@@ -130,6 +130,8 @@ public:
 
     std::string GetSystemSoundUri(const std::string &key);
 
+    bool IsSessionIdValid(int32_t callerUid, int32_t sessionId);
+
     // Parser callbacks
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
 
@@ -173,7 +175,7 @@ public:
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object);
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId);
+    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag);
 
     int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object);
 
@@ -283,15 +285,28 @@ private:
 
     InternalDeviceType GetCurrentActiveDevice(DeviceRole role) const;
 
+    bool IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const;
+
+    int32_t DeviceParamsCheck(DeviceRole targetRole,
+        std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const;
+
+    bool IsInputDevice(DeviceType deviceType) const;
+
+    bool IsOutputDevice(DeviceType deviceType) const;
+
     DeviceRole GetDeviceRole(DeviceType deviceType) const;
 
     DeviceRole GetDeviceRole(const std::string &role);
 
     int32_t SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType);
 
+    int32_t HandleA2dpDevice(DeviceType deviceType);
+
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     DeviceRole GetDeviceRole(AudioPin pin) const;
+
+    void KeepPortMute(int32_t muteDuration, std::string portName, DeviceType deviceType);
 
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
@@ -344,6 +359,8 @@ private:
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
     void LoadEffectSinks();
+    
+    DeviceType FindConnectedHeadset();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
@@ -355,7 +372,7 @@ private:
     bool hasModulesLoaded = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
-    int32_t switchVolumeDelay_ = 500000; // us
+    int32_t switchVolumeDelay_ = 200000; // us
     int32_t maxRendererInstances_ = 16;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
@@ -382,8 +399,7 @@ private:
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
 
-    std::unordered_map<int32_t,
-        std::pair<DeviceFlag, sptr<IStandardAudioPolicyManagerListener>>> deviceChangeCbsMap_;
+    std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
     std::unordered_map<int32_t,
         sptr<IStandardAudioRoutingManagerListener>> activeOutputDeviceCbsMap_;
 
@@ -392,12 +408,6 @@ private:
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
 
-    std::vector<DeviceType> ioDeviceList = {
-        DEVICE_TYPE_BLUETOOTH_A2DP,
-        DEVICE_TYPE_BLUETOOTH_SCO,
-        DEVICE_TYPE_USB_HEADSET,
-        DEVICE_TYPE_WIRED_HEADSET
-    };
     std::vector<DeviceType> outputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,
         DEVICE_TYPE_BLUETOOTH_A2DP,

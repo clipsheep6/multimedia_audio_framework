@@ -37,7 +37,8 @@ public:
 
     virtual int32_t GetMinVolumeLevel(AudioVolumeType streamType) = 0;
 
-    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9) = 0;
+    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+        API_VERSION api_v = API_9) = 0;
 
     virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
 
@@ -93,7 +94,7 @@ public:
     virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnsetDeviceChangeCallback(const int32_t clientId) = 0;
+    virtual int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) = 0;
 
     virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
 

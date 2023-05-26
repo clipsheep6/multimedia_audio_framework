@@ -135,9 +135,9 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
 
 AudioRendererSink *AudioRendererSink::GetInstance()
 {
-    static AudioRendererSinkInner audioRenderer_;
+    static AudioRendererSinkInner audioRenderer;
 
-    return &audioRenderer_;
+    return &audioRenderer;
 }
 
 void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
@@ -725,7 +725,10 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
         AUDIO_ERR_LOG("SetOutputRoute failed, audioAdapter_ is null.");
         return ERR_INVALID_HANDLE;
     }
+    int64_t stamp = ClockTime::GetCurNano();
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+    AUDIO_INFO_LOG("UpdateAudioRoute cost[%{public}" PRId64 "]ms", stamp);
     if (ret != 0) {
         AUDIO_ERR_LOG("UpdateAudioRoute failed");
         return ERR_OPERATION_FAILED;

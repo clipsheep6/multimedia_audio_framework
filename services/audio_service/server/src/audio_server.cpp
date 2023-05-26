@@ -22,18 +22,20 @@
 #include <thread>
 #include <unordered_map>
 
-#include "xcollie/xcollie.h"
-#include "xcollie/xcollie_define.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "xcollie/xcollie.h"
+#include "xcollie/xcollie_define.h"
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
-#include "audio_service.h"
 #include "audio_log.h"
-#include "audio_schedule.h"
 #include "audio_manager_listener_proxy.h"
+#include "audio_service.h"
+#include "audio_schedule.h"
+#include "audio_utils.h"
 #include "i_audio_capturer_source.h"
+#include "i_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #include "audio_effect_chain_manager.h"
 
@@ -73,13 +75,10 @@ void *AudioServer::paDaemonThread(void *arg)
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-      audioEffectServer_(std::make_unique<AudioEffectServer>())
-{
-}
+      audioEffectServer_(std::make_unique<AudioEffectServer>()) {}
 
-void AudioServer::OnDump()
-{
-}
+void AudioServer::OnDump() {}
+
 int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
     AUDIO_INFO_LOG("AudioServer: Dump Process Invoked");
@@ -128,7 +127,7 @@ void AudioServer::OnStop()
 
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
-    std::lock_guard<std::mutex> lockSet(setAudioParameterMutex_);
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
         TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AUDIO_DEBUG_LOG("server: set audio parameter");
@@ -144,7 +143,7 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     AudioParamKey parmKey = AudioParamKey::NONE;
     if (key == "A2dpSuspended") {
         parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
-        IAudioRendererSink* bluetoothSinkInstance= IAudioRendererSink::GetInstance("a2dp", "");
+        IAudioRendererSink* bluetoothSinkInstance = IAudioRendererSink::GetInstance("a2dp", "");
         if (bluetoothSinkInstance == nullptr) {
             AUDIO_ERR_LOG("has no valid sink");
             HiviewDFX::XCollie::GetInstance().CancelTimer(id);
@@ -194,6 +193,7 @@ void AudioServer::SetAudioParameter(const std::string& networkId, const AudioPar
 
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
         TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AUDIO_DEBUG_LOG("server: get audio parameter");
@@ -497,9 +497,20 @@ void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
     }
 }
 
+inline bool IsParamEnabled(std::string key, bool &isEnabled)
+{
+    int32_t policyFlag = 0;
+    if (GetSysPara(key.c_str(), policyFlag) && policyFlag == 1) {
+        isEnabled = true;
+        return true;
+    }
+    isEnabled = false;
+    return false;
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
 {
-    if (!isGetProcessEnabled_) {
+    if (!IsParamEnabled("persist.multimedia.audio.mmap.enable", isGetProcessEnabled_)) {
         AUDIO_ERR_LOG("AudioServer::CreateAudioProcess is not enabled!");
         return nullptr;
     }

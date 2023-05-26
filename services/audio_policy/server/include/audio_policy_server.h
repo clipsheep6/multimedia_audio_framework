@@ -128,7 +128,7 @@ public:
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object)
         override;
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId) override;
+    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) override;
     
     int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
@@ -310,6 +310,7 @@ private:
     AudioPolicyService& mPolicyService;
     int32_t clientOnFocus_;
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
+    std::recursive_mutex focussedAudioInterruptInfoMutex_;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;
     std::vector<pid_t> clientDiedListenerState_;
 

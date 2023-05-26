@@ -699,10 +699,10 @@ int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t /* clientId */,
     return mPolicyService.SetDeviceChangeCallback(clientPid, flag, object);
 }
 
-int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t /* clientId */)
+int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t /* clientId */, DeviceFlag flag)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return mPolicyService.UnsetDeviceChangeCallback(clientPid);
+    return mPolicyService.UnsetDeviceChangeCallback(clientPid, flag);
 }
 
 int32_t AudioPolicyServer::SetPreferOutputDeviceChangeCallback(const int32_t /* clientId */,
@@ -722,6 +722,12 @@ int32_t AudioPolicyServer::UnsetPreferOutputDeviceChangeCallback(const int32_t /
 int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
+
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (!mPolicyService.IsSessionIdValid(callerUid, sessionID)) {
+        AUDIO_ERR_LOG("SetAudioInterruptCallback for sessionID %{public}d, id is invalid", sessionID);
+        return ERR_INVALID_PARAM;
+    }
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "SetAudioInterruptCallback object is nullptr");
 
@@ -792,6 +798,7 @@ int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const Audio
         return SUCCESS;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (focussedAudioInterruptInfo_ != nullptr) {
         AUDIO_INFO_LOG("Existing stream: %{public}d, incoming stream: %{public}d",
             (focussedAudioInterruptInfo_->audioFocusType).streamType, audioInterrupt.audioFocusType.streamType);
@@ -809,6 +816,7 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
 {
     AUDIO_INFO_LOG("AudioPolicyServer: AbandonAudioFocus in");
 
+    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (clientId == clientOnFocus_) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: remove app focus");
         focussedAudioInterruptInfo_.reset();
@@ -822,8 +830,17 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
 void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus granted in: %{public}d", clientId);
+
+    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
+    if (amInterruptCbsMap_.find(clientId) == amInterruptCbsMap_.end()) {
+        AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback does not exist", clientId);
+        return;
+    }
     std::shared_ptr<AudioInterruptCallback> interruptCb = amInterruptCbsMap_[clientId];
-    if (interruptCb) {
+    if (interruptCb == nullptr) {
+        AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback is nullptr", clientId);
+        return;
+    } else {
         InterruptEventInternal interruptEvent = {};
         interruptEvent.eventType = INTERRUPT_TYPE_END;
         interruptEvent.forceType = INTERRUPT_SHARE;
@@ -1647,6 +1664,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
 {
     // update the clientUid
     auto callerUid = IPCSkeleton::GetCallingUid();
+    streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
+    streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
     AUDIO_INFO_LOG("RegisterTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
         if (mode == AUDIO_MODE_PLAYBACK) {
@@ -1761,15 +1780,16 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
-    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d state:%{public}d sType:%{public}d", clientUid,
-        streamSetState, audioStreamType);
-
+    constexpr int32_t avSessionUid = 6700; // "uid" : "av_session"
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid == clientUid) {
-        AUDIO_ERR_LOG("UpdateStreamState clientUid value is error");
+    if (callerUid != avSessionUid) {
+        // This function can only be used by av_session
+        AUDIO_ERR_LOG("UpdateStreamState callerUid is error: not av_session");
         return ERROR;
     }
 
+    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d streamSetState:%{public}d audioStreamType:%{public}d",
+        clientUid, streamSetState, audioStreamType);
     StreamSetState setState = StreamSetState::STREAM_PAUSE;
     if (streamSetState == StreamSetState::STREAM_RESUME) {
         setState  = StreamSetState::STREAM_RESUME;
