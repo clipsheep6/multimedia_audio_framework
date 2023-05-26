@@ -45,6 +45,8 @@ struct userdata {
     pa_module *module;
     pa_sink *sink;
     pa_sink_input *sinkInput;
+    pa_sample_spec sampleSpec;
+    pa_channel_map sinkMap;
     BufferAttr *bufferAttr;
     pa_memblockq *bufInQ;
     int32_t processLen;
@@ -389,55 +391,26 @@ int InitFail(pa_module *m, pa_modargs *ma)
     return -1;
 }
 
-int pa__init(pa_module *m)
+int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u)
 {
-    struct userdata *u;
     pa_sample_spec ss;
-    pa_resample_method_t resampleMethod = PA_RESAMPLER_SRC_SINC_FASTEST; //PA_RESAMPLER_INVALID;
-    pa_channel_map sink_map, stream_map;
-    pa_modargs *ma;
-    pa_sink *master;
-    pa_sink_input_new_data sinkInputData;
+    pa_channel_map sinkMap;
     pa_sink_new_data sinkData;
-    bool remix = true;
 
-    pa_assert(m);
-
-    if (!(ma = pa_modargs_new(m->argument, VALID_MODARGS))) {
-        AUDIO_ERR_LOG("Failed to parse module arguments.");
-        return InitFail(m, ma);
-    }
-
-    if (!(master = pa_namereg_get(m->core, pa_modargs_get_value(ma, "master", NULL), PA_NAMEREG_SINK))) {
-        AUDIO_ERR_LOG("Master sink not found");
-        return InitFail(m, ma);
-    }
-	
-    ss = m->core->default_sample_spec;
-    sink_map = m->core->default_channel_map;
-    if (pa_modargs_get_sample_spec_and_channel_map(ma, &ss, &sink_map, PA_CHANNEL_MAP_DEFAULT) < 0) {
+    /* Create sink */
+    sinkMap = m->core->default_channel_map;
+    if (pa_modargs_get_sample_spec_and_channel_map(ma, &ss, &sinkMap, PA_CHANNEL_MAP_DEFAULT) < 0) {
         AUDIO_ERR_LOG("Invalid sample format specification or channel map");
         return InitFail(m, ma);
     }
 
-    stream_map = sink_map;
-    if (stream_map.channels != ss.channels) {
-        AUDIO_ERR_LOG("Number of channels doesn't match");
-        return InitFail(m, ma);
-    }
-
-    u = pa_xnew0(struct userdata, 1);
-    u->module = m;
-    m->userdata = u;
-
-    /* Create sink */
     pa_sink_new_data_init(&sinkData);
     sinkData.driver = __FILE__;
     sinkData.module = m;
     if (!(sinkData.name = pa_xstrdup(pa_modargs_get_value(ma, "sink_name", NULL))))
         sinkData.name = pa_sprintf_malloc("%s.effected", master->name);
     pa_sink_new_data_set_sample_spec(&sinkData, &ss);
-    pa_sink_new_data_set_channel_map(&sinkData, &sink_map);
+    pa_sink_new_data_set_channel_map(&sinkData, &sinkMap);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_MASTER_DEVICE, master->name);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_CLASS, "filter");
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_STRING, "N/A");
@@ -461,22 +434,31 @@ int pa__init(pa_module *m)
     u->sink->update_requested_latency = SinkUpdateRequestedLatency;
     u->sink->request_rewind = SinkRequestRewind;
     u->sink->userdata = u;
+    u->sampleSpec = ss;
+    u->sinkMap = sinkMap;
 
     pa_sink_set_asyncmsgq(u->sink, master->asyncmsgq);
+    return 0;
+}
 
+int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u)
+{
+    pa_resample_method_t resampleMethod = PA_RESAMPLER_SRC_SINC_FASTEST; //PA_RESAMPLER_INVALID;
+    bool remix = true;
+    pa_sink_input_new_data sinkInputData;
     /* Create sink input */
     pa_sink_input_new_data_init(&sinkInputData);
     sinkInputData.driver = __FILE__;
     sinkInputData.module = m;
     pa_sink_input_new_data_set_sink(&sinkInputData, master, false, true);
     sinkInputData.origin_sink = u->sink;
-    const char *name = pa_sprintf_malloc("%s effected Stream", sinkData.name);
+    const char *name = pa_sprintf_malloc("%s effected Stream", u->sink->name);
     pa_proplist_sets(sinkInputData.proplist, PA_PROP_MEDIA_NAME, name);
     pa_proplist_sets(sinkInputData.proplist, PA_PROP_MEDIA_ROLE, "filter");
     pa_proplist_sets(sinkInputData.proplist, "scene.type", "N/A");
     pa_proplist_sets(sinkInputData.proplist, "scene.mode", "N/A");
-    pa_sink_input_new_data_set_sample_spec(&sinkInputData, &ss);
-    pa_sink_input_new_data_set_channel_map(&sinkInputData, &stream_map);
+    pa_sink_input_new_data_set_sample_spec(&sinkInputData, &u->sampleSpec);
+    pa_sink_input_new_data_set_channel_map(&sinkInputData, &u->sinkMap);
     sinkInputData.flags = (remix ? 0 : PA_SINK_INPUT_NO_REMIX) | PA_SINK_INPUT_START_CORKED;
     sinkInputData.resample_method = resampleMethod;
 
@@ -491,8 +473,45 @@ int pa__init(pa_module *m)
     u->sinkInput->userdata = u;
 
     u->sink->input_to_master = u->sinkInput;
+    return 0;
+}
+
+int pa__init(pa_module *m)
+{
+    int ret;
+    struct userdata *u;    
+    pa_modargs *ma;
+    pa_sink *master;
+    pa_sample_spec ss;
+
+    pa_assert(m);
+
+    if (!(ma = pa_modargs_new(m->argument, VALID_MODARGS))) {
+        AUDIO_ERR_LOG("Failed to parse module arguments.");
+        return InitFail(m, ma);
+    }
+
+    if (!(master = pa_namereg_get(m->core, pa_modargs_get_value(ma, "master", NULL), PA_NAMEREG_SINK))) {
+        AUDIO_ERR_LOG("Master sink not found");
+        return InitFail(m, ma);
+    }
+	
+    u = pa_xnew0(struct userdata, 1);
+    u->module = m;
+    m->userdata = u;
+
+    ret = CreateSink(m, ma, master, u);
+    if (ret != 0) {
+        return InitFail(m, ma);
+    }
+
+    ret = CreateSinkInput(m, ma, master, u);
+    if (ret != 0) {
+        return InitFail(m, ma);
+    }
 
     // Set buffer attributes
+    ss = u->sampleSpec;
     int32_t frameLen = EffectChainManagerGetFrameLen();
     u->format = ss.format;
     u->processLen = ss.channels * frameLen;
