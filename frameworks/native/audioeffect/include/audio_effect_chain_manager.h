@@ -33,7 +33,10 @@
 namespace OHOS {
 namespace AudioStandard {
 
-#define NUM_SET_EFFECT_PARAM 3
+const uint32_t NUM_SET_EFFECT_PARAM = 3;
+const uint32_t DEFAULT_SAMPLE_RATE = 48000;
+const uint32_t DEFAULT_NUM_CHANNEL = 2;
+const uint32_t FACTOR_TWO = 2;
 
 class AudioEffectChain {
 public:
@@ -42,7 +45,7 @@ public:
     void SetEffectMode(std::string mode);
     void AddEffectHandleBegin();
     void AddEffectHandleEnd();
-    void AddEffectHandle(AudioEffectHandle effectHandle);    
+    void AddEffectHandle(AudioEffectHandle effectHandle);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     void Dump();
@@ -60,7 +63,8 @@ public:
     AudioEffectChainManager();
     ~AudioEffectChainManager();
     static AudioEffectChainManager *GetInstance();
-    void InitAudioEffectChainManager(std::vector<EffectChain> &effectChains, std::unordered_map<std::string, std::string> &map,
+    void InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
+        std::unordered_map<std::string, std::string> &map,
         std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList);
     int32_t CreateAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetAudioEffectChain(std::string sceneType, std::string effectChain);
@@ -69,11 +73,11 @@ public:
     int32_t SetFrameLen(int32_t frameLen);
     void Dump();
 private:
-    std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap;  // {"EQ": AudioEffectLibEntry}
-    std::map<std::string, std::string> EffectToLibraryNameMap; // {"EQ": "HISTEN"}
-    std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap; // {"EFFECTCHAIN_SPK_MUSIC": [hvs, eq, histen]}
-    std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap; // {"SCENE_MUSIC_&_EFFECT_DEFAULT": "EFFECTCHAIN_SPK_MUSIC"}
-    std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap; // {"SCENE_MUSIC": AudioEffectChain}  Create AudioEffectChain when init
+    std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap;
+    std::map<std::string, std::string> EffectToLibraryNameMap;
+    std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap;
+    std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap;
+    std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap;
     int32_t frameLen = 960;
 };
 
