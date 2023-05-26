@@ -398,12 +398,13 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u
     pa_sink_new_data sinkData;
 
     /* Create sink */
+    ss = m->core->default_sample_spec;
     sinkMap = m->core->default_channel_map;
     if (pa_modargs_get_sample_spec_and_channel_map(ma, &ss, &sinkMap, PA_CHANNEL_MAP_DEFAULT) < 0) {
         AUDIO_ERR_LOG("Invalid sample format specification or channel map");
         return InitFail(m, ma);
     }
-
+    
     pa_sink_new_data_init(&sinkData);
     sinkData.driver = __FILE__;
     sinkData.module = m;
@@ -420,7 +421,7 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u
         k = pa_proplist_gets(master->proplist, PA_PROP_DEVICE_DESCRIPTION);
         pa_proplist_setf(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION, "effected %s", k ? k : master->name);
     }
-
+    
     u->sink = pa_sink_new(m->core, &sinkData, master->flags & (PA_SINK_LATENCY|PA_SINK_DYNAMIC_LATENCY));
     pa_sink_new_data_done(&sinkData);
 
@@ -436,7 +437,7 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u
     u->sink->userdata = u;
     u->sampleSpec = ss;
     u->sinkMap = sinkMap;
-
+    
     pa_sink_set_asyncmsgq(u->sink, master->asyncmsgq);
     return 0;
 }
@@ -482,7 +483,6 @@ int pa__init(pa_module *m)
     struct userdata *u;    
     pa_modargs *ma;
     pa_sink *master;
-    pa_sample_spec ss;
 
     pa_assert(m);
 
@@ -511,31 +511,31 @@ int pa__init(pa_module *m)
     }
 
     // Set buffer attributes
-    ss = u->sampleSpec;
     int32_t frameLen = EffectChainManagerGetFrameLen();
-    u->format = ss.format;
-    u->processLen = ss.channels * frameLen;
+    u->format = u->sampleSpec.format;
+    u->processLen = u->sampleSpec.channels * frameLen;
     u->processSize = u->processLen * sizeof(float);
     
     u->bufferAttr = pa_xnew0(BufferAttr, 1);
     pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
     pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
-    u->bufferAttr->samplingRate = ss.rate;
+    u->bufferAttr->samplingRate = u->sampleSpec.rate;
     u->bufferAttr->frameLen = frameLen;
-    u->bufferAttr->numChanIn = ss.channels;
-    u->bufferAttr->numChanOut = ss.channels;
+    u->bufferAttr->numChanIn = u->sampleSpec.channels;
+    u->bufferAttr->numChanOut = u->sampleSpec.channels;
     if (EffectChainManagerCreate(u->sink->name, u->bufferAttr) != 0) {
         return InitFail(m, ma);
     }
-    
-    int32_t bitSize = pa_sample_size_of_format(ss.format);
-    size_t targetSize = ss.channels * frameLen * bitSize;
-    u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, targetSize, &ss, 1, 1, 0, NULL);
+
+    int32_t bitSize = pa_sample_size_of_format(u->sampleSpec.format);
+    size_t targetSize = u->sampleSpec.channels * frameLen * bitSize;
+    u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, targetSize,
+                                 &u->sampleSpec, 1, 1, 0, NULL);
 
     pa_sink_input_put(u->sinkInput);
     pa_sink_put(u->sink);
     pa_sink_input_cork(u->sinkInput, false);
-
+    
     pa_modargs_free(ma);
     return 0;
 }
