@@ -71,11 +71,11 @@ AudioEffectChain::AudioEffectChain(std::string scene) {
     effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
     audioBufIn.frameLength = 0;
     audioBufOut.frameLength = 0;
-    ioBufferConfig.inputCfg.samplingRate = 48000;
-    ioBufferConfig.inputCfg.channels = 2;
+    ioBufferConfig.inputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
+    ioBufferConfig.inputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig.inputCfg.format = DATA_FORMAT_F32;
-    ioBufferConfig.outputCfg.samplingRate = 48000;
-    ioBufferConfig.outputCfg.channels = 2;
+    ioBufferConfig.outputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
+    ioBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig.outputCfg.format = DATA_FORMAT_F32;
 }
 
@@ -209,7 +209,7 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
     }
 }
 
-int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList, 
+int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
     AudioEffectLibEntry **libEntry, std::string libName) {
     for (const std::unique_ptr<AudioEffectLibEntry> &lib : effectLibraryList) {
         if (lib->libraryName == effect) {
@@ -219,6 +219,25 @@ int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffec
         }
     }
     return ERROR;
+}
+
+int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, std::string effect, std::string libName)
+{
+    if (!libEntry) {
+        AUDIO_ERR_LOG("Effect [%{public}s] in lib [%{public}s] is nullptr", effect.c_str(), libName.c_str());
+        return ERROR;
+    }
+    if (!libEntry->audioEffectLibHandle) {
+        AUDIO_ERR_LOG("AudioEffectLibHandle of Effect [%{public}s] in lib [%{public}s] is nullptr",
+                      effect.c_str(), libName.c_str());
+        return ERROR;
+    }
+    if (!libEntry->audioEffectLibHandle->createEffect) {
+        AUDIO_ERR_LOG("CreateEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr",
+                      effect.c_str(), libName.c_str());
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 AudioEffectChainManager::AudioEffectChainManager() {}
@@ -255,16 +274,21 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
 
     // Construct EffectToLibraryEntryMap that stores libEntry for each effect name
     AudioEffectLibEntry *libEntry = nullptr;
-    int32_t errorCode;
+    int32_t ret;
     std::string libName;
     for (std::string effect: effectSet) {
-        errorCode = FindEffectLib(effect, effectLibraryList, &libEntry, libName);
-        if (errorCode == ERROR) {
+        ret = FindEffectLib(effect, effectLibraryList, &libEntry, libName);
+        if (ret == ERROR) {
             AUDIO_INFO_LOG("Couldn't find libEntry of effect %{public}s", effect.c_str());
             continue;
         }
-        EffectToLibraryEntryMap[effect] = libEntry;        
-        EffectToLibraryNameMap[effect] = libName;        
+        ret = CheckValidEffectLibEntry(libEntry, effect, libName);
+        if (ret == ERROR) {
+            AUDIO_INFO_LOG("Invalid libEntry of effect %{public}s", effect.c_str());
+            continue;
+        }
+        EffectToLibraryEntryMap[effect] = libEntry;
+        EffectToLibraryNameMap[effect] = libName;
     }
     
     // Construct EffectChainToEffectsMap that stores all effect names of each effect chain
@@ -308,7 +332,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChain(std::string sceneType, B
 }
 
 int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std::string effectMode)
-{    
+{
     if (!SceneTypeToEffectChainMap.count(sceneType)) {
         AUDIO_ERR_LOG("SceneType [%{public}s] does not exist, failed to set", sceneType.c_str());
         return ERROR;
@@ -340,19 +364,6 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
         AudioEffectDescriptor descriptor;
         descriptor.libraryName = EffectToLibraryNameMap[effect];
         descriptor.effectName = effect;
-        if (!EffectToLibraryEntryMap[effect]) {
-            AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s] is nullptr", effect.c_str());
-            continue;
-        }
-        if (!EffectToLibraryEntryMap[effect]->audioEffectLibHandle) {
-            AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s]->audioEffectLibHandle is nullptr", effect.c_str());
-            continue;
-        }
-        if (!EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect) {
-            AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s]->audioEffectLibHandle->createEffect is nullptr",
-                          effect.c_str());
-            continue;
-        }
         ret = EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
         if (ret != 0) {
             AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());

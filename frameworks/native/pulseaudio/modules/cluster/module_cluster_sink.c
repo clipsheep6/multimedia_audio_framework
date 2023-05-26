@@ -39,7 +39,7 @@ struct userdata {
     pa_module *module;
 };
 
-static const char* const valid_modargs[] = {
+static const char* const VALID_MODARGS[] = {
     "sink_name",
     NULL
 };
@@ -121,7 +121,7 @@ int pa__init(pa_module *m)
 
     pa_assert(m);
 
-    if (!(ma = pa_modargs_new(m->argument, valid_modargs))) {
+    if (!(ma = pa_modargs_new(m->argument, VALID_MODARGS))) {
         AUDIO_ERR_LOG("Failed to parse module arguments.");
         return InitFail(m, ma);
     }

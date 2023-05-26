@@ -53,7 +53,7 @@ struct userdata {
     bool auto_desc;
 };
 
-static const char * const valid_modargs[] = {
+static const char* const VALID_MODARGS[] = {
     "sink_name",
     "rate",
     NULL
@@ -211,12 +211,12 @@ void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
 
 float CapMax(float v)
 {
-    float value = v;    
+    float value = v;
     if (v > 1.0f) {
         value = 1.0f - FLOAT_EPS;
     } else if (v < -1.0f) {
         value = -1.0f + FLOAT_EPS;
-    } 
+    }
     return value;
 }
 
@@ -403,7 +403,7 @@ int pa__init(pa_module *m)
 
     pa_assert(m);
 
-    if (!(ma = pa_modargs_new(m->argument, valid_modargs))) {
+    if (!(ma = pa_modargs_new(m->argument, VALID_MODARGS))) {
         AUDIO_ERR_LOG("Failed to parse module arguments.");
         return InitFail(m, ma);
     }
