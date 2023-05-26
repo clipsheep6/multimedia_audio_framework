@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
+c_utils_dir = "//commonlibrary/c_utils"
 
 config("cluster_config") {
   visibility = [ ":*" ]
@@ -25,8 +26,8 @@ config("cluster_config") {
     "$pulseaudio_dir",
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//commonlibrary/c_utils/base/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "$c_utils_dir/base/include",
   ]
 
   cflags = [
@@ -42,7 +43,7 @@ ohos_shared_library("module-cluster-sink") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
   }
   sources = [
     "module_cluster_sink.c",
@@ -56,7 +57,7 @@ ohos_shared_library("module-cluster-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "//third_party/bounds_checking_function:libsec_shared",
+    "${third_party_path}/bounds_checking_function:libsec_shared",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
