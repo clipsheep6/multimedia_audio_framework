@@ -133,15 +133,13 @@ void AudioManagerCallbackNapi::SaveAudioManagerDeviceChangeCbRef(DeviceFlag devi
         "SaveCallbackReference: creating reference for callback fail");
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
     audioManagerDeviceChangeCbList_.push_back({cb, deviceFlag});
-    AUDIO_INFO_LOG("Save manager device change callback ref success, deviceFlag [%{public}d], list size [%{public}d]",
+    AUDIO_INFO_LOG("Save manager device change callback ref success, deviceFlag [%{public}d], list size [%{public}zu]",
         deviceFlag, audioManagerDeviceChangeCbList_.size());
 }
 
 void AudioManagerCallbackNapi::RemoveAudioManagerDeviceChangeCbRef(napi_env env, napi_value callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    bool isEquals = false;
-    napi_value copyValue = nullptr;
 
     for (auto it = audioManagerDeviceChangeCbList_.begin(); it != audioManagerDeviceChangeCbList_.end(); ++it) {
         bool isSameCallback = AudioCommonNapi::IsSameCallback(env_, callback, (*it).first->cb_);
@@ -191,15 +189,13 @@ void AudioManagerCallbackNapi::SaveRoutingManagerDeviceChangeCbRef(DeviceFlag de
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
 
     routingManagerDeviceChangeCbList_.push_back({cb, deviceFlag});
-    AUDIO_INFO_LOG("Save routing device change callback ref success, deviceFlag [%{public}d], list size [%{public}d]",
+    AUDIO_INFO_LOG("Save routing device change callback ref success, deviceFlag [%{public}d], list size [%{public}zu]",
         deviceFlag, routingManagerDeviceChangeCbList_.size());
 }
 
 void AudioManagerCallbackNapi::RemoveRoutingManagerDeviceChangeCbRef(napi_env env, napi_value callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    bool isEquals = false;
-    napi_value copyValue = nullptr;
 
     for (auto it = routingManagerDeviceChangeCbList_.begin(); it != routingManagerDeviceChangeCbList_.end(); ++it) {
         bool isSameCallback = AudioCommonNapi::IsSameCallback(env_, callback, (*it).first->cb_);

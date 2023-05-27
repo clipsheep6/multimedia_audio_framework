@@ -907,6 +907,7 @@ struct StreamSetStateEventInternal {
 };
 
 struct AudioRendererChangeInfo {
+    int32_t createrUID;
     int32_t clientUID;
     int32_t sessionId;
     int32_t tokenId;
@@ -916,6 +917,7 @@ struct AudioRendererChangeInfo {
 };
 
 struct AudioCapturerChangeInfo {
+    int32_t createrUID;
     int32_t clientUID;
     int32_t sessionId;
     AudioCapturerInfo capturerInfo;
