@@ -472,6 +472,11 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
         AUDIO_ERR_LOG("Failed to parse device_type argument");
     }
 
+    if (pa_modargs_get_value_s32(ma, "source_type", &u->attrs.source_type) < 0) {
+        AUDIO_ERR_LOG("Failed to parse source_type argument");
+    }
+
+    AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d,", u->attrs.source_type);
     AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
         "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
 

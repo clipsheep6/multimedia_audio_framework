@@ -70,6 +70,7 @@ private:
     void SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
+    void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetSelectedDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
     void SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply);

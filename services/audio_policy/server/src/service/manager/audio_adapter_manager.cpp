@@ -530,6 +530,11 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
             args.append(" device_type=");
             args.append(audioModuleInfo.deviceType);
         }
+
+        if (!audioModuleInfo.sourceType.empty()) {
+            args.append(" source_type=");
+            args.append(audioModuleInfo.sourceType);
+        }
     } else if (audioModuleInfo.lib == PIPE_SINK) {
         if (!audioModuleInfo.fileName.empty()) {
             args = "file=";
@@ -586,6 +591,8 @@ std::string AudioAdapterManager::GetStreamNameByStreamType(DeviceType deviceType
             return type + "accessibility";
         case STREAM_ULTRASONIC:
             return type + "ultrasonic";
+        case STREAM_WAKEUP:
+            return type + "wakeup";
         default:
             return "";
     }
