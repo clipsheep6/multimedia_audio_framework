@@ -305,7 +305,8 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
 
     AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}d", (int32_t)EffectToLibraryEntryMap.size());
     AUDIO_INFO_LOG("EffectChainToEffectsMap size %{public}d", (int32_t)EffectChainToEffectsMap.size());
-    AUDIO_INFO_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}d", (int32_t)SceneTypeAndModeToEffectChainNameMap.size());
+    AUDIO_INFO_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}d",
+                   (int32_t)SceneTypeAndModeToEffectChainNameMap.size());
 }
 
 int32_t AudioEffectChainManager::CreateAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
@@ -318,8 +319,8 @@ int32_t AudioEffectChainManager::CreateAudioEffectChain(std::string sceneType, B
         SceneTypeToEffectChainMap[sceneType] = audioEffectChain;
     }
 
-    audioEffectChain->SetIOBufferConfig(true, bufferAttr->samplingRate, bufferAttr->numChanIn); // input buffer config
-    audioEffectChain->SetIOBufferConfig(false, bufferAttr->samplingRate, bufferAttr->numChanOut); // output buffer config
+    audioEffectChain->SetIOBufferConfig(true, bufferAttr->samplingRate, bufferAttr->numChanIn); // input
+    audioEffectChain->SetIOBufferConfig(false, bufferAttr->samplingRate, bufferAttr->numChanOut); // output
 
     std::string effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
     if (SetAudioEffectChain(sceneType, effectMode) != SUCCESS) {

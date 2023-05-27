@@ -65,11 +65,8 @@ static const char * const VALID_MODARGS[] = {
 static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk)
 {
     struct userdata *u = PA_SINK(o)->userdata;
-
     switch (code) {
-
         case PA_SINK_MESSAGE_GET_LATENCY:
-
             /* The sink is _put() before the sink input is, so let's
              * make sure we don't access it yet */
             if (!PA_SINK_IS_LINKED(u->sink->thread_info.state) ||
@@ -77,7 +74,6 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                 *((int64_t*) data) = 0;
                 return 0;
             }
-
             *((int64_t*) data) =
                 /* Get the latency of the masterSink */
                 pa_sink_get_latency_within_thread(u->sinkInput->sink, true) +
@@ -85,7 +81,6 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                 /* Add the latency internal to our sink input on top */
                 pa_bytes_to_usec(pa_memblockq_get_length(u->sinkInput->thread_info.render_memblockq),
                                  &u->sinkInput->sink->sample_spec);
-
             return 0;
         default:
             break;
@@ -164,7 +159,7 @@ static void SinkUpdateRequestedLatency(pa_sink *s)
 }
 
 // BEGIN Utility functions
-#define FLOAT_EPS 1e-9f;
+#define FLOAT_EPS 1e-9f
 #define MEMBLOCKQ_MAXLENGTH (16*1024*16)
 #define OFFSET_BIT_24 3
 #define BIT_DEPTH_TWO 2
