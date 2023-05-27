@@ -17,11 +17,11 @@
 #ifndef AUDIO_EFFECT_CHAIN_MANAGER_H
 #define AUDIO_EFFECT_CHAIN_MANAGER_H
 
-#include <stdio.h>
-#include <stdint.h>
+#include <cstdio>
+#include <cstdint>
 #include <cassert>
 #include <cstdint>
-#include <stddef.h>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>

@@ -13,14 +13,12 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <cassert>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <cstdint>
-#include <stddef.h>
+#include <cassert>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <vector>
@@ -264,7 +262,6 @@ int32_t AudioEffectChainManager::GetFrameLen()
 void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
     std::unordered_map<std::string, std::string> &map,
     std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList) {
-
     std::set<std::string> effectSet;
     for (EffectChain efc: effectChains) {
         for (std::string effect: efc.apply) {
