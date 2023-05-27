@@ -32,6 +32,7 @@ typedef struct {
     const char *filePath;
     const char *deviceNetworkId;
     int32_t device_type;
+    int32_t source_type;
 } IAudioSourceAttr;
 
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId, void **wapper);

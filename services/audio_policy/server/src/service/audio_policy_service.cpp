@@ -806,6 +806,31 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
     return audioModuleInfo;
 }
 
+// private method
+AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t sourceType)
+{
+    AudioModuleInfo audioModuleInfo = {};
+    audioModuleInfo.lib = "libmodule-hdi-source.z.so";
+    audioModuleInfo.format = "s16le";
+    audioModuleInfo.name = "Built_in_mic";
+    audioModuleInfo.networkId = "LocalDevice";
+
+    audioModuleInfo.adapterName = "primary";
+    audioModuleInfo.className = "primary";
+    audioModuleInfo.fileName = "";
+
+    audioModuleInfo.channels = "2";
+    audioModuleInfo.rate = "44100";
+    audioModuleInfo.bufferSize = "3584";
+    audioModuleInfo.OpenMicSpeaker = "1";
+
+    std::stringstream sourceType_;
+    sourceType_ << static_cast<int32_t>(sourceType);
+    audioModuleInfo.sourceType = sourceType_.str();
+
+    return audioModuleInfo;
+}
+
 void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std::string networkId)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
@@ -862,6 +887,36 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
     AUDIO_DEBUG_LOG("GetDevices list size = [%{public}zu]", deviceList.size());
     return deviceList;
 }
+
+bool AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
+{
+    //当传入的sourceType是wakeup类型时，先调用CloseAudioPort，再调用OpenAudioPort，并且将sourceType传入audio_capturer_source供给使用
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    //1、close
+    if (IOHandles_.find(PRIMARY_MIC) != IOHandles_.end()) {
+        audioPolicyManager_.CloseAudioPort(IOHandles_[PRIMARY_MIC]);
+        IOHandles_.erase(PRIMARY_MIC);
+    }
+    AUDIO_INFO_LOG("CloseAudioPort WakeUp Success!");
+    //2、open and init wakeup
+    auto sourceType = options.capturerInfo.sourceType; 
+    AudioModuleInfo moduleInfo = ConstructWakeUpAudioModuleInfo(sourceType);
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+        "OpenAudioPort failed %{public}d", ioHandle);
+    IOHandles_[moduleInfo.name] = ioHandle;
+    AUDIO_INFO_LOG("OpenAudioPort WakeUp Success!");
+    //3、 setDeviceActive
+    auto devType = GetDeviceType(moduleInfo.name);
+    int32_t result = ERROR;
+    result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
+    if (result == SUCCESS) {
+        AUDIO_INFO_LOG("SetWakeUpAudioCapturer Active Success!");
+        return true;
+    }
+        AUDIO_ERR_LOG("SetWakeUpAudioCapturer failed");
+    return false;
+}  
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo, std::string networkId)

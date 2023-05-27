@@ -253,6 +253,24 @@ void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParc
     }
 }
 
+void AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("SetWakeUpAudioCapturerInternal AudioManagerStub");
+    InternalAudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(data.ReadInt32());
+    capturerOptions.streamInfo.encoding = static_cast<AudioEncodingType>(data.ReadInt32());
+    capturerOptions.streamInfo.format = static_cast<AudioSampleFormat>(data.ReadInt32());
+    capturerOptions.streamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
+    capturerOptions.capturerInfo.sourceType = static_cast<SourceType>(data.ReadInt32());
+    capturerOptions.capturerInfo.capturerFlags = data.ReadInt32();
+    bool result = SetWakeUpAudioCapturer(capturerOptions);
+    if (result)
+        reply.WriteInt32(AUDIO_OK);
+    else
+        reply.WriteInt32(AUDIO_ERR);
+
+}
+
 void AudioPolicyManagerStub::GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
@@ -1036,6 +1054,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_DEVICES:
             GetDevicesInternal(data, reply);
+            break;
+
+        case SET_WAKEUP_AUDIOCAPTURER:
+            SetWakeUpAudioCapturerInternal(data, reply);
             break;
 
         case QUERY_PERMISSION:

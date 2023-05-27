@@ -28,6 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 using InternalDeviceType = DeviceType;
+using InternalAudioCapturerOptions = AudioCapturerOptions;
 
 class IAudioPolicy : public IRemoteBroker {
 public:
@@ -56,6 +57,8 @@ public:
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) = 0;
 
     virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) = 0;
+
+    virtual bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) = 0;
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
