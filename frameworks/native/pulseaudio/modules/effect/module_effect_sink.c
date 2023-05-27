@@ -55,7 +55,7 @@ struct userdata {
     bool auto_desc;
 };
 
-static const char* const VALID_MODARGS[] = {
+static const char * const VALID_MODARGS[] = {
     "sink_name",
     "rate",
     NULL
@@ -79,7 +79,7 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
             }
 
             *((int64_t*) data) =
-                /* Get the latency of the master sink */
+                /* Get the latency of the masterSink */
                 pa_sink_get_latency_within_thread(u->sinkInput->sink, true) +
 
                 /* Add the latency internal to our sink input on top */
@@ -102,9 +102,9 @@ static int SinkSetStateInMainThread(pa_sink *s, pa_sink_state_t state, pa_suspen
     pa_sink_assert_ref(s);
     pa_assert_se(u = s->userdata);
 
-    if (!PA_SINK_IS_LINKED(state) ||
-        !PA_SINK_INPUT_IS_LINKED(u->sinkInput->state))
+    if (!PA_SINK_IS_LINKED(state) || !PA_SINK_INPUT_IS_LINKED(u->sinkInput->state)) {
         return 0;
+    }
 
     pa_sink_input_cork(u->sinkInput, state == PA_SINK_SUSPENDED);
     return 0;
@@ -119,7 +119,7 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t new_state, pa_su
     pa_assert_se(u = s->userdata);
 
     /* When set to running or idle for the first time, request a rewind
-     * of the master sink to make sure we are heard immediately */
+     * of the masterSink to make sure we are heard immediately */
     if (PA_SINK_IS_OPENED(new_state) && s->thread_info.state == PA_SINK_INIT) {
         pa_log_debug("Requesting rewind due to state change.");
         pa_sink_input_request_rewind(u->sinkInput, 0, false, true, true);
@@ -157,7 +157,7 @@ static void SinkUpdateRequestedLatency(pa_sink *s)
         return;
     }
 
-    /* Just hand this one over to the master sink */
+    /* Just hand this one over to the masterSink */
     pa_sink_input_set_requested_latency_within_thread(
             u->sinkInput,
             pa_sink_get_requested_latency_within_thread(s));
@@ -391,7 +391,7 @@ int InitFail(pa_module *m, pa_modargs *ma)
     return -1;
 }
 
-int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u)
+int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdata *u)
 {
     pa_sample_spec ss;
     pa_channel_map sinkMap;
@@ -409,20 +409,20 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u
     sinkData.driver = __FILE__;
     sinkData.module = m;
     if (!(sinkData.name = pa_xstrdup(pa_modargs_get_value(ma, "sink_name", NULL))))
-        sinkData.name = pa_sprintf_malloc("%s.effected", master->name);
+        sinkData.name = pa_sprintf_malloc("%s.effected", masterSink->name);
     pa_sink_new_data_set_sample_spec(&sinkData, &ss);
     pa_sink_new_data_set_channel_map(&sinkData, &sinkMap);
-    pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_MASTER_DEVICE, master->name);
+    pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_MASTER_DEVICE, masterSink->name);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_CLASS, "filter");
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_STRING, "N/A");
 
     if ((u->auto_desc = !pa_proplist_contains(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION))) {
         const char *k;
-        k = pa_proplist_gets(master->proplist, PA_PROP_DEVICE_DESCRIPTION);
-        pa_proplist_setf(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION, "effected %s", k ? k : master->name);
+        k = pa_proplist_gets(masterSink->proplist, PA_PROP_DEVICE_DESCRIPTION);
+        pa_proplist_setf(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION, "effected %s", k ? k : masterSink->name);
     }
     
-    u->sink = pa_sink_new(m->core, &sinkData, master->flags & (PA_SINK_LATENCY|PA_SINK_DYNAMIC_LATENCY));
+    u->sink = pa_sink_new(m->core, &sinkData, masterSink->flags & (PA_SINK_LATENCY|PA_SINK_DYNAMIC_LATENCY));
     pa_sink_new_data_done(&sinkData);
 
     if (!u->sink) {
@@ -438,11 +438,11 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u
     u->sampleSpec = ss;
     u->sinkMap = sinkMap;
     
-    pa_sink_set_asyncmsgq(u->sink, master->asyncmsgq);
+    pa_sink_set_asyncmsgq(u->sink, masterSink->asyncmsgq);
     return 0;
 }
 
-int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u)
+int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdata *u)
 {
     pa_resample_method_t resampleMethod = PA_RESAMPLER_SRC_SINC_FASTEST; //PA_RESAMPLER_INVALID;
     bool remix = true;
@@ -451,7 +451,7 @@ int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *master, struct userda
     pa_sink_input_new_data_init(&sinkInputData);
     sinkInputData.driver = __FILE__;
     sinkInputData.module = m;
-    pa_sink_input_new_data_set_sink(&sinkInputData, master, false, true);
+    pa_sink_input_new_data_set_sink(&sinkInputData, masterSink, false, true);
     sinkInputData.origin_sink = u->sink;
     const char *name = pa_sprintf_malloc("%s effected Stream", u->sink->name);
     pa_proplist_sets(sinkInputData.proplist, PA_PROP_MEDIA_NAME, name);
@@ -480,9 +480,9 @@ int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *master, struct userda
 int pa__init(pa_module *m)
 {
     int ret;
-    struct userdata *u;    
+    struct userdata *u;
     pa_modargs *ma;
-    pa_sink *master;
+    pa_sink *masterSink;
 
     pa_assert(m);
 
@@ -491,8 +491,8 @@ int pa__init(pa_module *m)
         return InitFail(m, ma);
     }
 
-    if (!(master = pa_namereg_get(m->core, pa_modargs_get_value(ma, "master", NULL), PA_NAMEREG_SINK))) {
-        AUDIO_ERR_LOG("Master sink not found");
+    if (!(masterSink = pa_namereg_get(m->core, pa_modargs_get_value(ma, "master", NULL), PA_NAMEREG_SINK))) {
+        AUDIO_ERR_LOG("MasterSink not found");
         return InitFail(m, ma);
     }
 	
@@ -500,12 +500,12 @@ int pa__init(pa_module *m)
     u->module = m;
     m->userdata = u;
 
-    ret = CreateSink(m, ma, master, u);
+    ret = CreateSink(m, ma, masterSink, u);
     if (ret != 0) {
         return InitFail(m, ma);
     }
 
-    ret = CreateSinkInput(m, ma, master, u);
+    ret = CreateSinkInput(m, ma, masterSink, u);
     if (ret != 0) {
         return InitFail(m, ma);
     }

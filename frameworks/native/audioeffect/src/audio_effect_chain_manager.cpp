@@ -18,7 +18,7 @@
 #include <cstring>
 #include <cstdint>
 #include <cassert>
-#include <stddef.h>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <vector>
