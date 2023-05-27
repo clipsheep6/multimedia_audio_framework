@@ -98,6 +98,7 @@ config("audio_client_public_config") {
 ohos_shared_library("audio_client") {
   sanitize = {
     cfi = true
+    integer_overflow = true
     debug = false
     blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
   }
@@ -262,8 +263,8 @@ ohos_shared_library("audio_service") {
     ":audio_common",
     ":audio_process_service",
     "$pulseaudio_build_path/src/daemon:pulseaudio",
-    "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
     "${audio_fwk_path}/frameworks/native/audioeffect:audio_effect",
+    "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
     "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
     "${fwk_native_hdiadapter_path}/sink:audio_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:bluetooth_renderer_sink",
