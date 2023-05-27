@@ -55,8 +55,6 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     // check default/none
     if (pa_safe_streq(sceneMode, "EFFECT_NONE")) {
         pa_sink_input_move_to(si, c->default_sink, false); //if bypass move to hdi sink
-        // For Testing
-        ShowNumInputForEachSink(c);
         return PA_HOOK_OK;
     }
 
