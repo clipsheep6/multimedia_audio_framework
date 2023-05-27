@@ -15,9 +15,9 @@ import("//build/ohos.gni")
 
 group("pa_extend_modules") {
   deps = [
+    "cluster:module-cluster-sink",
+    "effect:module-effect-sink",
     "hdi:module-hdi-sink",
     "hdi:module-hdi-source",
-    "effect:module-effect-sink",
-    "cluster:module-cluster-sink",
   ]
 }

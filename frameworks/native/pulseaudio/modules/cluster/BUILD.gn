@@ -44,9 +44,7 @@ ohos_shared_library("module-cluster-sink") {
     debug = false
     blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
   }
-  sources = [
-    "module_cluster_sink.c",
-  ]
+  sources = [ "module_cluster_sink.c" ]
 
   configs = [ ":cluster_config" ]
 
