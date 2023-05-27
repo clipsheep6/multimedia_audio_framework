@@ -70,8 +70,6 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
         pa_sink_input_move_to(si, effectSink, false);
     }
 
-    // For Testing
-    ShowNumInputForEachSink(c);
     return PA_HOOK_OK;
 }
 
