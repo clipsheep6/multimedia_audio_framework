@@ -135,11 +135,11 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle) {
     effectParam->status = 0;
     effectParam->paramSize = sizeof(int32_t);
     effectParam->valueSize = 0;
-    int32_t *data = &effectParam->data[0];
+    int32_t *data = &(effectParam->data[0]);
     *data++ = EFFECT_SET_PARAM;
     *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
     *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
-    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, &effectParam};
+    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
     if (ret != 0) {
@@ -208,7 +208,7 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
 }
 
 int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
-    AudioEffectLibEntry **libEntry, std::string libName) {
+    AudioEffectLibEntry **libEntry, std::string &libName) {
     for (const std::unique_ptr<AudioEffectLibEntry> &lib : effectLibraryList) {
         if (lib->libraryName == effect) {
             libName = lib->libraryName;
@@ -303,10 +303,10 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
         SceneTypeAndModeToEffectChainNameMap[item->first] = item->second;
     }
 
-    AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}d", (int32_t)EffectToLibraryEntryMap.size());
-    AUDIO_INFO_LOG("EffectChainToEffectsMap size %{public}d", (int32_t)EffectChainToEffectsMap.size());
-    AUDIO_INFO_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}d",
-                   (int32_t)SceneTypeAndModeToEffectChainNameMap.size());
+    AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", EffectToLibraryEntryMap.size());
+    AUDIO_INFO_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap.size());
+    AUDIO_INFO_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
+                   SceneTypeAndModeToEffectChainNameMap.size());
 }
 
 int32_t AudioEffectChainManager::CreateAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
