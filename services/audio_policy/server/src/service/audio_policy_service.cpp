@@ -56,7 +56,7 @@ const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t PRIORITY_LIST_OFFSET_POSTION = 1;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 static int32_t startDeviceId = 1;
-std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper;
+std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 mutex g_adProxyMutex;
 
 AudioPolicyService::~AudioPolicyService()
@@ -105,8 +105,6 @@ bool AudioPolicyService::Init(void)
         AUDIO_ERR_LOG("[Policy Service] Register for device status events failed");
         return false;
     }
-    CreateDataShareHelperInstance();
-    RegisterNameMonitorHelper();
 
     return true;
 }
@@ -2898,6 +2896,12 @@ float AudioPolicyService::GetMinStreamVolume()
 float AudioPolicyService::GetMaxStreamVolume()
 {
     return audioPolicyManager_.GetMaxStreamVolume();
+}
+
+void AudioPolicyServer::RegisterDataObserver()
+{
+    CreateDataShareHelperInstance();
+    RegisterNameMonitorHelper();
 }
 } // namespace AudioStandard
 } // namespace OHOS

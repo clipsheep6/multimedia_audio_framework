@@ -143,11 +143,7 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
-    void CreateDataShareHelperInstance();
-
     int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
-
-    void RegisterNameMonitorHelper();
 
     void SetDisplayName(const std::string &deviceName);
 
@@ -244,6 +240,8 @@ public:
     float GetMaxStreamVolume(void);
 
     int32_t GetMaxRendererInstances();
+
+    void RegisterDataObserver();
 
 private:
     AudioPolicyService()
@@ -365,6 +363,10 @@ private:
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
     DeviceType FindConnectedHeadset();
+
+    void CreateDataShareHelperInstance();
+
+    void RegisterNameMonitorHelper();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;

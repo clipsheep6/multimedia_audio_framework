@@ -144,6 +144,10 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
             SubscribeAccessibilityConfigObserver();
             break;
+        case ABILITY_MGR_SERVICE_ID:
+            AUDIO_INFO_LOG("OnAddSystemAbility ability mgr service start");
+            RegisterDataObserver();
+            break;
         default:
             AUDIO_ERR_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
@@ -2030,6 +2034,11 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
 {
     AUDIO_INFO_LOG("GetMaxRendererInstances");
     return mPolicyService.GetMaxRendererInstances();
+}
+
+void AudioPolicyServer::RegisterDataObserver()
+{
+    mPolicyService.RegisterDataObserver();
 }
 } // namespace AudioStandard
 } // namespace OHOS
