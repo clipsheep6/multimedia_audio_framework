@@ -29,6 +29,7 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 
+#define DUMPFILE
 using namespace std;
 
 namespace OHOS {

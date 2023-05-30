@@ -2762,6 +2762,13 @@ const std::string AudioServiceClient::GetEffectSceneName(AudioStreamType audioTy
         case STREAM_ALARM:
             name = "SCENE_RING";
             break;
+        case STREAM_NOTIFICATION:
+            name = "SCENE_MOVIE";
+            break;
+        case STREAM_VOICE_ASSISTANT:
+            name = "SCENE_SPEECH";
+        case STREAM_ACCESSIBILITY:
+            name = "SCENE_GAME";
         default:
             name = "SCENE_OTHERS";
     }

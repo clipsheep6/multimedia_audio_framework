@@ -195,6 +195,13 @@ public:
                                           std::unordered_map<std::string, std::string> &map) = 0;
 
     /**
+     * Set output device sink for effect chain manager.
+     *
+     * @return true/false.
+     */
+    virtual bool SetOutputDeviceSink(int32_t device, std::string &sinkName) = 0;
+
+    /**
      * Request thread priority for client thread.
      */
     virtual void RequestThreadPriority(uint32_t tid, std::string bundleName) = 0;

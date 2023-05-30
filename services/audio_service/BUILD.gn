@@ -22,9 +22,38 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 group("audio_service_packages") {
   deps = [
     ":audio_common",
+    ":audio_histen",
     ":audio_service",
     ":audio_service_init",
   ]
+}
+
+ohos_shared_library("audio_histen") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+  }
+
+  install_enable = true
+
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/services/audio_service/server/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  sources = [ "//foundation/multimedia/audio_framework/services/audio_service/server/src/audio_histen.cpp" ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
 }
 
 ohos_shared_library("audio_common") {

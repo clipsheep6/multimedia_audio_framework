@@ -34,6 +34,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const uint32_t NUM_SET_EFFECT_PARAM = 3;
+const uint32_t DEFAULT_FRAMELEN = 960;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = 2;
 const uint32_t FACTOR_TWO = 2;
@@ -78,7 +79,7 @@ private:
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap;
     std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap;
     std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap;
-    int32_t frameLen = 960;
+    int32_t frameLen = DEFAULT_FRAMELEN;
 };
 
 }  // namespace AudioStandard
