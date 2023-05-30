@@ -1950,6 +1950,10 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         audioPolicyManager_.SetVolumeForSwitchDevice(currentActiveDevice_);
         OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
         OnPnpDeviceStatusUpdated(pnpDevice_, isPnpDeviceConnected);
+        audioEffectManager_.SetMasterSinkAvailable();
+        if (audioEffectManager_.CanLoadEffectSinks()) {
+            LoadEffectSinks();
+        }
     }
 }
 
@@ -1985,6 +1989,28 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
     gsp->SetAudioBalanceValue(audioBalance);
 }
 
+void AudioPolicyService::LoadEffectSinks()
+{
+    // Create sink for each effect
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-cluster-sink.z.so";
+    moduleInfo.name = "CLUSTER";
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+    IOHandles_[moduleInfo.name] = ioHandle;
+
+    moduleInfo.lib = "libmodule-effect-sink.z.so";
+    moduleInfo.rate = "48000";
+    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
+        ++sceneType) {
+        AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType->second.c_str());
+        moduleInfo.name = sceneType->second;
+        ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+        IOHandles_[moduleInfo.name] = ioHandle;
+    }
+}
+
 void AudioPolicyService::LoadEffectLibrary()
 {
     // IPC -> audioservice load library
@@ -2002,7 +2028,22 @@ void AudioPolicyService::LoadEffectLibrary()
     if (!loadSuccess) {
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
+
     audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
+    audioEffectManager_.GetAvailableAEConfig();
+
+    // Initialize EffectChainManager in audio service through IPC
+    SupportedEffectConfig supportedEffectConfig;
+    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
+    std::unordered_map<std::string, std::string> sceneTypeToEffectChainNameMap;
+    audioEffectManager_.ConstructSceneTypeToEffectChainNameMap(sceneTypeToEffectChainNameMap);
+    bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, sceneTypeToEffectChainNameMap);
+    CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
+
+    audioEffectManager_.SetEffectChainManagerAvailable();
+    if (audioEffectManager_.CanLoadEffectSinks()) {
+        LoadEffectSinks();
+    }
 }
 
 void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
@@ -2901,5 +2942,12 @@ float AudioPolicyService::GetMaxStreamVolume()
 {
     return audioPolicyManager_.GetMaxStreamVolume();
 }
+
+int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& supportedEffectConfig)
+{
+    int32_t ret = audioEffectManager_.QueryEffectManagerSceneMode(supportedEffectConfig);
+    return ret;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
