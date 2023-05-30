@@ -368,6 +368,10 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
     }
 
 #ifdef DEBUG_DIRECT_USE_HDI
+    if (frameSizeInByte_ == 0 || bufferTotalFrameSize_ > SIZE_MAX / frameSizeInByte_) {
+        AUDIO_ERR_LOG("PrepareMmapBuffer:: data overflow");
+        return ERR_OPERATION_FAILED;
+    }
     bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte_;
     ashmemSink_ = new Ashmem(bufferFd_, bufferSize_);
     AUDIO_INFO_LOG("%{public}s create ashmem sink OK, ashmemLen %{public}zu.", __func__, bufferSize_);
