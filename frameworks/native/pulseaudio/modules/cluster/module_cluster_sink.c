@@ -26,6 +26,8 @@
 
 #include "audio_log.h"
 
+#define SELF_TESTING
+
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Cluster module"));
 PA_MODULE_VERSION(PACKAGE_VERSION);
@@ -44,35 +46,39 @@ static const char * const VALID_MODARGS[] = {
     NULL
 };
 
-// static void ShowNumInputForEachSink(pa_core *c)
-// {
-//     pa_sink *sink;
-//     pa_sink_input *si;
-//     uint32_t idx, numInputs;
+// For Testing BEGIN
+#ifdef SELF_TESTING
+static void ShowNumInputForEachSink(pa_core *c)
+{
+    pa_sink *sink;
+    pa_sink_input *si;
+    uint32_t idx, numInputs;
 
-//     PA_IDXSET_FOREACH(sink, c->sinks, idx) {
-//         pa_proplist_sets(sink->proplist, PA_PROP_DEVICE_BUS, "0");
-//     }
+    PA_IDXSET_FOREACH(sink, c->sinks, idx) {
+        pa_proplist_sets(sink->proplist, PA_PROP_DEVICE_BUS, "0");
+    }
 
-//     PA_IDXSET_FOREACH(si, c->sink_inputs, idx) {
-//         const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
-//         if (pa_safe_streq(sceneType, "N/A")) {
-//             continue; // if sinkInput is created by ourselves, skip
-//         }
-//         const char *numInputsStr = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_BUS);
-//         pa_atou(numInputsStr, &numInputs);
-//         numInputs++;
-//         char newNumInputsStr[50];
-//         sprintf(newNumInputsStr, "%u", numInputs);
-//         pa_proplist_sets(si->sink->proplist, PA_PROP_DEVICE_BUS, newNumInputsStr);
-//     }
-// }
+    PA_IDXSET_FOREACH(si, c->sink_inputs, idx) {
+        const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
+        if (pa_safe_streq(sceneType, "N/A")) {
+            continue; // if sinkInput is created by ourselves, skip
+        }
+        const char *numInputsStr = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_BUS);
+        pa_atou(numInputsStr, &numInputs);
+        numInputs++;
+        char newNumInputsStr[50];
+        sprintf(newNumInputsStr, "%u", numInputs);
+        pa_proplist_sets(si->sink->proplist, PA_PROP_DEVICE_BUS, newNumInputsStr);
+    }
+}
 
-// static pa_hook_result_t SinkInputChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
-// {
-//     ShowNumInputForEachSink(c);
-//     return PA_HOOK_OK;
-// }
+static pa_hook_result_t SinkInputChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
+{
+    ShowNumInputForEachSink(c);
+    return PA_HOOK_OK;
+}
+#endif
+// For Testing END
 
 static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
 {
@@ -86,7 +92,9 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     if (pa_safe_streq(sceneMode, "EFFECT_NONE")) {
         pa_sink_input_move_to(si, c->default_sink, false); //if bypass move to hdi sink
         // For Testing
-        // ShowNumInputForEachSink(c);
+        #ifdef SELF_TESTING
+        ShowNumInputForEachSink(c);
+        #endif
         return PA_HOOK_OK;
     }
 
@@ -100,8 +108,10 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
         pa_sink_input_move_to(si, effectSink, false);
     }
 
-    // // For Testing
-    // ShowNumInputForEachSink(c);
+    // For Testing
+    #ifdef SELF_TESTING
+    ShowNumInputForEachSink(c);
+    #endif
     return PA_HOOK_OK;
 }
 
@@ -132,14 +142,16 @@ int pa__init(pa_module *m)
     
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED],
                            PA_HOOK_LATE, (pa_hook_cb_t) SinkInputProplistChangedCb, u);
-	// // For Testing BEGIN
-    // pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK],
-    //                        PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
-    // pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK_POST],
-    //                        PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
-    // pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED],
-    //                        PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
-	// // For Testing END
+	// For Testing BEGIN
+    #ifdef SELF_TESTING
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK],
+                           PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK_POST],
+                           PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED],
+                           PA_HOOK_EARLY, (pa_hook_cb_t) SinkInputChangedCb, u);
+    #endif
+	// For Testing END
 
     pa_modargs_free(ma);
 
