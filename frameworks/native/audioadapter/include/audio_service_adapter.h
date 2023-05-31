@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <vector>
 
-#include "audio_info.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
