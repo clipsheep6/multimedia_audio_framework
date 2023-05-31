@@ -239,7 +239,11 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, false, "Init failed, access buffer failed.");
 
     audioBuffer_->GetSizeParameter(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
-    if (byteSizePerFrame_ == 0 || spanSizeInFrame_ > SIZE_MAX / byteSizePerFrame_) {
+    if (frameSizeInByte_ == 0) {
+        AUDIO_ERR_LOG("PrepareMmapBuffer:: Frame size in byte cannot be zero");
+        return ERR_OPERATION_FAILED;
+    }
+    if (spanSizeInFrame_ > SIZE_MAX / byteSizePerFrame_) {
         AUDIO_ERR_LOG("InitAudioBuffer:: data overflow");
         return false;
     }

@@ -368,7 +368,11 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
     }
 
 #ifdef DEBUG_DIRECT_USE_HDI
-    if (frameSizeInByte_ == 0 || bufferTotalFrameSize_ > SIZE_MAX / frameSizeInByte_) {
+    if (frameSizeInByte_ == 0) {
+        AUDIO_ERR_LOG("PrepareMmapBuffer:: Frame size in byte cannot be zero");
+        return ERR_OPERATION_FAILED;
+    }
+    if (bufferTotalFrameSize_ > SIZE_MAX / frameSizeInByte_) {
         AUDIO_ERR_LOG("PrepareMmapBuffer:: data overflow");
         return ERR_OPERATION_FAILED;
     }
