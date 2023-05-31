@@ -44,7 +44,11 @@ public:
         uint32_t byteSizePerFrame = 0;
 
         hdiRenderSink_->GetMmapBufferInfo(fd, totalSizeInframe, spanSizeInframe, byteSizePerFrame);
-        if (byteSizePerFrame == 0 || spanSizeInframe > SIZE_MAX / byteSizePerFrame) {
+        if (byteSizePerFrame == 0) {
+            AUDIO_ERR_LOG("PrepareMmapBuffer:: Frame size in byte cannot be zero");
+            return ERR_OPERATION_FAILED;
+        }
+        if (spanSizeInframe > SIZE_MAX / byteSizePerFrame) {
             AUDIO_ERR_LOG("RenderFrameFromFile():data overflow");
             return;
         }
