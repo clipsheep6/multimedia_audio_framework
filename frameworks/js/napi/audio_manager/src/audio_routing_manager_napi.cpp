@@ -410,6 +410,8 @@ static void SetDevicesInfo(vector<sptr<AudioDeviceDescriptor>> deviceDescriptors
                 deviceDescriptors[i]->networkId_), valueParam);
             SetValueString(env, "displayName", static_cast<std::string>(
                 deviceDescriptors[i]->displayName_), valueParam);
+            
+            HiLog::Info(LABEL, " deviceDescriptors displayName = %{public}s", (deviceDescriptors[i]->displayName_).c_str());
             SetValueInt32(env, "interruptGroupId", static_cast<int32_t>(
                 deviceDescriptors[i]->interruptGroupId_), valueParam);
             SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(

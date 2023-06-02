@@ -1035,6 +1035,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             break;
 
         case GET_DEVICES:
+            AUDIO_INFO_LOG("Enter AudioPolicyManagerStub::GetDevicesInternal.");
             GetDevicesInternal(data, reply);
             break;
 

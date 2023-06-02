@@ -116,6 +116,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activ
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFlag deviceFlag)
 {
+    AUDIO_INFO_LOG("Enter AudioManagerProxy::GetDevices.");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -136,6 +137,9 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFla
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
         deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+    }
+    for (auto device : deviceInfo) {
+        AUDIO_INFO_LOG("AudioPolicyProxy::GetDevices::deviceType = %{public}d, displayName = %{public}s", device->deviceType_, (device->displayName_).c_str());
     }
 
     return deviceInfo;
