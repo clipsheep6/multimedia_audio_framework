@@ -56,7 +56,7 @@ const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t PRIORITY_LIST_OFFSET_POSTION = 1;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 static int32_t startDeviceId = 1;
-std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper;
+std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 mutex g_adProxyMutex;
 
 AudioPolicyService::~AudioPolicyService()
@@ -105,8 +105,6 @@ bool AudioPolicyService::Init(void)
         AUDIO_ERR_LOG("[Policy Service] Register for device status events failed");
         return false;
     }
-    CreateDataShareHelperInstance();
-    RegisterNameMonitorHelper();
 
     return true;
 }
@@ -832,6 +830,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
     }
 
     for (const auto& device : connectedDevices_) {
+        AUDIO_INFO_LOG("AudioPolicyService::GetDevices::deviceType = %{public}d, displayName = %{public}s", device->deviceType_, (device->displayName_).c_str());
         if (device == nullptr) {
             continue;
         }
@@ -1757,12 +1756,14 @@ void AudioPolicyService::SetDisplayName(const std::string &deviceName)
     for (auto deviceInfo : connectedDevices_) {
         if (deviceInfo->networkId_ == LOCAL_NETWORK_ID) {
             deviceInfo->displayName_ = deviceName;
+            AUDIO_INFO_LOG("AudioPolicyService::SetDisplayName::deviceType = %{public}d, displayName = %{public}s", deviceInfo->deviceType_, (deviceInfo->displayName_).c_str());
         }
     }
 }
 
 void AudioPolicyService::CreateDataShareHelperInstance()
 {
+    AUDIO_INFO_LOG("AudioPolicyService::%{public}s IN", __func__);
     if (g_dataShareHelper != nullptr) {
         AUDIO_ERR_LOG("CreateDataShareHelperInstance already inited.");
         return;
@@ -1781,6 +1782,7 @@ void AudioPolicyService::CreateDataShareHelperInstance()
     }
 
     g_dataShareHelper =  DataShare::DataShareHelper::Creator(remoteObject, SETTINGS_DATA_BASE_URI);
+    AUDIO_INFO_LOG("AudioPolicyService1111111111111::%{public}s IN", __func__);
     if (g_dataShareHelper == nullptr) {
         AUDIO_ERR_LOG("CreateDataShareHelperInstance create fail.");
         return;
@@ -1789,6 +1791,7 @@ void AudioPolicyService::CreateDataShareHelperInstance()
 
 int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &deviceName)
 {
+    AUDIO_INFO_LOG("AudioPolicyService::%{public}s IN", __func__);
     if (g_dataShareHelper == nullptr) {
         AUDIO_ERR_LOG("GetDeviceNameFromDataShareHelper NULL.");
         return ERROR;
@@ -1801,6 +1804,7 @@ int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &device
     predicates.EqualTo(SETTINGS_DATA_FIELD_KEYWORD, PREDICATES_STRING);
 
     auto resultSet = g_dataShareHelper->Query(*uri, predicates, columns);
+    AUDIO_INFO_LOG("AudioPolicyService111111111::%{public}s IN", __func__);
     if (resultSet == nullptr) {
         AUDIO_ERR_LOG("GetDeviceNameFromDataShareHelper query fail.");
         return ERROR;
@@ -1836,6 +1840,7 @@ void AudioPolicyService::RegisterNameMonitorHelper()
 
 void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
+    AUDIO_INFO_LOG("AudioPolicyService::%{public}s IN", __func__);
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
         std::string devicesName = "";
         int32_t ret = GetDeviceNameFromDataShareHelper(devicesName);
@@ -2050,6 +2055,7 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
     }
 
     audioDescriptor->deviceId_ = startDeviceId++;
+    AUDIO_INFO_LOG("AudioPolicyService1111111111::%{public}s IN", __func__);
     UpdateDisplayName(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
 }
@@ -2916,6 +2922,24 @@ float AudioPolicyService::GetMinStreamVolume()
 float AudioPolicyService::GetMaxStreamVolume()
 {
     return audioPolicyManager_.GetMaxStreamVolume();
+}
+
+void AudioPolicyService::RegisterDataObserver()
+{
+    AUDIO_INFO_LOG("AudioPolicyService::%{public}s IN", __func__);
+    CreateDataShareHelperInstance();
+   
+    AUDIO_INFO_LOG("RegisterDataObserver11111111111111111");
+    RegisterNameMonitorHelper();
+    std::string devicesName = "";
+    int32_t ret = GetDeviceNameFromDataShareHelper(devicesName);
+    AUDIO_INFO_LOG("RegisterDataObserver:UpdateDisplayName local name [%{public}s]", devicesName.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("RegisterDataObserver:Local UpdateDisplayName init device failed");
+        return;
+    }
+    SetDisplayName(devicesName);
+    AUDIO_INFO_LOG("AudioPolicyService1111111111111::%{public}s IN", __func__);
 }
 } // namespace AudioStandard
 } // namespace OHOS

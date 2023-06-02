@@ -689,6 +689,7 @@ int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
 {
+    AUDIO_INFO_LOG("Enter AudioSystemManager::GetDevices.");
     return AudioPolicyManager::GetInstance().GetDevices(deviceFlag);
 }
 

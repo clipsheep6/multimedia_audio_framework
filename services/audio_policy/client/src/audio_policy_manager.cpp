@@ -294,13 +294,18 @@ int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)
 {
+    AUDIO_INFO_LOG("Enter AudioPolicyManager::GetDevices.");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetDevices: audio policy manager proxy is NULL.");
         std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
         return deviceInfo;
     }
-    return gsp->GetDevices(deviceFlag);
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = gsp->GetDevices(deviceFlag);
+    for (auto deviceInfo : deviceDescs) {
+        AUDIO_INFO_LOG("AudioPolicyManager::GetDevices::deviceType = %{public}d, displayName = %{public}s", deviceInfo->deviceType_, (deviceInfo->displayName_).c_str());
+    }
+    return deviceDescs;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferOutputDeviceDescriptors(

@@ -129,6 +129,8 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
             InitKVStore();
+            AUDIO_INFO_LOG("RegisterDataObserver::OnAddSystemAbility kv data service start");
+            RegisterDataObserver();
             break;
         case AUDIO_DISTRIBUTED_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
@@ -405,6 +407,7 @@ int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapt
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
 {
+    AUDIO_INFO_LOG("Enter AudioPolicyServer::GetDevices");
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     switch (deviceFlag) {
         case NONE_DEVICES_FLAG:
@@ -441,6 +444,9 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
                 desc->macAddress_ = "";
             }
         }
+    }
+    for (auto deviceInfo : deviceDescs) {
+        AUDIO_INFO_LOG("AudioPolicyServer::GetDevices::deviceType = %{public}d, displayName = %{public}s", deviceInfo->deviceType_, (deviceInfo->displayName_).c_str());
     }
 
     return deviceDescs;
@@ -2032,6 +2038,11 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
 {
     AUDIO_INFO_LOG("GetMaxRendererInstances");
     return mPolicyService.GetMaxRendererInstances();
+}
+
+void AudioPolicyServer::RegisterDataObserver()
+{
+    mPolicyService.RegisterDataObserver();
 }
 } // namespace AudioStandard
 } // namespace OHOS

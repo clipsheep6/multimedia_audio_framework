@@ -93,6 +93,7 @@ bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
     parcel.WriteInt32(volumeGroupId_);
     parcel.WriteString(networkId_);
     parcel.WriteString(displayName_);
+    AUDIO_INFO_LOG("AudioDeviceDescriptor::Marshalling::deviceType = %{public}d, displayName = %{public}s",deviceType_, displayName_.c_str());
     return true;
 }
 
@@ -120,6 +121,7 @@ sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::Unmarshalling(Parcel &in)
     audioDeviceDescriptor->volumeGroupId_ = in.ReadInt32();
     audioDeviceDescriptor->networkId_ = in.ReadString();
     audioDeviceDescriptor->displayName_ = in.ReadString();
+    AUDIO_INFO_LOG("AudioDeviceDescriptor::Marshalling::deviceType = %{public}d, displayName = %{public}s",audioDeviceDescriptor->deviceType_, (audioDeviceDescriptor->displayName_).c_str());
 
     return audioDeviceDescriptor;
 }
