@@ -150,9 +150,10 @@ ohos_shared_library("remote_audio_renderer_sink") {
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
-  deps += [ "//foundation/distributedhardware/distributed_audio/services/hdfaudioclient:daudio_client" ]
-
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "distributed_audio:daudio_client",
+    "hiviewdfx_hilog_native:libhilog"
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -183,12 +184,12 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
 
   deps = [
     "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
-    "${daudio_path}/services/hdfaudioclient:daudio_client",
     "${third_party_path}/bounds_checking_function:libsec_shared",
   ]
 
   external_deps = [
     "c_utils:utils",
+    "distributed_audio:daudio_client",
     "hiviewdfx_hilog_native:libhilog",
   ]
 
