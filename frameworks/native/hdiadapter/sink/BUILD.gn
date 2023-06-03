@@ -152,7 +152,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
 
   external_deps = [
     "distributed_audio:daudio_client",
-    "hiviewdfx_hilog_native:libhilog"
+    "hiviewdfx_hilog_native:libhilog",
   ]
 
   part_name = "audio_framework"
