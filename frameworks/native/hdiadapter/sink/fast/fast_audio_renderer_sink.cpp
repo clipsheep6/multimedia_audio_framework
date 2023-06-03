@@ -436,7 +436,8 @@ int32_t FastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
         return ERR_NOT_STARTED;
     }
 
-    int32_t index = SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_, port, audioPort_, size);
+    int32_t index = SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_,
+        port, audioPort_, size);
     if (index < 0) {
         AUDIO_ERR_LOG("Switch Adapter Fail");
         return ERR_NOT_STARTED;
