@@ -111,6 +111,8 @@ private:
     void GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply);
     void IsVolumeUnadjustableInternal(MessageParcel &data, MessageParcel &reply);
     void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetInnerCapturerSinkNameInternal(MessageParcel &data, MessageParcel &reply);
+    void SetInnerCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

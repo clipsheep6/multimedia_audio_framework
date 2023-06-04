@@ -226,6 +226,11 @@ public:
     int32_t GetMaxRendererInstances();
     
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
+
+    std::string GetInnerCapturerSinkName();
+
+    int32_t SetInnerCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions);
+
 private:
     AudioPolicyManager()
     {

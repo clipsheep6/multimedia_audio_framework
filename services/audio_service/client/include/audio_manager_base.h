@@ -206,6 +206,22 @@ public:
      */
     virtual void RequestThreadPriority(uint32_t tid, std::string bundleName) = 0;
 
+    /**
+     * Create inner capturer manager.
+     * 
+     * @return true/false.
+     */
+    virtual bool CreateInnerCapturerManager() = 0;
+
+    /**
+     * Set StreamUsage set which support inner capturer.
+     * 
+     * @param usage value of StreamUsage which support inner capturer.
+     * 
+     * @return result of setting. 0 if success, error number else;
+    */
+   virtual int32_t SetSupportStreamUsage(std::vector<int32_t> usage) = 0;
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -231,6 +247,8 @@ public:
         REQUEST_THREAD_PRIORITY = 21,
         CREATE_AUDIO_EFFECT_CHAIN_MANAGER = 22,
         SET_OUTPUT_DEVICE_SINK = 23,
+        CREATE_INNER_CAPTURER_MANAGER = 24,
+        SET_SUPPORT_STREAM_USAGE = 25,
     };
 
 public:

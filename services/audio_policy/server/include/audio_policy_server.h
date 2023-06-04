@@ -247,6 +247,10 @@ public:
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
+    std::string GetInnerCapturerSinkName() override;
+
+    int32_t SetInnerCapturerFilterInfos(std::vector<CaptureFilterOptions> options) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

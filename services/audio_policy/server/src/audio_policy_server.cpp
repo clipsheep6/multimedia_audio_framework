@@ -1080,6 +1080,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         }
         std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
             std::make_pair((iterActive->first).audioFocusType, incomingFocusType);
+
         CHECK_AND_RETURN_RET_LOG(focusMap.find(audioFocusTypePair) != focusMap.end(), ERR_INVALID_PARAM,
             "ProcessFocusEntry: audio focus type pair is invalid");
         AudioFocusEntry focusEntry = focusMap[audioFocusTypePair];
@@ -2158,6 +2159,16 @@ int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supported
 {
     int32_t ret = mPolicyService.QueryEffectManagerSceneMode(supportedEffectConfig);
     return ret;
+}
+
+std::string AudioPolicyServer::GetInnerCapturerSinkName()
+{
+    return mPolicyService.GetInnerCapturerSinkName();
+}
+
+int32_t AudioPolicyServer::SetInnerCapturerFilterInfos(std::vector<CaptureFilterOptions> options)
+{
+    return mPolicyService.SetInnerCapturerFilterInfos(options);
 }
 } // namespace AudioStandard
 } // namespace OHOS

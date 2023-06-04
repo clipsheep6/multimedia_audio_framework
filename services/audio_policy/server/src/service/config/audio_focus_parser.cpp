@@ -89,7 +89,7 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
     CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");
     if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_focus_policy"))) {
         if ((currNode->children) && (currNode->children->next)) {
-            currNode = currNode->children->next;
+            currNode = currNode->children;
             ParseStreams(currNode, focusMap);
         } else {
             AUDIO_ERR_LOG("empty focus policy in : %s", AUDIO_FOCUS_CONFIG_FILE);

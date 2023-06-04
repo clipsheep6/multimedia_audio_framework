@@ -38,6 +38,8 @@ public:
     static constexpr std::string_view PIPE_SOURCE = "libmodule-pipe-source.z.so";
     static constexpr std::string_view CLUSTER_SINK = "libmodule-cluster-sink.z.so";
     static constexpr std::string_view EFFECT_SINK = "libmodule-effect-sink.z.so";
+    static constexpr std::string_view INNER_CAPTURER_SINK = "libmodule-inner-capturer-sink.z.so";
+    static constexpr std::string_view RECEIVER_SINK = "libmodule-receiver-sink.z.so";
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_COUNT = 5;
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_DELAY_TIME = 200000;
     static constexpr float MIN_VOLUME = 0.0f;
@@ -80,6 +82,8 @@ public:
     std::vector<SourceOutput> GetAllSourceOutputs();
 
     AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioModuleInfo);
+
+    AudioIOHandle LoadLoopback(const LoopbackModuleInfo &moduleInfo);
 
     int32_t CloseAudioPort(AudioIOHandle ioHandle);
 
@@ -164,6 +168,7 @@ private:
 
     bool ConnectToPulseAudio(void);
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
+    std::string GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const;
     std::string GetStreamNameByStreamType(DeviceType deviceType, AudioStreamType streamType);
     AudioStreamType GetStreamIDByType(std::string streamType);
     AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);

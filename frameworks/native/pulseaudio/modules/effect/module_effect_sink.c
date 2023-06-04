@@ -18,6 +18,8 @@
 #include <config.h>
 #endif
 
+#include <pulse/rtclock.h>
+#include <pulse/timeval.h>
 #include <pulse/xmalloc.h>
 
 #include <pulsecore/namereg.h>
@@ -27,6 +29,8 @@
 #include <pulsecore/modargs.h>
 #include <pulsecore/log.h>
 #include <pulsecore/rtpoll.h>
+#include <pulsecore/thread.h>
+#include <pulsecore/thread-mq.h>
 
 #include "securec.h"
 #include "audio_effect_chain_adapter.h"
@@ -41,10 +45,24 @@ PA_MODULE_USAGE(
         "rate=<sample rate> "
 );
 
+#define DEFAULT_BUFFER_SIZE 8192
+
 struct userdata {
     pa_module *module;
     pa_sink *sink;
     pa_sink_input *sinkInput;
+    char *sceneName;
+
+    uint32_t buffer_size;
+    pa_core *core;
+
+    pa_usec_t block_usec;
+    pa_usec_t timestamp;
+
+    pa_rtpoll *rtpoll;
+    pa_thread *thread;
+    pa_thread_mq thread_mq;
+
     pa_sample_spec sampleSpec;
     pa_channel_map sinkMap;
     BufferAttr *bufferAttr;
@@ -57,6 +75,8 @@ struct userdata {
 static const char * const VALID_MODARGS[] = {
     "sink_name",
     "rate",
+    "buffer_size",
+    "scene_name",
     NULL
 };
 
@@ -310,6 +330,36 @@ static size_t MemblockqMissing(pa_memblockq *bq)
 }
 // END Utility functions
 
+static void ProcessRender(struct userdata *u, pa_usec_t now)
+{
+    size_t ate = 0;
+    
+    pa_assert(u);
+
+    /* This is the configured latency. Sink inputs connected to us
+    might not have a single frame more than the maxrequest value
+    queued. Hence: at maximum read this many bytes from the sink
+    inputs. */
+
+    /* Fill the buffer up the latency size */
+    while (u->timestamp < now + u->block_usec) {
+        pa_memchunk chunk;
+
+        pa_sink_render(u->sink, u->sink->thread_info.max_request, &chunk);
+        pa_memblock_unref(chunk.memblock);
+
+        /* pa_log_debug("Ate %lu bytes.", (unsigned long) chunk.length); */
+        u->timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
+
+        ate += chunk.length;
+
+        if (ate >= u->sink->thread_info.max_request)
+            break;
+    }
+
+    /* pa_log_debug("Ate in sum %lu bytes (of %lu)", (unsigned long) ate, (unsigned long) nbytes); */
+}
+
 /* Called from I/O thread context */
 static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
 {
@@ -341,6 +391,7 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
     chunk->length = targetLength * iterNum;
     chunk->memblock = pa_memblock_new(si->sink->core->mempool, chunk->length);
     short *dst = pa_memblock_acquire_chunk(chunk);
+    const char *sn;
     for (int k = 0; k < iterNum; k++) {
         if (pa_memblockq_peek_fixed_size(u->bufInQ, targetLength, &tchunk) != 0) {
             break;
@@ -358,8 +409,14 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
         pa_memblock_release(tchunk.memblock);
         pa_memblock_unref(tchunk.memblock);
 
-        EffectChainManagerProcess(si->origin_sink->name, u->bufferAttr);
-        
+        sn = pa_proplist_gets(si->proplist, "scene.name");
+        if (sn != NULL) {
+            char *sceneName = pa_sprintf_malloc("%s", sn);
+            EffectChainManagerProcess(sceneName, u->bufferAttr);
+        } else {
+            EffectChainManagerProcess(si->origin_sink->name, u->bufferAttr);
+        }
+
         ConvertFromFloat(u->format, u->processLen, bufOut, dst);
         
         dst += u->processSize;
@@ -528,6 +585,53 @@ static void SinkInputMovingCb(pa_sink_input *i, pa_sink *dest)
     pa_proplist_free(pl);
 }
 
+static void thread_func(void *userdata)
+{
+    struct userdata *u = userdata;
+
+    pa_assert(u);
+
+    AUDIO_DEBUG_LOG("Effect sink thread starting up");
+
+    pa_thread_mq_install(&u->thread_mq);
+
+    u->timestamp = pa_rtclock_now();
+
+    for (;;) {
+        pa_usec_t now = 0;
+        int ret;
+
+        if (PA_SINK_IS_OPENED(u->sink->thread_info.state))
+            now = pa_rtclock_now();
+
+        /* Render some data and drop it immediately */
+        if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
+            if (u->timestamp <= now)
+                ProcessRender(u, now);
+
+            pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp);
+        } else
+            pa_rtpoll_set_timer_disabled(u->rtpoll);
+
+        /* Hmm, nothing to do. Let's sleep */
+        if ((ret = pa_rtpoll_run(u->rtpoll)) < 0)
+            goto fail;
+
+        if (ret == 0)
+            goto finish;
+    }
+
+fail:
+    /* If this was no regular exit from the loop we have to continue
+     * processing messages until we received PA_MESSAGE_SHUTDOWN */
+    pa_asyncmsgq_post(u->thread_mq.outq, PA_MSGOBJECT(u->core),
+        PA_CORE_MESSAGE_UNLOAD_MODULE, u->module, 0, NULL, NULL);
+    pa_asyncmsgq_wait_for(u->thread_mq.inq, PA_MESSAGE_SHUTDOWN);
+
+finish:
+    AUDIO_DEBUG_LOG("Thread shutting down");
+}
+
 int InitFail(pa_module *m, pa_modargs *ma)
 {
     AUDIO_ERR_LOG("Failed to create effect sink");
@@ -543,13 +647,14 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdat
     pa_sample_spec ss;
     pa_channel_map sinkMap;
     pa_sink_new_data sinkData;
+    const char *scene;
 
     /* Create sink */
     ss = m->core->default_sample_spec;
     sinkMap = m->core->default_channel_map;
     if (pa_modargs_get_sample_spec_and_channel_map(ma, &ss, &sinkMap, PA_CHANNEL_MAP_DEFAULT) < 0) {
         AUDIO_ERR_LOG("Invalid sample format specification or channel map");
-        return InitFail(m, ma);
+        return -1;
     }
     
     pa_sink_new_data_init(&sinkData);
@@ -557,6 +662,11 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdat
     sinkData.module = m;
     if (!(sinkData.name = pa_xstrdup(pa_modargs_get_value(ma, "sink_name", NULL)))) {
         sinkData.name = pa_sprintf_malloc("%s.effected", masterSink->name);
+    }
+    
+    scene = pa_modargs_get_value(ma, "scene_name", NULL);
+    if (scene != NULL) {
+        u->sceneName = pa_sprintf_malloc("%s", scene);
     }
     pa_sink_new_data_set_sample_spec(&sinkData, &ss);
     pa_sink_new_data_set_channel_map(&sinkData, &sinkMap);
@@ -571,7 +681,8 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdat
     pa_sink_new_data_done(&sinkData);
 
     if (!u->sink) {
-        return InitFail(m, ma);
+        AUDIO_ERR_LOG("Failed to create sink.");
+        return -1;
     }
 
     u->sink->parent.process_msg = SinkProcessMsg;
@@ -603,6 +714,9 @@ int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct us
     pa_proplist_sets(sinkInputData.proplist, PA_PROP_MEDIA_ROLE, "filter");
     pa_proplist_sets(sinkInputData.proplist, "scene.type", "N/A");
     pa_proplist_sets(sinkInputData.proplist, "scene.mode", "N/A");
+    if (u->sceneName != NULL) {
+        pa_proplist_sets(sinkInputData.proplist, "scene.name", u->sceneName);
+    }
     pa_sink_input_new_data_set_sample_spec(&sinkInputData, &u->sampleSpec);
     pa_sink_input_new_data_set_channel_map(&sinkInputData, &u->sinkMap);
     sinkInputData.flags = (remix ? 0 : PA_SINK_INPUT_NO_REMIX) | PA_SINK_INPUT_START_CORKED;
@@ -612,7 +726,7 @@ int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct us
     pa_sink_input_new_data_done(&sinkInputData);
 
     if (!u->sinkInput) {
-        return InitFail(m, ma);
+        return -1;
     }
 
     u->sinkInput->pop = SinkInputPopCb;
@@ -631,9 +745,59 @@ int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct us
     return 0;
 }
 
+int configSink(pa_module *m, pa_modargs *ma, struct userdata *u)
+{
+    u->buffer_size = DEFAULT_BUFFER_SIZE;
+    if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
+        AUDIO_ERR_LOG("Failed to parse buffer_size argument in effect sink.");
+        return -1;
+    }
+    u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->sink->sample_spec);
+    pa_sink_set_latency_range(u->sink, 0, u->block_usec);
+    pa_sink_set_max_request(u->sink, u->buffer_size);
+
+    if (!(u->thread = pa_thread_new("effect-sink", thread_func, u))) {
+        AUDIO_ERR_LOG("Failed to create effect-sink thread.");
+        return -1;
+    }
+    return 0;
+}
+
+int ConfigSinkInput(struct userdata *u)
+{
+    // Set buffer attributes
+    int32_t ret;
+    int32_t frameLen = EffectChainManagerGetFrameLen();
+    u->format = u->sampleSpec.format;
+    u->processLen = u->sampleSpec.channels * frameLen;
+    u->processSize = u->processLen * sizeof(float);
+
+    u->bufferAttr = pa_xnew0(BufferAttr, 1);
+    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
+    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
+    u->bufferAttr->samplingRate = u->sampleSpec.rate;
+    u->bufferAttr->frameLen = frameLen;
+    u->bufferAttr->numChanIn = u->sampleSpec.channels;
+    u->bufferAttr->numChanOut = u->sampleSpec.channels;
+    if (u->sceneName != NULL) {
+        ret = EffectChainManagerCreate(u->sceneName, u->bufferAttr);
+    } else {
+        ret = EffectChainManagerCreate(u->sink->name, u->bufferAttr);
+    }
+    if (ret != 0) {
+        return -1;
+    }
+
+    int32_t bitSize = pa_sample_size_of_format(u->sampleSpec.format);
+    size_t targetSize = u->sampleSpec.channels * frameLen * bitSize;
+    u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, targetSize, &u->sampleSpec,
+        1, 1, 0, NULL);
+
+    return 0;
+}
+
 int pa__init(pa_module *m)
 {
-    int ret;
     struct userdata *u;
     pa_modargs *ma;
     pa_sink *masterSink;
@@ -651,40 +815,23 @@ int pa__init(pa_module *m)
     }
 	
     u = pa_xnew0(struct userdata, 1);
+    u->core = m->core;
     u->module = m;
     m->userdata = u;
+    u->rtpoll = pa_rtpoll_new();
 
-    ret = CreateSink(m, ma, masterSink, u);
-    if (ret != 0) {
-        return ret;
-    }
-
-    ret = CreateSinkInput(m, ma, masterSink, u);
-    if (ret != 0) {
-        return ret;
-    }
-
-    // Set buffer attributes
-    int32_t frameLen = EffectChainManagerGetFrameLen();
-    u->format = u->sampleSpec.format;
-    u->processLen = u->sampleSpec.channels * frameLen;
-    u->processSize = u->processLen * sizeof(float);
-    
-    u->bufferAttr = pa_xnew0(BufferAttr, 1);
-    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
-    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
-    u->bufferAttr->samplingRate = u->sampleSpec.rate;
-    u->bufferAttr->frameLen = frameLen;
-    u->bufferAttr->numChanIn = u->sampleSpec.channels;
-    u->bufferAttr->numChanOut = u->sampleSpec.channels;
-    if (EffectChainManagerCreate(u->sink->name, u->bufferAttr) != 0) {
+    if (pa_thread_mq_init(&u->thread_mq, m->core->mainloop, u->rtpoll) < 0) {
+        AUDIO_ERR_LOG("pa_thread_mq_init failed.");
         return InitFail(m, ma);
     }
 
-    int32_t bitSize = pa_sample_size_of_format(u->sampleSpec.format);
-    size_t targetSize = u->sampleSpec.channels * frameLen * bitSize;
-    u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, targetSize, &u->sampleSpec,
-        1, 1, 0, NULL);
+    if (CreateSink(m, ma, masterSink, u) != 0 || configSink(m, ma, u) != 0) {
+        return InitFail(m, ma);
+    }
+
+    if (CreateSinkInput(m, ma, masterSink, u) != 0 || ConfigSinkInput(u) != 0) {
+        return InitFail(m, ma);
+    }
 
     pa_sink_input_put(u->sinkInput);
     pa_sink_put(u->sink);
@@ -722,6 +869,12 @@ void pa__done(pa_module *m)
         pa_sink_unlink(u->sink);
     }
 
+    if (u->thread) {
+        pa_asyncmsgq_send(u->thread_mq.inq, NULL, PA_MESSAGE_SHUTDOWN, NULL, 0, NULL);
+        pa_thread_free(u->thread);
+    }
+    pa_thread_mq_done(&u->thread_mq);
+
     if (u->sinkInput) {
         pa_sink_input_unlink(u->sinkInput);
         pa_sink_input_unref(u->sinkInput);
@@ -729,6 +882,10 @@ void pa__done(pa_module *m)
 
     if (u->sink) {
         pa_sink_unref(u->sink);
+    }
+
+    if (u->rtpoll) {
+        pa_rtpoll_free(u->rtpoll);
     }
 
     pa_xfree(u);

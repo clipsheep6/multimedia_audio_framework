@@ -68,6 +68,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_ULTRASONIC) {
         return nullptr;
     }
+    sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
 
     AudioStreamType audioStreamType = STREAM_MUSIC;
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
@@ -99,6 +100,11 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         capturer->SetApplicationCachePath(cachePath);
     }
 
+    if (sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        capturer->SetCapturerState(true);
+        (void)AudioPolicyManager::GetInstance().SetInnerCapturerFilterInfos(
+            capturerOptions.playbackCaptureConfig.filterOptions);
+    }
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
     if (capturer->SetParams(params) != SUCCESS) {
@@ -107,6 +113,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     if (isChange) {
         capturer->isChannelChange_ = true;
     }
+
     return capturer;
 }
 
@@ -136,6 +143,11 @@ AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, cons
     if (!capturerProxyObj_) {
         AUDIO_ERR_LOG("AudioCapturerProxyObj Memory Allocation Failed !!");
     }
+}
+
+void AudioCapturerPrivate::SetCapturerState(bool state)
+{
+    audioStream_->SetInnerCapturerState(state);
 }
 
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const

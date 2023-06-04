@@ -48,6 +48,11 @@ static const std::string SETTINGS_DATA_BASE_URI =
 static const std::string SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
 static const std::string SETTINGS_DATA_FIELD_VALUE = "VALUE";
 static const std::string PREDICATES_STRING = "settings.general.device_name";
+static const std::string INNER_CAPTURER_SINK_NAME = "InnerCapturer";
+static const std::string RECEIVER_SINK_NAME = "Receiver";
+static const std::string SINK_NAME_FOR_CAPTURE_SUFFIX = "_CAP";
+static const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
+
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
@@ -2051,6 +2056,76 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
     gsp->SetAudioBalanceValue(audioBalance);
 }
 
+void AudioPolicyService::LoadSinksForCapturer()
+{
+    AUDIO_INFO_LOG("LoadSinksForCapturer");
+    LoadInnerCapturerSink();
+    LoadReceiverSink();
+    LoadLoopback();
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("LoadSinksForCapturer error for g_adProxy null");
+        return;
+    }
+    bool ret = gsp->CreateInnerCapturerManager();
+    CHECK_AND_RETURN_LOG(ret, "InnerCapturerManager create failed");
+}
+
+void AudioPolicyService::LoadInnerCapturerSink()
+{
+    AUDIO_INFO_LOG("LoadInnerCapturerSink");
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
+    moduleInfo.name = INNER_CAPTURER_SINK_NAME;
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d for InnerCapturer sink", ioHandle);
+    IOHandles_[moduleInfo.name] = ioHandle;
+}
+
+void AudioPolicyService::LoadReceiverSink()
+{
+    AUDIO_INFO_LOG("LoadReceiverSink");
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.name = RECEIVER_SINK_NAME;
+    moduleInfo.lib = "libmodule-receiver-sink.z.so";
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d for Receiver sink", ioHandle);
+    IOHandles_[moduleInfo.name] = ioHandle;
+}
+
+void AudioPolicyService::LoadLoopback()
+{
+    AudioIOHandle ioHandle;
+    size_t cnt;
+    AUDIO_INFO_LOG("LoadLoopback");
+
+    cnt = IOHandles_.count(INNER_CAPTURER_SINK_NAME);
+    if (cnt != 1) {
+        AUDIO_ERR_LOG("LoadLoopback failed for InnerCapturer not loaded, cnt:%{public}d", cnt);
+        return;
+    }
+
+    LoopbackModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-loopback.z.so";
+    moduleInfo.sink = INNER_CAPTURER_SINK_NAME;
+
+    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
+        ++sceneType) {
+        moduleInfo.source = sceneType->second + SINK_NAME_FOR_CAPTURE_SUFFIX + MONITOR_SOURCE_SUFFIX;
+        ioHandle = audioPolicyManager_.LoadLoopback(moduleInfo);
+        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "LoadLoopback failed %{public}d", ioHandle);
+    }
+
+    cnt = IOHandles_.count(RECEIVER_SINK_NAME);
+    if (cnt != 1) {
+        AUDIO_ERR_LOG("receiver sink not exist");
+    } else {
+        moduleInfo.source = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX;
+        ioHandle = audioPolicyManager_.LoadLoopback(moduleInfo);
+        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "LoadLoopback failed %{public}d", ioHandle);
+    }
+}
+
 void AudioPolicyService::LoadEffectSinks()
 {
     // Create sink for each effect
@@ -2074,10 +2149,19 @@ void AudioPolicyService::LoadEffectSinks()
         ++sceneType) {
         AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType->second.c_str());
         moduleInfo.name = sceneType->second;
+        moduleInfo.sceneName.clear();
+        ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+        IOHandles_[moduleInfo.name] = ioHandle;
+
+        moduleInfo.name += SINK_NAME_FOR_CAPTURE_SUFFIX;
+        moduleInfo.sceneName = sceneType->second;
+        AUDIO_INFO_LOG("Initial effect sink:%{public}s for capturer", moduleInfo.name.c_str());
         ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
         CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
         IOHandles_[moduleInfo.name] = ioHandle;
     }
+    LoadSinksForCapturer(); // repy on the success of loading effect sink 
 }
 
 void AudioPolicyService::LoadEffectLibrary()
@@ -3078,5 +3162,35 @@ int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& s
     int32_t ret = audioEffectManager_.QueryEffectManagerSceneMode(supportedEffectConfig);
     return ret;
 }
+
+std::string AudioPolicyService::GetInnerCapturerSinkName()
+{
+    AUDIO_INFO_LOG("GetInnerCapturerSinkName");
+
+    size_t cnt = IOHandles_.count(INNER_CAPTURER_SINK_NAME);
+    if (cnt != 1u) {
+        AUDIO_ERR_LOG("GetInnerCapturerSinkName error, cnt:%{public}d", cnt);
+        return "";
+    }
+    return INNER_CAPTURER_SINK_NAME;
+}
+
+int32_t AudioPolicyService::SetInnerCapturerFilterInfos(std::vector<CaptureFilterOptions> options)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetInnerCapturerFilterInfos error for g_adProxy null");
+        return ERR_OPERATION_FAILED;
+    }
+
+    std::vector<int32_t> usages;
+    AUDIO_INFO_LOG("SetInnerCapturerFilterInfos");
+    for (size_t i = 0; i < options.size(); i++) {
+        usages.emplace_back(options[i].usage);
+    }
+
+    return gsp->SetSupportStreamUsage(usages);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

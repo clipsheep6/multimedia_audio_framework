@@ -50,6 +50,7 @@ namespace {
     constexpr int PARAM2 = 2;
 
     constexpr int TYPE_COMMUNICATION = 7;
+    constexpr int TYPE_PLAYBACK_CAPTURE = 2;
     constexpr int TYPE_VOICE_RECOGNITION = 1;
     constexpr int TYPE_MIC = 0;
     constexpr int TYPE_INVALID = -1;
@@ -193,6 +194,8 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
 
     capturerOptions.capturerInfo.sourceType = sCapturerOptions_->capturerInfo.sourceType;
     capturerOptions.capturerInfo.capturerFlags = sCapturerOptions_->capturerInfo.capturerFlags;
+
+    capturerOptions.playbackCaptureConfig.filterOptions = sCapturerOptions_->playbackCaptureConfig.filterOptions;
 
     std::shared_ptr<AbilityRuntime::Context> abilityContext = GetAbilityContext(env);
     std::string cacheDir = "";
@@ -359,6 +362,7 @@ void AudioCapturerNapi::GetCapturerAsyncCallbackComplete(napi_env env, napi_stat
             capturerOptions->streamInfo.channels = asyncContext->capturerOptions.streamInfo.channels;
             capturerOptions->capturerInfo.sourceType = asyncContext->capturerOptions.capturerInfo.sourceType;
             capturerOptions->capturerInfo.capturerFlags = asyncContext->capturerOptions.capturerInfo.capturerFlags;
+            capturerOptions->playbackCaptureConfig.filterOptions = asyncContext->capturerOptions.playbackCaptureConfig.filterOptions;
 
             valueParam = CreateAudioCapturerWrapper(env, capturerOptions);
             asyncContext->status = AudioCapturerNapi::isConstructSuccess_;
@@ -1314,6 +1318,54 @@ napi_value AudioCapturerNapi::GetState(napi_env env, napi_callback_info info)
     return jsResult;
 }
 
+bool AudioCapturerNapi::ParseCaptureFilterOptionsVector(napi_env env, napi_value root, std::vector<CaptureFilterOptions> &filterOptions)
+{
+    uint32_t arrayLen = 0;
+    napi_get_array_length(env, root, &arrayLen);
+
+    if (arrayLen == 0) {
+        filterOptions = {};
+        HiLog::Info(LABEL, "ParseCaptureFilterOptions get empty filterOptions");
+        return true;
+    }
+
+    for (size_t i = 0; i < (size_t)arrayLen; i++) {
+        napi_value element;
+        napi_get_element(env, root, i, &element);
+        CaptureFilterOptions option = {};
+        napi_value tempValue = nullptr;
+        int32_t intValue = {0};
+
+        if (napi_get_named_property(env, element, "usage", &tempValue) == napi_ok ) {
+            napi_get_value_int32(env, tempValue, &intValue);
+            option.usage = static_cast<StreamUsage>(intValue);
+        }
+
+        filterOptions.push_back(option);
+    }
+
+    return true;
+}
+
+bool AudioCapturerNapi::ParsePlaybackCaptureConfig(napi_env env, napi_value root, AudioPlaybackCaptureConfig* captureConfig)
+{
+    HiLog::Info(LABEL, "ParsePlaybackCaptureConfig");
+
+    napi_value res = nullptr;
+    bool result = false;
+
+    if (napi_get_named_property(env, root, "filterOptions", &res) == napi_ok) {
+        result = ParseCaptureFilterOptionsVector(env, res, captureConfig->filterOptions);
+    }
+
+    if (result == false) {
+        HiLog::Error(LABEL, "ParsePlaybackCaptureConfig return true");
+        return false;
+    }
+
+    return true;
+}
+
 bool AudioCapturerNapi::ParseCapturerOptions(napi_env env, napi_value root, AudioCapturerOptions *opts)
 {
     napi_value res = nullptr;
@@ -1331,6 +1383,14 @@ bool AudioCapturerNapi::ParseCapturerOptions(napi_env env, napi_value root, Audi
         result = ParseCapturerInfo(env, res, &(opts->capturerInfo));
     }
 
+    if (result == false) {
+        return result;
+    }
+
+    if (napi_get_named_property(env, root, "playbackCaptureConfig", &res) == napi_ok) {
+        result = ParsePlaybackCaptureConfig(env, res, &(opts->playbackCaptureConfig));
+    }
+
     return result;
 }
 
@@ -1345,6 +1405,7 @@ bool AudioCapturerNapi::ParseCapturerInfo(napi_env env, napi_value root, AudioCa
             case TYPE_INVALID:
             case TYPE_MIC:
             case TYPE_VOICE_RECOGNITION:
+            case TYPE_PLAYBACK_CAPTURE:
             case TYPE_COMMUNICATION:
                 capturerInfo->sourceType = static_cast<SourceType>(intValue);
                 break;

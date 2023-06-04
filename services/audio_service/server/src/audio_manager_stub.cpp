@@ -288,6 +288,21 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
             return AUDIO_OK;
         }
+        case CREATE_INNER_CAPTURER_MANAGER: {
+            bool ret = CreateInnerCapturerManager();
+            reply.WriteBool(ret);
+            return AUDIO_OK;
+        }
+        case SET_SUPPORT_STREAM_USAGE: {
+            std::vector<int32_t> usage;
+            int32_t cnt = data.ReadInt32();
+            for (int32_t i = 0; i < cnt; i++) {
+                usage.emplace_back(data.ReadInt32());
+            }
+            int32_t ret = SetSupportStreamUsage(usage);
+            reply.WriteInt32(ret);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

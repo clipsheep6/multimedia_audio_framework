@@ -98,6 +98,8 @@ enum AudioPolicyCommand {
     ADJUST_SYSTEM_VOLUME_BY_STEP,
     GET_SYSTEM_VOLUME_IN_DB,
     QUERY_EFFECT_SCENEMODE,
+    GET_INNER_CAPTURER_SINK_NAME,
+    SET_INNER_CAPTURER_FILTER_INFO,
 };
 } // namespace AudioStandard
 } // namespace OHOS

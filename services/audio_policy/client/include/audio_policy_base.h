@@ -202,6 +202,11 @@ public:
     virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;
 
     virtual int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) = 0;
+
+    virtual std::string GetInnerCapturerSinkName() = 0;
+
+    virtual int32_t SetInnerCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions) = 0;
+    
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

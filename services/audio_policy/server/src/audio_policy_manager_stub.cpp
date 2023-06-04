@@ -995,6 +995,26 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
     }
 }
 
+void AudioPolicyManagerStub::GetInnerCapturerSinkNameInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string name = GetInnerCapturerSinkName();
+    reply.WriteString(name);
+}
+
+void AudioPolicyManagerStub::SetInnerCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<CaptureFilterOptions> filterInfo;
+    int32_t ss = data.ReadInt32();
+    for (int32_t i = 0; i < ss; i++) {
+        CaptureFilterOptions info;
+        info.usage = static_cast<StreamUsage>(data.ReadInt32());
+        filterInfo.push_back(info);
+    }
+ 
+    int32_t ret = SetInnerCapturerFilterInfos(filterInfo);
+    reply.WriteInt32(ret);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1308,6 +1328,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_SYSTEM_VOLUME_IN_DB:
             GetSystemVolumeInDbInternal(data, reply);
+            break;
+
+        case GET_INNER_CAPTURER_SINK_NAME:
+            GetInnerCapturerSinkNameInternal(data, reply);
+            break;
+
+        case SET_INNER_CAPTURER_FILTER_INFO:
+            SetInnerCapturerFilterInfosInternal(data, reply);
             break;
 
         default:

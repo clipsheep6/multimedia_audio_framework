@@ -486,8 +486,17 @@ enum SourceType {
     SOURCE_TYPE_INVALID = -1,
     SOURCE_TYPE_MIC,
     SOURCE_TYPE_VOICE_RECOGNITION = 1,
+    SOURCE_TYPE_PLAYBACK_CAPTURE = 2,
     SOURCE_TYPE_VOICE_COMMUNICATION = 7,
     SOURCE_TYPE_ULTRASONIC = 8
+};
+
+/**
+ * Enumerates audio stream privacy type for playback capture.
+ */
+enum AudioPrivacyType {
+    PRIVACY_TYPE_PUBLIC = 0,
+    PRIVACY_TYPE_PRIVATE = 1
 };
 
 /**
@@ -643,6 +652,7 @@ struct AudioRendererDesc {
 struct AudioRendererOptions {
     AudioStreamInfo streamInfo;
     AudioRendererInfo rendererInfo;
+    AudioPrivacyType privacyType;
 };
 
 struct MicStateChangeEvent {
@@ -680,9 +690,18 @@ enum AudioScene {
     AUDIO_SCENE_PHONE_CHAT,
 };
 
+struct CaptureFilterOptions {
+    StreamUsage usage;
+};
+
+struct AudioPlaybackCaptureConfig {
+    std::vector<CaptureFilterOptions> filterOptions;
+};
+
 struct AudioCapturerOptions {
     AudioStreamInfo streamInfo;
     AudioCapturerInfo capturerInfo;
+    AudioPlaybackCaptureConfig playbackCaptureConfig;
 };
 
 struct AppInfo {

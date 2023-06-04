@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2023-2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import("//foundation/multimedia/audio_framework/config.gni")
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
-config("cluster_config") {
+config("capturer_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
@@ -27,8 +27,9 @@ config("cluster_config") {
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
     "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/frameworks/native/audioeffect/include",
-    "${audio_fwk_path}/frameworks/native/playbackcapturer/include",
+    "${audio_fwk_path}/frameworks/native/audioschedule/include",
+    "//drivers/peripheral/audio/interfaces/include",
+    "//commonlibrary/c_utils/base/include",
   ]
 
   cflags = [
@@ -40,25 +41,58 @@ config("cluster_config") {
   ]
 }
 
-ohos_shared_library("module-cluster-sink") {
+ohos_shared_library("module-inner-capturer-sink") {
   sanitize = {
     cfi = true
     debug = false
     blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
   }
-  sources = [ "module_cluster_sink.c" ]
+  sources = [ "module_inner_capturer_sink.c" ]
 
-  configs = [ ":cluster_config" ]
+  configs = [ ":capturer_config" ]
 
-  cflags = [ "-DPA_MODULE_NAME=libmodule_cluster_sink_z_so" ]
+  cflags = [ "-DPA_MODULE_NAME=libmodule_inner_capturer_sink_z_so" ]
+
+  ldflags = [
+    "-Wl",
+    "--no-undefined",
+  ]
 
   deps = [
-    "${audio_fwk_path}/frameworks/native/playbackcapturer:playback_capturer",
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "${audio_fwk_path}/frameworks/native/audioeffect:audio_effect",
-    "${third_party_path}/bounds_checking_function:libsec_shared",
+    "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_shared_library("module-receiver-sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+  }
+  sources = [ "module_receiver_sink.c" ]
+
+  configs = [ ":capturer_config" ]
+
+  cflags = [ "-DPA_MODULE_NAME=libmodule_receiver_sink_z_so" ]
+
+  ldflags = [
+    "-Wl",
+    "--no-undefined",
+  ]
+
+  deps = [
+    "$pulseaudio_build_path/src:pulsecommon",
+    "$pulseaudio_build_path/src/pulse:pulse",
+    "$pulseaudio_build_path/src/pulsecore:pulsecore",
+    "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

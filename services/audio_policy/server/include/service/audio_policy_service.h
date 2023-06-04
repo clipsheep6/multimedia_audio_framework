@@ -260,6 +260,12 @@ public:
 
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
+    std::string GetInnerCapturerSinkName();
+
+    int32_t SetInnerCapturerFilterInfos(std::vector<CaptureFilterOptions> options);
+
+    bool IsStreamSupportInnerCapturer(int32_t sessionId);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -384,7 +390,15 @@ private:
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
     void LoadEffectSinks();
-    
+
+    void LoadSinksForCapturer();
+
+    void LoadInnerCapturerSink();
+
+    void LoadReceiverSink();
+
+    void LoadLoopback();
+
     DeviceType FindConnectedHeadset();
 
     bool interruptEnabled_ = true;

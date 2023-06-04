@@ -561,5 +561,52 @@ bool AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sin
     return true;
 }
 
+bool AudioManagerProxy::CreateInnerCapturerManager()
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("CreateInnerCapturerManager: WriteInterfaceToken failed");
+        return false;
+    }
+
+    error = Remote()->SendRequest(CREATE_INNER_CAPTURER_MANAGER, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("CreateInnerCapturerManager failed, error: %{public}d", error);
+        return false;
+    }
+
+    return reply.ReadBool();
+}
+
+int32_t AudioManagerProxy::SetSupportStreamUsage(std::vector<int32_t> usage)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("SetSupportStreamUsage: WriteInterfaceToken failed");
+        return -1;
+    }
+    
+    int32_t cnt = (int32_t)usage.size();
+    data.WriteInt32(cnt);
+    for (int32_t i = 0; i < cnt; i++) {
+        data.WriteInt32(usage[i]);
+    }
+
+    error = Remote()->SendRequest(SET_SUPPORT_STREAM_USAGE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetSupportStreamUsage failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
