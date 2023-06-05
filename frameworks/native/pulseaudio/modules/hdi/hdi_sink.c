@@ -200,7 +200,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 static void ThreadFuncRendererTimer(void *userdata)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+    ScheduleReportData(getpid(), gettid(), "pulseaudio", AUDIO_NORMAL_QOS_LEVEL);
 
     struct Userdata *u = userdata;
 
@@ -272,7 +272,7 @@ finish:
 static void ThreadFuncWriteHDI(void *userdata)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+    ScheduleReportData(getpid(), gettid(), "pulseaudio", AUDIO_HIGH_QOS_LEVEL);
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -308,7 +308,7 @@ static void ThreadFuncWriteHDI(void *userdata)
 static void TestModeThreadFuncWriteHDI(void *userdata)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+    ScheduleReportData(getpid(), gettid(), "pulseaudio", AUDIO_HIGH_QOS_LEVEL);
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -583,7 +583,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
 static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+    ScheduleReportData(getpid(), gettid(), "pulseaudio", AUDIO_NORMAL_QOS_LEVEL);
 
     pa_sink_new_data data;
     pa_module *m;

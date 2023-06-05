@@ -30,14 +30,12 @@ extern "C" {
 #endif
 
 #ifdef RESSCHE_ENABLE
-const uint32_t AUDIO_QOS_LEVEL = 7;
-
-void ScheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
+void ScheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName, int qos)
 {
     std::string strBundleName = bundleName;
     std::string strPid = std::to_string(pid);
     std::string strTid = std::to_string(tid);
-    std::string strQos = std::to_string(AUDIO_QOS_LEVEL);
+    std::string strQos = std::to_string(qos);
     std::unordered_map<std::string, std::string> mapPayload;
     mapPayload["pid"] = strPid;
     mapPayload[strTid] = strQos;
@@ -47,7 +45,7 @@ void ScheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
 }
 #else
-void ScheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
+void ScheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/ int /* qos */) {};
 #endif
 
 #ifdef __cplusplus
