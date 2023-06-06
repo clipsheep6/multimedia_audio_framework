@@ -98,6 +98,11 @@ void CapturerPositionCallbackNapi::OnJsCapturerPositionCallback(std::unique_ptr<
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
 
+            napi_handle_scope scope = nullptr;
+            napi_open_handle_scope(env, &scope);
+            if (scope == nullptr) {
+                break;
+            }
             napi_value jsCallback = nullptr;
             napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
@@ -113,6 +118,7 @@ void CapturerPositionCallbackNapi::OnJsCapturerPositionCallback(std::unique_ptr<
             napi_value result = nullptr;
             nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
+            napi_close_handle_scope(env, scope);
         } while (0);
         delete event;
         delete work;

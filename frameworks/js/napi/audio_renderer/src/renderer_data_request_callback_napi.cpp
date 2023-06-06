@@ -139,6 +139,11 @@ void RendererDataRequestCallbackNapi::OnJsRendererDataRequestCallback(
         AUDIO_DEBUG_LOG("RendererDataRequestCallbackNapi: JsCallBack %{public}s, uv_queue_work start",
             request.c_str());
         do {
+            napi_handle_scope scope = nullptr;
+            napi_open_handle_scope(env, &scope);
+            if (scope == nullptr) {
+                break;
+            }
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
 
             napi_value jsCallback = nullptr;
@@ -155,6 +160,7 @@ void RendererDataRequestCallbackNapi::OnJsRendererDataRequestCallback(
             nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
             event->rendererNapiObj->audioRenderer_->Enqueue(event->bufDesc_);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
+            napi_close_handle_scope(env, scope);
         } while (0);
         delete event;
         delete work;

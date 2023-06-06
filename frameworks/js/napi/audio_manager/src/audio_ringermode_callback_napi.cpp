@@ -119,6 +119,11 @@ void AudioRingerModeCallbackNapi::OnJsCallbackRingerMode(std::unique_ptr<AudioRi
         napi_ref callback = event->callback->cb_;
         AUDIO_DEBUG_LOG("AudioRingerModeCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
         do {
+            napi_handle_scope scope = nullptr;
+            napi_open_handle_scope(env, &scope);
+            if (scope == nullptr) {
+                break;
+            }
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
 
             napi_value jsCallback = nullptr;
@@ -136,6 +141,7 @@ void AudioRingerModeCallbackNapi::OnJsCallbackRingerMode(std::unique_ptr<AudioRi
             napi_value result = nullptr;
             nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call ringer mode callback", request.c_str());
+            napi_close_handle_scope(env, scope);
         } while (0);
         delete event;
         delete work;

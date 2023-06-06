@@ -189,6 +189,11 @@ void AudioRendererDeviceChangeCallbackNapi::WorkCallbackCompleted(uv_work_t *wor
     napi_ref callback = event->callback_;
 
     do {
+        napi_handle_scope scope = nullptr;
+        napi_open_handle_scope(env, &scope);
+        if (scope == nullptr) {
+            break;
+        }
         napi_value jsCallback = nullptr;
         napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "callback get reference value fail");
@@ -202,6 +207,7 @@ void AudioRendererDeviceChangeCallbackNapi::WorkCallbackCompleted(uv_work_t *wor
         napi_value result = nullptr;
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call devicechange callback");
+        napi_close_handle_scope(env, scope);
     } while (0);
 }
 
