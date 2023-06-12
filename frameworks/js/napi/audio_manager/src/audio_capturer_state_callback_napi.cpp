@@ -182,6 +182,11 @@ void AudioCapturerStateCallbackNapi::OnJsCallbackCapturerState(std::unique_ptr<A
         napi_ref callback = event->callback->cb_;
 
         do {
+            napi_handle_scope scope = nullptr;
+            napi_open_handle_scope(env, &scope);
+            if (scope == nullptr) {
+                break;
+            }
             napi_value jsCallback = nullptr;
             napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr,
@@ -197,6 +202,7 @@ void AudioCapturerStateCallbackNapi::OnJsCallbackCapturerState(std::unique_ptr<A
             napi_value result = nullptr;
             nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call renderstate callback");
+            napi_close_handle_scope(env, scope);
         } while (0);
         delete event;
         delete work;

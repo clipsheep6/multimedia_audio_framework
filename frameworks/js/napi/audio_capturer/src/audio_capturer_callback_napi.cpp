@@ -111,7 +111,11 @@ void AudioCapturerCallbackNapi::OnJsCallbackInterrupt(std::unique_ptr<AudioCaptu
         AUDIO_DEBUG_LOG("AudioCapturerCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s cancelled", request.c_str());
-
+            napi_handle_scope scope = nullptr;
+            napi_open_handle_scope(env, &scope);
+            if (scope == nullptr) {
+                break;
+            }
             napi_value jsCallback = nullptr;
             napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
@@ -127,6 +131,7 @@ void AudioCapturerCallbackNapi::OnJsCallbackInterrupt(std::unique_ptr<AudioCaptu
             napi_value result = nullptr;
             nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback", request.c_str());
+            napi_close_handle_scope(env, scope);
         } while (0);
         delete event;
         delete work;
@@ -185,7 +190,11 @@ void AudioCapturerCallbackNapi::OnJsCallbackStateChange(std::unique_ptr<AudioCap
         AUDIO_DEBUG_LOG("AudioCapturerCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s cancelled", request.c_str());
-
+            napi_handle_scope scope = nullptr;
+            napi_open_handle_scope(env, &scope);
+            if (scope == nullptr) {
+                break;
+            }
             napi_value jsCallback = nullptr;
             napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
@@ -201,6 +210,7 @@ void AudioCapturerCallbackNapi::OnJsCallbackStateChange(std::unique_ptr<AudioCap
             napi_value result = nullptr;
             nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback", request.c_str());
+            napi_close_handle_scope(env, scope);
         } while (0);
         delete event;
         delete work;
