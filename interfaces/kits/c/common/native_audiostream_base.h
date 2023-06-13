@@ -125,6 +125,10 @@ typedef enum {
      * This is a normal audio scene.
      */
     AUDIOSTREAM_LATENCY_MODE_NORMAL,
+    /**
+     * This is a low latency audio scene.
+     */
+    AUDIOSTREAM_LATENCY_MODE_FAST,
 } OH_AudioStream_LatencyMode;
 
 /**
