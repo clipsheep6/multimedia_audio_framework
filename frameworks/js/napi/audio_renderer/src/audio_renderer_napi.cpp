@@ -534,6 +534,9 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
         HiLog::Error(LABEL, "Renderer Create failed");
         unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
         AudioRendererNapi::isConstructSuccess_ = NAPI_ERR_SYSTEM;
+        if(AudioRenderer::CheckMaxRendererInstances() == ERR_OVERFLOW) {
+            AudioRendererNapi::isConstructSuccess_ = NAPI_ERR_STREAM_LIMIT;
+        }
     }
 
     if (rendererNapi->audioRenderer_ != nullptr && rendererNapi->callbackNapi_ == nullptr) {

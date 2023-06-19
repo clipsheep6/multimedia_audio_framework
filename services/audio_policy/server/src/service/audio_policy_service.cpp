@@ -76,6 +76,7 @@ bool AudioPolicyService::Init(void)
         AUDIO_ERR_LOG("Audio Config Parse failed");
         return false;
     }
+    MaxRendererInstancesInit();
 
 #ifdef FEATURE_DTMF_TONE
     std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
@@ -2861,8 +2862,7 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     gsp->SetParameterCallback(object);
 }
 
-
-int32_t AudioPolicyService::GetMaxRendererInstances()
+int32_t AudioPolicyService::MaxRendererInstancesInit()
 {
     // init max renderer instances before kvstore start by local prop for bootanimation
     char currentMaxRendererInstances[100] = {0}; // 100 for system parameter usage
@@ -2874,6 +2874,12 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
     } else {
         AUDIO_ERR_LOG("Get max renderer instances failed %{public}d", ret);
     }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::GetMaxRendererInstances()
+{
     return maxRendererInstances_;
 }
 
