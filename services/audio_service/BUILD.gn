@@ -367,11 +367,12 @@ ohos_executable("audio_hdi_device_test") {
     "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
     "${audio_fwk_path}/frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "${audio_fwk_path}/frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
-    multimedia_audio_framework_hdi_audio_client,
   ]
 
   external_deps = [
     "c_utils:utils",
+    "drivers_interface_audio:audio_idl_headers",
+    "drivers_interface_audio:libaudio_proxy_1.0",
     "hiviewdfx_hilog_native:libhilog",
     "power_manager:powermgr_client",
   ]
