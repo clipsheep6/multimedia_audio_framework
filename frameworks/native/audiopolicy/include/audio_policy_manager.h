@@ -223,6 +223,12 @@ public:
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
     int32_t GetMaxRendererInstances();
+
+    int32_t CheckMaxRendererInstancesCount();
+
+    int32_t GetCurrentRendererInstancesCount();
+
+    int32_t RemoveRendererInstanceCount();
     
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
 private:

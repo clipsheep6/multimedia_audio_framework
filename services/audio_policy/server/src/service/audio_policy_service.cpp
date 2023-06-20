@@ -2883,6 +2883,24 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
     return maxRendererInstances_;
 }
 
+int32_t AudioPolicyService::CheckMaxRendererInstancesCount()
+{
+    CHECK_AND_RETURN_RET_LOG(GetCurrentRendererInstancesCount() < maxRendererInstances_, ERR_MEMORY_ALLOC_FAILED,
+        "The current number of audio renderer streams is greater than the maximum number of configured instances");
+    streamCollector_.AddRendererInstanceCount();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::GetCurrentRendererInstancesCount()
+{
+    return streamCollector_.GetCurrentRendererInstancesCount();
+}
+
+int32_t AudioPolicyService::RemoveRendererInstanceCount()
+{
+    return streamCollector_.RemoveRendererInstanceCount();
+}
+
 #ifdef BLUETOOTH_ENABLE
 const sptr<IStandardAudioService> RegisterBluetoothDeathCallback()
 {

@@ -1906,6 +1906,60 @@ int32_t AudioPolicyProxy::GetMaxRendererInstances()
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::CheckMaxRendererInstancesCount()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("CheckMaxRendererInstancesCount WriteInterfaceToken failed");
+        return ERROR;
+    }
+    int32_t error = Remote()->SendRequest(CHECK_MAX_RENDERER_INSTANCES, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("CheckMaxRendererInstancesCount failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetCurrentRendererInstancesCount()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetCurrentRendererInstancesCount WriteInterfaceToken failed");
+        return ERROR;
+    }
+    int32_t error = Remote()->SendRequest(GET_CURRENT_RENDERER_INSTANCES, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetCurrentRendererInstancesCount failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::RemoveRendererInstanceCount()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("RemoveRendererInstanceCount WriteInterfaceToken failed");
+        return ERROR;
+    }
+    int32_t error = Remote()->SendRequest(REMOVE_CURRENT_RENDERER_INSTANCES_COUNT, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RemoveRendererInstanceCount failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
 static void PreprocessMode(Stream &stream, MessageParcel &reply, int countMode)
 {
     int j, k;

@@ -242,6 +242,12 @@ public:
 
     int32_t GetMaxRendererInstances();
 
+    int32_t CheckMaxRendererInstancesCount();
+
+    int32_t GetCurrentRendererInstancesCount();
+
+    int32_t RemoveRendererInstanceCount();
+
     bool IsVolumeUnadjustable();
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
@@ -392,13 +398,11 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 16;
-    int32_t rendererInstancesCount_ = 0;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
-    std::mutex rendererInstancesCountMutex_;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     DeviceType pnpDevice_ = DEVICE_TYPE_NONE;

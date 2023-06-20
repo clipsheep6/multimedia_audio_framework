@@ -2162,6 +2162,21 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
     return mPolicyService.GetMaxRendererInstances();
 }
 
+int32_t AudioPolicyServer::CheckMaxRendererInstancesCount()
+{
+    return mPolicyService.CheckMaxRendererInstancesCount();
+}
+
+int32_t AudioPolicyServer::GetCurrentRendererInstancesCount()
+{
+    return mPolicyService.GetCurrentRendererInstancesCount();
+}
+
+int32_t AudioPolicyServer::RemoveRendererInstanceCount()
+{
+    return mPolicyService.RemoveRendererInstanceCount();
+}
+
 int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
     int32_t ret = mPolicyService.QueryEffectManagerSceneMode(supportedEffectConfig);
