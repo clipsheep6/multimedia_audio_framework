@@ -243,6 +243,12 @@ public:
 
     int32_t GetMaxRendererInstances() override;
 
+    int32_t CheckMaxRendererInstancesCount() override;
+
+    int32_t GetCurrentRendererInstancesCount() override;
+
+    int32_t RemoveRendererInstanceCount() override;
+
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos);
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;

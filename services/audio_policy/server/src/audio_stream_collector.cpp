@@ -161,7 +161,6 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-
     AUDIO_DEBUG_LOG("AudioStreamCollector: audioRendererChangeInfos_: Added for client %{public}d session %{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.sessionId);
 
@@ -277,6 +276,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                 rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID,
                     audioRendererChangeInfo.sessionId));
                 clientTracker_.erase(audioRendererChangeInfo.sessionId);
+                RemoveRendererInstanceCount();
             }
             return SUCCESS;
         }
@@ -462,6 +462,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
             audioRendererChangeInfo->sessionId));
         vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator temp = audioRendererBegin;
         audioRendererBegin = audioRendererChangeInfos_.erase(temp);
+        RemoveRendererInstanceCount();
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
             AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
         }
@@ -569,6 +570,30 @@ float AudioStreamCollector::GetSingleStreamVolume(int32_t streamId)
         ret, "AudioStreamCollector:GetSingleStreamVolume callback failed");
     callback->GetSingleStreamVolumeImpl(volume);
     return volume;
+}
+
+int32_t AudioStreamCollector::AddRendererInstanceCount()
+{
+    AUDIO_INFO_LOG("AddRendererInstanceCount");
+    lock_guard<mutex> lock(rendererInstancesCountMutex_);
+    rendererInstancesCount_ ++;
+    AUDIO_INFO_LOG("AddRendererInstanceCount::rendererInstancesCount_ %{public}d", rendererInstancesCount_);
+    return SUCCESS;
+}
+
+int32_t AudioStreamCollector::RemoveRendererInstanceCount()
+{
+    AUDIO_INFO_LOG("RemoveRendererInstanceCount");
+    lock_guard<mutex> lock(rendererInstancesCountMutex_);
+    rendererInstancesCount_ --;
+    AUDIO_INFO_LOG("RemoveRendererInstanceCount::rendererInstancesCount_ %{public}d", rendererInstancesCount_);
+    return SUCCESS;
+}
+
+int32_t AudioStreamCollector::GetCurrentRendererInstancesCount()
+{
+    lock_guard<mutex> lock(rendererInstancesCountMutex_);
+    return rendererInstancesCount_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

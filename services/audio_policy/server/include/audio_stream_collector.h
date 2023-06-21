@@ -50,8 +50,14 @@ public:
     float GetLowPowerVolume(int32_t streamId);
     float GetSingleStreamVolume(int32_t streamId);
     bool GetAndCompareStreamType(AudioStreamType requiredType, AudioRendererInfo rendererInfo);
+    int32_t AddRendererInstanceCount();
+    int32_t RemoveRendererInstanceCount();
+    int32_t GetCurrentRendererInstancesCount();
+
 private:
     AudioStreamEventDispatcher &mDispatcherService;
+    int32_t rendererInstancesCount_ = 0;
+    std::mutex rendererInstancesCountMutex_;
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
     std::map<std::pair<int32_t, int32_t>, int32_t> capturerStatequeue_;

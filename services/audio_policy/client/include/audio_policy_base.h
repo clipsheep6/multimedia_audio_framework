@@ -193,6 +193,12 @@ public:
 
     virtual int32_t GetMaxRendererInstances() = 0;
 
+    virtual int32_t CheckMaxRendererInstancesCount() = 0;
+
+    virtual int32_t GetCurrentRendererInstancesCount() = 0;
+
+    virtual int32_t RemoveRendererInstanceCount() = 0;
+
     virtual bool IsVolumeUnadjustable(void) = 0;
 
     virtual int32_t AdjustVolumeByStep(VolumeAdjustType adjustType) = 0;

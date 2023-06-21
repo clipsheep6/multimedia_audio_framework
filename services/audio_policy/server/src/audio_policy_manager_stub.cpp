@@ -919,6 +919,24 @@ void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::CheckMaxRendererInstancesCountInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result =  CheckMaxRendererInstancesCount();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetCurrentRendererInstancesCountInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result =  GetCurrentRendererInstancesCount();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::RemoveRendererInstanceCountInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result =  RemoveRendererInstanceCount();
+    reply.WriteInt32(result);
+}
+
 static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
 {
     int k;
@@ -1292,7 +1310,19 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_MAX_RENDERER_INSTANCES:
             GetMaxRendererInstancesInternal(data, reply);
             break;
-        
+
+        case CHECK_MAX_RENDERER_INSTANCES:
+            CheckMaxRendererInstancesCountInternal(data, reply);
+            break;
+
+        case GET_CURRENT_RENDERER_INSTANCES:
+            GetCurrentRendererInstancesCountInternal(data, reply);
+            break;
+
+        case REMOVE_CURRENT_RENDERER_INSTANCES_COUNT:
+            RemoveRendererInstanceCountInternal(data, reply);
+            break;
+
         case QUERY_EFFECT_SCENEMODE:
             QueryEffectSceneModeInternal(data, reply);
             break;

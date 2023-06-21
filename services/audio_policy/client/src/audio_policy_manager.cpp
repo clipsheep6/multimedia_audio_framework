@@ -1094,6 +1094,42 @@ int32_t AudioPolicyManager::GetMaxRendererInstances()
     return gsp->GetMaxRendererInstances();
 }
 
+int32_t AudioPolicyManager::CheckMaxRendererInstancesCount()
+{
+    AUDIO_INFO_LOG("CheckMaxRendererInstancesCount");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("CheckMaxRendererInstancesCount: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->CheckMaxRendererInstancesCount();
+}
+
+int32_t AudioPolicyManager::GetCurrentRendererInstancesCount()
+{
+    AUDIO_DEBUG_LOG("GetCurrentRendererInstancesCount");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetCurrentRendererInstancesCount: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->GetCurrentRendererInstancesCount();
+}
+
+int32_t AudioPolicyManager::RemoveRendererInstanceCount()
+{
+    AUDIO_DEBUG_LOG("RemoveRendererInstanceCount");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("RemoveRendererInstanceCount: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->RemoveRendererInstanceCount();
+}
+
 bool AudioPolicyManager::IsVolumeUnadjustable()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

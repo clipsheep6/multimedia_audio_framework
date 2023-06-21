@@ -76,6 +76,7 @@ bool AudioPolicyService::Init(void)
         AUDIO_ERR_LOG("Audio Config Parse failed");
         return false;
     }
+    MaxRendererInstancesInit();
 
 #ifdef FEATURE_DTMF_TONE
     std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
@@ -2861,8 +2862,7 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     gsp->SetParameterCallback(object);
 }
 
-
-int32_t AudioPolicyService::GetMaxRendererInstances()
+int32_t AudioPolicyService::MaxRendererInstancesInit()
 {
     // init max renderer instances before kvstore start by local prop for bootanimation
     char currentMaxRendererInstances[100] = {0}; // 100 for system parameter usage
@@ -2874,7 +2874,31 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
     } else {
         AUDIO_ERR_LOG("Get max renderer instances failed %{public}d", ret);
     }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::GetMaxRendererInstances()
+{
     return maxRendererInstances_;
+}
+
+int32_t AudioPolicyService::CheckMaxRendererInstancesCount()
+{
+    CHECK_AND_RETURN_RET_LOG(GetCurrentRendererInstancesCount() < maxRendererInstances_, ERR_MEMORY_ALLOC_FAILED,
+        "The current number of audio renderer streams is greater than the maximum number of configured instances");
+    streamCollector_.AddRendererInstanceCount();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::GetCurrentRendererInstancesCount()
+{
+    return streamCollector_.GetCurrentRendererInstancesCount();
+}
+
+int32_t AudioPolicyService::RemoveRendererInstanceCount()
+{
+    return streamCollector_.RemoveRendererInstanceCount();
 }
 
 #ifdef BLUETOOTH_ENABLE

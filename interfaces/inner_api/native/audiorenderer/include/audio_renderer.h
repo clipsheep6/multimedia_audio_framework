@@ -124,6 +124,8 @@ public:
  */
 class AudioRenderer {
 public:
+    static int32_t CheckRendererInstancesCountForJsCall();
+
     /**
      * @brief create renderer instance.
      *

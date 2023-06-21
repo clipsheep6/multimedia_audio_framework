@@ -106,6 +106,9 @@ private:
     void GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply);
+    void CheckMaxRendererInstancesCountInternal(MessageParcel &data, MessageParcel &reply);
+    void GetCurrentRendererInstancesCountInternal(MessageParcel &data, MessageParcel &reply);
+    void RemoveRendererInstanceCountInternal(MessageParcel &data, MessageParcel &reply);
     void AdjustVolumeByStepInternal(MessageParcel &data, MessageParcel &reply);
     void AdjustSystemVolumeByStepInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply);

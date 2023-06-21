@@ -242,6 +242,12 @@ public:
 
     int32_t GetMaxRendererInstances();
 
+    int32_t CheckMaxRendererInstancesCount();
+
+    int32_t GetCurrentRendererInstancesCount();
+
+    int32_t RemoveRendererInstanceCount();
+
     bool IsVolumeUnadjustable();
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
@@ -378,6 +384,8 @@ private:
     void LoadEffectSinks();
     
     DeviceType FindConnectedHeadset();
+
+    int32_t MaxRendererInstancesInit();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;

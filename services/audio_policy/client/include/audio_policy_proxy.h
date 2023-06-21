@@ -187,6 +187,12 @@ public:
 
     int32_t GetMaxRendererInstances() override;
 
+    int32_t CheckMaxRendererInstancesCount() override;
+
+    int32_t GetCurrentRendererInstancesCount() override;
+
+    int32_t RemoveRendererInstanceCount() override;
+
     bool IsVolumeUnadjustable() override;
 
     int32_t AdjustVolumeByStep(VolumeAdjustType adjustType) override;
