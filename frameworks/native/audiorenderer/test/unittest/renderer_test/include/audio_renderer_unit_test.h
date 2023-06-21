@@ -28,6 +28,15 @@ public:
 };
 
 class AudioRendererDeviceChangeCallbackTest : public AudioRendererDeviceChangeCallback {
+     void OnStateChange(const DeviceInfo &deviceInfo) override {}
+     void RemoveAllCallbacks() override {}
+};
+
+class AudioRendererPolicyServiceDiedCallbackTest : public AudioRendererPolicyServiceDiedCallback {
+    void OnAudioPolicyServiceDied() override {}
+};
+
+class AudioRendererDeviceChangeCallbackTest : public AudioRendererDeviceChangeCallback {
 public:
     virtual void OnStateChange(const DeviceInfo &deviceInfo) override {}
     virtual void RemoveAllCallbacks() override {}
