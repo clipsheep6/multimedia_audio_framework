@@ -453,7 +453,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
             AUDIO_INFO_LOG("Find sink-input with daudio[%{public}d]", sinkInputs[i].pid);
             continue;
         }
-        if (LOCAL_NETWORK_ID == networkId && audioEffectManager_.CheckEffectSinkName(sinkInputs[i].sinkName)) {
+        if (networkId == LOCAL_NETWORK_ID && audioEffectManager_.CheckEffectSinkName(sinkInputs[i].sinkName)) {
             AUDIO_INFO_LOG("Sink-input[%{public}zu] route to effect sink, don't move", i);
             continue;
         }
@@ -469,7 +469,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     }
 
     int32_t ret = SUCCESS;
-    ret = (LOCAL_NETWORK_ID == networkId) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]):
+    ret = (networkId == LOCAL_NETWORK_ID) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]):
                                             MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     UpdateTrackerDeviceChange(audioDeviceDescriptors);
     OnPreferOutputDeviceUpdated(currentActiveDevice_, networkId);
@@ -836,12 +836,7 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
         auto desc = GetPreferOutputDeviceDescriptors(rendererInfo);
         it->second->OnPreferOutputDeviceUpdated(desc);
     }
-
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-    std::string sinkName = GetPortName(deviceType);
-    bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
-    CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
+    UpdateEffectDefaultSink(deviceType);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
@@ -1954,6 +1949,33 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
         return;
     }
     gsp->SetAudioBalanceValue(audioBalance);
+}
+
+void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
+{
+    if (effectActiveDevice_ == deviceType) {
+        return;
+    }
+    effectActiveDevice_ = deviceType;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_FILE_SINK:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
+            const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+            CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+            std::string sinkName = GetPortName(deviceType);
+            bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
+            CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
+            int res = audioPolicyManager_.UpdateSwapDeviceStatus();
+            CHECK_AND_RETURN_LOG(res == SUCCESS, "Failed to update client swap device status");
+        }
+        default:
+            break;
+    }
 }
 
 void AudioPolicyService::LoadEffectSinks()
