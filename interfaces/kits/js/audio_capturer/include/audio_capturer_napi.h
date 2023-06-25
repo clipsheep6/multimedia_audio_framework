@@ -109,6 +109,7 @@ private:
     static bool ParseCapturerOptions(napi_env env, napi_value root, AudioCapturerOptions *opts);
     static bool ParseCapturerInfo(napi_env env, napi_value root, AudioCapturerInfo *capturerInfo);
     static bool ParseStreamInfo(napi_env env, napi_value root, AudioStreamInfo* streamInfo);
+    static bool CheckContextStatus(AudioCapturerAsyncContext *context);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
         napi_value* argv, const std::string& cbName);
