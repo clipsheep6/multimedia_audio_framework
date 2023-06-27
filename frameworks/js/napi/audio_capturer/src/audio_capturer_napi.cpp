@@ -26,6 +26,7 @@
 #include "audio_common_napi.h"
 #include "audio_parameters_napi.h"
 #include "audio_capturer_callback_napi.h"
+#include "audio_capturer_device_change_callback_napi.h"
 #include "capturer_period_position_callback_napi.h"
 #include "capturer_position_callback_napi.h"
 #include "audio_manager_napi.h"
@@ -60,6 +61,7 @@ namespace {
 
     const std::string MARK_REACH_CALLBACK_NAME = "markReach";
     const std::string PERIOD_REACH_CALLBACK_NAME = "periodReach";
+    const std::string INPUT_DEVICECHANGE_CALLBACK_NAME = "inputDeviceChange";
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
     napi_value argv[num] = {0};    \
@@ -1123,6 +1125,45 @@ napi_value AudioCapturerNapi::RegisterCapturerCallback(napi_env env, napi_value*
     return result;
 }
 
+std::shared_ptr<AudioCapturerDeviceChangeCallbackNapi> AudioCapturerNapi::FindSameNapiCallback(napi_value argv,
+    AudioCapturerNapi *capturerNapi)
+{
+    std::shared_ptr<AudioCapturerDeviceChangeCallbackNapi> cb = nullptr;
+    for (auto &iter : capturerNapi->deviceChangeCallbacks_) {
+        if (iter->ContainSameJsCallback(argv)) {
+            cb = iter;
+        }
+    }
+    return cb;
+}
+
+void AudioCapturerNapi::RegisterAudioCapturerDeviceChangeCallback(napi_env env, napi_value* argv,
+    AudioCapturerNapi *capturerNapi)
+{
+    if (FindSameNapiCallback(argv[PARAM1], capturerNapi) != nullptr) {
+        AUDIO_ERR_LOG("AudioCapturerNapi: Napi callback already exist!");
+        return;
+    }
+
+    std::shared_ptr<AudioCapturerDeviceChangeCallbackNapi> cb =
+        std::make_shared<AudioCapturerDeviceChangeCallbackNapi>(env);
+    if (!cb) {
+        AUDIO_ERR_LOG("AudioCapturerNapi: Memory Allocation Failed !!");
+        return;
+    }
+
+    cb->SaveCallbackReference(argv[PARAM1]);
+    int32_t ret =
+        capturerNapi->audioCapturer_->SetAudioCapturerDeviceChangeCallback(cb);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioCapturerNapi: Registering of Capturer Device Change Callback Failed");
+        return;
+    }
+    capturerNapi->deviceChangeCallbacks_.push_back(cb);
+
+    AUDIO_INFO_LOG("AudioCapturerNapi::RegisterAudioCapturerDeviceChangeCallback is successful");
+}
+
 napi_value AudioCapturerNapi::RegisterCallback(napi_env env, napi_value jsThis,
                                                napi_value* argv, const std::string& cbName)
 {
@@ -1142,6 +1183,8 @@ napi_value AudioCapturerNapi::RegisterCallback(napi_env env, napi_value jsThis,
         result = RegisterPositionCallback(env, argv, cbName, capturerNapi);
     } else if (!cbName.compare(PERIOD_REACH_CALLBACK_NAME)) {
         result = RegisterPeriodPositionCallback(env, argv, cbName, capturerNapi);
+    } else if(!cbName.compare(INPUT_DEVICECHANGE_CALLBACK_NAME)) {
+        RegisterAudioCapturerDeviceChangeCallback(env, argv, capturerNapi);
     } else {
         bool unknownCallback = true;
         THROW_ERROR_ASSERT(env, !unknownCallback, NAPI_ERROR_INVALID_PARAM);
