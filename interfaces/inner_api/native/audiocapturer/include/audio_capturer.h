@@ -104,6 +104,18 @@ public:
     virtual void OnReadData(size_t length) = 0;
 };
 
+class AudioCapturerDeviceChangeCallback {
+public:
+    virtual ~AudioCapturerDeviceChangeCallback() = default;
+
+    /**
+     * Called when renderer device is updated.
+     *
+     * @param state Indicates updated device of the renderer.
+     * since 10
+     */
+    virtual void OnStateChange(const DeviceInfo &deviceInfo) = 0;
+};
 /**
  * @brief Provides functions for applications to implement audio capturing.
  */
@@ -511,6 +523,15 @@ public:
      */
     virtual void SetValid(bool valid) = 0;
 
+    virtual int32_t SetAudioCapturerDeviceChangeCallback(
+        const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback) = 0;
+    /**
+     * @brief get current input devices.
+     *
+     * @return current input device info.
+     * @since 8
+     */
+    virtual int32_t GetCurrentInputDevices(DeviceInfo &deviceInfo) const = 0;
     virtual ~AudioCapturer();
 };
 }  // namespace AudioStandard

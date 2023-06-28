@@ -22,7 +22,7 @@
 #include "audio_capturer.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
-
+#include "audio_capturer_device_change_callback_napi.h"
 namespace OHOS {
 namespace AudioStandard {
 static const std::string AUDIO_CAPTURER_NAPI_CLASS_NAME = "AudioCapturer";
@@ -123,6 +123,10 @@ private:
         const std::string& cbName, AudioCapturerNapi *capturerNapi);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
     static void UnregisterCapturerCallback(napi_env env, const std::string& cbName, AudioCapturerNapi *capturerNapi);
+    static void RegisterAudioCapturerDeviceChangeCallback(napi_env env, napi_value* args,
+        AudioCapturerNapi *rendererNapi);
+    static std::shared_ptr<AudioCapturerDeviceChangeCallbackNapi> FindSameNapiCallback(napi_value argv,
+        AudioCapturerNapi *capturerNapi);
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioCapturerOptions> sCapturerOptions_;
@@ -140,6 +144,7 @@ private:
     std::shared_ptr<CapturerPositionCallback> positionCBNapi_ = nullptr;
     std::shared_ptr<CapturerPeriodPositionCallback> periodPositionCBNapi_ = nullptr;
     std::shared_ptr<AudioCapturerCallback> callbackNapi_ = nullptr;
+    std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallbackNapi>> deviceChangeCallbacks_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

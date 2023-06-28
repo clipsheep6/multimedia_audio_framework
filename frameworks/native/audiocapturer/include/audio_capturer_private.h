@@ -24,6 +24,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
+class AudioCapturerStateChangeCallbackImpl;
 
 class AudioCapturerPrivate : public AudioCapturer {
 public:
@@ -59,6 +60,11 @@ public:
     int32_t GetBufQueueState(BufferQueueState &bufState)const override;
     void SetApplicationCachePath(const std::string cachePath) override;
     void SetValid(bool valid) override;
+    int32_t GetCurrentInputDevices(DeviceInfo &deviceInfo) const override;
+    int32_t SetAudioCapturerDeviceChangeCallback(
+        const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback) override;
+//    int32_t UnsetAudioCapturerDeviceChangeCallback(const int32_t pid) override;
+    bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
 
     std::shared_ptr<AudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
@@ -82,6 +88,8 @@ private:
     };
     std::mutex lock_;
     bool isValid_ = true;
+	std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioDeviceChangeCallback_ = nullptr;
+    DeviceInfo currentDeviceInfo = {};
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
@@ -109,6 +117,20 @@ public:
     void SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback);
 private:
     std::weak_ptr<AudioCapturerCallback> callback_;
+};
+
+class AudioCapturerStateChangeCallbackImpl : public AudioCapturerStateChangeCallback {
+public:
+    AudioCapturerStateChangeCallbackImpl();
+    virtual ~AudioCapturerStateChangeCallbackImpl();
+
+    void OnCapturerStateChange(
+        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+    void SaveCallback(const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback);
+    void setAudioCapturerObj(AudioCapturerPrivate *capturerObj);
+private:
+    std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallback>> callbacklist_;
+    AudioCapturerPrivate *capturer;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
