@@ -27,6 +27,16 @@ public:
     ~DeviceInitCallBack() override {};
     void OnRemoteDied() override {};
 };
+
+class DeviceStatusCallbackImpl : public DistributedHardware::DeviceStatusCallback {
+public:
+    explicit DeviceStatusCallbackImpl();
+    ~DeviceStatusCallbackImpl() {};
+    void OnDeviceChanged(DistributedHardware::DmDeviceBasicInfo &dmDeviceBasicInfo) {};
+
+private:
+    AudioPolicyService& audioPolicyService_;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 
