@@ -332,6 +332,7 @@ private:
     void LoadEffectLibrary();
     void RegisterBluetoothListener();
     void SubscribeAccessibilityConfigObserver();
+    void RegisterDataObserver();
 
     AudioPolicyService& mPolicyService;
     int32_t clientOnFocus_;
