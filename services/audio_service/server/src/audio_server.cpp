@@ -735,7 +735,7 @@ void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
     AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
 
     uint32_t pid = IPCSkeleton::GetCallingPid();
-    ScheduleReportData(pid, tid, bundleName.c_str());
+    ScheduleReportData(pid, tid, bundleName.c_str(), AUDIO_HIGH_QOS_LEVEL);
 }
 
 } // namespace AudioStandard
