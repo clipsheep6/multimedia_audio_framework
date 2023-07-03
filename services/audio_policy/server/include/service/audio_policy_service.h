@@ -371,6 +371,10 @@ private:
 
     void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
 
+    void RegisterRemoteDisplayName();
+
+    void SetDisplayName(const std::string &deviceName, const std::string &networkId);
+
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
         const std::string& deviceName, const AudioStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);
 
