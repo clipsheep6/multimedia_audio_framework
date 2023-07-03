@@ -144,10 +144,6 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
-    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
-
-    void SetDisplayName(const std::string &deviceName);
-
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
@@ -247,8 +243,6 @@ public:
     float GetMaxStreamVolume(void);
 
     int32_t GetMaxRendererInstances();
-
-    void RegisterDataObserver();
 
     bool IsVolumeUnadjustable();
 
@@ -390,10 +384,6 @@ private:
     void LoadEffectSinks();
     
     DeviceType FindConnectedHeadset();
-
-    void CreateDataShareHelperInstance();
-
-    void RegisterNameMonitorHelper();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
