@@ -44,7 +44,7 @@ ohos_shared_library("audio_capturer") {
 
   configs = [ ":audio_capturer_config" ]
 
-  if ("${product_name}" == "ohcore") {
+  if (audio_framework_feature_ohcore) {
     defines = [ "OHCORE" ]
   }
 

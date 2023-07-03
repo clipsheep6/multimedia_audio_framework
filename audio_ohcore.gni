@@ -10,7 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-if ("${product_name}" == "ohcore") {
+
+import("config.gni")
+
+if (audio_framework_feature_ohcore) {
   audio_gateway_path = "//foundation/multimedia/audio_framework"
   audio_gateway_include_dirs =
       [ "${audio_gateway_path}/frameworks/native/audiocompatibility/include" ]
