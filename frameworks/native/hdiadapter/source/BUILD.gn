@@ -87,7 +87,7 @@ ohos_shared_library("remote_audio_capturer_source") {
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
-  if ("${product_name}" == "m40") {
+  if (audio_framework_feature_m40) {
     cflags += [ "-DPRODUCT_M40" ]
   }
 

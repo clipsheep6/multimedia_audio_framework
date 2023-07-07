@@ -20,7 +20,7 @@ ohos_shared_library("audio_capturer_gateway") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
-  if ("${product_name}" == "m40") {
+  if (audio_framework_feature_m40) {
     cflags += [ "-DPRODUCT_M40" ]
   }
   cflags_cc = cflags
@@ -57,7 +57,7 @@ ohos_shared_library("audio_renderer_gateway") {
   install_enable = true
 
   cflags = [ "-fPIC" ]
-  if ("${product_name}" == "m40") {
+  if (audio_framework_feature_m40) {
     cflags += [ "-DPRODUCT_M40" ]
   }
   cflags_cc = cflags

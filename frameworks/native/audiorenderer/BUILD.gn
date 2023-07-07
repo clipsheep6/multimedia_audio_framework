@@ -46,7 +46,7 @@ ohos_shared_library("audio_renderer") {
 
   configs = [ ":audio_renderer_config" ]
 
-  if ("${product_name}" == "ohcore") {
+  if (audio_framework_feature_ohcore) {
     defines = [ "OHCORE" ]
   }
 
