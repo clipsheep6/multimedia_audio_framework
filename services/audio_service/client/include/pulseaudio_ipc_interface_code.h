@@ -50,6 +50,7 @@ namespace AudioStandard {
         SET_SUPPORT_STREAM_USAGE = 25,
         REGISET_POLICY_PROVIDER = 26,
         SET_WAKEUP_CLOSE_CALLBACK = 27,
+        GET_WAKEUP_CLOSE_CALLBACK = 28,
     };
 } // namespace AudioStandard
 } // namespace OHOS
