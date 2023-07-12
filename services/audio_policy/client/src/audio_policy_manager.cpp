@@ -325,6 +325,7 @@ bool AudioPolicyManager::CloseWakeUpAudioCapturer()
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
+    AUDIO_INFO_LOG("HJF-TEST --- AudioPolicyManager::GetPreferOutputDeviceDescriptors");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetPreferOutputDeviceDescriptors: audio policy manager proxy is NULL.");

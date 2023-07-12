@@ -577,6 +577,7 @@ bool AudioPolicyProxy::CloseWakeUpAudioCapturer()
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
+    AUDIO_INFO_LOG("HJF-TEST --- AudioPolicyProxy::GetPreferOutputDeviceDescriptors");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
