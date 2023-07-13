@@ -118,6 +118,7 @@ private:
     std::mutex wakeupCloseMutex_;
     bool isGetProcessEnabled_ = false;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
+    std::recursive_mutex audioEffectMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

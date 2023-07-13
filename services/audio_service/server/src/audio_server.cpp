@@ -312,6 +312,7 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
         AUDIO_ERR_LOG("LoadAudioEffectLibraries refused for %{public}d", callingUid);
         return false;
     }
+    std::lock_guard<std::recursive_mutex> lock(audioEffectMutex_);
     bool loadSuccess = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
     if (!loadSuccess) {
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
@@ -327,6 +328,7 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChain
         return false;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    std::lock_guard<std::recursive_mutex> lock(audioEffectMutex_);
     audioEffectChainManager->InitAudioEffectChainManager(effectChains, map, audioEffectServer_->GetEffectEntries());
     return true;
 }
@@ -675,8 +677,8 @@ void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParam
 
 void AudioServer::OnWakeupClose()
 {
-    std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
     AUDIO_INFO_LOG("OnWakeupClose Callback start");
+    std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
         if (wakeupCallback_ == nullptr) {

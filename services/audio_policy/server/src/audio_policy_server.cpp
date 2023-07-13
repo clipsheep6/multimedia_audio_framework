@@ -439,6 +439,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     }
 
     int result = mPolicyService.SetStreamMute(streamType, mute);
+    std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -497,6 +498,7 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
     }
 
     int ret = mPolicyService.SetSystemVolumeLevel(streamType, volumeLevel, isUpdateUi);
+    std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -674,7 +676,7 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
     }
 
     int32_t ret = mPolicyService.SetRingerMode(ringMode);
-    
+
     std::lock_guard<std::mutex> lock(ringerModeMutex_);
     if (ret == SUCCESS) {
         for (auto it = ringerModeCbsMap_.begin(); it != ringerModeCbsMap_.end(); ++it) {
@@ -920,7 +922,7 @@ int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID)
 int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const int32_t /* clientId */,
                                                             const sptr<IRemoteObject> &object)
 {
-    std::lock_guard<std::mutex> lock(interruptMutex_);
+    std::lock_guard<std::mutex> lock(amInterruptMutex_);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "SetAudioManagerInterruptCallback object is nullptr");
@@ -942,6 +944,7 @@ int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const int32_t /* cli
 
 int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const int32_t /* clientId */)
 {
+    std::lock_guard<std::mutex> lock(amInterruptMutex_);
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     if (amInterruptCbsMap_.erase(clientPid) == 0) {
         AUDIO_ERR_LOG("UnsetAudioManagerInterruptCallback client %{public}d not present", clientPid);
@@ -993,7 +996,8 @@ void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioIn
 {
     AUDIO_INFO_LOG("Notify focus granted in: %{public}d", clientId);
 
-    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
+    std::lock_guard<std::mutex> lock(amInterruptMutex_);
+
     if (amInterruptCbsMap_.find(clientId) == amInterruptCbsMap_.end()) {
         AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback does not exist", clientId);
         return;
@@ -1017,6 +1021,8 @@ void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioIn
         tempAudioInterruptInfo->contentType = audioInterrupt.contentType;
         (tempAudioInterruptInfo->audioFocusType).streamType = audioInterrupt.audioFocusType.streamType;
         tempAudioInterruptInfo->pauseWhenDucked = audioInterrupt.pauseWhenDucked;
+
+        std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
         focussedAudioInterruptInfo_ = move(tempAudioInterruptInfo);
         clientOnFocus_ = clientId;
     }
@@ -1025,6 +1031,7 @@ void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioIn
 int32_t AudioPolicyServer::NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus abandoned in: %{public}d", clientId);
+    std::lock_guard<std::mutex> lock(amInterruptMutex_);
     std::shared_ptr<AudioInterruptCallback> interruptCb = nullptr;
     interruptCb = amInterruptCbsMap_[clientId];
     if (!interruptCb) {
@@ -1075,6 +1082,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         }
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, focusEntry.forceType, focusEntry.hintType, 1.0f};
         uint32_t activeSessionID = (iterActive->first).sessionID;
+        std::lock_guard<std::mutex> lock(interruptMutex_);
         std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[activeSessionID];
 
         float volumeDb = 0.0f;
@@ -1114,6 +1122,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
     auto focusMap = mPolicyService.GetAudioFocusMap();
     AudioFocuState incomingState = ACTIVE;
     AudioFocusType incomingFocusType = incomingInterrupt.audioFocusType;
+    std::lock_guard<std::mutex> lock(interruptMutex_);
     std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[incomingInterrupt.sessionID];
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
     for (auto iterActive = audioFocusInfoList_.begin(); iterActive != audioFocusInfoList_.end(); ++iterActive) {
@@ -1306,6 +1315,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::Simulate
 void AudioPolicyServer::NotifyStateChangedEvent(AudioFocuState oldState, AudioFocuState newState,
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive)
 {
+    std::lock_guard<std::mutex> lock(interruptMutex_);
     AudioInterrupt audioInterrupt = iterActive->first;
     uint32_t sessionID = audioInterrupt.sessionID;
     std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[sessionID];
@@ -1754,6 +1764,7 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
         argSets.insert(args[index]);
     }
 
+    std::lock_guard<std::mutex> lock(interruptMutex_);
     if (argSets.count(arg1) != 0) {
         InterruptType type = INTERRUPT_TYPE_BEGIN;
         InterruptForceType forceType = INTERRUPT_SHARE;
@@ -2060,6 +2071,7 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
     }
 
     volumeEvent.updateUi = false;
+    std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
     for (auto it = server_->volumeChangeCbsMap_.begin(); it != server_->volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -2086,6 +2098,7 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
         return;
     }
 
+    std::lock_guard<std::mutex> lock(interruptMutex_);
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
     for (auto it : server_->interruptCbsMap_) {
         if (it.second != nullptr) {
