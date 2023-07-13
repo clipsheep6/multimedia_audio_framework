@@ -614,6 +614,7 @@ bool AudioPolicyServer::CloseWakeUpAudioCapturer()
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
+    AUDIO_INFO_LOG("HJF-TEST --- AudioPolicyServer::GetPreferOutputDeviceDescriptors");
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescs =
         mPolicyService.GetPreferOutputDeviceDescriptors(rendererInfo);
     bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);

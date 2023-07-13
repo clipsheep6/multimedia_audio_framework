@@ -52,6 +52,7 @@ int32_t AudioRoutingManager::SetMicStateChangeCallback(
 int32_t AudioRoutingManager::GetPreferOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
     std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
+    AUDIO_INFO_LOG("HJF-TEST --- AudioRoutingManager::GetPreferOutputDeviceForRendererInfo");
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     desc = AudioPolicyManager::GetInstance().GetPreferOutputDeviceDescriptors(rendererInfo);

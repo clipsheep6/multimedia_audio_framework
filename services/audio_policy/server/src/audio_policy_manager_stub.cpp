@@ -314,6 +314,7 @@ void AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal(MessageParcel &dat
 
 void AudioPolicyManagerStub::GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
+    AUDIO_INFO_LOG("HJF-TEST --- AudioPolicyManagerStub::GetPreferOutputDeviceDescriptorsInternal");
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
     AudioRendererInfo rendererInfo;
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferOutputDeviceDescriptors(rendererInfo);
