@@ -292,19 +292,18 @@ static void ThreadFuncWriteHDI(void *userdata)
         pa_assert_se(pa_asyncmsgq_get(u->dq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
 
         switch (code) {
-            case HDI_RENDER:
-                {
-                    pa_usec_t now = pa_rtclock_now();
-                    if (RenderWrite(u, &chunk) < 0) {
-                        u->bytes_dropped += chunk.length;
-                        AUDIO_ERR_LOG("RenderWrite failed");
-                    }
-                    if (pa_atomic_load(&u->dflag) == 1) {
-                        pa_atomic_sub(&u->dflag, 1);
-                    }
-                    u->writeTime = pa_rtclock_now() - now;
+            case HDI_RENDER: {
+                pa_usec_t now = pa_rtclock_now();
+                if (RenderWrite(u, &chunk) < 0) {
+                    u->bytes_dropped += chunk.length;
+                    AUDIO_ERR_LOG("RenderWrite failed");
                 }
+                if (pa_atomic_load(&u->dflag) == 1) {
+                    pa_atomic_sub(&u->dflag, 1);
+                }
+                u->writeTime = pa_rtclock_now() - now;
                 break;
+            }
             case QUIT:
                 quit = 1;
                 break;
