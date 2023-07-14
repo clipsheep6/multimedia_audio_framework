@@ -247,7 +247,7 @@ static void ThreadFuncRendererTimer(void *userdata)
                 ProcessRenderUseTiming(u, now);
             }
 
-            a_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+            pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
             int64_t sleep_for_usec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->writeTime);
             sleep_for_usec = PA_MAX(sleep_for_usec, 0);
             pa_rtpoll_set_timer_relative(u->rtpoll, (pa_usec_t)sleep_for_usec);
