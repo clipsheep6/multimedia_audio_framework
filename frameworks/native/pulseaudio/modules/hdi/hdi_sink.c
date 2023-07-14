@@ -42,6 +42,7 @@
 #define DEFAULT_DEVICE_NETWORKID "LocalDevice"
 #define DEFAULT_BUFFER_SIZE 8192
 #define MAX_SINK_VOLUME_LEVEL 1.0
+#define DEFAULT_WRITE_TIME 1000
 
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
@@ -84,6 +85,7 @@ struct Userdata {
     bool test_mode_on;
     uint32_t writeCount;
     uint32_t renderCount;
+    pa_usec_t writeTime;
 };
 
 static void UserdataFree(struct Userdata *u);
@@ -235,16 +237,20 @@ static void ThreadFuncRendererTimer(void *userdata)
                 ProcessRenderUseTiming(u, now);
             }
 
-            pa_usec_t sleep_for_usec = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-            pa_rtpoll_set_timer_relative(u->rtpoll, sleep_for_usec);
+            pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+            int64_t sleep_for_usec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->writeTime);
+            sleep_for_usec = PA_MAX(sleep_for_usec, 0);
+            pa_rtpoll_set_timer_relative(u->rtpoll, (pa_usec_t)sleep_for_usec);
         } else if (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
             if (u->timestamp <= now && pa_atomic_load(&u->dflag) == 0) {
                 pa_atomic_add(&u->dflag, 1);
                 ProcessRenderUseTiming(u, now);
             }
 
-            pa_usec_t sleep_for_usec = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-            pa_rtpoll_set_timer_relative(u->rtpoll, sleep_for_usec);
+            a_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+            int64_t sleep_for_usec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->writeTime);
+            sleep_for_usec = PA_MAX(sleep_for_usec, 0);
+            pa_rtpoll_set_timer_relative(u->rtpoll, (pa_usec_t)sleep_for_usec);
         } else {
             pa_rtpoll_set_timer_disabled(u->rtpoll);
         }
@@ -287,12 +293,16 @@ static void ThreadFuncWriteHDI(void *userdata)
 
         switch (code) {
             case HDI_RENDER:
-                if (RenderWrite(u, &chunk) < 0) {
-                    u->bytes_dropped += chunk.length;
-                    AUDIO_ERR_LOG("RenderWrite failed");
-                }
-                if (pa_atomic_load(&u->dflag) == 1) {
-                    pa_atomic_sub(&u->dflag, 1);
+                {
+                    pa_usec_t now = pa_rtclock_now();
+                    if (RenderWrite(u, &chunk) < 0) {
+                        u->bytes_dropped += chunk.length;
+                        AUDIO_ERR_LOG("RenderWrite failed");
+                    }
+                    if (pa_atomic_load(&u->dflag) == 1) {
+                        pa_atomic_sub(&u->dflag, 1);
+                    }
+                    u->writeTime = pa_rtclock_now() - now;
                 }
                 break;
             case QUIT:
@@ -751,6 +761,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         }
     }
 
+    u->writeTime = DEFAULT_WRITE_TIME;
     pa_sink_put(u->sink);
 
     return u->sink;
