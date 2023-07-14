@@ -49,7 +49,10 @@ private:
     static napi_value GetActiveOutputDeviceDescriptors(napi_env env, napi_callback_info info);
     static napi_value GetPreferOutputDeviceForRendererInfo(napi_env env, napi_callback_info info);
     static napi_value GetPreferOutputDeviceByFilter(napi_env env, napi_callback_info info);
+    static napi_value GetPreferInputDeviceForCapturerInfo(napi_env env, napi_callback_info info);
 
+    static void CheckPreferInputDeviceForCaptureInfo(napi_env env,
+        std::unique_ptr<AudioRoutingManagerAsyncContext>& asyncContext, size_t argc, napi_value* argv);
     static void CheckPreferOutputDeviceForRendererInfo(napi_env env,
         std::unique_ptr<AudioRoutingManagerAsyncContext>& asyncContext, size_t argc, napi_value* argv);
     static void RegisterDeviceChangeCallback(napi_env env, size_t argc, napi_value* args, const std::string& cbName,
