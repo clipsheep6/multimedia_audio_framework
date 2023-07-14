@@ -22,7 +22,10 @@ ohos_shared_library("audio_capturer_source") {
     blocklist = "../../../../cfi_blocklist.txt"
   }
   install_enable = true
-  sources = [ "primary/audio_capturer_source.cpp" ]
+  sources = [
+    "primary/audio_capturer_source.cpp",
+    "primary/audio_capturer_source_wakeup.cpp",
+  ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
