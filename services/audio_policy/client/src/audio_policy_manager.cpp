@@ -334,6 +334,18 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferOutputDevi
     return gsp->GetPreferOutputDeviceDescriptors(rendererInfo);
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferInputDeviceDescriptors(
+    AudioCapturerInfo &captureInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetPreferInputDeviceDescriptors: audio policy manager proxy is NULL.");
+        std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+        return deviceInfo;
+    }
+    return gsp->GetPreferInputDeviceDescriptors(captureInfo);
+}
+
 int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

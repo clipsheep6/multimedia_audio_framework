@@ -603,6 +603,34 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferOutputDevice
     return deviceInfo;
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferInputDeviceDescriptors(
+    AudioCapturerInfo &captureInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return deviceInfo;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFER_INTPUT_DEVICE_DESCRIPTORS), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get prefer input devices failed, error: %d", error);
+        return deviceInfo;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+    }
+
+    return deviceInfo;
+}
+
 int32_t AudioPolicyProxy::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
     MessageParcel data;

@@ -367,6 +367,18 @@ void AudioPolicyManagerStub::SetPreferOutputDeviceChangeCallbackInternal(Message
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetPreferInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetPreferInputDeviceChangeCallbackInternal obj is null");
+        return;
+    }
+    int32_t result = SetPreferInputDeviceChangeCallback(clientId, object);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::UnsetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientId = data.ReadInt32();
@@ -1301,6 +1313,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK):
             UnsetPreferOutputDeviceChangeCallbackInternal(data, reply);
+            break;
+
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFER_INTPUT_DEVICE_DESCRIPTORS):
+            SetPreferInputDeviceChangeCallbackInternal(data, reply);
             break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_FOCUS_INFO_LIST):

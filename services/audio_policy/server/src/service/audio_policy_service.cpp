@@ -2464,6 +2464,20 @@ int32_t AudioPolicyService::SetPreferOutputDeviceChangeCallback(const int32_t cl
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::SetPreferInputDeviceChangeCallback(const int32_t clientId,
+    const sptr<IRemoteObject> &object, bool hasBTPermission)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    sptr<IStandardAudioRoutingManagerListener> callback = iface_cast<IStandardAudioRoutingManagerListener>(object);
+    if (callback != nullptr) {
+        callback->hasBTPermission_ = hasBTPermission;
+        preferOutputDeviceCbsMap_[clientId] = callback;
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);

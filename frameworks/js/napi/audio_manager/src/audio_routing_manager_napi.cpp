@@ -813,6 +813,20 @@ void AudioRoutingManagerNapi::CheckPreferInputDeviceForCaptureInfo(napi_env env,
 
 static void GetPreferInputDeviceForCapturerInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
+    auto asyncContext = static_cast<AudioRoutingManagerAsyncContext*>(data);
+    napi_value result[ARGS_TWO] = {0};
+    napi_value valueParam = nullptr;
+    if (asyncContext == nullptr) {
+        HiLog::Error(LABEL, "ERROR: AudioRoutingManagerAsyncContext* is Null!");
+        return;
+    }
+    SetDevicesInfo(asyncContext->inputDeviceDescriptors, env, result, ARGS_TWO, valueParam);
+
+    napi_get_undefined(env, &result[PARAM0]);
+    if (!asyncContext->status) {
+        napi_get_undefined(env, &valueParam);
+    }
+    CommonCallbackRoutine(env, asyncContext, result[PARAM1]);
 }
 
 napi_value AudioRoutingManagerNapi::GetPreferInputDeviceForCapturerInfo(napi_env env, napi_callback_info info)
