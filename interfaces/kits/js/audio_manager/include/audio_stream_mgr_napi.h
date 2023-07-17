@@ -46,6 +46,7 @@ private:
         int32_t volType;
         int32_t contentType;
         int32_t streamUsage;
+        int32_t rate;
         bool isTrue;
         bool isLowLatencySupported;
         bool isActive;
@@ -83,6 +84,8 @@ private:
     static void AsyncGetEffectInfoArray(napi_env env, void *data);
     static void GetEffectInfoArrayResult(napi_env env, std::unique_ptr<AudioStreamMgrAsyncContext> &asyncContext,
         napi_status status, napi_value &result);
+    static void GetRateAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static napi_value GetPrimaryOutputSamplingRate(napi_env env, napi_callback_info info);
     napi_env env_;
     AudioStreamManager *audioStreamMngr_;
     AudioSystemManager *audioMngr_;

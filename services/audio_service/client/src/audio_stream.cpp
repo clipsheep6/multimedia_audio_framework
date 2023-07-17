@@ -33,6 +33,105 @@ const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_MS = 80;
 constexpr int32_t CB_READ_BUFFERS_WAIT_IN_MS = 80;
+#ifdef DUMP_AUDIOSTREAM_PCM
+const char *g_audiostreamDumpFilePath = "/data/local/tmp/audiostream_dump.pcm";
+#endif
+
+template <typename T>
+void BlendLR(T& left, T& right)
+{
+    left = left / NUMBER_TWO + right / NUMBER_TWO;
+    right = left;
+}
+
+template <>
+void BlendLR(int24_t& left, int24_t& right)
+{
+    left.value[0] = left.value[0] / NUMBER_TWO + right.value[0] / NUMBER_TWO;
+    right.value[0] = left.value[0];
+    left.value[1] = left.value[1] / NUMBER_TWO + right.value[1] / NUMBER_TWO;
+    right.value[0] = left.value[0];
+    left.value[2] = left.value[2] / NUMBER_TWO + right.value[2] / NUMBER_TWO;
+    right.value[2] = left.value[2];
+}
+
+template <typename T>
+void ProcessBlendLRModeWithFormat(T *buffer, size_t count, AudioChannel channel)
+{
+    for (int i = count; i > 0; i--) {
+        switch (channel) {
+            case CHANNEL_8:
+                BlendLR(buffer[CHANNEL_SEVEN], buffer[CHANNEL_EIGHT]);
+            case CHANNEL_7:
+            case CHANNEL_6:
+                BlendLR(buffer[CHANNEL_FIVE], buffer[CHANNEL_SIX]);
+                BlendLR(buffer[CHANNEL_ONE], buffer[CHANNEL_TWO]);
+                break;
+            case CHANNEL_5:
+            case CHANNEL_4:
+                BlendLR(buffer[CHANNEL_THREE], buffer[CHANNEL_FOUR]);
+            case CHANNEL_3:
+            case STEREO:
+                BlendLR(buffer[CHANNEL_ONE], buffer[CHANNEL_TWO]);
+                break;
+            default:
+                break;
+        }
+        buffer += (int8_t)channel;
+    }
+}
+
+template <typename T>
+void ProcessAllLeftModeWithFormat(T *buffer, size_t count, AudioChannel channel)
+{
+    for (int i = count; i > 0; i--) {
+        switch (channel) {
+            case CHANNEL_8:
+                buffer[CHANNEL_EIGHT] = buffer[CHANNEL_SEVEN];
+            case CHANNEL_7:
+            case CHANNEL_6:
+                buffer[CHANNEL_SIX] = buffer[CHANNEL_FIVE];
+                buffer[CHANNEL_TWO] = buffer[CHANNEL_ONE];
+                break;
+            case CHANNEL_5:
+            case CHANNEL_4:
+                buffer[CHANNEL_FOUR] = buffer[CHANNEL_THREE];
+            case CHANNEL_3:
+            case STEREO:
+                buffer[CHANNEL_TWO] = buffer[CHANNEL_ONE];
+                break;
+            default:
+                break;
+        }
+        buffer += (int8_t)channel;
+    }
+}
+
+template <typename T>
+void ProcessAllRightModeWithFormat(T *buffer, size_t count, AudioChannel channel)
+{
+    for (int i = count; i > 0; i--) {
+        switch (channel) {
+            case CHANNEL_8:
+                buffer[CHANNEL_SEVEN] = buffer[CHANNEL_EIGHT];
+            case CHANNEL_7:
+            case CHANNEL_6:
+                buffer[CHANNEL_FIVE] = buffer[CHANNEL_SIX];
+                buffer[CHANNEL_ONE] = buffer[CHANNEL_TWO];
+                break;
+            case CHANNEL_5:
+            case CHANNEL_4:
+                buffer[CHANNEL_THREE] = buffer[CHANNEL_FOUR];
+            case CHANNEL_3:
+            case STEREO:
+                buffer[CHANNEL_ONE] = buffer[CHANNEL_TWO];
+                break;
+            default:
+                break;
+        }
+        buffer += (int8_t)channel;
+    }
+}
 
 AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid)
     : eStreamType_(eStreamType),
@@ -45,7 +144,8 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
       isReadyToWrite_(false),
       isReadyToRead_(false),
       isFirstRead_(false),
-      isFirstWrite_(false)
+      isFirstWrite_(false),
+      blendMode_(MODE_DEFAULT)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
@@ -76,6 +176,9 @@ AudioStream::~AudioStream()
         state_ = RELEASED;
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo, capturerInfo);
     }
+#ifdef DUMP_AUDIOSTREAM_PCM
+    pfd_ = nullptr;
+#endif
 }
 
 void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
@@ -284,7 +387,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     }
     state_ = PREPARED;
     AUDIO_INFO_LOG("AudioStream:Set stream Info SUCCESS");
-
+    streamParams_ = info;
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         (void)GetSessionID(sessionId_);
         AUDIO_DEBUG_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
@@ -330,6 +433,13 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
+
+#ifdef DUMP_AUDIOSTREAM_PCM
+    pfd_ = fopen(g_audiostreamDumpFilePath, "wb+");
+    if (pfd_ == nullptr) {
+        AUDIO_ERR_LOG("Error opening pcm test file!");
+    }
+#endif
     return true;
 }
 
@@ -395,6 +505,14 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
         isFirstWrite_ = false;
     }
 
+    ProcessPcmDataByBlendMode(buffer, buffer_size);
+
+#ifdef DUMP_AUDIOSTREAM_PCM
+    size_t writeResult = fwrite((void*)buffer, 1, buffer_size, pfd_);
+    if (writeResult != buffer_size) {
+        AUDIO_ERR_LOG("Failed to write the file.");
+    }
+#endif
     size_t bytesWritten = WriteStream(stream, writeError);
     if (writeError != 0) {
         AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
@@ -487,6 +605,13 @@ bool AudioStream::StopAudioStream()
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
+
+#ifdef DUMP_AUDIOSTREAM_PCM
+    if (pfd_) {
+        fclose(pfd_);
+        pfd_ = nullptr;
+    }
+#endif
     return true;
 }
 
@@ -929,6 +1054,120 @@ int64_t AudioStream::GetFramesWritten()
 int64_t AudioStream::GetFramesRead()
 {
     return GetStreamFramesRead();
+}
+
+void AudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
+{
+    blendMode_ = blendMode;
+    AUDIO_INFO_LOG("SetChannelBlendMode: %{public}d", blendMode);
+}
+
+void AudioStream::ProcessPcmDataByBlendMode(uint8_t *buffer, size_t buffer_size)
+{
+    switch (blendMode_) {
+        case MODE_BLEND_LR:
+            ProcessDataByBlendLR(buffer, buffer_size);
+            break;
+        case MODE_ALL_LEFT:
+            ProcessDataByAllLeftMode(buffer, buffer_size);
+            break;
+        case MODE_ALL_RIGHT:
+            ProcessDataByAllRightMode(buffer, buffer_size);
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioStream::ProcessDataByBlendLR(uint8_t *buffer, size_t buffer_size)
+{
+    int frameCount = 0;
+    switch (streamParams_.format) {
+        case AudioSampleFormat::SAMPLE_U8:
+            frameCount = buffer_size / streamParams_.channels;
+            ProcessBlendLRModeWithFormat<uint8_t>(reinterpret_cast<uint8_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+        case AudioSampleFormat::SAMPLE_S16LE:
+            frameCount = buffer_size / (streamParams_.channels * TWO_BYTE_PER_SAMPLE);
+            ProcessBlendLRModeWithFormat<int16_t>(reinterpret_cast<int16_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+
+        case AudioSampleFormat::SAMPLE_S24LE:
+            frameCount = buffer_size / (streamParams_.channels * THREE_BYTE_PER_SAMPLE);
+            ProcessBlendLRModeWithFormat<int24_t>(reinterpret_cast<int24_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+
+        case AudioSampleFormat::SAMPLE_S32LE:
+            frameCount = buffer_size / (streamParams_.channels * FOUR_BYTE_PER_SAMPLE);
+            ProcessBlendLRModeWithFormat<int32_t>(reinterpret_cast<int32_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioStream::ProcessDataByAllLeftMode(uint8_t *buffer, size_t buffer_size)
+{
+    int frameCount = 0;
+    switch (streamParams_.format) {
+        case AudioSampleFormat::SAMPLE_U8:
+            frameCount = buffer_size / streamParams_.channels;
+            ProcessAllLeftModeWithFormat<uint8_t>(reinterpret_cast<uint8_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+        case AudioSampleFormat::SAMPLE_S16LE:
+            frameCount = buffer_size / (streamParams_.channels * TWO_BYTE_PER_SAMPLE);
+            ProcessAllLeftModeWithFormat<int16_t>(reinterpret_cast<int16_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+
+        case AudioSampleFormat::SAMPLE_S24LE:
+            frameCount = buffer_size / (streamParams_.channels * THREE_BYTE_PER_SAMPLE);
+            ProcessAllLeftModeWithFormat<int24_t>(reinterpret_cast<int24_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+
+        case AudioSampleFormat::SAMPLE_S32LE:
+            frameCount = buffer_size / (streamParams_.channels * FOUR_BYTE_PER_SAMPLE);
+            ProcessAllLeftModeWithFormat<int32_t>(reinterpret_cast<int32_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioStream::ProcessDataByAllRightMode(uint8_t *buffer, size_t buffer_size)
+{
+    int frameCount = 0;
+    switch (streamParams_.format) {
+        case AudioSampleFormat::SAMPLE_U8:
+            frameCount = buffer_size / streamParams_.channels;
+            ProcessAllRightModeWithFormat<uint8_t>(reinterpret_cast<uint8_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+        case AudioSampleFormat::SAMPLE_S16LE:
+            frameCount = buffer_size / (streamParams_.channels * TWO_BYTE_PER_SAMPLE);
+            ProcessAllRightModeWithFormat<int16_t>(reinterpret_cast<int16_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+        case AudioSampleFormat::SAMPLE_S24LE:
+            frameCount = buffer_size / (streamParams_.channels * THREE_BYTE_PER_SAMPLE);
+            ProcessAllRightModeWithFormat<int24_t>(reinterpret_cast<int24_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+        case AudioSampleFormat::SAMPLE_S32LE:
+            frameCount = buffer_size / (streamParams_.channels * FOUR_BYTE_PER_SAMPLE);
+            ProcessAllRightModeWithFormat<int32_t>(reinterpret_cast<int32_t*>(buffer), frameCount,
+                (AudioChannel)streamParams_.channels);
+            break;
+        default:
+            break;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

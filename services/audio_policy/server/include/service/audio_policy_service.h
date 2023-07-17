@@ -284,6 +284,8 @@ public:
 
     void UnloadLoopback();
 
+    int32_t GetPrimaryOutputSamplingRate();
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

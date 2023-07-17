@@ -211,6 +211,8 @@ public:
 
     virtual int32_t SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions) = 0;
 
+    virtual int32_t GetPrimaryOutputSamplingRate() = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

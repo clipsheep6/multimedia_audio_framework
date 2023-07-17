@@ -2255,5 +2255,10 @@ int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(std::vector<CaptureFil
 {
     return mPolicyService.SetPlaybackCapturerFilterInfos(options);
 }
+
+int32_t AudioPolicyServer::GetPrimaryOutputSamplingRate()
+{
+    return mPolicyService.GetPrimaryOutputSamplingRate();
+}
 } // namespace AudioStandard
 } // namespace OHOS

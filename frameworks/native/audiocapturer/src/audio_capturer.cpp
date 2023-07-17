@@ -656,5 +656,285 @@ int64_t AudioCapturerPrivate::GetFramesRead() const
 {
     return audioStream_->GetFramesWritten();
 }
+
+int32_t AudioCapturerPrivate::GetCurrentInputDevices(DeviceInfo &deviceInfo) const
+{
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamId(sessionId);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioCapturerPrivate::GetCurrentInputDevices Get sessionId failed");
+        return ret;
+    }
+
+    ret = AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioCapturerPrivate::GetCurrentInputDevices Get Current Capturer devices failed");
+        return ret;
+    }
+
+    for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
+        if ((*it)->sessionId == sessionId) {
+            deviceInfo = (*it)->inputDeviceInfo;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::GetCurrentCapturerChangeInfo(AudioCapturerChangeInfo &changeInfo) const
+{
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamId(sessionId);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioCapturerPrivate::GetCurrentInputDevices Get sessionId failed");
+        return ret;
+    }
+
+    ret = AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioCapturerPrivate::GetCurrentInputDevices Get Current Capturer devices failed");
+        return ret;
+    }
+
+    for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
+        if ((*it)->sessionId == sessionId) {
+            changeInfo = *(*it);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::SetAudioCapturerDeviceChangeCallback(
+    const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback)
+{
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (RegisterAudioCapturerEventListener() != SUCCESS) {
+        return ERROR;
+    }
+    audioStateChangeCallback_->SaveDeviceChangeCallback(callback);
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::RemoveAudioCapturerDeviceChangeCallback(
+    const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback)
+{
+    audioStateChangeCallback_->RemoveDeviceChangeCallback(callback);
+    if (UnregisterAudioCapturerEventListener() != SUCCESS) {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+bool AudioCapturerPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
+{
+    bool deviceUpdated = false;
+    DeviceInfo deviceInfo = {};
+
+    if (GetCurrentInputDevices(deviceInfo) != SUCCESS) {
+        AUDIO_ERR_LOG("AudioCapturerPrivate::GetCurrentInputDevices failed");
+        return deviceUpdated;
+    }
+
+    if (currentDeviceInfo.deviceType != deviceInfo.deviceType) {
+        currentDeviceInfo = deviceInfo;
+        newDeviceInfo = currentDeviceInfo;
+        deviceUpdated = true;
+    }
+    return deviceUpdated;
+}
+
+int32_t AudioCapturerPrivate::RegisterAudioCapturerEventListener()
+{
+    if (!audioStateChangeCallback_) {
+        audioStateChangeCallback_ = std::make_shared<AudioCapturerStateChangeCallbackImpl>();
+        if (!audioStateChangeCallback_) {
+            AUDIO_ERR_LOG("AudioCapturerPrivate: Memory Allocation Failed !!");
+            return ERROR;
+        }
+
+        int32_t ret =
+            AudioPolicyManager::GetInstance().RegisterAudioCapturerEventListener(getpid(), audioStateChangeCallback_);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("AudioCapturerPrivate::RegisterAudioCapturerEventListener failed");
+            return ERROR;
+        }
+        audioStateChangeCallback_->setAudioCapturerObj(this);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::UnregisterAudioCapturerEventListener()
+{
+    if (audioStateChangeCallback_->DeviceChangeCallbackArraySize() == 0 &&
+        audioStateChangeCallback_->CapturerInfoChangeCallbackArraySize() == 0) {
+        if (audioStateChangeCallback_ != nullptr) {
+            int32_t ret =
+                AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(getpid());
+            if (ret != 0) {
+                AUDIO_ERR_LOG("AudioCapturerPrivate::UnregisterAudioCapturerEventListener failed");
+                return ERROR;
+            }
+            audioStateChangeCallback_ = nullptr;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::SetAudioCapturerInfoChangeCallback(
+    const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback)
+{
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (RegisterAudioCapturerEventListener() != SUCCESS) {
+        return ERROR;
+    }
+    audioStateChangeCallback_->SaveCapturerInfoChangeCallback(callback);
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::RemoveAudioCapturerInfoChangeCallback(
+    const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback)
+{
+    audioStateChangeCallback_->RemoveCapturerInfoChangeCallback(callback);
+    if (UnregisterAudioCapturerEventListener() != SUCCESS) {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+AudioCapturerStateChangeCallbackImpl::AudioCapturerStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioCapturerStateChangeCallbackImpl instance create");
+}
+
+AudioCapturerStateChangeCallbackImpl::~AudioCapturerStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioCapturerStateChangeCallbackImpl instance destory");
+}
+
+void AudioCapturerStateChangeCallbackImpl::SaveCapturerInfoChangeCallback(
+    const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback)
+{
+    auto iter = find(capturerInfoChangeCallbacklist_.begin(), capturerInfoChangeCallbacklist_.end(), callback);
+    if (iter == capturerInfoChangeCallbacklist_.end()) {
+        capturerInfoChangeCallbacklist_.emplace_back(callback);
+    }
+}
+
+void AudioCapturerStateChangeCallbackImpl::RemoveCapturerInfoChangeCallback(
+    const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback)
+{
+    if (callback == nullptr) {
+        capturerInfoChangeCallbacklist_.clear();
+        return;
+    }
+
+    auto iter = find(capturerInfoChangeCallbacklist_.begin(), capturerInfoChangeCallbacklist_.end(), callback);
+    if (iter != capturerInfoChangeCallbacklist_.end()) {
+        capturerInfoChangeCallbacklist_.erase(iter);
+    }
+}
+
+int32_t AudioCapturerStateChangeCallbackImpl::CapturerInfoChangeCallbackArraySize()
+{
+    return capturerInfoChangeCallbacklist_.size();
+}
+
+void AudioCapturerStateChangeCallbackImpl::SaveDeviceChangeCallback(
+    const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback)
+{
+    auto iter = find(deviceChangeCallbacklist_.begin(), deviceChangeCallbacklist_.end(), callback);
+    if (iter == deviceChangeCallbacklist_.end()) {
+        deviceChangeCallbacklist_.emplace_back(callback);
+    }
+}
+
+void AudioCapturerStateChangeCallbackImpl::RemoveDeviceChangeCallback(
+    const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback)
+{
+    if (callback == nullptr) {
+        deviceChangeCallbacklist_.clear();
+        return;
+    }
+
+    auto iter = find(deviceChangeCallbacklist_.begin(), deviceChangeCallbacklist_.end(), callback);
+    if (iter != deviceChangeCallbacklist_.end()) {
+        deviceChangeCallbacklist_.erase(iter);
+    }
+}
+
+int32_t AudioCapturerStateChangeCallbackImpl::DeviceChangeCallbackArraySize()
+{
+    return deviceChangeCallbacklist_.size();
+}
+
+void AudioCapturerStateChangeCallbackImpl::setAudioCapturerObj(AudioCapturerPrivate *capturerObj)
+{
+    capturer = capturerObj;
+}
+
+void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
+    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+{
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    bool found = false;
+    AudioCapturerChangeInfo capturerChangeInfo;
+    int32_t ret = capturer->GetAudioStreamId(sessionId);
+    if (ret) {
+        AUDIO_ERR_LOG("OnCapturerStateChange: Get sessionId failed");
+        return;
+    }
+
+    for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
+        if ((*it)->sessionId == sessionId) {
+            capturerChangeInfo = *(*it);
+            found = true;
+        }
+    }
+
+    if (found) {
+        for (auto it = capturerInfoChangeCallbacklist_.begin(); it != capturerInfoChangeCallbacklist_.end(); ++it) {
+            if (*it != nullptr) {
+                (*it)->OnStateChange(capturerChangeInfo);
+            }
+        }
+    }
+}
+
+void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
+    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+{
+    DeviceInfo deviceInfo = {};
+    if (!capturer->IsDeviceChanged(deviceInfo)) {
+        AUDIO_INFO_LOG("Device not change, no need callback.");
+        return;
+    }
+    for (auto it = deviceChangeCallbacklist_.begin(); it != deviceChangeCallbacklist_.end(); ++it) {
+        if (*it != nullptr) {
+            (*it)->OnStateChange(deviceInfo);
+        }
+    }
+}
+
+void AudioCapturerStateChangeCallbackImpl::OnCapturerStateChange(
+    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+{
+    AUDIO_INFO_LOG("AudioCapturerStateChangeCallbackImpl OnCapturerStateChange");
+    if (deviceChangeCallbacklist_.size() != 0) {
+        NotifyAudioCapturerDeviceChange(audioCapturerChangeInfos);
+    }
+
+    if (capturerInfoChangeCallbacklist_.size() != 0) {
+        NotifyAudioCapturerInfoChange(audioCapturerChangeInfos);
+    }
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

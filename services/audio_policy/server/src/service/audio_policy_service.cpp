@@ -2523,6 +2523,7 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
     deviceInfo.deviceRole = desc->deviceRole_;
     deviceInfo.deviceId = desc->deviceId_;
     deviceInfo.channelMasks = desc->channelMasks_;
+    deviceInfo.channelIndexMask = desc->channelIndexMask_;
     deviceInfo.displayName = desc->displayName_;
 
     if (hasBTPermission) {
@@ -3479,5 +3480,19 @@ int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(std::vector<CaptureFi
     return gsp->SetSupportStreamUsage(usages);
 }
 
+int32_t AudioPolicyService::GetPrimaryOutputSamplingRate()
+{
+    int32_t rate = 0;
+    auto pirmaryModuleInfoPos = deviceClassInfo_.find(ClassType::TYPE_PRIMARY);
+    if (pirmaryModuleInfoPos != deviceClassInfo_.end()) {
+        auto moduleInfoList = pirmaryModuleInfoPos->second;
+        for (auto &moduleInfo : moduleInfoList) {
+            if (moduleInfo.role == "sink") {
+                rate = atoi(moduleInfo.rate.c_str());
+            }
+        }
+    }
+    return rate;
+}
 } // namespace AudioStandard
 } // namespace OHOS

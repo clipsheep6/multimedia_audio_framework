@@ -86,6 +86,25 @@ enum VolumeAdjustType {
     VOLUME_DOWN = 1,
 };
 
+enum ChannelBlendMode {
+    /**
+     * No channel process.
+     */
+    MODE_DEFAULT = 0,
+    /**
+     * Blend left and right channel.
+     */
+    MODE_BLEND_LR = 1,
+    /**
+     * Replicate left to right channel.
+     */
+    MODE_ALL_LEFT = 2,
+    /**
+     * Replicate right to left channel.
+     */
+    MODE_ALL_RIGHT = 3,
+};
+
 enum DeviceFlag {
     /**
      * Device flag none.
@@ -1002,6 +1021,7 @@ struct DeviceInfo {
     DeviceRole deviceRole;
     int32_t deviceId;
     int32_t channelMasks;
+    int32_t channelIndexMask;
     std::string deviceName;
     std::string macAddress;
     AudioStreamInfo audioStreamInfo;

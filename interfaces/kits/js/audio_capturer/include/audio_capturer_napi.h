@@ -22,6 +22,8 @@
 #include "audio_capturer.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "audio_capturer_device_change_callback_napi.h"
+#include "audio_capturer_info_change_callback_napi.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -73,6 +75,8 @@ private:
         int32_t capturerFlags;
         AudioCapturerNapi *objectInfo;
         AudioCapturerOptions capturerOptions;
+        DeviceInfo deviceInfo;
+        AudioCapturerChangeInfo changeInfo;
     };
 
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
@@ -91,7 +95,8 @@ private:
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value GetState(napi_env env, napi_callback_info info);
     static napi_value CreateAudioCapturerWrapper(napi_env env, std::unique_ptr<AudioCapturerOptions> &captureOptions);
-
+    static napi_value GetCurrentInputDevices(napi_env env, napi_callback_info info);
+    static napi_value GetCurrentAudioCapturerChangeInfo(napi_env env, napi_callback_info info);
     static void CommonCallbackRoutine(napi_env env, AudioCapturerAsyncContext* &asyncContext,
                                       const napi_value &valueParam);
     static void SetFunctionAsyncCallbackComplete(napi_env env, napi_status status, void *data);
@@ -114,7 +119,14 @@ private:
     static bool ParseCapturerOptions(napi_env env, napi_value root, AudioCapturerOptions *opts);
     static bool ParseCapturerInfo(napi_env env, napi_value root, AudioCapturerInfo *capturerInfo);
     static bool ParseStreamInfo(napi_env env, napi_value root, AudioStreamInfo* streamInfo);
-
+    static void AsyncGetCurrentInputDevices(napi_env env, void *data);
+    static void AsyncGetCurrentAudioCapturerChangeInfo(napi_env env, void *data);
+    static void GetDeviceInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetCapturerChangeInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static bool CheckContextStatus(AudioCapturerAsyncContext *context);
+    static void RegisterCapturerDeviceChangeCallback(napi_env env, napi_value* args, AudioCapturerNapi *rendererNapi);
+    static void UnregisterCapturerDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
+        AudioCapturerNapi *rendererNapi);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
         napi_value* argv, const std::string& cbName);
     static napi_value RegisterCapturerCallback(napi_env env, napi_value* argv,
@@ -123,9 +135,21 @@ private:
         const std::string& cbName, AudioCapturerNapi *capturerNapi);
     static napi_value RegisterPeriodPositionCallback(napi_env env, napi_value* argv,
         const std::string& cbName, AudioCapturerNapi *capturerNapi);
-    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value* argv,
+        const std::string& cbName);
     static void UnregisterCapturerCallback(napi_env env, const std::string& cbName, AudioCapturerNapi *capturerNapi);
-
+    static void RegisterAudioCapturerDeviceChangeCallback(napi_env env, napi_value* args,
+        AudioCapturerNapi *rendererNapi);
+    static void UnregisterAudioCapturerDeviceChangeCallback(napi_env env, size_t argc, napi_value* argv,
+        AudioCapturerNapi *capturerNapi);
+    static void RegisterAudioCapturerInfoChangeCallback(napi_env env, napi_value* argv,
+        AudioCapturerNapi *capturerNapi);
+    static void UnregisterAudioCapturerInfoChangeCallback(napi_env env, size_t argc,
+        napi_value* argv, AudioCapturerNapi *capturerNapi);
+    static std::shared_ptr<AudioCapturerDeviceChangeCallbackNapi> GetDeviceChangeNapiCallback(napi_value argv,
+        AudioCapturerNapi *capturerNapi);
+    static std::shared_ptr<AudioCapturerInfoChangeCallbackNapi> GetCapturerInfoChangeNapiCallback(napi_value argv,
+        AudioCapturerNapi *capturerNapi);
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioCapturerOptions> sCapturerOptions_;
     static std::mutex createMutex_;
@@ -142,6 +166,8 @@ private:
     std::shared_ptr<CapturerPositionCallback> positionCBNapi_ = nullptr;
     std::shared_ptr<CapturerPeriodPositionCallback> periodPositionCBNapi_ = nullptr;
     std::shared_ptr<AudioCapturerCallback> callbackNapi_ = nullptr;
+    std::list<std::shared_ptr<AudioCapturerDeviceChangeCallbackNapi>> deviceChangeCallbacks_;
+    std::list<std::shared_ptr<AudioCapturerInfoChangeCallbackNapi>> capturerInfoChangeCallbacks_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
