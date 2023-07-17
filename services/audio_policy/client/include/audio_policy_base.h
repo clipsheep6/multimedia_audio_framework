@@ -130,6 +130,9 @@ public:
     virtual bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
         AudioPermissionState state) = 0;
 
+    virtual bool VerifyClientIntelligentPermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+        AudioPermissionState state) = 0;
+
     virtual bool getUsingPemissionFromPrivacy(const std::string &permission, uint32_t appTokenId,
         AudioPermissionState state) = 0;
 

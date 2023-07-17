@@ -657,6 +657,18 @@ bool AudioServiceClient::VerifyClientMicrophonePermission(uint32_t appTokenId, i
     return true;
 }
 
+bool AudioServiceClient::VerifyClientIntelligentPermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+    AudioPermissionState state)
+{
+    // for capturer check for MANAGE_INTELLTGENT_VOICE_PERMISSION
+    if (!AudioPolicyManager::GetInstance().VerifyClientIntelligentPermission(appTokenId, appUid, privacyFlag, state)) {
+        AUDIO_ERR_LOG("Client doesn't have MANAGE_INTELLTGENT_VOICE permission");
+        return false;
+    }
+
+    return true;
+}
+
 bool AudioServiceClient::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
     AudioPermissionState state)
 {

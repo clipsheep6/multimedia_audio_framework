@@ -1579,6 +1579,12 @@ bool AudioPolicyServer::VerifyClientMicrophonePermission(uint32_t appTokenId, in
     return VerifyClientPermission(MICROPHONE_PERMISSION, appTokenId, appUid, privacyFlag, state);
 }
 
+bool AudioPolicyServer::VerifyClientIntelligentPermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+    AudioPermissionState state)
+{
+    return VerifyClientPermission(MANAGE_INTELLTGENT_VOICE_PERMISSION, appTokenId, appUid, privacyFlag, state);
+}
+
 bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
     bool privacyFlag, AudioPermissionState state)
 {
