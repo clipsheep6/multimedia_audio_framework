@@ -220,7 +220,7 @@ static void ThreadFuncRendererTimer(void *userdata)
             (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state));
         if (flag) {
             now = pa_rtclock_now();
-        } 
+        }
 
         if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
             pa_sink_process_rewind(u->sink, 0);
@@ -232,11 +232,11 @@ static void ThreadFuncRendererTimer(void *userdata)
                 ProcessRenderUseTiming(u, now);
             }
             pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-            int64_t sleep_for_usec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->writeTime);
-            sleep_for_usec = PA_MAX(sleep_for_usec, 0);
-            pa_rtpoll_set_timer_relative(u->rtpoll, (pa_usec_t)sleep_for_usec);
+            int64_t sleepForUsec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->writeTime);
+            sleepForUsec = PA_MAX(sleepForUsec, 0);
+            pa_rtpoll_set_timer_relative(u->rtpoll, (pa_usec_t)sleepForUsec);
         } else {
-            pa_rtpoll_set_timer_disabled(u->rtpoll);            
+            pa_rtpoll_set_timer_disabled(u->rtpoll);
         }
 
         // Hmm, nothing to do. Let's sleep
