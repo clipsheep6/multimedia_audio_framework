@@ -739,7 +739,6 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         }
     }
 
-<<<<<<< HEAD
     u->writeTime = DEFAULT_WRITE_TIME;
 
     pa_sink_put(u->sink);
