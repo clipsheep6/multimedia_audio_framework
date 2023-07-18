@@ -232,7 +232,20 @@ static void ThreadFuncRendererTimer(void *userdata)
                 ProcessRenderUseTiming(u, now);
             }
             pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+<<<<<<< HEAD
             int64_t sleep_for_usec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->writeTime);
+=======
+            int64_t sleep_for_usec = blockTime - PA_MIN((pa_rtclock_now() - now), u->writeTime);
+            sleep_for_usec = PA_MAX(sleep_for_usec, 0);
+            pa_rtpoll_set_timer_relative(u->rtpoll, (pa_usec_t)sleep_for_usec);
+        } else if (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
+            if (u->timestamp <= now && pa_atomic_load(&u->dflag) == 0) {
+                pa_atomic_add(&u->dflag, 1);
+                ProcessRenderUseTiming(u, now);
+            }
+            pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+            int64_t sleep_for_usec = blockTime - PA_MIN((pa_rtclock_now() - now), u->writeTime);
+>>>>>>> e209a16531aa369f3e1df0ebe31b5fefa44ec24a
             sleep_for_usec = PA_MAX(sleep_for_usec, 0);
             pa_rtpoll_set_timer_relative(u->rtpoll, (pa_usec_t)sleep_for_usec);
         } else {
@@ -270,9 +283,15 @@ static void ThreadFuncWriteHDI(void *userdata)
 
         pa_assert_se(pa_asyncmsgq_get(u->dq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
 
+        pa_usec_t now;
         switch (code) {
+<<<<<<< HEAD
             case HDI_RENDER: {
                 pa_usec_t now = pa_rtclock_now();
+=======
+            case HDI_RENDER:
+                now = pa_rtclock_now();
+>>>>>>> e209a16531aa369f3e1df0ebe31b5fefa44ec24a
                 if (RenderWrite(u, &chunk) < 0) {
                     u->bytes_dropped += chunk.length;
                     AUDIO_ERR_LOG("RenderWrite failed");
@@ -739,7 +758,11 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         }
     }
 
+<<<<<<< HEAD
     u->writeTime = DEFAULT_WRITE_TIME;
+=======
+    u->writeTime = 1000;
+>>>>>>> e209a16531aa369f3e1df0ebe31b5fefa44ec24a
     pa_sink_put(u->sink);
 
     return u->sink;
