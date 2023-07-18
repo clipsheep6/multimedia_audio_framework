@@ -1026,6 +1026,35 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferOutputDevi
     return deviceList;
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferInputDeviceDescriptors(
+    AudioCapturerInfo &captureInfo, std::string networkId)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+    for (const auto& device : connectedDevices_) {
+        if (device == nullptr) {
+            continue;
+        }
+        bool filterLocalOutput = ((currentActiveDevice_ == device->deviceType_)
+            && (device->networkId_ == LOCAL_NETWORK_ID)
+            && (device->deviceRole_ == DeviceRole::INPUT_DEVICE));
+        if (!isCurrentRemoteRenderer && filterLocalOutput && networkId == LOCAL_NETWORK_ID) {
+            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+            deviceList.push_back(devDesc);
+        }
+
+        bool filterRemoteOutput = ((device->networkId_ != networkId)
+            && (device->deviceRole_ == DeviceRole::INPUT_DEVICE));
+        if (isCurrentRemoteRenderer && filterRemoteOutput) {
+            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+            deviceList.push_back(devDesc);
+        }
+    }
+
+    return deviceList;
+}
+
 DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = true)
 {
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
@@ -2451,20 +2480,6 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId, De
 }
 
 int32_t AudioPolicyService::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
-    const sptr<IRemoteObject> &object, bool hasBTPermission)
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-
-    sptr<IStandardAudioRoutingManagerListener> callback = iface_cast<IStandardAudioRoutingManagerListener>(object);
-    if (callback != nullptr) {
-        callback->hasBTPermission_ = hasBTPermission;
-        preferOutputDeviceCbsMap_[clientId] = callback;
-    }
-
-    return SUCCESS;
-}
-
-int32_t AudioPolicyService::SetPreferInputDeviceChangeCallback(const int32_t clientId,
     const sptr<IRemoteObject> &object, bool hasBTPermission)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);

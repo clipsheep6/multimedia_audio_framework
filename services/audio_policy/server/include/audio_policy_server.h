@@ -236,6 +236,9 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) override;
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferInputDeviceDescriptors(
+        AudioCapturerInfo &captureInfo) override;
+
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 
     int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) override;
