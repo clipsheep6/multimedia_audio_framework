@@ -514,6 +514,14 @@ public:
 
     void SetClientID(int32_t clientPid, int32_t clientUid) override;
 
+    /**
+    * Gets the audio effect scene name
+    *
+    * @param audioType indicate the stream type like music, system, ringtone etc
+    * @return Returns the audio effect scene name.
+    */
+    static const std::string GetEffectSceneName(AudioStreamType audioType);
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
