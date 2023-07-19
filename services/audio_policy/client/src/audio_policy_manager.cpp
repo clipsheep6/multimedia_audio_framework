@@ -337,6 +337,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferOutputDevi
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferInputDeviceDescriptors(
     AudioCapturerInfo &captureInfo)
 {
+    AUDIO_INFO_LOG("HJF-TEST -------- AudioPolicyManager::GetPreferInputDeviceDescriptors");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetPreferInputDeviceDescriptors: audio policy manager proxy is NULL.");

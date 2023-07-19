@@ -327,6 +327,7 @@ void AudioPolicyManagerStub::GetPreferOutputDeviceDescriptorsInternal(MessagePar
 
 void AudioPolicyManagerStub::GetPreferInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
+    AUDIO_INFO_LOG("HJF-TEST -------- AudioPolicyManagerStub::GetPreferInputDeviceDescriptorsInternal");
     AUDIO_DEBUG_LOG("GET_PREFER_INTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
     AudioCapturerInfo captureInfo;
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferInputDeviceDescriptors(captureInfo);

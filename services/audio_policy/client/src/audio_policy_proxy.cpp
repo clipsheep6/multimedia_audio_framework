@@ -606,6 +606,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferOutputDevice
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferInputDeviceDescriptors(
     AudioCapturerInfo &captureInfo)
 {
+    AUDIO_INFO_LOG("HJF-TEST -------- AudioPolicyProxy::GetPreferInputDeviceDescriptors");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;

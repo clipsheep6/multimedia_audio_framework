@@ -62,6 +62,7 @@ int32_t AudioRoutingManager::GetPreferOutputDeviceForRendererInfo(AudioRendererI
 int32_t AudioRoutingManager::GetPreferInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
     std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
+    AUDIO_INFO_LOG("HJF-TEST -------- AudioRoutingManager::GetPreferInputDeviceForCapturerInfo");
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     desc = AudioPolicyManager::GetInstance().GetPreferInputDeviceDescriptors(captureInfo);

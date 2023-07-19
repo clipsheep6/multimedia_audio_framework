@@ -1029,6 +1029,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferOutputDevi
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferInputDeviceDescriptors(
     AudioCapturerInfo &captureInfo, std::string networkId)
 {
+    AUDIO_INFO_LOG("HJF-TEST -------- AudioPolicyService::GetPreferInputDeviceDescriptors");
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};

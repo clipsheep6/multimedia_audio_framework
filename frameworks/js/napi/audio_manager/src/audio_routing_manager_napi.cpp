@@ -831,6 +831,7 @@ static void GetPreferInputDeviceForCapturerInfoAsyncCallbackComplete(napi_env en
 
 napi_value AudioRoutingManagerNapi::GetPreferInputDeviceForCapturerInfo(napi_env env, napi_callback_info info)
 {
+    AUDIO_INFO_LOG("HJF-TEST -------- AudioRoutingManagerNapi::GetPreferInputDeviceForCapturerInfo");
     napi_status status;
     napi_value result = nullptr;
     size_t argc = ARGS_TWO;
