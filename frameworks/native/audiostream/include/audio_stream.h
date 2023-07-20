@@ -23,11 +23,26 @@
 #include "audio_info.h"
 #include "audio_service_client.h"
 #include "audio_stream_tracker.h"
-
+#define DUMP_AUDIOSTREAM_PCM
 namespace OHOS {
 namespace AudioStandard {
 static constexpr int32_t MAX_WRITECB_NUM_BUFFERS = 1;
 static constexpr int32_t MAX_READCB_NUM_BUFFERS = 3;
+static constexpr int32_t TWO_BYTE_PER_SAMPLE = 2;
+static constexpr int32_t THREE_BYTE_PER_SAMPLE = 3;
+static constexpr int32_t FOUR_BYTE_PER_SAMPLE = 4;
+static constexpr int32_t CHANNEL_ONE = 0;
+static constexpr int32_t CHANNEL_TWO = 1;
+static constexpr int32_t CHANNEL_THREE = 2;
+static constexpr int32_t CHANNEL_FOUR = 3;
+static constexpr int32_t CHANNEL_FIVE = 4;
+static constexpr int32_t CHANNEL_SIX = 5;
+static constexpr int32_t CHANNEL_SEVEN = 6;
+static constexpr int32_t CHANNEL_EIGHT = 7;
+static constexpr int32_t NUMBER_TWO = 2;
+typedef struct {
+    int8_t value[3];
+} __attribute__((__packed__)) int24_t;
 
 class AudioStream : public AudioServiceClient {
 public:
@@ -94,6 +109,11 @@ public:
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
 
+    void SetChannelBlendMode(ChannelBlendMode blendMode) override;
+    void ProcessPcmDataByBlendMode(uint8_t *buffer, size_t buffer_size);
+    void ProcessDataByBlendLR(uint8_t *buffer, size_t buffer_size);
+    void ProcessDataByAllLeftMode(uint8_t *buffer, size_t buffer_size);
+    void ProcessDataByAllRightMode(uint8_t *buffer, size_t buffer_size);
 private:
     AudioStreamType eStreamType_;
     AudioMode eMode_;
@@ -120,9 +140,13 @@ private:
 
     bool isFirstRead_;
     bool isFirstWrite_;
-
     std::mutex bufferQueueLock_;
     std::condition_variable bufferQueueCV_;
+    AudioStreamParams streamParams_;
+    ChannelBlendMode blendMode_;
+#ifdef DUMP_AUDIOSTREAM_PCM
+    FILE *pfd_;
+#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS

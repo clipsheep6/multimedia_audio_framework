@@ -102,6 +102,7 @@ enum class AudioPolicyInterfaceCode {
     GET_SYSTEM_VOLUME_IN_DB,
     QUERY_EFFECT_SCENEMODE,
     SET_PLAYBACK_CAPTURER_FILTER_INFO,
+    GET_PRIMARY_OUTPUT_SAMPLING_RATE,
 };
 } // namespace AudioStandard
 } // namespace OHOS

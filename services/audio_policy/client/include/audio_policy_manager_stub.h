@@ -114,6 +114,7 @@ private:
     void IsVolumeUnadjustableInternal(MessageParcel &data, MessageParcel &reply);
     void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
     void SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPrimaryOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

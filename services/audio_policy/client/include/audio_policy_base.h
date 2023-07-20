@@ -212,6 +212,8 @@ public:
     virtual int32_t SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
         uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state) = 0;
 
+    virtual int32_t GetPrimaryOutputSamplingRate() = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

@@ -2174,5 +2174,25 @@ int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const CaptureFilterOpti
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::GetPrimaryOutputSamplingRate()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetPrimaryOutputSamplingRate: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PRIMARY_OUTPUT_SAMPLING_RATE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetPrimaryOutputSamplingRate event failed , error: %d", error);
+        return ERROR;
+    }
+
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

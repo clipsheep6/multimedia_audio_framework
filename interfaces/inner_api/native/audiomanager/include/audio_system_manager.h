@@ -41,6 +41,7 @@ public:
     DeviceRole deviceRole_;
     int32_t deviceId_;
     int32_t channelMasks_;
+    int32_t channelIndexMask_;
     std::string deviceName_;
     std::string macAddress_;
     int32_t interruptGroupId_;
@@ -60,7 +61,8 @@ public:
     bool Marshalling(Parcel &parcel) const override;
     static sptr<AudioDeviceDescriptor> Unmarshalling(Parcel &parcel);
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
-    void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask);
+    void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask,
+        int32_t channelIndexMask = 0);
 };
 
 class InterruptGroupInfo;
@@ -933,6 +935,14 @@ public:
      * @since 10
      */
     void RequestThreadPriority(uint32_t tid);
+
+    /**
+     * @brief Gets sampling rate for primary output
+     *
+     * @param Returns sampling rate for primary output
+     * @since 11
+     */
+    int32_t GetPrimaryOutputSamplingRate();
 
     static void AudioServerDied(pid_t pid);
 private:

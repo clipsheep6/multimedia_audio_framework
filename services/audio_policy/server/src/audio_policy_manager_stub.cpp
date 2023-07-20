@@ -1045,6 +1045,12 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
     reply.WriteInt32(ret);
 }
 
+void AudioPolicyManagerStub::GetPrimaryOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result =  GetPrimaryOutputSamplingRate();
+    reply.WriteInt32(result);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1369,6 +1375,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO):
             SetPlaybackCapturerFilterInfosInternal(data, reply);
+            break;
+
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PRIMARY_OUTPUT_SAMPLING_RATE):
+            GetPrimaryOutputSamplingRateInternal(data, reply);
             break;
 
         default:

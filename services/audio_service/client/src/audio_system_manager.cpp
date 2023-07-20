@@ -1073,6 +1073,13 @@ int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
     return result;
 }
 
+int32_t AudioSystemManager::GetPrimaryOutputSamplingRate()
+{
+    int32_t result = 0;
+    result = AudioPolicyManager::GetInstance().GetPrimaryOutputSamplingRate();
+    return result;
+}
+
 std::string AudioSystemManager::GetSelfBundleName()
 {
     std::string bundleName = "";
