@@ -746,8 +746,7 @@ static void source_output_suspend_cb(pa_source_output *o, pa_source_state_t old_
         if (u->sink_input->sink) {
             pa_asyncmsgq_send(u->sink_input->sink->asyncmsgq, PA_MSGOBJECT(u->sink_input),
                 SINK_INPUT_MESSAGE_SOURCE_CHANGED, NULL, 0, NULL);
-        }
-        else {
+        } else {
             u->output_thread_info.push_called = false;
         }
     } else {
@@ -1524,7 +1523,6 @@ int pa__init(pa_module *m) {
 
 void pa__done(pa_module*m) {
     struct userdata *u;
-
     pa_assert(m);
 
     if (!(u = m->userdata)) {
@@ -1536,7 +1534,6 @@ void pa__done(pa_module*m) {
     if (u->memblockq) {
         pa_memblockq_free(u->memblockq);
     }
-
     if (u->asyncmsgq) {
         pa_asyncmsgq_unref(u->asyncmsgq);
     }
