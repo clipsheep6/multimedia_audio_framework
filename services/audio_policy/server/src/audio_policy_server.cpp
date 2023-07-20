@@ -2251,8 +2251,19 @@ int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supported
     return ret;
 }
 
-int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> options)
+int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &options,
+    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
 {
+    for (auto &usg : options.usages) {
+        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
+            continue;
+        }
+
+        if (!VerifyClientPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, appTokenId, appUid, privacyFlag, state)) {
+            AUDIO_ERR_LOG("SetPlaybackCapturerFilterInfos, doesn't have downlink capturer permission");
+            return ERR_PERMISSION_DENIED;
+        }
+    }
     return mPolicyService.SetPlaybackCapturerFilterInfos(options);
 }
 

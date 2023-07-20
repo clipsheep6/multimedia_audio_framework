@@ -47,6 +47,7 @@ const std::string MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
+const std::string CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 const std::string REMOTE_NETWORK_ID = "RemoteDevice";
 
@@ -343,7 +344,7 @@ enum AudioStreamType {
     /**
      * Indicates audio streams for wakeup.
      */
-    STREAM_WAKEUP = 15,
+    STREAM_WAKEUP = 19,
     /**
      * Indicates audio streams used for only one volume bar of a device.
      */
@@ -751,11 +752,11 @@ enum AudioScene {
 };
 
 struct CaptureFilterOptions {
-    StreamUsage usage;
+    std::vector<StreamUsage> usages;
 };
 
 struct AudioPlaybackCaptureConfig {
-    std::vector<CaptureFilterOptions> filterOptions;
+    CaptureFilterOptions filterOptions;
 };
 
 struct AudioCapturerOptions {

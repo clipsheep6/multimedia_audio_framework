@@ -260,7 +260,6 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(capturerNapi != nullptr, result, "No memory");
     capturerNapi->env_ = env;
     capturerNapi->sourceType_ = sCapturerOptions_->capturerInfo.sourceType;
-    capturerNapi->capturerFlags_ = sCapturerOptions_->capturerInfo.capturerFlags;
 
     AudioCapturerOptions capturerOptions = {};
     capturerOptions.streamInfo.samplingRate = sCapturerOptions_->streamInfo.samplingRate;
@@ -269,7 +268,6 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     capturerOptions.streamInfo.channels = sCapturerOptions_->streamInfo.channels;
 
     capturerOptions.capturerInfo.sourceType = sCapturerOptions_->capturerInfo.sourceType;
-    capturerOptions.capturerInfo.capturerFlags = sCapturerOptions_->capturerInfo.capturerFlags;
 
     capturerOptions.playbackCaptureConfig.filterOptions =
         sCapturerOptions_->playbackCaptureConfig.filterOptions;
@@ -1713,32 +1711,29 @@ napi_value AudioCapturerNapi::GetState(napi_env env, napi_callback_info info)
 }
 
 bool AudioCapturerNapi::ParseCaptureFilterOptionsVector(napi_env env, napi_value root,
-    std::vector<CaptureFilterOptions> &filterOptions)
+    CaptureFilterOptions *filterOptions)
 {
-    uint32_t arrayLen = 0;
-    napi_get_array_length(env, root, &arrayLen);
+    napi_value usagesValue = nullptr;
 
-    if (arrayLen == 0) {
-        filterOptions = {};
-        HiLog::Info(LABEL, "ParseCaptureFilterOptions get empty filterOptions");
-        return true;
-    }
+    if (napi_get_named_property(env, root, "usages", &usagesValue) == napi_ok) {
+        uint32_t arrayLen = 0;
+        napi_get_array_length(env, usagesValue, &arrayLen);
 
-    for (size_t i = 0; i < (size_t)arrayLen; i++) {
-        napi_value element;
-        napi_get_element(env, root, i, &element);
-        CaptureFilterOptions option = {};
-        napi_value tempValue = nullptr;
-        int32_t intValue = {0};
-
-        if (napi_get_named_property(env, element, "usage", &tempValue) == napi_ok) {
-            napi_get_value_int32(env, tempValue, &intValue);
-            option.usage = static_cast<StreamUsage>(intValue);
+        if (arrayLen == 0) {
+            filterOptions->usages = {};
+            HiLog::Info(LABEL, "ParseCaptureFilterOptions get empty usage");
+            return true;
         }
 
-        filterOptions.push_back(option);
+        for (size_t i = 0; i < static_cast<size_t>(arrayLen); i++) {
+            napi_value element;
+            if (napi_get_element(env, usagesValue, i, &element) == napi_ok) {
+                int32_t val = {0};
+                napi_get_value_int32(env, element, &val);
+                filterOptions->usages.emplace_back(static_cast<StreamUsage>(val));
+            }
+        }
     }
-
     return true;
 }
 
@@ -1748,9 +1743,8 @@ bool AudioCapturerNapi::ParsePlaybackCaptureConfig(napi_env env, napi_value root
     napi_value res = nullptr;
 
     if (napi_get_named_property(env, root, "filterOptions", &res) == napi_ok) {
-        return ParseCaptureFilterOptionsVector(env, res, captureConfig->filterOptions);
+        return ParseCaptureFilterOptionsVector(env, res, &(captureConfig->filterOptions));
     } else {
-        HiLog::Info(LABEL, "ParsePlaybackCaptureConfig without filterOptions");
         return true;
     }
 }
@@ -1777,10 +1771,11 @@ bool AudioCapturerNapi::ParseCapturerOptions(napi_env env, napi_value root, Audi
     }
 
     if (napi_get_named_property(env, root, "playbackCaptureConfig", &res) == napi_ok) {
-        result = ParsePlaybackCaptureConfig(env, res, &(opts->playbackCaptureConfig));
+        return ParsePlaybackCaptureConfig(env, res, &(opts->playbackCaptureConfig));
     }
 
-    return result;
+    HiLog::Info(LABEL, "ParseCapturerOptions, without playbackCaptureConfig");
+    return true;
 }
 
 bool AudioCapturerNapi::ParseCapturerInfo(napi_env env, napi_value root, AudioCapturerInfo *capturerInfo)
