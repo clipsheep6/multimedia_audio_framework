@@ -1178,6 +1178,8 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
         int32_t muteDuration = 500000; // us
         std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName, deviceType);
         switchThread.detach(); // add another sleep before switch local can avoid pop in some case
+        int32_t beforSwitchDelay = 300000;
+        usleep(beforSwitchDelay);
     }
 
     result = audioPolicyManager_.SelectDevice(deviceRole, deviceType, portName);
