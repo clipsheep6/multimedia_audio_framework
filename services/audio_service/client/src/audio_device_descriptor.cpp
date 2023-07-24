@@ -55,6 +55,10 @@ AudioDeviceDescriptor::AudioDeviceDescriptor()
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
 {
+    if (deviceDescriptor == nullptr) {
+        AUDIO_ERR_LOG("Error input parameter");
+        return;
+    }
     deviceId_ = deviceDescriptor.deviceId_;
     deviceName_ = deviceDescriptor.deviceName_;
     macAddress_ = deviceDescriptor.macAddress_;
