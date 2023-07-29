@@ -1443,6 +1443,9 @@ void AudioPolicyServer::OnSessionRemoved(const uint32_t sessionID)
 {
     uint32_t removedSessionID = sessionID;
 
+    auto uid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("kwtest uid = %{public}u", uid);
+
     auto isSessionPresent = [&removedSessionID] (const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
         return audioFocusInfo.first.sessionID == removedSessionID;
     };
