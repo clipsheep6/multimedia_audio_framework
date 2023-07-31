@@ -29,6 +29,7 @@ public:
     DISALLOW_COPY_AND_MOVE(AudioManagerListenerProxy);
     void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) override;
+    void OnCapturerState(bool isActive) override;
     void OnWakeupClose() override;
 
 private:
