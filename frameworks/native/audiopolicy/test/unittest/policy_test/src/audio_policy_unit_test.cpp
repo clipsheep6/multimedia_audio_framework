@@ -33,6 +33,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 const int32_t FAILURE = -1;
+const bool FAIL = false;
 void AudioPolicyUnitTest::SetUpTestCase(void) {}
 void AudioPolicyUnitTest::TearDownTestCase(void) {}
 void AudioPolicyUnitTest::SetUp(void) {}
@@ -108,6 +109,25 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicrophoneMuteAudioConfig_001, TestS
     bool isMute = true;
     int32_t ret = audioPolicyProxy->SetMicrophoneMuteAudioConfig(isMute);
     EXPECT_EQ(FAILURE, ret);
+}
+
+/**
+* @tc.name  : Test Audio_Policy_VerifyClientIntelligentPermission_001 via illegal input
+* @tc.number: Audio_Policy_VerifyClientIntelligentPermission_001
+* @tc.desc  : Test VerifyClientIntelligentPermission interface. Returns fail.
+*/
+HWTEST(AudioPolicyUnitTest, Audio_Policy_VerifyClientIntelligentPermission_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+
+    uint32_t appTokenId = 0;
+    int32_t appUid = 0;
+    bool privacyFlag = false;
+    bool ret = audioPolicyProxy->VerifyClientIntelligentPermission(appTokenId, appUid, privacyFlag,
+    AudioPermissionState::AUDIO_PERMISSION_START);
+    EXPECT_EQ(FAIL, ret);
 }
 
 #ifdef FEATURE_DTMF_TONE

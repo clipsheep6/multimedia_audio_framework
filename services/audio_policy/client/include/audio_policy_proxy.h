@@ -130,6 +130,9 @@ public:
     bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
         AudioPermissionState state) override;
 
+    bool VerifyClientIntelligentPermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+        AudioPermissionState state) override;
+
     bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
         AudioPermissionState state) override;
 

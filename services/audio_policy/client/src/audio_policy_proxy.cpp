@@ -1360,6 +1360,34 @@ bool AudioPolicyProxy::VerifyClientMicrophonePermission(uint32_t appTokenId, int
     return reply.ReadBool();
 }
 
+bool AudioPolicyProxy::VerifyClientIntelligentPermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+    AudioPermissionState state)
+{
+    AUDIO_DEBUG_LOG("VerifyClientIntelligentPermission: [tid : %{public}d]", appTokenId);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("VerifyClientIntelligentPermission: WriteInterfaceToken failed");
+        return false;
+    }
+
+    data.WriteUint32(appTokenId);
+    data.WriteInt32(appUid);
+    data.WriteBool(privacyFlag);
+    data.WriteInt32(state);
+
+    int result = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_INTELLIGENT_PERMISSION), data, reply, option);
+    if (result != ERR_NONE) {
+        AUDIO_ERR_LOG("VerifyClientIntelligentPermission failed, result: %{public}d", result);
+        return false;
+    }
+
+    return reply.ReadBool();
+}
+
 bool AudioPolicyProxy::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
     AudioPermissionState state)
 {

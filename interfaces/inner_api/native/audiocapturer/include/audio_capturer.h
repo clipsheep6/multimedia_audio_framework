@@ -523,6 +523,7 @@ public:
 
 protected:
     static AudioStreamType FindStreamTypeBySourceType(SourceType sourceType);
+    static bool VerifyClientIntelligentPermission(const AudioCapturerOptions &capturerOptions, const AppInfo &appInfo);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

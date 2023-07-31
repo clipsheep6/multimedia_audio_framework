@@ -68,12 +68,11 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         return nullptr;
     }
     if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
-        if (AudioPolicyManager::GetInstance().SetWakeUpAudioCapturer(capturerOptions) != SUCCESS) {
-            AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error!");
+        if (!VerifyClientIntelligentPermission(capturerOptions, appInfo)) {
+            AUDIO_ERR_LOG("VerifyClientIntelligentPermission Error");
             return nullptr;
         }
     }
-
     AudioStreamType audioStreamType = FindStreamTypeBySourceType(sourceType);
 
     AudioCapturerParams params;
@@ -436,6 +435,12 @@ bool AudioCapturerPrivate::Release()
     this->GetCapturerInfo(currertCapturer);
     SourceType sourceType = currertCapturer.sourceType;
     if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
+        if (!AudioPolicyManager::GetInstance().VerifyClientIntelligentPermission(appInfo_.appTokenId, appInfo_.appUid,
+            false, AUDIO_PERMISSION_START)) {
+            AUDIO_ERR_LOG("MANAGE_INTELLTGENT_VOICE permission denied for %{public}d", appInfo_.appTokenId);
+            return false;
+        }
+
         bool ret = AudioPolicyManager::GetInstance().CloseWakeUpAudioCapturer();
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("can not destory wakeup config");
@@ -615,6 +620,29 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
         default:
             return STREAM_MUSIC;
     }
+}
+
+bool AudioCapturer::VerifyClientIntelligentPermission(const AudioCapturerOptions &capturerOptions,
+    const AppInfo &appInfo)
+{
+    AppInfo currAppInfo = {};
+    currAppInfo = appInfo;
+    if (!(currAppInfo.appPid)) {
+        currAppInfo.appPid = getpid();
+    }
+    if (currAppInfo.appUid < 0) {
+        currAppInfo.appUid = static_cast<int32_t>(getuid());
+    }
+    if (!AudioPolicyManager::GetInstance().VerifyClientIntelligentPermission(currAppInfo.appTokenId,
+        currAppInfo.appUid, false, AUDIO_PERMISSION_START)) {
+        AUDIO_ERR_LOG("VerifyClientIntelligentPermission %{public}d", currAppInfo.appTokenId);
+        return false;
+    }
+    if (!AudioPolicyManager::GetInstance().SetWakeUpAudioCapturer(capturerOptions) != SUCCESS) {
+        AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error!");
+        return false;
+    }
+    return true;
 }
 
 int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode) const
