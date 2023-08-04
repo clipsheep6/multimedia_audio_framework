@@ -31,5 +31,5 @@ ohos_unittest("multiple_audio_capturer_unit_test") {
 
   deps = [ "../../../../audiocapturer:audio_capturer" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 }
