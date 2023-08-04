@@ -27,7 +27,11 @@ ohos_unittest("multiple_audio_capturer_unit_test") {
     "-Werror",
   ]
 
-  sources = [ "src/multiple_audio_capturer_unit_test.cpp" ]
+  sources = [
+      "src/multiple_audio_capturer_unit_test.cpp",
+      "src/multiple_audio_capturer_with_wakeup_unit_test.cpp",
+      "src/multiple_audio_capturer_with_playbackcap_unit_test.cpp"
+  ]
 
   deps = [ "../../../../audiocapturer:audio_capturer" ]
 
