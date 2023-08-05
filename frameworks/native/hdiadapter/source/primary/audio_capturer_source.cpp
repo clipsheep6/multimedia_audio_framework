@@ -191,7 +191,7 @@ void AudioCapturerSourceInner::DeInit()
 
     IAudioSourceCallback* callback = nullptr;
     {
-        std::lock_guard<std::mutex> lck(wakeupClosecallbackMutex_);
+        std::lock_guard<std::mutex> lck{wakeupClosecallbackMutex_};
         callback = wakeupCloseCallback_;
     }
     if (callback != nullptr) {
@@ -420,7 +420,7 @@ int32_t AudioCapturerSourceInner::Start(void)
     if (!started_) {
         IAudioSourceCallback* callback = nullptr;
         {
-            std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
+            std::lock_guard<std::mutex> lck{audioCapturerSourceCallbackMutex_};
             callback = audioCapturerSourceCallback_;
         }
         if (callback != nullptr) {
@@ -683,7 +683,7 @@ int32_t AudioCapturerSourceInner::Stop(void)
 
     IAudioSourceCallback* callback = nullptr;
     {
-        std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
+        std::lock_guard<std::mutex> lck{audioCapturerSourceCallbackMutex_};
         callback = audioCapturerSourceCallback_;
     }
     if (callback != nullptr) {
@@ -744,14 +744,14 @@ int32_t AudioCapturerSourceInner::Flush(void)
 void AudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
 {
     AUDIO_INFO_LOG("Register WakeupClose Callback");
-    std::lock_guard<std::mutex> lck(wakeupClosecallbackMutex_);
+    std::lock_guard<std::mutex> lck{wakeupClosecallbackMutex_};
     wakeupCloseCallback_ = callback;
 }
 
 void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
 {
     AUDIO_INFO_LOG("Register AudioCapturerSource Callback");
-    std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
+    std::lock_guard<std::mutex> lck{audioCapturerSourceCallbackMutex_};
     audioCapturerSourceCallback_ = callback;
 }
 
