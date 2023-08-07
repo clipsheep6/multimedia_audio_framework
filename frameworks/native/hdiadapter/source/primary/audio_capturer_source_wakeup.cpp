@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,191 +30,30 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioCapturerSourceInner : public AudioCapturerSource {
-public:
-    int32_t Init(IAudioSourceAttr &attr) override;
-    bool IsInited(void) override;
-    void DeInit(void) override;
-
-    int32_t Start(void) override;
-    int32_t Stop(void) override;
-    int32_t Flush(void) override;
-    int32_t Reset(void) override;
-    int32_t Pause(void) override;
-    int32_t Resume(void) override;
-    int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
-    int32_t SetVolume(float left, float right) override;
-    int32_t GetVolume(float &left, float &right) override;
-    int32_t SetMute(bool isMute) override;
-    int32_t GetMute(bool &isMute) override;
-
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-
-    int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
-
-    int32_t SetInputRoute(DeviceType inputDevice) override;
-    uint64_t GetTransactionId() override;
-
-    void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
-
-    AudioCapturerSourceInner();
-    ~AudioCapturerSourceInner();
-
-private:
-    static constexpr int32_t HALF_FACTOR = 2;
-    static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
-    static constexpr float MAX_VOLUME_LEVEL = 15.0f;
-    static constexpr uint32_t PRIMARY_INPUT_STREAM_ID = 14; // 14 + 0 * 8
-
-    int32_t CreateCapture(struct AudioPort &capturePort);
-    int32_t InitAudioManager();
-    void InitAttrsCapture(struct AudioSampleAttributes &attrs);
-    void OpenDumpFile();
-
-    IAudioSourceAttr attr_;
-    bool capturerInited_;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
-
-    int32_t routeHandle_ = -1;
-    uint32_t openMic_;
-    uint32_t captureId_ = 0;
-    std::string adapterNameCase_;
-    struct IAudioManager *audioManager_;
-    struct IAudioAdapter *audioAdapter_;
-    struct IAudioCapture *audioCapture_;
-    struct AudioAdapterDescriptor adapterDesc_;
-    struct AudioPort audioPort;
-
-    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
-
-    IAudioSourceCallback* wakeupCloseCallback_ = nullptr;
-    std::mutex wakeupClosecallbackMutex_;
-
-    IAudioSourceCallback* audioCapturerSourceCallback_ = nullptr;
-    std::mutex audioCapturerSourceCallbackMutex_;
-#ifdef CAPTURE_DUMP
-    FILE *pfd_;
-#endif
-};
-
-class AudioCapturerSourceWakeup : public AudioCapturerSource {
-public:
-    int32_t Init(IAudioSourceAttr &attr) override;
-    bool IsInited(void) override;
-    void DeInit(void) override;
-
-    int32_t Start(void) override;
-    int32_t Stop(void) override;
-    int32_t Flush(void) override;
-    int32_t Reset(void) override;
-    int32_t Pause(void) override;
-    int32_t Resume(void) override;
-    int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
-    int32_t SetVolume(float left, float right) override;
-    int32_t GetVolume(float &left, float &right) override;
-    int32_t SetMute(bool isMute) override;
-    int32_t GetMute(bool &isMute) override;
-
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-
-    int32_t SetInputRoute(DeviceType inputDevice) override;
-    uint64_t GetTransactionId() override;
-
-    void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
-
-    AudioCapturerSourceWakeup() = default;
-    ~AudioCapturerSourceWakeup() = default;
-
-private:
-    static inline AudioCapturerSourceInner audioCapturerSource_;
-};
-
-#ifdef CAPTURE_DUMP
-const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/dump_audiosource.pcm";
-#endif // CAPTURE_DUMP
-bool AudioCapturerSource::micMuteState_ = false;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 
-AudioCapturerSourceInner::AudioCapturerSourceInner()
+AudioCapturerSourceWakeup::AudioCapturerSourceWakeup()
     : capturerInited_(false), started_(false), paused_(false), leftVolume_(MAX_VOLUME_LEVEL),
       rightVolume_(MAX_VOLUME_LEVEL), openMic_(0), audioManager_(nullptr), audioAdapter_(nullptr),
       audioCapture_(nullptr)
 {
     attr_ = {};
 #ifdef CAPTURE_DUMP
-    pfd_ = nullptr;
+    pfd = nullptr;
 #endif // CAPTURE_DUMP
 }
 
-AudioCapturerSourceInner::~AudioCapturerSourceInner()
+AudioCapturerSourceWakeup::~AudioCapturerSourceWakeup()
 {
-    AUDIO_ERR_LOG("~AudioCapturerSourceInner");
+    AUDIO_ERR_LOG("~AudioCapturerSourceWakeup");
 }
 
-AudioCapturerSource *AudioCapturerSource::GetInstance(const SourceType sourceType)
-{
-    switch (sourceType) {
-        case SourceType::SOURCE_TYPE_MIC:
-            return GetMicInstance();
-        case SourceType::SOURCE_TYPE_WAKEUP:
-            return GetWakeupInstance();
-        default:
-            AUDIO_ERR_LOG("sourceType error %{public}d", sourceType);
-            return GetMicInstance();
-    }
-}
-
-static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceType)
-{
-    enum AudioInputType hdiAudioInputType;
-    switch (currSourceType) {
-        case SOURCE_TYPE_INVALID:
-            hdiAudioInputType = AUDIO_INPUT_DEFAULT_TYPE;
-            break;
-        case SOURCE_TYPE_MIC:
-        case SOURCE_TYPE_PLAYBACK_CAPTURE:
-        case SOURCE_TYPE_ULTRASONIC:
-            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-        case SOURCE_TYPE_WAKEUP:
-            hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_COMMUNICATION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_RECOGNITION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
-            break;
-        default:
-            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-    }
-    return hdiAudioInputType;
-}
-
-AudioCapturerSource *AudioCapturerSource::GetMicInstance()
-{
-    static AudioCapturerSourceInner audioCapturer;
-    return &audioCapturer;
-}
-
-AudioCapturerSource *AudioCapturerSource::GetWakeupInstance()
-{
-    static AudioCapturerSourceWakeup audioCapturer;
-    return &audioCapturer;
-}
-
-bool AudioCapturerSourceInner::IsInited(void)
+bool AudioCapturerSourceWakeup::IsInited(void)
 {
     return capturerInited_;
 }
 
-void AudioCapturerSourceInner::DeInit()
+void AudioCapturerSourceWakeup::DeInit()
 {
     started_ = false;
     capturerInited_ = false;
@@ -225,8 +64,8 @@ void AudioCapturerSourceInner::DeInit()
 
     IAudioSourceCallback* callback = nullptr;
     {
-        std::lock_guard<std::mutex> lck(wakeupClosecallbackMutex_);
-        callback = wakeupCloseCallback_;
+        std::lock_guard<std::mutex> lck(callbackMutex_);
+        callback = callback_;
     }
     if (callback != nullptr) {
         callback->OnWakeupClose();
@@ -240,9 +79,9 @@ void AudioCapturerSourceInner::DeInit()
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
 #ifdef CAPTURE_DUMP
-    if (pfd_) {
-        fclose(pfd_);
-        pfd_ = nullptr;
+    if (pfd) {
+        fclose(pfd);
+        pfd = nullptr;
     }
 #endif // CAPTURE_DUMP
 }
@@ -254,7 +93,7 @@ static void InitAttrsCapture(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = PRIMARY_INPUT_STREAM_ID;
+    attrs.streamId = INTERNAL_INPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
@@ -294,9 +133,9 @@ static int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32
     return ERR_INVALID_INDEX;
 }
 
-int32_t AudioCapturerSourceInner::InitAudioManager()
+int32_t AudioCapturerSourceWakeup::InitAudioManager()
 {
-    AUDIO_INFO_LOG("Initialize audio proxy manager");
+    AUDIO_INFO_LOG("AudioCapturerSourceWakeup: Initialize audio proxy manager");
 
     audioManager_ = IAudioManagerGet(false);
     if (audioManager_ == nullptr) {
@@ -306,7 +145,7 @@ int32_t AudioCapturerSourceInner::InitAudioManager()
     return 0;
 }
 
-int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
+int32_t AudioCapturerSourceWakeup::CreateCapture(struct AudioPort &capturePort)
 {
     int32_t ret;
     struct AudioSampleAttributes param;
@@ -319,7 +158,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
     param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
-    param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
+    param.sourceType = attr_.sourceType;
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
@@ -336,7 +175,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     return 0;
 }
 
-int32_t AudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
+int32_t AudioCapturerSourceWakeup::Init(IAudioSourceAttr &attr)
 {
     if (InitAudioManager() != 0) {
         AUDIO_ERR_LOG("Init audio manager Fail");
@@ -379,7 +218,7 @@ int32_t AudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
     if (openMic_) {
         ret = SetInputRoute(DEVICE_TYPE_MIC);
         if (ret < 0) {
-            AUDIO_ERR_LOG("update route FAILED: %{public}d", ret);
+            AUDIO_ERR_LOG("AudioCapturerSourceWakeup:update route FAILED: %{public}d", ret);
         }
     }
     capturerInited_ = true;
@@ -388,17 +227,17 @@ int32_t AudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
     return SUCCESS;
 }
 
-void AudioCapturerSourceInner::OpenDumpFile()
+void AudioCapturerSourceWakeup::OpenDumpFile()
 {
 #ifdef CAPTURE_DUMP
-    pfd_ = fopen(g_audioOutTestFilePath, "wb+");
-    if (pfd_ == nullptr) {
+    pfd = fopen(g_audioOutTestFilePath, "wb+");
+    if (pfd == nullptr) {
         AUDIO_ERR_LOG("Error opening pcm test file!");
     }
 #endif // CAPTURE_DUMP
 }
 
-int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
+int32_t AudioCapturerSourceWakeup::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
@@ -415,8 +254,8 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     }
 
 #ifdef CAPTURE_DUMP
-    if (pfd_) {
-        size_t writeResult = fwrite(frame, 1, replyBytes, pfd_);
+    if (pfd) {
+        size_t writeResult = fwrite(frame, 1, replyBytes, pfd);
         if (writeResult != replyBytes) {
             AUDIO_ERR_LOG("Failed to write the file.");
         }
@@ -428,39 +267,30 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::Start(void)
+int32_t AudioCapturerSourceWakeup::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
-    if (keepRunningLock_ == nullptr) {
+    if (mKeepRunningLock == nullptr) {
         switch (attr_.sourceType) {
             case SOURCE_TYPE_WAKEUP:
-                keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioWakeupCapturer",
+                mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioWakeupCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
                 break;
             case SOURCE_TYPE_MIC:
             default:
-                keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
+                mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
         }
     }
-    if (keepRunningLock_ != nullptr) {
-        AUDIO_INFO_LOG("AudioCapturerSourceInner call KeepRunningLock lock");
-        keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("AudioCapturerSourceWakeup call KeepRunningLock lock");
+        mKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
-        AUDIO_ERR_LOG("keepRunningLock_ is null, start can not work well!");
+        AUDIO_ERR_LOG("mKeepRunningLock is null, start can not work well!");
     }
 
     int32_t ret;
     if (!started_) {
-        IAudioSourceCallback* callback = nullptr;
-        {
-            std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
-            callback = audioCapturerSourceCallback_;
-        }
-        if (callback != nullptr) {
-            callback->OnCapturerState(true);
-        }
-
         ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
             return ERR_NOT_STARTED;
@@ -471,11 +301,11 @@ int32_t AudioCapturerSourceInner::Start(void)
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::SetVolume(float left, float right)
+int32_t AudioCapturerSourceWakeup::SetVolume(float left, float right)
 {
     float volume;
     if (audioCapture_ == nullptr) {
-        AUDIO_ERR_LOG("SetVolume failed audioCapture_ null");
+        AUDIO_ERR_LOG("AudioCapturerSourceWakeup::SetVolume failed audioCapture_ null");
         return ERR_INVALID_HANDLE;
     }
 
@@ -494,7 +324,7 @@ int32_t AudioCapturerSourceInner::SetVolume(float left, float right)
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::GetVolume(float &left, float &right)
+int32_t AudioCapturerSourceWakeup::GetVolume(float &left, float &right)
 {
     float val = 0.0;
     audioCapture_->GetVolume(audioCapture_, &val);
@@ -504,23 +334,23 @@ int32_t AudioCapturerSourceInner::GetVolume(float &left, float &right)
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::SetMute(bool isMute)
+int32_t AudioCapturerSourceWakeup::SetMute(bool isMute)
 {
     int32_t ret;
     if (audioCapture_ == nullptr) {
-        AUDIO_ERR_LOG("SetMute failed audioCapture_ handle is null!");
+        AUDIO_ERR_LOG("AudioCapturerSourceWakeup::SetMute failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
     }
 
     ret = audioCapture_->SetMute(audioCapture_, isMute);
     if (ret != 0) {
-        AUDIO_ERR_LOG("SetMute failed from hdi");
+        AUDIO_ERR_LOG("AudioCapturerSourceWakeup::SetMute failed from hdi");
     }
 
     if (audioAdapter_ != nullptr) {
         ret = audioAdapter_->SetMicMute(audioAdapter_, isMute);
         if (ret != 0) {
-            AUDIO_ERR_LOG("SetMicMute failed from hdi");
+            AUDIO_ERR_LOG("AudioCapturerSourceWakeup::SetMicMute failed from hdi");
         }
     }
 
@@ -529,18 +359,18 @@ int32_t AudioCapturerSourceInner::SetMute(bool isMute)
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::GetMute(bool &isMute)
+int32_t AudioCapturerSourceWakeup::GetMute(bool &isMute)
 {
     int32_t ret;
     if (audioCapture_ == nullptr) {
-        AUDIO_ERR_LOG("GetMute failed audioCapture_ handle is null!");
+        AUDIO_ERR_LOG("AudioCapturerSourceWakeup::GetMute failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
     }
 
     bool isHdiMute = false;
     ret = audioCapture_->GetMute(audioCapture_, &isHdiMute);
     if (ret != 0) {
-        AUDIO_ERR_LOG("GetMute failed from hdi");
+        AUDIO_ERR_LOG("AudioCapturerSourceWakeup::GetMute failed from hdi");
     }
 
     isMute = AudioCapturerSource::micMuteState_;
@@ -568,7 +398,7 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
             audioCategory = AUDIO_IN_MEDIA;
             break;
     }
-    AUDIO_DEBUG_LOG("Audio category returned is: %{public}d", audioCategory);
+    AUDIO_DEBUG_LOG("AudioCapturerSourceWakeup: Audio category returned is: %{public}d", audioCategory);
 
     return audioCategory;
 }
@@ -604,25 +434,25 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
     return ret;
 }
 
-int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
+int32_t AudioCapturerSourceWakeup::SetInputRoute(DeviceType inputDevice)
 {
     AudioPortPin inputPortPin = PIN_IN_MIC;
     return SetInputRoute(inputDevice, inputPortPin);
 }
 
-int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin)
+int32_t AudioCapturerSourceWakeup::SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin)
 {
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
 
     int32_t ret = SetInputPortPin(inputDevice, source);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("SetOutputRoute FAILED: %{public}d", ret);
+        AUDIO_ERR_LOG("AudioCapturerSourceWakeup: SetOutputRoute FAILED: %{public}d", ret);
         return ret;
     }
 
     inputPortPin = source.ext.device.type;
-    AUDIO_INFO_LOG("Input PIN is: 0x%{public}X", inputPortPin);
+    AUDIO_INFO_LOG("AudioCapturerSourceWakeup: Input PIN is: 0x%{public}X", inputPortPin);
     source.portId = static_cast<int32_t>(audioPort.portId);
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_DEVICE_TYPE;
@@ -633,7 +463,7 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = PRIMARY_INPUT_STREAM_ID;
+    sink.ext.mix.streamId = INTERNAL_INPUT_STREAM_ID;
     sink.ext.device.desc = (char *)"";
 
     AudioRoute route = {
@@ -644,34 +474,34 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
     };
 
     if (audioAdapter_ == nullptr) {
-        AUDIO_ERR_LOG("AudioAdapter object is null.");
+        AUDIO_ERR_LOG("AudioCapturerSourceWakeup: AudioAdapter object is null.");
         return ERR_OPERATION_FAILED;
     }
 
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     if (ret != 0) {
-        AUDIO_ERR_LOG("UpdateAudioRoute failed");
+        AUDIO_ERR_LOG("AudioCapturerSourceWakeup: UpdateAudioRoute failed");
         return ERR_OPERATION_FAILED;
     }
 
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioCapturerSourceWakeup::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
-    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
+    AUDIO_INFO_LOG("AudioCapturerSourceWakeup::SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
         ERR_INVALID_PARAM, "invalid audioScene");
     if (audioCapture_ == nullptr) {
-        AUDIO_ERR_LOG("SetAudioScene failed audioCapture_ handle is null!");
+        AUDIO_ERR_LOG("AudioCapturerSourceWakeup::SetAudioScene failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
     }
     if (openMic_) {
         AudioPortPin audioSceneInPort = PIN_IN_MIC;
         int32_t ret = SetInputRoute(activeDevice, audioSceneInPort);
         if (ret < 0) {
-            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
+            AUDIO_ERR_LOG("AudioCapturerSourceWakeup: Update route FAILED: %{public}d", ret);
         }
         struct AudioSceneDescriptor scene;
         scene.scene.id = GetAudioCategory(audioScene);
@@ -680,29 +510,29 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
 
         ret = audioCapture_->SelectScene(audioCapture_, &scene);
         if (ret < 0) {
-            AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
+            AUDIO_ERR_LOG("AudioCapturerSourceWakeup: Select scene FAILED: %{public}d", ret);
             return ERR_OPERATION_FAILED;
         }
     }
-    AUDIO_DEBUG_LOG("Select audio scene SUCCESS: %{public}d", audioScene);
+    AUDIO_INFO_LOG("AudioCapturerSourceWakeup::Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
 }
 
-uint64_t AudioCapturerSourceInner::GetTransactionId()
+uint64_t AudioCapturerSourceWakeup::GetTransactionId()
 {
-    AUDIO_INFO_LOG("GetTransactionId in");
+    AUDIO_INFO_LOG("AudioCapturerSourceWakeup::GetTransactionId in");
     return reinterpret_cast<uint64_t>(audioCapture_);
 }
 
-int32_t AudioCapturerSourceInner::Stop(void)
+int32_t AudioCapturerSourceWakeup::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
 
-    if (keepRunningLock_ != nullptr) {
-        AUDIO_INFO_LOG("AudioCapturerSourceInner call KeepRunningLock UnLock");
-        keepRunningLock_->UnLock();
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("AudioCapturerSourceWakeup call KeepRunningLock UnLock");
+        mKeepRunningLock->UnLock();
     } else {
-        AUDIO_ERR_LOG("keepRunningLock_ is null, stop can not work well!");
+        AUDIO_ERR_LOG("mKeepRunningLock is null, stop can not work well!");
     }
 
     int32_t ret;
@@ -715,19 +545,10 @@ int32_t AudioCapturerSourceInner::Stop(void)
     }
     started_ = false;
 
-    IAudioSourceCallback* callback = nullptr;
-    {
-        std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
-        callback = audioCapturerSourceCallback_;
-    }
-    if (callback != nullptr) {
-        callback->OnCapturerState(false);
-    }
-
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::Pause(void)
+int32_t AudioCapturerSourceWakeup::Pause(void)
 {
     int32_t ret;
     if (started_ && audioCapture_ != nullptr) {
@@ -742,7 +563,7 @@ int32_t AudioCapturerSourceInner::Pause(void)
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::Resume(void)
+int32_t AudioCapturerSourceWakeup::Resume(void)
 {
     int32_t ret;
     if (paused_ && audioCapture_ != nullptr) {
@@ -757,131 +578,29 @@ int32_t AudioCapturerSourceInner::Resume(void)
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::Reset(void)
+int32_t AudioCapturerSourceWakeup::Reset(void)
 {
     if (started_ && audioCapture_ != nullptr) {
         audioCapture_->Flush(audioCapture_);
     }
 
     return SUCCESS;
-}
-
-int32_t AudioCapturerSourceInner::Flush(void)
-{
-    if (started_ && audioCapture_ != nullptr) {
-        audioCapture_->Flush(audioCapture_);
-    }
-
-    return SUCCESS;
-}
-
-void AudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
-{
-    AUDIO_INFO_LOG("Register WakeupClose Callback");
-    std::lock_guard<std::mutex> lck(wakeupClosecallbackMutex_);
-    wakeupCloseCallback_ = callback;
-}
-
-void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
-{
-    AUDIO_INFO_LOG("Register AudioCapturerSource Callback");
-    std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
-    audioCapturerSourceCallback_ = callback;
-}
-
-int32_t AudioCapturerSourceWakeup::Init(IAudioSourceAttr &attr)
-{
-    return audioCapturerSource_.Init(attr);
-}
-
-bool AudioCapturerSourceWakeup::IsInited(void)
-{
-    return audioCapturerSource_.IsInited();
-}
-
-void AudioCapturerSourceWakeup::DeInit(void)
-{
-    audioCapturerSource_.DeInit();
-}
-
-int32_t AudioCapturerSourceWakeup::Start(void)
-{
-    return audioCapturerSource_.Start();
-}
-
-int32_t AudioCapturerSourceWakeup::Stop(void)
-{
-    return audioCapturerSource_.Stop();
 }
 
 int32_t AudioCapturerSourceWakeup::Flush(void)
 {
-    return audioCapturerSource_.Flush();
-}
+    if (started_ && audioCapture_ != nullptr) {
+        audioCapture_->Flush(audioCapture_);
+    }
 
-int32_t AudioCapturerSourceWakeup::Reset(void)
-{
-    return audioCapturerSource_.Reset();
-}
-
-int32_t AudioCapturerSourceWakeup::Pause(void)
-{
-    return audioCapturerSource_.Pause();
-}
-
-int32_t AudioCapturerSourceWakeup::Resume(void)
-{
-    return audioCapturerSource_.Resume();
-}
-
-int32_t AudioCapturerSourceWakeup::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
-{
-    return audioCapturerSource_.CaptureFrame(frame, requestBytes, replyBytes);
-}
-
-int32_t AudioCapturerSourceWakeup::SetVolume(float left, float right)
-{
-    return audioCapturerSource_.SetVolume(left, right);
-}
-
-int32_t AudioCapturerSourceWakeup::GetVolume(float &left, float &right)
-{
-    return audioCapturerSource_.GetVolume(left, right);
-}
-
-int32_t AudioCapturerSourceWakeup::SetMute(bool isMute)
-{
-    return audioCapturerSource_.SetMute(isMute);
-}
-
-int32_t AudioCapturerSourceWakeup::GetMute(bool &isMute)
-{
-    return audioCapturerSource_.GetMute(isMute);
-}
-
-int32_t AudioCapturerSourceWakeup::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
-{
-    return audioCapturerSource_.SetAudioScene(audioScene, activeDevice);
-}
-
-int32_t AudioCapturerSourceWakeup::SetInputRoute(DeviceType inputDevice)
-{
-    return audioCapturerSource_.SetInputRoute(inputDevice);
-}
-
-uint64_t AudioCapturerSourceWakeup::GetTransactionId()
-{
-    return audioCapturerSource_.GetTransactionId();
+    return SUCCESS;
 }
 
 void AudioCapturerSourceWakeup::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
 {
-    audioCapturerSource_.RegisterWakeupCloseCallback(callback);
-}
-
-void AudioCapturerSourceWakeup::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
-{
-    audioCapturerSource_.RegisterAudioCapturerSourceCallback(callback);
+    AUDIO_INFO_LOG("Register WakeupClose Callback");
+    std::lock_guard<std::mutex> lck(callbackMutex_);
+    callback_ = callback;
 }
 
 } // namespace AudioStandard
