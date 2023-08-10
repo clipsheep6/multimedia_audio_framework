@@ -513,6 +513,8 @@ public:
 
     void SetClientID(int32_t clientPid, int32_t clientUid) override;
 
+    void SetWakeupCapturerState(bool isWakeupCapturer) override;
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -552,6 +554,7 @@ private:
     bool isContextConnected;
     bool isStreamConnected;
     bool isInnerCapturerStream;
+    bool isWakeupCapturerStream_ = false;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 
