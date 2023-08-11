@@ -96,6 +96,7 @@ private:
     void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPreferInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void SetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);

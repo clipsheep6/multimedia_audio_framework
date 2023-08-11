@@ -679,6 +679,20 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferOutputDevic
     return deviceDescs;
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferInputDeviceDescriptors(
+    AudioCapturerInfo &captureInfo)
+{
+    AUDIO_INFO_LOG("HJF-TEST -------- AudioPolicyServer::GetPreferInputDeviceDescriptors");
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs =
+        mPolicyService.GetPreferInputDeviceDescriptors(captureInfo);
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
+    if (!hasBTPermission) {
+        mPolicyService.UpdateDescWhenNoBTPermission(deviceDescs);
+    }
+
+    return deviceDescs;
+}
+
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 {
     return mPolicyService.IsStreamActive(streamType);

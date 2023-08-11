@@ -257,6 +257,9 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(AudioRendererInfo &rendererInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferInputDeviceDescriptors(AudioCapturerInfo &captureInfo,
+        std::string networkId = LOCAL_NETWORK_ID);
+
     void GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig, std::vector<Effect>& availableEffects);
 
     float GetMinStreamVolume(void);

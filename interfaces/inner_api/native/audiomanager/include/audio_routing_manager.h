@@ -47,6 +47,8 @@ public:
     int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
     int32_t GetPreferOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
         std::vector<sptr<AudioDeviceDescriptor>> &desc);
+    int32_t GetPreferInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
+        std::vector<sptr<AudioDeviceDescriptor>> &desc);
     int32_t GetPreferOutputDeviceByFilter(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<DeviceType> &deviceTypes);
     int32_t SetPreferOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,

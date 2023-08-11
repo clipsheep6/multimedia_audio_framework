@@ -317,6 +317,20 @@ void AudioPolicyManagerStub::GetPreferOutputDeviceDescriptorsInternal(MessagePar
     }
 }
 
+void AudioPolicyManagerStub::GetPreferInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_INFO_LOG("HJF-TEST -------- AudioPolicyManagerStub::GetPreferInputDeviceDescriptorsInternal");
+    AUDIO_DEBUG_LOG("GET_PREFER_INTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
+    AudioCapturerInfo captureInfo;
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferInputDeviceDescriptors(captureInfo);
+    int32_t size = static_cast<int32_t>(devices.size());
+    AUDIO_DEBUG_LOG("GET_PREFER_INTPUT_DEVICE_DESCRIPTORS size= %{public}d", size);
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
+}
+
 void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
 {
     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
@@ -1295,6 +1309,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS):
             GetPreferOutputDeviceDescriptorsInternal(data, reply);
+            break;
+
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFER_INTPUT_DEVICE_DESCRIPTORS):
+            GetPreferInputDeviceDescriptorsInternal(data, reply);
             break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK):

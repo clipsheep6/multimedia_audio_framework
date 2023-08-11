@@ -193,6 +193,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(AudioRendererInfo &rendererInfo);
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferInputDeviceDescriptors(AudioCapturerInfo &captureInfo);
+
     int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioPreferOutputDeviceChangeCallback> &callback);
 

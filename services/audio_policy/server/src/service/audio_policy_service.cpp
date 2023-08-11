@@ -1070,6 +1070,36 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferOutputDevi
     return deviceList;
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferInputDeviceDescriptors(
+    AudioCapturerInfo &captureInfo, std::string networkId)
+{
+    AUDIO_INFO_LOG("HJF-TEST -------- AudioPolicyService::GetPreferInputDeviceDescriptors");
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+    for (const auto& device : connectedDevices_) {
+        if (device == nullptr) {
+            continue;
+        }
+        bool filterLocalOutput = ((currentActiveDevice_ == device->deviceType_)
+            && (device->networkId_ == LOCAL_NETWORK_ID)
+            && (device->deviceRole_ == DeviceRole::INPUT_DEVICE));
+        if (!isCurrentRemoteRenderer && filterLocalOutput && networkId == LOCAL_NETWORK_ID) {
+            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+            deviceList.push_back(devDesc);
+        }
+
+        bool filterRemoteOutput = ((device->networkId_ != networkId)
+            && (device->deviceRole_ == DeviceRole::INPUT_DEVICE));
+        if (isCurrentRemoteRenderer && filterRemoteOutput) {
+            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+            deviceList.push_back(devDesc);
+        }
+    }
+
+    return deviceList;
+}
+
 DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = true)
 {
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
