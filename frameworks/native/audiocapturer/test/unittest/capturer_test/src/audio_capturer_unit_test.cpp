@@ -614,6 +614,32 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_022, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test Create API - Creating a Voice Wakeup Capturer.
+* @tc.number: Audio_Capturer_Create_023
+* @tc.desc  : Test Create interface with AudioCapturerOptions below.
+*             Returns audioCapturer instance, if create is successful.
+*             capturerOptions.streamInfo.samplingRate = SAMPLE_RATE_16000;
+*             capturerOptions.streamInfo.encoding = ENCODING_PCM;
+*             capturerOptions.streamInfo.format = SAMPLE_S32LE;
+*             capturerOptions.streamInfo.channels = MONO;
+*             capturerOptions.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
+*             capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_023, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_WAKEUP;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    EXPECT_EQ(nullptr, audioCapturer);
+}
+
+/**
 * @tc.name  : Test SetParams API via legal input
 * @tc.number: Audio_Capturer_SetParams_001
 * @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.

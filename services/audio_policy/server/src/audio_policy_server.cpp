@@ -1660,7 +1660,7 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
     if (!isRecording) {
         // root user case for auto test
         uid_t callingUid = IPCSkeleton::GetCallingUid();
-        if (callingUid == UID_ROOT) {
+        if (callingUid == UID_ROOT && permissionName != MANAGE_INTELLIGENT_VOICE_PERMISSION) {
             return true;
         }
 
