@@ -23,6 +23,8 @@ namespace AudioStandard {
 void AudioCapturerProxyObj::SaveCapturerObj(const AudioCapturer *capturerObj)
 {
     capturer = capturerObj;
+    // ****
+    //  ((((()))))
 }
 
 
