@@ -513,6 +513,8 @@ public:
 
     void SetClientID(int32_t clientPid, int32_t clientUid) override;
 
+    void SetWakeupCapturerState(bool isWakeupCapturer) override;
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -529,8 +531,8 @@ private:
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
 
-    std::mutex dataMutex;
-    std::condition_variable dataCv;
+    std::mutex dataMutex_;
+    std::condition_variable dataCv_;
     std::mutex ctrlMutex;
     std::mutex capturerMarkReachedMutex_;
     std::mutex capturerPeriodReachedMutex_;
@@ -552,6 +554,7 @@ private:
     bool isContextConnected;
     bool isStreamConnected;
     bool isInnerCapturerStream;
+    bool isWakeupCapturerStream_ = false;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 

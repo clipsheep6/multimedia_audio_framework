@@ -166,11 +166,7 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     AUDIO_INFO_LOG("AudioCapturer::SetParams");
-    AudioStreamParams audioStreamParams;
-    audioStreamParams.format = params.audioSampleFormat;
-    audioStreamParams.samplingRate = params.samplingRate;
-    audioStreamParams.channels = params.audioChannel;
-    audioStreamParams.encoding = params.audioEncoding;
+    AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     if (capturerInfo_.capturerFlags == STREAM_FLAG_FAST) {
@@ -200,6 +196,10 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         audioStream_->SetInnerCapturerState(true);
+    }
+
+    if (capturerInfo_.sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
+        audioStream_->SetWakeupCapturerState(true);
     }
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
@@ -434,15 +434,6 @@ bool AudioCapturerPrivate::Release()
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
-    AudioCapturerInfo currertCapturer;
-    this->GetCapturerInfo(currertCapturer);
-    SourceType sourceType = currertCapturer.sourceType;
-    if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
-        int32_t ret = AudioPolicyManager::GetInstance().CloseWakeUpAudioCapturer();
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("CloseWakeUpAudioCapturer Error! ErrorCode: %{public}d", ret);
-        }
-    }
     return audioStream_->ReleaseAudioStream();
 }
 
