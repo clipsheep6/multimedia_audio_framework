@@ -1521,7 +1521,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
     acache.readIndex += acache.totalCacheSize;
     acache.isFull = false;
 
-    if (!error && (length >= 0) && !acache.isFull) {
+    if (!error) {
         uint8_t *cacheBuffer = acache.buffer.get();
         uint32_t offset = acache.readIndex;
         if (acache.writeIndex > acache.readIndex) {
