@@ -193,10 +193,17 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(AudioRendererInfo &rendererInfo);
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo);
+
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
 
+    int32_t SetPreferredInputDeviceChangeCallback(
+        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
+
     int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId);
+
+    int32_t UnsetPreferredInputDeviceChangeCallback();
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
 
@@ -252,6 +259,7 @@ private:
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
+    bool rendererStateChangeRegistered = false;
 };
 } // namespce AudioStandard
 } // namespace OHOS

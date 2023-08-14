@@ -192,7 +192,12 @@ public:
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
         bool hasBTPermission);
 
+    int32_t SetPreferredInputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
+        bool hasBTPermission);
+
     int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId);
+
+    int32_t UnsetPreferredInputDeviceChangeCallback(const int32_t clientId);
 
     int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSysPermission);
@@ -255,6 +260,9 @@ public:
     void SubscribeAccessibilityConfigObserver();
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(AudioRendererInfo &rendererInfo,
+        std::string networkId = LOCAL_NETWORK_ID);
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
     void GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig, std::vector<Effect>& availableEffects);
@@ -322,7 +330,7 @@ private:
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
 
-    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t sourceType, int wakeupNo);
+    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo);
 
     AudioIOHandle GetSinkIOHandle(InternalDeviceType deviceType);
 
@@ -402,6 +410,10 @@ private:
 
     void OnPreferredOutputDeviceUpdated(DeviceType devType, std::string networkId);
 
+    void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
+
+    void OnPreferredDeviceUpdated(DeviceType activeOutputDevice, DeviceType activeInputDevice);
+
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
     void SetEarpieceState();
@@ -465,6 +477,7 @@ private:
     std::string localDevicesType_ = "";
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
+    std::mutex preferredInputMapMutex_;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     IAudioPolicyInterface& audioPolicyManager_;
     Parser& configParser_;
@@ -482,6 +495,7 @@ private:
 
     std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredOutputDeviceCbsMap_;
+    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredInputDeviceCbsMap_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
@@ -520,7 +534,6 @@ private:
 
     bool isMicrophoneMute_ = false;
 
-    static constexpr int WAKEUP_LIMIT = 2;
     int wakeupCount_ = 0;
     std::mutex wakeupCountMutex_;
 };

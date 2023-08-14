@@ -317,6 +317,18 @@ void AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal(Message
     }
 }
 
+void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioCapturerInfo captureInfo;
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredInputDeviceDescriptors(captureInfo);
+    size_t size = static_cast<int32_t>(devices.size());
+    AUDIO_DEBUG_LOG("GET_PREFERRED_INTPUT_DEVICE_DESCRIPTORS size= %{public}zu", size);
+    reply.WriteInt32(size);
+    for (size_t i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
+}
+
 void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
 {
     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
@@ -352,10 +364,21 @@ void AudioPolicyManagerStub::SetPreferredOutputDeviceChangeCallbackInternal(Mess
     int32_t clientId = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: object is null");
         return;
     }
     int32_t result = SetPreferredOutputDeviceChangeCallback(clientId, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("object is null");
+        return;
+    }
+    int32_t result = SetPreferredInputDeviceChangeCallback(object);
     reply.WriteInt32(result);
 }
 
@@ -363,6 +386,12 @@ void AudioPolicyManagerStub::UnsetPreferredOutputDeviceChangeCallbackInternal(Me
 {
     int32_t clientId = data.ReadInt32();
     int32_t result = UnsetPreferredOutputDeviceChangeCallback(clientId);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = UnsetPreferredInputDeviceChangeCallback();
     reply.WriteInt32(result);
 }
 
@@ -800,6 +829,7 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
         reply.WriteString(rendererChangeInfo->outputDeviceInfo.networkId);
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.interruptGroupId);
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.volumeGroupId);
+        reply.WriteBool(rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice);
     }
 
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Renderer change info internal exit");
@@ -844,6 +874,7 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
         reply.WriteString(capturerChangeInfo->inputDeviceInfo.networkId);
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.interruptGroupId);
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.volumeGroupId);
+        reply.WriteBool(capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice);
     }
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }
@@ -1300,12 +1331,24 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             GetPreferredOutputDeviceDescriptorsInternal(data, reply);
             break;
 
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INTPUT_DEVICE_DESCRIPTORS):
+            GetPreferredInputDeviceDescriptorsInternal(data, reply);
+            break;
+
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK):
             SetPreferredOutputDeviceChangeCallbackInternal(data, reply);
             break;
 
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ACTIVE_INPUT_DEVICE_CHANGE_CALLBACK):
+            SetPreferredInputDeviceChangeCallbackInternal(data, reply);
+            break;
+
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK):
             UnsetPreferredOutputDeviceChangeCallbackInternal(data, reply);
+            break;
+
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_ACTIVE_INPUT_DEVICE_CHANGE_CALLBACK):
+            UnsetPreferredInputDeviceChangeCallbackInternal(data, reply);
             break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_FOCUS_INFO_LIST):
