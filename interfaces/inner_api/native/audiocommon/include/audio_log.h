@@ -59,6 +59,14 @@
         }                                              \
     } while (0)
 
+#define CHECK_AND_RETURN_RET(cond, ret)                           \
+    do {                                                          \
+        if (!(cond)) {                                              \
+            AUDIO_ERR_LOG("%{public}s, check failed! ret = %{public}s", #cond, #ret); \
+            return ret;                                           \
+        }                                                         \
+    } while (0)
+
 #define CHECK_AND_RETURN_LOG(cond, fmt, ...)           \
     do {                                               \
         if (!(cond)) {                                 \
