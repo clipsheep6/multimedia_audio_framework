@@ -377,7 +377,7 @@ int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessagePa
         state = true;
     }
     int32_t ret = SetCaptureSilentState(state);
-    reply.WriteIn32(ret);
+    reply.WriteInt32(ret);
     return AUDIO_OK;
 }
 
