@@ -243,6 +243,17 @@ bool TonePlayerPrivate::StartTone()
 {
     AUDIO_INFO_LOG("STARTTONE tonePlayerState_ %{public}d", tonePlayerState_);
     bool retVal = false;
+    SetAudioDumpBySysParam();
+    if (enableDump_ && dumpFile_ == nullptr) {
+        std::string dumpFilePath = "/data/local/tmp/toneplayer_" +
+        std::to_string(dumpCount) + ".pcm";
+        dumpFile_ = fopen(dumpFilePath.c_str(), "wb+");
+        if (dumpFile_ == nullptr) {
+            AUDIO_ERR_LOG("Error opening dump file!");
+        } else {
+            dumpCount++;
+        }
+    }
     mutexLock_.lock();
     if (tonePlayerState_ == TONE_PLAYER_IDLE || tonePlayerState_ == TONE_PLAYER_INIT) {
         if (LoadEventStateHandler() == false) {
@@ -295,6 +306,10 @@ bool TonePlayerPrivate::StopTone()
         AUDIO_ERR_LOG("StopTone audioRenderer_ is null");
     }
     mutexLock_.unlock();
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
+    }
 #ifdef DUMPFILE
     if (pfd_) {
         fclose(pfd_);
@@ -587,6 +602,12 @@ void TonePlayerPrivate::AudioToneDataThreadFunc()
         AUDIO_INFO_LOG("Exiting the AudioToneDataThreadFunc: %{public}zu,tonePlayerState_: %{public}d",
             bufDesc.dataLength, tonePlayerState_);
         if (bufDesc.dataLength) {
+            if (dumpFile_) {
+                size_t writeResult = fwrite((void*)bufDesc.buffer, 1, bufDesc.dataLength, dumpFile_);
+                if (writeResult != bufDesc.dataLength) {
+                    AUDIO_ERR_LOG("Failed to write the file.");
+                }
+            }
 #ifdef DUMPFILE
             size_t writeResult = fwrite((void*)bufDesc.buffer, 1, bufDesc.dataLength, pfd_);
             if (writeResult != bufDesc.dataLength) {
@@ -677,6 +698,30 @@ int32_t TonePlayerPrivate::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t 
     }
     sampleCount_ += reqSamples;
     return 0;
+}
+
+void TonePlayerPrivate::SetAudioDumpBySysParam(void)
+{
+    std::string dumpEnable;
+    enableDump_ = false;
+    bool res = GetSysPara("sys.media.dump.audioframe.client.write.enable", dumpEnable);
+    if (!res || dumpEnable.empty()) {
+        AUDIO_INFO_LOG("sys.media.dump.audioframe.client.write.enable is not set, dump audio is not required");
+        if (dumpFile_) {
+            fclose(dumpFile_);
+            dumpFile_ = nullptr;
+        }
+        return;
+    }
+    AUDIO_INFO_LOG("sys.media.dump.audioframe.client.write.enable=%s", dumpEnable.c_str());
+    if (dumpEnable == "true") {
+        enableDump_ = true;
+        return;
+    }
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
+    }
 }
 } // end namespace AudioStandard
 } // end OHOS
