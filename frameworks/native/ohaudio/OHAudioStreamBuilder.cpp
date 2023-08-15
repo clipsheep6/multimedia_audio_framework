@@ -26,9 +26,9 @@ using OHOS::AudioStandard::AudioEncodingType;
 using OHOS::AudioStandard::ContentType;
 using OHOS::AudioStandard::SourceType;
 
+namespace {
 static const int32_t RENDERER_TYPE = 1;
 static const int32_t CAPTURER_TYPE = 2;
-
 
 static OHOS::AudioStandard::OHAudioStreamBuilder *convertBuilder(OH_AudioStreamBuilder* builder)
 {
@@ -150,6 +150,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder* build
         return AUDIOSTREAM_SUCCESS;
     }
     return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+}
 }
 
 namespace OHOS {
