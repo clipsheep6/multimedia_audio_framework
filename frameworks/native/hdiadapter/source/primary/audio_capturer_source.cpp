@@ -71,6 +71,7 @@ private:
     int32_t InitAudioManager();
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
     void OpenDumpFile();
+    void SetAudioDumpBySysParam();
 
     IAudioSourceAttr attr_;
     bool capturerInited_;
@@ -96,6 +97,9 @@ private:
 
     IAudioSourceCallback* audioCapturerSourceCallback_ = nullptr;
     std::mutex audioCapturerSourceCallbackMutex_;
+    bool enableDump_ = false;
+    FILE *dumpFile_ = nullptr;
+    uint32_t dumpCount = 0;
 #ifdef CAPTURE_DUMP
     FILE *pfd_;
 #endif
@@ -367,6 +371,10 @@ void AudioCapturerSourceInner::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
+    }
 #ifdef CAPTURE_DUMP
     if (pfd_) {
         fclose(pfd_);
@@ -542,6 +550,12 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
         return ERR_READ_FAILED;
     }
 
+    if (dumpFile_) {
+        size_t writeResult = fwrite(frame, 1, replyBytes, dumpFile_);
+        if (writeResult != replyBytes) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+    }
 #ifdef CAPTURE_DUMP
     if (pfd_) {
         size_t writeResult = fwrite(frame, 1, replyBytes, pfd_);
@@ -576,6 +590,18 @@ int32_t AudioCapturerSourceInner::Start(void)
         keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, start can not work well!");
+    }
+
+    SetAudioDumpBySysParam();
+    if (enableDump_ && dumpFile_ == nullptr) {
+        std::string dumpFilePath = "/data/data/.pulse_dir/dump_audiocapture_" +
+        std::to_string(dumpCount) + ".pcm";
+        dumpFile_ = fopen(dumpFilePath.c_str(), "wb+");
+        if (dumpFile_ == nullptr) {
+            AUDIO_ERR_LOG("Error opening dump file!");
+        } else {
+            dumpCount++;
+        }
     }
 
     int32_t ret;
@@ -1063,5 +1089,28 @@ void AudioCapturerSourceWakeup::RegisterAudioCapturerSourceCallback(IAudioSource
     audioCapturerSource_.RegisterAudioCapturerSourceCallback(callback);
 }
 
+void AudioCapturerSourceInner::SetAudioDumpBySysParam(void)
+{
+    std::string dumpEnable;
+    enableDump_ = false;
+    bool res = GetSysPara("sys.media.dump.audioframe.write.enable", dumpEnable);
+    if (!res || dumpEnable.empty()) {
+        AUDIO_INFO_LOG("sys.media.dump.audioframe.write.enable is not set, dump audio is not required");
+        if (dumpFile_) {
+            fclose(dumpFile_);
+            dumpFile_ = nullptr;
+        }
+        return;
+    }
+    AUDIO_INFO_LOG("sys.media.dump.audioframe.write.enable=%s", dumpEnable.c_str());
+    if (dumpEnable == "true") {
+        enableDump_ = true;
+        return;
+    }
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
+    }
+}
 } // namespace AudioStandard
 } // namesapce OHOS
