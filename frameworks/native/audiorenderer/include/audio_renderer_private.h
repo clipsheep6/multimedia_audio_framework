@@ -119,6 +119,7 @@ protected:
 
 private:
     int32_t InitAudioInterruptCallback();
+    void SetAudioDumpBySysParam() const;
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass);
     void SetSelfRendererStateCallback();
@@ -140,6 +141,9 @@ private:
     DeviceInfo currentDeviceInfo = {};
     bool isFastRenderer_ = false;
     bool isSwitching_ = false;
+    mutable bool enableDump_ = false;
+    mutable FILE *dumpFile_ = nullptr;
+    mutable uint32_t dumpCount = 0;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

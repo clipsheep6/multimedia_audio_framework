@@ -83,6 +83,9 @@ private:
     tone_data_state toneDataState_;
     // to wait for audio rendere callback completion after a change is requested
     float volume_;  // Volume applied to audio Renderer
+    FILE *dumpFile_ = nullptr;
+    bool enableDump_ = false;
+    uint32_t dumpCount = 0;
 #ifdef DUMPFILE
     FILE *pfd_;
 #endif // DUMPFILE
@@ -102,6 +105,7 @@ private:
     void GetCurrentSegmentUpdated(std::shared_ptr<ToneInfo> toneDesc);
     bool CheckToneContinuity ();
     bool AudioToneSequenceGen(BufferDesc &bufDesc);
+    void SetAudioDumpBySysParam();
     std::unique_ptr<std::thread> toneDataGenLoop_ = nullptr;
 };
 } // namespace AudioStandard
