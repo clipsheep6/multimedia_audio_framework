@@ -1160,64 +1160,55 @@ napi_value AudioRendererNapi::SetRenderRate(napi_env env, napi_callback_info inf
     }
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && asyncContext->objectInfo != nullptr, nullptr);
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
 
-            if (i == PARAM0 && valueType == napi_number) {
-                napi_get_value_int32(env, argv[PARAM0], &asyncContext->audioRendererRate);
-            } else if (i == PARAM1) {
-                if (valueType == napi_function) {
-                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                }
-                break;
-            } else {
-                asyncContext->status = NAPI_ERR_INVALID_PARAM;
-            }
-        }
-
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
+        if (i == PARAM0 && valueType == napi_number) {
+            napi_get_value_int32(env, argv[PARAM0], &asyncContext->audioRendererRate);
+        } else if (i == PARAM1) {
+            CHECK_AND_BREAK_LOG(valueType == napi_function, "callback param is invalid");
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
         } else {
-            napi_get_undefined(env, &result);
-        }
-
-        napi_value resource = nullptr;
-        napi_create_string_utf8(env, "SetRenderRate", NAPI_AUTO_LENGTH, &resource);
-
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioRendererAsyncContext *>(data);
-                if (!CheckContextStatus(context)) {
-                    return;
-                }
-                if (context->status == SUCCESS) {
-                    AudioRendererRate audioRenderRate = static_cast<AudioRendererRate>(context->audioRendererRate);
-                    int32_t audioClientInvalidParamsErr = -2;
-                    context->intValue = context->objectInfo->audioRenderer_->SetRenderRate(audioRenderRate);
-                    if (context->intValue == SUCCESS) {
-                        context->status = SUCCESS;
-                    } else if (context->intValue == audioClientInvalidParamsErr) {
-                        context->status = NAPI_ERR_UNSUPPORTED;
-                    } else {
-                        context->status = NAPI_ERR_SYSTEM;
-                    }
-                }
-            },
-            VoidAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
     }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "SetRenderRate", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioRendererAsyncContext *>(data);
+            if (!CheckContextStatus(context)) {
+                return;
+            }
+            if (context->status == SUCCESS) {
+                AudioRendererRate audioRenderRate = static_cast<AudioRendererRate>(context->audioRendererRate);
+                int32_t audioClientInvalidParamsErr = -2;
+                context->intValue = context->objectInfo->audioRenderer_->SetRenderRate(audioRenderRate);
+                if (context->intValue == SUCCESS) {
+                    context->status = SUCCESS;
+                } else if (context->intValue == audioClientInvalidParamsErr) {
+                    context->status = NAPI_ERR_UNSUPPORTED;
+                } else {
+                    context->status = NAPI_ERR_SYSTEM;
+                }
+            }
+        },
+        VoidAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Failed to create_async");
+    status = napi_queue_async_work(env, asyncContext->work);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_error, status: %{public}u", status);
+    asyncContext.release();
 
     return result;
 }
@@ -1472,88 +1463,80 @@ napi_value AudioRendererNapi::Write(napi_env env, napi_callback_info info)
     }
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
 
-            if ((i == PARAM0) && (valueType == napi_object)) {
-                napi_get_arraybuffer_info(env, argv[i], &asyncContext->data, &asyncContext->bufferLen);
-            } else if (i == PARAM1) {
-                if (valueType == napi_function) {
-                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                }
-                break;
-            } else {
-                asyncContext->status = NAPI_ERR_INVALID_PARAM;
-            }
-        }
-
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
+        if ((i == PARAM0) && (valueType == napi_object)) {
+            napi_get_arraybuffer_info(env, argv[i], &asyncContext->data, &asyncContext->bufferLen);
+        } else if (i == PARAM1) {
+            // if (valueType == napi_function) {
+            //     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            // }
+            // break;
         } else {
-            napi_get_undefined(env, &result);
-        }
-
-        napi_value resource = nullptr;
-        napi_create_string_utf8(env, "Write", NAPI_AUTO_LENGTH, &resource);
-
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioRendererAsyncContext *>(data);
-                if (!CheckContextStatus(context)) {
-                    return;
-                }
-                if (context->status == SUCCESS) {
-                    context->status = NAPI_ERR_SYSTEM;
-                    size_t bufferLen = context->bufferLen;
-                    auto buffer = std::make_unique<uint8_t[]>(bufferLen);
-                    if (buffer == nullptr) {
-                        HiLog::Error(LABEL, "Renderer write buffer allocation failed");
-                        return;
-                    }
-
-                    if (memcpy_s(buffer.get(), bufferLen, context->data, bufferLen)) {
-                        HiLog::Info(LABEL, "Renderer mem copy failed");
-                        return;
-                    }
-
-                    int32_t bytesWritten = 0;
-                    size_t totalBytesWritten = 0;
-                    size_t minBytes = 4;
-                    while ((totalBytesWritten < bufferLen) && ((bufferLen - totalBytesWritten) > minBytes)) {
-                        bytesWritten = context->objectInfo->audioRenderer_->Write(buffer.get() + totalBytesWritten,
-                            bufferLen - totalBytesWritten);
-                        if (bytesWritten < 0) {
-                            break;
-                        }
-
-                        totalBytesWritten += bytesWritten;
-                    }
-
-                    context->status = SUCCESS;
-                    context->totalBytesWritten = totalBytesWritten;
-                }
-            },
-            WriteAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else if (asyncContext->objectInfo->scheduleFromApiCall_) {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext->objectInfo->scheduleFromApiCall_ = false;
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        } else {
-            asyncContext->objectInfo->writeRequestQ_.push(asyncContext->work);
-            asyncContext.release();
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
     }
 
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "Write", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource, AudioRendererNapi::AsyncWrite, WriteAsyncCallbackComplete,
+        static_cast<void *>(asyncContext.get()), &asyncContext->work);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Failed to create_async");
+    if (asyncContext->objectInfo->scheduleFromApiCall_) {
+        status = napi_queue_async_work(env, asyncContext->work);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Failed to create_async");
+        asyncContext->objectInfo->scheduleFromApiCall_ = false;
+        asyncContext.release();
+    } else {
+        asyncContext->objectInfo->writeRequestQ_.push(asyncContext->work);
+        asyncContext.release();
+    }
+
     return result;
+}
+
+void AudioRendererNapi::AsyncWrite(napi_env env, void *data)
+{
+    auto context = static_cast<AudioRendererAsyncContext *>(data);
+    if (!CheckContextStatus(context)) {
+        return;
+    }
+    CHECK_AND_RETURN_LOG(context->status == SUCCESS, "Renderer write context status failed");
+    context->status = NAPI_ERR_SYSTEM;
+    size_t bufferLen = context->bufferLen;
+    auto buffer = std::make_unique<uint8_t[]>(bufferLen);
+    CHECK_AND_RETURN_LOG(buffer != nullptr, "Renderer write buffer allocation failed");
+
+    if (memcpy_s(buffer.get(), bufferLen, context->data, bufferLen)) {
+        HiLog::Info(LABEL, "Renderer mem copy failed");
+        return;
+    }
+
+    int32_t bytesWritten = 0;
+    size_t totalBytesWritten = 0;
+    size_t minBytes = 4;
+    while ((totalBytesWritten < bufferLen) && ((bufferLen - totalBytesWritten) > minBytes)) {
+        bytesWritten = context->objectInfo->audioRenderer_->Write(buffer.get() + totalBytesWritten,
+            bufferLen - totalBytesWritten);
+        if (bytesWritten < 0) {
+            break;
+        }
+
+        totalBytesWritten += bytesWritten;
+    }
+
+    context->status = SUCCESS;
+    context->totalBytesWritten = totalBytesWritten;
 }
 
 napi_value AudioRendererNapi::GetAudioTime(napi_env env, napi_callback_info info)
@@ -1996,64 +1979,54 @@ napi_value AudioRendererNapi::SetVolume(napi_env env, napi_callback_info info)
     }
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-            if (i == PARAM0 && valueType == napi_number) {
-                napi_get_value_double(env, argv[i], &asyncContext->volLevel);
-            } else if (i == PARAM1) {
-                if (valueType == napi_function) {
-                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                }
-                break;
-            } else {
-                asyncContext->status = NAPI_ERR_INVALID_PARAM;
-            }
-        }
-
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && asyncContext->objectInfo != nullptr, nullptr);
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+        if (i == PARAM0 && valueType == napi_number) {
+            napi_get_value_double(env, argv[i], &asyncContext->volLevel);
+        } else if (i == PARAM1) {
+            CHECK_AND_BREAK_LOG(valueType == napi_function, "callback param is invalid");
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
         } else {
-            napi_get_undefined(env, &result);
-        }
-
-        HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
-        napi_value resource = nullptr;
-        napi_create_string_utf8(env, "SetVolume", NAPI_AUTO_LENGTH, &resource);
-
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioRendererAsyncContext*>(data);
-                if (!CheckContextStatus(context)) {
-                    return;
-                }
-                if (context->status == SUCCESS) {
-                    if (context->volLevel < MIN_VOLUME_IN_DOUBLE || context->volLevel > MAX_VOLUME_IN_DOUBLE) {
-                        context->status = NAPI_ERR_UNSUPPORTED;
-                    } else {
-                        context->status = context->objectInfo->audioRenderer_->
-                            SetVolume(static_cast<float>(context->volLevel));
-                    }
-                }
-            },
-            SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
     }
 
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "SetVolume", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioRendererAsyncContext*>(data);
+            if (!CheckContextStatus(context)) {
+                return;
+            }
+            if (context->status == SUCCESS) {
+                if (context->volLevel < MIN_VOLUME_IN_DOUBLE || context->volLevel > MAX_VOLUME_IN_DOUBLE) {
+                    context->status = NAPI_ERR_UNSUPPORTED;
+                } else {
+                    context->status = context->objectInfo->audioRenderer_->
+                        SetVolume(static_cast<float>(context->volLevel));
+                }
+            }
+        },
+        SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Failed to create_async");
+    status = napi_queue_async_work(env, asyncContext->work);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_error, status: %{public}u", status);
+    asyncContext.release();
+
     return result;
 }
-
 
 napi_value AudioRendererNapi::GetRendererInfo(napi_env env, napi_callback_info info)
 {
@@ -2101,16 +2074,10 @@ napi_value AudioRendererNapi::GetRendererInfo(napi_env env, napi_callback_info i
                 }
             },
             AudioRendererInfoAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        }
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Failed to create_async");
+        status = napi_queue_async_work(env, asyncContext->work);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_error, status: %{public}u", status);
+        asyncContext.release();
     }
 
     return result;
@@ -2162,16 +2129,10 @@ napi_value AudioRendererNapi::GetStreamInfo(napi_env env, napi_callback_info inf
                 }
             },
             AudioStreamInfoAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        }
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Failed to create_async");
+        status = napi_queue_async_work(env, asyncContext->work);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_error, status: %{public}u", status);
+        asyncContext.release();
     }
 
     return result;
@@ -2724,16 +2685,10 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
                 }
             },
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        }
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Failed to create_async");
+        status = napi_queue_async_work(env, asyncContext->work);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_error, status: %{public}u", status);
+        asyncContext.release();
     }
 
     return result;
