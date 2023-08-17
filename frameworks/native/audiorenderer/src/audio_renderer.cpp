@@ -47,7 +47,7 @@ static float VolumeToDb(int32_t volumeLevel)
     return static_cast<float>(roundValue) / CONST_FACTOR;
 }
 
-static bool isNeedVerfityPermission(const StreamUsage streamUsage)
+static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
 {
     for (const auto& item : NEED_VERFITY_PERMISSION_STREAMS) {
         if (streamUsage == item) {
@@ -70,6 +70,10 @@ AudioRendererPrivate::~AudioRendererPrivate()
     if (isFastRenderer_) {
         // Unregister the renderer event callaback in policy server
         (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
+    }
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
     }
 #ifdef DUMP_CLIENT_PCM
     if (dcp_) {
@@ -142,7 +146,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
     CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN &&
         streamUsage <= STREAM_USAGE_VOICE_MODEM_COMMUNICATION, nullptr, "Invalid stream usage");
-    if (contentType == CONTENT_TYPE_ULTRASONIC || isNeedVerfityPermission(streamUsage)) {
+    if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
         if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
                 "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
@@ -468,6 +472,18 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
         return false;
     }
 
+    SetAudioDumpBySysParam();
+    if (enableDump_ && dumpFile_ == nullptr) {
+        std::string dumpFilePath = "/data/app/el2/100/base/dump_audio_client_" +
+        std::to_string(dumpCount) + ".pcm";
+        dumpFile_ = fopen(dumpFilePath.c_str(), "wb+");
+        if (dumpFile_ == nullptr) {
+            AUDIO_ERR_LOG("Error opening dump file %{public}s!", dumpFilePath.c_str());
+        } else {
+            dumpCount++;
+        }
+    }
+
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioRenderer::ActivateAudioInterrupt Failed");
@@ -485,6 +501,12 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
+    if (dumpFile_) {
+        size_t writeResult = fwrite((void*)&buffer, 1, bufferSize, dumpFile_);
+        if (writeResult != bufferSize) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+    }
 #ifdef DUMP_CLIENT_PCM
     if (dcp_ != nullptr) {
         fwrite((void *)buffer, 1, bufferSize, dcp_);
@@ -842,6 +864,12 @@ int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
 {
+    if (dumpFile_) {
+        size_t writeResult = fwrite((void*)&bufDesc.buffer, 1, bufDesc.bufLength, dumpFile_);
+        if (writeResult != bufDesc.bufLength) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+    }
 #ifdef DUMP_CLIENT_PCM
     if (dcp_ != nullptr) {
         fwrite((void *)(bufDesc.buffer), 1, bufDesc.bufLength, dcp_);
@@ -1227,6 +1255,30 @@ void AudioRendererPrivate::SetSelfRendererStateCallback()
 
     audioDeviceChangeCallback_->setAudioRendererObj(this);
     AUDIO_INFO_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener successful!");
+}
+
+void AudioRendererPrivate::SetAudioDumpBySysParam(void) const
+{
+    std::string dumpEnable;
+    enableDump_ = false;
+    bool res = GetSysPara("sys.media.dump.audioframe.client.write.enable", dumpEnable);
+    if (!res || dumpEnable.empty()) {
+        AUDIO_INFO_LOG("sys.media.dump.audioframe.client.write.enable is not set, dump audio is not required");
+        if (dumpFile_) {
+            fclose(dumpFile_);
+            dumpFile_ = nullptr;
+        }
+        return;
+    }
+    AUDIO_INFO_LOG("sys.media.dump.audioframe.client.write.enable=%s", dumpEnable.c_str());
+    if (dumpEnable == "true") {
+        enableDump_ = true;
+        return;
+    }
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
+    }
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

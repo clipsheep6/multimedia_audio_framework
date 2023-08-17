@@ -627,7 +627,7 @@ static void EffectManagerInfoDumpPart(string& dumpString, const AudioData &audio
 
     // xml -- Postprocess
     AppendFormat(dumpString, "- %d postProcess (s) available :\n",
-        audioData_.policyData.oriEffectConfig.preProcess.size());
+        audioData_.policyData.oriEffectConfig.postProcess.size());
     for (Postprocess x : audioData_.policyData.oriEffectConfig.postProcess) {
         AppendFormat(dumpString, "  postprocess stream = %s \n", x.stream.c_str());
         count = 0;
