@@ -1092,8 +1092,8 @@ uint32_t AudioServiceClient::GetUnderflowCount()
 
 int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
 {
-    AUDIO_DEBUG_LOG("GetSessionID %{public}d", sessionID);
-    if (sessionID != PA_INVALID_INDEX && sessionID != 0) {
+    AUDIO_DEBUG_LOG("GetSessionID %{public}d", this->sessionID);
+    if (this->sessionID != PA_INVALID_INDEX && this->sessionID != 0) {
         sessionID = this->sessionID;
         return AUDIO_CLIENT_SUCCESS;
     }
