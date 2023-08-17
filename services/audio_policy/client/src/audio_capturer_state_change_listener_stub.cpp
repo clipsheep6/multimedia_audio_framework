@@ -19,6 +19,9 @@
 #include "audio_system_manager.h"
 #include "audio_log.h"
 
+#include <chrono>
+#include <thread>
+
 using namespace std;
 
 namespace OHOS {
@@ -101,12 +104,22 @@ int AudioCapturerStateChangeListenerStub::OnRemoteRequest(
 void AudioCapturerStateChangeListenerStub::OnCapturerStateChange(
     const vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
+    AUDIO_INFO_LOG("wangtao AudioCapturerStateChangeListenerStub: cb.use_count [%{public}ld] begin stub",callback_.lock().use_count());
+
     shared_ptr<AudioCapturerStateChangeCallback> cb = callback_.lock();
+
+    AUDIO_INFO_LOG("wangtao stub OnCapturerStateChange sleep");
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    AUDIO_INFO_LOG("wangtao stub OnCapturerStateChange sleep done");
+
     if (cb == nullptr) {
         AUDIO_ERR_LOG("AudioCapturerStateChangeListenerStub: callback_ is nullptr");
     } else {
+        AUDIO_INFO_LOG("wangtao AudioCapturerStateChangeListenerStub: cb.use_count ... [%{public}ld]",cb.use_count());
         cb->OnCapturerStateChange(audioCapturerChangeInfos);
     }
+    AUDIO_INFO_LOG("wangtao AudioCapturerStateChangeListenerStub: cb.use_count [%{public}ld] after call js",cb.use_count());
+
     return;
 }
 

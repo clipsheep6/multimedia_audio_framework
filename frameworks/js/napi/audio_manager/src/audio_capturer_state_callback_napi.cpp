@@ -20,6 +20,9 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 
+#include <chrono>
+#include <thread>
+
 using namespace std;
 
 namespace OHOS {
@@ -27,11 +30,13 @@ namespace AudioStandard {
 AudioCapturerStateCallbackNapi::AudioCapturerStateCallbackNapi(napi_env env)
     : env_(env)
 {
+    AUDIO_INFO_LOG("wangtao AudioCapturerStateCallbackNapi: instance create");
     AUDIO_DEBUG_LOG("AudioCapturerStateCallbackNapi: instance create");
 }
 
 AudioCapturerStateCallbackNapi::~AudioCapturerStateCallbackNapi()
 {
+    AUDIO_INFO_LOG("wangtao AudioCapturerStateCallbackNapi: instance destroy");
     AUDIO_DEBUG_LOG("AudioCapturerStateCallbackNapi: instance destroy");
 }
 
@@ -50,6 +55,12 @@ void AudioCapturerStateCallbackNapi::SaveCallbackReference(napi_value args)
     capturerStateCallback_ = cb;
 }
 
+void AudioCapturerStateCallbackNapi::RemoveCallback()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("wangtao RemoveCallback is called");
+}
+
 void AudioCapturerStateCallbackNapi::OnCapturerStateChange(
     const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
@@ -63,6 +74,10 @@ void AudioCapturerStateCallbackNapi::OnCapturerStateChange(
     for (const auto &changeInfo : audioCapturerChangeInfos) {
         capturerChangeInfos.push_back(std::make_unique<AudioCapturerChangeInfo>(*changeInfo));
     }
+
+    // AUDIO_INFO_LOG("wangtao OnCapturerStateChange sleep");
+    // std::this_thread::sleep_for(std::chrono::seconds(2));
+    // AUDIO_INFO_LOG("wangtao OnCapturerStateChange sleep done");
 
     cb->callback = capturerStateCallback_;
     cb->changeInfos = move(capturerChangeInfos);
