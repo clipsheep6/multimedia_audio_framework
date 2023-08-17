@@ -17,6 +17,9 @@
 
 using OHOS::AudioStandard::Timestamp;
 
+namespace {
+const int64_t SECOND_TO_NANOSECOND = 1000000000;
+
 static OHOS::AudioStandard::OHAudioRenderer *convertRenderer(OH_AudioRenderer* renderer)
 {
     return (OHOS::AudioStandard::OHAudioRenderer*) renderer;
@@ -175,7 +178,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer,
     Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
     audioRenderer->GetAudioTime(stamp, base);
     *framePosition = stamp.framePosition;
-    *timestamp = stamp.time.tv_nsec;
+    *timestamp = stamp.time.tv_sec * SECOND_TO_NANOSECOND + stamp.time.tv_nsec;
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -186,7 +189,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* 
     *frameSize = audioRenderer->GetFrameSizeInCallback();
     return AUDIOSTREAM_SUCCESS;
 }
-
+}
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -258,8 +261,6 @@ AudioChannel OHAudioRenderer::GetChannelCount()
 
 int32_t OHAudioRenderer::GetSamplingRate()
 {
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, MONO, "renderer client is nullptr");
-    AudioRendererParams params;
     audioRenderer_->GetParams(params);
     return params.sampleRate;
 }
@@ -301,9 +302,9 @@ void OHAudioRenderer::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
 int32_t OHAudioRenderer::GetFrameSizeInCallback()
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
-    size_t bufSize;
-    audioRenderer_->GetBufferSize(bufSize);
-    return (int32_t)bufSize;
+    size_t frameSize;
+    audioRenderer_->GetFrameCount(frameSize);
+    return (int32_t)frameSize;
 }
 
 int32_t OHAudioRenderer::GetBufferDesc(BufferDesc &bufDesc) const
