@@ -125,6 +125,7 @@ private:
         const std::string& cbName, AudioCapturerNapi *capturerNapi);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
     static void UnregisterCapturerCallback(napi_env env, const std::string& cbName, AudioCapturerNapi *capturerNapi);
+    static void AsyncRead(napi_env env, void *data);
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioCapturerOptions> sCapturerOptions_;

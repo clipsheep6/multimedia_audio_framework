@@ -91,6 +91,7 @@ private:
                                       const napi_value &valueParam);
     static void VoidAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetTonePlayerAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void LoadToneAsync(napi_env env, bool inputRight, TonePlayerAsyncContext* &asyncContext);
     static std::unique_ptr<AudioRendererInfo> sRendererInfo_;
     static napi_ref toneType_;
     static std::mutex createMutex_;

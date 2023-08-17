@@ -422,66 +422,57 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
     unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
     
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_TWO) {
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && asyncContext->objectInfo != nullptr, nullptr);
+    if (argc < ARGS_TWO) {
+        asyncContext->status = NAPI_ERR_INVALID_PARAM;
+    }
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+
+        if (i == PARAM0 && valueType == napi_number) {
+            napi_get_value_int32(env, argv[i], &asyncContext->volType);
+            if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
+                asyncContext->status = (asyncContext->status ==
+                    NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+            }
+        } else if (i == PARAM1 && valueType == napi_number) {
+            napi_get_value_int32(env, argv[i], &asyncContext->volLevel);
+            if (!AudioCommonNapi::IsLegalInputArgumentVolLevel(asyncContext->volLevel)) {
+                asyncContext->status = (asyncContext->status ==
+                    NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+            }
+        } else if (i == PARAM2) {
+            CHECK_AND_BREAK_LOG(valueType == napi_function, "param callback is invalid");
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+        } else {
             asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-
-            if (i == PARAM0 && valueType == napi_number) {
-                napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
-                    asyncContext->status = (asyncContext->status ==
-                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
-                }
-            } else if (i == PARAM1 && valueType == napi_number) {
-                napi_get_value_int32(env, argv[i], &asyncContext->volLevel);
-                if (!AudioCommonNapi::IsLegalInputArgumentVolLevel(asyncContext->volLevel)) {
-                    asyncContext->status = (asyncContext->status ==
-                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
-                }
-            } else if (i == PARAM2) {
-                if (valueType == napi_function) {
-                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                }
-                break;
-            } else {
-                asyncContext->status = NAPI_ERR_INVALID_PARAM;
-            }
-        }
-
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
-        } else {
-            napi_get_undefined(env, &result);
-        }
-
-        HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
-        napi_value resource = nullptr;
-        napi_create_string_utf8(env, "SetVolume", NAPI_AUTO_LENGTH, &resource);
-
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-                if (context->status == SUCCESS) {
-                    context->status = context->objectInfo->audioGroupMngr_->SetVolume(GetNativeAudioVolumeType(
-                        context->volType), context->volLevel);
-                }
-            }, SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        }
     }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "SetVolume", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
+            if (context->status == SUCCESS) {
+                context->status = context->objectInfo->audioGroupMngr_->SetVolume(GetNativeAudioVolumeType(
+                    context->volType), context->volLevel);
+            }
+        }, SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Failed to create_async");
+    status = napi_queue_async_work(env, asyncContext->work);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_error, status: %{public}u", status);
+    asyncContext.release();
 
     return result;
 }
@@ -640,62 +631,53 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
 
     unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_ONE) {
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && asyncContext->objectInfo != nullptr, nullptr);
+    if (argc < ARGS_ONE) {
+        asyncContext->status = NAPI_ERR_INVALID_PARAM;
+    }
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+
+        if (i == PARAM0 && valueType == napi_number) {
+            napi_get_value_int32(env, argv[i], &asyncContext->volType);
+            if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
+                asyncContext->status = (asyncContext->status ==
+                    NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+            }
+        } else if (i == PARAM1 && valueType == napi_boolean) {
+            napi_get_value_bool(env, argv[i], &asyncContext->isMute);
+        } else if (i == PARAM2) {
+            CHECK_AND_BREAK_LOG(valueType == napi_function, "param callback is invalid");
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+        } else {
             asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-
-            if (i == PARAM0 && valueType == napi_number) {
-                napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
-                    asyncContext->status = (asyncContext->status ==
-                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
-                }
-            } else if (i == PARAM1 && valueType == napi_boolean) {
-                napi_get_value_bool(env, argv[i], &asyncContext->isMute);
-            } else if (i == PARAM2) {
-                if (valueType == napi_function) {
-                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                }
-                break;
-            } else {
-                asyncContext->status = NAPI_ERR_INVALID_PARAM;
-            }
-        }
-
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
-        } else {
-            napi_get_undefined(env, &result);
-        }
-
-        napi_value resource = nullptr;
-        napi_create_string_utf8(env, "SetStreamMute", NAPI_AUTO_LENGTH, &resource);
-
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-                if (context->status == SUCCESS) {
-                    context->status = context->objectInfo->audioGroupMngr_->SetMute(GetNativeAudioVolumeType(
-                        context->volType), context->isMute);
-                }
-            },
-            SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        }
     }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "SetStreamMute", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
+            if (context->status == SUCCESS) {
+                context->status = context->objectInfo->audioGroupMngr_->SetMute(GetNativeAudioVolumeType(
+                    context->volType), context->isMute);
+            }
+        },
+        SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Failed to create_async");
+    status = napi_queue_async_work(env, asyncContext->work);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_error, status: %{public}u", status);
+    asyncContext.release();
 
     return result;
 }
