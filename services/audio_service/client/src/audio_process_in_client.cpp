@@ -166,6 +166,11 @@ private:
 
     std::atomic<uint32_t> underflowCount_ = 0;
     std::string cachePath_;
+    bool enableDump_ = false;
+    FILE *dumpFile_ = nullptr;
+    uint32_t dumpCount = 0;
+
+    void SetAudioDumpBySysParam();
 #ifdef DUMP_CLIENT
     FILE *dcp_ = nullptr;
 #endif
@@ -262,6 +267,10 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
     }
     if (isInited_) {
         AudioProcessInClientInner::Release();
+    }
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
     }
 #ifdef DUMP_CLIENT
     if (dcp_) {
@@ -551,6 +560,12 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
         static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
+    if (dumpFile_) {
+        size_t writeResult = fwrite(static_cast<void *>(readbufDesc.buffer), 1, spanSizeInByte_, dumpFile_);
+        if (writeResult != spanSizeInByte_) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+    }
 #ifdef DUMP_CLIENT
     if (dcp_ != nullptr) {
         fwrite(static_cast<void *>(readbufDesc.buffer), 1, spanSizeInByte_, dcp_);
@@ -712,7 +727,12 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             bool succ = ChannelFormatConvert(srcData, dstData);
             CHECK_AND_RETURN_RET_LOG(succ == true, ERR_OPERATION_FAILED, "Convert data failed!");
         }
-
+        if (dumpFile_) {
+            size_t writeResult = fwrite(static_cast<void *>(bufDesc.buffer), 1, clientSpanSizeInByte_, dumpFile_);
+            if (writeResult != clientSpanSizeInByte_) {
+                AUDIO_ERR_LOG("Failed to write the file.");
+            }
+        }
 #ifdef DUMP_CLIENT
         if (dcp_ != nullptr) {
             fwrite(static_cast<void *>(bufDesc.buffer), 1, clientSpanSizeInByte_, dcp_);
@@ -753,6 +773,18 @@ int32_t AudioProcessInClientInner::Start()
     if (!streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING)) {
         AUDIO_ERR_LOG("Start failed, invalid status: %{public}s", GetStatusInfo(targetStatus).c_str());
         return ERR_ILLEGAL_STATE;
+    }
+
+    SetAudioDumpBySysParam();
+    if (enableDump_ && dumpFile_ == nullptr) {
+        std::string dumpFilePath = "/data/local/tmp/dump_audioclient_" +
+        std::to_string(dumpCount) + ".pcm";
+        dumpFile_ = fopen(dumpFilePath.c_str(), "a+");
+        if (dumpFile_ == nullptr) {
+            AUDIO_ERR_LOG("Error opening dump file!");
+        } else {
+            dumpCount++;
+        }
     }
 
     if (processProxy_->Start() != SUCCESS) {
@@ -1268,6 +1300,30 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
             AUDIO_WARNING_LOG("wakeUpTime is too late...");
         }
         ClockTime::AbsoluteSleep(wakeUpTime);
+    }
+}
+
+void AudioProcessInClientInner::SetAudioDumpBySysParam(void)
+{
+    std::string dumpEnable;
+    enableDump_ = false;
+    bool res = GetSysPara("sys.media.dump.audioframe.write.enable", dumpEnable);
+    if (!res || dumpEnable.empty()) {
+        AUDIO_INFO_LOG("sys.media.dump.audioframe.write.enable is not set, dump audio is not required");
+        if (dumpFile_) {
+            fclose(dumpFile_);
+            dumpFile_ = nullptr;
+        }
+        return;
+    }
+    AUDIO_INFO_LOG("sys.media.dump.audioframe.write.enable=%s", dumpEnable.c_str());
+    if (dumpEnable == "true") {
+        enableDump_ = true;
+        return;
+    }
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
     }
 }
 } // namespace AudioStandard
