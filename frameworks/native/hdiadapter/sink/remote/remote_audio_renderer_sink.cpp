@@ -108,11 +108,15 @@ private:
     struct AudioPort audioPort_;
     IAudioSinkCallback* callback_ = nullptr;
     bool paramCallbackRegistered_ = false;
+    bool enableDump_ = false;
+    FILE *dumpFile_ = nullptr;
+    uint32_t dumpCount = 0;
 
     int32_t GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size, const char *networkId);
     int32_t CreateRender(const struct AudioPort &renderPort);
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
     struct AudioManager *GetAudioManager();
+    void SetAudioDumpBySysParam();
 #ifdef DEBUG_DUMP_FILE
     FILE *pfd;
 #endif // DEBUG_DUMP_FILE
@@ -282,6 +286,10 @@ void RemoteAudioRendererSinkInner::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
+    }
 #ifdef DEBUG_DUMP_FILE
     if (pfd) {
         fclose(pfd);
@@ -514,6 +522,12 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
         return ERR_WRITE_FAILED;
     }
     writeLen = len;
+    if (dumpFile_) {
+        size_t writeResult = fwrite((void*)&data, 1, len, dumpFile_);
+        if (writeResult != len) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+    }
 #ifdef DEBUG_DUMP_FILE
     if (pfd != nullptr) {
         size_t writeResult = fwrite((void*)&data, 1, len, pfd);
@@ -531,6 +545,17 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
 int32_t RemoteAudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
+    SetAudioDumpBySysParam();
+    if (enableDump_ && dumpFile_ == nullptr) {
+        std::string dumpFilePath = "/data/local/tmp/dump_remote_audiosink_" +
+        std::to_string(dumpCount) + ".pcm";
+        dumpFile_ = fopen(dumpFilePath.c_str(), "wb+");
+        if (dumpFile_ == nullptr) {
+            AUDIO_ERR_LOG("Error opening dump file!");
+        } else {
+            dumpCount++;
+        }
+    }
     if (!isRenderCreated_.load()) {
         if (CreateRender(audioPort_) != 0) {
             AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
@@ -867,6 +892,30 @@ int32_t RemoteAudioRendererSinkInner::Flush(void)
         return ERR_OPERATION_FAILED;
     }
     return SUCCESS;
+}
+
+void RemoteAudioRendererSinkInner::SetAudioDumpBySysParam(void)
+{
+    std::string dumpEnable;
+    enableDump_ = false;
+    bool res = GetSysPara("sys.media.dump.audioframe.write.enable", dumpEnable);
+    if (!res || dumpEnable.empty()) {
+        AUDIO_INFO_LOG("sys.media.dump.audioframe.write.enable is not set, dump audio is not required");
+        if (dumpFile_) {
+            fclose(dumpFile_);
+            dumpFile_ = nullptr;
+        }
+        return;
+    }
+    AUDIO_INFO_LOG("sys.media.dump.audioframe.write.enable=%s", dumpEnable.c_str());
+    if (dumpEnable == "true") {
+        enableDump_ = true;
+        return;
+    }
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

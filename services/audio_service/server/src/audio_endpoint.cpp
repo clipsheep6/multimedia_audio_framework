@@ -177,6 +177,11 @@ private:
 
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
+    bool enableDump_ = false;
+    FILE *dcp_ = nullptr;
+    FILE *dump_hdi_ = nullptr;
+
+    void SetAudioDumpBySysParam();
 #ifdef DUMP_PROCESS_FILE
     FILE *dcp_ = nullptr;
     FILE *dump_hdi_ = nullptr;
@@ -252,6 +257,14 @@ void AudioEndpointInner::Release()
     if (dstAudioBuffer_ != nullptr) {
         AUDIO_INFO_LOG("Set device buffer null");
         dstAudioBuffer_ = nullptr;
+    }
+    if (dcp_) {
+        fclose(dcp_);
+        dcp_ = nullptr;
+    }
+    if (dump_hdi_) {
+        fclose(dump_hdi_);
+        dump_hdi_ = nullptr;
     }
 #ifdef DUMP_PROCESS_FILE
     if (dcp_) {
@@ -336,6 +349,13 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
     endpointWorkThread_ = std::thread(&AudioEndpointInner::RecordEndpointWorkLoopFuc, this);
     pthread_setname_np(endpointWorkThread_.native_handle(), "AudioEndpointLoop");
 
+    SetAudioDumpBySysParam();
+    if (enableDump_) {
+        dump_hdi_ = fopen("/data/data/server-capture-hdi.pcm", "a+");
+        if (dump_hdi_ == nullptr) {
+            AUDIO_ERR_LOG("Error opening dump file!");
+        }
+    }
 #ifdef DUMP_PROCESS_FILE
     dump_hdi_ = fopen("/data/data/server-capture-hdi.pcm", "a+");
     if (dump_hdi_ == nullptr) {
@@ -391,6 +411,14 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
     updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
     pthread_setname_np(updatePosTimeThread_.native_handle(), "AudioEndpointUpdate");
 
+    SetAudioDumpBySysParam();
+    if (enableDump_) {
+        dcp_ = fopen("/data/data/server-read-client.pcm", "a+");
+        dump_hdi_ = fopen("/data/data/server-hdi.pcm", "a+");
+        if (dcp_ == nullptr || dump_hdi_ == nullptr) {
+            AUDIO_ERR_LOG("Error opening pcm test file!");
+        }
+    }
 #ifdef DUMP_PROCESS_FILE
     dcp_ = fopen("/data/data/server-read-client.pcm", "a+");
     dump_hdi_ = fopen("/data/data/server-hdi.pcm", "a+");
@@ -921,6 +949,13 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
             processBufferList_[i]->GetReadbuffer(curRead, streamData.bufferDesc); // check return?
             audioDataList.push_back(streamData);
             curReadSpan->readStartTime = ClockTime::GetCurNano();
+            if (dcp_) {
+                size_t writeResult = fwrite(static_cast<void *>(streamData.bufferDesc.buffer), 1,
+                streamData.bufferDesc.bufLength, dcp_);
+                if (writeResult != streamData.bufferDesc.bufLength) {
+                    AUDIO_ERR_LOG("Failed to write the file.");
+                }
+            }
 #ifdef DUMP_PROCESS_FILE
             if (dcp_ != nullptr) {
                 fwrite(static_cast<void *>(streamData.bufferDesc.buffer), 1, streamData.bufferDesc.bufLength, dcp_);
@@ -958,6 +993,13 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
         ProcessData(audioDataList, dstStreamData);
     }
 
+    if (dump_hdi_) {
+        size_t writeResult = fwrite(static_cast<void *>(dstStreamData.bufferDesc.buffer), 1,
+        dstStreamData.bufferDesc.bufLength, dump_hdi_);
+        if (writeResult != dstStreamData.bufferDesc.bufLength) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+    }
 #ifdef DUMP_PROCESS_FILE
     if (dump_hdi_ != nullptr) {
         fwrite(static_cast<void *>(dstStreamData.bufferDesc.buffer), 1, dstStreamData.bufferDesc.bufLength, dump_hdi_);
@@ -1252,6 +1294,12 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     BufferDesc readBuf;
     int32_t ret = dstAudioBuffer_->GetReadbuffer(curReadPos, readBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s get read buffer fail, ret %{public}d.", __func__, ret);
+    if (dump_hdi_) {
+        size_t writeResult = fwrite(static_cast<void *>(readBuf.buffer), 1, readBuf.bufLength, dump_hdi_);
+        if (writeResult != readBuf.bufLength) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+    }
 #ifdef DUMP_PROCESS_FILE
     if (dump_hdi_ != nullptr) {
         fwrite(static_cast<void *>(readBuf.buffer), 1, readBuf.bufLength, dump_hdi_);
@@ -1358,6 +1406,30 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
     AUDIO_DEBUG_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
+}
+
+void AudioEndpointInner::SetAudioDumpBySysParam(void)
+{
+    std::string dumpEnable;
+    enableDump_ = false;
+    bool res = GetSysPara("sys.media.dump.audioframe.write.enable", dumpEnable);
+    if (!res || dumpEnable.empty()) {
+        AUDIO_INFO_LOG("sys.media.dump.audioframe.write.enable is not set, dump audio is not required");
+    } else {
+        AUDIO_INFO_LOG("sys.media.dump.audioframe.write.enable=%s", dumpEnable.c_str());
+        if (dumpEnable == "true") {
+            enableDump_ = true;
+            return;
+        }
+    }
+    if (dcp_) {
+        fclose(dcp_);
+        dcp_ = nullptr;
+    }
+    if (dump_hdi_) {
+        fclose(dump_hdi_);
+        dump_hdi_ = nullptr;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
