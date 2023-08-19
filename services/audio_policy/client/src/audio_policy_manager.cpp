@@ -64,6 +64,10 @@ inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
             deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyManager::AudioPolicyServerDied,
                 std::placeholders::_1));
             AUDIO_INFO_LOG("Register audio policy server death recipient");
+            if (object == nullptr) {
+                AUDIO_ERR_LOG("GetAudioPolicyManagerProxy Object is NULL.");
+                return nullptr;
+            }
             bool result = object->AddDeathRecipient(deathRecipient_);
             if (!result) {
                 AUDIO_ERR_LOG("failed to add deathRecipient");
