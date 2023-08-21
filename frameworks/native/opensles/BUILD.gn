@@ -89,6 +89,7 @@ if (!audio_framework_feature_opensl_es) {
     deps = [
       ":libsl",
       "../../../services/audio_service:audio_client",
+      "../../../services/audio_service:audio_common",
       "../audiocapturer:audio_capturer",
       "../audiorenderer:audio_renderer",
     ]

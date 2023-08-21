@@ -35,7 +35,10 @@ ohos_fuzztest("AudioManagerFuzzTest") {
 
   sources = [ "audio_manager_fuzzer.cpp" ]
 
-  deps = [ "../../../services/audio_service:audio_client" ]
+  deps = [
+    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_common",
+  ]
   external_deps = [ "c_utils:utils" ]
 }
 
