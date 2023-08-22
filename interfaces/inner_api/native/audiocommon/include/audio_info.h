@@ -274,15 +274,16 @@ struct AudioRendererInfo {
     int32_t rendererFlags = 0;
 };
 
-class AudioCapturerInfo : public Parcelable {
+class AudioCapturerInfo {
 public:
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
-    AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_);
+    AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
+        capturerFlags(capturerFlags_) {}
     AudioCapturerInfo(const AudioCapturerInfo &audioCapturerInfo);
-    AudioCapturerInfo();
-    ~AudioCapturerInfo();
-    bool Marshalling(Parcel &parcel) const override;
+    AudioCapturerInfo() = default;
+    ~AudioCapturerInfo()= default;
+    bool Marshalling(Parcel &parcel) const;
     void Unmarshalling(Parcel &parcel);
 };
 
@@ -503,7 +504,7 @@ struct StreamSetStateEventInternal {
     AudioStreamType audioStreamType;
 };
 
-class AudioRendererChangeInfo : Parcelable {
+class AudioRendererChangeInfo : public Parcelable {
 public:
     int32_t createrUID;
     int32_t clientUID;

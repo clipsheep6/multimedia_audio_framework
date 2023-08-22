@@ -30,7 +30,6 @@ ohos_unittest("audio_capturer_interrupt_unit_test") {
   sources = [ "src/audio_capturer_interrupt_unit_test.cpp" ]
 
   deps = [
-    "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",
   ]

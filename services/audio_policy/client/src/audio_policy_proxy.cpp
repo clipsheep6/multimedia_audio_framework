@@ -1207,7 +1207,7 @@ int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioI
     }
 
     data.WriteInt32(clientId);
-     if (!audioInterrupt.Marshalling(data)) {
+    if (!audioInterrupt.Marshalling(data)) {
         AUDIO_ERR_LOG("RequestAudioFocus: WriteInterfaceToken failed");
         return -1;
     }

@@ -156,20 +156,10 @@ void AudioCapturerChangeInfo::Unmarshalling(Parcel &parcel)
     muted = parcel.ReadBool();
 }
 
-AudioCapturerInfo::AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_)
-    : sourceType(sourceType_), capturerFlags(capturerFlags_)
-{}
-
 AudioCapturerInfo::AudioCapturerInfo(const AudioCapturerInfo &audioCapturerInfo)
 {
     *this = audioCapturerInfo;
 }
-
-AudioCapturerInfo::AudioCapturerInfo()
-{}
-
-AudioCapturerInfo::~AudioCapturerInfo()
-{}
 
 bool AudioCapturerInfo::Marshalling(Parcel &parcel) const
 {
@@ -203,7 +193,7 @@ void ToneSegment::Unmarshalling(Parcel &parcel)
     AUDIO_DEBUG_LOG("duration: %{public}d, loopCnt: %{public}d, loopIndx: %{public}d", duration, loopCnt, loopIndx);
     for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
         waveFreq[i] = parcel.ReadUint16();
-        AUDIO_DEBUG_LOG("wave[%{public}d]: %{public}d", i , waveFreq[i]);
+        AUDIO_DEBUG_LOG("wave[%{public}d]: %{public}d", i, waveFreq[i]);
     }
 }
 

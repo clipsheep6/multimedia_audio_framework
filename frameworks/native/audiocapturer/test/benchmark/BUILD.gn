@@ -22,10 +22,7 @@ ohos_benchmarktest("BenchmarkAudioCapturerTest") {
     "../../../../../interfaces/inner_api/native/audiocommon/include",
   ]
   sources = [ "benchmark_audiocapturer_test.cpp" ]
-  deps = [
-    "../../../../../services/audio_service:audio_client",
-    "../../../audiocapturer:audio_capturer",
-  ]
+  deps = [ "../../../audiocapturer:audio_capturer" ]
 }
 
 group("benchmarktest") {

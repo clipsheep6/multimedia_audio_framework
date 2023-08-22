@@ -104,8 +104,8 @@ ohos_shared_library("audio_client") {
   install_enable = true
   sources = [
     "client/src/audio_device_descriptor.cpp",
-    "client/src/audio_info.cpp",
     "client/src/audio_group_manager.cpp",
+    "client/src/audio_info.cpp",
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
     "client/src/audio_process_in_client.cpp",
