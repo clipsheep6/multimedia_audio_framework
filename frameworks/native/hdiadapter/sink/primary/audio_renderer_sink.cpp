@@ -86,7 +86,7 @@ public:
     int32_t SetOutputRoute(DeviceType outputDevice) override;
 
     int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
-    explicit AudioRendererSinkInner(const std::string halName = "primary");
+    explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
 private:
     IAudioSinkAttr attr_;
@@ -130,7 +130,7 @@ private:
 #endif // DUMPFILE
 };
 
-AudioRendererSinkInner::AudioRendererSinkInner(const std::string halName)
+AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0), audioManager_(nullptr), audioAdapter_(nullptr),
       audioRender_(nullptr), halName_(halName)
