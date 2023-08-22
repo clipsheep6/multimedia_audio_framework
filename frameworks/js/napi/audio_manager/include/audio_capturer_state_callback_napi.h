@@ -29,6 +29,7 @@ public:
     explicit AudioCapturerStateCallbackNapi(napi_env env);
     virtual ~AudioCapturerStateCallbackNapi();
     void SaveCallbackReference(napi_value callback);
+    void RemoveCallback();
     void OnCapturerStateChange(
         const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 

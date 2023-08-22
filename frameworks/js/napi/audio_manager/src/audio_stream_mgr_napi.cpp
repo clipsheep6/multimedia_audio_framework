@@ -397,9 +397,14 @@ void AudioStreamMgrNapi::RegisterCapturerStateChangeCallback(napi_env env, napi_
             return;
         }
 
+        AUDIO_INFO_LOG("wangtao --Regi-- .use_count:[%{public}ld] ",streamMgrNapi->capturerStateChangeCallbackNapi_.use_count());
+
         int32_t ret =
             streamMgrNapi->audioStreamMngr_->RegisterAudioCapturerEventListener(streamMgrNapi->cachedClientId_,
             streamMgrNapi->capturerStateChangeCallbackNapi_);
+
+        AUDIO_INFO_LOG("wangtao --Regi--after .use_count:[%{public}ld] ",streamMgrNapi->capturerStateChangeCallbackNapi_.use_count());
+
         if (ret) {
             AUDIO_ERR_LOG("Registering of Capturer State Change Callback Failed");
             return;
@@ -407,7 +412,7 @@ void AudioStreamMgrNapi::RegisterCapturerStateChangeCallback(napi_env env, napi_
     }
 
     std::shared_ptr<AudioCapturerStateCallbackNapi> cb =
-    std::static_pointer_cast<AudioCapturerStateCallbackNapi>(streamMgrNapi->capturerStateChangeCallbackNapi_);
+        std::static_pointer_cast<AudioCapturerStateCallbackNapi>(streamMgrNapi->capturerStateChangeCallbackNapi_);
     cb->SaveCallbackReference(args[PARAM1]);
 
     AUDIO_INFO_LOG("OnCapturerStateChangeCallback is successful");
@@ -486,16 +491,23 @@ void AudioStreamMgrNapi::UnregisterCallback(napi_env env, napi_value jsThis, con
         }
         AUDIO_INFO_LOG("UnRegistering of renderer State Change Callback successful");
     } else if (!cbName.compare(CAPTURERCHANGE_CALLBACK_NAME)) {
+        AUDIO_INFO_LOG("wangtao ---UnRegist1 .use_count:[%{public}ld] ",streamMgrNapi->capturerStateChangeCallbackNapi_.use_count());
+
         int32_t ret = streamMgrNapi->audioStreamMngr_->
             UnregisterAudioCapturerEventListener(streamMgrNapi->cachedClientId_);
+        AUDIO_INFO_LOG("wangtao --- UnRegist2.use_count:[%{public}ld] ",streamMgrNapi->capturerStateChangeCallbackNapi_.use_count());
+
         if (ret) {
             AUDIO_ERR_LOG("UnRegistering of capturer State Change Callback Failed");
             return;
         }
+        AUDIO_INFO_LOG("wangtao --- UnRegist3.use_count:[%{public}ld] ",streamMgrNapi->capturerStateChangeCallbackNapi_.use_count());
+
         if (streamMgrNapi->capturerStateChangeCallbackNapi_ != nullptr) {
             streamMgrNapi->capturerStateChangeCallbackNapi_.reset();
             streamMgrNapi->capturerStateChangeCallbackNapi_ = nullptr;
         }
+        AUDIO_INFO_LOG("wangtao --- UnRegist4.use_count:[%{public}ld] ",streamMgrNapi->capturerStateChangeCallbackNapi_.use_count());
         AUDIO_INFO_LOG("UnRegistering of capturer State Change Callback successful");
     } else {
         AUDIO_ERR_LOG("No such callback supported");
