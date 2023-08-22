@@ -94,7 +94,7 @@ ohos_executable("audio_capturer_test") {
 
   deps = [
     ":audio_capturer",
-    "../../../services/audio_service:audio_common",
+    "../../../services/audio_service:audio_client",
   ]
 
   external_deps = [ "hilog:libhilog" ]

@@ -56,13 +56,15 @@ bool WriteDeviceInfo(Parcel &parcel, const DeviceInfo &deviceInfo)
         && parcel.WriteInt32(static_cast<int32_t>(deviceInfo.deviceRole))
         && parcel.WriteInt32(deviceInfo.deviceId)
         && parcel.WriteInt32(deviceInfo.channelMasks)
+        && parcel.WriteInt32(deviceInfo.channelIndexMasks)
         && parcel.WriteString(deviceInfo.deviceName)
         && parcel.WriteString(deviceInfo.macAddress)
         && deviceInfo.audioStreamInfo.Marshalling(parcel)
         && parcel.WriteString(deviceInfo.networkId)
         && parcel.WriteString(deviceInfo.displayName)
         && parcel.WriteInt32(deviceInfo.interruptGroupId)
-        && parcel.WriteInt32(deviceInfo.volumeGroupId);
+        && parcel.WriteInt32(deviceInfo.volumeGroupId)
+        && parcel.WriteBool(deviceInfo.isLowLatencyDevice);
 }
 
 void ReadDeviceInfo(Parcel &parcel, DeviceInfo &deviceInfo)
@@ -71,6 +73,7 @@ void ReadDeviceInfo(Parcel &parcel, DeviceInfo &deviceInfo)
     deviceInfo.deviceRole = static_cast<DeviceRole>(parcel.ReadInt32());
     deviceInfo.deviceId = parcel.ReadInt32();
     deviceInfo.channelMasks = parcel.ReadInt32();
+    deviceInfo.channelIndexMasks = parcel.ReadInt32();
     deviceInfo.deviceName = parcel.ReadString();
     deviceInfo.macAddress = parcel.ReadString();
     deviceInfo.audioStreamInfo.Unmarshalling(parcel);
@@ -78,6 +81,7 @@ void ReadDeviceInfo(Parcel &parcel, DeviceInfo &deviceInfo)
     deviceInfo.displayName = parcel.ReadString();
     deviceInfo.interruptGroupId = parcel.ReadInt32();
     deviceInfo.volumeGroupId = parcel.ReadInt32();
+    deviceInfo.isLowLatencyDevice = parcel.ReadBool();
 }
 
 AudioRendererChangeInfo::AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)

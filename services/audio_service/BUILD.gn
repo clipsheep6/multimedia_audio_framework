@@ -41,7 +41,6 @@ ohos_shared_library("audio_common") {
   ]
 
   sources = [
-    "common/src/audio_info.cpp",
     "common/src/audio_process_config.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
@@ -105,6 +104,7 @@ ohos_shared_library("audio_client") {
   install_enable = true
   sources = [
     "client/src/audio_device_descriptor.cpp",
+    "client/src/audio_info.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
@@ -227,6 +227,7 @@ ohos_shared_library("audio_process_service") {
   configs = [ ":audio_service_config" ]
 
   deps = [
+    ":audio_client",
     ":audio_common",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
@@ -269,6 +270,7 @@ ohos_shared_library("audio_service") {
   configs = [ ":audio_service_config" ]
 
   deps = [
+    ":audio_client",
     ":audio_common",
     ":audio_process_service",
     "$pulseaudio_build_path/src/daemon:pulseaudio",
@@ -327,7 +329,6 @@ ohos_executable("audio_process_client_test") {
 
   deps = [
     ":audio_client",
-    ":audio_common",
     "./../../frameworks/native/audioutils:audio_utils",
   ]
 

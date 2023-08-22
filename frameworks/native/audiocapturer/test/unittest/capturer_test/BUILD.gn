@@ -39,7 +39,6 @@ ohos_unittest("audio_capturer_unit_test") {
 
   deps = [
     "../../../../../../services/audio_service:audio_client",
-    "../../../../../../services/audio_service:audio_common",
     "../../../../audiocapturer:audio_capturer",
   ]
 }

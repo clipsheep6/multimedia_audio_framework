@@ -92,7 +92,7 @@ ohos_shared_library("audio_dump") {
   }
   install_enable = true
   sources = [
-    "../audio_service/common/src/audio_info.cpp",
+    "../audio_service/client/src/audio_info.cpp",
     "server/src/service/dump/audio_service_dump.cpp",
   ]
 
@@ -138,7 +138,7 @@ ohos_shared_library("audio_policy_service") {
   }
   install_enable = true
   sources = [
-    "../audio_service/common/src/audio_info.cpp",
+    "../audio_service/client/src/audio_info.cpp",
     "client/src/audio_interrupt_group_info.cpp",
     "client/src/audio_volume_group_info.cpp",
     "server/src/audio_capturer_state_change_listener_proxy.cpp",
@@ -333,7 +333,7 @@ ohos_shared_library("audio_policy_client") {
 
   sources = [
     "../audio_service/client/src/audio_device_descriptor.cpp",
-    "../audio_service/common/src/audio_info.cpp",
+    "../audio_service/client/src/audio_info.cpp",
     "client/src/audio_capturer_state_change_listener_stub.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
     "client/src/audio_policy_manager.cpp",
