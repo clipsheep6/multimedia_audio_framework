@@ -504,7 +504,7 @@ struct StreamSetStateEventInternal {
     AudioStreamType audioStreamType;
 };
 
-class AudioRendererChangeInfo : public Parcelable {
+class AudioRendererChangeInfo {
 public:
     int32_t createrUID;
     int32_t clientUID;
@@ -515,9 +515,9 @@ public:
     DeviceInfo outputDeviceInfo;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo);
-    AudioRendererChangeInfo();
-    ~AudioRendererChangeInfo();
-    bool Marshalling(Parcel &parcel) const override;
+    AudioRendererChangeInfo() = default;
+    ~AudioRendererChangeInfo() = default;
+    bool Marshalling(Parcel &parcel) const;
     void Unmarshalling(Parcel &parcel);
 };
 

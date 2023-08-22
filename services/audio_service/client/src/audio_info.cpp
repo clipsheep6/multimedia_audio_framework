@@ -89,12 +89,6 @@ AudioRendererChangeInfo::AudioRendererChangeInfo(const AudioRendererChangeInfo &
     *this = audioRendererChangeInfo;
 }
 
-AudioRendererChangeInfo::AudioRendererChangeInfo()
-{}
-
-AudioRendererChangeInfo::~AudioRendererChangeInfo()
-{}
-
 bool AudioRendererChangeInfo::Marshalling(Parcel &parcel) const
 {
     return parcel.WriteInt32(createrUID)
