@@ -390,20 +390,18 @@ void AudioStreamMgrNapi::RegisterRendererStateChangeCallback(napi_env env, napi_
 void AudioStreamMgrNapi::RegisterCapturerStateChangeCallback(napi_env env, napi_value* args,
     const std::string& cbName, AudioStreamMgrNapi *streamMgrNapi)
 {
+    streamMgrNapi->capturerStateChangeCallbackNapi_ = std::make_shared<AudioCapturerStateCallbackNapi>(env);
     if (!streamMgrNapi->capturerStateChangeCallbackNapi_) {
-        streamMgrNapi->capturerStateChangeCallbackNapi_ = std::make_shared<AudioCapturerStateCallbackNapi>(env);
-        if (!streamMgrNapi->capturerStateChangeCallbackNapi_) {
-            AUDIO_ERR_LOG("Memory Allocation Failed !!");
-            return;
-        }
+        AUDIO_ERR_LOG("Memory Allocation Failed !!");
+        return;
+    }
 
-        int32_t ret =
-            streamMgrNapi->audioStreamMngr_->RegisterAudioCapturerEventListener(streamMgrNapi->cachedClientId_,
-            streamMgrNapi->capturerStateChangeCallbackNapi_);
-        if (ret) {
-            AUDIO_ERR_LOG("Registering of Capturer State Change Callback Failed");
-            return;
-        }
+    int32_t ret =
+        streamMgrNapi->audioStreamMngr_->RegisterAudioCapturerEventListener(streamMgrNapi->cachedClientId_,
+        streamMgrNapi->capturerStateChangeCallbackNapi_);
+    if (ret) {
+        AUDIO_ERR_LOG("Registering of Capturer State Change Callback Failed");
+        return;
     }
 
     std::shared_ptr<AudioCapturerStateCallbackNapi> cb =
