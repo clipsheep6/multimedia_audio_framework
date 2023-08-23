@@ -505,7 +505,7 @@ int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
     return audioServiceAdapter_->CloseAudioPort(ioHandle);
 }
 
-void AppendArgs(std::string &args, const std::string &val, const std::string &tag, const std::string &opt)
+void AppendArgs(std::string &args, const std::string &val, const std::string &tag, const std::string &opt = "")
 {
     if (!val.empty()) {
         args.append(tag);
