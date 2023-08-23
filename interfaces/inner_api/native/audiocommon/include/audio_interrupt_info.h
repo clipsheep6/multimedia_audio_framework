@@ -15,8 +15,24 @@
 #ifndef AUDIO_INTERRUPT_INFO_H
 #define AUDIO_INTERRUPT_INFO_H
 
+#include <audio_stream_info.h>
+#include <audio_source_type.h>
+
 namespace OHOS {
 namespace AudioStandard {
+enum ActionTarget {
+    CURRENT = 0,
+    INCOMING,
+    BOTH
+};
+
+enum AudioFocuState {
+    ACTIVE = 0,
+    DUCK,
+    PAUSE,
+    STOP
+};
+
 enum InterruptMode {
     SHARE_MODE = 0,
     INDEPENDENT_MODE = 1
@@ -103,6 +119,33 @@ struct InterruptAction {
     InterruptType interruptType;
     InterruptHint interruptHint;
     bool activated;
+};
+
+struct AudioFocusEntry {
+    InterruptForceType forceType;
+    InterruptHint hintType;
+    ActionTarget actionOn;
+    bool isReject;
+};
+
+struct AudioFocusType {
+    AudioStreamType streamType;
+    SourceType sourceType;
+    bool isPlay;
+    bool operator==(const AudioFocusType &value) const
+    {
+        return streamType == value.streamType && sourceType == value.sourceType && isPlay == value.isPlay;
+    }
+
+    bool operator<(const AudioFocusType &value) const
+    {
+        return streamType < value.streamType || (streamType == value.streamType && sourceType < value.sourceType);
+    }
+
+    bool operator>(const AudioFocusType &value) const
+    {
+        return streamType > value.streamType || (streamType == value.streamType && sourceType > value.sourceType);
+    }
 };
 } // namespace AudioStandard
 } // namespace OHOS

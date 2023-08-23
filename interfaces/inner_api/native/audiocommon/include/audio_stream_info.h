@@ -145,6 +145,23 @@ enum StreamUsage {
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 
+/**
+* Enumerates the audio content type.
+*/
+enum ContentType {
+    CONTENT_TYPE_UNKNOWN = 0,
+    CONTENT_TYPE_SPEECH = 1,
+    CONTENT_TYPE_MUSIC = 2,
+    CONTENT_TYPE_MOVIE = 3,
+    CONTENT_TYPE_SONIFICATION = 4,
+    CONTENT_TYPE_RINGTONE = 5,
+    // other ContentType
+    CONTENT_TYPE_PROMPT = 6,
+    CONTENT_TYPE_GAME = 7,
+    CONTENT_TYPE_DTMF = 8,
+    CONTENT_TYPE_ULTRASONIC = 9
+};
+
 struct AudioStreamParams {
     uint32_t samplingRate;
     uint8_t encoding;

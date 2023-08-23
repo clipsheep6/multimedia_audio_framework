@@ -158,23 +158,6 @@ enum AudioRingerMode {
 };
 
 /**
-* Enumerates the audio content type.
-*/
-enum ContentType {
-    CONTENT_TYPE_UNKNOWN = 0,
-    CONTENT_TYPE_SPEECH = 1,
-    CONTENT_TYPE_MUSIC = 2,
-    CONTENT_TYPE_MOVIE = 3,
-    CONTENT_TYPE_SONIFICATION = 4,
-    CONTENT_TYPE_RINGTONE = 5,
-    // other ContentType
-    CONTENT_TYPE_PROMPT = 6,
-    CONTENT_TYPE_GAME = 7,
-    CONTENT_TYPE_DTMF = 8,
-    CONTENT_TYPE_ULTRASONIC = 9
-};
-
-/**
  * Enumerates audio stream privacy type for playback capture.
  */
 enum AudioPrivacyType {
@@ -189,46 +172,6 @@ enum AudioRendererRate {
     RENDER_RATE_NORMAL = 0,
     RENDER_RATE_DOUBLE = 1,
     RENDER_RATE_HALF = 2,
-};
-
-enum ActionTarget {
-    CURRENT = 0,
-    INCOMING,
-    BOTH
-};
-
-enum AudioFocuState {
-    ACTIVE = 0,
-    DUCK,
-    PAUSE,
-    STOP
-};
-
-struct AudioFocusEntry {
-    InterruptForceType forceType;
-    InterruptHint hintType;
-    ActionTarget actionOn;
-    bool isReject;
-};
-
-struct AudioFocusType {
-    AudioStreamType streamType;
-    SourceType sourceType;
-    bool isPlay;
-    bool operator==(const AudioFocusType &value) const
-    {
-        return streamType == value.streamType && sourceType == value.sourceType && isPlay == value.isPlay;
-    }
-
-    bool operator<(const AudioFocusType &value) const
-    {
-        return streamType < value.streamType || (streamType == value.streamType && sourceType < value.sourceType);
-    }
-
-    bool operator>(const AudioFocusType &value) const
-    {
-        return streamType > value.streamType || (streamType == value.streamType && sourceType > value.sourceType);
-    }
 };
 
 class AudioInterrupt : public Parcelable {
