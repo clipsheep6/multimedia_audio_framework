@@ -73,11 +73,11 @@ int ExecuteFourArgc(char *argv[])
 {
     char *inputPath = argv[1];
     int ret = ReadWavFile(wavHeader1_, wavFile1_, inputPath);
-    CHECK_AND_RETURN_LOG(ret == 0, ret, "execute fail");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "execute fail");
 
     inputPath = argv[2];
     ret = ReadWavFile(wavHeader2_, wavFile2_, inputPath);
-    CHECK_AND_RETURN_LOG(ret == 0, ret, "execute fail");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "execute fail");
 
     OpenSlTestConcurrent();
 
@@ -94,11 +94,11 @@ int ExecuteFourArgc(char *argv[])
     return 0;
 }
 
-int ExecuteNotFourArgc(char *argv[])
+int ExecuteNotFourArgc(int argc, char *argv[])
 {
     char *inputPath = argv[1];
     int ret = ReadWavFile(wavHeader_, wavFile_, inputPath);
-    CHECK_AND_RETURN_LOG(ret == 0, ret, "execute fail");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "execute fail");
 
     OpenSlTest();
 
@@ -113,7 +113,7 @@ int ExecuteNotFourArgc(char *argv[])
     }
     char *inputPath2 = argv[2];
     ret = ReadWavFile(wavHeader_, wavFile_, inputPath2);
-    CHECK_AND_RETURN_LOG(ret == 0, ret, "execute fail");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "execute fail");
 
     OpenSlTest();
 
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
     if (argc == 4) {
         ExecuteFourArgc(argv);
     } else {
-        ExecuteNotFourArgc(argv);
+        ExecuteNotFourArgc(argc, argv);
     }
 }
 
