@@ -109,6 +109,9 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    bool enableDump_ = false;
+    FILE *dumpFile_ = nullptr;
+    uint32_t dumpCount = 0;
 
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 
@@ -124,10 +127,7 @@ private:
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
-#ifdef DUMPFILE
-    FILE *pfd;
-    const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/dump_audiosink.pcm";
-#endif // DUMPFILE
+    void SetAudioDumpBySysParam();
 };
 
 AudioRendererSinkInner::AudioRendererSinkInner(const std::string halName)
@@ -136,9 +136,6 @@ AudioRendererSinkInner::AudioRendererSinkInner(const std::string halName)
       audioRender_(nullptr), halName_(halName)
 {
     attr_ = {};
-#ifdef DUMPFILE
-    pfd = nullptr;
-#endif // DUMPFILE
 }
 
 AudioRendererSinkInner::~AudioRendererSinkInner()
@@ -311,12 +308,10 @@ void AudioRendererSinkInner::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
-#ifdef DUMPFILE
-    if (pfd) {
-        fclose(pfd);
-        pfd = nullptr;
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
     }
-#endif // DUMPFILE
 }
 
 void InitAttrs(struct AudioSampleAttributes &attrs)
@@ -493,13 +488,6 @@ int32_t AudioRendererSinkInner::Init(IAudioSinkAttr attr)
     }
     rendererInited_ = true;
 
-#ifdef DUMPFILE
-    pfd = fopen(g_audioOutTestFilePath, "wb+");
-    if (pfd == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif // DUMPFILE
-
     return SUCCESS;
 }
 
@@ -520,14 +508,12 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         AdjustAudioBalance(&data, len);
     }
 
-#ifdef DUMPFILE
-    if (pfd) {
-        size_t writeResult = fwrite((void*)&data, 1, len, pfd);
+    if (dumpFile_) {
+        size_t writeResult = fwrite(static_cast<void*>(&data), 1, len, dumpFile_);
         if (writeResult != len) {
             AUDIO_ERR_LOG("Failed to write the file.");
         }
     }
-#endif // DUMPFILE
     if (inSwitch_) {
         Trace traceInSwitch("AudioRendererSinkInner::RenderFrame::inSwitch");
         writeLen = len;
@@ -569,6 +555,18 @@ int32_t AudioRendererSinkInner::Start(void)
         keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
+    }
+
+    SetAudioDumpBySysParam();
+    if (enableDump_ && dumpFile_ == nullptr) {
+        std::string dumpFilePath = "/data/data/.pulse_dir/dump_audiosink_" +
+        std::to_string(dumpCount) + ".pcm";
+        dumpFile_ = fopen(dumpFilePath.c_str(), "wb+");
+        if (dumpFile_ == nullptr) {
+            AUDIO_ERR_LOG("Error opening dump file!");
+        } else {
+            dumpCount++;
+        }
     }
 
     int32_t ret;
@@ -950,6 +948,30 @@ int32_t AudioRendererSinkInner::Flush(void)
     }
 
     return ERR_OPERATION_FAILED;
+}
+
+void AudioRendererSinkInner::SetAudioDumpBySysParam(void)
+{
+    std::string dumpEnable;
+    enableDump_ = false;
+    bool res = GetSysPara("sys.audio.dump.writehdi.enable", dumpEnable);
+    if (!res || dumpEnable.empty()) {
+        AUDIO_INFO_LOG("sys.audio.dump.writehdi.enable is not set, dump audio is not required");
+        if (dumpFile_) {
+            fclose(dumpFile_);
+            dumpFile_ = nullptr;
+        }
+        return;
+    }
+    AUDIO_INFO_LOG("sys.audio.dump.writehdi.enable=%s", dumpEnable.c_str());
+    if (dumpEnable == "true") {
+        enableDump_ = true;
+        return;
+    }
+    if (dumpFile_) {
+        fclose(dumpFile_);
+        dumpFile_ = nullptr;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
