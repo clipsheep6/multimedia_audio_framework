@@ -58,11 +58,12 @@ SLObjectItf pcmPlayerObject = nullptr;
 SLObjectItf pcmPlayerObject1 = nullptr;
 SLObjectItf pcmPlayerObject2 = nullptr;
 
-int ReadWavFile(wav_hdr &wavHeader, FILE *wavFile, char *inputPath) {
+int ReadWavFile(wav_hdr &wavHeader, FILE *wavFile, char *inputPath)
+{
     size_t headerSize = sizeof(wav_hdr);
     char path[PATH_MAX + 1] = {0x00};
-    CHECK_AND_RETURN_RET_LOG((strlen(inputPath) <= PATH_MAX)
-                            && (realpath(inputPath, path) != nullptr), -1, "Invalid path");
+    CHECK_AND_RETURN_RET_LOG((strlen(inputPath) <= PATH_MAX) &&
+        (realpath(inputPath, path) != nullptr), -1, "Invalid path");
     wavFile = fopen(path, "rb");
     CHECK_AND_RETURN_RET_LOG(wavFile != nullptr, -1, "AudioRendererTest: Unable to open wave file");
     fread(&wavHeader, 1, headerSize, wavFile);
