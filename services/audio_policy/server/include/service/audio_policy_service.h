@@ -47,7 +47,7 @@
 namespace OHOS {
 namespace AudioStandard {
 class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
-    public IAudioAccessibilityConfigObserver, public PolicyProviderStub {
+    public IAudioAccessibilityConfigObserver, public IPolicyProvider {
 public:
     static AudioPolicyService& GetAudioPolicyService()
     {
