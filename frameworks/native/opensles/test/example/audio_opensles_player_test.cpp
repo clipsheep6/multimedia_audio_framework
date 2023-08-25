@@ -58,99 +58,83 @@ SLObjectItf pcmPlayerObject = nullptr;
 SLObjectItf pcmPlayerObject1 = nullptr;
 SLObjectItf pcmPlayerObject2 = nullptr;
 
+int ReadWavFile(wav_hdr &wavHeader, FILE *wavFile, char *inputPath)
+{
+    size_t headerSize = sizeof(wav_hdr);
+    char path[PATH_MAX + 1] = {0x00};
+    CHECK_AND_RETURN_RET_LOG((strlen(inputPath) <= PATH_MAX) &&
+        (realpath(inputPath, path) != nullptr), -1, "Invalid path");
+    wavFile = fopen(path, "rb");
+    CHECK_AND_RETURN_RET_LOG(wavFile != nullptr, -1, "AudioRendererTest: Unable to open wave file");
+    fread(&wavHeader, 1, headerSize, wavFile);
+    return 0;
+}
+
+int ExecuteFourArgc(char *argv[])
+{
+    char *inputPath = argv[1];
+    int ret = ReadWavFile(wavHeader1_, wavFile1_, inputPath);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "execute fail");
+
+    inputPath = argv[2];
+    ret = ReadWavFile(wavHeader2_, wavFile2_, inputPath);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "execute fail");
+
+    OpenSlTestConcurrent();
+
+    while (!feof(wavFile1_) || !feof(wavFile2_)) {
+        sleep(1);
+    }
+
+    PlayerStop(playItf1, bufferQueueItf1);
+    PlayerStop(playItf2, bufferQueueItf2);
+    (*pcmPlayerObject1)->Destroy(pcmPlayerObject1);
+    (*pcmPlayerObject2)->Destroy(pcmPlayerObject2);
+    (*engineObject)->Destroy(engineObject);
+    (*outputMixObject)->Destroy(outputMixObject);
+    return 0;
+}
+
+int ExecuteNotFourArgc(int argc, char *argv[])
+{
+    char *inputPath = argv[1];
+    int ret = ReadWavFile(wavHeader_, wavFile_, inputPath);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "execute fail");
+
+    OpenSlTest();
+
+    while (!feof(wavFile_)) {
+        sleep(1);
+    }
+    PlayerStop(playItf, bufferQueueItf);
+    (*pcmPlayerObject)->Destroy(pcmPlayerObject);
+
+    if (argc < 3) {
+        return 0;
+    }
+    char *inputPath2 = argv[2];
+    ret = ReadWavFile(wavHeader_, wavFile_, inputPath2);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "execute fail");
+
+    OpenSlTest();
+
+    while (!feof(wavFile_)) {
+        sleep(1);
+    }
+    PlayerStop(playItf, bufferQueueItf);
+    (*pcmPlayerObject)->Destroy(pcmPlayerObject);
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
+    if (argc < 2) {
+        return -1;
+    }
     if (argc == 4) {
-        size_t headerSize = sizeof(wav_hdr);
-        char *inputPath = argv[1];
-        char path[PATH_MAX + 1] = {0x00};
-        if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
-            AUDIO_ERR_LOG("Invalid path");
-            return -1;
-        }
-        wavFile1_ = fopen(path, "rb");
-        if (wavFile1_ == nullptr) {
-            AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
-            return -1;
-        }
-        fread(&wavHeader1_, 1, headerSize, wavFile1_);
-
-        headerSize = sizeof(wav_hdr);
-        inputPath = argv[2];
-        if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
-            AUDIO_ERR_LOG("Invalid path");
-            return -1;
-        }
-        wavFile2_ = fopen(path, "rb");
-        if (wavFile2_ == nullptr) {
-            AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
-            return -1;
-        }
-        fread(&wavHeader2_, 1, headerSize, wavFile2_);
-
-        OpenSlTestConcurrent();
-
-        while (!feof(wavFile1_) || !feof(wavFile2_)) {
-            sleep(1);
-        }
-
-        PlayerStop(playItf1, bufferQueueItf1);
-        PlayerStop(playItf2, bufferQueueItf2);
-        (*pcmPlayerObject1)->Destroy(pcmPlayerObject1);
-        (*pcmPlayerObject2)->Destroy(pcmPlayerObject2);
-        (*engineObject)->Destroy(engineObject);
-        (*outputMixObject)->Destroy(outputMixObject);
-        return 0;
+        ExecuteFourArgc(argv);
     } else {
-        if (argc < 2) {
-            return -1;
-        }
-        size_t headerSize = sizeof(wav_hdr);
-        char *inputPath = argv[1];
-        char path[PATH_MAX + 1] = {0x00};
-        if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
-            AUDIO_ERR_LOG("Invalid path");
-            return -1;
-        }
-        wavFile_ = fopen(path, "rb");
-        if (wavFile_ == nullptr) {
-            AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
-            return -1;
-        }
-        fread(&wavHeader_, 1, headerSize, wavFile_);
-
-        OpenSlTest();
-
-        while (!feof(wavFile_)) {
-            sleep(1);
-        }
-        PlayerStop(playItf, bufferQueueItf);
-        (*pcmPlayerObject)->Destroy(pcmPlayerObject);
-
-        if (argc < 3) {
-            return 0;
-        }
-        char *inputPath2 = argv[2];
-        char path2[PATH_MAX + 1] = {0x00};
-        if ((strlen(inputPath2) > PATH_MAX) || (realpath(inputPath2, path2) == nullptr)) {
-            AUDIO_ERR_LOG("Invalid path");
-            return -1;
-        }
-        wavFile_ = fopen(path2, "rb");
-        if (wavFile_ == nullptr) {
-            AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
-            return -1;
-        }
-        fread(&wavHeader_, 1, headerSize, wavFile_);
-
-        OpenSlTest();
-
-        while (!feof(wavFile_)) {
-            sleep(1);
-        }
-        PlayerStop(playItf, bufferQueueItf);
-        (*pcmPlayerObject)->Destroy(pcmPlayerObject);
-        return 0;
+        ExecuteNotFourArgc(argc, argv);
     }
 }
 
