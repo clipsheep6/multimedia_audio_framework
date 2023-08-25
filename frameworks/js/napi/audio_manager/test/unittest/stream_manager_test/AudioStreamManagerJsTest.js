@@ -22,6 +22,9 @@ describe("AudioStreamManagerJsTest", function () {
   const ERROR_INPUT_INVALID = '401';
   const ERROR_INVALID_PARAM = '6800101';
 
+  const ERROR_INPUT_INVALID = '401';
+  const ERROR_INVALID_PARAM = '6800101';
+
   let AudioStreamInfo = {
     samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_48000,
     channels: audio.AudioChannel.CHANNEL_2,
