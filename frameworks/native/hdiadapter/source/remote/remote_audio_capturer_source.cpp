@@ -309,7 +309,6 @@ int32_t RemoteAudioCapturerSource::Start(void)
         }
         started_ = true;
     }
-    started_ = true;
     return SUCCESS;
 }
 
