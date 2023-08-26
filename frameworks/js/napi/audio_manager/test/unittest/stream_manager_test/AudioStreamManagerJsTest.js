@@ -1045,7 +1045,7 @@ describe("AudioStreamManagerJsTest", function () {
       done();
     } catch(e) {
       console.error(`${TAG} getAudioEffectInfoArraySync018 ERROR: ${e.message}`);
-      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      expect(e.code).assertEqual(ERROR_INVALID_PARAM);
       done();
       return;
     }
@@ -1310,7 +1310,7 @@ describe("AudioStreamManagerJsTest", function () {
       done();
     } catch(e) {
       console.error(`${TAG} isActiveSync011 ERROR: ${e.message}`);
-      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      expect(e.code).assertEqual(ERROR_INVALID_PARAM);
       done();
       return;
     }

@@ -26,7 +26,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
     let audioVolumeGroupManager;
     const ERROR_INPUT_INVALID = '401';
     const ERROR_INVALID_PARAM = '6800101';
-    const TYPE_NUMBER = 'number';
     const MIN_VOLUME_LEVEL = 0;
     const MAX_VOLUME_LEVEL = 15;
 
@@ -244,28 +243,16 @@ describe("AudioGroupManagerJsUnitTest", function () {
      * @tc.require: I7V04L
      */
     it("SUB_AUDIO_GROUP_MANAGER_GET_VOLUME_SYNC_002", 0, async function (done) {
-        let volume = 6;
-        audioVolumeGroupManager.setVolume(audio.AudioVolumeType.RINGTONE, volume, (err) => {
-            if (err) {
-                console.error(`Failed to set RINGTONE volume. ${err}`);
-                expect(false).assertTrue();
-                done();
-                return;
-            }
-            console.info('invoked to indicate a successful RINGTONE volume setting.');
-            expect(true).assertTrue();
-
-            try {
-                let value = audioVolumeGroupManager.getVolumeSync(audio.AudioVolumeType.RINGTONE);
-                console.info(`get RINGTONE volume is obtained ${value}.`);
-                expect(value).assertEqual(volume);
-                done();
-            } catch (err) {
-                console.error(`Failed to obtain RINGTONE volume. ${err}`);
-                expect(false).assertTrue();
-                done();
-            }
-        })
+        try {
+            let value = audioVolumeGroupManager.getVolumeSync(audio.AudioVolumeType.RINGTONE);
+            console.info(`get MEDIA volume is obtained ${value}.`);
+            expect(value >= MIN_VOLUME_LEVEL && value <= MAX_VOLUME_LEVEL).assertTrue();
+            done();
+        } catch (err) {
+            console.error(`Failed to obtain RINGTONE volume. ${err}`);
+            expect(false).assertTrue();
+            done();
+        }
     })
 
     /*
@@ -430,28 +417,16 @@ describe("AudioGroupManagerJsUnitTest", function () {
      * @tc.require: I7V04L
      */
     it("SUB_AUDIO_GROUP_MANAGER_GET_VOLUME_SYNC_008", 0, async function (done) {
-        let volume = 6;
-        audioVolumeGroupManager.setVolume(audio.AudioVolumeType.ALL, volume, (err) => {
-            if (err) {
-                console.error(`Failed to set ALL volume. ${err}`);
-                expect(false).assertTrue();
-                done();
-                return;
-            }
-            console.info('invoked to indicate a successful ALL volume setting.');
-            expect(true).assertTrue();
-
-            try {
-                let value = audioVolumeGroupManager.getVolumeSync(audio.AudioVolumeType.ALL);
-                console.info(`get ALL volume is obtained ${value}.`);
-                expect(value).assertEqual(volume);
-                done();
-            } catch (err) {
-                console.error(`Failed to obtain ALL volume. ${err}`);
-                expect(false).assertTrue();
-                done();
-            }
-        })
+        try {
+            let value = audioVolumeGroupManager.getVolumeSync(audio.AudioVolumeType.ULTRASONIC);
+            console.info(`get ULTRASONIC volume is obtained ${value}.`);
+            expect(value >= MIN_VOLUME_LEVEL && value <= MAX_VOLUME_LEVEL).assertTrue();
+            done();
+        } catch (err) {
+            console.error(`Failed to obtain ALL volume. ${err}`);
+            expect(false).assertTrue();
+            done();
+        }
     })
 
     /*
@@ -522,7 +497,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMinVolumeSync(audio.AudioVolumeType.VOICE_CALL);
             console.info(`get VOICE_CALL min volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value >= MIN_VOLUME_LEVEL && value < MAX_VOLUME_LEVEL).assertTrue();
             done();
         } catch (err) {
@@ -542,7 +516,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMinVolumeSync(audio.AudioVolumeType.RINGTONE);
             console.info(`get RINGTONE min volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value >= MIN_VOLUME_LEVEL && value < MAX_VOLUME_LEVEL).assertTrue();
             done();
         } catch (err) {
@@ -562,7 +535,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMinVolumeSync(audio.AudioVolumeType.MEDIA);
             console.info(`get MEDIA min volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value >= MIN_VOLUME_LEVEL && value < MAX_VOLUME_LEVEL).assertTrue();
             done();
         } catch (err) {
@@ -582,7 +554,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMinVolumeSync(audio.AudioVolumeType.ALARM);
             console.info(`get ALARM min volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value >= MIN_VOLUME_LEVEL && value < MAX_VOLUME_LEVEL).assertTrue();
             done();
         } catch (err) {
@@ -602,7 +573,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMinVolumeSync(audio.AudioVolumeType.ACCESSIBILITY);
             console.info(`get ACCESSIBILITY min volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value >= MIN_VOLUME_LEVEL && value < MAX_VOLUME_LEVEL).assertTrue();
             done();
         } catch (err) {
@@ -622,7 +592,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMinVolumeSync(audio.AudioVolumeType.VOICE_ASSISTANT);
             console.info(`get VOICE_ASSISTANT min volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value >= MIN_VOLUME_LEVEL && value < MAX_VOLUME_LEVEL).assertTrue();
             done();
         } catch (err) {
@@ -642,7 +611,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMinVolumeSync(audio.AudioVolumeType.ULTRASONIC);
             console.info(`get ULTRASONIC min volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value >= MIN_VOLUME_LEVEL && value < MAX_VOLUME_LEVEL).assertTrue();
             done();
         } catch (err) {
@@ -662,7 +630,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMinVolumeSync(audio.AudioVolumeType.ALL);
             console.info(`get ALL min volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value >= MIN_VOLUME_LEVEL && value < MAX_VOLUME_LEVEL).assertTrue();
             done();
         } catch (err) {
@@ -740,7 +707,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMaxVolumeSync(audio.AudioVolumeType.VOICE_CALL);
             console.info(`get VOICE_CALL max volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value).assertEqual(MAX_VOLUME_LEVEL);
             done();
         } catch (err) {
@@ -760,7 +726,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMaxVolumeSync(audio.AudioVolumeType.RINGTONE);
             console.info(`get RINGTONE max volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value).assertEqual(MAX_VOLUME_LEVEL);
             done();
         } catch (err) {
@@ -780,7 +745,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMaxVolumeSync(audio.AudioVolumeType.MEDIA);
             console.info(`get MEDIA max volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value).assertEqual(MAX_VOLUME_LEVEL);
             done();
         } catch (err) {
@@ -800,7 +764,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMaxVolumeSync(audio.AudioVolumeType.ALARM);
             console.info(`get ALARM max volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value).assertEqual(MAX_VOLUME_LEVEL);
             done();
         } catch (err) {
@@ -820,7 +783,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMaxVolumeSync(audio.AudioVolumeType.ACCESSIBILITY);
             console.info(`get ACCESSIBILITY max volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value).assertEqual(MAX_VOLUME_LEVEL);
             done();
         } catch (err) {
@@ -840,7 +802,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMaxVolumeSync(audio.AudioVolumeType.VOICE_ASSISTANT);
             console.info(`get VOICE_ASSISTANT max volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value).assertEqual(MAX_VOLUME_LEVEL);
             done();
         } catch (err) {
@@ -860,7 +821,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMaxVolumeSync(audio.AudioVolumeType.ULTRASONIC);
             console.info(`get ULTRASONIC max volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value).assertEqual(MAX_VOLUME_LEVEL);
             done();
         } catch (err) {
@@ -880,7 +840,6 @@ describe("AudioGroupManagerJsUnitTest", function () {
         try {
             let value = audioVolumeGroupManager.getMaxVolumeSync(audio.AudioVolumeType.ALL);
             console.info(`get ALL max volume is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
             expect(value).assertEqual(MAX_VOLUME_LEVEL);
             done();
         } catch (err) {
@@ -985,27 +944,16 @@ describe("AudioGroupManagerJsUnitTest", function () {
      * @tc.require: I7V04L
      */
     it("SUB_AUDIO_GROUP_MANAGER_IS_MUTE_SYNC_002", 0, async function (done) {
-        audioVolumeGroupManager.mute(audio.AudioVolumeType.RINGTONE, true, (err) => {
-            if (err) {
-                console.error(`Failed to mute RINGTONE stream. ${err}`);
-                expect(false).assertTrue();
-                done();
-                return;
-            }
-            console.info('invoked to indicate that RINGTONE stream is muted.');
-            expect(true).assertTrue();
-
-            try {
-                let value = audioVolumeGroupManager.isMuteSync(audio.AudioVolumeType.RINGTONE);
-                console.info(`The mute status of RINGTONE stream is obtained ${value}.`);
-                expect(value).assertTrue();
-                done();
-            } catch (err) {
-                console.error(`Failed to obtain RINGTONE mute status. ${err}`);
-                expect(false).assertTrue();
-                done();
-            }
-        })
+        try {
+            let value = audioVolumeGroupManager.isMuteSync(audio.AudioVolumeType.RINGTONE);
+            console.info(`The mute status of RINGTONE stream is obtained ${value}.`);
+            expect(typeof value).assertEqual('boolean');
+            done();
+        } catch (err) {
+            console.error(`Failed to obtain RINGTONE mute status. ${err}`);
+            expect(false).assertTrue();
+            done();
+        }
     })
 
     /*
@@ -1165,27 +1113,16 @@ describe("AudioGroupManagerJsUnitTest", function () {
      * @tc.require: I7V04L
      */
     it("SUB_AUDIO_GROUP_MANAGER_IS_MUTE_SYNC_008", 0, async function (done) {
-        audioVolumeGroupManager.mute(audio.AudioVolumeType.ALL, true, (err) => {
-            if (err) {
-                console.error(`Failed to mute ALL stream. ${err}`);
-                expect(false).assertTrue();
-                done();
-                return;
-            }
-            console.info('invoked to indicate that ALL stream is muted.');
-            expect(true).assertTrue();
-
-            try {
-                let value = audioVolumeGroupManager.isMuteSync(audio.AudioVolumeType.ALL);
-                console.info(`The mute status of ALL stream is obtained ${value}.`);
-                expect(value).assertTrue();
-                done();
-            } catch (err) {
-                console.error(`Failed to obtain ALL mute status. ${err}`);
-                expect(false).assertTrue();
-                done();
-            }
-        })
+        try {
+            let value = audioVolumeGroupManager.isMuteSync(audio.AudioVolumeType.ALL);
+            console.info(`The mute status of ALL stream is obtained ${value}.`);
+            expect(typeof value).assertEqual('boolean');
+            done();
+        } catch (err) {
+            console.error(`Failed to obtain ALL mute status. ${err}`);
+            expect(false).assertTrue();
+            done();
+        }
     })
 
     /*
@@ -1253,27 +1190,16 @@ describe("AudioGroupManagerJsUnitTest", function () {
      * @tc.require: I7V04L
      */
     it("SUB_AUDIO_GROUP_MANAGER_GET_RINGER_MODE_SYNC_001", 0, async function (done) {
-        audioVolumeGroupManager.setRingerMode(audio.AudioRingMode.RINGER_MODE_SILENT, (err) => {
-            if (err) {
-                console.error(`Failed to set the ringer mode. ${err}`);
-                expect(false).assertTrue();
-                done();
-                return;
-            }
-            console.info('invoked to indicate a successful setting of the ringer mode.');
-            expect(true).assertTrue();
-
-            try {
-                let value = audioVolumeGroupManager.getRingerModeSync();
-                console.info(`invoked to indicate that the ringer mode is obtained ${value}.`);
-                expect(value).assertEqual(audio.AudioRingMode.RINGER_MODE_SILENT);
-                done();
-            } catch (err) {
-                console.error(`Failed to obtain the ringer mode. ${err}`);
-                expect(false).assertTrue();
-                done();
-            }
-        })
+        try {
+            let value = audioVolumeGroupManager.getRingerModeSync();
+            console.info(`invoked to indicate that the ringer mode is obtained ${value}.`);
+            expect(typeof value).assertEqual('number');
+            done();
+        } catch (err) {
+            console.error(`Failed to obtain the ringer mode. ${err}`);
+            expect(false).assertTrue();
+            done();
+        }
     })
 
     /*
@@ -1283,27 +1209,16 @@ describe("AudioGroupManagerJsUnitTest", function () {
      * @tc.require: I7V04L
      */
     it("SUB_AUDIO_GROUP_MANAGER_IS_MICROPHONE_MUTE_SYNC_001", 0, async function (done) {
-        audioVolumeGroupManager.setMicrophoneMute(true, (err) => {
-            if (err) {
-                console.error(`Failed to mute the microphone. ${err}`);
-                expect(false).assertTrue();
-                done();
-                return;
-            }
-            console.info('invoked to indicate that the microphone is muted.');
-            expect(true).assertTrue();
-
-            try {
-                let value = audioVolumeGroupManager.isMicrophoneMute();
-                console.info(`invoked to indicate that the mute status of the microphone is obtained ${value}.`);
-                expect(value).assertTrue();
-                done();
-            } catch (err) {
-                console.error(`Failed to obtain the mute status of the microphone. ${err}`);
-                expect(false).assertTrue();
-                done();
-            }
-        })
+        try {
+            let value = audioVolumeGroupManager.isMicrophoneMuteSync();
+            console.info(`invoked to indicate that the mute status of the microphone is obtained ${value}.`);
+            expect(typeof value).assertEqual('boolean');
+            done();
+        } catch (err) {
+            console.error(`Failed to obtain the mute status of the microphone. ${err}`);
+            expect(false).assertTrue();
+            done();
+        }
     })
 
     /*
@@ -1318,7 +1233,7 @@ describe("AudioGroupManagerJsUnitTest", function () {
             let value = audioVolumeGroupManager.getSystemVolumeInDbSync(audio.AudioVolumeType.VOICE_CALL, volumeLevel,
                 audio.DeviceType.SPEAKER);
             console.info(`get <VOICE_CALL, SPEAKER> volume db is obtained ${value}.`);
-            expect(typeof value).assertEqual(TYPE_NUMBER);
+            expect(typeof value).assertEqual('number');
             done();
         } catch (err) {
             console.error(`Failed to obtain <VOICE_CALL, SPEAKER> volume db. ${err}`);

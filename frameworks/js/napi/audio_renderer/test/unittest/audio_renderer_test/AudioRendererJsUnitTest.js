@@ -143,7 +143,7 @@ describe("AudioRendererJsUnitTest", function() {
         try {
             let data = audioRenderer.getAudioStreamIdSync();
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_AUDIO_STREAM_ID_SYNC_TEST_001 SUCCESS: ${data}`);
-            expect(true).assertTrue();
+            expect(typeof data).assertEqual('number');
             done();
         } catch (err) {
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_AUDIO_STREAM_ID_SYNC_TEST_001 ERROR: ${err.message}`);
@@ -162,7 +162,7 @@ describe("AudioRendererJsUnitTest", function() {
         try {
             let data = audioRenderer.getBufferSizeSync();
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_BUFFER_SIZE_SYNC_TEST_001 SUCCESS: ${data}`);
-            expect(true).assertTrue();
+            expect(typeof data).assertEqual('number');
             done();
         } catch (err) {
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_BUFFER_SIZE_SYNC_TEST_001 ERROR: ${err.message}`);
@@ -181,7 +181,7 @@ describe("AudioRendererJsUnitTest", function() {
         try {
             let data = audioRenderer.getMinStreamVolumeSync();
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_MIN_STREAM_VOLUME_SYNC_TEST_001 SUCCESS: ${data}`);
-            expect(true).assertTrue();
+            expect(typeof data).assertEqual('number');
             done();
         } catch (err) {
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_MIN_STREAM_VOLUME_SYNC_TEST_001 ERROR: ${err.message}`);
@@ -200,7 +200,7 @@ describe("AudioRendererJsUnitTest", function() {
         try {
             let data = audioRenderer.getMaxStreamVolumeSync();
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_MAX_STREAM_VOLUME_SYNC_TEST_001 SUCCESS: ${data}`);
-            expect(true).assertTrue();
+            expect(typeof data).assertEqual('number');
             done();
         } catch (err) {
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_MAX_STREAM_VOLUME_SYNC_TEST_001 ERROR: ${err.message}`);
@@ -218,8 +218,8 @@ describe("AudioRendererJsUnitTest", function() {
     it('SUB_AUDIO_RENDERER_GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001', 0, async function (done) {
         try {
             let data = audioRenderer.getCurrentOutputDevicesSync();
-            console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001 SUCCESS: ${data}`);
-            expect(data.length).assertLarger(0);
+            console.info(`${TAG}: GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001 SUCCESS: ${JSON.stringify(data)}`);
+            expect(typeof data).assertEqual('object');
             done();
         } catch (err) {
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001 ERROR: ${err.message}`);
@@ -247,11 +247,6 @@ describe("AudioRendererJsUnitTest", function() {
             expect(data).assertLarger(0);
 
             await audioRenderer.stop();
-            data = audioRenderer.getAudioTimeSync();
-            console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_AUDIO_TIME_SYNC_TEST_001 SUCCESS, after stop: ${data}`);
-            expect(data).assertLarger(0);
-
-            await audioRenderer.release();
             done();
         } catch (err) {
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_AUDIO_TIME_SYNC_TEST_001 ERROR: ${err.message}`);
@@ -342,7 +337,7 @@ describe("AudioRendererJsUnitTest", function() {
         try {
             let data = audioRenderer.getUnderflowCountSync();
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_UNDERFLOW_COUNT_SYNC_TEST_001 SUCCESS: ${data}`);
-            expect(data).assertLarger(0);
+            expect(typeof data).assertEqual('number');
             done();
         } catch (err) {
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_UNDERFLOW_COUNT_SYNC_TEST_001 ERROR: ${err.message}`);

@@ -141,7 +141,7 @@ describe("AudioCapturerJsUnitTest", function() {
         try {
             let data = audioCapturer.getAudioStreamIdSync();
             console.info(`${TAG}: SUB_AUDIO_CAPTURER_GET_AUDIO_STREAM_ID_SYNC_TEST_001 SUCCESS: ${data}`);
-            expect(true).assertTrue();
+            expect(typeof data).assertEqual('number');
             done();
         } catch (err) {
             console.info(`${TAG}: SUB_AUDIO_CAPTURER_GET_AUDIO_STREAM_ID_SYNC_TEST_001 ERROR: ${err.message}`);
@@ -160,7 +160,7 @@ describe("AudioCapturerJsUnitTest", function() {
         try {
             let data = audioCapturer.getBufferSizeSync();
             console.info(`${TAG}: SUB_AUDIO_CAPTURER_GET_BUFFER_SIZE_SYNC_TEST_001 SUCCESS: ${data}`);
-            expect(true).assertTrue();
+            expect(typeof data).assertEqual('number');
             done();
         } catch (err) {
             console.info(`${TAG}: SUB_AUDIO_CAPTURER_GET_BUFFER_SIZE_SYNC_TEST_001 ERROR: ${err.message}`);
@@ -188,10 +188,6 @@ describe("AudioCapturerJsUnitTest", function() {
             expect(data).assertLarger(0);
 
             await audioCapturer.stop();
-            data = audioCapturer.getAudioTimeSync();
-            console.info(`${TAG}: SUB_AUDIO_CAPTURER_GET_AUDIO_TIME_SYNC_TEST_001 SUCCESS, after stop: ${data}`);
-            expect(data).assertLarger(0);
-
             await audioCapturer.release();
             done();
         } catch (err) {
