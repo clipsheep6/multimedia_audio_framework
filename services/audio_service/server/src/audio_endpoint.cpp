@@ -96,6 +96,7 @@ private:
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
     bool PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
     bool RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wakeUpTime);
+    void InitDumpFile(FILE *file);
 
     /**
      * @brief Get the current read position in frame and the read-time with it.
@@ -177,10 +178,8 @@ private:
 
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
-#ifdef DUMP_PROCESS_FILE
     FILE *dcp_ = nullptr;
-    FILE *dump_hdi_ = nullptr;
-#endif
+    FILE *dumpHdi_ = nullptr;
 };
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::GetInstance(EndpointType type, const DeviceInfo &deviceInfo)
@@ -253,16 +252,8 @@ void AudioEndpointInner::Release()
         AUDIO_INFO_LOG("Set device buffer null");
         dstAudioBuffer_ = nullptr;
     }
-#ifdef DUMP_PROCESS_FILE
-    if (dcp_) {
-        fclose(dcp_);
-        dcp_ = nullptr;
-    }
-    if (dump_hdi_) {
-        fclose(dump_hdi_);
-        dump_hdi_ = nullptr;
-    }
-#endif
+    DumpFileUtil::CloseDumpFile(&dcp_);
+    DumpFileUtil::CloseDumpFile(&dumpHdi_);
 }
 
 AudioEndpointInner::~AudioEndpointInner()
@@ -339,12 +330,8 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
     updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
     pthread_setname_np(updatePosTimeThread_.native_handle(), "AudioEndpointUpdate");
 
-#ifdef DUMP_PROCESS_FILE
-    dump_hdi_ = fopen("/data/data/server-capture-hdi.pcm", "a+");
-    if (dump_hdi_ == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif
+    InitDumpFile(dumpHdi_);
+
     return true;
 }
 
@@ -393,13 +380,8 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
     updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
     pthread_setname_np(updatePosTimeThread_.native_handle(), "AudioEndpointUpdate");
 
-#ifdef DUMP_PROCESS_FILE
-    dcp_ = fopen("/data/data/server-read-client.pcm", "a+");
-    dump_hdi_ = fopen("/data/data/server-hdi.pcm", "a+");
-    if (dcp_ == nullptr || dump_hdi_ == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif
+    InitDumpFile(dcp_);
+    InitDumpFile(dumpHdi_);
     return true;
 }
 
@@ -583,6 +565,23 @@ void AudioEndpointInner::ReSyncPosition()
     nextWriteSapn->offsetInFrame = nextDstWritePos;
     nextWriteSapn->spanStatus = SpanStatus::SPAN_READ_DONE;
     return;
+}
+
+void AudioEndpointInner::InitDumpFile(FILE *file)
+{
+    if (file == nullptr) {
+        file = DumpFileUtil::OpenDumpFile("sys.audio.dump.writehdi.enable", "dump_endpoint_hdi.pcm",
+            AUDIO_SERVICE);
+        if (file == nullptr) {
+            AUDIO_INFO_LOG("Failed to open dump file.");
+        }
+    } else {
+        int32_t res = DumpFileUtil::ChangeDumpFileState("sys.audio.dump.writehdi.enable", &file,
+            "dump_endpoint_hdi.pcm", AUDIO_SERVICE);
+        if (res == ERROR) {
+            AUDIO_ERR_LOG("Failed to change file status.");
+        }
+    }
 }
 
 bool AudioEndpointInner::StartDevice()
@@ -923,11 +922,14 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
             processBufferList_[i]->GetReadbuffer(curRead, streamData.bufferDesc); // check return?
             audioDataList.push_back(streamData);
             curReadSpan->readStartTime = ClockTime::GetCurNano();
-#ifdef DUMP_PROCESS_FILE
-            if (dcp_ != nullptr) {
-                fwrite(static_cast<void *>(streamData.bufferDesc.buffer), 1, streamData.bufferDesc.bufLength, dcp_);
+            int32_t res = SUCCESS;
+            if (dcp_) {
+                res = DumpFileUtil::WriteDumpFile(dcp_, static_cast<void *>(streamData.bufferDesc.buffer),
+                    streamData.bufferDesc.bufLength);
             }
-#endif
+            if (res != SUCCESS) {
+                AUDIO_ERR_LOG("Failed to write the file.");
+            }
         }
     }
 }
@@ -960,11 +962,13 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
         ProcessData(audioDataList, dstStreamData);
     }
 
-#ifdef DUMP_PROCESS_FILE
-    if (dump_hdi_ != nullptr) {
-        fwrite(static_cast<void *>(dstStreamData.bufferDesc.buffer), 1, dstStreamData.bufferDesc.bufLength, dump_hdi_);
+    if (dumpHdi_) {
+        int32_t res = DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
+            dstStreamData.bufferDesc.bufLength);
+        if (res != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
     }
-#endif
     return true;
 }
 
@@ -1256,11 +1260,12 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     BufferDesc readBuf;
     int32_t ret = dstAudioBuffer_->GetReadbuffer(curReadPos, readBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s get read buffer fail, ret %{public}d.", __func__, ret);
-#ifdef DUMP_PROCESS_FILE
-    if (dump_hdi_ != nullptr) {
-        fwrite(static_cast<void *>(readBuf.buffer), 1, readBuf.bufLength, dump_hdi_);
+    if (dumpHdi_) {
+        int32_t res = DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
+        if (res != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
     }
-#endif
 
     WriteToProcessBuffers(readBuf);
     ret = memset_s(readBuf.buffer, readBuf.bufLength, 0, readBuf.bufLength);

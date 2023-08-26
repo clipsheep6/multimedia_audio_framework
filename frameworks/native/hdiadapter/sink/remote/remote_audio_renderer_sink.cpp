@@ -113,9 +113,7 @@ private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
     struct AudioManager *GetAudioManager();
-#ifdef DEBUG_DUMP_FILE
-    FILE *pfd;
-#endif // DEBUG_DUMP_FILE
+    FILE *dumpFile_ = nullptr;
 };
 
 RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string &deviceNetworkId)
@@ -124,9 +122,6 @@ RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string &de
     attr_ = {};
     this->deviceNetworkId_ = deviceNetworkId;
     audioManager_ = GetAudioManager();
-#ifdef DEBUG_DUMP_FILE
-    pfd = nullptr;
-#endif // DEBUG_DUMP_FILE
 }
 
 RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
@@ -282,12 +277,7 @@ void RemoteAudioRendererSinkInner::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
-#ifdef DEBUG_DUMP_FILE
-    if (pfd) {
-        fclose(pfd);
-        pfd = nullptr;
-    }
-#endif // DEBUG_DUMP_FILE
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
     // remove map recorder.
     RemoteAudioRendererSinkInner *temp = allsinks[this->deviceNetworkId_];
     if (temp != nullptr) {
@@ -484,18 +474,6 @@ int32_t RemoteAudioRendererSinkInner::Init(IAudioSinkAttr attr)
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink: Init end.");
     rendererInited_.store(true);
 
-#ifdef DEBUG_DUMP_FILE
-    AUDIO_INFO_LOG("dump IAudioSinkAttr:%{public}s", printRemoteAttr(attr_).c_str());
-    std::string fileName = attr_.filePath;
-    std::string filePath = "/data/local/tmp/remote_test_001.pcm";
-    const char *g_audioOutTestFilePath = filePath.c_str();
-    pfd = fopen(g_audioOutTestFilePath, "a+"); // here will not create a file if not exit.
-    AUDIO_ERR_LOG("init dump file[%{public}s]", g_audioOutTestFilePath);
-    if (pfd == nullptr) {
-        AUDIO_ERR_LOG("Error opening remote pcm file[%{public}s]", g_audioOutTestFilePath);
-    }
-#endif // DEBUG_DUMP_FILE
-
     return SUCCESS;
 }
 
@@ -514,14 +492,12 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
         return ERR_WRITE_FAILED;
     }
     writeLen = len;
-#ifdef DEBUG_DUMP_FILE
-    if (pfd != nullptr) {
-        size_t writeResult = fwrite((void*)&data, 1, len, pfd);
-        if (writeResult != len) {
+    if (dumpFile_) {
+        int32_t res = DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+        if (res != SUCCESS) {
             AUDIO_ERR_LOG("Failed to write the file.");
         }
     }
-#endif // DEBUG_DUMP_FILE
 
     int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, cost);
@@ -530,7 +506,21 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
 
 int32_t RemoteAudioRendererSinkInner::Start(void)
 {
+    std::string audioOutTestFileName = "dump_remote_audiosink.pcm";
     AUDIO_INFO_LOG("Start.");
+    if (dumpFile_ == nullptr) {
+        dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writehdi.enable", audioOutTestFileName, AUDIO_PULSE);
+        if (dumpFile_ == nullptr) {
+            AUDIO_INFO_LOG("Failed to open dump file.");
+        }
+    } else {
+        int32_t res = DumpFileUtil::ChangeDumpFileState("sys.audio.dump.writehdi.enable", &dumpFile_,
+            audioOutTestFileName, AUDIO_SERVICE);
+        if (res == ERROR) {
+            AUDIO_ERR_LOG("Failed to change file status.");
+        }
+    }
+    
     if (!isRenderCreated_.load()) {
         if (CreateRender(audioPort_) != 0) {
             AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
