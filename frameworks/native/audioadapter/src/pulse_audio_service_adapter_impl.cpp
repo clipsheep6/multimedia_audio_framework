@@ -31,8 +31,8 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
-std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSessionIDMap;
-std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
+std::unordered_map<uint32_t, std::pair<uint32_t, int32_t>> PulseAudioServiceAdapterImpl::g_sinkIndexSessionInfoMap;
+std::unordered_map<uint32_t, std::pair<uint32_t, int32_t>> PulseAudioServiceAdapterImpl::g_sourceIndexSessionInfoMap;
 int32_t g_playbackCapturerSourceOutputIndex = -1;
 
 std::set<uint32_t> g_wakeupCapturerSourceOutputIndexs;
@@ -692,22 +692,42 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
 
     if (!streamType.compare(string("music"))) {
         stream = STREAM_MUSIC;
-    } else if (!streamType.compare(string("ring"))) {
-        stream = STREAM_RING;
-    } else if (!streamType.compare(string("system"))) {
-        stream = STREAM_SYSTEM;
-    } else if (!streamType.compare(string("notification"))) {
-        stream = STREAM_NOTIFICATION;
-    } else if (!streamType.compare(string("alarm"))) {
-        stream = STREAM_ALARM;
     } else if (!streamType.compare(string("voice_call"))) {
         stream = STREAM_VOICE_CALL;
-    }  else if (!streamType.compare(string("voice_assistant"))) {
+    } else if (!streamType.compare(string("ring"))) {
+        stream = STREAM_RING;
+    } else if (!streamType.compare(string("media"))) {
+        stream = STREAM_MEDIA;
+    } else if (!streamType.compare(string("voice_assistant"))) {
         stream = STREAM_VOICE_ASSISTANT;
+    } else if (!streamType.compare(string("system"))) {
+        stream = STREAM_SYSTEM;
+    } else if (!streamType.compare(string("alarm"))) {
+        stream = STREAM_ALARM;
+    } else if (!streamType.compare(string("notification"))) {
+        stream = STREAM_NOTIFICATION;
+    } else if (!streamType.compare(string("dtmf"))) {
+        stream = STREAM_DTMF;
+    } else if (!streamType.compare(string("tts"))) {
+        stream = STREAM_TTS;
     } else if (!streamType.compare(string("accessibility"))) {
         stream = STREAM_ACCESSIBILITY;
+    } else if (!streamType.compare(string("movie"))) {
+        stream = STREAM_MOVIE;
+    } else if (!streamType.compare(string("game"))) {
+        stream = STREAM_GAME;
+    } else if (!streamType.compare(string("speech"))) {
+        stream = STREAM_SPEECH;
+    } else if (!streamType.compare(string("system_enforced"))) {
+        stream = STREAM_SYSTEM_ENFORCED;
     } else if (!streamType.compare(string("ultrasonic"))) {
         stream = STREAM_ULTRASONIC;
+    } else if (!streamType.compare(string("wakeup"))) {
+        stream = STREAM_WAKEUP;
+    } else if (!streamType.compare(string("voice_message"))) {
+        stream = STREAM_VOICE_MESSAGE;
+    } else if (!streamType.compare(string("navigation"))) {
+        stream = STREAM_NAVIGATION;
     } else {
         stream = STREAM_MUSIC;
     }
@@ -846,7 +866,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     sessionStr >> sessionID;
     AUDIO_INFO_LOG("PaGetSinkInputInfoVolumeCb sessionID %{public}u", sessionID);
 
-    sinkIndexSessionIDMap[i->index] = sessionID;
+    g_sinkIndexSessionInfoMap[i->index] = std::make_pair(sessionID, uid);
 
     string streamType(streamtype);
     float volumeFactor = atof(streamVolume);
@@ -937,12 +957,15 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
         return;
     }
 
+    int32_t uid = -1;
+    CastValue<int32_t>(uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
+
     std::stringstream sessionStr;
     uint32_t sessionID;
     sessionStr << streamSession;
     sessionStr >> sessionID;
     AUDIO_INFO_LOG("sessionID %{public}u", sessionID);
-    sourceIndexSessionIDMap[i->index] = sessionID;
+    g_sourceIndexSessionInfoMap[i->index] = std::make_pair(sessionID, uid);
 
     const char *captureFlag = pa_proplist_gets(i->proplist, "stream.isInnerCapturer");
     if (captureFlag == nullptr) {
@@ -1077,9 +1100,12 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         pa_operation_unref(operation);
         pa_threaded_mainloop_unlock(thiz->mMainLoop);
     } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-        uint32_t sessionID = sourceIndexSessionIDMap[idx];
+        AUDIO_INFO_LOG("[111][][][][][]g_sinkIndexSessionInfoMap.size: %{public}zu", g_sinkIndexSessionInfoMap.size());
+        uint32_t sessionID = g_sourceIndexSessionInfoMap[idx];
         AUDIO_ERR_LOG("[ProcessSourceOutputEvent] sessionID: %{public}d removed", sessionID);
         g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
+        g_sourceIndexSessionInfoMap.erase(idx);
+        AUDIO_INFO_LOG("[222][][][][][]g_sinkIndexSessionInfoMap.size: %{public}zu", g_sinkIndexSessionInfoMap.size());
         if (g_playbackCapturerSourceOutputIndex >= 0 &&
             idx == static_cast<uint32_t>(g_playbackCapturerSourceOutputIndex)) {
             g_audioServiceAdapterCallback->OnPlaybackCapturerStop();
@@ -1115,6 +1141,7 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
 
         case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
             if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_NEW) {
+                AUDIO_INFO_LOG("[111][][][][][]g_sinkIndexSessionInfoMap.size: %{public}zu", g_sinkIndexSessionInfoMap.size());
                 pa_threaded_mainloop_lock(thiz->mMainLoop);
                 pa_operation *operation = pa_context_get_sink_input_info(c, idx,
                     PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb, reinterpret_cast<void*>(userData.get()));
@@ -1123,12 +1150,15 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
                     pa_threaded_mainloop_unlock(thiz->mMainLoop);
                     return;
                 }
+                AUDIO_INFO_LOG("[][][][][][][] sessionID: %{public}d added", g_sinkIndexSessionInfoMap[idx]);
+                // onSessionAdded()
+                AUDIO_INFO_LOG("[222][][][][][]g_sinkIndexSessionInfoMap.size: %{public}zu", g_sinkIndexSessionInfoMap.size());
                 userData.release();
                 pa_threaded_mainloop_accept(thiz->mMainLoop);
                 pa_operation_unref(operation);
                 pa_threaded_mainloop_unlock(thiz->mMainLoop);
             } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-                const uint32_t *sessionID = new(std::nothrow) const uint32_t(sinkIndexSessionIDMap[idx]);
+                const uint32_t *sessionID = new(std::nothrow) const uint32_t(g_sinkIndexSessionInfoMap[idx]);
                 if (sessionID == nullptr) {
                     AUDIO_ERR_LOG("PaSubscribeCb: No memory");
                     return;
@@ -1141,6 +1171,9 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
                         delete sessionID;
                     },
                     const_cast<uint32_t*>(sessionID));
+                AUDIO_INFO_LOG("[111][][][][][]g_sinkIndexSessionInfoMap.size: %{public}zu", g_sinkIndexSessionInfoMap.size());
+                g_sinkIndexSessionInfoMap.erase(idx);
+                AUDIO_INFO_LOG("[222][][][][][]g_sinkIndexSessionInfoMap.size: %{public}zu", g_sinkIndexSessionInfoMap.size());
             }
             break;
 
