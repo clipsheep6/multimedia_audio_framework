@@ -2264,21 +2264,10 @@ void AudioRendererNapi::AsyncSetAudioEffectMode(napi_env env, void *data)
     }
 }
 
-napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_info info)
+void AudioRendererNapi::GetArgvForSetAudioEffectMode(napi_env env, size_t argc, napi_value* argv,
+    unique_ptr<AudioRendererAsyncContext> &asyncContext)
 {
-    napi_status status;
     const int32_t refCount = 1;
-    napi_value result = nullptr;
-
-    GET_PARAMS(env, info, ARGS_TWO);
-    unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
-    THROW_ERROR_ASSERT(env, argc >= ARGS_ONE, NAPI_ERR_INVALID_PARAM);
-
-    status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
-    if (status != napi_ok || asyncContext->objectInfo == nullptr) {
-        return result;
-    }
-
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[i], &valueType);
@@ -2295,9 +2284,27 @@ napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_inf
             }
             break;
         } else {
-            asyncContext->status = NAPI_ERR_INVALID_PARAM;
+            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+            return;
         }
     }
+}
+
+napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_TWO);
+    unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
+    THROW_ERROR_ASSERT(env, argc >= ARGS_ONE, NAPI_ERR_INPUT_INVALID);
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
+    if (status != napi_ok || asyncContext->objectInfo == nullptr) {
+        return result;
+    }
+
+    GetArgvForSetAudioEffectMode(env, argc, argv, asyncContext);
 
     if (asyncContext->callbackRef == nullptr) {
         napi_create_promise(env, &asyncContext->deferred, &result);
@@ -2915,6 +2922,41 @@ napi_value AudioRendererNapi::GetCurrentOutputDevices(napi_env env, napi_callbac
             }
         }
     }
+    return result;
+}
+
+napi_value AudioRendererNapi::GetCurrentOutputDevicesSync(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value thisVar = nullptr;
+    napi_value result = nullptr;
+    size_t argCount = 0;
+    void *native = nullptr;
+
+    status = napi_get_cb_info(env, info, &argCount, nullptr, &thisVar, nullptr);
+    if (status != napi_ok) {
+        AUDIO_ERR_LOG("Invalid parameters!");
+        return result;
+    }
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioRendererNapi = reinterpret_cast<AudioRendererNapi *>(native);
+    if (status != napi_ok || audioRendererNapi == nullptr) {
+        AUDIO_ERR_LOG("GetCurrentOutputDevicesSync unwrap failure!");
+        return result;
+    }
+
+    DeviceInfo deviceInfo;
+    int32_t ret = audioRendererNapi->audioRenderer_->GetCurrentOutputDevices(deviceInfo);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetCurrentOutputDevices failure!");
+        return result;
+    }
+    napi_create_array_with_length(env, 1, &result);
+    napi_value valueParam;
+    SetDeviceDescriptors(env, valueParam, deviceInfo);
+    napi_set_element(env, result, 0, valueParam);
+
     return result;
 }
 

@@ -97,7 +97,6 @@ void AudioCapturerNapi::Destructor(napi_env env, void *nativeObject, void *final
 
 napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
 {
-    napi_status status;
     napi_value constructor;
     napi_value result = nullptr;
     const int32_t refCount = 1;
@@ -124,8 +123,8 @@ napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_STATIC_FUNCTION("createAudioCapturer", CreateAudioCapturer)
     };
 
-    status = napi_define_class(env, AUDIO_CAPTURER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
-        sizeof(audio_capturer_properties) / sizeof(audio_capturer_properties[PARAM0]),
+    napi_status status = napi_define_class(env, AUDIO_CAPTURER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
+        nullptr, sizeof(audio_capturer_properties) / sizeof(audio_capturer_properties[PARAM0]),
         audio_capturer_properties, &constructor);
     if (status != napi_ok) {
         return result;
@@ -697,6 +696,42 @@ napi_value AudioCapturerNapi::GetCapturerInfo(napi_env env, napi_callback_info i
             }
         }
     }
+
+    return result;
+}
+
+napi_value AudioCapturerNapi::GetCapturerInfoSync(napi_env env, napi_callback_info info)
+{
+    HiLog::Info(LABEL, "%{public}s IN", __func__);
+    napi_status status;
+    napi_value thisVar = nullptr;
+    napi_value result = nullptr;
+    size_t argCount = 0;
+    void *native = nullptr;
+
+    status = napi_get_cb_info(env, info, &argCount, nullptr, &thisVar, nullptr);
+    if (status != napi_ok) {
+        AUDIO_ERR_LOG("Invalid parameters!");
+        return result;
+    }
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioCapturerNapi = reinterpret_cast<AudioCapturerNapi *>(native);
+    if (status != napi_ok || audioCapturerNapi == nullptr) {
+        AUDIO_ERR_LOG("GetCapturerInfoSync unwrap failure!");
+        return result;
+    }
+
+    AudioCapturerInfo capturerInfo;
+    int32_t ret = audioCapturerNapi->audioCapturer_->GetCapturerInfo(capturerInfo);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetCapturerInfo failure!");
+        return result;
+    }
+
+    (void)napi_create_object(env, &result);
+    SetValueInt32(env, "source", static_cast<int32_t>(capturerInfo.sourceType), result);
+    SetValueInt32(env, "capturerFlags", static_cast<int32_t>(capturerInfo.capturerFlags), result);
 
     return result;
 }

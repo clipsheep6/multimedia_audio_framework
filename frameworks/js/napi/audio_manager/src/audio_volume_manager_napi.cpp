@@ -390,6 +390,30 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupManager(napi_env env, napi_call
     return result;
 }
 
+napi_value AudioVolumeManagerNapi::GetVolumeGroupManagerSync(napi_env env, napi_callback_info info)
+{
+    HiLog::Info(LABEL, " %{public}s IN", __func__);
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    if (argc < ARGS_ONE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return nullptr;
+    }
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    if (valueType != napi_number) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return nullptr;
+    }
+
+    int32_t groupId;
+    napi_get_value_int32(env, argv[PARAM0], &groupId);
+
+    return AudioVolumeGroupManagerNapi::CreateAudioVolumeGroupManagerWrapper(env, groupId);
+}
+
 napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
 {
     napi_value undefinedResult = nullptr;

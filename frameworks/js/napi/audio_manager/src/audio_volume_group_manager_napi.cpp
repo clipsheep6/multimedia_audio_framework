@@ -1307,7 +1307,7 @@ void GetArgvForSystemVolumeInDb(napi_env env, size_t argc, napi_value* argv,
 {
     const int32_t refCount = 1;
     if (argv == nullptr) {
-        asyncContext->status = NAPI_ERR_INVALID_PARAM;
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
         return;
     }
     if (argc > PARAM3) {
@@ -1316,6 +1316,9 @@ void GetArgvForSystemVolumeInDb(napi_env env, size_t argc, napi_value* argv,
         if (valueType == napi_function) {
             napi_create_reference(env, argv[PARAM3], refCount, &asyncContext->callbackRef);
         }
+    } else {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return;
     }
 
     for (size_t i = PARAM0; i < argc; i++) {
@@ -1339,7 +1342,8 @@ void GetArgvForSystemVolumeInDb(napi_env env, size_t argc, napi_value* argv,
             }
             break;
         } else {
-            asyncContext->status = NAPI_ERR_INVALID_PARAM;
+            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+            return;
         }
     }
 }
