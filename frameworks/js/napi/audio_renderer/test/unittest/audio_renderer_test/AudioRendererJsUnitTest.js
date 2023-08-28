@@ -219,7 +219,10 @@ describe("AudioRendererJsUnitTest", function() {
         try {
             let data = audioRenderer.getCurrentOutputDevicesSync();
             console.info(`${TAG}: GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001 SUCCESS: ${JSON.stringify(data)}`);
-            expect(typeof data).assertEqual('object');
+            expect(data.length).assertLarger(0);
+            for (let i = 0; i < data.length; i++) {
+                expect(data[i].displayName!=="" && data[i].displayName!==undefined).assertTrue();
+            }
             done();
         } catch (err) {
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001 ERROR: ${err.message}`);
