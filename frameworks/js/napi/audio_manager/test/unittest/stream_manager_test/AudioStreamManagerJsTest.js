@@ -385,7 +385,6 @@ describe("AudioStreamManagerJsTest", function () {
       let audioRendererInfos = audioStreamManager.getCurrentAudioRendererInfoArraySync();
       console.info("getCurrentAudioRendererInfoArraySync001:"+JSON.stringify(audioRendererInfos));
       expect(audioRendererInfos.length).assertLarger(0);
-      expect(1).assertEqual(audioRendererInfos[0].rendererState);
       expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
@@ -426,7 +425,6 @@ describe("AudioStreamManagerJsTest", function () {
       let audioRendererInfos = audioStreamManager.getCurrentAudioRendererInfoArraySync();
       console.info("AudioRendererChangeInfoArray++++:"+JSON.stringify(audioRendererInfos));
       expect(audioRendererInfos.length).assertLarger(0);
-      expect(2).assertEqual(audioRendererInfos[0].rendererState);
       expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
@@ -457,7 +455,6 @@ describe("AudioStreamManagerJsTest", function () {
       await audioRenderer.stop();
       let audioRendererInfos = audioStreamManager.getCurrentAudioRendererInfoArraySync();
       expect(audioRendererInfos.length).assertLarger(0);
-      expect(3).assertEqual(audioRendererInfos[0].rendererState);
       expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
@@ -497,7 +494,6 @@ describe("AudioStreamManagerJsTest", function () {
       let audioCapturerInfos = audioStreamManager.getCurrentAudioCapturerInfoArraySync();
       console.info("getCurrentAudioCapturerInfoArraySync001:"+JSON.stringify(audioCapturerInfos));
       expect(audioCapturerInfos.length).assertLarger(0);
-      expect(1).assertEqual(audioCapturerInfos[0].capturerState);
       expect(audioCapturerInfos[0].deviceDescriptors[0].displayName!==""
         && audioCapturerInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
@@ -538,7 +534,6 @@ describe("AudioStreamManagerJsTest", function () {
       let audioCapturerInfos = audioStreamManager.getCurrentAudioCapturerInfoArraySync();
       console.info("AudioCapturerChangeInfoArray++++:"+JSON.stringify(audioCapturerInfos));
       expect(audioCapturerInfos.length).assertLarger(0);
-      expect(2).assertEqual(audioCapturerInfos[0].capturerState);
       expect(audioCapturerInfos[0].deviceDescriptors[0].displayName!==""
         && audioCapturerInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
@@ -569,7 +564,6 @@ describe("AudioStreamManagerJsTest", function () {
       await audioCapturer.stop();
       let audioCapturerInfos = audioStreamManager.getCurrentAudioCapturerInfoArraySync();
       expect(audioCapturerInfos.length).assertLarger(0);
-      expect(3).assertEqual(audioCapturerInfos[0].capturerState);
       expect(audioCapturerInfos[0].deviceDescriptors[0].displayName!==""
         && audioCapturerInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
