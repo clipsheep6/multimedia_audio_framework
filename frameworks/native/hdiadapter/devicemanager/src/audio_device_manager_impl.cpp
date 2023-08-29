@@ -149,7 +149,7 @@ struct AudioAdapterDescriptor *AudioDeviceManagerImpl::GetTargetAdapterDesc(cons
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
-        if (!isMmap && adapterName.compare(desc->adapterName) != 0) {
+        if (adapterName.compare(desc->adapterName)) {
             AUDIO_INFO_LOG("[%{public}d] is not target adapter", index);
             continue;
         }
@@ -169,8 +169,7 @@ std::shared_ptr<IAudioDeviceAdapter> AudioDeviceManagerImpl::LoadAdapters(const 
 
     std::lock_guard<std::mutex> lock(mtx_);
     if (enableAdapters_.find(std::string(desc->adapterName)) != enableAdapters_.end()) {
-        AUDIO_INFO_LOG("LoadAdapters: Audio adapter already inited.");
-        return enableAdapters_[std::string(desc->adapterName)].devAdp;
+        AUDIO_INFO_LOG("LoadAdapters: Audio adapter already inited, and will replace new adapter.");
     }
 
     CHECK_AND_RETURN_RET_LOG((audioMgr_ != nullptr), nullptr,
