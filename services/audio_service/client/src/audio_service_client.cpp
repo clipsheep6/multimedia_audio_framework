@@ -738,20 +738,23 @@ const std::string AudioServiceClient::GetStreamName(AudioStreamType audioType)
 {
     std::string name;
     switch (audioType) {
-        case STREAM_VOICE_ASSISTANT:
-            name = "voice_assistant";
-            break;
         case STREAM_VOICE_CALL:
             name = "voice_call";
             break;
-        case STREAM_SYSTEM:
-            name = "system";
+        case STREAM_MUSIC:
+            name = "music";
             break;
         case STREAM_RING:
             name = "ring";
             break;
-        case STREAM_MUSIC:
-            name = "music";
+        case STREAM_MEDIA:
+            name = "media";
+            break;
+        case STREAM_VOICE_ASSISTANT:
+            name = "voice_assistant";
+            break;
+        case STREAM_SYSTEM:
+            name = "system";
             break;
         case STREAM_ALARM:
             name = "alarm";
@@ -771,11 +774,29 @@ const std::string AudioServiceClient::GetStreamName(AudioStreamType audioType)
         case STREAM_ACCESSIBILITY:
             name = "accessibility";
             break;
+        case STREAM_MOVIE:
+            name = "movie";
+            break;
+        case STREAM_GAME:
+            name = "game";
+            break;
+        case STREAM_SPEECH:
+            name = "speech";
+            break;
+        case STREAM_SYSTEM_ENFORCED:
+            name = "system_enforced";
+            break;
         case STREAM_ULTRASONIC:
             name = "ultrasonic";
             break;
         case STREAM_WAKEUP:
             name = "wakeup";
+            break;
+        case STREAM_VOICE_MESSAGE:
+            name = "voice_message";
+            break;
+        case STREAM_NAVIGATION:
+            name = "navigation";
             break;
         default:
             name = "unknown";
