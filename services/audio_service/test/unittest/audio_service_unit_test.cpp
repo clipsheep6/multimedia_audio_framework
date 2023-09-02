@@ -384,7 +384,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceClient_001, TestSize.Level1)
     rate = audioServiceClient->GetRendererSamplingRate();
     EXPECT_EQ((uint32_t)SAMPLE_RATE_44100, rate);
 
-    audioServiceClient->OnTimeOut();
+    audioServiceClient->HandleFunc();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -93,7 +93,24 @@ public:
     virtual void OnEventCb(AudioServiceEventTypes error) const = 0;
 };
 
-class AudioServiceClient : public IAudioStream, public AudioTimer, public AppExecFwk::EventHandler {
+class ITimerHandle : public std::enable_shared_from_this<ITimerHandle> {
+public:
+    ITimerHandle() = default;
+    virtual ~ITimerHandle() = default;
+    virtual void HandleFunc() = 0;
+};
+
+class CapturerTimer : public AudioTimer {
+public:
+    CapturerTimer(std::shared_ptr<ITimerHandle> timerHandle);
+    virtual ~CapturerTimer();
+
+    void OnTimeOut() override;
+private:
+    std::weak_ptr<ITimerHandle> timerHandle_;
+};
+
+class AudioServiceClient : public IAudioStream, public AppExecFwk::EventHandler, public ITimerHandle {
 public:
     static constexpr char PA_RUNTIME_DIR[] = "/data/data/.pulse_dir/runtime";
     static constexpr char PA_STATE_DIR[] = "/data/data/.pulse_dir/state";
@@ -509,7 +526,7 @@ public:
     float GetSingleStreamVol();
 
     // Audio timer callback
-    virtual void OnTimeOut() override;
+    void HandleFunc() override;
 
     void SetClientID(int32_t clientPid, int32_t clientUid) override;
 
@@ -561,6 +578,7 @@ private:
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 
+    std::unique_ptr<CapturerTimer> capturerTimer_;
     std::unique_ptr<uint8_t[]> preBuf_ {nullptr};
     uint32_t sinkLatencyInMsec_ {0};
 

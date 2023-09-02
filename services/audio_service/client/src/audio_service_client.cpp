@@ -98,6 +98,26 @@ static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop, pa_context
     return retVal;
 }
 
+CapturerTimer::CapturerTimer(std::shared_ptr<ITimerHandle> timerHandle) : timerHandle_(timerHandle)
+{
+    AUDIO_INFO_LOG("CapturerTimer()");
+}
+
+CapturerTimer::~CapturerTimer()
+{
+    AUDIO_INFO_LOG("~CapturerTimer()");
+}
+
+void CapturerTimer::OnTimeOut()
+{
+    std::shared_ptr<ITimerHandle> handle = timerHandle_.lock();
+    if (handle == nullptr) {
+        AUDIO_ERR_LOG("CapturerTimer::OnTimeOut handle is null.");
+        return;
+    }
+    handle->HandleFunc();
+}
+
 AudioStreamParams AudioServiceClient::ConvertFromPAAudioParams(pa_sample_spec paSampleSpec)
 {
     AudioStreamParams audioParams;
@@ -639,7 +659,9 @@ AudioServiceClient::~AudioServiceClient()
     lock_guard<mutex> lockdata(dataMutex_);
     AUDIO_INFO_LOG("start ~AudioServiceClient");
     ResetPAAudioClient();
-    StopTimer();
+    if (capturerTimer_ != nullptr) {
+        capturerTimer_->StopTimer();
+    }
 }
 
 void AudioServiceClient::SetEnv()
@@ -683,6 +705,9 @@ bool AudioServiceClient::CheckRecordingStateChange(uint32_t appTokenId, uint64_t
 
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 {
+    if (eClientType == AUDIO_SERVICE_CLIENT_RECORD) {
+        capturerTimer_ = std::make_unique<CapturerTimer>(this->ITimerHandle::shared_from_this());
+    }
     int error = PA_ERR_INTERNAL;
     eAudioClientType = eClientType;
 
@@ -1615,7 +1640,7 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
     return AUDIO_CLIENT_SUCCESS;
 }
 
-void AudioServiceClient::OnTimeOut()
+void AudioServiceClient::HandleFunc()
 {
     AUDIO_ERR_LOG("Inside read timeout callback");
     if (mainLoop == nullptr) {
@@ -1720,13 +1745,17 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
 
             if (internalRdBufLen_ <= 0) {
                 if (isBlocking) {
-                    StartTimer(READ_TIMEOUT_IN_SEC);
+                    if (capturerTimer_ != nullptr) {
+                        capturerTimer_->StartTimer(READ_TIMEOUT_IN_SEC);
+                    }
                     pa_threaded_mainloop_wait(mainLoop);
-                    StopTimer();
-                    if (IsTimeOut()) {
-                        AUDIO_ERR_LOG("Read timeout");
-                        pa_threaded_mainloop_unlock(mainLoop);
-                        return AUDIO_CLIENT_READ_STREAM_ERR;
+                    if (capturerTimer_ != nullptr) {
+                        capturerTimer_->StopTimer();
+                        if (capturerTimer_->IsTimeOut()) {
+                            AUDIO_ERR_LOG("Read timeout");
+                            pa_threaded_mainloop_unlock(mainLoop);
+                            return AUDIO_CLIENT_READ_STREAM_ERR;
+                        }
                     }
                 } else {
                     pa_threaded_mainloop_unlock(mainLoop);
@@ -1761,6 +1790,10 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
 int32_t AudioServiceClient::ReleaseStream(bool releaseRunner)
 {
     state_ = RELEASED;
+    // call StopTimer befor lock dataMutex_ to avoid dead block
+    if ((eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) && capturerTimer_ != nullptr) {
+        capturerTimer_->StopTimer();
+    }
     lock_guard<mutex> lockdata(dataMutex_);
     WriteStateChangedSysEvents();
     ResetPAAudioClient();
