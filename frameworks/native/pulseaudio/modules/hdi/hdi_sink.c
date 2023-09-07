@@ -24,6 +24,9 @@
 #include <pulsecore/sink.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
+#include <pulsecore/memblock.c>
+#include <pulsecore/mix.h>
+#include <pulse/volume.h>
 
 #include <stddef.h>
 #include <stdint.h>
@@ -35,6 +38,9 @@
 #include "audio_log.h"
 #include "audio_schedule.h"
 #include "renderer_sink_adapter.h"
+#include "audio_effect_chain_adapter.h"
+#include "securec.h"
+#include "playback_capturer_adapter.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
@@ -43,6 +49,12 @@
 #define DEFAULT_BUFFER_SIZE 8192
 #define MAX_SINK_VOLUME_LEVEL 1.0
 #define DEFAULT_WRITE_TIME 1000
+#define MIX_BUFFER_LENGTH (pa_page_size())
+#define MAX_MIX_CHANNELS 32
+#define IN_CHANNEL_NUM_MAX 2
+#define OUT_CHANNEL_NUM_MAX 2
+#define DEFAULT_FRAMELEN 960
+#define SCENE_TYPE_NUM 7
 
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
@@ -86,10 +98,153 @@ struct Userdata {
     uint32_t writeCount;
     uint32_t renderCount;
     pa_usec_t writeTime;
+    pa_sample_format_t format;
+    BufferAttr *bufferAttr;
+    int32_t processLen;
+    size_t processSize;
 };
 
 static void UserdataFree(struct Userdata *u);
 static int32_t PrepareDevice(struct Userdata *u, const char* filePath);
+
+// BEGIN Utility functions
+#define FLOAT_EPS 1e-9f
+#define MEMBLOCKQ_MAXLENGTH (16*1024*16)
+#define OFFSET_BIT_24 3
+#define BIT_DEPTH_TWO 2
+#define BIT_8 8
+#define BIT_16 16
+#define BIT_24 24
+#define BIT_32 32
+static uint32_t Read24Bit(const uint8_t *p)
+{
+    return ((uint32_t) p[BIT_DEPTH_TWO] << BIT_16) | ((uint32_t) p[1] << BIT_8) | ((uint32_t) p[0]);
+}
+
+static void Write24Bit(uint8_t *p, uint32_t u)
+{
+    p[BIT_DEPTH_TWO] = (uint8_t) (u >> BIT_16);
+    p[1] = (uint8_t) (u >> BIT_8);
+    p[0] = (uint8_t) u;
+}
+
+void ConvertFrom16BitToFloat(unsigned n, const int16_t *a, float *b)
+{
+    for (; n > 0; n--) {
+        *(b++) = *(a++) * (1.0f / (1 << (BIT_16 - 1)));
+    }
+}
+
+void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b)
+{
+    for (; n > 0; n--) {
+        int32_t s = Read24Bit(a) << BIT_8;
+        *b = s * (1.0f / (1U << (BIT_32 - 1)));
+        a += OFFSET_BIT_24;
+        b++;
+    }
+}
+
+void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
+{
+    for (; n > 0; n--) {
+        *(b++) = *(a++) * (1.0f / (1U << (BIT_32 - 1)));
+    }
+}
+
+float CapMax(float v)
+{
+    float value = v;
+    if (v > 1.0f) {
+        value = 1.0f - FLOAT_EPS;
+    } else if (v < -1.0f) {
+        value = -1.0f + FLOAT_EPS;
+    }
+    return value;
+}
+
+void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b)
+{
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1 << (BIT_16 - 1));
+        *(b++) = (int16_t) v;
+    }
+}
+
+void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
+{
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1U << (BIT_32 - 1));
+        Write24Bit(b, ((uint32_t) v) >> BIT_8);
+        a++;
+        b += OFFSET_BIT_24;
+    }
+}
+
+void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
+{
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1U << (BIT_32 - 1));
+        *(b++) = (int32_t) v;
+    }
+}
+
+static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, float *dst)
+{
+    pa_assert(src);
+    pa_assert(dst);
+    int ret;
+    switch (format) {
+        case PA_SAMPLE_S16LE:
+            ConvertFrom16BitToFloat(n, src, dst);
+            break;
+        case PA_SAMPLE_S24LE:
+            ConvertFrom24BitToFloat(n, src, dst);
+            break;
+        case PA_SAMPLE_S32LE:
+            ConvertFrom32BitToFloat(n, src, dst);
+            break;
+        default:
+            ret = memcpy_s(dst, n, src, n);
+            if (ret != 0) {
+                float *srcFloat = (float *)src;
+                for (uint32_t i = 0; i < n; i++) {
+                    dst[i] = srcFloat[i];
+                }
+            }
+            break;
+    }
+}
+
+static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, void *dst)
+{
+    pa_assert(src);
+    pa_assert(dst);
+    int ret;
+    switch (format) {
+        case PA_SAMPLE_S16LE:
+            ConvertFromFloatTo16Bit(n, src, dst);
+            break;
+        case PA_SAMPLE_S24LE:
+            ConvertFromFloatTo24Bit(n, src, dst);
+            break;
+        case PA_SAMPLE_S32LE:
+            ConvertFromFloatTo32Bit(n, src, dst);
+            break;
+        default:
+            ret = memcpy_s(dst, n, src, n);
+            if (ret != 0) {
+                float *dstFloat = (float *)dst;
+                for (uint32_t i = 0; i < n; i++) {
+                    dstFloat[i] = src[i];
+                }
+            }
+            break;
+    }
+}
 
 static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
 {
@@ -184,6 +339,508 @@ static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     return count;
 }
 
+static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_info *infoIn, unsigned maxinfo)
+{
+    pa_sink_input *sinkIn;
+
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(infoIn);
+
+    unsigned n = 0;
+    void *state = NULL;
+    size_t mixlength = *length;
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
+        const char *usageStr = pa_proplist_gets(sinkIn->proplist, "stream.usage");
+        const char *privacyTypeStr = pa_proplist_gets(sinkIn->proplist, "stream.privacyType");
+        int32_t usage = -1;
+        int32_t privacyType = -1;
+        bool usageSupport = false;
+        bool privacySupport = true;
+
+        if (privacyTypeStr != NULL) {
+            pa_atoi(privacyTypeStr, &privacyType);
+            privacySupport = IsPrivacySupportInnerCapturer(privacyType);
+        }
+
+        if (usageStr != NULL) {
+            pa_atoi(usageStr, &usage);
+            usageSupport = IsStreamSupportInnerCapturer(usage);
+        }
+        bool innerCapturer = privacySupport && usageSupport;
+        
+        if (innerCapturer) {
+            pa_sink_input_assert_ref(sinkIn);
+
+            pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
+
+            if (mixlength == 0 || infoIn->chunk.length < mixlength)
+                mixlength = infoIn->chunk.length;
+
+            if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
+                pa_memblock_unref(infoIn->chunk.memblock);
+                continue;
+            }
+
+            infoIn->userdata = pa_sink_input_ref(sinkIn);
+            pa_assert(infoIn->chunk.memblock);
+            pa_assert(infoIn->chunk.length > 0);
+
+            infoIn++;
+            n++;
+            maxinfo--;
+        }
+    }
+
+    if (mixlength > 0) {
+        *length = mixlength;
+    }
+
+    return n;
+}
+
+static void SinkRenderPrimaryMix(pa_sink *s, size_t length, pa_mix_info *info, unsigned n, pa_memchunk *chunkIn)
+{
+    if (n == 0) {
+        if (chunkIn->length > length)
+            chunkIn->length = length;
+
+        pa_silence_memchunk(chunkIn, &s->sample_spec);
+    } else if (n == 1) {
+        pa_cvolume volume;
+
+        if (chunkIn->length > length)
+            chunkIn->length = length;
+
+        pa_sw_cvolume_multiply(&volume, &s->thread_info.soft_volume, &info[0].volume);
+
+        if (s->thread_info.soft_muted || pa_cvolume_is_muted(&volume)) {
+            pa_silence_memchunk(chunkIn, &s->sample_spec);
+        } else {
+            pa_memchunk vchunk;
+
+            vchunk = info[0].chunk;
+            pa_memblock_ref(vchunk.memblock);
+
+            if (vchunk.length > length)
+                vchunk.length = length;
+
+            if (!pa_cvolume_is_norm(&volume)) {
+                pa_memchunk_make_writable(&vchunk, 0);
+                pa_volume_memchunk(&vchunk, &s->sample_spec, &volume);
+            }
+
+            pa_memchunk_memcpy(chunkIn, &vchunk);
+            pa_memblock_unref(vchunk.memblock);
+        }
+    } else {
+        void *ptr;
+
+        ptr = pa_memblock_acquire(chunkIn->memblock);
+
+        chunkIn->length = pa_mix(info, n,
+                                (uint8_t*) ptr + chunkIn->index, length,
+                                &s->sample_spec,
+                                &s->thread_info.soft_volume,
+                                s->thread_info.soft_muted);
+
+        pa_memblock_release(chunkIn->memblock);
+    }
+}
+
+static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *info, unsigned n, pa_memchunk *chunkIn)
+{
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(chunkIn);
+    pa_assert(chunkIn->memblock);
+    pa_assert(chunkIn->length > 0);
+
+    /* We optimize for the case where the order of the inputs has not changed */
+
+    pa_mix_info *infoCur = NULL;
+    for (int k = 0; k < n; k++) {
+        infoCur = info + k;
+        if (infoCur) {
+            if (infoCur->chunk.memblock) {
+                pa_memblock_unref(infoCur->chunk.memblock);
+                pa_memchunk_reset(&infoCur->chunk);
+            }
+
+            pa_sink_input_unref(infoCur->userdata);
+        }
+    }
+}
+
+int SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
+{
+    pa_mix_info info[MAX_MIX_CHANNELS];
+    unsigned n;
+    size_t length, blockSizeMax;
+
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
+    pa_assert(chunkIn);
+    pa_assert(chunkIn->memblock);
+    pa_assert(chunkIn->length > 0);
+    pa_assert(pa_frame_aligned(chunkIn->length, &si->sample_spec));
+
+    pa_assert(!si->thread_info.rewind_requested);
+    pa_assert(si->thread_info.rewind_nbytes == 0);
+
+    if (si->thread_info.state == PA_SINK_SUSPENDED) {
+        pa_silence_memchunk(chunkIn, &si->sample_spec);
+        return 0;
+    }
+
+    pa_sink_ref(si);
+
+    length = chunkIn->length;
+    blockSizeMax = pa_mempool_block_size_max(si->core->mempool);
+    if (length > blockSizeMax)
+        length = pa_frame_align(blockSizeMax, &si->sample_spec);
+
+    pa_assert(length > 0);
+
+    n = SinkRenderPrimaryClusterCap(si, &length, info, MAX_MIX_CHANNELS);
+    SinkRenderPrimaryMix(si, length, info, n, chunkIn);
+
+    SinkRenderPrimaryInputsDropCap(si, info, n, chunkIn);
+    pa_sink_unref(si);
+
+    return n;
+}
+
+int SinkRenderPrimaryGetDataCap(pa_sink *s, pa_memchunk *chunkIn)
+{
+    pa_memchunk chunk;
+    size_t l, d;
+    int nSinkInput;
+    pa_sink_assert_ref(s);
+    pa_sink_assert_io_context(s);
+    pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
+    pa_assert(chunkIn);
+    pa_assert(chunkIn->memblock);
+    pa_assert(chunkIn->length > 0);
+    pa_assert(pa_frame_aligned(chunkIn->length, &s->sample_spec));
+
+    pa_assert(!s->thread_info.rewind_requested);
+    pa_assert(s->thread_info.rewind_nbytes == 0);
+
+    if (s->thread_info.state == PA_SINK_SUSPENDED) {
+        pa_silence_memchunk(chunkIn, &s->sample_spec);
+        return 0;
+    }
+
+    pa_sink_ref(s);
+
+    l = chunkIn->length;
+    d = 0;
+    while (l > 0) {
+        chunk = *chunkIn;
+        chunk.index += d;
+        chunk.length -= d;
+
+        nSinkInput = SinkRenderPrimaryPeekCap(s, &chunk);
+
+        d += chunk.length;
+        l -= chunk.length;
+    }
+
+    pa_sink_unref(s);
+
+    return nSinkInput;
+}
+
+static void SinkRenderPrimaryInputsDrop(pa_sink *s, pa_mix_info *info, unsigned n, pa_memchunk *chunkIn)
+{
+    pa_sink_input *sceneSinkInput;
+    unsigned nUnreffed = 0;
+
+    pa_sink_assert_ref(s);
+    pa_sink_assert_io_context(s);
+    pa_assert(chunkIn);
+    pa_assert(chunkIn->memblock);
+    pa_assert(chunkIn->length > 0);
+
+    /* We optimize for the case where the order of the inputs has not changed */
+    pa_mix_info *infoCur = NULL;
+    for (int k = 0; k < n; k++) {
+        sceneSinkInput = info[k].userdata;
+        pa_sink_input_assert_ref(sceneSinkInput);
+
+        /* Drop read data */
+        pa_sink_input_drop(sceneSinkInput, chunkIn->length);
+        infoCur = info + k;
+        if (infoCur) {
+            if (infoCur->chunk.memblock) {
+                pa_memblock_unref(infoCur->chunk.memblock);
+                pa_memchunk_reset(&infoCur->chunk);
+            }
+
+            pa_sink_input_unref(infoCur->userdata);
+            infoCur->userdata = NULL;
+
+            nUnreffed += 1;
+        }
+    }
+    /* Now drop references to entries that are included in the
+     * pa_mix_info array but don't exist anymore */
+
+    if (nUnreffed < n) {
+        for (; n > 0; info++, n--) {
+            if (info->userdata)
+                pa_sink_input_unref(info->userdata);
+            if (info->chunk.memblock)
+                pa_memblock_unref(info->chunk.memblock);
+        }
+    }
+}
+
+static unsigned SinkRenderPrimaryCluster(pa_sink *s, size_t *length, pa_mix_info *info,
+ unsigned maxinfo, char *sceneType)
+{
+    pa_sink_input *i;
+    unsigned n = 0;
+    void *state = NULL;
+    size_t mixlength = *length;
+
+    pa_sink_assert_ref(s);
+    pa_sink_assert_io_context(s);
+    pa_assert(info);
+
+    while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
+        const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
+        const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
+        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
+        if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
+            (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
+            pa_sink_input_assert_ref(i);
+
+            pa_sink_input_peek(i, *length, &info->chunk, &info->volume);
+
+            if (mixlength == 0 || info->chunk.length < mixlength)
+                mixlength = info->chunk.length;
+
+            if (pa_memblock_is_silence(info->chunk.memblock)) {
+                pa_memblock_unref(info->chunk.memblock);
+                continue;
+            }
+
+            info->userdata = pa_sink_input_ref(i);
+            pa_assert(info->chunk.memblock);
+            pa_assert(info->chunk.length > 0);
+
+            info++;
+            n++;
+            maxinfo--;
+        }
+    }
+
+    if (mixlength > 0) {
+        *length = mixlength;
+    }
+
+    return n;
+}
+
+int SinkRenderPrimaryPeek(pa_sink *s, pa_memchunk *target, char *sceneType)
+{
+    pa_mix_info info[MAX_MIX_CHANNELS];
+    unsigned n;
+    size_t length, blockSizeMax;
+
+    pa_sink_assert_ref(s);
+    pa_sink_assert_io_context(s);
+    pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
+    pa_assert(target);
+    pa_assert(target->memblock);
+    pa_assert(target->length > 0);
+    pa_assert(pa_frame_aligned(target->length, &s->sample_spec));
+
+    pa_assert(!s->thread_info.rewind_requested);
+    pa_assert(s->thread_info.rewind_nbytes == 0);
+
+    if (s->thread_info.state == PA_SINK_SUSPENDED) {
+        pa_silence_memchunk(target, &s->sample_spec);
+        return 0;
+    }
+
+    pa_sink_ref(s);
+
+    length = target->length;
+    blockSizeMax = pa_mempool_block_size_max(s->core->mempool);
+    if (length > blockSizeMax)
+        length = pa_frame_align(blockSizeMax, &s->sample_spec);
+
+    pa_assert(length > 0);
+
+    n = SinkRenderPrimaryCluster(s, &length, info, MAX_MIX_CHANNELS, sceneType);
+    AUDIO_ERR_LOG("yjy: peek length %{public}zu", length);
+    SinkRenderPrimaryMix(s, length, info, n, target);
+
+    SinkRenderPrimaryInputsDrop(s, info, n, target);
+    pa_sink_unref(s);
+
+    return n;
+}
+
+int SinkRenderPrimaryGetData(pa_sink *s, pa_memchunk *target, char *sceneType)
+{
+    pa_memchunk chunk;
+    size_t l, d;
+    int nSinkInput;
+    pa_sink_assert_ref(s);
+    pa_sink_assert_io_context(s);
+    pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
+    pa_assert(target);
+    pa_assert(target->memblock);
+    pa_assert(target->length > 0);
+    pa_assert(pa_frame_aligned(target->length, &s->sample_spec));
+
+    pa_assert(!s->thread_info.rewind_requested);
+    pa_assert(s->thread_info.rewind_nbytes == 0);
+
+    if (s->thread_info.state == PA_SINK_SUSPENDED) {
+        pa_silence_memchunk(target, &s->sample_spec);
+        return 0;
+    }
+
+    pa_sink_ref(s);
+
+    l = target->length;
+    d = 0;
+    while (l > 0) {
+        chunk = *target;
+        chunk.index += d;
+        chunk.length -= d;
+
+        nSinkInput = SinkRenderPrimaryPeek(s, &chunk, sceneType);
+
+        d += chunk.length;
+        l -= chunk.length;
+    }
+
+    pa_sink_unref(s);
+
+    return nSinkInput;
+}
+
+static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *result)
+{
+    pa_memchunk capResult;
+    capResult.memblock = pa_memblock_new(s->core->mempool, length);
+    capResult.index = 0;
+    capResult.length = length;
+    SinkRenderPrimaryGetDataCap(s, &capResult);
+
+    if (s->monitor_source && PA_SOURCE_IS_LINKED(s->monitor_source->thread_info.state)) {
+        pa_source_post(s->monitor_source, &capResult);
+    }
+    char *sceneTypeSet[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
+        "SCENE_SPEECH", "SCENE_RING", "SCENE_OTHERS", "EFFECT_NONE"};
+    struct Userdata *u;
+    pa_assert_se(u = s->userdata);
+    size_t memsetLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
+    memset_s(u->bufferAttr->tempBufIn, memsetLen, 0, memsetLen);
+    memset_s(u->bufferAttr->tempBufOut, memsetLen, 0, memsetLen);
+    int bitSize = pa_sample_size_of_format(u->format);
+    int frameLen = (int)(length / bitSize);
+    AUDIO_ERR_LOG("yjy: process length %{public}zu bitSize %{public}d framelen %{public}d", length, bitSize, frameLen);
+    int nSinkInput;
+    result->memblock = pa_memblock_new(s->core->mempool, length);
+    for (int i = 0; i < SCENE_TYPE_NUM; i++) {
+        result->index = 0;
+        result->length = length;
+        nSinkInput = SinkRenderPrimaryGetData(s, result, sceneTypeSet[i]);
+        if (nSinkInput == 0) {
+            continue;
+        }
+        void *src = pa_memblock_acquire_chunk(result);
+
+        FILE *fIn;
+        const char *primaryFilePathIn = "/data/data/.pulse_dir/primarySinkIn.pcm";
+        fIn = fopen(primaryFilePathIn, "ab+");
+        fwrite(src, bitSize, frameLen, fIn);
+        fclose(fIn);
+        fIn = NULL;
+
+        ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
+        memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
+        u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanOut;
+        EffectChainManagerProcess(sceneTypeSet[i], u->bufferAttr);
+        for (int k = 0; k < frameLen; k++) {
+            u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
+        }
+        pa_memblock_release(result->memblock);
+    }
+    void *dst = pa_memblock_acquire_chunk(result);
+    for (int i = 0; i < frameLen; i++) {
+        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
+        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
+    }
+    ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
+
+    FILE *fOut;
+    const char *primaryFilePathOut = "/data/data/.pulse_dir/primarySinkOut.pcm";
+    fOut = fopen(primaryFilePathOut, "ab+");
+    fwrite(dst, bitSize, frameLen, fOut);
+    fclose(fOut);
+    fOut = NULL;
+
+    result->index = 0;
+    result->length = length;
+    pa_memblock_release(result->memblock);
+    pa_memblock_unref(capResult.memblock);
+}
+
+void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *result)
+{
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
+    pa_assert(length > 0);
+    pa_assert(pa_frame_aligned(length, &si->sample_spec));
+    pa_assert(result);
+
+    pa_assert(!si->thread_info.rewind_requested);
+    pa_assert(si->thread_info.rewind_nbytes == 0);
+
+    pa_sink_ref(si);
+
+    size_t blockSizeMax;
+
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
+    pa_assert(pa_frame_aligned(length, &si->sample_spec));
+    pa_assert(result);
+
+    pa_assert(!si->thread_info.rewind_requested);
+    pa_assert(si->thread_info.rewind_nbytes == 0);
+
+    if (si->thread_info.state == PA_SINK_SUSPENDED) {
+        result->memblock = pa_memblock_ref(si->silence.memblock);
+        result->index = si->silence.index;
+        result->length = PA_MIN(si->silence.length, length);
+        return;
+    }
+
+    if (length <= 0)
+        length = pa_frame_align(MIX_BUFFER_LENGTH, &si->sample_spec);
+
+    blockSizeMax = pa_mempool_block_size_max(si->core->mempool);
+    if (length > blockSizeMax)
+        length = pa_frame_align(blockSizeMax, &si->sample_spec);
+
+    pa_assert(length > 0);
+
+    SinkRenderPrimaryProcess(si, length, result);
+
+    pa_sink_unref(si);
+}
+
 static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 {
     pa_assert(u);
@@ -192,7 +849,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     pa_memchunk chunk;
 
     // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
-    pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
+    SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
     pa_assert(chunk.length > 0);
 
     pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER, NULL, 0, &chunk, NULL);
@@ -570,6 +1227,22 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
     return 0;
 }
 
+static void PaHdiSinkUserdataInit(struct Userdata *u)
+{
+    u->format = u->ss.format;
+    u->processLen = IN_CHANNEL_NUM_MAX * DEFAULT_FRAMELEN;
+    u->processSize = u->processLen * sizeof(float);
+    u->bufferAttr = pa_xnew0(BufferAttr, 1);
+    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
+    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
+    pa_assert_se(u->bufferAttr->tempBufIn = (float *)malloc(u->processSize));
+    pa_assert_se(u->bufferAttr->tempBufOut = (float *)malloc(u->processSize));
+    u->bufferAttr->samplingRate = u->ss.rate;
+    u->bufferAttr->frameLen = DEFAULT_FRAMELEN;
+    u->bufferAttr->numChanIn = u->ss.channels;
+    u->bufferAttr->numChanOut = u->ss.channels;
+}
+
 static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
     // set audio thread priority
@@ -598,6 +1271,7 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     data.driver = driver;
     data.module = m;
 
+    PaHdiSinkUserdataInit(u);
     pa_sink_new_data_set_name(&data, pa_modargs_get_value(ma, "sink_name", DEFAULT_SINK_NAME));
     pa_sink_new_data_set_sample_spec(&data, &u->ss);
     pa_sink_new_data_set_channel_map(&data, &u->map);
