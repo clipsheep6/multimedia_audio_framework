@@ -54,6 +54,8 @@ struct userdata {
     int32_t processLen;
     size_t processSize;
     pa_sample_format_t format;
+
+    bool capSinkOpen;
 };
 
 static const char * const VALID_MODARGS[] = {
@@ -349,7 +351,9 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
     }
 
     if (!PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
-        return -1;
+        if ((u->sceneName != NULL) || (u->sceneName == NULL && u->capSinkOpen)) {
+            return -1;
+        }
     }
     
     size_t targetLength = pa_memblockq_get_tlength(u->bufInQ);
@@ -607,6 +611,7 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdat
     u->sink->userdata = u;
     u->sampleSpec = ss;
     u->sinkMap = sinkMap;
+    u->capSinkOpen = false;
 
     pa_sink_set_asyncmsgq(u->sink, masterSink->asyncmsgq);
     return 0;
@@ -691,6 +696,20 @@ int ConfigSinkInput(struct userdata *u)
     return 0;
 }
 
+/* Called from main context */
+static pa_hook_result_t SinkStateChangedCb(pa_core *c, pa_sink *s, struct userdata* u) {
+    const char *capName = pa_sprintf_malloc("%s_CAP", u->sink->name);
+
+    if (capName != NULL && pa_safe_streq(capName, s->name)) {
+        if (PA_SINK_IS_OPENED(s->state)) {
+            u->capSinkOpen = true;
+            return PA_HOOK_OK;
+        }
+        u->capSinkOpen = false;
+    }
+    return PA_HOOK_OK;
+}
+
 int pa__init(pa_module *m)
 {
     struct userdata *u;
@@ -724,6 +743,9 @@ int pa__init(pa_module *m)
     pa_sink_input_put(u->sinkInput);
     pa_sink_put(u->sink);
     pa_sink_input_cork(u->sinkInput, false);
+
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_STATE_CHANGED], PA_HOOK_LATE,
+        (pa_hook_cb_t)SinkStateChangedCb, u);
 
     pa_modargs_free(ma);
     return 0;
