@@ -20,8 +20,8 @@
     "mainElement": "EntryAbility",
     "deviceTypes": [
       "default",
-      "tablet",
-      "2in1"
+      "tablet"
+//      "2in1"
     ],
     "deliveryWithInstall": true,
     "installationFree": false,
@@ -75,6 +75,25 @@
       },
       {
         "name": "ohos.permission.MICROPHONE",
+        "reason": "$string:EntryAbility_desc",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ],
+          "when": "always"
+        }
+      },{
+        "name": "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+        "reason": "$string:EntryAbility_desc",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ],
+          "when": "always"
+        }
+      },
+      {
+        "name": "ohos.permission.USE_BLUETOOTH",
         "reason": "$string:EntryAbility_desc",
         "usedScene": {
           "abilities": [
