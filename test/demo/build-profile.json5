@@ -18,13 +18,13 @@
       {
         "name": "default",
         "material": {
-          "certpath": "C:\\Users\\Curry\\.ohos\\config\\openharmony\\auto_ohos_default_demo_com.sample.rocketer.system.cer",
-          "storePassword": "0000001B02700B43D2D28914FE6D4F7E54A3690261E36FDCB9A8FCEEA38AFA4794AD5D2BCD4700CC903D30",
+          "certpath": "C:\\Users\\chenjiahuan\\.ohos\\config\\openharmony\\auto_ohos_default_demo_com.sample.rocketer.system.cer",
+          "storePassword": "0000001B9CAD8A9C2B576A901144D4CE33B64A7A6FC9BC7405427432E84D48E0E588EAC72DFCB0AC2FC49C",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001B42BCEAE75605EBA7F73B0AFE4B84CA5812768539C1612D45306784A7F8377F9C54A0DC7FCA6EED",
-          "profile": "C:\\Users\\Curry\\.ohos\\config\\openharmony\\auto_ohos_default_demo_com.sample.rocketer.system.p7b",
+          "keyPassword": "0000001B6CBF6FB784278EA32C6F59E0651746A4D23E3BF349D1DA46EB7FC4EE6597A8EC3E03D2FB70CF80",
+          "profile": "C:\\Users\\chenjiahuan\\.ohos\\config\\openharmony\\auto_ohos_default_demo_com.sample.rocketer.system.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\Curry\\.ohos\\config\\openharmony\\auto_ohos_default_demo_com.sample.rocketer.system.p12"
+          "storeFile": "C:\\Users\\chenjiahuan\\.ohos\\config\\openharmony\\auto_ohos_default_demo_com.sample.rocketer.system.p12"
         }
       }
     ],
