@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_POLICY_CLIENT_H
-#define ST_AUDIO_POLICY_CLIENT_H
+#ifndef ST_AUDIO_POLICY_CLIENT_PROXY_H
+#define ST_AUDIO_POLICY_CLIENT_PROXY_H
 
 #include "audio_policy_client.h"
 #include "audio_system_manager.h"
-#include "volume_key_event_call_back_listener.h"
+#include "volume_key_event_callback_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,11 +35,11 @@ private:
     int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object, API_VERSION apt_v);
     std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
 
-    using HandlerFunc = int32_t(AudioPolicyClientProxy::*)(const sptr<IRemoteObject> &object, API_VERSION apt_v);
+    using HandlerFunc = int32_t(AudioPolicyClientProxy::*)(const sptr<IRemoteObject> &object, API_VERSION api_v);
     static inline HandlerFunc handlers[] = {
         &AudioPolicyClientProxy::SetVolumeKeyEventCallback,
-    }
-}
+    };
+};
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // ST_AUDIO_POLICY_CLIENT_H
+#endif // ST_AUDIO_POLICY_CLIENT_PROXY_H

@@ -857,7 +857,7 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
     }
 
     std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient(clientPid)
-    if (audioPolicyClientStub == null) {
+    if (audioPolicyClientStub == nullptr) {
         AUDIO_ERR_LOG("SetVolumeKeyEventCallback: audioPolicyClientStub get error");
         return ERROR;
     }
@@ -879,8 +879,8 @@ int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
         AUDIO_ERR_LOG("UnsetVolumeKeyEventCallback: audio policy manager proxy is NULL.");
         return ERROR;
     }
-    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient(clientPid)
-    if (audioPolicyClientStub == null) {
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient(clientPid);
+    if (audioPolicyClientStub == nullptr) {
         AUDIO_ERR_LOG("SetVolumeKeyEventCallback: audioPolicyClientStub get error");
         return ERROR;
     }

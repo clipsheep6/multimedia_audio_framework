@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef I_AUDIO_POLICY_CLIENT_STUB_H
-#define I_AUDIO_POLICY_CLIENT_STUB_H
+#ifndef AUDIO_POLICY_CLIENT_STUB_H
+#define AUDIO_POLICY_CLIENT_STUB_H
 
 #include "event_handler.h"
 #include "event_runner.h"
@@ -23,20 +23,20 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPolicyClientStub : public IRemoteSutb<IAudioPolicyClient>, public AppExecFwk::EventHandler {
+class AudioPolicyClientStub : public IRemoteStub<IAudioPolicyClient>, public AppExecFwk::EventHandler {
 public:
     AudioPolicyClientStub();
     ~AudioPolicyClientStub();
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
         MessageOption &option) override;
 private:
-    void HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply),
+    void HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void (AudioPolicyClientStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[]  = {
         &AudioPolicyClientStub::HandleVolumeKeyEvent,
-    }
-}
+    };
+};
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // I_AUDIO_POLICY_CLIENT_STUB_H
+#endif // AUDIO_POLICY_CLIENT_STUB_H

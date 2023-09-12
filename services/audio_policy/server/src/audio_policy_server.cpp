@@ -2166,7 +2166,7 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
     }
 
     volumeEvent.updateUi = false;
-    for (auto it = audioPolicyProxyCBMap_.begin(); it != audioPolicyProxyCBMap_.end(); ++it) {
+    for (auto it = server_->audioPolicyProxyCBMap_.begin(); it != server_->audioPolicyProxyCBMap_.end(); ++it) {
         std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
         if (proxy == nullptr) {
             continue;

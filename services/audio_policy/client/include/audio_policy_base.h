@@ -212,7 +212,7 @@ public:
     virtual int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId) = 0;
 
     virtual int32_t RegisterPolicyCallbackClient(const int32_t clientPid,
-        cibst sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v = API_9) = 0;
+        const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v = API_9) = 0;
 
     virtual int32_t UnregisterPolicyCallbackClient(const int32_t clientPid, const uint32_t code) = 0;
 

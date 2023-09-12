@@ -35,8 +35,7 @@ public:
 
 private:
     sptr<IAudioPolicyClient> listener_ = nullptr;
-}
-
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_LISTENER_H

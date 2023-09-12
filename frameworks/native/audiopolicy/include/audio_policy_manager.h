@@ -251,11 +251,9 @@ private:
     void Init();
     sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
     std::mutex listenerStubMutex_;
-    std::mutex volumeCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
     std::mutex ringerModelistenerStubMutex_;
-    sptr<AudioVolumeKeyEventCallbackStub> volumeKeyEventListenerStub_ = nullptr;
     sptr<AudioRingerModeUpdateListenerStub> ringerModelistenerStub_ = nullptr;
     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;

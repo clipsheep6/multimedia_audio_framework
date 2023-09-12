@@ -25,7 +25,7 @@ int32_t AudioPolicyClientStubImpl::SetVolumeKeyEventCallback(const std::shared_p
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::UnSetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback)
+int32_t AudioPolicyClientStubImpl::UnsetVolumeKeyEventCallback()
 {
     volumeKeyEventCallbackList_.clear();
     return SUCCESS;
@@ -33,7 +33,7 @@ int32_t AudioPolicyClientStubImpl::UnSetVolumeKeyEventCallback(const std::shared
 
 void AudioPolicyClientStubImpl::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
-    for (auto it = volumeKeyEventCallbackList_.begin(; it != volumeKeyEventCallbackList_.end(); ++it)) {
+    for (auto it = volumeKeyEventCallbackList_.begin(); it != volumeKeyEventCallbackList_.end(); ++it) {
         (*it)->OnVolumeKeyEvent(volumeEvent);
     }
 }

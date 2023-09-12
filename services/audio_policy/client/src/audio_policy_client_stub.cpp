@@ -26,7 +26,7 @@ AudioPolicyClientStub::AudioPolicyClientStub()
 AudioPolicyClientStub::~AudioPolicyClientStub()
 {}
 
-int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply
+int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
@@ -36,15 +36,16 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
     switch (code) {
         case UPDATE_POLICY_CALLBACK_CLIENT: {
             uint32_t updateCode = static_cast<uint32_t>(data.ReadInt32());
-            if (updateCode > static_cast<uint32_t>(AudioPolicyClientCode::AUDIO_POLICY_CLIENT_MAX)) {
+            if (updateCode > static_cast<uint32_t>(AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX)) {
                 return -1;
             }
             (this->*handlers[updateCode])(data, reply);
             break;
         }
-        default:
+        default: {
             reply.WriteInt32(ERR_INVALID_OPERATION);
             break;
+        }
     }
     return SUCCESS;
 }

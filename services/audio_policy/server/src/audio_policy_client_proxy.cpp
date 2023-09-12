@@ -43,7 +43,7 @@ int32_t AudioPolicyClientProxy::RegisterPolicyCallbackClient(const sptr<IRemoteO
 void AudioPolicyClientProxy::UnregisterPolicyCallbackClient(const uint32_t code)
 {
     switch (code) {
-        case static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT);
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT):
             volumeKeyEventCallbackList_.clear();
             break;
         default:
@@ -86,6 +86,9 @@ void AudioPolicyClientProxy::OnVolumeKeyEvent(VolumeEvent volumeEvent)
     data.WriteInt32(volumeEvent.volumeGroupId);
     data.WriteString(volumeEvent.networkId);
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_POLICY_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_DEBUG_LOG("Error while sending volume key event %{public}d", error);
+    }
     reply.ReadInt32();
 }
 } // namespace AudioStandard

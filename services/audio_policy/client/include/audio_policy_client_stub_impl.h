@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef I_AUDIO_POLICY_CLIENT_STUB_IMPL_H
-#define I_AUDIO_POLICY_CLIENT_STUB_IMPL_H
+#ifndef AUDIO_POLICY_CLIENT_STUB_IMPL_H
+#define AUDIO_POLICY_CLIENT_STUB_IMPL_H
 
 #include "audio_policy_client_stub.h"
 #include "audio_system_manager.h"
@@ -24,13 +24,13 @@ namespace AudioStandard {
 class AudioPolicyClientStubImpl : public AudioPolicyClientStub {
 public:
     int32_t SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
-    int32_t UnSetVolumeKeyEventCallback();
+    int32_t UnsetVolumeKeyEventCallback();
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
 private:
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
-}
+};
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // I_AUDIO_POLICY_CLIENT_STUB_IMPL_H
+#endif // AUDIO_POLICY_CLIENT_STUB_IMPL_H

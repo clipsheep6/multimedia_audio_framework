@@ -26,9 +26,9 @@ namespace OHOS {
 namespace AudioStandard {
 static const int32_t UPDATE_POLICY_CALLBACK_CLIENT = 0;
 enum class AudioPolicyClientCode {
-    ON_VOLUME_KEY_EVENT = 0;
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_VOLUME_KEY_EVENT;
-}
+    ON_VOLUME_KEY_EVENT = 0,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_VOLUME_KEY_EVENT,
+};
 class IAudioPolicyClient : public IRemoteBroker {
 public:
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
