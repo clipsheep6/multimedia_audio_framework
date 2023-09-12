@@ -350,6 +350,41 @@ AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType s
     }
 }
 
+bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
+{
+    bool result = false;
+    switch (streamType) {
+        case STREAM_MUSIC:
+        case STREAM_RING:
+        case STREAM_NOTIFICATION:
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALARM:
+        case STREAM_ACCESSIBILITY:
+        case STREAM_ULTRASONIC:
+        case STREAM_ALL:
+            result = true;
+            break;
+        default:
+            result = false;
+            AUDIO_ERR_LOG("IsVolumeTypeValid: streamType[%{public}d] is not supported", streamType);
+            break;
+    }
+    return result;
+}
+
+bool AudioPolicyServer::IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel)
+{
+    bool result = true;
+    if (volumeLevel < mPolicyService.GetMinVolumeLevel(streamType) ||
+        volumeLevel > mPolicyService.GetMaxVolumeLevel(streamType)) {
+        AUDIO_ERR_LOG("IsVolumeLevelValid: volumeLevel[%{public}d] is out of valid range for streamType[%{public}d]",
+            volumeLevel, streamType);
+        result = false;
+    }
+    return result;
+}
+
 void AudioPolicyServer::InitKVStore()
 {
     mPolicyService.InitKVStore();
@@ -384,6 +419,14 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
         AUDIO_ERR_LOG("SetSystemVolumeLevel: No system permission");
         return ERR_PERMISSION_DENIED;
     }
+
+    if (!IsVolumeTypeValid(streamType)) {
+        return ERR_NOT_SUPPORTED;
+    }
+    if (!IsVolumeLevelValid(streamType, volumeLevel)) {
+        return ERR_NOT_SUPPORTED;
+    }
+
     return SetSystemVolumeLevelInternal(streamType, volumeLevel, false);
 }
 
@@ -461,6 +504,13 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
 
 float AudioPolicyServer::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
 {
+    if (!IsVolumeTypeValid(volumeType)) {
+        return static_cast<float>(ERR_INVALID_PARAM);
+    }
+    if (!IsVolumeLevelValid(volumeType, volumeLevel)) {
+        return static_cast<float>(ERR_INVALID_PARAM);
+    }
+
     return mPolicyService.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
 
@@ -1451,10 +1501,11 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
+    AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
+
     if (!mPolicyService.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
-        AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
         audioFocusInfoList_.remove_if([&](std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
             if ((audioFocusInfo.first).sessionID != exitSessionID) {
                 AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(audioFocusInfo.first);
@@ -1480,7 +1531,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     }
 
     bool isInterruptActive = false;
-    AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
+
     for (auto it = audioFocusInfoList_.begin(); it != audioFocusInfoList_.end();) {
         if ((it->first).sessionID == audioInterrupt.sessionID) {
             it = audioFocusInfoList_.erase(it);
@@ -1511,6 +1562,11 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 }
 
 void AudioPolicyServer::OnSessionRemoved(const uint32_t sessionID)
+{
+    sessionProcessor_.Post({SessionEvent::Type::REMOVE, sessionID});
+}
+
+void AudioPolicyServer::ProcessSessionRemoved(const uint32_t sessionID)
 {
     uint32_t removedSessionID = sessionID;
 

@@ -38,6 +38,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_service_dump.h"
 #include "audio_policy_client_proxy.h"
+#include "session_processor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -182,6 +183,8 @@ public:
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 
     void OnSessionRemoved(const uint32_t sessionID) override;
+
+    void ProcessSessionRemoved(const uint32_t sessionID);
 
     void OnPlaybackCapturerStop() override;
 
@@ -345,6 +348,8 @@ private:
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
+    bool IsVolumeTypeValid(AudioStreamType streamType);
+    bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
@@ -396,6 +401,9 @@ private:
     std::mutex ringerModeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
+
+    SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
+        this, std::placeholders::_1)};
 };
 } // namespace AudioStandard
 } // namespace OHOS
