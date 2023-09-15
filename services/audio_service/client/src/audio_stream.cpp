@@ -30,7 +30,6 @@ const unsigned long long TIME_CONVERSION_US_S = 1000000ULL; /* us to s */
 const unsigned long long TIME_CONVERSION_NS_US = 1000ULL; /* ns to us */
 const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
-constexpr int32_t READ_WRITE_WAIT_TIME_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_MS = 80;
 constexpr int32_t CB_READ_BUFFERS_WAIT_IN_US = 500;
 
@@ -83,8 +82,6 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
     : eStreamType_(eStreamType),
       eMode_(eMode),
       state_(NEW),
-      isReadInProgress_(false),
-      isWriteInProgress_(false),
       resetTime_(false),
       resetTimestamp_(0),
       renderMode_(RENDER_MODE_NORMAL),
@@ -405,9 +402,7 @@ int32_t AudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
     StreamBuffer stream;
     stream.buffer = &buffer;
     stream.bufferLen = userSize;
-    isReadInProgress_ = true;
     int32_t readLen = ReadStream(stream, isBlockingRead);
-    isReadInProgress_ = false;
     if (readLen < 0) {
         AUDIO_ERR_LOG("ReadStream fail,ret:%{public}d", readLen);
         return ERR_INVALID_READ;
@@ -439,7 +434,6 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
     StreamBuffer stream;
     stream.buffer = buffer;
     stream.bufferLen = buffer_size;
-    isWriteInProgress_ = true;
 
     if (isFirstWrite_) {
         if (RenderPrebuf(stream.bufferLen)) {
@@ -449,7 +443,6 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
     }
 
     size_t bytesWritten = WriteStream(stream, writeError);
-    isWriteInProgress_ = false;
     if (writeError != 0) {
         AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
         return ERR_WRITE_FAILED;
@@ -484,10 +477,6 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
         }
     }
 
-    while (isReadInProgress_ || isWriteInProgress_) {
-        std::this_thread::sleep_for(std::chrono::microseconds(READ_WRITE_WAIT_TIME_IN_US));
-    }
-    
     AUDIO_DEBUG_LOG("AudioStream::PauseAudioStream:renderMode_ : %{public}d state_: %{public}d", renderMode_, state_);
 
     int32_t ret = PauseStream(cmdType);
@@ -537,10 +526,6 @@ bool AudioStream::StopAudioStream()
         if (writeThread_ && writeThread_->joinable()) {
             writeThread_->join();
         }
-    }
-
-    while (isReadInProgress_ || isWriteInProgress_) {
-        std::this_thread::sleep_for(std::chrono::microseconds(READ_WRITE_WAIT_TIME_IN_US));
     }
 
     int32_t ret = StopStream();
