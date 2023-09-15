@@ -17,6 +17,7 @@ group("audio_unit_test") {
   testonly = true
 
   deps = [
+    "../frameworks/js/napi/audio_capturer/test/unittest/audio_capturer_interrupt_test:js_audio_capturer_interrupt_test",
     "../frameworks/js/napi/audio_manager/test/unittest/group_manager_test:jsunittest",
     "../frameworks/js/napi/audio_manager/test/unittest/routing_manager_test:jsunittest",
     "../frameworks/js/napi/audio_manager/test/unittest/stream_manager_test:jsunittest",
