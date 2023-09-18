@@ -2308,7 +2308,7 @@ napi_status JsObjToAudioInterrupt(const napi_env& env, const napi_value& object,
 }
 
 template<typename T> void AudioManagerNapi::RegisterInterruptCallback(napi_env env, const T &args,
-    AudioManagerNapi *managerNapi)
+    [[maybe_unused]] const size_t argc, AudioManagerNapi *managerNapi)
 {
     napi_valuetype paramArg1 = napi_undefined;
     napi_typeof(env, args[PARAM1], &paramArg1);
@@ -2341,7 +2341,7 @@ template<typename T> void AudioManagerNapi::RegisterInterruptCallback(napi_env e
 }
 
 template<typename T> void AudioManagerNapi::RegisterRingerModeCallback(napi_env env, const T &args,
-    AudioManagerNapi *managerNapi)
+    [[maybe_unused]] const size_t argc, AudioManagerNapi *managerNapi)
 {
     if (managerNapi->ringerModecallbackNapi_ == nullptr) {
         managerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
@@ -2362,7 +2362,7 @@ template<typename T> void AudioManagerNapi::RegisterRingerModeCallback(napi_env 
 }
 
 template<typename T> void AudioManagerNapi::RegisterVolumeChangeCallback(napi_env env, const T &args,
-    AudioManagerNapi *managerNapi)
+    [[maybe_unused]] const size_t argc, AudioManagerNapi *managerNapi)
 {
     if (managerNapi->volumeKeyEventCallbackNapi_ == nullptr) {
         managerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
@@ -2381,7 +2381,7 @@ template<typename T> void AudioManagerNapi::RegisterVolumeChangeCallback(napi_en
 }
 
 template<typename T> void AudioManagerNapi::RegisterDeviceChangeCallback(napi_env env, const T &args,
-    AudioManagerNapi *managerNapi)
+    [[maybe_unused]] const size_t argc, AudioManagerNapi *managerNapi)
 {
     if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
         managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
@@ -2434,13 +2434,13 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
     }
 
     if (!callbackName.compare(INTERRUPT_CALLBACK_NAME)) {
-        RegisterInterruptCallback(env, args, managerNapi);
+        RegisterInterruptCallback(env, args, argCount, managerNapi);
     } else if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
-        RegisterRingerModeCallback(env, args, managerNapi);
+        RegisterRingerModeCallback(env, args, argCount, managerNapi);
     } else if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
-        RegisterVolumeChangeCallback(env, args, managerNapi);
+        RegisterVolumeChangeCallback(env, args, argCount, managerNapi);
     } else if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
-        RegisterDeviceChangeCallback(env, args, managerNapi);
+        RegisterDeviceChangeCallback(env, args, argCount, managerNapi);
     }
     return undefinedResult;
 }
@@ -2468,7 +2468,7 @@ void AudioManagerNapi::UnregisterDeviceChangeCallback(napi_env env, napi_value c
 }
 
 template<typename T> void AudioManagerNapi::UnregisterInterruptCallback(napi_env env, const T &args,
-    const size_t argCount, AudioManagerNapi *managerNapi)
+    const size_t argc, AudioManagerNapi *managerNapi)
 {
     napi_valuetype paramArg1 = napi_undefined;
     napi_valuetype handler = napi_undefined;
@@ -2477,7 +2477,7 @@ template<typename T> void AudioManagerNapi::UnregisterInterruptCallback(napi_env
         AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
         return;
     }
-    if ((argCount == ARGS_THREE) &&
+    if ((argc == ARGS_THREE) &&
         (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function)) {
         AUDIO_ERR_LOG("Off type mismatch for parameter 3");
         AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
@@ -2487,9 +2487,9 @@ template<typename T> void AudioManagerNapi::UnregisterInterruptCallback(napi_env
     if (managerNapi->interruptCallbackNapi_ != nullptr) {
         std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
             std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
-        if (argCount == ARGS_TWO) {
+        if (argc == ARGS_TWO) {
             cb->RemoveAllCallbackReferences(INTERRUPT_CALLBACK_NAME);
-        } else if (argCount == ARGS_THREE) {
+        } else if (argc == ARGS_THREE) {
             cb->RemoveCallbackReference(INTERRUPT_CALLBACK_NAME, args[PARAM2]);
         }
         callbackCount = cb->GetInterruptCallbackListSize();

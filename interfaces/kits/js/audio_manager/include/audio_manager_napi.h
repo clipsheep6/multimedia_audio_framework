@@ -107,16 +107,16 @@ private:
     static napi_value GetVolumeManager(napi_env env, napi_callback_info info);
     static napi_value GetInterruptManager(napi_env env, napi_callback_info info);
     static void UnregisterDeviceChangeCallback(napi_env env, napi_value callback, AudioManagerNapi *audioMgrNapi);
-    template<typename T> static void RegisterInterruptCallback(napi_env env, const T &args,
-    AudioManagerNapi *managerNapi);
-    template<typename T> static void RegisterRingerModeCallback(napi_env env, const T &args,
-    AudioManagerNapi *managerNapi);
-    template<typename T> static void RegisterVolumeChangeCallback(napi_env env, const T &args,
-    AudioManagerNapi *managerNapi);
-    template<typename T> static void RegisterDeviceChangeCallback(napi_env env, const T &args,
-    AudioManagerNapi *managerNapi);
-    template<typename T> static void UnregisterInterruptCallback(napi_env env, const T &args,
-        const size_t argCount, AudioManagerNapi *managerNapi);
+    template<typename T> static void RegisterInterruptCallback(napi_env env, const T &args, const size_t argc,
+        AudioManagerNapi *managerNapi);
+    template<typename T> static void RegisterRingerModeCallback(napi_env env, const T &args, const size_t argc,
+        AudioManagerNapi *managerNapi);
+    template<typename T> static void RegisterVolumeChangeCallback(napi_env env, const T &args, const size_t argc,
+        AudioManagerNapi *managerNapi);
+    template<typename T> static void RegisterDeviceChangeCallback(napi_env env, const T &args, const size_t argc,
+        AudioManagerNapi *managerNapi);
+    template<typename T> static void UnregisterInterruptCallback(napi_env env, const T &args, const size_t argc,
+        AudioManagerNapi *managerNapi);
     static void AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result);
 
     template<typename T> static napi_value CreatePropertyBase(napi_env env, T& t_map, napi_ref ref);
