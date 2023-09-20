@@ -186,6 +186,7 @@ public:
      * For details, refer InterruptAction struct in audio_info.h
      */
     virtual void OnInterrupt(const InterruptAction &interruptAction) = 0;
+    std::mutex cbMutex_;
 };
 
 class AudioManagerInterruptCallbackImpl : public AudioInterruptCallback {
