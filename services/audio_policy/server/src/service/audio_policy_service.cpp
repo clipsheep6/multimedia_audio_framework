@@ -1356,6 +1356,8 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<Au
         std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName,
             deviceDescriptor->deviceType_);
         switchThread.detach(); // add another sleep before switch local can avoid pop in some case
+        int32_t beforSwitchDelay = 300000;
+        usleep(beforSwitchDelay);
     }
 
     if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
