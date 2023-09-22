@@ -2221,7 +2221,9 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
             return AUDIO_CLIENT_ERR;
         }
 
-        pa_threaded_mainloop_accept(mainLoop);
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mainLoop);
+        }
 
         pa_operation_unref(operation);
     } else {
@@ -2250,7 +2252,7 @@ void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_i
     }
 
     if (eol) {
-        pa_threaded_mainloop_signal(thiz->mainLoop, 1);
+        pa_threaded_mainloop_signal(thiz->mainLoop, 0);
         return;
     }
 
@@ -2495,7 +2497,9 @@ int32_t AudioServiceClient::SetStreamLowPowerVolume(float powerVolumeFactor)
             return AUDIO_CLIENT_ERR;
         }
 
-        pa_threaded_mainloop_accept(mainLoop);
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mainLoop);
+        }
 
         pa_operation_unref(operation);
     } else {
