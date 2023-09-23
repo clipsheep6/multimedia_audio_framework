@@ -330,6 +330,13 @@ void AudioHfpManager::UnregisterBluetoothScoListener()
     hfpInstance_ = nullptr;
 }
 
+void AudioHfpManager::DisconnectScoDevice()
+{
+    BluetoothRemoteDevice device;
+    int disconnected = static_cast<int>(HfpScoConnectState::SCO_DISCONNECTED);
+    hfpListener_.OnScoStateChanged(device, disconnected);
+}
+
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state)
 {
     AUDIO_INFO_LOG("Entered %{public}s [%{public}d]", __func__, state);
