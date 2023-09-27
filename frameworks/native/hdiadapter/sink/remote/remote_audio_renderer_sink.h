@@ -24,6 +24,7 @@
 #include <list>
 #include <string>
 #include <map>
+#define DEBUG_DUMP_FILE
 
 namespace OHOS {
 namespace AudioStandard {
