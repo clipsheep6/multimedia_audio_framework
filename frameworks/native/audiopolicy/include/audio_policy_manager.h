@@ -27,13 +27,11 @@
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"
 #include "audio_system_manager.h"
-#include "audio_volume_key_event_callback_stub.h"
-#include "audio_system_manager.h"
-#include "i_audio_volume_key_event_callback.h"
 #include "i_standard_renderer_state_change_listener.h"
 #include "i_standard_capturer_state_change_listener.h"
 #include "i_standard_client_tracker.h"
 #include "audio_log.h"
+#include "audio_policy_client_stub_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -234,12 +232,14 @@ public:
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
     int32_t GetMaxRendererInstances();
-    
+
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId);
 
     static void RecoverAudioCapturerEventListener();
+
+    std::shared_ptr<AudioPolicyClientStubImpl> GetAudioPolicyClient(const int32_t clientPid);
 
 private:
     AudioPolicyManager()
@@ -251,17 +251,16 @@ private:
     void Init();
     sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
     std::mutex listenerStubMutex_;
-    std::mutex volumeCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
     std::mutex ringerModelistenerStubMutex_;
-    sptr<AudioVolumeKeyEventCallbackStub> volumeKeyEventListenerStub_ = nullptr;
     sptr<AudioRingerModeUpdateListenerStub> ringerModelistenerStub_ = nullptr;
     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::unordered_map<int32_t, AudioCapturerStateChangeListenerStub*> capturerStateChangeCBMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientStubImpl>> audioPolicyClientCBMap_;
 };
 } // namespce AudioStandard
 } // namespace OHOS
