@@ -56,8 +56,6 @@ private:
     void AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply);
-    void SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
@@ -111,6 +109,8 @@ private:
     void GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply);
     void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
     void SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
 
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
@@ -148,8 +148,6 @@ private:
         &AudioPolicyManagerStub::AbandonAudioFocusInternal,
         &AudioPolicyManagerStub::GetStreamInFocusInternal,
         &AudioPolicyManagerStub::GetSessionInfoInFocusInternal,
-        &AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal,
-        &AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal,
         &AudioPolicyManagerStub::GetDevicesInternal,
         &AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal,
         &AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal,
@@ -203,6 +201,8 @@ private:
         &AudioPolicyManagerStub::GetSystemVolumeInDbInternal,
         &AudioPolicyManagerStub::QueryEffectSceneModeInternal,
         &AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal,
+        &AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal,
+        &AudioPolicyManagerStub::UnregisterPolicyCallbackClientInternal,
     };
 };
 } // namespace AudioStandard
