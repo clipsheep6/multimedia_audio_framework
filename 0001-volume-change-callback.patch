@@ -1,0 +1,1458 @@
+From 682822f75b0750df03897383e0f402774325e72e Mon Sep 17 00:00:00 2001
+From: liuyuehua1 <liuyuehua1@huawei.com>
+Date: Tue, 10 Oct 2023 14:49:52 +0800
+Subject: [PATCH] volume change callback.
+
+Signed-off-by: liuyuehua1 <liuyuehua1@huawei.com>
+
+diff --git a/frameworks/native/audiopolicy/include/audio_policy_manager.h b/frameworks/native/audiopolicy/include/audio_policy_manager.h
+index 0ee9d6d5..a9e4b26d 100644
+--- a/frameworks/native/audiopolicy/include/audio_policy_manager.h
++++ b/frameworks/native/audiopolicy/include/audio_policy_manager.h
+@@ -27,13 +27,11 @@
+ #include "audio_routing_manager.h"
+ #include "audio_routing_manager_listener_stub.h"
+ #include "audio_system_manager.h"
+-#include "audio_volume_key_event_callback_stub.h"
+-#include "audio_system_manager.h"
+-#include "i_audio_volume_key_event_callback.h"
+ #include "i_standard_renderer_state_change_listener.h"
+ #include "i_standard_capturer_state_change_listener.h"
+ #include "i_standard_client_tracker.h"
+ #include "audio_log.h"
++#include "audio_policy_client_stub_impl.h"
+ 
+ namespace OHOS {
+ namespace AudioStandard {
+@@ -234,13 +232,15 @@ public:
+     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+ 
+     int32_t GetMaxRendererInstances();
+-    
++
+     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
+ 
+     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId);
+ 
+     static void RecoverAudioCapturerEventListener();
+ 
++    std::shared_ptr<AudioPolicyClientStubImpl> GetAudioPolicyClient(const int32_t clientPid);
++
+ private:
+     AudioPolicyManager()
+     {
+@@ -251,17 +251,16 @@ private:
+     void Init();
+     sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
+     std::mutex listenerStubMutex_;
+-    std::mutex volumeCallbackMutex_;
+     std::mutex stateChangelistenerStubMutex_;
+     std::mutex clientTrackerStubMutex_;
+     std::mutex ringerModelistenerStubMutex_;
+-    sptr<AudioVolumeKeyEventCallbackStub> volumeKeyEventListenerStub_ = nullptr;
+     sptr<AudioRingerModeUpdateListenerStub> ringerModelistenerStub_ = nullptr;
+     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
+     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
+     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
+     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
+     static std::unordered_map<int32_t, AudioCapturerStateChangeListenerStub*> capturerStateChangeCBMap_;
++    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientStubImpl>> audioPolicyClientCBMap_;
+ };
+ } // namespce AudioStandard
+ } // namespace OHOS
+diff --git a/services/audio_policy/BUILD.gn b/services/audio_policy/BUILD.gn
+index 5c9123f9..354503af 100644
+--- a/services/audio_policy/BUILD.gn
++++ b/services/audio_policy/BUILD.gn
+@@ -141,6 +141,7 @@ ohos_shared_library("audio_policy_service") {
+     "server/src/audio_capturer_state_change_listener_proxy.cpp",
+     "server/src/audio_client_tracker_callback_proxy.cpp",
+     "server/src/audio_group_handle.cpp",
++    "server/src/audio_policy_client_proxy.cpp",
+     "server/src/audio_policy_manager_listener_proxy.cpp",
+     "server/src/audio_policy_manager_stub.cpp",
+     "server/src/audio_policy_server.cpp",
+@@ -149,7 +150,6 @@ ohos_shared_library("audio_policy_service") {
+     "server/src/audio_routing_manager_listener_proxy.cpp",
+     "server/src/audio_stream_collector.cpp",
+     "server/src/audio_stream_event_dispatcher.cpp",
+-    "server/src/audio_volume_key_event_callback_proxy.cpp",
+     "server/src/service/audio_policy_service.cpp",
+     "server/src/service/config/audio_focus_parser.cpp",
+     "server/src/service/config/audio_volume_parser.cpp",
+@@ -336,6 +336,8 @@ ohos_shared_library("audio_policy_client") {
+     "../audio_service/client/src/audio_device_descriptor.cpp",
+     "client/src/audio_capturer_state_change_listener_stub.cpp",
+     "client/src/audio_client_tracker_callback_stub.cpp",
++    "client/src/audio_policy_client_stub.cpp",
++    "client/src/audio_policy_client_stub_impl.cpp",
+     "client/src/audio_policy_manager.cpp",
+     "client/src/audio_policy_manager_listener_stub.cpp",
+     "client/src/audio_policy_proxy.cpp",
+@@ -343,7 +345,6 @@ ohos_shared_library("audio_policy_client") {
+     "client/src/audio_ringermode_update_listener_stub.cpp",
+     "client/src/audio_routing_manager_listener_stub.cpp",
+     "client/src/audio_volume_group_info.cpp",
+-    "client/src/audio_volume_key_event_callback_stub.cpp",
+   ]
+ 
+   public_configs = [ ":audio_policy_client_config" ]
+@@ -352,6 +353,7 @@ ohos_shared_library("audio_policy_client") {
+ 
+   external_deps = [
+     "c_utils:utils",
++    "eventhandler:libeventhandler",
+     "hilog:libhilog",
+     "init:libbegetutil",
+     "ipc:ipc_single",
+diff --git a/services/audio_policy/client/include/audio_policy_base.h b/services/audio_policy/client/include/audio_policy_base.h
+index be082c9b..b5780d1a 100644
+--- a/services/audio_policy/client/include/audio_policy_base.h
++++ b/services/audio_policy/client/include/audio_policy_base.h
+@@ -19,7 +19,6 @@
+ #include "audio_interrupt_callback.h"
+ #include "audio_policy_ipc_interface_code.h"
+ 
+-#include "i_audio_volume_key_event_callback.h"
+ #include "ipc_types.h"
+ #include "iremote_broker.h"
+ #include "iremote_proxy.h"
+@@ -122,11 +121,6 @@ public:
+ 
+     virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) = 0;
+ 
+-    virtual int32_t SetVolumeKeyEventCallback(const int32_t clientId,
+-        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) = 0;
+-
+-    virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) = 0;
+-
+     virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) = 0;
+ 
+     virtual bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+@@ -217,6 +211,11 @@ public:
+ 
+     virtual int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId) = 0;
+ 
++    virtual int32_t RegisterPolicyCallbackClient(const int32_t clientPid,
++        const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v = API_9) = 0;
++
++    virtual int32_t UnregisterPolicyCallbackClient(const int32_t clientPid, const uint32_t code) = 0;
++
+ public:
+     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
+ };
+diff --git a/services/audio_policy/client/include/audio_policy_client_stub.h b/services/audio_policy/client/include/audio_policy_client_stub.h
+new file mode 100644
+index 00000000..3fee0dfd
+--- /dev/null
++++ b/services/audio_policy/client/include/audio_policy_client_stub.h
+@@ -0,0 +1,42 @@
++/*
++ * Copyright (c) 2023 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef AUDIO_POLICY_CLIENT_STUB_H
++#define AUDIO_POLICY_CLIENT_STUB_H
++
++#include "event_handler.h"
++#include "event_runner.h"
++#include "audio_policy_client.h"
++#include "audio_system_manager.h"
++
++namespace OHOS {
++namespace AudioStandard {
++class AudioPolicyClientStub : public IRemoteStub<IAudioPolicyClient>, public AppExecFwk::EventHandler {
++public:
++    AudioPolicyClientStub();
++    ~AudioPolicyClientStub();
++    virtual int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
++        MessageOption &option) override;
++private:
++    void HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply);
++
++    using HandlerFunc = void (AudioPolicyClientStub::*)(MessageParcel &data, MessageParcel &reply);
++    static inline HandlerFunc handlers[]  = {
++        &AudioPolicyClientStub::HandleVolumeKeyEvent,
++    };
++};
++} // namespace AudioStandard
++} // namespace OHOS
++#endif // AUDIO_POLICY_CLIENT_STUB_H
+\ No newline at end of file
+diff --git a/services/audio_policy/client/include/audio_volume_key_event_callback_stub.h b/services/audio_policy/client/include/audio_policy_client_stub_impl.h
+similarity index 52%
+rename from services/audio_policy/client/include/audio_volume_key_event_callback_stub.h
+rename to services/audio_policy/client/include/audio_policy_client_stub_impl.h
+index 4704391f..4d4d2ee3 100644
+--- a/services/audio_policy/client/include/audio_volume_key_event_callback_stub.h
++++ b/services/audio_policy/client/include/audio_policy_client_stub_impl.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
++ * Copyright (c) 2023 Huawei Device Co., Ltd.
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+@@ -13,26 +13,24 @@
+  * limitations under the License.
+  */
+ 
+-#ifndef ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_STUB_H
+-#define ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_STUB_H
++#ifndef AUDIO_POLICY_CLIENT_STUB_IMPL_H
++#define AUDIO_POLICY_CLIENT_STUB_IMPL_H
+ 
++#include "audio_policy_client_stub.h"
+ #include "audio_system_manager.h"
+-#include "i_audio_volume_key_event_callback.h"
+ 
+ namespace OHOS {
+ namespace AudioStandard {
+-class AudioVolumeKeyEventCallbackStub : public IRemoteStub<IAudioVolumeKeyEventCallback> {
++class AudioPolicyClientStubImpl : public AudioPolicyClientStub {
+ public:
+-    AudioVolumeKeyEventCallbackStub();
+-    virtual ~AudioVolumeKeyEventCallbackStub();
+-    virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
+-            MessageParcel &reply, MessageOption &option) override;
+-    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+-    void SetOnVolumeKeyEventCallback(const std::weak_ptr<VolumeKeyEventCallback> &callback);
+-
++    int32_t SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
++    int32_t UnsetVolumeKeyEventCallback();
++protected:
++    virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
+ private:
+-    std::weak_ptr<VolumeKeyEventCallback> callback_;
++    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
++    std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
+ };
+ } // namespace AudioStandard
+ } // namespace OHOS
+-#endif // ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_H
++#endif // AUDIO_POLICY_CLIENT_STUB_IMPL_H
+\ No newline at end of file
+diff --git a/services/audio_policy/client/include/audio_policy_manager_stub.h b/services/audio_policy/client/include/audio_policy_manager_stub.h
+index ec7e1d08..90b4fe68 100644
+--- a/services/audio_policy/client/include/audio_policy_manager_stub.h
++++ b/services/audio_policy/client/include/audio_policy_manager_stub.h
+@@ -56,8 +56,6 @@ private:
+     void AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
+     void GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply);
+     void GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply);
+-    void SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
+-    void UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
+     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
+     void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
+     void CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
+@@ -111,6 +109,8 @@ private:
+     void GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply);
+     void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
+     void SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply);
++    void RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
++    void UnregisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+ 
+     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+     void WriteAudioFocusInfo(MessageParcel &data,
+@@ -148,8 +148,6 @@ private:
+         &AudioPolicyManagerStub::AbandonAudioFocusInternal,
+         &AudioPolicyManagerStub::GetStreamInFocusInternal,
+         &AudioPolicyManagerStub::GetSessionInfoInFocusInternal,
+-        &AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal,
+-        &AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal,
+         &AudioPolicyManagerStub::GetDevicesInternal,
+         &AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal,
+         &AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal,
+@@ -203,6 +201,8 @@ private:
+         &AudioPolicyManagerStub::GetSystemVolumeInDbInternal,
+         &AudioPolicyManagerStub::QueryEffectSceneModeInternal,
+         &AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal,
++        &AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal,
++        &AudioPolicyManagerStub::UnregisterPolicyCallbackClientInternal,
+     };
+ };
+ } // namespace AudioStandard
+diff --git a/services/audio_policy/client/include/audio_policy_proxy.h b/services/audio_policy/client/include/audio_policy_proxy.h
+index 62fb0bf8..2aa3b0b3 100644
+--- a/services/audio_policy/client/include/audio_policy_proxy.h
++++ b/services/audio_policy/client/include/audio_policy_proxy.h
+@@ -118,11 +118,6 @@ public:
+ 
+     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
+ 
+-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
+-        const sptr<IRemoteObject> &object, API_VERSION api_v) override;
+-
+-    int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) override;
+-
+     AudioStreamType GetStreamInFocus() override;
+ 
+     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
+@@ -208,6 +203,11 @@ public:
+     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
+ 
+     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId) override;
++
++    int32_t RegisterPolicyCallbackClient(int32_t clientPid, const sptr<IRemoteObject> &object, const uint32_t code,
++        API_VERSION api_v) override;
++    
++    int32_t UnregisterPolicyCallbackClient(int32_t clientPid, const uint32_t code) override;
+ private:
+     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
+     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
+diff --git a/services/audio_policy/client/src/audio_policy_client_stub.cpp b/services/audio_policy/client/src/audio_policy_client_stub.cpp
+new file mode 100644
+index 00000000..ec843fd7
+--- /dev/null
++++ b/services/audio_policy/client/src/audio_policy_client_stub.cpp
+@@ -0,0 +1,65 @@
++/*
++ * Copyright (c) 2023-2023 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "audio_policy_client_stub.h"
++#include "audio_errors.h"
++#include "audio_log.h"
++
++namespace OHOS {
++namespace AudioStandard {
++AudioPolicyClientStub::AudioPolicyClientStub()
++    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create("AudioPolicyClientStubRunner"))
++{}
++
++AudioPolicyClientStub::~AudioPolicyClientStub()
++{}
++
++int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
++    MessageOption &option)
++{
++    if (data.ReadInterfaceToken() != GetDescriptor()) {
++        AUDIO_ERR_LOG("AudioPolicyClientStub: ReadInterfaceToken failed");
++        return -1;
++    }
++    switch (code) {
++        case UPDATE_POLICY_CALLBACK_CLIENT: {
++            uint32_t updateCode = static_cast<uint32_t>(data.ReadInt32());
++            if (updateCode > static_cast<uint32_t>(AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX)) {
++                return -1;
++            }
++            (this->*handlers[updateCode])(data, reply);
++            break;
++        }
++        default: {
++            reply.WriteInt32(ERR_INVALID_OPERATION);
++            break;
++        }
++    }
++    return SUCCESS;
++}
++
++void AudioPolicyClientStub::HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply)
++{
++    std::unique_ptr<VolumeEvent> object = std::make_unique<VolumeEvent>();
++    object->volumeType = static_cast<AudioStreamType>(data.ReadInt32());
++    object->volume = data.ReadInt32();
++    object->updateUi = data.ReadBool();
++    object->volumeGroupId = data.ReadInt32();
++    object->networkId = data.ReadString();
++    SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT), object));
++    reply.WriteInt32(SUCCESS);
++}
++} // namespace AudioStandard
++} // namespace OHOS
+\ No newline at end of file
+diff --git a/services/audio_policy/client/src/audio_policy_client_stub_impl.cpp b/services/audio_policy/client/src/audio_policy_client_stub_impl.cpp
+new file mode 100644
+index 00000000..2ee3eb05
+--- /dev/null
++++ b/services/audio_policy/client/src/audio_policy_client_stub_impl.cpp
+@@ -0,0 +1,50 @@
++/*
++ * Copyright (c) 2023-2023 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "audio_policy_client_stub_impl.h"
++#include "audio_errors.h"
++#include "audio_log.h"
++
++namespace OHOS {
++namespace AudioStandard {
++int32_t AudioPolicyClientStubImpl::SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback)
++{
++    volumeKeyEventCallbackList_.push_back(callback);
++    return SUCCESS;
++}
++
++int32_t AudioPolicyClientStubImpl::UnsetVolumeKeyEventCallback()
++{
++    volumeKeyEventCallbackList_.clear();
++    return SUCCESS;
++}
++
++void AudioPolicyClientStubImpl::OnVolumeKeyEvent(VolumeEvent volumeEvent)
++{
++    for (auto it = volumeKeyEventCallbackList_.begin(); it != volumeKeyEventCallbackList_.end(); ++it) {
++        (*it)->OnVolumeKeyEvent(volumeEvent);
++    }
++}
++
++void AudioPolicyClientStubImpl::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
++{
++    uint32_t eventId = event->GetInnerEventId();
++    if (eventId == static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT)) {
++        VolumeEvent volumeEvent = *(event->GetUniqueObject<VolumeEvent>());
++        OnVolumeKeyEvent(volumeEvent);
++    }
++}
++} // namespace AudioStandard
++} // namespace OHOS
+\ No newline at end of file
+diff --git a/services/audio_policy/client/src/audio_policy_manager.cpp b/services/audio_policy/client/src/audio_policy_manager.cpp
+index 2ecae4a0..16490c30 100644
+--- a/services/audio_policy/client/src/audio_policy_manager.cpp
++++ b/services/audio_policy/client/src/audio_policy_manager.cpp
+@@ -75,6 +75,16 @@ inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
+     return gsp;
+ }
+ 
++std::shared_ptr<AudioPolicyClientStubImpl> AudioPolicyManager::GetAudioPolicyClient(const int32_t clientPid)
++{
++    std::shared_ptr<AudioPolicyClientStubImpl> stub = audioPolicyClientCBMap_[clientPid];
++    if (stub == nullptr) {
++        stub = std::make_shared<AudioPolicyClientStubImpl>();
++        audioPolicyClientCBMap_[clientPid] = stub;
++    }
++    return stub;
++}
++
+ void AudioPolicyManager::RecoverAudioCapturerEventListener()
+ {
+     if (capturerStateChangeCBMap_.size() == 0) {
+@@ -846,20 +856,21 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
+         return ERR_INVALID_PARAM;
+     }
+ 
+-    std::lock_guard<std::mutex> lock(volumeCallbackMutex_);
+-    volumeKeyEventListenerStub_ = new(std::nothrow) AudioVolumeKeyEventCallbackStub();
+-    if (volumeKeyEventListenerStub_ == nullptr) {
+-        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: object null");
++    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient(clientPid);
++    if (audioPolicyClientStub == nullptr) {
++        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: audioPolicyClientStub get error");
+         return ERROR;
+     }
+-    volumeKeyEventListenerStub_->SetOnVolumeKeyEventCallback(callback);
++    audioPolicyClientStub->SetVolumeKeyEventCallback(callback);
++    sptr<IRemoteObject> object = audioPolicyClientStub->AsObject();
+ 
+-    sptr<IRemoteObject> object = volumeKeyEventListenerStub_->AsObject();
+     if (object == nullptr) {
+-        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: volumeKeyEventListenerStub_->AsObject is nullptr.");
++        
++        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: volumeKeyEventListenerStub->AsObject is nullptr");
+         return ERROR;
+     }
+-    return gsp->SetVolumeKeyEventCallback(clientPid, object, api_v);
++    return gsp->RegisterPolicyCallbackClient(clientPid, object,
++        static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT), api_v);
+ }
+ 
+ int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
+@@ -867,9 +878,14 @@ int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
+     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+     if (gsp == nullptr) {
+         AUDIO_ERR_LOG("UnsetVolumeKeyEventCallback: audio policy manager proxy is NULL.");
+-        return -1;
++        return ERROR;
++    }
++    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient(clientPid);
++    if (audioPolicyClientStub == nullptr) {
++        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: audioPolicyClientStub get error");
++        return ERROR;
+     }
+-    return gsp->UnsetVolumeKeyEventCallback(clientPid);
++    return audioPolicyClientStub->UnsetVolumeKeyEventCallback();
+ }
+ 
+ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t clientPid,
+diff --git a/services/audio_policy/client/src/audio_policy_proxy.cpp b/services/audio_policy/client/src/audio_policy_proxy.cpp
+index 1f96d8c6..d099486c 100644
+--- a/services/audio_policy/client/src/audio_policy_proxy.cpp
++++ b/services/audio_policy/client/src/audio_policy_proxy.cpp
+@@ -1274,57 +1274,6 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
+     return reply.ReadInt32();
+ }
+ 
+-int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const int32_t clientPid,
+-    const sptr<IRemoteObject> &object, API_VERSION api_v)
+-{
+-    MessageParcel data;
+-    MessageParcel reply;
+-    MessageOption option;
+-
+-    if (!data.WriteInterfaceToken(GetDescriptor())) {
+-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+-        return -1;
+-    }
+-    if (object == nullptr) {
+-        AUDIO_ERR_LOG("VolumeKeyEventCallback object is null");
+-        return ERR_NULL_OBJECT;
+-    }
+-
+-    data.WriteInt32(clientPid);
+-    data.WriteRemoteObject(object);
+-    data.WriteInt32(static_cast<int32_t>(api_v));
+-    int result = Remote()->SendRequest(
+-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOLUME_KEY_EVENT_CALLBACK), data, reply, option);
+-    if (result != ERR_NONE) {
+-        AUDIO_ERR_LOG("SetAudioVolumeKeyEventCallback failed, result: %{public}d", result);
+-        return result;
+-    }
+-
+-    return reply.ReadInt32();
+-}
+-
+-int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
+-{
+-    MessageParcel data;
+-    MessageParcel reply;
+-    MessageOption option;
+-
+-    if (!data.WriteInterfaceToken(GetDescriptor())) {
+-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+-        return -1;
+-    }
+-
+-    data.WriteInt32(clientPid);
+-    int result = Remote()->SendRequest(
+-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_VOLUME_KEY_EVENT_CALLBACK), data, reply, option);
+-    if (result != ERR_NONE) {
+-        AUDIO_ERR_LOG("UnsetVolumeKeyEventCallback failed, result: %{public}d", result);
+-        return result;
+-    }
+-
+-    return reply.ReadInt32();
+-}
+-
+ bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
+ {
+     AUDIO_DEBUG_LOG("CheckRecordingCreate: [tid : %{public}d]", appTokenId);
+@@ -2094,5 +2043,55 @@ int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const AudioPlaybackCapt
+     return reply.ReadInt32();
+ }
+ 
++int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const int32_t clientPid,
++    const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v)
++{
++    MessageParcel data;
++    MessageParcel reply;
++    MessageOption option;
++
++    if (object == nullptr) {
++        AUDIO_ERR_LOG("RegisterPolicyCallbackClient object is null");
++        return ERR_NULL_OBJECT;
++    }
++    if (!data.WriteInterfaceToken(GetDescriptor())) {
++        AUDIO_ERR_LOG("WriteInterfaceToken failed");
++        return -1;
++    }
++
++    data.WriteInt32(clientPid);
++    data.WriteUint32(code);
++    data.WriteInt32(static_cast<int32_t>(api_v));
++    data.WriteRemoteObject(object);
++    int error = Remote()->SendRequest(
++        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_POLICY_CALLBACK_CLIENT), data, reply, option);
++    if (error != ERR_NONE) {
++        AUDIO_ERR_LOG("RegisterPolicyCallbackClient failed, error: %d", error);
++        return ERROR;
++    }
++    return reply.ReadInt32();
++}
++
++int32_t AudioPolicyProxy::UnregisterPolicyCallbackClient(const int32_t clientPid, const uint32_t code)
++{
++    MessageParcel data;
++    MessageParcel reply;
++    MessageOption option;
++
++    if (!data.WriteInterfaceToken(GetDescriptor())) {
++        AUDIO_ERR_LOG("WriteInterfaceToken failed");
++        return -1;
++    }
++
++    data.WriteInt32(clientPid);
++    data.WriteUint32(code);
++    int error = Remote()->SendRequest(
++        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_POLICY_CALLBACK_CLIENT), data, reply, option);
++    if (error != ERR_NONE) {
++        AUDIO_ERR_LOG("RegisterPolicyCallbackClient failed, error: %d", error);
++        return ERROR;
++    }
++    return reply.ReadInt32();
++}
+ } // namespace AudioStandard
+ } // namespace OHOS
+diff --git a/services/audio_policy/client/src/audio_volume_key_event_callback_stub.cpp b/services/audio_policy/client/src/audio_volume_key_event_callback_stub.cpp
+deleted file mode 100644
+index f2fe5954..00000000
+--- a/services/audio_policy/client/src/audio_volume_key_event_callback_stub.cpp
++++ /dev/null
+@@ -1,76 +0,0 @@
+-/*
+- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#include "audio_volume_key_event_callback_stub.h"
+-#include "audio_log.h"
+-
+-namespace OHOS {
+-namespace AudioStandard {
+-AudioVolumeKeyEventCallbackStub::AudioVolumeKeyEventCallbackStub()
+-{
+-}
+-
+-AudioVolumeKeyEventCallbackStub::~AudioVolumeKeyEventCallbackStub()
+-{
+-}
+-
+-int AudioVolumeKeyEventCallbackStub::OnRemoteRequest(
+-    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+-{
+-    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnRemoteRequest");
+-    if (data.ReadInterfaceToken() != GetDescriptor()) {
+-        AUDIO_ERR_LOG("AudioVolumeKeyEventCallbackStub: ReadInterfaceToken failed");
+-        return -1;
+-    }
+-    switch (code) {
+-        case ON_VOLUME_KEY_EVENT: {
+-            VolumeEvent volumeEvent;
+-            volumeEvent.volumeType = static_cast<AudioStreamType>(data.ReadInt32());
+-            volumeEvent.volume = data.ReadInt32();
+-            volumeEvent.updateUi = data.ReadBool();
+-            volumeEvent.volumeGroupId = data.ReadInt32();
+-            volumeEvent.networkId = data.ReadString();
+-            OnVolumeKeyEvent(volumeEvent);
+-            reply.WriteInt32(0);
+-            break;
+-        }
+-        default: {
+-            reply.WriteInt32(-1);
+-            break;
+-        }
+-    }
+-    return 0;
+-}
+-
+-void AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent(VolumeEvent volumeEvent)
+-{
+-    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent");
+-    std::shared_ptr<VolumeKeyEventCallback> cb = callback_.lock();
+-    if (cb != nullptr) {
+-        AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NOT NULL");
+-        cb->OnVolumeKeyEvent(volumeEvent);
+-    } else {
+-        AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NULL");
+-    }
+-}
+-
+-void AudioVolumeKeyEventCallbackStub::SetOnVolumeKeyEventCallback(
+-    const std::weak_ptr<VolumeKeyEventCallback> &callback)
+-{
+-    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::SetOnVolumeKeyEventCallback");
+-    callback_ = callback;
+-}
+-} // namespace AudioStandard
+-} // namespace OHOS
+diff --git a/services/audio_policy/common/include/i_audio_volume_key_event_callback.h b/services/audio_policy/common/include/audio_policy_client.h
+similarity index 66%
+rename from services/audio_policy/common/include/i_audio_volume_key_event_callback.h
+rename to services/audio_policy/common/include/audio_policy_client.h
+index f623b51c..f2420f2d 100644
+--- a/services/audio_policy/common/include/i_audio_volume_key_event_callback.h
++++ b/services/audio_policy/common/include/audio_policy_client.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
++ * Copyright (c) 2023 Huawei Device Co., Ltd.
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+@@ -13,8 +13,8 @@
+  * limitations under the License.
+  */
+ 
+-#ifndef ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_H
+-#define ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_H
++#ifndef ST_AUDIO_POLICY_CLIENT_H
++#define ST_AUDIO_POLICY_CLIENT_H
+ 
+ #include "ipc_types.h"
+ #include "iremote_broker.h"
+@@ -24,15 +24,17 @@
+ 
+ namespace OHOS {
+ namespace AudioStandard {
+-class IAudioVolumeKeyEventCallback : public IRemoteBroker {
++static const int32_t UPDATE_POLICY_CALLBACK_CLIENT = 0;
++enum class AudioPolicyClientCode {
++    ON_VOLUME_KEY_EVENT = 0,
++    AUDIO_POLICY_CLIENT_CODE_MAX = ON_VOLUME_KEY_EVENT,
++};
++class IAudioPolicyClient : public IRemoteBroker {
+ public:
+     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
+-    enum {
+-        ON_VOLUME_KEY_EVENT = 0,
+-    };
+ public:
+-    DECLARE_INTERFACE_DESCRIPTOR(u"IAudioVolumeKeyEventCallback");
++    DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicyClient");
+ };
+ } // namespace AudioStandard
+ } // namespace OHOS
+-#endif // ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_H
++#endif // ST_AUDIO_POLICY_CLIENT_H
+diff --git a/services/audio_policy/common/include/audio_policy_ipc_interface_code.h b/services/audio_policy/common/include/audio_policy_ipc_interface_code.h
+index 1459e98e..82f18cbd 100644
+--- a/services/audio_policy/common/include/audio_policy_ipc_interface_code.h
++++ b/services/audio_policy/common/include/audio_policy_ipc_interface_code.h
+@@ -52,8 +52,6 @@ enum class AudioPolicyInterfaceCode {
+     ABANDON_AUDIO_FOCUS,
+     GET_STREAM_IN_FOCUS,
+     GET_SESSION_INFO_IN_FOCUS,
+-    SET_VOLUME_KEY_EVENT_CALLBACK,
+-    UNSET_VOLUME_KEY_EVENT_CALLBACK,
+     GET_DEVICES,
+     SET_WAKEUP_AUDIOCAPTURER,
+     CLOSE_WAKEUP_AUDIOCAPTURER,
+@@ -107,7 +105,9 @@ enum class AudioPolicyInterfaceCode {
+     GET_SYSTEM_VOLUME_IN_DB,
+     QUERY_EFFECT_SCENEMODE,
+     SET_PLAYBACK_CAPTURER_FILTER_INFO,
+-    AUDIO_POLICY_MANAGER_CODE_MAX = SET_PLAYBACK_CAPTURER_FILTER_INFO,
++    REGISTER_POLICY_CALLBACK_CLIENT,
++    UNREGISTER_POLICY_CALLBACK_CLIENT,
++    AUDIO_POLICY_MANAGER_CODE_MAX = UNREGISTER_POLICY_CALLBACK_CLIENT,
+ };
+ } // namespace AudioStandard
+ } // namespace OHOS
+diff --git a/services/audio_policy/server/include/audio_policy_client_proxy.h b/services/audio_policy/server/include/audio_policy_client_proxy.h
+new file mode 100644
+index 00000000..53ecaa6a
+--- /dev/null
++++ b/services/audio_policy/server/include/audio_policy_client_proxy.h
+@@ -0,0 +1,45 @@
++/*
++ * Copyright (c) 2023 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef ST_AUDIO_POLICY_CLIENT_PROXY_H
++#define ST_AUDIO_POLICY_CLIENT_PROXY_H
++
++#include "audio_policy_client.h"
++#include "audio_system_manager.h"
++#include "volume_key_event_callback_listener.h"
++
++namespace OHOS {
++namespace AudioStandard {
++class AudioPolicyClientProxy : public IRemoteProxy<IAudioPolicyClient> {
++public:
++    AudioPolicyClientProxy(const sptr<IRemoteObject> &impl);
++    virtual ~AudioPolicyClientProxy();
++    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v);
++    void UnregisterPolicyCallbackClient(const uint32_t code);
++    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
++
++private:
++    static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;
++    int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object, API_VERSION apt_v);
++    std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
++
++    using HandlerFunc = int32_t(AudioPolicyClientProxy::*)(const sptr<IRemoteObject> &object, API_VERSION api_v);
++    static inline HandlerFunc handlers[] = {
++        &AudioPolicyClientProxy::SetVolumeKeyEventCallback,
++    };
++};
++} // namespace AudioStandard
++} // namespace OHOS
++#endif // ST_AUDIO_POLICY_CLIENT_PROXY_H
+\ No newline at end of file
+diff --git a/services/audio_policy/server/include/audio_policy_server.h b/services/audio_policy/server/include/audio_policy_server.h
+index bf67c06a..b0d288b5 100644
+--- a/services/audio_policy/server/include/audio_policy_server.h
++++ b/services/audio_policy/server/include/audio_policy_server.h
+@@ -37,6 +37,7 @@
+ #include "audio_policy_manager_stub.h"
+ #include "audio_server_death_recipient.h"
+ #include "audio_service_dump.h"
++#include "audio_policy_client_proxy.h"
+ #include "session_processor.h"
+ 
+ namespace OHOS {
+@@ -184,11 +185,6 @@ public:
+ 
+     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
+ 
+-    int32_t SetVolumeKeyEventCallback(const int32_t clientId,
+-        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) override;
+-
+-    int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) override;
+-
+     void OnSessionRemoved(const uint32_t sessionID) override;
+ 
+     void ProcessSessionRemoved(const uint32_t sessionID);
+@@ -273,6 +269,12 @@ public:
+     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
+         uint32_t appTokenId) override;
+ 
++    int32_t RegisterPolicyCallbackClient(int32_t clientPid, const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v) override;
++
++    int32_t UnregisterPolicyCallbackClient(int32_t clientPid, const uint32_t code) override;
++
++    std::shared_ptr<AudioPolicyClientProxy> GetAudioPolicyProxy(const int32_t clientPid, const sptr<IRemoteObject> &object);
++
+     class RemoteParameterCallback : public AudioParameterCallback {
+     public:
+         RemoteParameterCallback(sptr<AudioPolicyServer> server);
+@@ -388,12 +390,12 @@ private:
+     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;
+     std::vector<pid_t> clientDiedListenerState_;
+ 
+-    std::unordered_map<int32_t, std::shared_ptr<VolumeKeyEventCallback>> volumeChangeCbsMap_;
+     std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap_;
+     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
+     std::unordered_map<int32_t, sptr<IStandardAudioPolicyManagerListener>> focusInfoChangeCbsMap_;
+     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeCbsMap_;
+     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
++    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> audioPolicyProxyCBMap_;
+ 
+     std::mutex volumeKeyEventMutex_;
+     std::mutex interruptMutex_;
+diff --git a/services/audio_policy/server/include/audio_volume_key_event_callback_proxy.h b/services/audio_policy/server/include/audio_volume_key_event_callback_proxy.h
+deleted file mode 100644
+index 1cc6d971..00000000
+--- a/services/audio_policy/server/include/audio_volume_key_event_callback_proxy.h
++++ /dev/null
+@@ -1,45 +0,0 @@
+-/*
+- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#ifndef ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_PROXY_H
+-#define ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_PROXY_H
+-
+-#include "iremote_proxy.h"
+-#include "audio_system_manager.h"
+-#include "i_audio_volume_key_event_callback.h"
+-
+-namespace OHOS {
+-namespace AudioStandard {
+-class VolumeKeyEventCallbackListner : public VolumeKeyEventCallback {
+-public:
+-    explicit VolumeKeyEventCallbackListner(const sptr<IAudioVolumeKeyEventCallback> &listener);
+-    virtual ~VolumeKeyEventCallbackListner();
+-    DISALLOW_COPY_AND_MOVE(VolumeKeyEventCallbackListner);
+-    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+-
+-private:
+-    sptr<IAudioVolumeKeyEventCallback> listener_ = nullptr;
+-};
+-class AudioVolumeKeyEventCallbackProxy : public IRemoteProxy<IAudioVolumeKeyEventCallback> {
+-public:
+-    explicit AudioVolumeKeyEventCallbackProxy(const sptr<IRemoteObject> &impl);
+-    virtual ~AudioVolumeKeyEventCallbackProxy() = default;
+-    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+-private:
+-    static inline BrokerDelegator<AudioVolumeKeyEventCallbackProxy> delegator_;
+-};
+-} // namespace AudioStandard
+-} // namespace OHOS
+-#endif // ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_PROXY_H
+diff --git a/services/audio_policy/server/include/service/listener/volume_key_event_callback_listener.h b/services/audio_policy/server/include/service/listener/volume_key_event_callback_listener.h
+new file mode 100644
+index 00000000..9685d88b
+--- /dev/null
++++ b/services/audio_policy/server/include/service/listener/volume_key_event_callback_listener.h
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (c) 2023 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_LISTENER_H
++#define ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_LISTENER_H
++
++#include "audio_system_manager.h"
++#include "audio_policy_client.h"
++
++namespace OHOS {
++namespace AudioStandard {
++class VolumeKeyEventCallbackListener : public VolumeKeyEventCallback {
++public:
++    explicit VolumeKeyEventCallbackListener(const sptr<IAudioPolicyClient> &listener);
++    virtual ~VolumeKeyEventCallbackListener();
++    DISALLOW_COPY_AND_MOVE(VolumeKeyEventCallbackListener);
++    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override
++    {
++        if (listener_ != nullptr) {
++            listener_->OnVolumeKeyEvent(volumeEvent);
++        }
++    }
++
++private:
++    sptr<IAudioPolicyClient> listener_ = nullptr;
++};
++} // namespace AudioStandard
++} // namespace OHOS
++#endif // ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_LISTENER_H
+\ No newline at end of file
+diff --git a/services/audio_policy/server/src/audio_policy_client_proxy.cpp b/services/audio_policy/server/src/audio_policy_client_proxy.cpp
+new file mode 100644
+index 00000000..154b29d5
+--- /dev/null
++++ b/services/audio_policy/server/src/audio_policy_client_proxy.cpp
+@@ -0,0 +1,95 @@
++/*
++ * Copyright (c) 2023 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "audio_policy_client_proxy.h"
++#include "audio_log.h"
++#include "audio_errors.h"
++#include "audio_utils.h"
++
++namespace OHOS {
++namespace AudioStandard {
++AudioPolicyClientProxy::AudioPolicyClientProxy(const sptr<IRemoteObject> &impl)
++    : IRemoteProxy<IAudioPolicyClient>(impl)
++{}
++
++AudioPolicyClientProxy::~AudioPolicyClientProxy()
++{}
++
++VolumeKeyEventCallbackListener::VolumeKeyEventCallbackListener(const sptr<IAudioPolicyClient> &listener)
++: listener_(listener) {}
++
++VolumeKeyEventCallbackListener::~VolumeKeyEventCallbackListener() {}
++
++int32_t AudioPolicyClientProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v)
++{
++    if (code > static_cast<uint32_t>(AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX)) {
++        return -1;
++    }
++    return (this->*handlers[code])(object, api_v);
++}
++
++void AudioPolicyClientProxy::UnregisterPolicyCallbackClient(const uint32_t code)
++{
++    switch (code) {
++        case static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT):
++            volumeKeyEventCallbackList_.clear();
++            break;
++        default:
++            break;
++    }
++}
++
++int32_t AudioPolicyClientProxy::SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object, API_VERSION api_v)
++{
++    if (api_v == API_8 && !PermissionUtil::VerifySystemPermission()) {
++        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: No system permission");
++        return ERR_PERMISSION_DENIED;
++    }
++    sptr<IAudioPolicyClient> listener = iface_cast<IAudioPolicyClient>(object);
++    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
++        "SetVolumeKeyEventCallback listener obj cast failed");
++    std::shared_ptr<VolumeKeyEventCallback> callback = std::make_shared<VolumeKeyEventCallbackListener>(listener);
++    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
++        "SetVolumeKeyEventCallback failed to create cb obj");
++    volumeKeyEventCallbackList_.push_back(callback);
++    return SUCCESS;
++}
++
++void AudioPolicyClientProxy::OnVolumeKeyEvent(VolumeEvent volumeEvent)
++{
++    if (volumeKeyEventCallbackList_.empty()) {
++        return;
++    }
++    MessageParcel data;
++    MessageParcel reply;
++    MessageOption option(MessageOption::TF_ASYNC);
++    if (!data.WriteInterfaceToken(GetDescriptor())) {
++        AUDIO_ERR_LOG("AudioPolicyClientProxy: WriteInterfaceToken failed");
++        return;
++    }
++    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT));
++    data.WriteInt32(static_cast<int32_t>(volumeEvent.volumeType));
++    data.WriteInt32(volumeEvent.volume);
++    data.WriteBool(volumeEvent.updateUi);
++    data.WriteInt32(volumeEvent.volumeGroupId);
++    data.WriteString(volumeEvent.networkId);
++    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_POLICY_CALLBACK_CLIENT), data, reply, option);
++    if (error != 0) {
++        AUDIO_DEBUG_LOG("Error while sending volume key event %{public}d", error);
++    }
++    reply.ReadInt32();
++}
++} // namespace AudioStandard
++} // namespace OHOS
+diff --git a/services/audio_policy/server/src/audio_policy_manager_stub.cpp b/services/audio_policy/server/src/audio_policy_manager_stub.cpp
+index d2587942..65c35df3 100644
+--- a/services/audio_policy/server/src/audio_policy_manager_stub.cpp
++++ b/services/audio_policy/server/src/audio_policy_manager_stub.cpp
+@@ -584,26 +584,6 @@ void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel & /* da
+     reply.WriteInt32(ret);
+ }
+ 
+-void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
+-{
+-    int32_t clientPid =  data.ReadInt32();
+-    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+-    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
+-    if (remoteObject == nullptr) {
+-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
+-        return;
+-    }
+-    int ret = SetVolumeKeyEventCallback(clientPid, remoteObject, api_v);
+-    reply.WriteInt32(ret);
+-}
+-
+-void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
+-{
+-    int32_t clientPid = data.ReadInt32();
+-    int ret = UnsetVolumeKeyEventCallback(clientPid);
+-    reply.WriteInt32(ret);
+-}
+-
+ void AudioPolicyManagerStub::CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply)
+ {
+     uint32_t appTokenId = data.ReadUint32();
+@@ -959,6 +939,28 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
+     reply.WriteInt32(ret);
+ }
+ 
++void AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
++{
++    int32_t clientPid = data.ReadInt32();
++    uint32_t code = data.ReadUint32();
++    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
++    sptr<IRemoteObject> object = data.ReadRemoteObject();
++    if (object == nullptr) {
++        AUDIO_ERR_LOG("RegisterPolicyCallbackClientInternal obj is null");
++        return;
++    }
++    int32_t result = RegisterPolicyCallbackClient(clientPid, object, code, api_v);
++    reply.WriteInt32(result);
++}
++
++void AudioPolicyManagerStub::UnregisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
++{
++    int32_t clientPid = data.ReadInt32();
++    uint32_t code = data.ReadUint32();
++    int32_t result = UnregisterPolicyCallbackClient(clientPid, code);
++    reply.WriteInt32(result);
++}
++
+ int AudioPolicyManagerStub::OnRemoteRequest(
+     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+ {
+diff --git a/services/audio_policy/server/src/audio_policy_server.cpp b/services/audio_policy/server/src/audio_policy_server.cpp
+index 605c632f..0422e31f 100644
+--- a/services/audio_policy/server/src/audio_policy_server.cpp
++++ b/services/audio_policy/server/src/audio_policy_server.cpp
+@@ -43,7 +43,6 @@
+ #include "audio_policy_manager_listener_proxy.h"
+ #include "audio_routing_manager_listener_proxy.h"
+ #include "audio_ringermode_update_listener_proxy.h"
+-#include "audio_volume_key_event_callback_proxy.h"
+ #include "i_standard_audio_policy_manager_listener.h"
+ 
+ #include "parameter.h"
+@@ -115,6 +114,17 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
+     focussedAudioInterruptInfo_ = nullptr;
+ }
+ 
++std::shared_ptr<AudioPolicyClientProxy> AudioPolicyServer::GetAudioPolicyProxy(const int32_t clientPid,
++    const sptr<IRemoteObject> &object)
++{
++    std::shared_ptr<AudioPolicyClientProxy> proxy = audioPolicyProxyCBMap_[clientPid];
++    if (proxy == nullptr && object != nullptr) {
++        proxy = std::make_shared<AudioPolicyClientProxy>(object);
++        audioPolicyProxyCBMap_[clientPid] = proxy;
++    }
++    return proxy;
++}
++
+ void AudioPolicyServer::OnDump()
+ {
+     return;
+@@ -202,25 +212,18 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
+     bool volLevelCheck = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ?
+         volLevel >= GetMaxVolumeLevel(streamInFocus) : volLevel <= GetMinVolumeLevel(streamInFocus);
+     if (volLevelCheck) {
+-        for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
+-            std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+-            if (volumeChangeCb == nullptr) {
+-                AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
++        VolumeEvent volumeEvent;
++        volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
++        volumeEvent.volume = volLevel;
++        volumeEvent.updateUi = true;
++        volumeEvent.volumeGroupId = 0;
++        volumeEvent.networkId = LOCAL_NETWORK_ID;
++        for (auto it = audioPolicyProxyCBMap_.begin(); it != audioPolicyProxyCBMap_.end(); ++it) {
++            std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
++            if (proxy == nullptr) {
+                 continue;
+             }
+-
+-            if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) {
+-                AUDIO_DEBUG_LOG("volume greater than max, trigger cb clientPid : %{public}d", it->first);
+-            } else {
+-                AUDIO_DEBUG_LOG("volume lower than min, trigger cb clientPid : %{public}d", it->first);
+-            }
+-            VolumeEvent volumeEvent;
+-            volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
+-            volumeEvent.volume = volLevel;
+-            volumeEvent.updateUi = true;
+-            volumeEvent.volumeGroupId = 0;
+-            volumeEvent.networkId = LOCAL_NETWORK_ID;
+-            volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
++            proxy->OnVolumeKeyEvent(volumeEvent);
+         }
+         return true;
+     }
+@@ -550,23 +553,19 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool
+     }
+ 
+     int result = mPolicyService.SetStreamMute(streamType, mute);
+-    for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
+-        std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+-        if (volumeChangeCb == nullptr) {
+-            AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
++    VolumeEvent volumeEvent;
++    volumeEvent.volumeType = streamType;
++    volumeEvent.volume = GetSystemVolumeLevel(streamType);
++    volumeEvent.updateUi = isUpdateUi;
++    volumeEvent.volumeGroupId = 0;
++    volumeEvent.networkId = LOCAL_NETWORK_ID;
++    for (auto it = audioPolicyProxyCBMap_.begin(); it != audioPolicyProxyCBMap_.end(); ++it) {
++        std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
++        if (proxy == nullptr) {
+             continue;
+         }
+-        AUDIO_DEBUG_LOG("SetStreamMute trigger volumeChangeCb clientPid: %{public}d, type: %{public}d",
+-            it->first, streamType);
+-        VolumeEvent volumeEvent;
+-        volumeEvent.volumeType = streamType;
+-        volumeEvent.volume = GetSystemVolumeLevel(streamType);
+-        volumeEvent.updateUi = isUpdateUi;
+-        volumeEvent.volumeGroupId = 0;
+-        volumeEvent.networkId = LOCAL_NETWORK_ID;
+-        volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
++        proxy->OnVolumeKeyEvent(volumeEvent);
+     }
+-
+     return result;
+ }
+ 
+@@ -610,23 +609,19 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
+     }
+ 
+     int ret = mPolicyService.SetSystemVolumeLevel(streamType, volumeLevel, isUpdateUi);
+-    for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
+-        std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+-        if (volumeChangeCb == nullptr) {
+-            AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
++    VolumeEvent volumeEvent;
++    volumeEvent.volumeType = streamType;
++    volumeEvent.volume = GetSystemVolumeLevel(streamType);
++    volumeEvent.updateUi = isUpdateUi;
++    volumeEvent.volumeGroupId = 0;
++    volumeEvent.networkId = LOCAL_NETWORK_ID;
++    for (auto it = audioPolicyProxyCBMap_.begin(); it != audioPolicyProxyCBMap_.end(); ++it) {
++        std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
++        if (proxy == nullptr) {
+             continue;
+         }
+-
+-        AUDIO_DEBUG_LOG("SetSystemVolumeLevelInternal trigger volumeChangeCb clientPid : %{public}d", it->first);
+-        VolumeEvent volumeEvent;
+-        volumeEvent.volumeType = streamType;
+-        volumeEvent.volume = GetSystemVolumeLevel(streamType);
+-        volumeEvent.updateUi = isUpdateUi;
+-        volumeEvent.volumeGroupId = 0;
+-        volumeEvent.networkId = LOCAL_NETWORK_ID;
+-        volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
++        proxy->OnVolumeKeyEvent(volumeEvent);
+     }
+-
+     return ret;
+ }
+ 
+@@ -1645,45 +1640,6 @@ int32_t AudioPolicyServer::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
+     return SUCCESS;
+ }
+ 
+-int32_t AudioPolicyServer::SetVolumeKeyEventCallback(const int32_t /* clientId */,
+-    const sptr<IRemoteObject> &object, API_VERSION api_v)
+-{
+-    AUDIO_DEBUG_LOG("SetVolumeKeyEventCallback");
+-
+-    std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
+-    if (api_v == API_8 && !PermissionUtil::VerifySystemPermission()) {
+-        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: No system permission");
+-        return ERR_PERMISSION_DENIED;
+-    }
+-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+-        "SetVolumeKeyEventCallback listener object is nullptr");
+-
+-    sptr<IAudioVolumeKeyEventCallback> listener = iface_cast<IAudioVolumeKeyEventCallback>(object);
+-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
+-        "SetVolumeKeyEventCallback listener obj cast failed");
+-
+-    std::shared_ptr<VolumeKeyEventCallback> callback = std::make_shared<VolumeKeyEventCallbackListner>(listener);
+-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+-        "SetVolumeKeyEventCallback failed to create cb obj");
+-
+-    int32_t clientPid = IPCSkeleton::GetCallingPid();
+-    volumeChangeCbsMap_[clientPid] = callback;
+-    return SUCCESS;
+-}
+-
+-int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t /* clientId */)
+-{
+-    std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
+-
+-    int32_t clientPid = IPCSkeleton::GetCallingPid();
+-    if (volumeChangeCbsMap_.erase(clientPid) == 0) {
+-        AUDIO_ERR_LOG("UnsetVolumeKeyEventCallback client %{public}d not present", clientPid);
+-        return ERR_INVALID_OPERATION;
+-    }
+-
+-    return SUCCESS;
+-}
+-
+ void AudioPolicyServer::OnAudioFocusInfoChange()
+ {
+     std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
+@@ -2271,15 +2227,12 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
+     }
+ 
+     volumeEvent.updateUi = false;
+-    for (auto it = server_->volumeChangeCbsMap_.begin(); it != server_->volumeChangeCbsMap_.end(); ++it) {
+-        std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+-        if (volumeChangeCb == nullptr) {
+-            AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
++    for (auto it = server_->audioPolicyProxyCBMap_.begin(); it != server_->audioPolicyProxyCBMap_.end(); ++it) {
++        std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
++        if (proxy == nullptr) {
+             continue;
+         }
+-
+-        AUDIO_DEBUG_LOG("trigger volumeChangeCb clientPid : %{public}d", it->first);
+-        volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
++        proxy->OnVolumeKeyEvent(volumeEvent);
+     }
+ }
+ 
+@@ -2471,5 +2424,25 @@ int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const AudioPlaybackCap
+     }
+     return mPolicyService.SetPlaybackCapturerFilterInfos(config);
+ }
++
++int32_t AudioPolicyServer::RegisterPolicyCallbackClient(int32_t clientPid,
++    const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v)
++{
++    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyProxy(clientPid, object);
++    if (proxy == nullptr) {
++        return ERR_INVALID_OPERATION;
++    }
++    return proxy->RegisterPolicyCallbackClient(object, code, api_v);
++}
++
++int32_t AudioPolicyServer::UnregisterPolicyCallbackClient(int32_t clientPid, const uint32_t code)
++{
++    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyProxy(clientPid, nullptr);
++    if (proxy == nullptr) {
++        return ERR_INVALID_OPERATION;
++    }
++    proxy->UnregisterPolicyCallbackClient(code);
++    return SUCCESS;
++}
+ } // namespace AudioStandard
+ } // namespace OHOS
+diff --git a/services/audio_policy/server/src/audio_volume_key_event_callback_proxy.cpp b/services/audio_policy/server/src/audio_volume_key_event_callback_proxy.cpp
+deleted file mode 100644
+index 2b30dd3c..00000000
+--- a/services/audio_policy/server/src/audio_volume_key_event_callback_proxy.cpp
++++ /dev/null
+@@ -1,65 +0,0 @@
+-/*
+- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-#include "audio_log.h"
+-#include "audio_volume_key_event_callback_proxy.h"
+-
+-namespace OHOS {
+-namespace AudioStandard {
+-AudioVolumeKeyEventCallbackProxy::AudioVolumeKeyEventCallbackProxy(const sptr<IRemoteObject> &impl)
+-    : IRemoteProxy<IAudioVolumeKeyEventCallback>(impl) { }
+-
+-void AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent(VolumeEvent volumeEvent)
+-{
+-    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent");
+-    MessageParcel data;
+-    MessageParcel reply;
+-    MessageOption option(MessageOption::TF_ASYNC);
+-
+-    if (!data.WriteInterfaceToken(GetDescriptor())) {
+-        AUDIO_ERR_LOG("AudioVolumeKeyEventCallbackProxy: WriteInterfaceToken failed");
+-        return;
+-    }
+-    data.WriteInt32(static_cast<int32_t>(volumeEvent.volumeType));
+-    data.WriteInt32(volumeEvent.volume);
+-    data.WriteBool(volumeEvent.updateUi);
+-    data.WriteInt32(volumeEvent.volumeGroupId);
+-    data.WriteString(volumeEvent.networkId);
+-    int error = Remote()->SendRequest(ON_VOLUME_KEY_EVENT, data, reply, option);
+-    if (error != 0) {
+-        AUDIO_DEBUG_LOG("Error while sending volume key event %{public}d", error);
+-    }
+-    reply.ReadInt32();
+-}
+-
+-VolumeKeyEventCallbackListner::VolumeKeyEventCallbackListner(const sptr<IAudioVolumeKeyEventCallback> &listener)
+-    : listener_(listener)
+-{
+-    AUDIO_DEBUG_LOG("VolumeKeyEventCallbackListner");
+-}
+-
+-VolumeKeyEventCallbackListner::~VolumeKeyEventCallbackListner()
+-{
+-    AUDIO_DEBUG_LOG("VolumeKeyEventCallbackListner desctrutor");
+-}
+-
+-void VolumeKeyEventCallbackListner::OnVolumeKeyEvent(VolumeEvent volumeEvent)
+-{
+-    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackProxy VolumeKeyEventCallbackListner");
+-    if (listener_ != nullptr) {
+-        listener_->OnVolumeKeyEvent(volumeEvent);
+-    }
+-}
+-} // namespace AudioStandard
+-} // namespace OHOS
+diff --git a/services/audio_service/client/src/audio_system_manager.cpp b/services/audio_service/client/src/audio_system_manager.cpp
+index b5f94857..c99a4b3e 100644
+--- a/services/audio_service/client/src/audio_system_manager.cpp
++++ b/services/audio_service/client/src/audio_system_manager.cpp
+@@ -25,7 +25,6 @@
+ #include "audio_manager_proxy.h"
+ #include "audio_server_death_recipient.h"
+ #include "audio_policy_manager.h"
+-#include "audio_volume_key_event_callback_stub.h"
+ #include "audio_utils.h"
+ #include "audio_manager_listener_stub.h"
+ 
+-- 
+2.37.0.windows.1
+
