@@ -76,6 +76,15 @@ inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
     return gsp;
 }
 
+std::shared_ptr<AudioPolicyClientStubImpl> AudioPolicyManager::GetAudioPolicyClient()
+{
+    if (audioPolicyClientCB == nullptr) {
+        audioPolicyClientCB = std::make_shared<AudioPolicyClientStubImpl>();
+    }
+
+    return audioPolicyClientCB;
+}
+
 void AudioPolicyManager::RecoverAudioCapturerEventListener()
 {
     if (capturerStateChangeCBMap_.size() == 0) {
@@ -836,7 +845,7 @@ int32_t AudioPolicyManager::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt
     return gsp->GetSessionInfoInFocus(audioInterrupt);
 }
 
-int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
+int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t /*clientPid*/,
     const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -850,30 +859,32 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
         return ERR_INVALID_PARAM;
     }
 
-    std::lock_guard<std::mutex> lock(volumeCallbackMutex_);
-    volumeKeyEventListenerStub_ = new(std::nothrow) AudioVolumeKeyEventCallbackStub();
-    if (volumeKeyEventListenerStub_ == nullptr) {
-        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: object null");
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient();
+    if (audioPolicyClientStub == nullptr) {
+        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: audioPolicyClientStub get error");
         return ERROR;
     }
-    volumeKeyEventListenerStub_->SetOnVolumeKeyEventCallback(callback);
+    audioPolicyClientStub->SetVolumeKeyEventCallback(callback);
+    sptr<IRemoteObject> object = audioPolicyClientStub->AsObject();
 
-    sptr<IRemoteObject> object = volumeKeyEventListenerStub_->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: volumeKeyEventListenerStub_->AsObject is nullptr.");
+        
+        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: volumeKeyEventListenerStub->AsObject is nullptr");
         return ERROR;
     }
-    return gsp->SetVolumeKeyEventCallback(clientPid, object, api_v);
+    return gsp->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT), api_v);
 }
 
-int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
+int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t /*clientPid*/)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("UnsetVolumeKeyEventCallback: audio policy manager proxy is NULL.");
-        return -1;
+        return ERROR;
     }
-    return gsp->UnsetVolumeKeyEventCallback(clientPid);
+
+    return gsp->UnregisterPolicyCallbackClient(static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT));
 }
 
 int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t clientPid,
