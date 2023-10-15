@@ -1191,7 +1191,6 @@ void AudioRendererNapi::AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_
             SetValueInt32(env, "channels", static_cast<int32_t>(asyncContext->channelCount), valueParam);
             SetValueInt32(env, "sampleFormat", static_cast<int32_t>(asyncContext->sampleFormat), valueParam);
             SetValueInt32(env, "encodingType", static_cast<int32_t>(asyncContext->encodingType), valueParam);
-            SetValueInt64(env, "channelLayout", static_cast<int64_t>(asyncContext->channelLayout), valueParam);
         }
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
