@@ -781,11 +781,19 @@ static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenR
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         const uint8_t sinkChannels = sinkIn->sample_spec.channels;
         const char *sinkChannelLayout = pa_proplist_gets(sinkIn->proplist, "stream.channelLayout");
+        if (!sinkIn->thread_info.resampler) {
+            AUDIO_ERR_LOG("resampler is nullptr");
+            continue;
+        }
         if (NeedPARemap(sinkSceneType, sinkSceneMode, sinkChannels, sinkChannelLayout)) {
             sinkIn->thread_info.resampler->map_required = true;
             continue;
         }
         for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+            if (!sinkSceneType) {
+                AUDIO_ERR_LOG("sinkSceneType is nullptr");
+                continue;
+            }
             if (!strcmp(sinkSceneType, sceneTypeSet[i])) {
                 sceneTypeLenRef[i] = sinkIn->sample_spec.channels;
                 sinkIn->thread_info.resampler->map_required = false;
