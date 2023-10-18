@@ -38,7 +38,7 @@ namespace {
     const int PARAM2 = 2;
 
 /* check condition related to argc/argv, return and logging. */
-#define CHECK_ARGS_RETURN_VOID(context, condition, message, code)               \
+#define NAPI_CHECK_ARGS_RETURN_VOID(context, condition, message, code)               \
     do {                                                               \
         if (!(condition)) {                                            \
             (context)->status = napi_invalid_arg;                         \
@@ -49,7 +49,7 @@ namespace {
         }                                                              \
     } while (0)
 
-#define CHECK_STATUS_RETURN_VOID(context, message, code)                        \
+#define NAPI_CHECK_STATUS_RETURN_VOID(context, message, code)                        \
     do {                                                               \
         if ((context)->status != napi_ok) {                               \
             (context)->errMessage = std::string(message);                      \
@@ -57,23 +57,6 @@ namespace {
             AUDIO_ERR_LOG("test (context->status == napi_ok) failed: " message);  \
             return;                                                    \
         }                                                              \
-    } while (0)
-
-/* check condition, return and logging if condition not true. */
-#define CHECK_RETURN(condition, message, retVal)             \
-    do {                                                     \
-        if (!(condition)) {                                  \
-            AUDIO_ERR_LOG("test (" #condition ") failed: " message); \
-            return retVal;                                   \
-        }                                                    \
-    } while (0)
-
-#define CHECK_RETURN_VOID(condition, message)                \
-    do {                                                     \
-        if (!(condition)) {                                  \
-            AUDIO_ERR_LOG("test (" #condition ") failed: " message); \
-            return;                                          \
-        }                                                    \
     } while (0)
 }
 
@@ -112,8 +95,6 @@ public:
         const int64_t value, napi_value &result);
 
     static napi_value GetUndefinedValue(napi_env env);
-
-    static std::shared_ptr<AbilityRuntime::Context> GetAbilityContext(napi_env env);
 };
 } // namespace AudioStandard
 } // namespace OHOS

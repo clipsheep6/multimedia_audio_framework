@@ -18,6 +18,24 @@ namespace OHOS {
 namespace AudioStandard {
 static __thread napi_ref g_rendererConstructor = nullptr;
 
+static std::shared_ptr<AbilityRuntime::Context> GetAbilityContext(napi_env env)
+{
+    AUDIO_INFO_LOG("Getting context with FA model");
+    auto ability = OHOS::AbilityRuntime::GetCurrentAbility(env);
+    if (ability == nullptr) {
+        AUDIO_ERR_LOG("Failed to obtain ability in FA mode");
+        return nullptr;
+    }
+
+    auto faContext = ability->GetAbilityContext();
+    if (faContext == nullptr) {
+        AUDIO_ERR_LOG("GetAbilityContext returned null in FA model");
+        return nullptr;
+    }
+
+    return faContext;
+}
+
 NapiAudioRenderer::NapiAudioRenderer()
     : audioRenderer_(nullptr), contentType_(CONTENT_TYPE_MUSIC), streamUsage_(STREAM_USAGE_MEDIA),
       /*deviceRole_(OUTPUT_DEVICE), deviceType_(DEVICE_TYPE_SPEAKER),*/ env_(nullptr),
@@ -43,8 +61,8 @@ napi_value NapiAudioRenderer::Init(napi_env env, napi_value exports)
 
     napi_property_descriptor audio_renderer_properties[] = {
         DECLARE_NAPI_FUNCTION("setRenderRate", SetRenderRate),
-#if 0
         DECLARE_NAPI_FUNCTION("getRenderRate", GetRenderRate),
+#if 0
         DECLARE_NAPI_FUNCTION("getRenderRateSync", GetRenderRateSync),
         DECLARE_NAPI_FUNCTION("setRendererSamplingRate", SetRendererSamplingRate),
         DECLARE_NAPI_FUNCTION("getRendererSamplingRate", GetRendererSamplingRate),
@@ -122,19 +140,10 @@ void NapiAudioRenderer::CreateRendererFailed()
     }
 }
 
-napi_value NapiAudioRenderer::Construct(napi_env env, napi_callback_info info)
+unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject(napi_env env)
 {
-    napi_status status;
-    napi_value result = nullptr;
-    napi_get_undefined(env, &result);
-
-    size_t argCount = ARGS_TWO;
-    napi_value thisVar = nullptr;
-    status = napi_get_cb_info(env, info, &argCount, nullptr, &thisVar, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "failed to napi_get_cb_info");
-
     unique_ptr<NapiAudioRenderer> rendererNapi = make_unique<NapiAudioRenderer>();
-    CHECK_AND_RETURN_RET_LOG(rendererNapi != nullptr, result, "No memory");
+    CHECK_AND_RETURN_RET_LOG(rendererNapi != nullptr, nullptr, "No memory");
 
     rendererNapi->env_ = env;
     rendererNapi->contentType_ = sRendererOptions_->rendererInfo.contentType;
@@ -149,7 +158,7 @@ napi_value NapiAudioRenderer::Construct(napi_env env, napi_callback_info info)
     rendererOptions.rendererInfo.streamUsage = sRendererOptions_->rendererInfo.streamUsage;
     rendererOptions.privacyType = sRendererOptions_->privacyType;
 
-    std::shared_ptr<AbilityRuntime::Context> abilityContext = NapiParamUtils::GetAbilityContext(env);
+    std::shared_ptr<AbilityRuntime::Context> abilityContext = GetAbilityContext(env);
     std::string cacheDir = "";
     if (abilityContext != nullptr) {
         cacheDir = abilityContext->GetCacheDir();
@@ -172,6 +181,22 @@ napi_value NapiAudioRenderer::Construct(napi_env env, napi_callback_info info)
         }
     }
 #endif
+    return rendererNapi;
+}
+
+napi_value NapiAudioRenderer::Construct(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+
+    size_t argCount = ARGS_TWO;
+    napi_value thisVar = nullptr;
+    status = napi_get_cb_info(env, info, &argCount, nullptr, &thisVar, nullptr);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "failed to napi_get_cb_info");
+
+    unique_ptr<NapiAudioRenderer> rendererNapi = CreateAudioRendererNativeObject(env);
+    CHECK_AND_RETURN_RET_LOG(rendererNapi != nullptr, result, "failed to CreateAudioRendererNativeObject");
 
     status = napi_wrap(env, thisVar, static_cast<void*>(rendererNapi.get()),
                        NapiAudioRenderer::Destructor, nullptr, nullptr);
@@ -194,7 +219,6 @@ bool NapiAudioRenderer::CheckContextStatus(std::shared_ptr<AudioRendererAsyncCon
         context->status = napi_generic_failure;
         context->errCode = NAPI_ERR_SYSTEM;
         context->errMessage = "CheckContextStatus failed : renderernapi is nullptr";
-        AUDIO_ERR_LOG("context object state is error.");
         return false;
     }
     return true;
@@ -211,7 +235,6 @@ bool NapiAudioRenderer::CheckAudioRendererStatus(NapiAudioRenderer *napi,
         context->status = napi_generic_failure;
         context->errCode = NAPI_ERR_SYSTEM;
         context->errMessage = "CheckContextStatus failed : renderernapi is nullptr";
-        AUDIO_ERR_LOG("context object state is error.");
         return false;
     }
     return false;
@@ -228,35 +251,28 @@ napi_value NapiAudioRenderer::SetRenderRate(napi_env env, napi_callback_info inf
     }
 
     auto inputParser = [env, context](size_t argc, napi_value* argv) {
-        CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->audioRendererRate, argv[PARAM0]);
-        CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioRendererRate failed",
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioRendererRate failed",
             NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
     auto executor = [context]() {
-        if (!CheckContextStatus(context)) {
-            return;
-        }
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
         auto* napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         if (context->status == napi_ok) {
             AudioRendererRate audioRenderRate = static_cast<AudioRendererRate>(context->audioRendererRate);
-            if (!CheckAudioRendererStatus(napiAudioRenderer, context)) {
-                return;
-            }
+            CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+                "context object state is error.");
             int32_t audioClientInvalidParamsErr = -2;
             context->intValue = napiAudioRenderer->audioRenderer_->SetRenderRate(audioRenderRate);
             if (context->intValue == SUCCESS) {
                 context->status = napi_ok;
             } else if (context->intValue == audioClientInvalidParamsErr) {
-                context->status = napi_generic_failure;
-                context->errMessage = "error InvalidParams";
-                context->errCode = NAPI_ERR_UNSUPPORTED;
+                context->SignError(NAPI_ERR_UNSUPPORTED);
             } else {
-                context->status = napi_generic_failure;
-                context->errMessage = "error system operation";
-                context->errCode = NAPI_ERR_SYSTEM;
+                context->SignError(NAPI_ERR_SYSTEM);
             }
         }
     };
@@ -264,6 +280,34 @@ napi_value NapiAudioRenderer::SetRenderRate(napi_env env, napi_callback_info inf
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetRenderRate", executor, complete);
+}
+
+napi_value NapiAudioRenderer::GetRenderRate(napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("GetRenderRate");
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetRenderRate failed : no memory");
+        NapiAudioError::ThrowError(env, "GetRenderRate failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto* napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        if (context->status == napi_ok) {
+            CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+                "context object state is error.");
+            context->intValue = napiAudioRenderer->audioRenderer_->GetRenderRate();
+            context->status = napi_ok;
+        }
+    };
+    auto complete = [env, context](napi_value& output) {
+        context->status = NapiParamUtils::SetValueInt32(env, context->intValue, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetRenderRate", executor, complete);
 }
 } // namespace AudioStandard
 } // namespace OHOS

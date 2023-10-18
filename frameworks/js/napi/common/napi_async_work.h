@@ -36,8 +36,8 @@ using NapiAsyncComplete = std::function<void(napi_value&)>;
 struct ContextBase {
     virtual ~ContextBase();
     void GetCbInfo(napi_env env, napi_callback_info info, NapiCbInfoParser parse = NapiCbInfoParser(),
-                   bool sync = false);
-
+        bool sync = false);
+    void SignError(int32_t errCode);
     napi_env env = nullptr;
     napi_value output = nullptr;
     napi_status status = napi_invalid_arg;
@@ -45,7 +45,6 @@ struct ContextBase {
     int32_t errCode;
     napi_value self = nullptr;
     void* native = nullptr;
-    int32_t taskId = -1;
     std::string taskName;
 
 private:
@@ -66,8 +65,8 @@ private:
 class NapiAsyncWork {
 public:
     static napi_value Enqueue(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string& name,
-                              NapiAsyncExecute execute = NapiAsyncExecute(),
-                              NapiAsyncComplete complete = NapiAsyncComplete());
+        NapiAsyncExecute execute = NapiAsyncExecute(),
+        NapiAsyncComplete complete = NapiAsyncComplete());
 
 private:
     enum {
@@ -76,7 +75,7 @@ private:
         RESULT_DATA = 1,
         RESULT_ALL = 2
     };
-    static void GenerateOutput(ContextBase* ctxt);
+    static void CommonCallbackRoutine(ContextBase* ctxt);
 };
 } // namespace AudioStandard
 } // namespace OHOS

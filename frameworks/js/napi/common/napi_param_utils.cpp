@@ -31,35 +31,17 @@ napi_status NapiParamUtils::GetParam(const napi_env& env, napi_callback_info inf
     return napi_get_cb_info(env, info, &argc, args, &thisVar, &data);
 }
 
-std::shared_ptr<AbilityRuntime::Context> NapiParamUtils::GetAbilityContext(napi_env env)
-{
-    AUDIO_INFO_LOG("Getting context with FA model");
-    auto ability = OHOS::AbilityRuntime::GetCurrentAbility(env);
-    if (ability == nullptr) {
-        AUDIO_ERR_LOG("Failed to obtain ability in FA mode");
-        return nullptr;
-    }
-
-    auto faContext = ability->GetAbilityContext();
-    if (faContext == nullptr) {
-        AUDIO_ERR_LOG("GetAbilityContext returned null in FA model");
-        return nullptr;
-    }
-
-    return faContext;
-}
-
 napi_status NapiParamUtils::GetValueInt32(const napi_env& env, int32_t &value, napi_value in)
 {
     napi_status status = napi_get_value_int32(env, in, &value);
-    CHECK_RETURN(status == napi_ok, "GetValueInt32 napi_get_value_int32 failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt32 napi_get_value_int32 failed");
     return status;
 }
 
 napi_status NapiParamUtils::SetValueInt32(const napi_env& env, const int32_t &value, napi_value &result)
 {
     napi_status status = napi_create_int32(env, value, &result);
-    CHECK_RETURN(status == napi_ok, "SetValueInt32 napi_create_int32 failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32 napi_create_int32 failed");
     return status;
 }
 
@@ -68,9 +50,9 @@ napi_status NapiParamUtils::GetValueInt32(const napi_env& env, const std::string
 {
     napi_value jsValue = nullptr;
     napi_status status = napi_get_named_property(env, in, fieldStr.c_str(), &jsValue);
-    CHECK_RETURN(status == napi_ok, "GetValueInt32 napi_get_named_property failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt32 napi_get_named_property failed");
     status = GetValueInt32(env, value, jsValue);
-    CHECK_RETURN(status == napi_ok, "GetValueInt32 napi_get_value_int32 failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt32 napi_get_value_int32 failed");
     return status;
 }
 
@@ -79,23 +61,23 @@ napi_status NapiParamUtils::SetValueInt32(const napi_env& env, const std::string
 {
     napi_value jsValue = nullptr;
     napi_status status = SetValueInt32(env, value, jsValue);
-    CHECK_RETURN(status == napi_ok, "SetValueInt32 napi_create_int32 failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32 napi_create_int32 failed");
     status = napi_set_named_property(env, result, fieldStr.c_str(), jsValue);
-    CHECK_RETURN(status == napi_ok, "SetValueInt32 napi_create_int32 failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32 napi_create_int32 failed");
     return status;
 }
 
 napi_status NapiParamUtils::GetValueDouble(const napi_env& env, double &value, napi_value in)
 {
     napi_status status = napi_get_value_double(env, in, &value);
-    CHECK_RETURN(status == napi_ok, "GetValueDouble napi_get_value_double failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueDouble napi_get_value_double failed");
     return status;
 }
 
 napi_status NapiParamUtils::SetValueDouble(const napi_env& env, const double &value, napi_value &result)
 {
     napi_status status = napi_create_double(env, value, &result);
-    CHECK_RETURN(status == napi_ok, "SetValueDouble napi_create_double failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueDouble napi_create_double failed");
     return status;
 }
 
@@ -104,9 +86,9 @@ napi_status NapiParamUtils::GetValueDouble(const napi_env& env, const std::strin
 {
     napi_value jsValue = nullptr;
     napi_status status = napi_get_named_property(env, in, fieldStr.c_str(), &jsValue);
-    CHECK_RETURN(status == napi_ok, "GetValueDouble napi_get_named_property failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueDouble napi_get_named_property failed");
     status = GetValueDouble(env, value, jsValue);
-    CHECK_RETURN(status == napi_ok, "GetValueDouble failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueDouble failed");
     return status;
 }
 
@@ -115,9 +97,9 @@ napi_status NapiParamUtils::SetValueDouble(const napi_env& env, const std::strin
 {
     napi_value jsValue = nullptr;
     napi_status status = SetValueDouble(env, value, jsValue);
-    CHECK_RETURN(status == napi_ok, "SetValueDouble SetValueDouble failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueDouble SetValueDouble failed");
     status = napi_set_named_property(env, result, fieldStr.c_str(), jsValue);
-    CHECK_RETURN(status == napi_ok, "SetValueDouble napi_set_named_property failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueDouble napi_set_named_property failed");
     return status;
 }
 
@@ -162,7 +144,7 @@ std::string NapiParamUtils::GetStringArgument(napi_env env, napi_value value)
 napi_status NapiParamUtils::SetValueString(const napi_env &env, const std::string stringValue, napi_value &result)
 {
     napi_status status = napi_create_string_utf8(env, stringValue.c_str(), NAPI_AUTO_LENGTH, &result);
-    CHECK_RETURN(status == napi_ok, "SetValueString napi_create_string_utf8 failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueString napi_create_string_utf8 failed");
     return status;
 }
 
@@ -171,23 +153,23 @@ napi_status NapiParamUtils::SetValueString(const napi_env &env, const std::strin
 {
     napi_value value = nullptr;
     napi_status status = SetValueString(env, stringValue.c_str(), value);
-    CHECK_RETURN(status == napi_ok, "SetValueString failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueString failed");
     status = napi_set_named_property(env, result, fieldStr.c_str(), value);
-    CHECK_RETURN(status == napi_ok, "SetValueString napi_set_named_property failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueString napi_set_named_property failed");
     return status;
 }
 
 napi_status NapiParamUtils::GetValueBoolean(const napi_env& env, bool &boolValue, napi_value in)
 {
     napi_status status = napi_get_value_bool(env, in, &boolValue);
-    CHECK_RETURN(status == napi_ok, "GetValueBoolean napi_get_boolean failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueBoolean napi_get_boolean failed");
     return status;
 }
 
 napi_status NapiParamUtils::SetValueBoolean(const napi_env& env, const bool boolValue, napi_value& result)
 {
     napi_status status = napi_get_boolean(env, boolValue, &result);
-    CHECK_RETURN(status == napi_ok, "SetValueBoolean napi_get_boolean failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueBoolean napi_get_boolean failed");
     return status;
 }
 
@@ -196,9 +178,9 @@ napi_status NapiParamUtils::GetValueBoolean(const napi_env& env, const std::stri
 {
     napi_value jsValue = nullptr;
     napi_status status = napi_get_named_property(env, in, fieldStr.c_str(), &jsValue);
-    CHECK_RETURN(status == napi_ok, "GetValueBoolean napi_get_named_property failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueBoolean napi_get_named_property failed");
     status = GetValueBoolean(env, boolValue, jsValue);
-    CHECK_RETURN(status == napi_ok, "GetValueBoolean failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueBoolean failed");
     return status;
 }
 
@@ -207,23 +189,23 @@ napi_status NapiParamUtils::SetValueBoolean(const napi_env& env, const std::stri
 {
     napi_value value = nullptr;
     napi_status status = SetValueBoolean(env, boolValue, value);
-    CHECK_RETURN(status == napi_ok, "SetValueBoolean SetValueBoolean failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueBoolean SetValueBoolean failed");
     napi_set_named_property(env, result, fieldStr.c_str(), value);
-    CHECK_RETURN(status == napi_ok, "SetValueBoolean napi_get_boolean failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueBoolean napi_get_boolean failed");
     return status;
 }
 
 napi_status NapiParamUtils::GetValueInt64(const napi_env& env, int64_t &value, napi_value in)
 {
     napi_status status = napi_get_value_int64(env, in, &value);
-    CHECK_RETURN(status == napi_ok, "GetValueInt64 napi_get_value_int64 failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt64 napi_get_value_int64 failed");
     return status;
 }
 
 napi_status NapiParamUtils::SetValueInt64(const napi_env& env, const int64_t &value, napi_value &result)
 {
     napi_status status = napi_create_int64(env, value, &result);
-    CHECK_RETURN(status == napi_ok, "SetValueInt64 napi_create_int64 failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt64 napi_create_int64 failed");
     return status;
 }
 
@@ -232,9 +214,9 @@ napi_status NapiParamUtils::GetValueInt64(const napi_env& env, const std::string
 {
     napi_value jsValue = nullptr;
     napi_status status = napi_get_named_property(env, in, fieldStr.c_str(), &jsValue);
-    CHECK_RETURN(status == napi_ok, "GetValueInt64 napi_get_named_property failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt64 napi_get_named_property failed");
     status = GetValueInt64(env, value, jsValue);
-    CHECK_RETURN(status == napi_ok, "GetValueInt64 failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt64 failed");
     return status;
 }
 
@@ -243,9 +225,9 @@ napi_status NapiParamUtils::SetValueInt64(const napi_env& env, const std::string
 {
     napi_value jsValue = nullptr;
     napi_status status = SetValueInt64(env, value, jsValue);
-    CHECK_RETURN(status == napi_ok, "SetValueInt64 failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt64 failed");
     status = napi_set_named_property(env, result, fieldStr.c_str(), jsValue);
-    CHECK_RETURN(status == napi_ok, "SetValueInt64 napi_set_named_property failed", status);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt64 napi_set_named_property failed");
     return status;
 }
 } // namespace AudioStandard

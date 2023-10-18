@@ -80,7 +80,6 @@ private:
         StreamUsage usage;
         DeviceRole deviceRole;
         DeviceType deviceType;
-        //NapiAudioRenderer *objectInfo; /* 移动到ContextBase native变量 */
         AudioRendererOptions rendererOptions;
         DeviceInfo deviceInfo;
     };
@@ -88,11 +87,15 @@ private:
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static void CreateRendererFailed();
     static napi_value Construct(napi_env env, napi_callback_info info);
+    static unique_ptr<NapiAudioRenderer> CreateAudioRendererNativeObject(napi_env env);
 #if 0
     static napi_value CreateAudioRenderer(napi_env env, napi_callback_info info);
     static napi_value CreateAudioRendererSync(napi_env env, napi_callback_info info);
 #endif
     static napi_value SetRenderRate(napi_env env, napi_callback_info info);
+    static napi_value GetRenderRate(napi_env env, napi_callback_info info);
+
+    /* common interface in AudioRendererNapi */
     static bool CheckContextStatus(std::shared_ptr<AudioRendererAsyncContext> context);
     static bool CheckAudioRendererStatus(NapiAudioRenderer *napi, std::shared_ptr<AudioRendererAsyncContext> context);
 
