@@ -56,8 +56,6 @@ private:
     void AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply);
-    void SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
@@ -114,6 +112,8 @@ private:
     void GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioCapturerMicrophoneDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetAvailableMicrophonesInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterVolumeKeyEventCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterVolumeKeyEventCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
@@ -150,8 +150,6 @@ private:
         &AudioPolicyManagerStub::AbandonAudioFocusInternal,
         &AudioPolicyManagerStub::GetStreamInFocusInternal,
         &AudioPolicyManagerStub::GetSessionInfoInFocusInternal,
-        &AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal,
-        &AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal,
         &AudioPolicyManagerStub::GetDevicesInternal,
         &AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal,
         &AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal,
@@ -208,6 +206,8 @@ private:
         &AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal,
         &AudioPolicyManagerStub::GetAudioCapturerMicrophoneDescriptorsInternal,
         &AudioPolicyManagerStub::GetAvailableMicrophonesInternal,
+        &AudioPolicyManagerStub::RegisterVolumeKeyEventCallbackClientInternal,
+        &AudioPolicyManagerStub::UnregisterVolumeKeyEventCallbackClientInternal,
     };
 };
 } // namespace AudioStandard

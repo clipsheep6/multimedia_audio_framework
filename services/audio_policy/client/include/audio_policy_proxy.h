@@ -119,11 +119,6 @@ public:
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
-        const sptr<IRemoteObject> &object, API_VERSION api_v) override;
-
-    int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) override;
-
     AudioStreamType GetStreamInFocus() override;
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
@@ -215,6 +210,11 @@ public:
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() override;
+
+    int32_t RegisterVolumeKeyEventCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        API_VERSION api_v) override;
+    
+    int32_t UnregisterVolumeKeyEventCallbackClient(const uint32_t code) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

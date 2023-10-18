@@ -584,26 +584,6 @@ void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel & /* da
     reply.WriteInt32(ret);
 }
 
-void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientPid =  data.ReadInt32();
-    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    if (remoteObject == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
-        return;
-    }
-    int ret = SetVolumeKeyEventCallback(clientPid, remoteObject, api_v);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientPid = data.ReadInt32();
-    int ret = UnsetVolumeKeyEventCallback(clientPid);
-    reply.WriteInt32(ret);
-}
-
 void AudioPolicyManagerStub::CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t appTokenId = data.ReadUint32();
@@ -990,6 +970,28 @@ void AudioPolicyManagerStub::GetAvailableMicrophonesInternal(MessageParcel &data
     for (int i = 0; i < size; i++) {
         descs[i]->Marshalling(reply);
     }
+}
+
+void AudioPolicyManagerStub::RegisterVolumeKeyEventCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    //int32_t clientPid = IPCSkeleton::GetCallingPid();
+    uint32_t code = data.ReadUint32();
+    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterPolicyCallbackClientInternal obj is null");
+        return;
+    }
+    int32_t result = RegisterVolumeKeyEventCallbackClient(object, code, api_v);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnregisterVolumeKeyEventCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    //int32_t clientPid = IPCSkeleton::GetCallingPid();
+    uint32_t code = data.ReadUint32();
+    int32_t result = UnregisterVolumeKeyEventCallbackClient(code);
+    reply.WriteInt32(result);
 }
 
 int AudioPolicyManagerStub::OnRemoteRequest(

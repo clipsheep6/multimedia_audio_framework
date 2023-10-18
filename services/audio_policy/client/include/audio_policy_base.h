@@ -19,7 +19,6 @@
 #include "audio_interrupt_callback.h"
 #include "audio_policy_ipc_interface_code.h"
 
-#include "i_audio_volume_key_event_callback.h"
 #include "ipc_types.h"
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
@@ -123,11 +122,6 @@ public:
 
     virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) = 0;
 
-    virtual int32_t SetVolumeKeyEventCallback(const int32_t clientId,
-        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) = 0;
-
-    virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) = 0;
-
     virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) = 0;
 
     virtual bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
@@ -223,6 +217,11 @@ public:
     virtual std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) = 0;
 
     virtual std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() = 0;
+
+    virtual int32_t RegisterVolumeKeyEventCallbackClient(
+        const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v = API_9) = 0;
+
+    virtual int32_t UnregisterVolumeKeyEventCallbackClient(const uint32_t code) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
