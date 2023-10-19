@@ -1587,7 +1587,11 @@ napi_value AudioVolumeGroupManagerNapi::GetSystemVolumeInDb(napi_env env, napi_c
         return nullptr;
     }
     if (asyncContext->callbackRef == nullptr) {
-        napi_create_promise(env, &asyncContext->deferred, &result);
+        status = napi_create_promise(env, &asyncContext->deferred, &result);
+        if (status != napi_ok) {
+            AUDIO_ERR_LOG("GetSystemVolumeInDb napi_create_promise failure!");
+            return nullptr;
+        }
     } else {
         napi_get_undefined(env, &result);
     }
