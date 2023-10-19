@@ -32,10 +32,9 @@ public:
     ~NapiAudioEnum();
 
     static napi_value Init(napi_env env, napi_value exports);
-    static napi_value CreateAudioParametersWrapper(napi_env env, std::unique_ptr<AudioParameters> &audioParameters);
 
 private:
-    static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
+    static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value GetAudioSampleFormat(napi_env env, napi_callback_info info);
     static napi_value SetAudioSampleFormat(napi_env env, napi_callback_info info);
@@ -54,7 +53,6 @@ private:
     static napi_value GetDeviceType(napi_env env, napi_callback_info info);
     static napi_value SetDeviceType(napi_env env, napi_callback_info info);
 
-    static napi_value CreateAudioSampleFormatObject(napi_env env);
     static napi_value CreateAudioChannelObject(napi_env env);
     static napi_value CreateSamplingRateObject(napi_env env);
     static napi_value CreateEncodingTypeObject(napi_env env);
@@ -87,17 +85,6 @@ private:
     static const std::map<std::string, SourceType> sourceTypeMap;
     static const std::map<std::string, VolumeAdjustType> volumeAdjustTypeMap;
     static const std::map<std::string, ChannelBlendMode> channelBlendModeMap;
-
-#if 0
-    static napi_ref audioRendererRate_;
-    static napi_ref interruptEventType_;
-    static napi_ref interruptForceType_;
-    static napi_ref interruptHintType_;
-    static napi_ref audioState_;
-    static napi_ref sampleFormat_;
-    static napi_ref audioEffectMode_;
-    static napi_ref audioPrivacyType_;
-#endif
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 

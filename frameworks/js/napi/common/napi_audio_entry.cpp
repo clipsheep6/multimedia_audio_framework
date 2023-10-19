@@ -20,18 +20,7 @@ namespace OHOS {
 namespace AudioStandard {
 static napi_value Init(napi_env env, napi_value exports)
 {
-    // NapiAudioManager::Init(env, exports);
-    // NapiAudioCapturer::Init(env, exports);
-    // NapiAudioRenderer::Init(env, exports);
-#ifdef FEATURE_DTMF_TONE
-    // TonePlayerNapi::Init(env, exports);
-#endif
-    // NapiAudioParameters::Init(env, exports);
-    // NapiAudioStreamMgr::Init(env, exports);
-    // NapiAudioRoutingManager::Init(env, exports);
-    // NapiAudioVolumeGroupManager::Init(env, exports);
-    // NapiAudioVolumeManager::Init(env, exports);
-    // NapiAudioInterruptManager::Init(env, exports);
+    /* 各模块新增Init接口添加 */
     NapiAudioEnum::Init(env, exports);
     return exports;
 }

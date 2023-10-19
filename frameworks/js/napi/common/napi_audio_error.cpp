@@ -32,54 +32,54 @@ napi_status NapiAudioError::ThrowError(napi_env env, const char* napiMessage, in
 
 void NapiAudioError::ThrowError(napi_env env, int32_t code)
 {
-    std::string messageValue = getMessageByCode(code);
+    std::string messageValue = GetMessageByCode(code);
     napi_throw_error(env, (std::to_string(code)).c_str(), messageValue.c_str());
 }
 
-std::string NapiAudioError::getMessageByCode(int32_t &code)
+std::string NapiAudioError::GetMessageByCode(int32_t &code)
 {
-    std::string err_message;
+    std::string errMessage;
     switch (code) {
         case NAPI_ERR_INVALID_PARAM:
-            err_message = NAPI_ERR_INVALID_PARAM_INFO;
+            errMessage = NAPI_ERR_INVALID_PARAM_INFO;
             break;
         case NAPI_ERR_NO_MEMORY:
-            err_message = NAPI_ERR_NO_MEMORY_INFO;
+            errMessage = NAPI_ERR_NO_MEMORY_INFO;
             break;
         case NAPI_ERR_ILLEGAL_STATE:
-            err_message = NAPI_ERR_ILLEGAL_STATE_INFO;
+            errMessage = NAPI_ERR_ILLEGAL_STATE_INFO;
             break;
         case NAPI_ERR_UNSUPPORTED:
         case ERR_NOT_SUPPORTED:
-            err_message = NAPI_ERR_UNSUPPORTED_INFO;
+            errMessage = NAPI_ERR_UNSUPPORTED_INFO;
             code = NAPI_ERR_UNSUPPORTED;
             break;
         case NAPI_ERR_TIMEOUT:
-            err_message = NAPI_ERR_TIMEOUT_INFO;
+            errMessage = NAPI_ERR_TIMEOUT_INFO;
             break;
         case NAPI_ERR_STREAM_LIMIT:
-            err_message = NAPI_ERR_STREAM_LIMIT_INFO;
+            errMessage = NAPI_ERR_STREAM_LIMIT_INFO;
             break;
         case NAPI_ERR_SYSTEM:
-            err_message = NAPI_ERR_SYSTEM_INFO;
+            errMessage = NAPI_ERR_SYSTEM_INFO;
             break;
         case NAPI_ERR_INPUT_INVALID:
-            err_message = NAPI_ERR_INPUT_INVALID_INFO;
+            errMessage = NAPI_ERR_INPUT_INVALID_INFO;
             break;
         case NAPI_ERR_PERMISSION_DENIED:
         case ERR_PERMISSION_DENIED:
-            err_message = NAPI_ERROR_PERMISSION_DENIED_INFO;
+            errMessage = NAPI_ERROR_PERMISSION_DENIED_INFO;
             code = NAPI_ERR_PERMISSION_DENIED;
             break;
         case NAPI_ERR_NO_PERMISSION:
-            err_message = NAPI_ERR_NO_PERMISSION_INFO;
+            errMessage = NAPI_ERR_NO_PERMISSION_INFO;
             break;
         default:
-            err_message = NAPI_ERR_SYSTEM_INFO;
+            errMessage = NAPI_ERR_SYSTEM_INFO;
             code = NAPI_ERR_SYSTEM;
             break;
     }
-    return err_message;
+    return errMessage;
 }
 } // namespace AudioStandard
 } // namespace OHOS

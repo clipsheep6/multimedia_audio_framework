@@ -72,7 +72,7 @@ void ContextBase::SignError(int32_t code)
 {
     status = napi_generic_failure;
     errCode = code;
-    errMessage = NapiAudioError::getMessageByCode(errCode);
+    errMessage = NapiAudioError::GetMessageByCode(errCode);
 }
 
 napi_value NapiAsyncWork::Enqueue(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string& name,

@@ -146,7 +146,7 @@ NapiAudioEnum::~NapiAudioEnum()
     audioParameters_ = nullptr;
 }
 
-void NapiAudioEnum::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
+void NapiAudioEnum::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
     if (nativeObject != nullptr) {
         auto obj = static_cast<NapiAudioEnum *>(nativeObject);
@@ -542,7 +542,7 @@ napi_value NapiAudioEnum::Construct(napi_env env, napi_callback_info info)
 napi_value NapiAudioEnum::GetAudioSampleFormat(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 0;
     napi_value jsThis = nullptr;
     AudioSampleFormat audioSampleFormat;
@@ -555,13 +555,13 @@ napi_value NapiAudioEnum::GetAudioSampleFormat(napi_env env, napi_callback_info 
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
-        if (!((NapiAudioEnum != nullptr) && (NapiAudioEnum->audioParameters_ != nullptr))) {
+        if (!((napiAudioEnum != nullptr) && (napiAudioEnum->audioParameters_ != nullptr))) {
             AUDIO_ERR_LOG("Get audio sample format fail to napi_unwrap");
             return jsResult;
         }
-        audioSampleFormat = NapiAudioEnum->audioParameters_->format;
+        audioSampleFormat = napiAudioEnum->audioParameters_->format;
         status = napi_create_int32(env, audioSampleFormat, &jsResult);
         if (status == napi_ok) {
             return jsResult;
@@ -574,7 +574,7 @@ napi_value NapiAudioEnum::GetAudioSampleFormat(napi_env env, napi_callback_info 
 napi_value NapiAudioEnum::SetAudioSampleFormat(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 1;
     napi_value args[1] = { nullptr };
     napi_value jsThis = nullptr;
@@ -588,7 +588,7 @@ napi_value NapiAudioEnum::SetAudioSampleFormat(napi_env env, napi_callback_info 
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
         napi_valuetype valueType = napi_undefined;
         if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
@@ -599,7 +599,7 @@ napi_value NapiAudioEnum::SetAudioSampleFormat(napi_env env, napi_callback_info 
 
     status = napi_get_value_int32(env, args[0], &audioSampleFormat);
     if (status == napi_ok) {
-        NapiAudioEnum->audioParameters_->format = static_cast<AudioSampleFormat>(audioSampleFormat);
+        napiAudioEnum->audioParameters_->format = static_cast<AudioSampleFormat>(audioSampleFormat);
     }
 
     return jsResult;
@@ -608,7 +608,7 @@ napi_value NapiAudioEnum::SetAudioSampleFormat(napi_env env, napi_callback_info 
 napi_value NapiAudioEnum::GetAudioChannel(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 0;
     napi_value jsThis = nullptr;
     AudioChannel audioChannel;
@@ -621,9 +621,9 @@ napi_value NapiAudioEnum::GetAudioChannel(napi_env env, napi_callback_info info)
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
-        audioChannel = NapiAudioEnum->audioParameters_->channels;
+        audioChannel = napiAudioEnum->audioParameters_->channels;
         status = napi_create_int32(env, audioChannel, &jsResult);
         if (status == napi_ok) {
             return jsResult;
@@ -636,7 +636,7 @@ napi_value NapiAudioEnum::GetAudioChannel(napi_env env, napi_callback_info info)
 napi_value NapiAudioEnum::SetAudioChannel(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 1;
     napi_value args[1] = { nullptr };
     napi_value jsThis = nullptr;
@@ -650,7 +650,7 @@ napi_value NapiAudioEnum::SetAudioChannel(napi_env env, napi_callback_info info)
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
         napi_valuetype valueType = napi_undefined;
         if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
@@ -661,7 +661,7 @@ napi_value NapiAudioEnum::SetAudioChannel(napi_env env, napi_callback_info info)
 
     status = napi_get_value_int32(env, args[0], &audioChannel);
     if (status == napi_ok) {
-        NapiAudioEnum->audioParameters_->channels = static_cast<AudioChannel>(audioChannel);
+        napiAudioEnum->audioParameters_->channels = static_cast<AudioChannel>(audioChannel);
     }
 
     return jsResult;
@@ -670,7 +670,7 @@ napi_value NapiAudioEnum::SetAudioChannel(napi_env env, napi_callback_info info)
 napi_value NapiAudioEnum::GetAudioSamplingRate(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 0;
     napi_value jsThis = nullptr;
     AudioSamplingRate samplingRate;
@@ -683,9 +683,9 @@ napi_value NapiAudioEnum::GetAudioSamplingRate(napi_env env, napi_callback_info 
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
-        samplingRate = NapiAudioEnum->audioParameters_->samplingRate;
+        samplingRate = napiAudioEnum->audioParameters_->samplingRate;
         status = napi_create_int32(env, samplingRate, &jsResult);
         if (status == napi_ok) {
             return jsResult;
@@ -698,7 +698,7 @@ napi_value NapiAudioEnum::GetAudioSamplingRate(napi_env env, napi_callback_info 
 napi_value NapiAudioEnum::SetAudioSamplingRate(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 1;
     napi_value args[1] = { nullptr };
     napi_value jsThis = nullptr;
@@ -712,7 +712,7 @@ napi_value NapiAudioEnum::SetAudioSamplingRate(napi_env env, napi_callback_info 
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
         napi_valuetype valueType = napi_undefined;
         if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
@@ -723,7 +723,7 @@ napi_value NapiAudioEnum::SetAudioSamplingRate(napi_env env, napi_callback_info 
 
     status = napi_get_value_int32(env, args[0], &samplingRate);
     if (status == napi_ok) {
-        NapiAudioEnum->audioParameters_->samplingRate = static_cast<AudioSamplingRate>(samplingRate);
+        napiAudioEnum->audioParameters_->samplingRate = static_cast<AudioSamplingRate>(samplingRate);
     }
 
     return jsResult;
@@ -732,7 +732,7 @@ napi_value NapiAudioEnum::SetAudioSamplingRate(napi_env env, napi_callback_info 
 napi_value NapiAudioEnum::GetAudioEncodingType(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 0;
     napi_value jsThis = nullptr;
     AudioEncodingType encodingType;
@@ -745,9 +745,9 @@ napi_value NapiAudioEnum::GetAudioEncodingType(napi_env env, napi_callback_info 
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
-        encodingType = NapiAudioEnum->audioParameters_->encoding;
+        encodingType = napiAudioEnum->audioParameters_->encoding;
         status = napi_create_int32(env, encodingType, &jsResult);
         if (status == napi_ok) {
             return jsResult;
@@ -760,7 +760,7 @@ napi_value NapiAudioEnum::GetAudioEncodingType(napi_env env, napi_callback_info 
 napi_value NapiAudioEnum::SetAudioEncodingType(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 1;
     napi_value args[1] = { nullptr };
     napi_value jsThis = nullptr;
@@ -774,7 +774,7 @@ napi_value NapiAudioEnum::SetAudioEncodingType(napi_env env, napi_callback_info 
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
         napi_valuetype valueType = napi_undefined;
         if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
@@ -785,7 +785,7 @@ napi_value NapiAudioEnum::SetAudioEncodingType(napi_env env, napi_callback_info 
 
     status = napi_get_value_int32(env, args[0], &encodingType);
     if (status == napi_ok) {
-        NapiAudioEnum->audioParameters_->encoding = static_cast<AudioEncodingType>(encodingType);
+        napiAudioEnum->audioParameters_->encoding = static_cast<AudioEncodingType>(encodingType);
     }
 
     return jsResult;
@@ -794,7 +794,7 @@ napi_value NapiAudioEnum::SetAudioEncodingType(napi_env env, napi_callback_info 
 napi_value NapiAudioEnum::GetContentType(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 0;
     napi_value jsThis = nullptr;
     ContentType contentType;
@@ -807,9 +807,9 @@ napi_value NapiAudioEnum::GetContentType(napi_env env, napi_callback_info info)
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
-        contentType = NapiAudioEnum->audioParameters_->contentType;
+        contentType = napiAudioEnum->audioParameters_->contentType;
         status = napi_create_int32(env, contentType, &jsResult);
         if (status == napi_ok) {
             return jsResult;
@@ -822,7 +822,7 @@ napi_value NapiAudioEnum::GetContentType(napi_env env, napi_callback_info info)
 napi_value NapiAudioEnum::SetContentType(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 1;
     napi_value args[1] = { nullptr };
     napi_value jsThis = nullptr;
@@ -836,7 +836,7 @@ napi_value NapiAudioEnum::SetContentType(napi_env env, napi_callback_info info)
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
         napi_valuetype valueType = napi_undefined;
         if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
@@ -847,7 +847,7 @@ napi_value NapiAudioEnum::SetContentType(napi_env env, napi_callback_info info)
 
     status = napi_get_value_int32(env, args[0], &contentType);
     if (status == napi_ok) {
-        NapiAudioEnum->audioParameters_->contentType = static_cast<ContentType>(contentType);
+        napiAudioEnum->audioParameters_->contentType = static_cast<ContentType>(contentType);
     }
 
     return jsResult;
@@ -856,7 +856,7 @@ napi_value NapiAudioEnum::SetContentType(napi_env env, napi_callback_info info)
 napi_value NapiAudioEnum::GetStreamUsage(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 0;
     napi_value jsThis = nullptr;
     StreamUsage usage;
@@ -869,9 +869,9 @@ napi_value NapiAudioEnum::GetStreamUsage(napi_env env, napi_callback_info info)
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
-        usage = NapiAudioEnum->audioParameters_->usage;
+        usage = napiAudioEnum->audioParameters_->usage;
         status = napi_create_int32(env, usage, &jsResult);
         if (status == napi_ok) {
             return jsResult;
@@ -884,7 +884,7 @@ napi_value NapiAudioEnum::GetStreamUsage(napi_env env, napi_callback_info info)
 napi_value NapiAudioEnum::SetStreamUsage(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 1;
     napi_value args[1] = { nullptr };
     napi_value jsThis = nullptr;
@@ -898,7 +898,7 @@ napi_value NapiAudioEnum::SetStreamUsage(napi_env env, napi_callback_info info)
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
         napi_valuetype valueType = napi_undefined;
         if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
@@ -909,7 +909,7 @@ napi_value NapiAudioEnum::SetStreamUsage(napi_env env, napi_callback_info info)
 
     status = napi_get_value_int32(env, args[0], &usage);
     if (status == napi_ok) {
-        NapiAudioEnum->audioParameters_->usage = static_cast<StreamUsage>(usage);
+        napiAudioEnum->audioParameters_->usage = static_cast<StreamUsage>(usage);
     }
 
     return jsResult;
@@ -918,7 +918,7 @@ napi_value NapiAudioEnum::SetStreamUsage(napi_env env, napi_callback_info info)
 napi_value NapiAudioEnum::GetDeviceRole(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 0;
     napi_value jsThis = nullptr;
     DeviceRole deviceRole;
@@ -931,9 +931,9 @@ napi_value NapiAudioEnum::GetDeviceRole(napi_env env, napi_callback_info info)
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
-        deviceRole = NapiAudioEnum->audioParameters_->deviceRole;
+        deviceRole = napiAudioEnum->audioParameters_->deviceRole;
         status = napi_create_int32(env, deviceRole, &jsResult);
         if (status == napi_ok) {
             return jsResult;
@@ -946,7 +946,7 @@ napi_value NapiAudioEnum::GetDeviceRole(napi_env env, napi_callback_info info)
 napi_value NapiAudioEnum::SetDeviceRole(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 1;
     napi_value args[1] = { nullptr };
     napi_value jsThis = nullptr;
@@ -960,7 +960,7 @@ napi_value NapiAudioEnum::SetDeviceRole(napi_env env, napi_callback_info info)
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
         napi_valuetype valueType = napi_undefined;
         if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
@@ -971,7 +971,7 @@ napi_value NapiAudioEnum::SetDeviceRole(napi_env env, napi_callback_info info)
 
     status = napi_get_value_int32(env, args[0], &deviceRole);
     if (status == napi_ok) {
-        NapiAudioEnum->audioParameters_->deviceRole = static_cast<DeviceRole>(deviceRole);
+        napiAudioEnum->audioParameters_->deviceRole = static_cast<DeviceRole>(deviceRole);
     }
 
     return jsResult;
@@ -980,7 +980,7 @@ napi_value NapiAudioEnum::SetDeviceRole(napi_env env, napi_callback_info info)
 napi_value NapiAudioEnum::GetDeviceType(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 0;
     napi_value jsThis = nullptr;
     DeviceType deviceType;
@@ -993,9 +993,9 @@ napi_value NapiAudioEnum::GetDeviceType(napi_env env, napi_callback_info info)
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
-        deviceType = NapiAudioEnum->audioParameters_->deviceType;
+        deviceType = napiAudioEnum->audioParameters_->deviceType;
         AUDIO_INFO_LOG("get device type: %d", deviceType);
         status = napi_create_int32(env, deviceType, &jsResult);
         if (status == napi_ok) {
@@ -1009,7 +1009,7 @@ napi_value NapiAudioEnum::GetDeviceType(napi_env env, napi_callback_info info)
 napi_value NapiAudioEnum::SetDeviceType(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    NapiAudioEnum *NapiAudioEnum = nullptr;
+    NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 1;
     napi_value args[1] = { nullptr };
     napi_value jsThis = nullptr;
@@ -1023,7 +1023,7 @@ napi_value NapiAudioEnum::SetDeviceType(napi_env env, napi_callback_info info)
         return jsResult;
     }
 
-    status = napi_unwrap(env, jsThis, (void **)&NapiAudioEnum);
+    status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
     if (status == napi_ok) {
         napi_valuetype valueType = napi_undefined;
         if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
@@ -1034,8 +1034,8 @@ napi_value NapiAudioEnum::SetDeviceType(napi_env env, napi_callback_info info)
 
     status = napi_get_value_int32(env, args[0], &deviceType);
     if (status == napi_ok) {
-        NapiAudioEnum->audioParameters_->deviceType = static_cast<DeviceType>(deviceType);
-        AUDIO_INFO_LOG("set device type: %d", NapiAudioEnum->audioParameters_->deviceType);
+        napiAudioEnum->audioParameters_->deviceType = static_cast<DeviceType>(deviceType);
+        AUDIO_INFO_LOG("set device type: %d", napiAudioEnum->audioParameters_->deviceType);
     }
 
     return jsResult;

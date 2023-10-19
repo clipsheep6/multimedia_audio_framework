@@ -28,7 +28,7 @@ class NapiAudioError {
 public:
     static napi_status ThrowError(napi_env env, const char* napiMessage, int32_t napiCode);
     static void ThrowError(napi_env env, int32_t code);
-    static std::string getMessageByCode(int32_t &code);
+    static std::string GetMessageByCode(int32_t &code);
 };
 
 const int32_t NAPI_ERROR_INVALID_PARAM = 6800101;
