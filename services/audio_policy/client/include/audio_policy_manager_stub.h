@@ -96,8 +96,8 @@ private:
     void UnsetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);
-    void RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterFocusInfoChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterFocusInfoChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
@@ -190,8 +190,8 @@ private:
         &AudioPolicyManagerStub::UnsetPreferredOutputDeviceChangeCallbackInternal,
         &AudioPolicyManagerStub::UnsetPreferredInputDeviceChangeCallbackInternal,
         &AudioPolicyManagerStub::GetAudioFocusInfoListInternal,
-        &AudioPolicyManagerStub::RegisterFocusInfoChangeCallbackInternal,
-        &AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackInternal,
+        &AudioPolicyManagerStub::RegisterFocusInfoChangeCallbackClientInternal,
+        &AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackClientInternal,
         &AudioPolicyManagerStub::SetSystemSoundUriInternal,
         &AudioPolicyManagerStub::GetSystemSoundUriInternal,
         &AudioPolicyManagerStub::GetMinStreamVolumeInternal,

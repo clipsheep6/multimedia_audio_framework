@@ -91,7 +91,7 @@ void AudioPolicyManagerListenerProxy::WriteAudioFocusInfo(MessageParcel &data,
     focusInfo.first.Marshalling(data);
     data.WriteInt32(focusInfo.second);
 }
-
+/*
 void AudioPolicyManagerListenerProxy::OnAudioFocusInfoChange(
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
@@ -116,7 +116,7 @@ void AudioPolicyManagerListenerProxy::OnAudioFocusInfoChange(
         AUDIO_ERR_LOG("OnAudioFocusInfoChange failed, error: %{public}d", error);
     }
 }
-
+*/
 AudioPolicyManagerListenerCallback::AudioPolicyManagerListenerCallback(
     const sptr<IStandardAudioPolicyManagerListener> &listener) : listener_(listener)
 {

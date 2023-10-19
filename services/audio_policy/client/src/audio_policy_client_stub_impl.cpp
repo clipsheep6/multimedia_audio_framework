@@ -19,9 +19,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
-int32_t AudioPolicyClientStubImpl::SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback)
+int32_t AudioPolicyClientStubImpl::SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
 {
-    volumeKeyEventCallbackList_.push_back(callback);
+    volumeKeyEventCallbackList_.push_back(cb);
     return SUCCESS;
 }
 
@@ -38,12 +38,37 @@ void AudioPolicyClientStubImpl::OnVolumeKeyEvent(VolumeEvent volumeEvent)
     }
 }
 
+int32_t AudioPolicyClientStubImpl::SetFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &cb)
+{
+    focusInfoChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::UnsetFocusInfoChangeCallback()
+{
+    focusInfoChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+void AudioPolicyClientStubImpl::OnAudioFocusInfoChange(
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+{
+    for (auto it = focusInfoChangeCallbackList_.begin(); it != focusInfoChangeCallbackList_.end(); ++it) {
+        (*it)->OnAudioFocusInfoChange(focusInfoList);
+    }
+}
+
+
 void AudioPolicyClientStubImpl::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     uint32_t eventId = event->GetInnerEventId();
     if (eventId == static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT)) {
         VolumeEvent volumeEvent = *(event->GetUniqueObject<VolumeEvent>());
         OnVolumeKeyEvent(volumeEvent);
+    } else if (eventId == static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED)) {
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> foucusInfolist =
+            *(event->GetUniqueObject<std::list<std::pair<AudioInterrupt, AudioFocuState>>>());
+        OnAudioFocusInfoChange(foucusInfolist);
     }
 }
 } // namespace AudioStandard

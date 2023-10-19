@@ -358,22 +358,22 @@ void AudioPolicyManagerStub::GetAudioFocusInfoListInternal(MessageParcel &data, 
     }
 }
 
-void AudioPolicyManagerStub::RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterFocusInfoChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
+    uint32_t code = data.ReadUint32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioFocusInfoCallback obj is null");
         return;
     }
-    int32_t result = RegisterFocusInfoChangeCallback(clientId, object);
+    int32_t result = RegisterFocusInfoChangeCallbackClient(object, code);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
-    int32_t result = UnregisterFocusInfoChangeCallback(clientId);
+    uint32_t code = data.ReadUint32();
+    int32_t result = UnregisterFocusInfoChangeCallbackClient(code);
     reply.WriteInt32(result);
 }
 

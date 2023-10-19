@@ -18,6 +18,8 @@
 
 #include "audio_policy_client.h"
 #include "audio_system_manager.h"
+#include "audio_interrupt_info.h"
+#include "audio_focus_info_change_callback_listener.h"
 #include "volume_key_event_callback_listener.h"
 
 namespace OHOS {
@@ -30,15 +32,21 @@ public:
         const uint32_t code, API_VERSION api_v);
     void UnregisterVolumeKeyEventCallbackClient(const uint32_t code);
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+    int32_t RegisterFocusInfoChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v = API_9);
+    void UnregisterFocusInfoChangeCallbackClient(const uint32_t code);
+    void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;
     int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object, API_VERSION apt_v);
+    int32_t SetFocusInfoChangeCallback(const sptr<IRemoteObject> &object, API_VERSION /*apt_v*/);
     std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
+    std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
 
     using HandlerFunc = int32_t(AudioPolicyClientProxy::*)(const sptr<IRemoteObject> &object, API_VERSION api_v);
     static inline HandlerFunc handlers[] = {
         &AudioPolicyClientProxy::SetVolumeKeyEventCallback,
+        &AudioPolicyClientProxy::SetFocusInfoChangeCallback,
     };
 };
 } // namespace AudioStandard

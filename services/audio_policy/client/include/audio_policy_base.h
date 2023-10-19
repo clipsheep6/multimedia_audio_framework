@@ -186,9 +186,9 @@ public:
 
     virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
 
-    virtual int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) = 0;
+    virtual int32_t RegisterFocusInfoChangeCallbackClient(const sptr<IRemoteObject>& object, const uint32_t code) = 0;
 
-    virtual int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId) = 0;
+    virtual int32_t UnregisterFocusInfoChangeCallbackClient(const uint32_t code) = 0;
 
     virtual int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) = 0;
 

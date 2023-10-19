@@ -78,7 +78,7 @@ void AudioPolicyClientProxy::OnVolumeKeyEvent(VolumeEvent volumeEvent)
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyClientProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnVolumeKeyEvent: WriteInterfaceToken failed");
         return;
     }
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT));
@@ -87,9 +87,78 @@ void AudioPolicyClientProxy::OnVolumeKeyEvent(VolumeEvent volumeEvent)
     data.WriteBool(volumeEvent.updateUi);
     data.WriteInt32(volumeEvent.volumeGroupId);
     data.WriteString(volumeEvent.networkId);
-    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_VOLUME_KEY_ENVENT_CALLBACK_CLIENT), data, reply, option);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
+        data, reply, option);
     if (error != 0) {
         AUDIO_DEBUG_LOG("Error while sending volume key event %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
+AudioFocusInfoChangeCallbackListener::AudioFocusInfoChangeCallbackListener(const sptr<IAudioPolicyClient> &listener)
+: listener_(listener) {}
+
+AudioFocusInfoChangeCallbackListener::~AudioFocusInfoChangeCallbackListener() {}
+
+int32_t AudioPolicyClientProxy::RegisterFocusInfoChangeCallbackClient(const sptr<IRemoteObject> &object,
+    const uint32_t code, API_VERSION api_v)
+{
+    if (code > static_cast<uint32_t>(AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX)) {
+        return -1;
+    }
+    return (this->*handlers[code])(object, api_v);
+}
+
+void AudioPolicyClientProxy::UnregisterFocusInfoChangeCallbackClient(const uint32_t code)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED):
+            focusInfoChangeCallbackList_.clear();
+            break;
+        default:
+            break;
+    }
+}
+
+int32_t AudioPolicyClientProxy::SetFocusInfoChangeCallback(const sptr<IRemoteObject> &object, API_VERSION /*api_v*/)
+{
+    sptr<IAudioPolicyClient> listener = iface_cast<IAudioPolicyClient>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
+        "SetFocusInfoChangeCallback listener obj cast failed");
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback =
+        std::make_shared<AudioFocusInfoChangeCallbackListener>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "SetFocusInfoChangeCallback failed to create cb obj");
+    focusInfoChangeCallbackList_.push_back(callback);
+
+    return SUCCESS;
+}
+
+void AudioPolicyClientProxy::OnAudioFocusInfoChange(
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+{
+    if (focusInfoChangeCallbackList_.empty()) {
+        return;
+    }
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnAudioFocusInfoChange: WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED));
+    size_t size = focusInfoList.size();
+    data.WriteUint32(size);
+    for (auto iter = focusInfoList.begin(); iter != focusInfoList.end(); ++iter) {
+        iter->first.Marshalling(data);
+        data.WriteUint32(iter->second);
+    }
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
+        data, reply, option);
+    if (error != 0) {
+        AUDIO_DEBUG_LOG("Error while sending focus change info: %{public}d", error);
     }
     reply.ReadInt32();
 }

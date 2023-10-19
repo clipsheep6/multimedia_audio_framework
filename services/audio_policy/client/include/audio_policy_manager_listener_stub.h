@@ -34,8 +34,6 @@ public:
                                 MessageParcel &reply, MessageOption &option) override;
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
-    void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
-    // AudioManagerListenerStub
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetDeviceChangeCallback(const std::weak_ptr<AudioManagerDeviceChangeCallback> &callback);
     void SetFocusInfoChangeCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
@@ -47,7 +45,6 @@ private:
 
     std::weak_ptr<AudioInterruptCallback> callback_;
     std::weak_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_;
-    std::weak_ptr<AudioFocusInfoChangeCallback> focusInfoChangeCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

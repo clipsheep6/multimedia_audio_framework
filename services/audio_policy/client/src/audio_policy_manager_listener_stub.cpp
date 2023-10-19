@@ -89,12 +89,6 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             OnDeviceChange(deviceChangeAction);
             return AUDIO_OK;
         }
-        case ON_FOCUS_INFO_CHANGED: {
-            std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
-            ReadAudioFocusInfoChangeData(data, focusInfoList);
-            OnAudioFocusInfoChange(focusInfoList);
-            return AUDIO_OK;
-        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -126,19 +120,6 @@ void AudioPolicyManagerListenerStub::OnDeviceChange(const DeviceChangeAction &de
     deviceChangedCallback->OnDeviceChange(deviceChangeAction);
 }
 
-void AudioPolicyManagerListenerStub::OnAudioFocusInfoChange(
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
-{
-    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnFocusInfoChange start");
-    std::shared_ptr<AudioFocusInfoChangeCallback> focunIfoChangedCallback = focusInfoChangeCallback_.lock();
-    if (focunIfoChangedCallback == nullptr) {
-        AUDIO_ERR_LOG("OnFocusInfoChange: deviceChangeCallback_ or focunIfoChangedCallback is nullptr");
-        return;
-    }
-
-    focunIfoChangedCallback->OnAudioFocusInfoChange(focusInfoList);
-}
-
 void AudioPolicyManagerListenerStub::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
 {
     callback_ = callback;
@@ -147,11 +128,6 @@ void AudioPolicyManagerListenerStub::SetInterruptCallback(const std::weak_ptr<Au
 void AudioPolicyManagerListenerStub::SetDeviceChangeCallback(const std::weak_ptr<AudioManagerDeviceChangeCallback> &cb)
 {
     deviceChangeCallback_ = cb;
-}
-
-void AudioPolicyManagerListenerStub::SetFocusInfoChangeCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &cb)
-{
-    focusInfoChangeCallback_ = cb;
 }
 } // namespace AudioStandard
 } // namespace OHOS

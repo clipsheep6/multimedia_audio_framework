@@ -31,10 +31,12 @@ public:
         MessageOption &option) override;
 private:
     void HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply);
+    void HandleAudioFocusInfoChange(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void (AudioPolicyClientStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[]  = {
         &AudioPolicyClientStub::HandleVolumeKeyEvent,
+        &AudioPolicyClientStub::HandleAudioFocusInfoChange,
     };
 };
 } // namespace AudioStandard

@@ -18,18 +18,23 @@
 
 #include "audio_policy_client_stub.h"
 #include "audio_system_manager.h"
+#include "audio_interrupt_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 class AudioPolicyClientStubImpl : public AudioPolicyClientStub {
 public:
-    int32_t SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     int32_t UnsetVolumeKeyEventCallback();
+    int32_t SetFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &cb);
+    int32_t UnsetFocusInfoChangeCallback();
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
 private:
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+    void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
     std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
+    std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

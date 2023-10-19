@@ -1656,8 +1656,12 @@ void AudioPolicyServer::OnAudioFocusInfoChange()
 {
     std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
-    for (auto it = focusInfoChangeCbsMap_.begin(); it != focusInfoChangeCbsMap_.end(); ++it) {
-        it->second->OnAudioFocusInfoChange(audioFocusInfoList_);
+    for (auto it = audioPolicyProxyCBMap_.begin(); it != audioPolicyProxyCBMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
+        if (proxy == nullptr) {
+            continue;
+        }
+        proxy->OnAudioFocusInfoChange(audioFocusInfoList_);
     }
 }
 
@@ -1669,30 +1673,28 @@ int32_t AudioPolicyServer::GetAudioFocusInfoList(std::list<std::pair<AudioInterr
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::RegisterFocusInfoChangeCallback(const int32_t /* clientId */,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterFocusInfoChangeCallbackClient(const sptr<IRemoteObject> &object,
+    const uint32_t code)
 {
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
-    std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
-
-    sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
-    if (callback != nullptr) {
-        int32_t clientPid = IPCSkeleton::GetCallingPid();
-        focusInfoChangeCbsMap_[clientPid] = callback;
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, object);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
     }
+    return proxy->RegisterFocusInfoChangeCallbackClient(object, code);
 
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::UnregisterFocusInfoChangeCallback(const int32_t /* clientId */)
+int32_t AudioPolicyServer::UnregisterFocusInfoChangeCallbackClient(const uint32_t code)
 {
-    std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
-
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    if (focusInfoChangeCbsMap_.erase(clientPid) == 0) {
-        AUDIO_ERR_LOG("UnregisterFocusInfoChangeCallback client %{public}d not present", clientPid);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, nullptr);
+    if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
+    proxy->UnregisterFocusInfoChangeCallbackClient(code);
 
     return SUCCESS;
 }

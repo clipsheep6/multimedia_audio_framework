@@ -24,15 +24,17 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static const int32_t UPDATE_VOLUME_KEY_ENVENT_CALLBACK_CLIENT = 0;
+static const int32_t UPDATE_CALLBACK_CLIENT = 0;
 
 enum class AudioPolicyClientCode {
     ON_VOLUME_KEY_EVENT = 0,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_VOLUME_KEY_EVENT,
+    ON_FOCUS_INFO_CHANGED,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_FOCUS_INFO_CHANGED,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
+    virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicyClient");

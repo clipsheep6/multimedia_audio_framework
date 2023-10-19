@@ -403,7 +403,7 @@ int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInter
     return gsp->GetAudioFocusInfoList(focusInfoList);
 }
 
-int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t clientId,
+int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t /*clientId*/,
     const std::shared_ptr<AudioFocusInfoChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -416,33 +416,32 @@ int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t client
         return ERR_INVALID_PARAM;
     }
 
-    std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    sptr<AudioPolicyManagerListenerStub> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
-    if (focusListenerStub == nullptr) {
-        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback: object null");
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient();
+    if (audioPolicyClientStub == nullptr) {
+        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: audioPolicyClientStub get error");
         return ERROR;
     }
-    focusListenerStub->SetFocusInfoChangeCallback(callback);
-
-    sptr<IRemoteObject> object = focusListenerStub->AsObject();
+    audioPolicyClientStub->SetFocusInfoChangeCallback(callback);
+    sptr<IRemoteObject> object = audioPolicyClientStub->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback: focusListenerStub->AsObject is nullptr.");
         return ERROR;
     }
-    lock.unlock();
 
-    return gsp->RegisterFocusInfoChangeCallback(clientId, object);
+    return gsp->RegisterFocusInfoChangeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED));
 }
 
-int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clientId)
+int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t /*clientId*/)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("UnsetDeviceChangeCallback: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("UnregisterFocusInfoChangeCallback: audio policy manager proxy is NULL.");
         return -1;
     }
 
-    return gsp->UnregisterFocusInfoChangeCallback(clientId);
+    return gsp->UnregisterVolumeKeyEventCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED));
 }
 
 #ifdef FEATURE_DTMF_TONE

@@ -13,10 +13,12 @@
  * limitations under the License.
  */
 
+#include <utility>
 #include "audio_policy_client_stub.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 
+using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 AudioPolicyClientStub::AudioPolicyClientStub()
@@ -34,7 +36,7 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
         return -1;
     }
     switch (code) {
-        case UPDATE_VOLUME_KEY_ENVENT_CALLBACK_CLIENT: {
+        case UPDATE_CALLBACK_CLIENT: {
             uint32_t updateCode = static_cast<uint32_t>(data.ReadInt32());
             if (updateCode > static_cast<uint32_t>(AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX)) {
                 return -1;
@@ -59,6 +61,20 @@ void AudioPolicyClientStub::HandleVolumeKeyEvent(MessageParcel &data, MessagePar
     object->volumeGroupId = data.ReadInt32();
     object->networkId = data.ReadString();
     SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT), object));
+    reply.WriteInt32(SUCCESS);
+}
+
+void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, MessageParcel &reply)
+{
+    std::unique_ptr<std::list<std::pair<AudioInterrupt, AudioFocuState>>>object =
+        std::make_unique<std::list<std::pair<AudioInterrupt, AudioFocuState>>>();
+    size_t size = data.ReadUint32();
+    AudioInterrupt audioInterrupt = {};
+    for (uint32_t i = 0; i < size; i++) {
+        audioInterrupt.Unmarshalling(data);
+        object->emplace_back(std::make_pair(audioInterrupt, static_cast<AudioFocuState>(data.ReadUint32())));
+    }
+    SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED), object));
     reply.WriteInt32(SUCCESS);
 }
 } // namespace AudioStandard

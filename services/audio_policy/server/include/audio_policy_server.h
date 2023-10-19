@@ -248,9 +248,9 @@ public:
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 
-    int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) override;
+    int32_t RegisterFocusInfoChangeCallbackClient(const sptr<IRemoteObject>& object, const uint32_t code) override;
 
-    int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId) override;
+    int32_t UnregisterFocusInfoChangeCallbackClient(const uint32_t code) override;
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) override;
 
@@ -401,7 +401,7 @@ private:
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
-    std::unordered_map<int32_t, sptr<IStandardAudioPolicyManagerListener>> focusInfoChangeCbsMap_;
+    //std::unordered_map<int32_t, sptr<IStandardAudioPolicyManagerListener>> focusInfoChangeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> audioPolicyProxyCBMap_;

@@ -1002,15 +1002,14 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
     }
 }
 
-int32_t AudioPolicyProxy::RegisterFocusInfoChangeCallback(const int32_t clientId,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterFocusInfoChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (object == nullptr) {
-        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback object is null");
+        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallbackClient object is null");
         return ERR_NULL_OBJECT;
     }
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -1018,19 +1017,19 @@ int32_t AudioPolicyProxy::RegisterFocusInfoChangeCallback(const int32_t clientId
         return -1;
     }
 
-    data.WriteInt32(clientId);
+    data.WriteUint32(code);
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_FOCUS_INFO_CHANGE_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallbackClient failed, error: %{public}d", error);
         return error;
     }
 
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnregisterFocusInfoChangeCallback(const int32_t clientId)
+int32_t AudioPolicyProxy::UnregisterFocusInfoChangeCallbackClient(const uint32_t code)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1040,7 +1039,7 @@ int32_t AudioPolicyProxy::UnregisterFocusInfoChangeCallback(const int32_t client
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return -1;
     }
-    data.WriteInt32(clientId);
+    data.WriteUint32(code);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_FOCUS_INFO_CHANGE_CALLBACK),
         data, reply, option);
@@ -2147,7 +2146,8 @@ int32_t AudioPolicyProxy::RegisterVolumeKeyEventCallbackClient(const sptr<IRemot
     data.WriteInt32(static_cast<int32_t>(api_v));
     data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_POLICY_CALLBACK_CLIENT), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_VOLUME_KEY_ENVENT_CALLBACK_CLIENT),
+        data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("RegisterPolicyCallbackClient failed, error: %d", error);
         return ERROR;
@@ -2168,7 +2168,8 @@ int32_t AudioPolicyProxy::UnregisterVolumeKeyEventCallbackClient(const uint32_t 
 
     data.WriteUint32(code);
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_POLICY_CALLBACK_CLIENT), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_VOLUME_KEY_ENVENT_CALLBACK_CLIENT),
+        data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("RegisterPolicyCallbackClient failed, error: %d", error);
         return ERROR;
