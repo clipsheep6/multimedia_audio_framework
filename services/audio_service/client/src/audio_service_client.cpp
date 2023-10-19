@@ -2765,12 +2765,17 @@ void AudioServiceClient::SendReadBufferRequestEvent()
 
 void AudioServiceClient::HandleWriteRequestEvent()
 {
-    std::lock_guard<std::mutex> lockSet(writeCallbackMutex_);
+    {
+        std::lock_guard<std::mutex> lockSet(writeCallbackMutex_);
+        if (writeCallback_) {
+            writeCallbackCopy_ = writeCallback_;
+        }
+    }
     // do callback to application
-    if (writeCallback_) {
+    if (writeCallbackCopy_) {
         size_t requestSize;
         GetMinimumBufferSize(requestSize);
-        writeCallback_->OnWriteData(requestSize);
+        writeCallbackCopy_->OnWriteData(requestSize);
     }
 }
 
