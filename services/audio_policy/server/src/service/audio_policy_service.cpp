@@ -4069,6 +4069,7 @@ void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid)
     AUDIO_INFO_LOG("Bluetooth sa crashed, will restore proxy in next call");
     lock_guard<mutex> lock(g_btProxyMutex);
     g_btProxy = nullptr;
+    Bluetooth::AudioHfpManager::DisconnectScoDevice();
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
 }
 #endif
