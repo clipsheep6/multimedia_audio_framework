@@ -280,8 +280,9 @@ public:
 
     int32_t UnregisterVolumeKeyEventCallbackClient(const uint32_t code) override;
 
-    std::shared_ptr<AudioPolicyClientProxy> GetAudioPolicyClientProxy(const int32_t clientPid,
-        const sptr<IRemoteObject> &object);
+    std::shared_ptr<AudioPolicyClientProxy> GetAudioPolicyClientProxy(
+        const int32_t clientPid, const sptr<IRemoteObject> &object,
+        std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> &audioPolicyclientProxyMap);
 
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
 
@@ -408,7 +409,8 @@ private:
     //std::unordered_map<int32_t, sptr<IStandardAudioPolicyManagerListener>> focusInfoChangeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> audioPolicyProxyCBMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> volumeKeyEventPolicyProxyCBMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> focusInfoChangePolicyProxyCBMap_;
 
     std::mutex volumeKeyEventMutex_;
     std::mutex interruptMutex_;

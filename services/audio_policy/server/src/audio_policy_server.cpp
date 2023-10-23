@@ -117,13 +117,14 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     focussedAudioInterruptInfo_ = nullptr;
 }
 
-std::shared_ptr<AudioPolicyClientProxy> AudioPolicyServer::GetAudioPolicyClientProxy(const int32_t clientPid,
-    const sptr<IRemoteObject> &object)
+std::shared_ptr<AudioPolicyClientProxy> AudioPolicyServer::GetAudioPolicyClientProxy(
+    const int32_t clientPid, const sptr<IRemoteObject> &object,
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> &audioPolicyclientProxyMap)
 {
-    std::shared_ptr<AudioPolicyClientProxy> proxy = audioPolicyProxyCBMap_[clientPid];
+    std::shared_ptr<AudioPolicyClientProxy> proxy = audioPolicyclientProxyMap[clientPid];
     if (proxy == nullptr && object != nullptr) {
         proxy = std::make_shared<AudioPolicyClientProxy>(object);
-        audioPolicyProxyCBMap_[clientPid] = proxy;
+        audioPolicyclientProxyMap[clientPid] = proxy;
     }
     return proxy;
 }
@@ -221,7 +222,7 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
         volumeEvent.updateUi = true;
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
-        for (auto it = audioPolicyProxyCBMap_.begin(); it != audioPolicyProxyCBMap_.end(); ++it) {
+        for (auto it = volumeKeyEventPolicyProxyCBMap_.begin(); it != volumeKeyEventPolicyProxyCBMap_.end(); ++it) {
             std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
             if (proxy == nullptr) {
                 continue;
@@ -562,7 +563,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
-    for (auto it = audioPolicyProxyCBMap_.begin(); it != audioPolicyProxyCBMap_.end(); ++it) {
+    for (auto it = volumeKeyEventPolicyProxyCBMap_.begin(); it != volumeKeyEventPolicyProxyCBMap_.end(); ++it) {
         std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
         if (proxy == nullptr) {
             continue;
@@ -618,7 +619,7 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
     volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
-    for (auto it = audioPolicyProxyCBMap_.begin(); it != audioPolicyProxyCBMap_.end(); ++it) {
+    for (auto it = volumeKeyEventPolicyProxyCBMap_.begin(); it != volumeKeyEventPolicyProxyCBMap_.end(); ++it) {
         std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
         if (proxy == nullptr) {
             continue;
@@ -1659,7 +1660,7 @@ void AudioPolicyServer::OnAudioFocusInfoChange()
 {
     std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
-    for (auto it = audioPolicyProxyCBMap_.begin(); it != audioPolicyProxyCBMap_.end(); ++it) {
+    for (auto it = focusInfoChangePolicyProxyCBMap_.begin(); it != focusInfoChangePolicyProxyCBMap_.end(); ++it) {
         std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
         if (proxy == nullptr) {
             continue;
@@ -1681,7 +1682,8 @@ int32_t AudioPolicyServer::RegisterFocusInfoChangeCallbackClient(const sptr<IRem
 {
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, object);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, object,
+        focusInfoChangePolicyProxyCBMap_);
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
@@ -1693,7 +1695,8 @@ int32_t AudioPolicyServer::RegisterFocusInfoChangeCallbackClient(const sptr<IRem
 int32_t AudioPolicyServer::UnregisterFocusInfoChangeCallbackClient(const uint32_t code)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, nullptr);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, nullptr,
+    focusInfoChangePolicyProxyCBMap_);
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
@@ -2244,7 +2247,8 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
     }
 
     volumeEvent.updateUi = false;
-    for (auto it = server_->audioPolicyProxyCBMap_.begin(); it != server_->audioPolicyProxyCBMap_.end(); ++it) {
+    for (auto it = server_->volumeKeyEventPolicyProxyCBMap_.begin();
+        it != server_->volumeKeyEventPolicyProxyCBMap_.end(); ++it) {
         std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
         if (proxy == nullptr) {
             continue;
@@ -2464,7 +2468,8 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEventCallbackClient(
     const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, object);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, object,
+        volumeKeyEventPolicyProxyCBMap_);
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
@@ -2474,7 +2479,8 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEventCallbackClient(
 int32_t AudioPolicyServer::UnregisterVolumeKeyEventCallbackClient(const uint32_t code)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, nullptr);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, nullptr,
+        volumeKeyEventPolicyProxyCBMap_);
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
@@ -2502,21 +2508,21 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     }
     int32_t ret = mPolicyService.SetA2dpDeviceVolume(macAddress, volume);
     if (ret == SUCCESS) {
-        for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
-            std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
-            if (volumeChangeCb == nullptr) {
-                AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+        for (auto it = volumeKeyEventPolicyProxyCBMap_.begin(); it != volumeKeyEventPolicyProxyCBMap_.end(); ++it) {
+            std::shared_ptr<AudioPolicyClientProxy> proxy = it->second;
+            if (proxy == nullptr) {
+                AUDIO_ERR_LOG("proxy: nullptr for client : %{public}d", it->first);
                 continue;
             }
 
-            AUDIO_DEBUG_LOG("SetA2dpDeviceVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
+            AUDIO_DEBUG_LOG("SetA2dpDeviceVolume trigger proxy clientPid : %{public}d", it->first);
             VolumeEvent volumeEvent;
             volumeEvent.volumeType = STREAM_MUSIC;
             volumeEvent.volume = volume;
             volumeEvent.updateUi = updateUi;
             volumeEvent.volumeGroupId = 0;
             volumeEvent.networkId = LOCAL_NETWORK_ID;
-            volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
+            proxy->OnVolumeKeyEvent(volumeEvent);
         }
     }
     return ret;
