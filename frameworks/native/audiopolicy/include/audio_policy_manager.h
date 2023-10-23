@@ -248,6 +248,9 @@ public:
 
     std::shared_ptr<AudioPolicyClientStubImpl> GetAudioPolicyClient();
 
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
+
+    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
 private:
     AudioPolicyManager()
     {

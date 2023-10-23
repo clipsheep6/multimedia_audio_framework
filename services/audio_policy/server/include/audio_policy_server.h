@@ -283,6 +283,10 @@ public:
     std::shared_ptr<AudioPolicyClientProxy> GetAudioPolicyClientProxy(const int32_t clientPid,
         const sptr<IRemoteObject> &object);
 
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
+
+    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

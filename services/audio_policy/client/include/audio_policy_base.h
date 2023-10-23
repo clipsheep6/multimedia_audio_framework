@@ -222,6 +222,10 @@ public:
         const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v = API_9) = 0;
 
     virtual int32_t UnregisterVolumeKeyEventCallbackClient(const uint32_t code) = 0;
+
+    virtual int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) = 0;
+
+    virtual int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool updateUi) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

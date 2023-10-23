@@ -68,6 +68,8 @@ constexpr uid_t UID_CAAS_SA = 5527;
 constexpr uid_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr uid_t UID_MEDIA_SA = 1013;
 constexpr uid_t UID_AUDIO = 1041;
+constexpr uid_t UID_FOUNDATION_SA = 5523;
+constexpr uid_t UID_BLUETOOTH_SA = 1002;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -91,7 +93,8 @@ const std::list<uid_t> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
-    UID_AUDIO
+    UID_AUDIO,
+    UID_FOUNDATION_SA
 };
 
 const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
@@ -2477,6 +2480,46 @@ int32_t AudioPolicyServer::UnregisterVolumeKeyEventCallbackClient(const uint32_t
     }
     proxy->UnregisterVolumeKeyEventCallbackClient(code);
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_BLUETOOTH_SA) {
+        AUDIO_ERR_LOG("SetDeviceAbsVolumeSupported: Error caller uid: %{public}d", callerUid);
+        return ERROR;
+    }
+    return mPolicyService.SetDeviceAbsVolumeSupported(macAddress, support);
+}
+
+int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
+    const bool updateUi)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_BLUETOOTH_SA) {
+        AUDIO_ERR_LOG("SetA2dpDeviceVolume: Error caller uid: %{public}d", callerUid);
+        return ERROR;
+    }
+    int32_t ret = mPolicyService.SetA2dpDeviceVolume(macAddress, volume);
+    if (ret == SUCCESS) {
+        for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
+            std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+            if (volumeChangeCb == nullptr) {
+                AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+                continue;
+            }
+
+            AUDIO_DEBUG_LOG("SetA2dpDeviceVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
+            VolumeEvent volumeEvent;
+            volumeEvent.volumeType = STREAM_MUSIC;
+            volumeEvent.volume = volume;
+            volumeEvent.updateUi = updateUi;
+            volumeEvent.volumeGroupId = 0;
+            volumeEvent.networkId = LOCAL_NETWORK_ID;
+            volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
+        }
+    }
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

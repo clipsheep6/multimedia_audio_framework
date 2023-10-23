@@ -185,6 +185,23 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
     StreamSetState streamSetState = *reinterpret_cast<const StreamSetState *>(rawData);
     AudioStreamType audioStreamType = *reinterpret_cast<const AudioStreamType *>(rawData);
     AudioPolicyServerPtr->UpdateStreamState(clientUid, streamSetState, audioStreamType);
+    
+    int32_t sessionId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioPolicyServerPtr->GetAudioCapturerMicrophoneDescriptors(sessionId);
+
+    sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
+    deviceDescriptor->deviceType_ = *reinterpret_cast<const DeviceType *>(rawData);
+    deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(rawData);
+    AudioPolicyServerPtr->GetHardwareOutputSamplingRate(deviceDescriptor);
+
+    AudioPolicyServerPtr->GetAvailableMicrophones();
+
+    std::string macAddress(reinterpret_cast<const char*>(rawData), size - 1);
+    bool support = *reinterpret_cast<const bool *>(rawData);
+    int32_t volume = *reinterpret_cast<const int32_t *>(rawData);
+    bool updateUi = *reinterpret_cast<const bool *>(rawData);
+    AudioPolicyServerPtr->SetDeviceAbsVolumeSupported(macAddress, support);
+    AudioPolicyServerPtr->SetA2dpDeviceVolume(macAddress, volume, updateUi);
 }
 
 void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)

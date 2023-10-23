@@ -215,6 +215,10 @@ public:
         API_VERSION api_v) override;
     
     int32_t UnregisterVolumeKeyEventCallbackClient(const uint32_t code) override;
+
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
+
+    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

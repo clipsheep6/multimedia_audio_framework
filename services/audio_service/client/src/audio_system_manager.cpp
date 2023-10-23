@@ -1121,6 +1121,19 @@ void AudioSystemManager::RequestThreadPriority(uint32_t tid)
     gasp->RequestThreadPriority(tid, bundleName);
 }
 
+int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
+{
+    AUDIO_INFO_LOG("AudioSystemManager::SetDeviceAbsVolumeSupported");
+    return AudioPolicyManager::GetInstance().SetDeviceAbsVolumeSupported(macAddress, support);
+}
+
+int32_t AudioSystemManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
+    const bool updateUi)
+{
+    AUDIO_INFO_LOG("AudioSystemManager::SetA2dpDeviceVolume");
+    return AudioPolicyManager::GetInstance().SetA2dpDeviceVolume(macAddress, volume, updateUi);
+}
+
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
 {
     AudioPin pin = AUDIO_PIN_NONE;
@@ -1238,15 +1251,13 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
 int32_t AudioSystemManager::SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback)
 {
     audioCapturerSourceCallback_ = callback;
-    return isRemoteWakeUpCallbackRegistered.exchange(true) ? SUCCESS :
-        RegisterWakeupSourceCallback();
+    return RegisterWakeupSourceCallback();
 }
 
 int32_t AudioSystemManager::SetWakeUpSourceCloseCallback(const std::shared_ptr<WakeUpSourceCloseCallback> &callback)
 {
     audioWakeUpSourceCloseCallback_ = callback;
-    return isRemoteWakeUpCallbackRegistered.exchange(true) ? SUCCESS :
-        RegisterWakeupSourceCallback();
+    return RegisterWakeupSourceCallback();
 }
 } // namespace AudioStandard
 } // namespace OHOS
