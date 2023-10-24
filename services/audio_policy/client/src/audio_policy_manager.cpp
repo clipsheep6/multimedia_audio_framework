@@ -562,23 +562,20 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
         AUDIO_ERR_LOG("SetDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
-
-    auto deviceChangeCbStub = new(std::nothrow) AudioPolicyManagerListenerStub();
-    if (deviceChangeCbStub == nullptr) {
-        AUDIO_ERR_LOG("SetDeviceChangeCallback: object null");
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient();
+    if (audioPolicyClientStub == nullptr) {
+        AUDIO_ERR_LOG("SetDeviceChangeCallback: audioPolicyClientStub get error");
         return ERROR;
     }
-
-    deviceChangeCbStub->SetDeviceChangeCallback(callback);
-
-    sptr<IRemoteObject> object = deviceChangeCbStub->AsObject();
+    audioPolicyClientStub->SetDeviceChangeCallback(callback);
+    sptr<IRemoteObject> object = audioPolicyClientStub->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetDeviceChangeCallback: listenerStub->AsObject is nullptr..");
-        delete deviceChangeCbStub;
+        AUDIO_ERR_LOG("RegisterDeviceChangeCallback: audioPolicyClientStub get error.");
         return ERROR;
     }
 
-    return gsp->SetDeviceChangeCallback(clientId, flag, object);
+    return gsp->RegisterDeviceChangeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), flag);
 }
 
 int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag)
@@ -589,7 +586,8 @@ int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, De
         AUDIO_ERR_LOG("UnsetDeviceChangeCallback: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->UnsetDeviceChangeCallback(clientId, flag);
+    return gsp->UnregisterDeviceChangeCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), flag);
 }
 
 int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const int32_t clientId,

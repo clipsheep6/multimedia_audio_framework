@@ -816,15 +816,15 @@ int32_t AudioPolicyProxy::SetMicStateChangeCallback(const int32_t clientId, cons
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+    const DeviceFlag flag)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetDeviceChangeCallback object is null");
+        AUDIO_ERR_LOG("AudioPolicyProxy: RegisterDeviceChangeCallbackClient object is null");
         return ERR_NULL_OBJECT;
     }
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -832,20 +832,20 @@ int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const 
         return -1;
     }
 
-    data.WriteInt32(clientId);
+    data.WriteInt32(code);
     data.WriteInt32(flag);
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_CHANGE_CALLBACK), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_DEVICE_CHANGE_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetDeviceChangeCallback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy: RegisterDeviceChangeCallbackClient failed, error: %{public}d", error);
         return error;
     }
 
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag)
+int32_t AudioPolicyProxy::UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -855,12 +855,12 @@ int32_t AudioPolicyProxy::UnsetDeviceChangeCallback(const int32_t clientId, Devi
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
-    data.WriteInt32(clientId);
+    data.WriteInt32(code);
     data.WriteInt32(flag);
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_DEVICE_CHANGE_CALLBACK), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_DEVICE_CHANGE_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: unset device change callback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy: UnregisterDeviceChangeCallbackClient failed, error: %{public}d", error);
         return error;
     }
 

@@ -59,6 +59,26 @@ void AudioPolicyClientStubImpl::OnAudioFocusInfoChange(
 }
 
 
+int32_t AudioPolicyClientStubImpl::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &cb)
+{
+    deviceChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::UnSetDeviceChangeCallback()
+{
+    deviceChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+void AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
+{
+    for (auto it = deviceChangeCallbackList_.begin(); it != deviceChangeCallbackList_.end(); ++it) {
+        (*it)->OnAudioFocusInfoChange(deviceChangeAction);
+    }
+}
+
+
 void AudioPolicyClientStubImpl::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     uint32_t eventId = event->GetInnerEventId();
@@ -69,6 +89,9 @@ void AudioPolicyClientStubImpl::ProcessEvent(const AppExecFwk::InnerEvent::Point
         std::list<std::pair<AudioInterrupt, AudioFocuState>> foucusInfolist =
             *(event->GetUniqueObject<std::list<std::pair<AudioInterrupt, AudioFocuState>>>());
         OnAudioFocusInfoChange(foucusInfolist);
+    } else if (eventId == static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE) {
+        DeviceChangeAction deviceChangeAction = *(event->GetUniqueObject<DeviceChangeAction>());
+        OnDeviceChange(deviceChangeAction);
     }
 }
 } // namespace AudioStandard

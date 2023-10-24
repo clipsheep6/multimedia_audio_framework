@@ -152,10 +152,10 @@ public:
 
     int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object)
-        override;
+    int32_t RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code,
+        const DeviceFlag flag) override;
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) override;
+    int32_t UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag) override;
     
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 

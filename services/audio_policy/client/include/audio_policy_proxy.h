@@ -98,10 +98,10 @@ public:
 
     int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
-        const sptr<IRemoteObject>& object) override;
+    // int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+    //     const sptr<IRemoteObject>& object) override;
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) override;
+    // int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
 
@@ -219,6 +219,12 @@ public:
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
+
+    int32_t RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        const DeviceFlag flag) override;
+
+    int32_t UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

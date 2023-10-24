@@ -77,5 +77,18 @@ void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, Mess
     SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED), object));
     reply.WriteInt32(SUCCESS);
 }
+
+void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParcel &reply)
+{
+    std::unique_ptr<DeviceChangeAction> object = std::make_unique<DeviceChangeAction>();
+    object->type = data.ReadUint32();
+    object->flag = data.ReadUint32();
+    size_t size = data.ReadUint32();
+    for (uint32_t i = 0; i < size; i++) {
+        object->deviceDescriptors->emplace_back(static_cast<sptr<AudioDeviceDescriptor>>(data.ReadUint32()));
+    }
+    SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), object));
+    reply.WriteInt32(SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

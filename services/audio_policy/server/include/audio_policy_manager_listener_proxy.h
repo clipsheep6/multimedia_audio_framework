@@ -28,7 +28,7 @@ public:
     virtual ~AudioPolicyManagerListenerProxy();
     DISALLOW_COPY_AND_MOVE(AudioPolicyManagerListenerProxy);
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
-    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
+    //void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyManagerListenerProxy> delegator_;

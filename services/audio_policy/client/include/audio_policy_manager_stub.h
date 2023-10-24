@@ -59,8 +59,8 @@ private:
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
-    void SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterDeviceChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterDeviceChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
     void CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply);
     void SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetSelectedDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
@@ -155,8 +155,8 @@ private:
         &AudioPolicyManagerStub::GetDevicesInternal,
         &AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal,
         &AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal,
-        &AudioPolicyManagerStub::SetDeviceChangeCallbackInternal,
-        &AudioPolicyManagerStub::UnsetDeviceChangeCallbackInternal,
+        &AudioPolicyManagerStub::RegisterDeviceChangeCallbackClientInternal,
+        &AudioPolicyManagerStub::UnregisterDeviceChangeCallbackClientInternal,
         &AudioPolicyManagerStub::CheckRecordingCreateInternal,
         &AudioPolicyManagerStub::SelectOutputDeviceInternal,
         &AudioPolicyManagerStub::GetSelectedDeviceInfoInternal,

@@ -28,25 +28,31 @@ class AudioPolicyClientProxy : public IRemoteProxy<IAudioPolicyClient> {
 public:
     AudioPolicyClientProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioPolicyClientProxy();
-
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code);
     void UnregisterPolicyCallbackClient(const uint32_t code);
 
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
-
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;
     int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object);
     int32_t SetFocusInfoChangeCallback(const sptr<IRemoteObject> &object);
-    std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
-    std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
+    int32_t SetDeviceChangeCallback(const sptr<IRemoteObject> &object);
 
     using HandlerFunc = int32_t(AudioPolicyClientProxy::*)(const sptr<IRemoteObject> &object);
     static inline HandlerFunc handlers[] = {
         &AudioPolicyClientProxy::SetVolumeKeyEventCallback,
         &AudioPolicyClientProxy::SetFocusInfoChangeCallback,
+        &AudioPolicyClientProxy::SetDeviceChangeCallback,
     };
+
+    std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
+    std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioManagerDeviceChangeCallback>> deviceChangeCallbackList_;
+
+    bool hasBTPermission_ = true;
+    bool hasSystemPermission_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

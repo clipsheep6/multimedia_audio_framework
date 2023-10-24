@@ -96,12 +96,12 @@ public:
     virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
 
     virtual int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
-
+/*
     virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) = 0;
-
+*/
     virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) = 0;
@@ -226,6 +226,12 @@ public:
     virtual int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) = 0;
 
     virtual int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool updateUi) = 0;
+
+    virtual int32_t RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        const DeviceFlag flag) = 0;
+
+    virtual int32_t UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

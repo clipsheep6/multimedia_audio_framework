@@ -988,11 +988,11 @@ int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t /* clientId *
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t /* clientId */, const DeviceFlag flag,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code,
+    const DeviceFlag flag)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "SetDeviceChangeCallback set listener object is nullptr");
+        "RegisterDeviceChangeCallbackClient set listener object is nullptr");
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     switch (flag) {
         case NONE_DEVICES_FLAG:
@@ -1011,13 +1011,13 @@ int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t /* clientId */,
 
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
-    return mPolicyService.SetDeviceChangeCallback(clientPid, flag, object, hasBTPermission);
+    return mPolicyService.RegisterDeviceChangeCallbackClient(object, code, flag, clientPid, hasBTPermission);
 }
 
-int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t /* clientId */, DeviceFlag flag)
+int32_t AudioPolicyServer::UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return mPolicyService.UnsetDeviceChangeCallback(clientPid, flag);
+    return mPolicyService.UnregisterDeviceChangeCallbackClient(code, flag, clientPid);
 }
 
 int32_t AudioPolicyServer::SetPreferredOutputDeviceChangeCallback(const int32_t /* clientId */,

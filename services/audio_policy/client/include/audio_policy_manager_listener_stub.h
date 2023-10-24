@@ -33,9 +33,9 @@ public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
-    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
+    //void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
-    void SetDeviceChangeCallback(const std::weak_ptr<AudioManagerDeviceChangeCallback> &callback);
+    //void SetDeviceChangeCallback(const std::weak_ptr<AudioManagerDeviceChangeCallback> &callback);
     void SetFocusInfoChangeCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
 private:
     void ReadInterruptEventParams(MessageParcel &data, InterruptEventInternal &interruptEvent);
@@ -44,7 +44,7 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
 
     std::weak_ptr<AudioInterruptCallback> callback_;
-    std::weak_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_;
+    //std::weak_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
