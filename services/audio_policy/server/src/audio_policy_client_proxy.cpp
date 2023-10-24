@@ -32,32 +32,30 @@ VolumeKeyEventCallbackListener::VolumeKeyEventCallbackListener(const sptr<IAudio
 
 VolumeKeyEventCallbackListener::~VolumeKeyEventCallbackListener() {}
 
-int32_t AudioPolicyClientProxy::RegisterVolumeKeyEventCallbackClient(const sptr<IRemoteObject> &object,
-    const uint32_t code, API_VERSION api_v)
+int32_t AudioPolicyClientProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code)
 {
     if (code > static_cast<uint32_t>(AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX)) {
         return -1;
     }
-    return (this->*handlers[code])(object, api_v);
+    return (this->*handlers[code])(object);
 }
 
-void AudioPolicyClientProxy::UnregisterVolumeKeyEventCallbackClient(const uint32_t code)
+void AudioPolicyClientProxy::UnregisterPolicyCallbackClient(const uint32_t code)
 {
     switch (code) {
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT):
             volumeKeyEventCallbackList_.clear();
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED):
+            focusInfoChangeCallbackList_.clear();
             break;
         default:
             break;
     }
 }
 
-int32_t AudioPolicyClientProxy::SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object, API_VERSION api_v)
+int32_t AudioPolicyClientProxy::SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object)
 {
-    if (api_v == API_8 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
     sptr<IAudioPolicyClient> listener = iface_cast<IAudioPolicyClient>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
         "SetVolumeKeyEventCallback listener obj cast failed");
@@ -100,27 +98,8 @@ AudioFocusInfoChangeCallbackListener::AudioFocusInfoChangeCallbackListener(const
 
 AudioFocusInfoChangeCallbackListener::~AudioFocusInfoChangeCallbackListener() {}
 
-int32_t AudioPolicyClientProxy::RegisterFocusInfoChangeCallbackClient(const sptr<IRemoteObject> &object,
-    const uint32_t code, API_VERSION api_v)
-{
-    if (code > static_cast<uint32_t>(AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX)) {
-        return -1;
-    }
-    return (this->*handlers[code])(object, api_v);
-}
 
-void AudioPolicyClientProxy::UnregisterFocusInfoChangeCallbackClient(const uint32_t code)
-{
-    switch (code) {
-        case static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED):
-            focusInfoChangeCallbackList_.clear();
-            break;
-        default:
-            break;
-    }
-}
-
-int32_t AudioPolicyClientProxy::SetFocusInfoChangeCallback(const sptr<IRemoteObject> &object, API_VERSION /*api_v*/)
+int32_t AudioPolicyClientProxy::SetFocusInfoChangeCallback(const sptr<IRemoteObject> &object)
 {
     sptr<IAudioPolicyClient> listener = iface_cast<IAudioPolicyClient>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,

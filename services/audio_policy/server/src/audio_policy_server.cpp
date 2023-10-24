@@ -1687,7 +1687,7 @@ int32_t AudioPolicyServer::RegisterFocusInfoChangeCallbackClient(const sptr<IRem
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
-    return proxy->RegisterFocusInfoChangeCallbackClient(object, code);
+    return proxy->RegisterPolicyCallbackClient(object, code);
 
     return SUCCESS;
 }
@@ -1700,7 +1700,7 @@ int32_t AudioPolicyServer::UnregisterFocusInfoChangeCallbackClient(const uint32_
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
-    proxy->UnregisterFocusInfoChangeCallbackClient(code);
+    proxy->UnregisterPolicyCallbackClient(code);
 
     return SUCCESS;
 }
@@ -2467,13 +2467,18 @@ vector<sptr<MicrophoneDescriptor>> AudioPolicyServer::GetAvailableMicrophones()
 int32_t AudioPolicyServer::RegisterVolumeKeyEventCallbackClient(
     const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v)
 {
+    if (api_v == API_8 && !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, object,
         volumeKeyEventPolicyProxyCBMap_);
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
-    return proxy->RegisterVolumeKeyEventCallbackClient(object, code, api_v);
+    return proxy->RegisterPolicyCallbackClient(object, code);
 }
 
 int32_t AudioPolicyServer::UnregisterVolumeKeyEventCallbackClient(const uint32_t code)
@@ -2484,7 +2489,7 @@ int32_t AudioPolicyServer::UnregisterVolumeKeyEventCallbackClient(const uint32_t
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
-    proxy->UnregisterVolumeKeyEventCallbackClient(code);
+    proxy->UnregisterPolicyCallbackClient(code);
     return SUCCESS;
 }
 
