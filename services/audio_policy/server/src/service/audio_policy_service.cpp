@@ -2981,12 +2981,13 @@ std::shared_ptr<AudioPolicyClientProxy> AudioPolicyService::GetAudioPolicyClient
     return proxy;
 }
 
-int32_t AudioPolicyService::RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code,
-    const DeviceFlag flag, const int32_t clientId, bool hasBTPermission);
+int32_t AudioPolicyService::RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+    const DeviceFlag flag, const int32_t clientId, bool hasBTPermission)
 {
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
 
-    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxyAPS(clientPid, flag, object);
+    std::shared_ptr<AudioPolicyClientProxy> proxy =
+        GetAudioPolicyClientProxyAPS(clientId, flag, hasBTPermission, object);
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
@@ -2994,10 +2995,11 @@ int32_t AudioPolicyService::RegisterDeviceChangeCallbackClient(const sptr<IRemot
 }
 
 int32_t AudioPolicyService::UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag,
-    const int32_t clientId)
+    const int32_t clientId, bool hasBTPermission)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxyAPS(clientPid, flag, object);
+    std::shared_ptr<AudioPolicyClientProxy> proxy =
+        GetAudioPolicyClientProxyAPS(clientId, flag, hasBTPermission, nullptr);
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }

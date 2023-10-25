@@ -21,6 +21,7 @@
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
 #include "audio_info.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

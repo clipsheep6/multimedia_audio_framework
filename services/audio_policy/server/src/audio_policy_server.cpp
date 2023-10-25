@@ -988,7 +988,7 @@ int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t /* clientId *
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code,
+int32_t AudioPolicyServer::RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
     const DeviceFlag flag)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
@@ -1017,7 +1017,8 @@ int32_t AudioPolicyServer::RegisterDeviceChangeCallbackClient(const sptr<IRemote
 int32_t AudioPolicyServer::UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return mPolicyService.UnregisterDeviceChangeCallbackClient(code, flag, clientPid);
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
+    return mPolicyService.UnregisterDeviceChangeCallbackClient(code, flag, clientPid, hasBTPermission);
 }
 
 int32_t AudioPolicyServer::SetPreferredOutputDeviceChangeCallback(const int32_t /* clientId */,

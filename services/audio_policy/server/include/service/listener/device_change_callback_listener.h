@@ -13,23 +13,23 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_VOLUME_KEY_EVENT_CALLBACK_LISTENER_H
-#define AUDIO_VOLUME_KEY_EVENT_CALLBACK_LISTENER_H
+#ifndef DEVICE_CHANGE_CALLBACK_LISTENER_H
+#define DEVICE_CHANGE_CALLBACK_LISTENER_H
 
 #include "audio_system_manager.h"
 #include "audio_policy_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class VolumeKeyEventCallbackListener : public VolumeKeyEventCallback {
+class DeviceChangeCallbackListener : public AudioManagerDeviceChangeCallback {
 public:
-    explicit VolumeKeyEventCallbackListener(const sptr<IAudioPolicyClient> &listener);
-    virtual ~VolumeKeyEventCallbackListener();
-    DISALLOW_COPY_AND_MOVE(VolumeKeyEventCallbackListener);
-    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override
+    explicit DeviceChangeCallbackListener(const sptr<IAudioPolicyClient> &listener);
+    virtual ~DeviceChangeCallbackListener();
+    DISALLOW_COPY_AND_MOVE(DeviceChangeCallbackListener);
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override
     {
         if (listener_ != nullptr) {
-            listener_->OnVolumeKeyEvent(volumeEvent);
+            listener_->OnDeviceChange(deviceChangeAction);
         }
     }
 
@@ -38,4 +38,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_VOLUME_KEY_EVENT_CALLBACK_LISTENER_H
+#endif // DEVICE_CHANGE_CALLBACK_LISTENER_H

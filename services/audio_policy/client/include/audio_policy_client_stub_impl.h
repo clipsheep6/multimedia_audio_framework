@@ -28,6 +28,8 @@ public:
     int32_t UnsetVolumeKeyEventCallback();
     int32_t SetFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &cb);
     int32_t UnsetFocusInfoChangeCallback();
+    int32_t SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &cb);
+    int32_t UnSetDeviceChangeCallback();
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
 private:

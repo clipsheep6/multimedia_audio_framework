@@ -68,11 +68,12 @@ void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, Mess
 {
     std::unique_ptr<std::list<std::pair<AudioInterrupt, AudioFocuState>>>object =
         std::make_unique<std::list<std::pair<AudioInterrupt, AudioFocuState>>>();
-    size_t size = data.ReadUint32();
-    AudioInterrupt audioInterrupt = {};
+    std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
+    int32_t size = data.ReadInt32();
     for (uint32_t i = 0; i < size; i++) {
-        audioInterrupt.Unmarshalling(data);
-        object->emplace_back(std::make_pair(audioInterrupt, static_cast<AudioFocuState>(data.ReadUint32())));
+        focusInfo.first.Unmarshalling(data);
+        focusInfo.second = static_cast<AudioFocuState>(data.ReadInt32());
+        object->emplace_back(focusInfo);
     }
     SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED), object));
     reply.WriteInt32(SUCCESS);
@@ -81,11 +82,11 @@ void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, Mess
 void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParcel &reply)
 {
     std::unique_ptr<DeviceChangeAction> object = std::make_unique<DeviceChangeAction>();
-    object->type = data.ReadUint32();
-    object->flag = data.ReadUint32();
-    size_t size = data.ReadUint32();
+    object->type = static_cast<DeviceChangeType>(data.ReadUint32());
+    object->flag = static_cast<DeviceFlag>(data.ReadUint32());
+    size_t size = data.ReadInt32();
     for (uint32_t i = 0; i < size; i++) {
-        object->deviceDescriptors->emplace_back(static_cast<sptr<AudioDeviceDescriptor>>(data.ReadUint32()));
+        object->deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
     SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), object));
     reply.WriteInt32(SUCCESS);

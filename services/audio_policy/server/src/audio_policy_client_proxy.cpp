@@ -129,10 +129,10 @@ void AudioPolicyClientProxy::OnAudioFocusInfoChange(
     }
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED));
     size_t size = focusInfoList.size();
-    data.WriteUint32(size);
+    data.WriteInt32(static_cast<int32_t>(size));
     for (auto iter = focusInfoList.begin(); iter != focusInfoList.end(); ++iter) {
         iter->first.Marshalling(data);
-        data.WriteUint32(iter->second);
+        data.WriteInt32(iter->second);
     }
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
         data, reply, option);
@@ -142,41 +142,28 @@ void AudioPolicyClientProxy::OnAudioFocusInfoChange(
     reply.ReadInt32();
 }
 
-int32_t AudioPolicyClientProxy::RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code)
-{
-    if (code > static_cast<uint32_t>(AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX)) {
-        return -1;
-    }
-    return (this->*handlers[code])(object, api_v);
-}
+DeviceChangeCallbackListener::DeviceChangeCallbackListener(const sptr<IAudioPolicyClient> &listener)
+: listener_(listener) {}
 
-void AudioPolicyClientProxy::UnregisterDeviceChangeCallbackClient(const uint32_t code)
-{
-    switch (code) {
-        case static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE):
-            deviceChangeCallbackList_.clear();
-            break;
-        default:
-            break;
-}
+DeviceChangeCallbackListener::~DeviceChangeCallbackListener() {}
 
 int32_t AudioPolicyClientProxy::SetDeviceChangeCallback(const sptr<IRemoteObject> &object)
 {
     sptr<IAudioPolicyClient> listener = iface_cast<IAudioPolicyClient>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
         "SetFocusInfoChangeCallback listener obj cast failed");
-    std::shared_ptr<AudioFocusInfoChangeCallback> callback =
-        std::make_shared<AudioFocusInfoChangeCallbackListener>(listener);
+    std::shared_ptr<AudioManagerDeviceChangeCallback> callback =
+        std::make_shared<DeviceChangeCallbackListener>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "SetFocusInfoChangeCallback failed to create cb obj");
-    focusInfoChangeCallbackList_.push_back(callback);
+    deviceChangeCallbackList_.push_back(callback);
 
     return SUCCESS;
 }
 
 void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
-    if (deviceChangeCallbackList_.emtpy()) {
+    if (deviceChangeCallbackList_.empty()) {
         return;
     }
 
@@ -187,13 +174,16 @@ void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChan
         AUDIO_ERR_LOG("AudioPolicyClientProxy::OnDeviceChange: WriteInterfaceToken failed");
         return;
     }
+
+    auto devices = deviceChangeAction.deviceDescriptors;
+    size_t size = deviceChangeAction.deviceDescriptors.size();
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE));
     data.WriteInt32(deviceChangeAction.type);
     data.WriteInt32(deviceChangeAction.flag);
-    size_t size = deviceChangeAction.deviceDescriptors.size();
-    for (auto iter = deviceChangeAction.deviceDescriptors.begin();
-        iter != deviceChangeAction.deviceDescriptors.end(); ++iter) {
-        data.WriteUinte32(iter);
+    data.WriteInt32(static_cast<int32_t>(size));
+
+    for (size_t i = 0; i < size; i++) {
+        devices[i]->Marshalling(data);
     }
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
         data, reply, option);

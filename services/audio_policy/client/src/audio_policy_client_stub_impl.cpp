@@ -74,7 +74,7 @@ int32_t AudioPolicyClientStubImpl::UnSetDeviceChangeCallback()
 void AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
     for (auto it = deviceChangeCallbackList_.begin(); it != deviceChangeCallbackList_.end(); ++it) {
-        (*it)->OnAudioFocusInfoChange(deviceChangeAction);
+        (*it)->OnDeviceChange(deviceChangeAction);
     }
 }
 
@@ -89,7 +89,7 @@ void AudioPolicyClientStubImpl::ProcessEvent(const AppExecFwk::InnerEvent::Point
         std::list<std::pair<AudioInterrupt, AudioFocuState>> foucusInfolist =
             *(event->GetUniqueObject<std::list<std::pair<AudioInterrupt, AudioFocuState>>>());
         OnAudioFocusInfoChange(foucusInfolist);
-    } else if (eventId == static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE) {
+    } else if (eventId == static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE)) {
         DeviceChangeAction deviceChangeAction = *(event->GetUniqueObject<DeviceChangeAction>());
         OnDeviceChange(deviceChangeAction);
     }

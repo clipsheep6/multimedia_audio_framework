@@ -56,6 +56,7 @@ void AudioPolicyManagerListenerProxy::OnInterrupt(const InterruptEventInternal &
     }
 }
 
+/*
 void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManagerListenerProxy: OnDeviceChange at listener proxy");
@@ -84,13 +85,17 @@ void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &d
         AUDIO_ERR_LOG("OnDeviceChange failed, error: %{public}d", error);
     }
 }
+*/
 
+/*
 void AudioPolicyManagerListenerProxy::WriteAudioFocusInfo(MessageParcel &data,
     const std::pair<AudioInterrupt, AudioFocuState> &focusInfo)
 {
     focusInfo.first.Marshalling(data);
     data.WriteInt32(focusInfo.second);
 }
+*/
+
 /*
 void AudioPolicyManagerListenerProxy::OnAudioFocusInfoChange(
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)

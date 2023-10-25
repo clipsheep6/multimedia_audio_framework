@@ -192,10 +192,11 @@ public:
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
-    int32_t RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code,
-        const DeviceFlag flag, const int32_t clientId);
+    int32_t RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        const DeviceFlag flag, const int32_t clientId, bool hasBTPermission);
 
-    int32_t UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag, const int32_t clientId);
+    int32_t UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag,
+        const int32_t clientId, bool hasBTPermission);
 
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
         bool hasBTPermission);
@@ -312,7 +313,7 @@ public:
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 
     std::shared_ptr<AudioPolicyClientProxy> GetAudioPolicyClientProxyAPS(
-        const int32_t clientPid, const sptr<IRemoteObject> &object,);
+        const int32_t clientPid, const DeviceFlag flag, bool hasBTPermission, const sptr<IRemoteObject> &object);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -545,9 +546,7 @@ private:
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
 
-    std::unordered_map<std::pair<int32_t, DeviceFlag>, std::shared_ptr<AudioPolicyClientProxy>>
-        deviceChangePolicyProxyCbsMap_;
-    //std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
+    std::map<std::pair<int32_t, DeviceFlag>, std::shared_ptr<AudioPolicyClientProxy>> deviceChangePolicyProxyCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredOutputDeviceCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredInputDeviceCbsMap_;
 

@@ -38,6 +38,7 @@ void AudioPolicyManagerListenerStub::ReadInterruptEventParams(MessageParcel &dat
     interruptEvent.duckVolume = data.ReadFloat();
 }
 
+/*
 void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange)
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDesc = {};
@@ -54,7 +55,9 @@ void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &da
     devChange.flag = static_cast<DeviceFlag>(flag);
     devChange.deviceDescriptors = deviceChangeDesc;
 }
+*/
 
+/*
 void AudioPolicyManagerListenerStub::ReadAudioFocusInfoChangeData(MessageParcel &data,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
@@ -67,6 +70,7 @@ void AudioPolicyManagerListenerStub::ReadAudioFocusInfoChangeData(MessageParcel 
         focusInfoList.push_back(focusInfo);
     }
 }
+*/
 
 int AudioPolicyManagerListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
@@ -83,12 +87,12 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             OnInterrupt(interruptEvent);
             return AUDIO_OK;
         }
-        case ON_DEVICE_CHANGED: {
-            DeviceChangeAction deviceChangeAction = {};
-            ReadAudioDeviceChangeData(data, deviceChangeAction);
-            OnDeviceChange(deviceChangeAction);
-            return AUDIO_OK;
-        }
+        // case ON_DEVICE_CHANGED: {
+        //     DeviceChangeAction deviceChangeAction = {};
+        //     ReadAudioDeviceChangeData(data, deviceChangeAction);
+        //     OnDeviceChange(deviceChangeAction);
+        //     return AUDIO_OK;
+        // }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -107,27 +111,27 @@ void AudioPolicyManagerListenerStub::OnInterrupt(const InterruptEventInternal &i
     }
 }
 
-void AudioPolicyManagerListenerStub::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
-{
-    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnDeviceChange start");
-    std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangedCallback = deviceChangeCallback_.lock();
+// void AudioPolicyManagerListenerStub::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
+// {
+//     AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnDeviceChange start");
+//     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangedCallback = deviceChangeCallback_.lock();
 
-    if (deviceChangedCallback == nullptr) {
-        AUDIO_ERR_LOG("OnDeviceChange: deviceChangeCallback_ or deviceChangeAction is nullptr");
-        return;
-    }
+//     if (deviceChangedCallback == nullptr) {
+//         AUDIO_ERR_LOG("OnDeviceChange: deviceChangeCallback_ or deviceChangeAction is nullptr");
+//         return;
+//     }
 
-    deviceChangedCallback->OnDeviceChange(deviceChangeAction);
-}
+//     deviceChangedCallback->OnDeviceChange(deviceChangeAction);
+// }
 
 void AudioPolicyManagerListenerStub::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
 {
     callback_ = callback;
 }
 
-void AudioPolicyManagerListenerStub::SetDeviceChangeCallback(const std::weak_ptr<AudioManagerDeviceChangeCallback> &cb)
-{
-    deviceChangeCallback_ = cb;
-}
+// void AudioPolicyManagerListenerStub::SetDeviceChangeCallback(const std::weak_ptr<AudioManagerDeviceChangeCallback> &cb)
+// {
+//     deviceChangeCallback_ = cb;
+// }
 } // namespace AudioStandard
 } // namespace OHOS

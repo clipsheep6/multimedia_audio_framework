@@ -21,6 +21,7 @@
 #include "audio_interrupt_info.h"
 #include "audio_focus_info_change_callback_listener.h"
 #include "volume_key_event_callback_listener.h"
+#include "device_change_callback_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,6 +35,9 @@ public:
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
+
+    bool hasBTPermission_ = true;
+    bool hasSystemPermission_ = true;
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;
     int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object);
@@ -50,9 +54,6 @@ private:
     std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::shared_ptr<AudioManagerDeviceChangeCallback>> deviceChangeCallbackList_;
-
-    bool hasBTPermission_ = true;
-    bool hasSystemPermission_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS
