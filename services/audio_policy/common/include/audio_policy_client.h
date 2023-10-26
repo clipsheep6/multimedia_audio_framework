@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,26 +13,38 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_H
-#define ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_H
+#ifndef ST_AUDIO_POLICY_CLIENT_H
+#define ST_AUDIO_POLICY_CLIENT_H
 
 #include "ipc_types.h"
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
 #include "audio_info.h"
+#include "audio_system_manager.h"
+#include "audio_interrupt_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class IAudioVolumeKeyEventCallback : public IRemoteBroker {
+static const int32_t UPDATE_CALLBACK_CLIENT = 0;
+
+enum class AudioPolicyClientCode {
+    ON_VOLUME_KEY_EVENT = 0,
+    ON_FOCUS_INFO_CHANGED,
+    ON_DEVICE_CHANGE,
+    ON_INTERRUPT,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_INTERRUPT,
+};
+class IAudioPolicyClient : public IRemoteBroker {
 public:
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
-    enum {
-        ON_VOLUME_KEY_EVENT = 0,
-    };
+    virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
+    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) =0;
+    virtual void OnInterrupt(const InterruptEventInternal &interruptEvent) = 0;
+
 public:
-    DECLARE_INTERFACE_DESCRIPTOR(u"IAudioVolumeKeyEventCallback");
+    DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicyClient");
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // ST_AUDIO_VOLUME_KEY_EVENT_CALLBACK_H
+#endif // ST_AUDIO_POLICY_CLIENT_H
