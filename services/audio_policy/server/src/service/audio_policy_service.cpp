@@ -1049,7 +1049,7 @@ void AudioPolicyService::OnPreferredInputDeviceUpdated(DeviceType deviceType, st
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    std::lock_guard<std::mutex> lock(preferredInputMapMutex_);
+    std::lock_guard<std::mutex> lock(preferredDeviceMapMutex_);
     for (auto it = preferredInputDeviceCbsMap_.begin(); it != preferredInputDeviceCbsMap_.end(); ++it) {
         AudioCapturerInfo captureInfo;
         auto deviceDescs = GetPreferredInputDeviceDescriptors(captureInfo);
@@ -2969,32 +2969,51 @@ void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, 
     interruptGroupData_ = interruptGroupData;
 }
 
-int32_t AudioPolicyService::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
-    const sptr<IRemoteObject> &object, bool hasBTPermission)
+std::shared_ptr<AudioPolicyClientProxy> AudioPolicyService::GetDeviceChangeAPCProxy(
+    const int32_t clientPid, const DeviceFlag flag, bool hasBTPermission, const sptr<IRemoteObject> &object)
 {
-    sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
-
-    if (callback != nullptr) {
-        callback->hasBTPermission_ = hasBTPermission;
-        deviceChangeCbsMap_[{clientId, flag}] = callback;
+    std::shared_ptr<AudioPolicyClientProxy> proxy = deviceChangePolicyProxyCbsMap_[{clientPid, flag}];
+    if (proxy == nullptr && object != nullptr) {
+        proxy = std::make_shared<AudioPolicyClientProxy>(object);
+        proxy->hasBTPermission_ = hasBTPermission;
+        deviceChangePolicyProxyCbsMap_[{clientPid, flag}] = proxy;
     }
-    AUDIO_DEBUG_LOG("SetDeviceChangeCallback:: deviceChangeCbsMap_ size: %{public}zu", deviceChangeCbsMap_.size());
-    return SUCCESS;
+    return proxy;
 }
 
-int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag)
+int32_t AudioPolicyService::RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+    const DeviceFlag flag, const int32_t clientId, bool hasBTPermission)
+{
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+
+    std::shared_ptr<AudioPolicyClientProxy> proxy =
+        GetDeviceChangeAPCProxy(clientId, flag, hasBTPermission, object);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    return proxy->RegisterPolicyCallbackClient(object, code);
+}
+
+int32_t AudioPolicyService::UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag,
+    const int32_t clientId, bool hasBTPermission)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    std::shared_ptr<AudioPolicyClientProxy> proxy =
+        GetDeviceChangeAPCProxy(clientId, flag, hasBTPermission, nullptr);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    proxy->UnregisterPolicyCallbackClient(code);
 
-    if (deviceChangeCbsMap_.erase({clientId, flag}) == 0) {
+    if (deviceChangePolicyProxyCbsMap_.erase({clientId, flag}) == 0) {
         AUDIO_INFO_LOG("client not present in %{public}s", __func__);
     }
     // for audio manager napi remove all device change callback
     if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
-        for (auto it = deviceChangeCbsMap_.begin(); it != deviceChangeCbsMap_.end();) {
+        for (auto it = deviceChangePolicyProxyCbsMap_.begin(); it != deviceChangePolicyProxyCbsMap_.end();) {
             if ((*it).first.first == clientId && ((*it).first.second == DeviceFlag::INPUT_DEVICES_FLAG ||
                 (*it).first.second == DeviceFlag::OUTPUT_DEVICES_FLAG)) {
-                it = deviceChangeCbsMap_.erase(it);
+                it = deviceChangePolicyProxyCbsMap_.erase(it);
             } else {
                 it++;
             }
@@ -3002,49 +3021,67 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId, De
     }
     // for routing manager napi remove all device change callback
     if (flag == DeviceFlag::ALL_L_D_DEVICES_FLAG) {
-        for (auto it = deviceChangeCbsMap_.begin(); it != deviceChangeCbsMap_.end();) {
+        for (auto it = deviceChangePolicyProxyCbsMap_.begin(); it != deviceChangePolicyProxyCbsMap_.end();) {
             if ((*it).first.first == clientId) {
-                it = deviceChangeCbsMap_.erase(it);
+                it = deviceChangePolicyProxyCbsMap_.erase(it);
             } else {
                 it++;
             }
         }
     }
 
-    AUDIO_DEBUG_LOG("UnsetDeviceChangeCallback:: deviceChangeCbsMap_ size: %{public}zu", deviceChangeCbsMap_.size());
+    AUDIO_DEBUG_LOG("UnsetDeviceChangeCallback:: deviceChangePolicyProxyCbsMap_ size: %{public}zu", \
+        deviceChangePolicyProxyCbsMap_.size());
+
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
-    const sptr<IRemoteObject> &object, bool hasBTPermission)
+std::shared_ptr<AudioPolicyClientProxy> AudioPolicyService::GetPreferredDeviceChangeAPCProxy(
+    const int32_t clientPid, bool hasBTPermission, const sptr<IRemoteObject> &object,
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> &preferredDeviceCbsMap)
 {
-    sptr<IStandardAudioRoutingManagerListener> callback = iface_cast<IStandardAudioRoutingManagerListener>(object);
-    if (callback != nullptr) {
-        callback->hasBTPermission_ = hasBTPermission;
-        preferredOutputDeviceCbsMap_[clientId] = callback;
+    std::lock_guard<std::mutex> lock(preferredDeviceMapMutex_);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = preferredDeviceCbsMap[clientPid];
+    if (proxy == nullptr && object != nullptr) {
+        proxy = std::make_shared<AudioPolicyClientProxy>(object);
+        proxy->hasBTPermission_ = hasBTPermission;
+        preferredDeviceCbsMap[clientPid] = proxy;
     }
-
-    return SUCCESS;
+    return proxy;
 }
 
-int32_t AudioPolicyService::SetPreferredInputDeviceChangeCallback(const int32_t clientId,
-    const sptr<IRemoteObject> &object, bool hasBTPermission)
+int32_t AudioPolicyService::RegisterPreferredOutputDeviceChangeCbClient(const int32_t clientId,
+    const sptr<IRemoteObject> &object, bool hasBTPermission, int32_t code)
+{
+    std::shared_ptr<AudioPolicyClientProxy> proxy =
+        GetPreferredDeviceChangeAPCProxy(clientId, hasBTPermission, object, preferredOutputDeviceCbsMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    return proxy->RegisterPolicyCallbackClient(object, code);
+}
+
+int32_t AudioPolicyService::RegisterPreferredInputDeviceChangeCbClient(const int32_t clientId,
+    const sptr<IRemoteObject> &object, bool hasBTPermission, int32_t code)
+{
+    std::shared_ptr<AudioPolicyClientProxy> proxy =
+        GetPreferredDeviceChangeAPCProxy(clientId, hasBTPermission, object, preferredInputDeviceCbsMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    return proxy->RegisterPolicyCallbackClient(object, code);
+}
+
+int32_t AudioPolicyService::UnRegisterPreferredOutputDeviceChangeCbClient(const int32_t clientId,
+    bool hasBTPermission, int32_t code)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-
-    sptr<IStandardAudioRoutingManagerListener> callback = iface_cast<IStandardAudioRoutingManagerListener>(object);
-    if (callback != nullptr) {
-        callback->hasBTPermission_ = hasBTPermission;
-        std::lock_guard<std::mutex> lock(preferredInputMapMutex_);
-        preferredInputDeviceCbsMap_[clientId] = callback;
+    std::shared_ptr<AudioPolicyClientProxy> proxy =
+        GetPreferredDeviceChangeAPCProxy(clientId, hasBTPermission, nullptr, preferredOutputDeviceCbsMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
     }
-
-    return SUCCESS;
-}
-
-int32_t AudioPolicyService::UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId)
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    proxy->UnregisterPolicyCallbackClient(code);
 
     if (preferredOutputDeviceCbsMap_.erase(clientId) == 0) {
         AUDIO_ERR_LOG("client not present in %{public}s", __func__);
@@ -3054,10 +3091,18 @@ int32_t AudioPolicyService::UnsetPreferredOutputDeviceChangeCallback(const int32
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::UnsetPreferredInputDeviceChangeCallback(const int32_t clientId)
+int32_t AudioPolicyService::UnregisterPreferredInputDeviceChangeCbClient(const int32_t clientId,
+    bool hasBTPermission, int32_t code)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    std::lock_guard<std::mutex> lock(preferredInputMapMutex_);
+    std::shared_ptr<AudioPolicyClientProxy> proxy =
+        GetPreferredDeviceChangeAPCProxy(clientId, hasBTPermission, nullptr, preferredInputDeviceCbsMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    proxy->UnregisterPolicyCallbackClient(code);
+
+    std::lock_guard<std::mutex> lock(preferredDeviceMapMutex_);
     if (preferredInputDeviceCbsMap_.erase(clientId) == 0) {
         AUDIO_ERR_LOG("client not present in %{public}s", __func__);
         return ERR_INVALID_OPERATION;
@@ -3644,7 +3689,7 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
 
     WriteDeviceChangedSysEvents(desc, isConnected);
 
-    for (auto it = deviceChangeCbsMap_.begin(); it != deviceChangeCbsMap_.end(); ++it) {
+    for (auto it = deviceChangePolicyProxyCbsMap_.begin(); it != deviceChangePolicyProxyCbsMap_.end(); ++it) {
         deviceChangeAction.flag = it->first.second;
         deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first.second, desc);
         if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {

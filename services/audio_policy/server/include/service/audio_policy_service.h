@@ -43,6 +43,7 @@
 #include "parser_factory.h"
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
+#include "audio_policy_client_proxy.h"
 #include "policy_provider_stub.h"
 
 namespace OHOS {
@@ -191,20 +192,21 @@ public:
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
+    int32_t RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        const DeviceFlag flag, const int32_t clientId, bool hasBTPermission);
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag);
+    int32_t UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag,
+        const int32_t clientId, bool hasBTPermission);
 
-    int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
+    int32_t RegisterPreferredOutputDeviceChangeCbClient(const int32_t clientId, const sptr<IRemoteObject> &object,
+        bool hasBTPermission, int32_t code);
 
-    int32_t SetPreferredInputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
+    int32_t RegisterPreferredInputDeviceChangeCbClient(const int32_t clientId, const sptr<IRemoteObject> &object,
+        bool hasBTPermission, int32_t code);
 
-    int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId);
+    int32_t UnRegisterPreferredOutputDeviceChangeCbClient(const int32_t clientId, bool hasBTPermission, int32_t code);
 
-    int32_t UnsetPreferredInputDeviceChangeCallback(const int32_t clientId);
+    int32_t UnregisterPreferredInputDeviceChangeCbClient(const int32_t clientId, bool hasBTPermission, int32_t code);
 
     int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSysPermission);
@@ -309,6 +311,7 @@ public:
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -498,6 +501,13 @@ private:
 
     void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
 
+    std::shared_ptr<AudioPolicyClientProxy> GetDeviceChangeAPCProxy(
+        const int32_t clientPid, const DeviceFlag flag, bool hasBTPermission, const sptr<IRemoteObject> &object);
+
+    std::shared_ptr<AudioPolicyClientProxy> GetPreferredDeviceChangeAPCProxy(
+        const int32_t clientPid, bool hasBTPermission, const sptr<IRemoteObject> &object,
+        std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> &preferredDeviceCbsMap);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -522,7 +532,7 @@ private:
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     mutable std::mutex a2dpDeviceMapMutex_;
-    std::mutex preferredInputMapMutex_;
+    std::mutex preferredDeviceMapMutex_;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, Role>
     IAudioPolicyInterface& audioPolicyManager_;
@@ -541,9 +551,9 @@ private:
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
 
-    std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
-    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredOutputDeviceCbsMap_;
-    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredInputDeviceCbsMap_;
+    std::map<std::pair<int32_t, DeviceFlag>, std::shared_ptr<AudioPolicyClientProxy>> deviceChangePolicyProxyCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> preferredOutputDeviceCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> preferredInputDeviceCbsMap_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
