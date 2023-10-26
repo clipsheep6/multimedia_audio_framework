@@ -1050,10 +1050,10 @@ int32_t AudioPolicyServer::UnsetPreferredInputDeviceChangeCallback()
     return mPolicyService.UnsetPreferredInputDeviceChangeCallback(clientPid);
 }
 
-int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterAudioInterruptCallbackClient(const sptr<IRemoteObject> &object,
+    const uint32_t sessionID, const uint32_t code)
 {
-    std::lock_guard<std::mutex> lock(interruptMutex_);
-
+    //std::lock_guard<std::mutex> lock(interruptMutex_);
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (!mPolicyService.IsSessionIdValid(callerUid, sessionID)) {
         AUDIO_ERR_LOG("SetAudioInterruptCallback for sessionID %{public}d, id is invalid", sessionID);
@@ -1061,24 +1061,28 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, c
     }
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "SetAudioInterruptCallback object is nullptr");
-
-    sptr<IStandardAudioPolicyManagerListener> listener = iface_cast<IStandardAudioPolicyManagerListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "SetAudioInterruptCallback obj cast failed");
-
-    std::shared_ptr<AudioInterruptCallback> callback = std::make_shared<AudioPolicyManagerListenerCallback>(listener);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "SetAudioInterruptCallback create cb failed");
-
-    interruptCbsMap_[sessionID] = callback;
-    AUDIO_DEBUG_LOG("SetAudioInterruptCallback for sessionID %{public}d done", sessionID);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(sessionID, object,
+        audioInterruptPolicyProxyCBMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    return proxy->RegisterPolicyCallbackClient(object, code);
 
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID)
+int32_t AudioPolicyServer::UnRegisterAudioInterruptCallbackClient(const uint32_t sessionID, const uint32_t code)
 {
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(sessionID, nullptr,
+    focusInfoChangePolicyProxyCBMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    proxy->UnregisterPolicyCallbackClient(code);
+
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
-    if (interruptCbsMap_.erase(sessionID) == 0) {
+    if (focusInfoChangePolicyProxyCBMap_.erase(sessionID) == 0) {
         AUDIO_ERR_LOG("UnsetAudioInterruptCallback session %{public}d not present", sessionID);
         return ERR_INVALID_OPERATION;
     }
@@ -1242,7 +1246,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         }
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, focusEntry.forceType, focusEntry.hintType, 1.0f};
         uint32_t activeSessionID = (iterActive->first).sessionID;
-        std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[activeSessionID];
+        std::shared_ptr<AudioPolicyClientProxy> policyListenerCb = audioInterruptPolicyProxyCBMap_[activeSessionID];
 
         float volumeDb = 0.0f;
         switch (focusEntry.hintType) {
@@ -1281,7 +1285,8 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
     auto focusMap = mPolicyService.GetAudioFocusMap();
     AudioFocuState incomingState = ACTIVE;
     AudioFocusType incomingFocusType = incomingInterrupt.audioFocusType;
-    std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[incomingInterrupt.sessionID];
+    std::shared_ptr<AudioPolicyClientProxy> policyListenerCb =
+	    audioInterruptPolicyProxyCBMap_[incomingInterrupt.sessionID];
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
     for (auto iterActive = audioFocusInfoList_.begin(); iterActive != audioFocusInfoList_.end(); ++iterActive) {
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) {
@@ -1466,7 +1471,7 @@ void AudioPolicyServer::NotifyStateChangedEvent(AudioFocuState oldState, AudioFo
 {
     AudioInterrupt audioInterrupt = iterActive->first;
     uint32_t sessionID = audioInterrupt.sessionID;
-    std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[sessionID];
+    std::shared_ptr<AudioPolicyClientProxy> policyListenerCb = audioInterruptPolicyProxyCBMap_[sessionID];
     if (policyListenerCb == nullptr) {
         AUDIO_WARNING_LOG("AudioPolicyServer: sessionID policyListenerCb is null");
         return;
@@ -1605,13 +1610,15 @@ void AudioPolicyServer::ProcessSessionRemoved(const uint32_t sessionID)
         AUDIO_INFO_LOG("Removed SessionID: %{public}u is present in audioFocusInfoList_", removedSessionID);
 
         (void)DeactivateAudioInterrupt(removedInterrupt);
-        (void)UnsetAudioInterruptCallback(removedSessionID);
+        (void)UnRegisterAudioInterruptCallbackClient(removedSessionID,
+            static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
         return;
     }
 
     // Though it is not present in the owners list, check and clear its entry from callback map
     lock.unlock();
-    (void)UnsetAudioInterruptCallback(removedSessionID);
+    (void)UnRegisterAudioInterruptCallbackClient(removedSessionID,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
 }
 
 void AudioPolicyServer::OnPlaybackCapturerStop()
@@ -1689,8 +1696,6 @@ int32_t AudioPolicyServer::RegisterFocusInfoChangeCallbackClient(const sptr<IRem
         return ERR_INVALID_OPERATION;
     }
     return proxy->RegisterPolicyCallbackClient(object, code);
-
-    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::UnregisterFocusInfoChangeCallbackClient(const uint32_t code)
@@ -1702,6 +1707,12 @@ int32_t AudioPolicyServer::UnregisterFocusInfoChangeCallbackClient(const uint32_
         return ERR_INVALID_OPERATION;
     }
     proxy->UnregisterPolicyCallbackClient(code);
+
+    std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
+    if (focusInfoChangePolicyProxyCBMap_.erase(clientPid) == 0) {
+        AUDIO_ERR_LOG("UnregisterFocusInfoChangeCallback client %{public}d not present", clientPid);
+        return ERR_INVALID_OPERATION;
+    }
 
     return SUCCESS;
 }
@@ -1946,7 +1957,7 @@ void AudioPolicyServer::ProcessInterrupt(const InterruptHint& hint)
     InterruptType type = INTERRUPT_TYPE_BEGIN;
     InterruptForceType forceType = INTERRUPT_SHARE;
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
-    for (auto it : interruptCbsMap_) {
+    for (auto it : audioInterruptPolicyProxyCBMap_) {
         if (it.second != nullptr) {
             it.second->OnInterrupt(interruptEvent);
         }
@@ -2273,7 +2284,7 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
     }
 
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
-    for (auto it : server_->interruptCbsMap_) {
+    for (auto it : server_->audioInterruptPolicyProxyCBMap_) {
         if (it.second != nullptr) {
             it.second->OnInterrupt(interruptEvent);
         }
@@ -2491,6 +2502,13 @@ int32_t AudioPolicyServer::UnregisterVolumeKeyEventCallbackClient(const uint32_t
         return ERR_INVALID_OPERATION;
     }
     proxy->UnregisterPolicyCallbackClient(code);
+
+    std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
+    if (volumeKeyEventPolicyProxyCBMap_.erase(clientPid) == 0) {
+        AUDIO_ERR_LOG("UnregisterVolumeKeyEventCallbackClient client %{public}d not present", clientPid);
+        return ERR_INVALID_OPERATION;
+    }
+
     return SUCCESS;
 }
 

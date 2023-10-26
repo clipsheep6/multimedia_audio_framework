@@ -22,6 +22,7 @@
 #include "iremote_stub.h"
 #include "audio_info.h"
 #include "audio_system_manager.h"
+#include "audio_interrupt_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,13 +32,15 @@ enum class AudioPolicyClientCode {
     ON_VOLUME_KEY_EVENT = 0,
     ON_FOCUS_INFO_CHANGED,
     ON_DEVICE_CHANGE,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_DEVICE_CHANGE,
+    ON_INTERRUPT,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_INTERRUPT,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
     virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) =0;
+    virtual void OnInterrupt(const InterruptEventInternal &interruptEvent) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicyClient");

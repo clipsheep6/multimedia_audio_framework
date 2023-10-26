@@ -165,9 +165,10 @@ public:
 
     int32_t UnsetPreferredInputDeviceChangeCallback() override;
 
-    int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
+    int32_t RegisterAudioInterruptCallbackClient(const sptr<IRemoteObject> &object,
+        const uint32_t sessionID, const uint32_t code) override;
 
-    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) override;
+    int32_t UnRegisterAudioInterruptCallbackClient(const uint32_t sessionID, const uint32_t code) override;
 
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
 
@@ -411,6 +412,7 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> volumeKeyEventPolicyProxyCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> focusInfoChangePolicyProxyCBMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> audioInterruptPolicyProxyCBMap_;
 
     std::mutex volumeKeyEventMutex_;
     std::mutex interruptMutex_;

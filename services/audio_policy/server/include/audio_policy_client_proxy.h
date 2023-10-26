@@ -19,9 +19,11 @@
 #include "audio_policy_client.h"
 #include "audio_system_manager.h"
 #include "audio_interrupt_info.h"
+#include "audio_interrupt_callback.h"
 #include "audio_focus_info_change_callback_listener.h"
 #include "volume_key_event_callback_listener.h"
 #include "device_change_callback_listener.h"
+#include "audio_interrupt_callback_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,6 +37,7 @@ public:
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
+    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
@@ -43,17 +46,20 @@ private:
     int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object);
     int32_t SetFocusInfoChangeCallback(const sptr<IRemoteObject> &object);
     int32_t SetDeviceChangeCallback(const sptr<IRemoteObject> &object);
+    int32_t SetAudioInterruptCallback(const sptr<IRemoteObject> &object);
 
     using HandlerFunc = int32_t(AudioPolicyClientProxy::*)(const sptr<IRemoteObject> &object);
     static inline HandlerFunc handlers[] = {
         &AudioPolicyClientProxy::SetVolumeKeyEventCallback,
         &AudioPolicyClientProxy::SetFocusInfoChangeCallback,
         &AudioPolicyClientProxy::SetDeviceChangeCallback,
+        &AudioPolicyClientProxy::SetAudioInterruptCallback,
     };
 
     std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::shared_ptr<AudioManagerDeviceChangeCallback>> deviceChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioInterruptCallback>> audioInterruptCallbackList_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

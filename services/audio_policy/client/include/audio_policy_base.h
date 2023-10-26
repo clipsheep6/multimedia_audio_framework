@@ -96,15 +96,11 @@ public:
     virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
 
     virtual int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
-/*
-    virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
-        const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) = 0;
-*/
-    virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterAudioInterruptCallbackClient(const sptr<IRemoteObject>& object, const uint32_t sessionID,
+        const uint32_t code) = 0;
 
-    virtual int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) = 0;
+    virtual int32_t UnRegisterAudioInterruptCallbackClient(const uint32_t sessionID, const uint32_t code) = 0;
 
     virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) = 0;
 

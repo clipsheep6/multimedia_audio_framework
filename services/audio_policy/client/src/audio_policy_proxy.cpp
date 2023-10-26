@@ -1051,7 +1051,8 @@ int32_t AudioPolicyProxy::UnregisterFocusInfoChangeCallbackClient(const uint32_t
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterAudioInterruptCallbackClient(const sptr<IRemoteObject>& object,
+    const uint32_t sessionID, const uint32_t code)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1065,19 +1066,21 @@ int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, co
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
+
     data.WriteUint32(sessionID);
+    data.WriteUint32(code);
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_AUDIO_INTERRUPT_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: set callback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy:RegisterAudioInterruptCallbackClient failed, error: %{public}d", error);
         return error;
     }
 
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID)
+int32_t AudioPolicyProxy::UnRegisterAudioInterruptCallbackClient(const uint32_t sessionID, const uint32_t code)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1087,11 +1090,13 @@ int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID)
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
+
     data.WriteUint32(sessionID);
+    data.WriteUint32(code);
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_AUDIO_INTERRUPT_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: unset callback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy:UnRegisterAudioInterruptCallbackClient failed, error: %{public}d", error);
         return error;
     }
 

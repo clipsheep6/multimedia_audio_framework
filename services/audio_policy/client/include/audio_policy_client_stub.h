@@ -33,12 +33,13 @@ private:
     void HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply);
     void HandleAudioFocusInfoChange(MessageParcel &data, MessageParcel &reply);
     void HandleDeviceChange(MessageParcel &data, MessageParcel &reply);
+    void HandleAudioInterrupt(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void (AudioPolicyClientStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[]  = {
         &AudioPolicyClientStub::HandleVolumeKeyEvent,
         &AudioPolicyClientStub::HandleAudioFocusInfoChange,
-        &AudioPolicyClientStub::HandleDeviceChange,
+        &AudioPolicyClientStub::HandleAudioInterrupt,
     };
 };
 } // namespace AudioStandard

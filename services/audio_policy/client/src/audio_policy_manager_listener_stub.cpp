@@ -57,7 +57,6 @@ void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &da
 }
 */
 
-/*
 void AudioPolicyManagerListenerStub::ReadAudioFocusInfoChangeData(MessageParcel &data,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
@@ -70,7 +69,6 @@ void AudioPolicyManagerListenerStub::ReadAudioFocusInfoChangeData(MessageParcel 
         focusInfoList.push_back(focusInfo);
     }
 }
-*/
 
 int AudioPolicyManagerListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)

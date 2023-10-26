@@ -78,6 +78,23 @@ void AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &deviceC
     }
 }
 
+int32_t AudioPolicyClientStubImpl::SetAudioInterruptCallback(const std::shared_ptr<AudioInterruptCallback> &cb)
+{
+    audioInterruptCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+int32_t AudioPolicyClientStubImpl::UnSetAudioInterruptCallback()
+{
+    audioInterruptCallbackList_.clear();
+    return SUCCESS;
+}
+
+void AudioPolicyClientStubImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
+{
+    for (auto it = audioInterruptCallbackList_.begin(); it != audioInterruptCallbackList_.end(); ++it) {
+        (*it)->OnInterrupt(interruptEvent);
+    }
+}
 
 void AudioPolicyClientStubImpl::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -92,6 +109,9 @@ void AudioPolicyClientStubImpl::ProcessEvent(const AppExecFwk::InnerEvent::Point
     } else if (eventId == static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE)) {
         DeviceChangeAction deviceChangeAction = *(event->GetUniqueObject<DeviceChangeAction>());
         OnDeviceChange(deviceChangeAction);
+    } else if (eventId == static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT)) {
+        InterruptEventInternal interruptEvent = *(event->GetUniqueObject<InterruptEventInternal>());
+        OnInterrupt(interruptEvent);
     }
 }
 } // namespace AudioStandard

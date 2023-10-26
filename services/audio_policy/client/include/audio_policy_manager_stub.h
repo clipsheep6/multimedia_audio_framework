@@ -46,8 +46,8 @@ private:
     void IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterAudioInterruptCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+    void UnRegisterAudioInterruptCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
     void DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
     void SetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply);
@@ -142,8 +142,8 @@ private:
         &AudioPolicyManagerStub::IsMicrophoneMuteInternal,
         &AudioPolicyManagerStub::SetRingerModeCallbackInternal,
         &AudioPolicyManagerStub::UnsetRingerModeCallbackInternal,
-        &AudioPolicyManagerStub::SetInterruptCallbackInternal,
-        &AudioPolicyManagerStub::UnsetInterruptCallbackInternal,
+        &AudioPolicyManagerStub::RegisterAudioInterruptCallbackClientInternal,
+        &AudioPolicyManagerStub::UnRegisterAudioInterruptCallbackClientInternal,
         &AudioPolicyManagerStub::ActivateInterruptInternal,
         &AudioPolicyManagerStub::DeactivateInterruptInternal,
         &AudioPolicyManagerStub::SetAudioManagerInterruptCbInternal,

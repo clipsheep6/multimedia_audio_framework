@@ -711,24 +711,24 @@ int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
         return ERR_INVALID_PARAM;
     }
 
-    // Need to lock member variable listenerStub_ as SetAudioInterruptCallback
-    // can be called from different threads in multi renderer usage
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    listenerStub_ = new(std::nothrow) AudioPolicyManagerListenerStub();
-    if (listenerStub_ == nullptr) {
-        AUDIO_ERR_LOG("SetAudioInterruptCallback: object null");
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient();
+    if (audioPolicyClientStub == nullptr) {
+        AUDIO_ERR_LOG("SetVolumeKeyEventCallback: audioPolicyClientStub get error");
+        lock.unlock();
         return ERROR;
     }
-    listenerStub_->SetInterruptCallback(callback);
-
-    sptr<IRemoteObject> object = listenerStub_->AsObject();
+    audioPolicyClientStub->SetAudioInterruptCallback(callback);
+    sptr<IRemoteObject> object = audioPolicyClientStub->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetAudioInterruptCallback: listenerStub->AsObject is nullptr..");
+        AUDIO_ERR_LOG("SetAudioInterruptCallback: audioPolicyClientStub->AsObject is nullptr.");
+        lock.unlock();
         return ERROR;
     }
-    lock.unlock(); // unlock once it is converted into IRemoteObject
+    lock.unlock();
 
-    return gsp->SetAudioInterruptCallback(sessionID, object);
+    return gsp->RegisterAudioInterruptCallbackClient(object, sessionID,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
 }
 
 int32_t AudioPolicyManager::UnsetAudioInterruptCallback(const uint32_t sessionID)
@@ -738,7 +738,9 @@ int32_t AudioPolicyManager::UnsetAudioInterruptCallback(const uint32_t sessionID
         AUDIO_ERR_LOG("UnsetAudioInterruptCallback: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->UnsetAudioInterruptCallback(sessionID);
+
+    return gsp->UnRegisterAudioInterruptCallbackClient(sessionID,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
 }
 
 int32_t AudioPolicyManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)

@@ -91,5 +91,16 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
     SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), object));
     reply.WriteInt32(SUCCESS);
 }
+
+void AudioPolicyClientStub::HandleAudioInterrupt(MessageParcel &data, MessageParcel &reply)
+{
+    std::unique_ptr<InterruptEventInternal> object = std::make_unique<InterruptEventInternal>();
+    object->eventType = static_cast<InterruptType>(data.ReadInt32());
+    object->forceType = static_cast<InterruptForceType>(data.ReadInt32());
+    object->hintType = static_cast<InterruptHint>(data.ReadInt32());
+    object->duckVolume = data.ReadFloat();
+    SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT), object));
+    reply.WriteInt32(SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
