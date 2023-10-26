@@ -38,29 +38,35 @@ public:
 
     std::unordered_map<AudioDevicePrivacyType, std::list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
 
-    // 所有蓝牙设备
-    std::vector<unique_ptr<AudioDeviceDescriptor>> bluetoothDevices_;
+    // 远程播放设备
+    std::vector<unique_ptr<AudioDeviceDescriptor>> RemoteRenderDevices;
 
-    // 所有远程设备
-    std::vector<unique_ptr<AudioDeviceDescriptor>> remoteDevices_;
+    // 远程录制设备
+    std::vector<unique_ptr<AudioDeviceDescriptor>> RemoteCaptureDevices;
 
-    // 所有通话设备
-    std::vector<unique_ptr<AudioDeviceDescriptor>> communicationDevices_;
+    // 隐私通话设备
+    std::vector<unique_ptr<AudioDeviceDescriptor>> CommRenderPrivacyDevices;
 
-    // 所有媒体设备
-    std::vector<unique_ptr<AudioDeviceDescriptor>> mediaDevices_;
+    // 公共通话设备
+    std::vector<unique_ptr<AudioDeviceDescriptor>> CommRenderPublicDevices;
 
-    // 所有录音设备
-    std::vector<unique_ptr<AudioDeviceDescriptor>> captureDevices_;
+    // 隐私通话录制设备
+    std::vector<unique_ptr<AudioDeviceDescriptor>> CommCapturePrivacyDevices;
 
-    // 所有隐私设备
-    std::vector<unique_ptr<AudioDeviceDescriptor>> privacyDevices_;
+    // 公共通话录制设备
+    std::vector<unique_ptr<AudioDeviceDescriptor>> CommCapturePublicDevices;
 
-    // 所有公共属性设备
-    std::vector<unique_ptr<AudioDeviceDescriptor>> publicDevices_;
+    // 私有媒体设备
+    std::vector<unique_ptr<AudioDeviceDescriptor>> MediaPrivacyDevices;
 
-    // 所有默认设备
-    std::vector<unique_ptr<AudioDeviceDescriptor>> defaultDevices_;
+    // 公共媒体设备
+    std::vector<unique_ptr<AudioDeviceDescriptor>> MediaPublicDevices;
+
+    // 私有录制设备
+    std::vector<unique_ptr<AudioDeviceDescriptor>> CapturePrivacyDevices;
+
+    // 公共录制设备
+    std::vector<unique_ptr<AudioDeviceDescriptor>> CapturePublicDevices;
 
 
     void AddNewDevice(const AudioDeviceDescriptor &devDesc);
@@ -71,34 +77,25 @@ public:
 
     int32_t GetDeviceUsageFromType(const DeviceType devType)const;
 
-    void GetDeviceForPrivacyWithType(const DeviceType devType) const
+    std::vector<unique_ptr<AudioDeviceDescriptor>> getRemoteRenderDevices();
 
-    // 非通话的隐私设备列表
-    std::vector<unique_ptr<AudioDeviceDescriptor>> GetPrivacyDevices();
+    std::vector<unique_ptr<AudioDeviceDescriptor>> getRemoteCaptureDevices();
 
-    // 非通话的公共属性设备列表
-    std::vector<unique_ptr<AudioDeviceDescriptor>> GetPublicDevices();
+    std::vector<unique_ptr<AudioDeviceDescriptor>> getCommRenderPrivacyDevices();
 
-    // 非通话的默认设备列表
-    std::vector<unique_ptr<AudioDeviceDescriptor>> GetDefautlDevices();
+    std::vector<unique_ptr<AudioDeviceDescriptor>> getCommRenderPublicDevices();
 
-    // 非通话的所有设备列表
-    std::vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices();
+    std::vector<unique_ptr<AudioDeviceDescriptor>> getCommCapturePrivacyDevices();
 
-    // 通话的隐私设备列表
-    std::vector<unique_ptr<AudioDeviceDescriptor>> GetPrivacyComDevices();
+    std::vector<unique_ptr<AudioDeviceDescriptor>> getCommCapturePublicDevices();
 
-    // 通话的公共属性设备列表
-    std::vector<unique_ptr<AudioDeviceDescriptor>> GetPublicComDevices();
+    std::vector<unique_ptr<AudioDeviceDescriptor>> getMediaRenderDevices();
 
-    // 通话的默认设备列表
-    std::vector<unique_ptr<AudioDeviceDescriptor>> GetDefautlComDevices();
+    std::vector<unique_ptr<AudioDeviceDescriptor>> getMediaCaptureDevices();
 
-    // 通话的所有设备列表
-    std::vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableComDevices();
+    std::vector<unique_ptr<AudioDeviceDescriptor>> getCapturePrivacyDevices();
 
-    // 录音的所有设备列表
-    std::vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableRecordDevices();
+    std::vector<unique_ptr<AudioDeviceDescriptor>> getCapturePublicDevices();
 
 };
 } // namespace AudioStandard

@@ -2382,7 +2382,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
-        audioDeviceManager.RemoveDevice(deviceDesc);
+        // audioDeviceManager.RemoveDevice(deviceDesc);
         result = HandleLocalDeviceDisconnected(devType, macAddress);
         if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
             isArmUsbDevice_ = false;
