@@ -2360,11 +2360,13 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             return descriptor->deviceType_ == devType;
         }
     };
+    AudioDeviceManager audioDeviceManager = AudioDeviceManager.GetAudioDeviceManager();
     if (isConnected) {
         // If device already in list, remove it else do not modify the list
         connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
             connectedDevices_.end());
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
+        audioDeviceManager.AddNewDevice(deviceDesc);
 
         if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
             // If the A2DP device is connecting when calling, add it to connectedDevices_ and donot activate it now
@@ -2380,6 +2382,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
+        // audioDeviceManager.RemoveDevice(deviceDesc);
         result = HandleLocalDeviceDisconnected(devType, macAddress);
         if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
             isArmUsbDevice_ = false;
