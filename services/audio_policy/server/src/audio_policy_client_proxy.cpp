@@ -27,10 +27,10 @@ AudioPolicyClientProxy::AudioPolicyClientProxy(const sptr<IRemoteObject> &impl)
 AudioPolicyClientProxy::~AudioPolicyClientProxy()
 {}
 
-VolumeKeyEventCallbackListener::VolumeKeyEventCallbackListener(const sptr<IAudioPolicyClient> &listener)
+AudioEnhancementMonitoringCallback::AudioEnhancementMonitoringCallback(const sptr<IAudioPolicyClient> &listener)
 : listener_(listener) {}
 
-VolumeKeyEventCallbackListener::~VolumeKeyEventCallbackListener() {}
+AudioEnhancementMonitoringCallback::~AudioEnhancementMonitoringCallback() {}
 
 int32_t AudioPolicyClientProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code)
 {
@@ -59,7 +59,7 @@ int32_t AudioPolicyClientProxy::SetVolumeKeyEventCallback(const sptr<IRemoteObje
     sptr<IAudioPolicyClient> listener = iface_cast<IAudioPolicyClient>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
         "SetVolumeKeyEventCallback listener obj cast failed");
-    std::shared_ptr<VolumeKeyEventCallback> callback = std::make_shared<VolumeKeyEventCallbackListener>(listener);
+    std::shared_ptr<VolumeKeyEventCallback> callback = std::make_shared<AudioEnhancementMonitoringCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "SetVolumeKeyEventCallback failed to create cb obj");
     volumeKeyEventCallbackList_.push_back(callback);
@@ -93,10 +93,10 @@ void AudioPolicyClientProxy::OnVolumeKeyEvent(VolumeEvent volumeEvent)
     reply.ReadInt32();
 }
 
-AudioFocusInfoChangeCallbackListener::AudioFocusInfoChangeCallbackListener(const sptr<IAudioPolicyClient> &listener)
-: listener_(listener) {}
+//AudioFocusInfoChangeCallbackListener::AudioFocusInfoChangeCallbackListener(const sptr<IAudioPolicyClient> &listener)
+//: listener_(listener) {}
 
-AudioFocusInfoChangeCallbackListener::~AudioFocusInfoChangeCallbackListener() {}
+//AudioFocusInfoChangeCallbackListener::~AudioFocusInfoChangeCallbackListener() {}
 
 
 int32_t AudioPolicyClientProxy::SetFocusInfoChangeCallback(const sptr<IRemoteObject> &object)
@@ -105,7 +105,7 @@ int32_t AudioPolicyClientProxy::SetFocusInfoChangeCallback(const sptr<IRemoteObj
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
         "SetFocusInfoChangeCallback listener obj cast failed");
     std::shared_ptr<AudioFocusInfoChangeCallback> callback =
-        std::make_shared<AudioFocusInfoChangeCallbackListener>(listener);
+        std::make_shared<AudioEnhancementMonitoringCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "SetFocusInfoChangeCallback failed to create cb obj");
     focusInfoChangeCallbackList_.push_back(callback);
@@ -142,10 +142,10 @@ void AudioPolicyClientProxy::OnAudioFocusInfoChange(
     reply.ReadInt32();
 }
 
-DeviceChangeCallbackListener::DeviceChangeCallbackListener(const sptr<IAudioPolicyClient> &listener)
-: listener_(listener) {}
+// DeviceChangeCallbackListener::DeviceChangeCallbackListener(const sptr<IAudioPolicyClient> &listener)
+// : listener_(listener) {}
 
-DeviceChangeCallbackListener::~DeviceChangeCallbackListener() {}
+// DeviceChangeCallbackListener::~DeviceChangeCallbackListener() {}
 
 int32_t AudioPolicyClientProxy::SetDeviceChangeCallback(const sptr<IRemoteObject> &object)
 {
@@ -153,7 +153,7 @@ int32_t AudioPolicyClientProxy::SetDeviceChangeCallback(const sptr<IRemoteObject
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
         "SetFocusInfoChangeCallback listener obj cast failed");
     std::shared_ptr<AudioManagerDeviceChangeCallback> callback =
-        std::make_shared<DeviceChangeCallbackListener>(listener);
+        std::make_shared<AudioEnhancementMonitoringCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "SetFocusInfoChangeCallback failed to create cb obj");
     deviceChangeCallbackList_.push_back(callback);
@@ -193,10 +193,10 @@ void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChan
     reply.ReadInt32();
 }
 
-AudioInterruptCallbackListener::AudioInterruptCallbackListener(const sptr<IAudioPolicyClient> &listener)
-: listener_(listener) {}
+// AudioInterruptCallbackListener::AudioInterruptCallbackListener(const sptr<IAudioPolicyClient> &listener)
+// : listener_(listener) {}
 
-AudioInterruptCallbackListener::~AudioInterruptCallbackListener() {}
+// AudioInterruptCallbackListener::~AudioInterruptCallbackListener() {}
 
 int32_t AudioPolicyClientProxy::SetAudioInterruptCallback(const sptr<IRemoteObject> &object)
 {
@@ -204,7 +204,7 @@ int32_t AudioPolicyClientProxy::SetAudioInterruptCallback(const sptr<IRemoteObje
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
         "SetAudioInterruptCallback listener obj cast failed");
     std::shared_ptr<AudioInterruptCallback> callback =
-        std::make_shared<AudioInterruptCallbackListener>(listener);
+        std::make_shared<AudioEnhancementMonitoringCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "SetFocusInfoChangeCallback failed to create cb obj");
     audioInterruptCallbackList_.push_back(callback);
