@@ -22,8 +22,8 @@
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
-//#include "audio_policy_service.h"
 #include "audio_device_info.h"
+#include "audio_device_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
