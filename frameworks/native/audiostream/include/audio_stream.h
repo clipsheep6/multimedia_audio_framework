@@ -108,8 +108,11 @@ private:
 
     void OpenDumpFile();
     void ProcessDataByAudioBlend(uint8_t *buffer, size_t bufferSize);
-    void ProcessDataWithStreamVolume(uint8_t *buffer, size_t bufferSize);
-    void RampStreamVolume();
+    void ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize);
+
+    template <typename T>
+    void ProcessDataByVolumeRampInner(T *buffer, size_t bufferSize);
+
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     AudioStreamType eStreamType_;
     AudioMode eMode_;
@@ -144,7 +147,7 @@ private:
     VolumeRamp volumeRamp_;
     FILE *pfd_;
     bool streamTrackerRegistered_ = false;
-    float streamVolume_;
+    float streamRampVolume_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

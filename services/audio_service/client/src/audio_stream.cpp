@@ -47,7 +47,7 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
       isFirstRead_(false),
       isFirstWrite_(false),
       pfd_(nullptr),
-      streamVolume_(1.0)
+      streamRampVolume_(1.0)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
@@ -454,7 +454,7 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     }
 
     ProcessDataByAudioBlend(buffer, bufferSize);
-    ProcessDataWithStreamVolume(buffer, bufferSize);
+    ProcessDataByVolumeRamp(buffer, bufferSize);
     size_t bytesWritten = WriteStream(stream, writeError);
     if (writeError != 0) {
         AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
@@ -621,13 +621,13 @@ int32_t AudioStream::SetVolume(float volume)
     if (volumeRamp_.IsActive()) {
         volumeRamp_.Terminate();
     }
-    streamVolume_ = volume;
-    return SUCCESS;
+    streamRampVolume_ = volume;
+    return SetStreamVolume(volume);
 }
 
 float AudioStream::GetVolume()
 {
-    return streamVolume_;
+    return GetStreamVolume();
 }
 
 int32_t AudioStream::SetRenderRate(AudioRendererRate renderRate)
@@ -890,7 +890,7 @@ void AudioStream::WriteCbTheadLoop()
             }
 
             ProcessDataByAudioBlend(stream.buffer, stream.bufferLen);
-            ProcessDataWithStreamVolume(stream.buffer, stream.bufferLen);
+            ProcessDataByVolumeRamp(stream.buffer, stream.bufferLen);
 
             bytesWritten = WriteStreamInCb(stream, writeError);
             if (writeError != 0) {
@@ -1045,7 +1045,7 @@ int32_t AudioStream::SetVolumeWithRamp(float targetVolume, int32_t duration)
         return ERR_ILLEGAL_STATE;
     }
 
-    float currStreamVol = GetVolume();
+    float currStreamVol = streamRampVolume_;
     if (currStreamVol == targetVolume) {
         return SUCCESS;
     }
@@ -1054,18 +1054,32 @@ int32_t AudioStream::SetVolumeWithRamp(float targetVolume, int32_t duration)
     return SUCCESS;
 }
 
-void AudioStream::RampStreamVolume()
+void AudioStream::ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize)
 {
-    if (volumeRamp_.IsActive()) {
-        streamVolume_ = volumeRamp_.GetRampVolume();
+    if (streamParams_.format == SAMPLE_U8) {
+        AUDIO_ERR_LOG("SAMPLE_U8");
+        ProcessDataByVolumeRampInner(buffer, bufferSize);
+    } else if (streamParams_.format == SAMPLE_S16LE ) {
+        bufferSize /= 2;
+        AUDIO_ERR_LOG("SAMPLE_S16LE");
+        ProcessDataByVolumeRampInner(reinterpret_cast<int16_t*>(buffer), bufferSize);
+    } else if (streamParams_.format == SAMPLE_S32LE) {
+        AUDIO_ERR_LOG("SAMPLE_S32LE");
+        bufferSize /= 4;
+        ProcessDataByVolumeRampInner(reinterpret_cast<int32_t*>(buffer), bufferSize);
     }
 }
 
-void AudioStream::ProcessDataWithStreamVolume(uint8_t *buffer, size_t bufferSize)
+
+template <typename T>
+void AudioStream::ProcessDataByVolumeRampInner(T *buffer, size_t bufferSize)
 {
-    RampStreamVolume();
-    for (int i = bufferSize; i > 0; i--) {
-        buffer[i] *= streamVolume_;
+    if (volumeRamp_.IsActive()) {
+        streamRampVolume_ = volumeRamp_.GetRampVolume();
+        AUDIO_ERR_LOG("streamRampVolume_:%{public}f size %{public}zd", streamRampVolume_, bufferSize);
+        for (int i = bufferSize; i > 0; i--) {
+            buffer[i] *= streamRampVolume_;
+        }
     }
 }
 } // namespace AudioStandard
