@@ -28,53 +28,24 @@ using namespace std;
 
 int32_t VOICE_MEDIA = 3; 
 
-// 远程播放设备
-std::vector<unique_ptr<AudioDeviceDescriptor>> RemoteRenderDevices = {};
-
-// 远程录制设备
-std::vector<unique_ptr<AudioDeviceDescriptor>> RemoteCaptureDevices = {};
-
-// 隐私通话设备
-std::vector<unique_ptr<AudioDeviceDescriptor>> CommRenderPrivacyDevices = {};
-
-// 公共通话设备
-std::vector<unique_ptr<AudioDeviceDescriptor>> CommRenderPublicDevices = {};
-
-// 隐私通话录制设备
-std::vector<unique_ptr<AudioDeviceDescriptor>> CommCapturePrivacyDevices = {};
-
-// 公共通话录制设备
-std::vector<unique_ptr<AudioDeviceDescriptor>> CommCapturePublicDevices = {};
-
-// 私有媒体设备
-std::vector<unique_ptr<AudioDeviceDescriptor>> MediaPrivacyDevices = {};
-
-// 公共媒体设备
-std::vector<unique_ptr<AudioDeviceDescriptor>> MediaPublicDevices = {};
-
-// 私有录制设备
-std::vector<unique_ptr<AudioDeviceDescriptor>> CapturePrivacyDevices = {};
-
-// 公共录制设备
-std::vector<unique_ptr<AudioDeviceDescriptor>> CapturePublicDevices = {};
-
-
 // 设备连接时进行添加并分类
-void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc) 
+void AudioDeviceManager::AddNewDevice (const AudioDeviceDescriptor &devDesc) 
 {
     AUDIO_ERR_LOG("WZX ADD NEW DEVICES.");
-    sptr<AudioDeviceDescriptor> newDevice = new(std::nothrow) AudioDeviceDescriptor(devDesc);
-    if (newDevice == nullptr) {
-        AUDIO_ERR_LOG("Device error: null device.");
+    int32_t usage = -1;
+
+    unique_ptr<AudioDeviceDescriptor> newDevice = make_unique<AudioDeviceDescriptor>(devDesc);
+    if (!newDevice) {
+        AUDIO_ERR_LOG("AddNewDevice memory allocation failed");
         return;
     }
 
 // 远程播放/远程录制
     if (newDevice->networkId_ != LOCAL_NETWORK_ID && newDevice->deviceRole_ == DeviceRole::OUTPUT_DEVICE) {
-        RemoteRenderDevices.push_back(newDevice);
+        remoteRenderDevices_.push_back(move(newDevice));
     }
-    if (newDevice->networkId_ != LOCAL_NETWORK_ID && newDevice->deviceRole_ = DeviceRole::INPUT_DEVICE) {
-        RemoteCaptureDevices.push_back(newDevice);
+    if (newDevice->networkId_ != LOCAL_NETWORK_ID && newDevice->deviceRole_ == DeviceRole::INPUT_DEVICE) {
+        remoteCaptureDevices_.push_back(move(newDevice));
     }
 
 // 私有媒体/公共媒体
@@ -82,10 +53,10 @@ void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc)
     if (mediaPrivacyDevices != devicePrivacyMaps_.end()) {
         auto mediaPrivacyDevList = mediaPrivacyDevices->second;
         for (auto mediaPrivacyDev : mediaPrivacyDevList) {
-            int32_t usage = GetDeviceUsageFromType(mediaPrivacyDev->deviceType_);
+            usage = GetDeviceUsageFromType(mediaPrivacyDev.deviceType);
             if ((usage == DeviceUsage::MEDIA || usage == VOICE_MEDIA) 
-                && (mediaPrivacyDev->deviceType_ == newDevice->deviceType_)) {
-                MediaPrivacyDevices.push_back(newDevice);
+                && (mediaPrivacyDev.deviceType == newDevice->deviceType_)) {
+                mediaPrivacyDevices_.push_back(move(newDevice));
             }
         }
     }
@@ -93,10 +64,10 @@ void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc)
     if (mediaPublicDevices != devicePrivacyMaps_.end()) {
         auto mediaPublicDevList = mediaPublicDevices->second;
         for (auto mediaPublicDev : mediaPublicDevList) {
-            int32_t usage = GetDeviceUsageFromType(mediaPublicDev->deviceType_);
-            if ((usage == DeviceUsage::MEDIA || usage == VOICE_MEDIA) 
-                && (mediaPublicDev->deviceType_ == newDevice->deviceType_)) {
-                MediaPublicDevices.push_back(newDevice);
+            usage = GetDeviceUsageFromType(mediaPublicDev.deviceType);
+            if ((usage == DeviceUsage::MEDIA || usage == VOICE_MEDIA)
+                && (mediaPublicDev.deviceType == newDevice->deviceType_)) {
+                mediaPublicDevices_.push_back(move(newDevice));
             }
         }
     }
@@ -106,11 +77,11 @@ void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc)
     if (comPrivacyDevices != devicePrivacyMaps_.end()) {
         auto comPrivacyDevList = comPrivacyDevices->second;
         for (auto comPrivacyDev : comPrivacyDevList) {
-            int32_t usage = GetDeviceUsageFromType(comPrivacyDev->deviceType_);
+            usage = GetDeviceUsageFromType(comPrivacyDev.deviceType);
             if ((usage == DeviceUsage::MEDIA || usage == VOICE_MEDIA) 
-                && (comPrivacyDev->deviceType_ == newDevice->deviceType_) 
+                && (comPrivacyDev.deviceType == newDevice->deviceType_)
                 && (newDevice->deviceRole_ == DeviceRole::OUTPUT_DEVICE)) {
-                CommRenderPrivacyDevices.push_back(newDevice);
+                commRenderPrivacyDevices_.push_back(move(newDevice));
             }
         }
     }
@@ -118,11 +89,11 @@ void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc)
     if (comPublicDevices != devicePrivacyMaps_.end()) {
         auto comPublicDevList = comPublicDevices->second;
         for (auto comPublicDev : comPublicDevList) {
-            int32_t usage = GetDeviceUsageFromType(comPublicDev->deviceType_);
+            usage = GetDeviceUsageFromType(comPublicDev.deviceType);
             if ((usage == DeviceUsage::MEDIA || usage == VOICE_MEDIA) 
-                && (comPublicDev->deviceType_ == newDevice->deviceType_) 
+                && (comPublicDev.deviceType == newDevice->deviceType_)
                 && (newDevice->deviceRole_ == DeviceRole::OUTPUT_DEVICE)) {
-                CommRenderPublicDevices.push_back(newDevice);
+                commRenderPublicDevices_.push_back(move(newDevice));
             }
         }
     }
@@ -132,9 +103,9 @@ void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc)
     if (capPrivacyDevices != devicePrivacyMaps_.end()) {
         auto capPrivacyDevList = capPrivacyDevices->second;
         for (auto capPrivacyDev : capPrivacyDevList) {
-            if ((capPrivacyDev->deviceType_ == newDevice->deviceType_) 
+            if ((capPrivacyDev.deviceType == newDevice->deviceType_) 
                 && (newDevice->deviceRole_ == DeviceRole::INPUT_DEVICE)) {
-                CapturePrivacyDevices.push_back(newDevice);
+                capturePrivacyDevices_.push_back(move(newDevice));
             }
         }
     }
@@ -142,9 +113,9 @@ void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc)
     if (capPublicDevices != devicePrivacyMaps_.end()) {
         auto capPublicDevList = capPublicDevices->second;
         for (auto capPublicDev : capPublicDevList) {
-            if ((capPublicDev->deviceType_ == newDevice->deviceType_) 
+            if ((capPublicDev.deviceType == newDevice->deviceType_) 
                 && (newDevice->deviceRole_ == DeviceRole::INPUT_DEVICE)) {
-                CapturePublicDevices.push_back(newDevice);
+                capturePublicDevices_.push_back(move(newDevice));
             }
         }
     }
@@ -154,11 +125,11 @@ void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc)
     if (comCapPrivacyDevices != devicePrivacyMaps_.end()) {
         auto comCapPrivacyDevList = comCapPrivacyDevices->second;
         for (auto comCapPrivacyDev : comCapPrivacyDevList) {
-            int32_t usage = GetDeviceUsageFromType(comCapPrivacyDev->deviceType_);
-            if ((comCapPrivacyDev->deviceType_ == newDevice->deviceType_) 
+            usage = GetDeviceUsageFromType(comCapPrivacyDev.deviceType);
+            if ((comCapPrivacyDev.deviceType == newDevice->deviceType_) 
                 && (newDevice->deviceRole_ == DeviceRole::INPUT_DEVICE)
                 && (usage == DeviceUsage::VOICE || usage == VOICE_MEDIA)) {
-                CommCapturePrivacyDevices.push_back(newDevice);
+                commCapturePrivacyDevices_.push_back(move(newDevice));
             }
         }
     }
@@ -166,13 +137,15 @@ void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc)
     if (comCapPublicDevices != devicePrivacyMaps_.end()) {
         auto comCapPublicDevList = comCapPublicDevices->second;
         for (auto comCapPublicDev : comCapPublicDevList) {
-            if ((comCapPublicDev->deviceType_ == newDevice->deviceType_) 
+            usage = GetDeviceUsageFromType(comCapPublicDev.deviceType);
+            if ((comCapPublicDev.deviceType == newDevice->deviceType_)
                 && (newDevice->deviceRole_ == DeviceRole::INPUT_DEVICE)
                 && (usage == DeviceUsage::VOICE || usage == VOICE_MEDIA)) {
-                CommCapturePublicDevices.push_back(newDevice);
+                commCapturePublicDevices_.push_back(move(newDevice));
             }
         }
     }
+
 // auto negativeDevices = devicePrivacyMaps_.find(AudioDevicePrivacyType::TYPE_NEGATIVE);
     // if (negativeDevices != devicePrivacyMaps_.end()) {
     //     auto negativeDevList = privacyDevices->second;
@@ -183,7 +156,7 @@ void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc)
     //     }
     // }
 }
-
+ 
 // 设备断开时删除对应设备
 // void AudioDeviceManager :: RemoveNewDevice (const AudioDeviceDescriptor &devDesc) 
 // {
@@ -192,7 +165,7 @@ void AudioDeviceManager :: AddNewDevice (const AudioDeviceDescriptor &devDesc)
 // 解析完成
 void AudioDeviceManager::OnXmlParsingCompleted(const std::unordered_map<AudioDevicePrivacyType, std::list<DevicePrivacyInfo>> &xmlData)
 {
-    AUDIO_INFO_LOG("WZX XmlParsingComplete DevicePrivacyInfo num [%{public}zu]", __func__, xmlData.size());
+    AUDIO_INFO_LOG("WZX XmlParsingComplete DevicePrivacyInfo num %{public}s [%{public}zu]", __func__, xmlData.size());
     if (xmlData.empty()) {
         AUDIO_ERR_LOG("WZX failed to parse xml file. Received data is empty");
         return;
@@ -218,54 +191,130 @@ int32_t AudioDeviceManager::GetDeviceUsageFromType(const DeviceType devType) con
 }
 
 
-std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDevices()
+std::vector<unique_ptr<AudioDeviceDescriptor>> &AudioDeviceManager::GetRemoteRenderDevices() 
 {
-    return RemoteRenderDevices;
+    return remoteRenderDevices_;
 }
 
-std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteCaptureDevices()
+
+std::vector<unique_ptr<AudioDeviceDescriptor>> &AudioDeviceManager::GetRemoteCaptureDevices() 
 {
-    return RemoteCaptureDevices;
+    return remoteCaptureDevices_;
 }
 
-std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPrivacyDevices()
+std::vector<unique_ptr<AudioDeviceDescriptor>> &AudioDeviceManager::GetCommRenderPrivacyDevices() 
 {
-    return CommRenderPrivacyDevices;
+    return commRenderPrivacyDevices_;
 }
 
-std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPublicDevices()
+std::vector<unique_ptr<AudioDeviceDescriptor>> &AudioDeviceManager::GetCommRenderPublicDevices() 
 {
-    return CommRenderPublicDevices;
+    return commRenderPublicDevices_;
 }
 
-std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePrivacyDevices()
+std::vector<unique_ptr<AudioDeviceDescriptor>> &AudioDeviceManager::GetCommCapturePrivacyDevices() 
 {
-    return CommCapturePrivacyDevices;
+    return commCapturePrivacyDevices_;
 }
 
-std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePublicDevices()
+std::vector<unique_ptr<AudioDeviceDescriptor>> &AudioDeviceManager::GetCommCapturePublicDevices() 
 {
-    return GetCommCapturePublicDevices;
+    return commCapturePublicDevices_;
 }
 
-std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::getMediaRenderDevices()
+std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderDevices() const
 {
-    return getMediaRenderDevices;
+    std::vector<unique_ptr<AudioDeviceDescriptor>> mediaRenderDevices_;
+    for (auto &renPriDevice : mediaPrivacyDevices_) {
+        unique_ptr<AudioDeviceDescriptor> renderPriDevice = make_unique<AudioDeviceDescriptor>();
+        if (renPriDevice->deviceRole_ == DeviceRole::OUTPUT_DEVICE) {
+            renderPriDevice->deviceType_ = renPriDevice->deviceType_;
+            renderPriDevice->deviceRole_ = renPriDevice->deviceRole_;
+            renderPriDevice->deviceId_ = renPriDevice->deviceId_;
+            renderPriDevice->channelMasks_ = renPriDevice->channelMasks_;
+            renderPriDevice->channelIndexMasks_ = renPriDevice->channelIndexMasks_;
+            renderPriDevice->deviceName_ = renPriDevice->deviceName_;
+            renderPriDevice->macAddress_ = renPriDevice->macAddress_;
+            renderPriDevice->interruptGroupId_ = renPriDevice->interruptGroupId_;
+            renderPriDevice->volumeGroupId_ = renPriDevice->volumeGroupId_;
+            renderPriDevice->networkId_ = renPriDevice->networkId_;
+            renderPriDevice->displayName_ = renPriDevice->displayName_;
+            renderPriDevice->audioStreamInfo_ = renPriDevice->audioStreamInfo_;
+            //继续赋值
+            mediaRenderDevices_.push_back(move(renderPriDevice));
+        }
+    }
+    for (auto &renPubDevice : mediaPublicDevices_) {
+        unique_ptr<AudioDeviceDescriptor> renderPubDevice = make_unique<AudioDeviceDescriptor>();
+        if (renPubDevice->deviceRole_ == DeviceRole::OUTPUT_DEVICE) {
+            renderPubDevice->deviceType_ = renPubDevice->deviceType_;
+            renderPubDevice->deviceRole_ = renPubDevice->deviceRole_;
+            renderPubDevice->deviceId_ = renPubDevice->deviceId_;
+            renderPubDevice->channelMasks_ = renPubDevice->channelMasks_;
+            renderPubDevice->channelIndexMasks_ = renPubDevice->channelIndexMasks_;
+            renderPubDevice->deviceName_ = renPubDevice->deviceName_;
+            renderPubDevice->macAddress_ = renPubDevice->macAddress_;
+            renderPubDevice->interruptGroupId_ = renPubDevice->interruptGroupId_;
+            renderPubDevice->volumeGroupId_ = renPubDevice->volumeGroupId_;
+            renderPubDevice->networkId_ = renPubDevice->networkId_;
+            renderPubDevice->displayName_ = renPubDevice->displayName_;
+            renderPubDevice->audioStreamInfo_ = renPubDevice->audioStreamInfo_;
+            mediaRenderDevices_.push_back(move(renderPubDevice));
+        }
+    }
+    return mediaRenderDevices_;
 }
 
-std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::getMediaCaptureDevices()
+std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCaptureDevices() const
 {
-    return getMediaCaptureDevices; 
+    std::vector<unique_ptr<AudioDeviceDescriptor>> mediaCaptureDevices_;
+    for (auto &capPriDevice : mediaPrivacyDevices_) {
+        unique_ptr<AudioDeviceDescriptor> capturePriDevice = make_unique<AudioDeviceDescriptor>();
+        if (capPriDevice->deviceRole_ == DeviceRole::INPUT_DEVICE) {
+            capturePriDevice->deviceType_ = capPriDevice->deviceType_;
+            capturePriDevice->deviceRole_ = capPriDevice->deviceRole_;
+            capturePriDevice->deviceId_ = capPriDevice->deviceId_;
+            capturePriDevice->channelMasks_ = capPriDevice->channelMasks_;
+            capturePriDevice->channelIndexMasks_ = capPriDevice->channelIndexMasks_;
+            capturePriDevice->deviceName_ = capPriDevice->deviceName_;
+            capturePriDevice->macAddress_ = capPriDevice->macAddress_;
+            capturePriDevice->interruptGroupId_ = capPriDevice->interruptGroupId_;
+            capturePriDevice->volumeGroupId_ = capPriDevice->volumeGroupId_;
+            capturePriDevice->networkId_ = capPriDevice->networkId_;
+            capturePriDevice->displayName_ = capPriDevice->displayName_;
+            capturePriDevice->audioStreamInfo_ = capPriDevice->audioStreamInfo_;
+            mediaCaptureDevices_.push_back(move(capturePriDevice));
+        }
+    }
+    for (auto &capPubDevice : mediaPublicDevices_) {
+        unique_ptr<AudioDeviceDescriptor> capturePubDevice = make_unique<AudioDeviceDescriptor>();
+        if (capPubDevice->deviceRole_ == DeviceRole::INPUT_DEVICE) {
+            capturePubDevice->deviceType_ = capPubDevice->deviceType_;
+            capturePubDevice->deviceRole_ = capPubDevice->deviceRole_;
+            capturePubDevice->deviceId_ = capPubDevice->deviceId_;
+            capturePubDevice->channelMasks_ = capPubDevice->channelMasks_;
+            capturePubDevice->channelIndexMasks_ = capPubDevice->channelIndexMasks_;
+            capturePubDevice->deviceName_ = capPubDevice->deviceName_;
+            capturePubDevice->macAddress_ = capPubDevice->macAddress_;
+            capturePubDevice->interruptGroupId_ = capPubDevice->interruptGroupId_;
+            capturePubDevice->volumeGroupId_ = capPubDevice->volumeGroupId_;
+            capturePubDevice->networkId_ = capPubDevice->networkId_;
+            capturePubDevice->displayName_ = capPubDevice->displayName_;
+            capturePubDevice->audioStreamInfo_ = capPubDevice->audioStreamInfo_;
+            mediaCaptureDevices_.push_back(move(capturePubDevice));
+        }
+    }
+    return mediaCaptureDevices_;
 }
 
-std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::getCapturePrivacyDevices()
+std::vector<unique_ptr<AudioDeviceDescriptor>> &AudioDeviceManager::GetCapturePrivacyDevices() 
 {
-    return getCapturePrivacyDevices;
+    return capturePrivacyDevices_;
 }
 
-std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::getCapturePublicDevices()
+std::vector<unique_ptr<AudioDeviceDescriptor>> &AudioDeviceManager::GetCapturePublicDevices() 
 {
-    return getCapturePublicDevices;
+    return capturePublicDevices_;
 }
 
 // std::vector<unique_ptr<AudioDeviceDescriptor>> getAvailRemoteRenderDevices()
