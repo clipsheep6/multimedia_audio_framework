@@ -592,6 +592,7 @@ private:
     std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
+    AudioDeviceManager audioDeviceManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
