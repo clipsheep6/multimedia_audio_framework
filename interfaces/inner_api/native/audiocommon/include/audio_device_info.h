@@ -185,34 +185,6 @@ enum AudioDeviceManagerType {
     BLUETOOTH_DEV_MGR,
 };
 
-enum AudioDevicePrivacyType {
-    TYPE_PRIVACY,
-    TYPE_PUBLIC,
-    TYPE_NEGATIVE,
-};
-
-enum DeviceCategory {
-    HEADPHONE = 1,
-    GLASSES = 2,
-    SOUNDBOX = 4,
-    CAR = 8,
-    HEADPHONE_UNWEAR = 16,
-    WATCH = 32,
-};
-
-enum DeviceUsage {
-    MEDIA = 1,
-    VOICE = 2,
-};
-
-struct DevicePrivacyInfo {
-    std::string deviceName;
-    DeviceType deviceType;
-    DeviceRole deviceRole;
-    DeviceCategory deviceCategory;
-    DeviceUsage deviceUsage;
-};
-
 class DeviceInfo {
 public:
     DeviceType deviceType;
