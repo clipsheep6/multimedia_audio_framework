@@ -45,6 +45,8 @@
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
+#include "audio_device_manager.h"
+#include "audio_device_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -600,7 +602,7 @@ private:
     std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
-
+    AudioDeviceManager audioDeviceManager_;
     AudioModuleInfo primaryMicModuleInfo_ = {};
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
