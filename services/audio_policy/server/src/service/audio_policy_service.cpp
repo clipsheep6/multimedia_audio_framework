@@ -75,7 +75,7 @@ mutex g_dataShareHelperMutex;
 #ifdef BLUETOOTH_ENABLE
 mutex g_btProxyMutex;
 #endif
-
+ 
 AudioPolicyService::~AudioPolicyService()
 {
     AUDIO_ERR_LOG("~AudioPolicyService()");
@@ -88,6 +88,7 @@ bool AudioPolicyService::Init(void)
     serviceFlag_.reset();
     audioPolicyManager_.Init();
     audioEffectManager_.EffectManagerInit();
+    audioDeviceManager_.ParseDeviceXml();
 
     if (!configParser_.LoadConfiguration()) {
         AUDIO_ERR_LOG("Audio Config Load Configuration failed");
@@ -2360,12 +2361,16 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             return descriptor->deviceType_ == devType;
         }
     };
+   // AudioDeviceManager audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+   
     if (isConnected) {
         // If device already in list, remove it else do not modify the list
         connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
             connectedDevices_.end());
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
-
+        AUDIO_ERR_LOG("WZX ADD DEVICES in policy service.");
+        audioDeviceManager_.AddNewDevice(deviceDesc);
+        AUDIO_ERR_LOG("WZX ADD DEVICES in policy service after.");
         if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
             // If the A2DP device is connecting when calling, add it to connectedDevices_ and donot activate it now
             AUDIO_INFO_LOG("A2DP device should be used in non-call mode [%{public}d]", GetAudioScene());
@@ -2380,6 +2385,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
+        // audioDeviceManager.RemoveDevice(deviceDesc);
         result = HandleLocalDeviceDisconnected(devType, macAddress);
         if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
             isArmUsbDevice_ = false;
