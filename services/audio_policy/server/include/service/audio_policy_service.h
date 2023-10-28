@@ -44,6 +44,7 @@
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
+#include "audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -591,6 +592,7 @@ private:
     std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
+    AudioDeviceManager audioDeviceManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
