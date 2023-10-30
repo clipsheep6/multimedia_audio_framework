@@ -147,25 +147,6 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
     return false;
 }
 
-int32_t AudioStream::GetBufferSize(size_t &bufferSize)
-{
-    AUDIO_INFO_LOG("AudioStream: Get Buffer size");
-    if (GetMinimumBufferSize(bufferSize) != 0) {
-        return ERR_OPERATION_FAILED;
-    }
-
-    return SUCCESS;
-}
-
-int32_t AudioStream::GetFrameCount(uint32_t &frameCount)
-{
-    AUDIO_INFO_LOG("AudioStream: Get frame count");
-    if (GetMinimumFrameCount(frameCount) != 0) {
-        return ERR_OPERATION_FAILED;
-    }
-
-    return SUCCESS;
-}
 
 int32_t AudioStream::GetLatency(uint64_t &latency)
 {
