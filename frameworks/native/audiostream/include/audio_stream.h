@@ -44,8 +44,6 @@ public:
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     State GetState() override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
-    int32_t GetBufferSize(size_t &bufferSize) override;
-    int32_t GetFrameCount(uint32_t &frameCount) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) override;
