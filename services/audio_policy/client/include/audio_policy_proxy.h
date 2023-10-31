@@ -219,6 +219,14 @@ public:
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
+
+    bool IsSpatializationEnabled() override;
+
+    int32_t SetSpatializationEnabled(const bool enable) override;
+
+    bool IsHeadTrackingEnabled() override;
+
+    int32_t SetHeadTrackingEnabled(const bool enable) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
