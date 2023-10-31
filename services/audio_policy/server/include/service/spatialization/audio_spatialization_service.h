@@ -55,11 +55,17 @@ public:
     bool ConnectServiceAdapter();
 
     const sptr<IStandardAudioService> GetAudioServerProxy();
+    bool IsSpatializationEnabled();
+    int32_t SetSpatializationEnabled(bool enable);
+    bool IsHeadTrackingEnabled();
+    int32_t SetHeadTrackingEnabled(bool enable);
 private:
     AudioSpatializationService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
 
     ~AudioPolicyService();
+    bool spatializationEnabledFlag_;
+    bool headTrackingEnabledFlag_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

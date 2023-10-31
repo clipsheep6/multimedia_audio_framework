@@ -47,6 +47,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+static const SPATIALIZATION_SERVICE_OK = 0;
 static const std::string INNER_CAPTURER_SINK_NAME = "InnerCapturer";
 static const std::string RECEIVER_SINK_NAME = "Receiver";
 static const std::string SINK_NAME_FOR_CAPTURE_SUFFIX = "_CAP";
@@ -199,6 +200,34 @@ void AudioPolicyService::Deinit(void)
     policyVolumeMap_ = nullptr;
 
     return;
+}
+
+bool IsSpatializationEnabled()
+{
+    return spatializationEnabledFlag_;
+}
+
+int32_t SetSpatializationEnabled(bool enable);
+{
+    if (spatializationEnabledFlag_ == enable) {
+        return SPATIALIZATION_SERVICE_OK;
+    }
+    spatializationEnabledFlag_ = enable;
+    return SPATIALIZATION_SERVICE_OK;
+}
+
+bool IsHeadTrackingEnabled()
+{
+    return headTrackingEnabledFlag_;
+}
+
+int32_t SetHeadTrackingEnabled(bool enable);
+{
+    if (headTrackingEnabledFlag_ == enable) {
+        return SPATIALIZATION_SERVICE_OK;
+    }
+    headTrackingEnabledFlag_ = enable;
+    return SPATIALIZATION_SERVICE_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS
