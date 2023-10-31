@@ -1321,5 +1321,45 @@ int32_t AudioPolicyManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     }
     return gsp->SetA2dpDeviceVolume(macAddress, volume, updateUi);
 }
+
+bool AudioPolicyManager::IsSpatializationEnabled()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("IsSpatializationEnabled: audio policy manager proxy is NULL.");
+        return false;
+    }
+    return gsp->IsSpatializationEnabled();
+}
+
+int32_t AudioPolicyManager::SetSpatializationEnabled(const bool enable)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetSpatializationEnabled: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->SetSpatializationEnabled(enable);
+}
+
+bool AudioPolicyManager::IsHeadTrackingEnabled()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("IsHeadTrackingEnabled: audio policy manager proxy is NULL.");
+        return false;
+    }
+    return gsp->IsHeadTrackingEnabled();
+}
+
+int32_t AudioPolicyManager::SetHeadTrackingEnabled(const bool enable)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetHeadTrackingEnabled: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->SetHeadTrackingEnabled(enable);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -251,6 +251,14 @@ public:
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
+
+    bool IsSpatializationEnabled();
+
+    int32_t SetSpatializationEnabled(const bool enable);
+
+    bool IsHeadTrackingEnabled();
+
+    int32_t SetHeadTrackingEnabled(const bool enable);
 private:
     AudioPolicyManager()
     {
