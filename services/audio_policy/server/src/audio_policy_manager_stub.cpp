@@ -1009,6 +1009,32 @@ void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, Me
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::IsSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = IsSpatializationEnabled();
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool enable = data.ReadBool();
+    int32_t result = SetSpatializationEnabled(enable);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = IsHeadTrackingEnabled();
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::SetHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool enable = data.ReadBool();
+    int32_t result = SetHeadTrackingEnabled(enable);
+    reply.WriteInt32(result);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
