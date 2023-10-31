@@ -106,6 +106,7 @@ const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       mPolicyService(AudioPolicyService::GetAudioPolicyService())
+      audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService())
 {
     if (mPolicyService.SetAudioSessionCallback(this)) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
@@ -2562,6 +2563,26 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
         }
     }
     return ret;
+}
+
+bool AudioPolicyServer::IsSpatializationEnabled()
+{
+    return audioSpatializationService_.IsSpatializationEnabled();
+}
+
+int32_t AudioPolicyServer::SetSpatializationEnabled(const bool enable)
+{
+    return audioSpatializationService_.SetSpatializationEnabled(enable);
+}
+
+bool AudioPolicyServer::IsHeadTrackingEnabled()
+{
+    return audioSpatializationService_.IsHeadTrackingEnabled();
+}
+
+int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
+{
+    return audioSpatializationService_.SetHeadTrackingEnabled(enable);
 }
 } // namespace AudioStandard
 } // namespace OHOS

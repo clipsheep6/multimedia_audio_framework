@@ -38,6 +38,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_service_dump.h"
 #include "session_processor.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -287,6 +288,14 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
 
+    bool IsSpatializationEnabled() override;
+
+    int32_t SetSpatializationEnabled(const bool enable) override;
+
+    bool IsHeadTrackingEnabled() override;
+
+    int32_t SetHeadTrackingEnabled(const bool enable) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -422,6 +431,8 @@ private:
         this, std::placeholders::_1),
         std::bind(&AudioPolicyServer::ProcessSessionAdded,
             this, std::placeholders::_1)};
+
+    AudioSpatializationService& audioSpatializationService_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

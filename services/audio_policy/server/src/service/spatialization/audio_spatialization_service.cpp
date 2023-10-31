@@ -80,62 +80,62 @@ mutex g_dataShareHelperMutex;
 mutex g_btProxyMutex;
 #endif
 
-AudioPolicyService::~AudioPolicyService()
+AudioSpatializationService::~AudioSpatializationService()
 {
-    AUDIO_ERR_LOG("~AudioPolicyService()");
-    Deinit();
+    AUDIO_ERR_LOG("~AudioSpatializationService()");
+    // Deinit();
 }
 
-bool AudioPolicyService::Init(void)
+bool AudioSpatializationService::Init(void)
 {
-    AUDIO_INFO_LOG("AudioPolicyService init");
-    serviceFlag_.reset();
-    audioPolicyManager_.Init();
-    audioEffectManager_.EffectManagerInit();
+    // AUDIO_INFO_LOG("AudioSpatializationService init");
+    // serviceFlag_.reset();
+    // audioPolicyManager_.Init();
+    // audioEffectManager_.EffectManagerInit();
 
-    if (!configParser_.LoadConfiguration()) {
-        AUDIO_ERR_LOG("Audio Config Load Configuration failed");
-        return false;
-    }
-    if (!configParser_.Parse()) {
-        AUDIO_ERR_LOG("Audio Config Parse failed");
-        return false;
-    }
+    // if (!configParser_.LoadConfiguration()) {
+    //     AUDIO_ERR_LOG("Audio Config Load Configuration failed");
+    //     return false;
+    // }
+    // if (!configParser_.Parse()) {
+    //     AUDIO_ERR_LOG("Audio Config Parse failed");
+    //     return false;
+    // }
 
-    std::unique_ptr<AudioFocusParser> audioFocusParser = make_unique<AudioFocusParser>();
-    CHECK_AND_RETURN_RET_LOG(audioFocusParser != nullptr, false, "Failed to create AudioFocusParser");
-    std::string AUDIO_FOCUS_CONFIG_FILE = "system/etc/audio/audio_interrupt_policy_config.xml";
+    // std::unique_ptr<AudioFocusParser> audioFocusParser = make_unique<AudioFocusParser>();
+    // CHECK_AND_RETURN_RET_LOG(audioFocusParser != nullptr, false, "Failed to create AudioFocusParser");
+    // std::string AUDIO_FOCUS_CONFIG_FILE = "system/etc/audio/audio_interrupt_policy_config.xml";
 
-    if (audioFocusParser->LoadConfig(focusMap_)) {
-        AUDIO_ERR_LOG("Failed to load audio interrupt configuration!");
-        return false;
-    }
-    AUDIO_INFO_LOG("Audio interrupt configuration has been loaded. FocusMap.size: %{public}zu", focusMap_.size());
+    // if (audioFocusParser->LoadConfig(focusMap_)) {
+    //     AUDIO_ERR_LOG("Failed to load audio interrupt configuration!");
+    //     return false;
+    // }
+    // AUDIO_INFO_LOG("Audio interrupt configuration has been loaded. FocusMap.size: %{public}zu", focusMap_.size());
 
-    if (deviceStatusListener_->RegisterDeviceStatusListener()) {
-        AUDIO_ERR_LOG("[Policy Service] Register for device status events failed");
-        return false;
-    }
+    // if (deviceStatusListener_->RegisterDeviceStatusListener()) {
+    //     AUDIO_ERR_LOG("[Policy Service] Register for device status events failed");
+    //     return false;
+    // }
 
-    RegisterRemoteDevStatusCallback();
+    // RegisterRemoteDevStatusCallback();
 
-    // Get device type from const.product.devicetype when starting.
-    char devicesType[100] = {0}; // 100 for system parameter usage
-    (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
-    localDevicesType_ = devicesType;
+    // // Get device type from const.product.devicetype when starting.
+    // char devicesType[100] = {0}; // 100 for system parameter usage
+    // (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
+    // localDevicesType_ = devicesType;
 
-    if (policyVolumeMap_ == nullptr) {
-        size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
-        AUDIO_INFO_LOG("InitSharedVolume create shared volume map with size %{public}zu", mapSize);
-        policyVolumeMap_ = AudioSharedMemory::CreateFormLocal(mapSize, "PolicyVolumeMap");
-        CHECK_AND_RETURN_RET_LOG(policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr,
-            false, "Get shared memory failed!");
-        volumeVector_ = reinterpret_cast<Volume *>(policyVolumeMap_->GetBase());
-    }
+    // if (policyVolumeMap_ == nullptr) {
+    //     size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
+    //     AUDIO_INFO_LOG("InitSharedVolume create shared volume map with size %{public}zu", mapSize);
+    //     policyVolumeMap_ = AudioSharedMemory::CreateFormLocal(mapSize, "PolicyVolumeMap");
+    //     CHECK_AND_RETURN_RET_LOG(policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr,
+    //         false, "Get shared memory failed!");
+    //     volumeVector_ = reinterpret_cast<Volume *>(policyVolumeMap_->GetBase());
+    // }
     return true;
 }
 
-const sptr<IStandardAudioService> AudioPolicyService::GetAudioServerProxy()
+const sptr<IStandardAudioService> AudioSpatializationService::GetAudioServerProxy()
 {
     AUDIO_DEBUG_LOG("[Policy Service] Start get audio policy service proxy.");
     lock_guard<mutex> lock(g_adProxyMutex);
@@ -163,51 +163,51 @@ const sptr<IStandardAudioService> AudioPolicyService::GetAudioServerProxy()
     return gsp;
 }
 
-void AudioPolicyService::InitKVStore()
+void AudioSpatializationService::InitKVStore()
 {
-    audioPolicyManager_.InitKVStore();
+    // audioPolicyManager_.InitKVStore();
 }
 
-bool AudioPolicyService::ConnectServiceAdapter()
+bool AudioSpatializationService::ConnectServiceAdapter()
 {
-    if (!audioPolicyManager_.ConnectServiceAdapter()) {
-        AUDIO_ERR_LOG("AudioPolicyService::ConnectServiceAdapter  Error in connecting to audio service adapter");
-        return false;
-    }
+    // if (!audioPolicyManager_.ConnectServiceAdapter()) {
+    //     AUDIO_ERR_LOG("AudioSpatializationService::ConnectServiceAdapter  Error in connecting to audio service adapter");
+    //     return false;
+    // }
 
-    OnServiceConnected(AudioServiceIndex::AUDIO_SERVICE_INDEX);
+    // OnServiceConnected(AudioServiceIndex::AUDIO_SERVICE_INDEX);
 
     return true;
 }
 
-void AudioPolicyService::Deinit(void)
+void AudioSpatializationService::Deinit(void)
 {
-    AUDIO_ERR_LOG("Policy service died. closing active ports");
-    std::for_each(IOHandles_.begin(), IOHandles_.end(), [&](std::pair<std::string, AudioIOHandle> handle) {
-        audioPolicyManager_.CloseAudioPort(handle.second);
-    });
+//     AUDIO_ERR_LOG("Policy service died. closing active ports");
+//     std::for_each(IOHandles_.begin(), IOHandles_.end(), [&](std::pair<std::string, AudioIOHandle> handle) {
+//         audioPolicyManager_.CloseAudioPort(handle.second);
+//     });
 
-    IOHandles_.clear();
-#ifdef ACCESSIBILITY_ENABLE
-    accessibilityConfigListener_->UnsubscribeObserver();
-#endif
-    deviceStatusListener_->UnRegisterDeviceStatusListener();
+//     IOHandles_.clear();
+// #ifdef ACCESSIBILITY_ENABLE
+//     accessibilityConfigListener_->UnsubscribeObserver();
+// #endif
+//     deviceStatusListener_->UnRegisterDeviceStatusListener();
 
-    if (isBtListenerRegistered) {
-        UnregisterBluetoothListener();
-    }
-    volumeVector_ = nullptr;
-    policyVolumeMap_ = nullptr;
+//     if (isBtListenerRegistered) {
+//         UnregisterBluetoothListener();
+//     }
+//     volumeVector_ = nullptr;
+//     policyVolumeMap_ = nullptr;
 
     return;
 }
 
-bool IsSpatializationEnabled()
+bool AudioSpatializationService::IsSpatializationEnabled()
 {
     return spatializationEnabledFlag_;
 }
 
-int32_t SetSpatializationEnabled(bool enable);
+int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable);
 {
     if (spatializationEnabledFlag_ == enable) {
         return SPATIALIZATION_SERVICE_OK;
@@ -216,12 +216,12 @@ int32_t SetSpatializationEnabled(bool enable);
     return SPATIALIZATION_SERVICE_OK;
 }
 
-bool IsHeadTrackingEnabled()
+bool AudioSpatializationService::IsHeadTrackingEnabled()
 {
     return headTrackingEnabledFlag_;
 }
 
-int32_t SetHeadTrackingEnabled(bool enable);
+int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable);
 {
     if (headTrackingEnabledFlag_ == enable) {
         return SPATIALIZATION_SERVICE_OK;

@@ -56,14 +56,14 @@ public:
 
     const sptr<IStandardAudioService> GetAudioServerProxy();
     bool IsSpatializationEnabled();
-    int32_t SetSpatializationEnabled(bool enable);
+    int32_t SetSpatializationEnabled(const bool enable);
     bool IsHeadTrackingEnabled();
-    int32_t SetHeadTrackingEnabled(bool enable);
+    int32_t SetHeadTrackingEnabled(const bool enable);
 private:
     AudioSpatializationService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
 
-    ~AudioPolicyService();
+    ~AudioSpatializationService();
     bool spatializationEnabledFlag_;
     bool headTrackingEnabledFlag_;
 };
