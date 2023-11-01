@@ -594,5 +594,22 @@ float AudioRendererGateway::GetSingleStreamVolume() const
 {
     return 0;
 }
+
+int32_t AudioRendererGateway::GetInputBuffers(BufferDesc &pcmDesc, BufferDesc &metaDesc) const 
+{
+    /*
+    * This function is intentionally left empty and should not be used.
+    * It is included to ensure the class can be instantiated without errors.
+    */
+    return SUCCESS;
+}
+int32_t AudioRendererGateway::ProcessConverter(BufferDesc &pcmDesc, BufferDesc &metaDesc) const 
+{
+    /*
+    * This function is intentionally left empty and should not be used.
+    * It is included to ensure the class can be instantiated without errors.
+    */
+    return SUCCESS;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -123,6 +123,9 @@ class OHAudioRenderer {
         int32_t GetFrameSizeInCallback();
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;
+        // for only 3D Audio
+        int32_t GetInputBuffers(BufferDesc &pcmDesc, BufferDesc &metaDesc) const;
+        int32_t ProcessConverter(BufferDesc &pcmDesc, BufferDesc &metaDesc) const;
 
         void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
 

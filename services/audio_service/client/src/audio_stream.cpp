@@ -310,6 +310,16 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
                 return ERR_NOT_SUPPORTED;
             }
             ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
+
+            if (info.encoding == ENCODING_AUDIOVIVID) {
+                converter_ = std::make_unique<AudioFormatConverter3DA>();
+                if (converter_ == nullptr || 
+                    converter_->Init(info) != SUCCESS || 
+                    converter_->AllocateMem() != SUCCESS) {
+                    AUDIO_ERR_LOG("AudioStream: error audio_format_converter_3DA init.");
+                    return ERROR;
+                }
+            }
         } else if (eMode_ == AUDIO_MODE_RECORD) {
             AUDIO_DEBUG_LOG("AudioStream: Initialize recording");
             if (!IsCapturerChannelValid(info.channels)) {
@@ -323,14 +333,18 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "AudioStream: Error initializing!");
     }
+    
+    AudioStreamParams param = info;
+    if (converter_ != nullptr) 
+        converter_->ConvertChannels(param.channels, param.channelLayout);
 
-    if (CreateStream(info, eStreamType_) != SUCCESS) {
+    if (CreateStream(param, eStreamType_) != SUCCESS) {
         AUDIO_ERR_LOG("AudioStream:Create stream failed");
         return ERROR;
     }
     state_ = PREPARED;
     AUDIO_DEBUG_LOG("AudioStream:Set stream Info SUCCESS");
-    streamParams_ = info;
+    streamParams_ = param;
     RegisterTracker(proxyObj);
     return SUCCESS;
 }
@@ -360,8 +374,14 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
 
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = true;
-        writeThread_ = std::make_unique<std::thread>(&AudioStream::WriteCbTheadLoop, this);
-        pthread_setname_np(writeThread_->native_handle(), "AudioWriteCb");
+        // encoding is audiovivid, another threadloop
+        if (streamParams_.encoding == ENCODING_AUDIOVIVID) {
+            writeThread_ = std::make_unique<std::thread>(&AudioStream::WriteCb3DAThreadLoop, this);
+            pthread_setname_np(writeThread_->native_handle(), "AudioWriteCb3DA");
+        } else {
+            writeThread_ = std::make_unique<std::thread>(&AudioStream::WriteCbTheadLoop, this);
+            pthread_setname_np(writeThread_->native_handle(), "AudioWriteCb");
+        }
     } else if (captureMode_ == CAPTURE_MODE_CALLBACK) {
         isReadyToRead_ = true;
         readThread_ = std::make_unique<std::thread>(&AudioStream::ReadCbThreadLoop, this);
@@ -845,6 +865,16 @@ int32_t AudioStream::Enqueue(const BufferDesc &bufDesc)
     return SUCCESS;
 }
 
+int32_t AudioStream::GetInputBuffers(BufferDesc &pcmDesc, BufferDesc &metaDesc) 
+{
+    return converter_->GetInputBuffers(pcmDesc, metaDesc);
+}
+
+int32_t AudioStream::ProcessConverter(BufferDesc &pcmDesc, BufferDesc &metaDesc) 
+{
+    return converter_->Process(pcmDesc, metaDesc);
+}
+
 int32_t AudioStream::Clear()
 {
     if ((renderMode_ != RENDER_MODE_CALLBACK) && (captureMode_ != CAPTURE_MODE_CALLBACK)) {
@@ -949,6 +979,61 @@ void AudioStream::ReadCbThreadLoop()
                 freeBufferQ_.pop();
                 SendReadBufferRequestEvent();
             }
+        }
+    }
+}
+
+void AudioStream::WriteCb3DAThreadLoop() 
+{
+    AUDIO_INFO_LOG("WriteCb3DA thread start");
+    StreamBuffer stream;
+    int32_t writeError;
+
+    if (isReadyToWrite_) {
+        // send write events for application to fill buffers at the beginning
+        lock_guard<mutex> lock(bufferQueueLock_);
+        SendWriteBufferRequestEvent();
+        
+        while (true)
+        {
+            if (state_ != RUNNING) {
+                AUDIO_INFO_LOG("Write: not running state: %{public}u", state_);
+                isReadyToWrite_ = false;
+                break;
+            }
+
+            unique_lock<mutex> lock(bufferQueueLock_);
+
+            if (!converter_->IsReady()) 
+            {
+                bufferQueueCV_.wait_for(lock, chrono::milliseconds(CB_WRITE_BUFFERS_WAIT_IN_MS));
+                continue;
+            }
+
+            converter_->GetOutputBufferStream(stream.buffer, stream.bufferLen);
+            
+            if (stream.buffer == nullptr) 
+            {
+                AUDIO_ERR_LOG("WriteCb stream.buffer is nullptr return");
+                break;
+            }
+
+            ProcessDataByAudioBlend(stream.buffer, stream.bufferLen);
+            ProcessDataWithStreamVolume(stream.buffer, stream.bufferLen);
+
+            size_t bytesWritten = WriteStream(stream, writeError);
+
+            if (writeError != 0) 
+            {
+                AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
+                break;
+            } else 
+            {
+                AUDIO_DEBUG_LOG("WriteCb3DA WriteStream, bytesWritten:%{public}zu", bytesWritten);
+            }
+
+            converter_->SetNotReady();
+            SendWriteBufferRequestEvent();
         }
     }
 }

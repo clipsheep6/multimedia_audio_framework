@@ -461,6 +461,22 @@ typedef struct OH_AudioRenderer_Callbacks_Struct {
             void* userData,
             void* buffer,
             int32_t lenth);
+    
+    /**
+     * This function pointer will point to the callback function that
+     * is used to write audio data with meta
+     *
+     * @since 11
+     */
+    int32_t (*OH_AudioRenderer_OnWriteDataWithMeta) (
+        OH_AudioRenderer *renderer,
+            void *userData,
+            void *pcmBuffer,
+            int32_t pcmLenth,
+            void *metaBuffer,
+            int32_t metaLen);
+    
+    // TODO: Add OnWriteData(AVBuffer)
 
     /**
      * This function pointer will point to the callback function that

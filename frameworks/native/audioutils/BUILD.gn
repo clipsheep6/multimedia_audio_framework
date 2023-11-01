@@ -30,6 +30,7 @@ ohos_shared_library("audio_utils") {
     "./src/audio_channel_blend.cpp",
     "./src/audio_utils.cpp",
     "./src/volume_ramp.cpp",
+    "./src/audio_format_converter_3DA.cpp",
   ]
 
   external_deps = [

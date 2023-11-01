@@ -597,6 +597,30 @@ public:
     virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
 
     /**
+     * @brief Gets the pcm & meta BufferDesc to fill the data.
+     * This API should only be used if RENDER_MODE_CALLBACK is needed and encodingtype is VIVID.
+     *
+     * @param pcmDesc The buffer descriptor for filling in PCM data.
+     * @param metaDesc The buffer descriptor for filling in metadata.
+     * @return Returns {@link SUCCESS} if two bufDescs is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    virtual int32_t GetInputBuffers(BufferDesc &pcmDesc, BufferDesc &metaDesc) const = 0;
+
+    /**
+     * @brief Convert pcm and metadata into multichannel pcm data.
+     * This API should only be used if RENDER_MODE_CALLBACK is needed and encodingtype is VIVID.
+     *
+     * @param pcmDesc Buffer descriptor containing the PCM data to be converted.
+     * @param metaDesc Buffer descriptor containing the metadata to be converted.
+     * @return Returns {@link SUCCESS} if process is successfully worked; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+    */
+    virtual int32_t ProcessConverter(BufferDesc &pcmDesc, BufferDesc &metaDesc) const = 0;
+
+    /**
      * @brief Enqueues the buffer to the bufferQueue.
      * This API should only be used if RENDER_MODE_CALLBACK is needed.
      *

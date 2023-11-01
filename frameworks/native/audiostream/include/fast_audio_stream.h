@@ -90,6 +90,11 @@ public:
     int32_t GetBufferDesc(BufferDesc &bufDesc) override;
     int32_t GetBufQueueState(BufferQueueState &bufState) override;
     int32_t Enqueue(const BufferDesc &bufDesc) override;
+    
+    // donot use
+    int32_t GetInputBuffers(BufferDesc &pcmDesc, BufferDesc &metaDesc) override;
+    int32_t ProcessConverter(BufferDesc &pcmDesc, BufferDesc &metaDesc) override;
+    
     int32_t Clear() override;
 
     int32_t SetLowPowerVolume(float volume) override;

@@ -25,6 +25,7 @@
 #include "audio_service_client.h"
 #include "audio_stream_tracker.h"
 #include "volume_ramp.h"
+#include "audio_format_converter_3DA.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,6 +65,11 @@ public:
     int32_t GetBufferDesc(BufferDesc &bufDesc) override;
     int32_t GetBufQueueState(BufferQueueState &bufState) override;
     int32_t Enqueue(const BufferDesc &bufDesc) override;
+
+    // should only be used when the encoding type is AUDIOVIVID
+    int32_t GetInputBuffers(BufferDesc &pcmDesc, BufferDesc &metaDesc) override;
+    int32_t ProcessConverter(BufferDesc &pcmDesc, BufferDesc &metaDesc) override;
+
     int32_t Clear() override;
     void SubmitAllFreeBuffers();
 
@@ -128,6 +134,9 @@ private:
     bool isReadyToRead_;
     void WriteCbTheadLoop();
     void ReadCbThreadLoop();
+
+    void WriteCb3DAThreadLoop();
+
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
     AudioRendererInfo rendererInfo_;
     AudioCapturerInfo capturerInfo_;
@@ -143,6 +152,8 @@ private:
     VolumeRamp volumeRamp_;
     FILE *pfd_;
     bool streamTrackerRegistered_ = false;
+
+    std::unique_ptr<AudioFormatConverter3DA> converter_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
