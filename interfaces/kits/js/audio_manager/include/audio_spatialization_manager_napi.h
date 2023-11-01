@@ -18,28 +18,27 @@
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
-#include "audio_system_manager.h"
+#include "audio_spatialization_manager.h"
 #include "audio_manager_callback_napi.h"
 
 namespace OHOS {
 namespace AudioStandard {
-static const std::string AUDIO_INTERRUPT_MANAGER_NAPI_CLASS_NAME = "AudioInterruptManager";
+static const std::string AUDIO_SPATIALIZATION_MANAGER_NAPI_CLASS_NAME = "AudioSpatializationManager";
 
-struct AudioInterruptManagerAsyncContext;
-class AudioInterruptManagerNapi {
+struct AudioSpatializationManagerAsyncContext;
+class AudioSpatializationManagerNapi {
 public:
-    AudioInterruptManagerNapi();
-    ~AudioInterruptManagerNapi();
+    AudioSpatializationManagerNapi();
+    ~AudioSpatializationManagerNapi();
 
     static napi_value Init(napi_env env, napi_value exports);
-    static napi_value CreateInterruptManagerWrapper(napi_env env);
+    static napi_value CreateSpatializationManagerWrapper(napi_env env);
 private:
-
     static napi_value On(napi_env env, napi_callback_info info);
 
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
-    AudioSystemManager *audioSystemMngr_;
+    std::shared_ptr<AudioSpatializationManager> audioSpatializationMngr_ = nullptr;
 
     napi_env env_;
 };

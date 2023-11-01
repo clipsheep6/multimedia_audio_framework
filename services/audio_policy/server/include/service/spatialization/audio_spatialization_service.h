@@ -64,8 +64,8 @@ private:
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
 
     ~AudioSpatializationService();
-    bool spatializationEnabledFlag_;
-    bool headTrackingEnabledFlag_;
+    bool spatializationEnabledFlag_ = true;
+    bool headTrackingEnabledFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
