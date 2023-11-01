@@ -1018,7 +1018,6 @@ void AudioStream::WriteCb3DAThreadLoop()
                 break;
             }
 
-            ProcessDataByAudioBlend(stream.buffer, stream.bufferLen);
             ProcessDataWithStreamVolume(stream.buffer, stream.bufferLen);
 
             size_t bytesWritten = WriteStream(stream, writeError);
