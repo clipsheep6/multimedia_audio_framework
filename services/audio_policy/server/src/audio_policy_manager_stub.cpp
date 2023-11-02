@@ -300,39 +300,41 @@ void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, M
     reply.WriteInt32(static_cast<int>(deviceType));
 }
 
-void AudioPolicyManagerStub::SetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterPreferredOutputDeviceChangeCbCInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
+    int32_t code = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: object is null");
         return;
     }
-    int32_t result = SetPreferredOutputDeviceChangeCallback(clientId, object);
+    int32_t result = RegisterPreferredOutputDeviceChangeCbClient(object, code);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterPreferredInputDeviceChangeCbCInternal(MessageParcel &data, MessageParcel &reply)
 {
+    int32_t code = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("object is null");
         return;
     }
-    int32_t result = SetPreferredInputDeviceChangeCallback(object);
+    int32_t result = RegisterPreferredInputDeviceChangeCbClient(object, code);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnregisterPreferredOutputDeviceChangeCbCInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
-    int32_t result = UnsetPreferredOutputDeviceChangeCallback(clientId);
+    int32_t code = data.ReadInt32();
+    int32_t result = UnRegisterPreferredOutputDeviceChangeCbClient(code);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnregisterPreferredInputDeviceChangeCbCInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t result = UnsetPreferredInputDeviceChangeCallback();
+    int32_t code = data.ReadInt32();
+    int32_t result = UnregisterPreferredInputDeviceChangeCbClient(code);
     reply.WriteInt32(result);
 }
 
@@ -358,54 +360,61 @@ void AudioPolicyManagerStub::GetAudioFocusInfoListInternal(MessageParcel &data, 
     }
 }
 
-void AudioPolicyManagerStub::RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterFocusInfoChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
+    uint32_t code = data.ReadUint32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioFocusInfoCallback obj is null");
         return;
     }
-    int32_t result = RegisterFocusInfoChangeCallback(clientId, object);
+    int32_t result = RegisterFocusInfoChangeCallbackClient(object, code);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
-    int32_t result = UnregisterFocusInfoChangeCallback(clientId);
+    uint32_t code = data.ReadUint32();
+    int32_t result = UnregisterFocusInfoChangeCallbackClient(code);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterRingerModeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    int32_t code = data.ReadInt32();
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: RegisterRingerModeCallbackClient obj is null");
         return;
     }
-    int32_t result = SetRingerModeCallback(clientId, object, api_v);
+    int32_t result = RegisterRingerModeCallbackClient(object, code, api_v);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetMicStateChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnregisterRingerModeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
+    int32_t code = data.ReadInt32();
+    int32_t result = UnregisterRingerModeCallbackClient(code);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::RegisterMicStateChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t code = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
-    int32_t result = SetMicStateChangeCallback(clientId, object);
+    int32_t result = RegisterMicStateChangeCallbackClient(object, code);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnregisterMicStateChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
-    int32_t result = UnsetRingerModeCallback(clientId);
+    int32_t code = data.ReadInt32();
+    int32_t result = UnregisterMicStateChangeCallbackClient(code);
     reply.WriteInt32(result);
 }
 
@@ -475,43 +484,45 @@ void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, Mess
     reply.WriteInt32(ret);
 }
 
-void AudioPolicyManagerStub::SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterDeviceChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
+    int32_t code = data.ReadInt32();
     DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
-    int32_t result = SetDeviceChangeCallback(clientId, flag, object);
+    int32_t result = RegisterDeviceChangeCallbackClient(object, code, flag);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnregisterDeviceChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
+    int32_t code = data.ReadInt32();
     DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
-    int32_t result = UnsetDeviceChangeCallback(clientId, flag);
+    int32_t result = UnregisterDeviceChangeCallbackClient(code, flag);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterAudioInterruptCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t sessionID = data.ReadUint32();
+    uint32_t code = data.ReadUint32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
-    int32_t result = SetAudioInterruptCallback(sessionID, object);
+    int32_t result = RegisterAudioInterruptCallbackClient(object, sessionID, code);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnRegisterAudioInterruptCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t sessionID = data.ReadUint32();
-    int32_t result = UnsetAudioInterruptCallback(sessionID);
+    uint32_t code = data.ReadUint32();
+    int32_t result = UnRegisterAudioInterruptCallbackClient(sessionID, code);
     reply.WriteInt32(result);
 }
 
@@ -531,22 +542,24 @@ void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, Me
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterAudioManagerInterruptCallbackClientInternal(MessageParcel &data,
+    MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
+    int32_t code = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
-    int32_t result = SetAudioManagerInterruptCallback(clientId, object);
+    int32_t result = RegisterAudioManagerInterruptCallbackClient(object, code);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnregisterAudioManagerInterruptCallbackClientInternal(MessageParcel &data,
+    MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
-    int32_t result = UnsetAudioManagerInterruptCallback(clientId);
+    int32_t code = data.ReadInt32();
+    int32_t result = UnregisterAudioManagerInterruptCallbackClient(code);
     reply.WriteInt32(result);
 }
 
@@ -584,24 +597,24 @@ void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel & /* da
     reply.WriteInt32(ret);
 }
 
-void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterVolumeKeyEventCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientPid =  data.ReadInt32();
-    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    uint32_t code = data.ReadUint32();
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    if (remoteObject == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterPolicyCallbackClientInternal obj is null");
         return;
     }
-    int ret = SetVolumeKeyEventCallback(clientPid, remoteObject, api_v);
-    reply.WriteInt32(ret);
+    int32_t result = RegisterVolumeKeyEventCallbackClient(object, code, api_v);
+    reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnregisterVolumeKeyEventCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientPid = data.ReadInt32();
-    int ret = UnsetVolumeKeyEventCallback(clientPid);
-    reply.WriteInt32(ret);
+    uint32_t code = data.ReadUint32();
+    int32_t result = UnregisterVolumeKeyEventCallbackClient(code);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply)

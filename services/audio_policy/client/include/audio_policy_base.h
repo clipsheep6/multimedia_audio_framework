@@ -19,7 +19,6 @@
 #include "audio_interrupt_callback.h"
 #include "audio_policy_ipc_interface_code.h"
 
-#include "i_audio_volume_key_event_callback.h"
 #include "ipc_types.h"
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
@@ -91,29 +90,33 @@ public:
 
     virtual AudioScene GetAudioScene() = 0;
 
-    virtual int32_t SetRingerModeCallback(const int32_t clientId,
-        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) = 0;
+    virtual int32_t RegisterRingerModeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code,
+        API_VERSION api_v = API_9) = 0;
 
-    virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
+    virtual int32_t UnregisterRingerModeCallbackClient(const int32_t code) = 0;
 
-    virtual int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterMicStateChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code) = 0;
 
-    virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
-        const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t UnregisterMicStateChangeCallbackClient(const int32_t code) = 0;
 
-    virtual int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) = 0;
+    virtual int32_t RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        const DeviceFlag flag) = 0;
 
-    virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag) = 0;
 
-    virtual int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) = 0;
+    virtual int32_t RegisterAudioInterruptCallbackClient(const sptr<IRemoteObject>& object, const uint32_t sessionID,
+        const uint32_t code) = 0;
+
+    virtual int32_t UnRegisterAudioInterruptCallbackClient(const uint32_t sessionID, const uint32_t code) = 0;
 
     virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) = 0;
 
     virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) = 0;
 
-    virtual int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterAudioManagerInterruptCallbackClient(const sptr<IRemoteObject> &object,
+        const int32_t code) = 0;
 
-    virtual int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) = 0;
+    virtual int32_t UnregisterAudioManagerInterruptCallbackClient(const int32_t code) = 0;
 
     virtual int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
 
@@ -123,10 +126,10 @@ public:
 
     virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) = 0;
 
-    virtual int32_t SetVolumeKeyEventCallback(const int32_t clientId,
-        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) = 0;
+    virtual int32_t RegisterVolumeKeyEventCallbackClient(
+        const sptr<IRemoteObject> &object, const uint32_t code, API_VERSION api_v = API_9) = 0;
 
-    virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) = 0;
+    virtual int32_t UnregisterVolumeKeyEventCallbackClient(const uint32_t code) = 0;
 
     virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) = 0;
 
@@ -178,23 +181,24 @@ public:
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) = 0;
 
-    virtual int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
-        const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterPreferredOutputDeviceChangeCbClient(const sptr<IRemoteObject> &object,
+        const int32_t code) = 0;
 
-    virtual int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId) = 0;
+    virtual int32_t UnRegisterPreferredOutputDeviceChangeCbClient(const int32_t code) = 0;
 
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) = 0;
 
-    virtual int32_t SetPreferredInputDeviceChangeCallback(const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterPreferredInputDeviceChangeCbClient(const sptr<IRemoteObject> &object,
+        const int32_t code) = 0;
 
-    virtual int32_t UnsetPreferredInputDeviceChangeCallback() = 0;
+    virtual int32_t UnregisterPreferredInputDeviceChangeCbClient(const int32_t code) = 0;
 
     virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
 
-    virtual int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) = 0;
+    virtual int32_t RegisterFocusInfoChangeCallbackClient(const sptr<IRemoteObject>& object, const uint32_t code) = 0;
 
-    virtual int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId) = 0;
+    virtual int32_t UnregisterFocusInfoChangeCallbackClient(const uint32_t code) = 0;
 
     virtual int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) = 0;
 
