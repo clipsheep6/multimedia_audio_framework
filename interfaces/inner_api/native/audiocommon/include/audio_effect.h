@@ -193,6 +193,8 @@ struct AudioBuffer {
         int16_t*  s16;
         uint8_t*  u8;
     };
+    size_t metaDataLength;
+    void* metaData;
 };
 
 struct AudioBufferConfig {

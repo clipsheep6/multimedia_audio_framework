@@ -324,6 +324,24 @@ int32_t FastAudioStream::Enqueue(const BufferDesc &bufDesc)
     return SUCCESS;
 }
 
+int32_t FastAudioStream::GetInputBuffers(BufferDesc &pcmDesc, BufferDesc &metaDesc) 
+{
+    /*
+    * This function is intentionally left empty and should not be used.
+    * It is included to ensure the class can be instantiated without errors.
+    */
+    return SUCCESS;
+}
+
+int32_t FastAudioStream::ProcessConverter(BufferDesc &pcmDesc, BufferDesc &metaDesc) 
+{
+    /*
+    * This function is intentionally left empty and should not be used.
+    * It is included to ensure the class can be instantiated without errors.
+    */
+    return SUCCESS;
+}
+
 int32_t FastAudioStream::Clear()
 {
     AUDIO_INFO_LOG("Clear will do nothing.");

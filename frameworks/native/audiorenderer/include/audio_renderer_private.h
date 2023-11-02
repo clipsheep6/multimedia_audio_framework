@@ -68,6 +68,11 @@ public:
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) const override;
     int32_t Enqueue(const BufferDesc &bufDesc) const override;
+
+    // should only be used when the encoding type is AUDIOVIVID
+    int32_t GetInputBuffers(BufferDesc &pcmDesc, BufferDesc &metaDesc) const override;
+    int32_t ProcessConverter(BufferDesc &pcmDesc, BufferDesc &metaDesc) const override;
+
     int32_t Clear() const override;
     int32_t GetBufQueueState(BufferQueueState &bufState) const override;
     void SetApplicationCachePath(const std::string cachePath) override;

@@ -70,6 +70,11 @@ public:
     int32_t SetLowPowerVolume(float volume) const override;
     float GetLowPowerVolume() const override;
     float GetSingleStreamVolume() const override;
+
+    // donot use it
+    int32_t GetInputBuffers(BufferDesc &pcmDesc, BufferDesc &metaDesc) const override;
+    int32_t ProcessConverter(BufferDesc &pcmDesc, BufferDesc &metaDesc) const override;
+
     AudioRendererInfo rendererInfo_ = {};
 
 private:

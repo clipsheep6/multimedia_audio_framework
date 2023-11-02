@@ -845,6 +845,19 @@ int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
     return audioStream_->Enqueue(bufDesc);
 }
 
+int32_t AudioRendererPrivate::GetInputBuffers(BufferDesc &pcmDesc, BufferDesc &metaDesc) const 
+{
+    std::lock_guard<std::mutex> lock(switchStreamMutex_);
+    return audioStream_->GetInputBuffers(pcmDesc, metaDesc);
+}
+
+int32_t AudioRendererPrivate::ProcessConverter(BufferDesc &pcmDesc, BufferDesc &metaDesc) const 
+{
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(pcmDesc.buffer), pcmDesc.bufLength);
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(metaDesc.buffer), metaDesc.bufLength);
+    return audioStream_->ProcessConverter(pcmDesc, metaDesc);
+}
+
 int32_t AudioRendererPrivate::Clear() const
 {
     return audioStream_->Clear();
