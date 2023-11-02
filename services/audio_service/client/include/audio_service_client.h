@@ -57,6 +57,8 @@ typedef pa_sink_info          SinkDeviceInfo;
 typedef pa_source_info        SourceDeviceInfo;
 typedef pa_client_info        ClientInfo;
 
+constexpr size_t DEFAULT_BUFFER_TIME_MS = 20;
+
 struct StreamBuffer {
     uint8_t *buffer; // the virtual address of stream
     uint32_t bufferLen; // stream length in bytes
@@ -548,6 +550,12 @@ public:
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
     int32_t HandleMainLoopStart();
 
+    void SetCapturerSource(int capturerSource) override;
+
+    int32_t GetBufferSizeForCapturer(size_t &bufferSize);
+
+    int32_t GetFrameCountForCapturer(uint32_t &frameCount);
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -588,6 +596,7 @@ private:
     bool isStreamConnected_;
     bool isInnerCapturerStream_;
     bool isWakeupCapturerStream_ = false;
+    int capturerSource_ = -1;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 
@@ -675,6 +684,9 @@ private:
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
     void WriteStateChangedSysEvents();
+
+    int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map,
+        AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime);
 
     // Error code used
     static const int32_t AUDIO_CLIENT_SUCCESS = 0;
