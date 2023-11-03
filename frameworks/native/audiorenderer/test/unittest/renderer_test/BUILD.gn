@@ -39,8 +39,8 @@ ohos_unittest("audio_renderer_unit_test") {
   ]
 
   sources = [
-    "src/audio_fast_renderer_unit_test.cpp",
     "src/audio_renderer_unit_test.cpp",
+    "src/fast_audio_renderer_unit_test.cpp",
   ]
 
   deps = [

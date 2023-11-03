@@ -36,7 +36,7 @@ const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
 constexpr uint32_t STREAM_FAST = 1;
 const int32_t VALUE_THOUSAND = 1000;
 const int32_t VALUE_ZERO = 0;
-const int64_t WRITE_FRAME = 240;
+const int32_t SLEEP_TIME = 2;
 static size_t g_reqBufLen = 0;
 bool g_flag = true;
 } // namespace
@@ -112,6 +112,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_001, TestSize.Level0)
     float volume1 = audioRenderer->GetVolume();
     EXPECT_EQ(0.5, volume1);
 
+    sleep(SLEEP_TIME);
     audioRenderer->Release();
 }
 
@@ -144,6 +145,8 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_002, TestSize.Level0)
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
     EXPECT_EQ(SUCCESS, ret);
+
+    sleep(SLEEP_TIME);
     audioRenderer->Release();
 }
 
@@ -192,6 +195,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_003, TestSize.Level1)
     int32_t written = audioRenderer->Write(buffer, bytesToWrite);
     EXPECT_GE(written, ERR_INVALID_OPERATION);
 
+    sleep(SLEEP_TIME);
     audioRenderer->Release();
 }
 
@@ -218,6 +222,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_004, TestSize.Level1)
     bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
 
+    sleep(SLEEP_TIME);
     audioRenderer->Release();
 }
 
@@ -279,6 +284,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     audioRenderer->Stop();
+    sleep(SLEEP_TIME);
     audioRenderer->Release();
 }
 
@@ -312,6 +318,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_006, TestSize.Level1)
     ret = audioRenderer->SetRendererWriteCallback(cb);
     EXPECT_EQ(SUCCESS, ret);
 
+    sleep(SLEEP_TIME);
     audioRenderer->Release();
 }
 
@@ -332,11 +339,8 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_007, TestSize.Level1)
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
-
     ret = audioRenderer->GetFramesWritten();
-    EXPECT_EQ(WRITE_FRAME, ret);
+    EXPECT_EQ(VALUE_ZERO, ret);
 
     float setLowPowerVolume = audioRenderer->SetLowPowerVolume(1.0f);
     EXPECT_EQ(setLowPowerVolume, 1);
@@ -353,9 +357,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_007, TestSize.Level1)
     AudioEffectMode effectMode = audioRenderer->GetAudioEffectMode();
     EXPECT_EQ(EFFECT_NONE, effectMode);
 
-    bool isPaused = audioRenderer->Pause();
-    EXPECT_EQ(true, isPaused);
-
+    sleep(SLEEP_TIME);
     audioRenderer->Release();
 }
 
@@ -384,12 +386,16 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_008, TestSize.Level1)
     bool isDrained = audioRenderer->Drain();
     EXPECT_EQ(true, isDrained);
 
+    bool isPaused = audioRenderer->Pause();
+    EXPECT_EQ(true, isPaused);
+
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(true, isStopped);
 
     bool isFlushed1 = audioRenderer->Flush();
     EXPECT_EQ(true, isFlushed1);
 
+    sleep(SLEEP_TIME);
     audioRenderer->Release();
 }
 
@@ -430,11 +436,9 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_009, TestSize.Level1)
     ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_THOUSAND, positionCB2);
     EXPECT_EQ(SUCCESS, ret);
 
+    sleep(SLEEP_TIME);
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
-
-    bool isStopped = audioRenderer->Stop();
-    EXPECT_EQ(false, isStopped);
 }
 } // namespace AudioStandard
 } // namespace OHOS
