@@ -22,8 +22,14 @@
 #include "audio_utils.h"
 #include "parameters.h"
 #include "audio_stream.h"
+#include "hisysevent.h"
+
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 
 using namespace std;
+using namespace OHOS::HiviewDFX;
+using namespace OHOS::AppExecFwk;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,7 +52,8 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
       isReadyToRead_(false),
       isFirstRead_(false),
       isFirstWrite_(false),
-      pfd_(nullptr)
+      pfd_(nullptr),
+      appUid_(appUid)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
@@ -447,6 +454,27 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
         return ERR_ILLEGAL_STATE;
     }
 
+    if (buffer[0] == 0) {
+        if (startMuteTime_ == 0) {
+            startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        }
+        std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+        if ((currentTime - startMuteTime_ >= 60) && !isUpEvent) {
+            isUpEvent = true;
+            std::string bundleName = GetBundleNameFromUid(appUid_);
+
+            AUDIO_INFO_LOG("isUpEvent = true");
+            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+                "MUTE_DATA", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+                "BUNDLENAME", bundleName);
+        }
+        AUDIO_ERR_LOG("zero data");
+    } else if (buffer[0] != 0 && startMuteTime_ != 0) {
+        AUDIO_INFO_LOG("startMuteTime_ = 0");
+        startMuteTime_ = 0;
+    }
+
     int32_t writeError;
     StreamBuffer stream;
     stream.buffer = buffer;
@@ -524,6 +552,7 @@ bool AudioStream::StopAudioStream()
         AUDIO_ERR_LOG("StopAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
         return false;
     }
+    startMuteTime_ = 0;
     State oldState = state_;
     state_ = STOPPED; // Set it before stopping as Read/Write and Stop can be called from different threads
 
@@ -1065,6 +1094,29 @@ void AudioStream::ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize)
     if (volumeRamp_.IsActive()) {
         SetStreamVolume(volumeRamp_.GetRampVolume());
     }
+}
+
+std::string AudioStream::GetBundleNameFromUid(const int32_t uid)
+{
+    std::string bundleName {""};
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        return "";
+    }
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (remoteObject == nullptr) {
+        return "";
+    }
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    if (bundleMgrProxy == nullptr) {
+        return "";
+    }
+    if (bundleMgrProxy != nullptr) {
+        bundleMgrProxy->GetNameForUid(uid, bundleName);
+    }
+    return bundleName;
 }
 } // namespace AudioStandard
 } // namespace OHOS
