@@ -39,12 +39,8 @@ static __thread napi_ref g_spatializationManagerConstructor = nullptr;
 namespace {
     const int ARGS_ONE = 1;
     const int ARGS_TWO = 2;
-    const int ARGS_THREE = 3;
-    const int SIZE = 100;
     const int PARAM0 = 0;
     const int PARAM1 = 1;
-    const int PARAM2 = 2;
-    const int PARAM3 = 3;
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioSpatializationManagerNapi"};
 }
 
@@ -264,7 +260,7 @@ static void SetSpatializationEnabledAsyncCallbackComplete(napi_env env, napi_sta
 
     if (asyncContext != nullptr) {
         if (!asyncContext->status) {
-            napi_get_undefined(env, asyncContext->status, &valueParam);
+            napi_get_undefined(env, &valueParam);
         }
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
@@ -387,7 +383,7 @@ static void SetHeadTrackingEnabledAsyncCallbackComplete(napi_env env, napi_statu
 
     if (asyncContext != nullptr) {
         if (!asyncContext->status) {
-            napi_get_undefined(env, asyncContext->status, &valueParam);
+            napi_get_undefined(env, &valueParam);
         }
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {

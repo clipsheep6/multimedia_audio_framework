@@ -42,7 +42,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-static const SPATIALIZATION_SERVICE_OK = 0;
+static const int32_t SPATIALIZATION_SERVICE_OK = 0;
 
 // std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 // static sptr<IStandardAudioService> g_adProxy = nullptr;
@@ -176,7 +176,7 @@ bool AudioSpatializationService::IsSpatializationEnabled()
     return spatializationEnabledFlag_;
 }
 
-int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable);
+int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
 {
     if (spatializationEnabledFlag_ == enable) {
         return SPATIALIZATION_SERVICE_OK;
@@ -190,7 +190,7 @@ bool AudioSpatializationService::IsHeadTrackingEnabled()
     return headTrackingEnabledFlag_;
 }
 
-int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable);
+int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
 {
     if (headTrackingEnabledFlag_ == enable) {
         return SPATIALIZATION_SERVICE_OK;

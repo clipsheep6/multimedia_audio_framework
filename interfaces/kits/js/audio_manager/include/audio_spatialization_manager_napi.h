@@ -37,9 +37,11 @@ private:
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value IsSpatializationEnabled(napi_env env, napi_callback_info info);
+    static napi_value SetSpatializationEnabled(napi_env env, napi_callback_info info);
     static napi_value IsHeadTrackingEnabled(napi_env env, napi_callback_info info);
+    static napi_value SetHeadTrackingEnabled(napi_env env, napi_callback_info info);
 
-    std::shared_ptr<AudioSpatializationManager> audioSpatializationMngr_ = nullptr;
+    AudioSpatializationManager *audioSpatializationMngr_;
 
     napi_env env_;
 };
