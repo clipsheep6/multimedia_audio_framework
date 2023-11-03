@@ -29,6 +29,13 @@ namespace OHOS {
 namespace AudioStandard {
 static __thread napi_ref g_spatializationManagerConstructor = nullptr;
 
+#define GET_PARAMS(env, info, num) \
+    size_t argc = num;             \
+    napi_value argv[num] = {0};    \
+    napi_value thisVar = nullptr;  \
+    void *data;                    \
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
+
 namespace {
     const int ARGS_ONE = 1;
     const int ARGS_TWO = 2;
@@ -38,7 +45,7 @@ namespace {
     const int PARAM1 = 1;
     const int PARAM2 = 2;
     const int PARAM3 = 3;
-    constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioInterruptManagerNapi"};
+    constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioSpatializationManagerNapi"};
 }
 
 struct AudioSpatializationManagerAsyncContext {
@@ -46,11 +53,9 @@ struct AudioSpatializationManagerAsyncContext {
     napi_async_work work;
     napi_deferred deferred;
     napi_ref callbackRef = nullptr;
-    int32_t deviceFlag;
-    bool bArgTransFlag = true;
+    bool spatializationEnable;
+    bool headTrackingEnable;
     int32_t status = SUCCESS;
-    int32_t groupId;
-    std::string networkId;
     AudioSpatializationManagerNapi *objectInfo;
 };
 
@@ -153,42 +158,287 @@ napi_value AudioSpatializationManagerNapi::Init(napi_env env, napi_value exports
     return result;
 }
 
+static void CommonCallbackRoutine(napi_env env, AudioSpatializationManagerAsyncContext* &asyncContext,
+    const napi_value &valueParam)
+{
+    napi_value result[ARGS_TWO] = {0};
+    napi_value retVal;
+
+    if (!asyncContext->status) {
+        napi_get_undefined(env, &result[PARAM0]);
+        result[PARAM1] = valueParam;
+    } else {
+        napi_value message = nullptr;
+        std::string messageValue = AudioCommonNapi::getMessageByCode(asyncContext->status);
+        napi_create_string_utf8(env, messageValue.c_str(), NAPI_AUTO_LENGTH, &message);
+
+        napi_value code = nullptr;
+        napi_create_string_utf8(env, (std::to_string(asyncContext->status)).c_str(), NAPI_AUTO_LENGTH, &code);
+
+        napi_create_error(env, code, message, &result[PARAM0]);
+        napi_get_undefined(env, &result[PARAM1]);
+    }
+
+    if (asyncContext->deferred) {
+        if (!asyncContext->status) {
+            napi_resolve_deferred(env, asyncContext->deferred, result[PARAM1]);
+        } else {
+            napi_reject_deferred(env, asyncContext->deferred, result[PARAM0]);
+        }
+    } else {
+        napi_value callback = nullptr;
+        napi_get_reference_value(env, asyncContext->callbackRef, &callback);
+        napi_call_function(env, nullptr, callback, ARGS_TWO, result, &retVal);
+        napi_delete_reference(env, asyncContext->callbackRef);
+    }
+    napi_delete_async_work(env, asyncContext->work);
+
+    delete asyncContext;
+    asyncContext = nullptr;
+}
+
 napi_value AudioSpatializationManagerNapi::IsSpatializationEnabled(napi_env env, napi_callback_info info)
 {
     napi_status status;
+    napi_value thisVar = nullptr;
     napi_value result = nullptr;
+    size_t argCount = 0;
     void *native = nullptr;
 
-    GET_PARAMS(env, info, ARGS_ONE);
-
-    if (argc < ARGS_ONE) {
-        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+    status = napi_get_cb_info(env, info, &argCount, nullptr, &thisVar, nullptr);
+    if (status != napi_ok) {
+        AUDIO_ERR_LOG("Invalid parameters!");
         return result;
     }
 
     status = napi_unwrap(env, thisVar, &native);
-    auto *audioRoutingManagerNapi = reinterpret_cast<AudioRoutingManagerNapi *>(native);
-    if (status != napi_ok || audioRoutingManagerNapi == nullptr) {
-        AUDIO_ERR_LOG("IsCommunicationDeviceActiveSync unwrap failure!");
+    auto *audioSpatializationManagerNapi = reinterpret_cast<AudioSpatializationManagerNapi *>(native);
+    if (status != napi_ok || audioSpatializationManagerNapi == nullptr) {
+        AUDIO_ERR_LOG("IsSpatializationEnabled unwrap failure!");
         return result;
     }
 
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, argv[PARAM0], &valueType);
-    if (valueType != napi_number) {
+    bool isSpatializationEnabled = audioSpatializationManagerNapi->audioSpatializationMngr_->IsSpatializationEnabled();
+    napi_get_boolean(env, isSpatializationEnabled, &result);
+
+    return result;
+}
+
+bool GetArgvForSetSpatializationEnabled(napi_env env, size_t argc, napi_value* argv,
+    unique_ptr<AudioSpatializationManagerAsyncContext> &asyncContext)
+{
+    const int32_t refCount = 1;
+
+    if (argv == nullptr) {
         AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return false;
+    }
+    if (argc < ARGS_ONE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return false;
+    }
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+
+        if (i == PARAM0 && valueType == napi_boolean) {
+            napi_get_value_bool(env, argv[i], &asyncContext->spatializationEnable);
+        } else if (i == PARAM1) {
+            if (valueType == napi_function) {
+                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            }
+            break;
+        } else {
+            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static void SetSpatializationEnabledAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    auto asyncContext = static_cast<AudioSpatializationManagerAsyncContext*>(data);
+    napi_value valueParam = nullptr;
+
+    if (asyncContext != nullptr) {
+        if (!asyncContext->status) {
+            napi_get_undefined(env, asyncContext->status, &valueParam);
+        }
+        CommonCallbackRoutine(env, asyncContext, valueParam);
+    } else {
+        HiLog::Error(LABEL, "ERROR: AudioSpatializationManagerAsyncContext* is Null!");
+    }
+}
+
+napi_value AudioSpatializationManagerNapi::SetSpatializationEnabled(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_TWO);
+
+    unique_ptr<AudioSpatializationManagerAsyncContext> asyncContext =
+        make_unique<AudioSpatializationManagerAsyncContext>();
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status != napi_ok || asyncContext->objectInfo == nullptr) {
+        AUDIO_ERR_LOG("SetSpatializationEnabled unwrap failure!");
+        return nullptr;
+    }
+
+    if (!GetArgvForSetSpatializationEnabled(env, argc, argv, asyncContext)) {
+        return nullptr;
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "SetSpatializationEnabled", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioSpatializationManagerAsyncContext*>(data);
+            if (context->status == SUCCESS) {
+                context->status = context->objectInfo->audioSpatializationMngr_->SetSpatializationEnabled(
+                    context->spatializationEnable);
+            }
+        },
+        SetSpatializationEnabledAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        NAPI_CALL(env, napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default));
+        asyncContext.release();
+    }
+
+    return result;
+}
+
+napi_value AudioSpatializationManagerNapi::IsHeadTrackingEnabled(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value thisVar = nullptr;
+    napi_value result = nullptr;
+    size_t argCount = 0;
+    void *native = nullptr;
+
+    status = napi_get_cb_info(env, info, &argCount, nullptr, &thisVar, nullptr);
+    if (status != napi_ok) {
+        AUDIO_ERR_LOG("Invalid parameters!");
         return result;
     }
 
-    int32_t deviceType;
-    napi_get_value_int32(env, argv[PARAM0], &deviceType);
-    if (!AudioCommonNapi::IsLegalInputArgumentActiveDeviceType(deviceType)) {
-        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioSpatializationManagerNapi = reinterpret_cast<AudioSpatializationManagerNapi *>(native);
+    if (status != napi_ok || audioSpatializationManagerNapi == nullptr) {
+        AUDIO_ERR_LOG("IsHeadTrackingEnabled unwrap failure!");
         return result;
     }
 
-    bool isActive = audioRoutingManagerNapi->audioMngr_->IsDeviceActive(static_cast<ActiveDeviceType>(deviceType));
-    napi_get_boolean(env, isActive, &result);
+    bool isHeadTrackingEnabled = audioSpatializationManagerNapi->audioSpatializationMngr_->IsHeadTrackingEnabled();
+    napi_get_boolean(env, isHeadTrackingEnabled, &result);
+
+    return result;
+}
+
+bool GetArgvForSetHeadTrackingEnabled(napi_env env, size_t argc, napi_value* argv,
+    unique_ptr<AudioSpatializationManagerAsyncContext> &asyncContext)
+{
+    const int32_t refCount = 1;
+
+    if (argv == nullptr) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return false;
+    }
+    if (argc < ARGS_ONE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return false;
+    }
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+
+        if (i == PARAM0 && valueType == napi_boolean) {
+            napi_get_value_bool(env, argv[i], &asyncContext->headTrackingEnable);
+        } else if (i == PARAM1) {
+            if (valueType == napi_function) {
+                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            }
+            break;
+        } else {
+            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static void SetHeadTrackingEnabledAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    auto asyncContext = static_cast<AudioSpatializationManagerAsyncContext*>(data);
+    napi_value valueParam = nullptr;
+
+    if (asyncContext != nullptr) {
+        if (!asyncContext->status) {
+            napi_get_undefined(env, asyncContext->status, &valueParam);
+        }
+        CommonCallbackRoutine(env, asyncContext, valueParam);
+    } else {
+        HiLog::Error(LABEL, "ERROR: AudioSpatializationManagerAsyncContext* is Null!");
+    }
+}
+
+napi_value AudioSpatializationManagerNapi::SetHeadTrackingEnabled(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_TWO);
+
+    unique_ptr<AudioSpatializationManagerAsyncContext> asyncContext =
+        make_unique<AudioSpatializationManagerAsyncContext>();
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status != napi_ok || asyncContext->objectInfo == nullptr) {
+        AUDIO_ERR_LOG("SetHeadTrackingEnabled unwrap failure!");
+        return nullptr;
+    }
+
+    if (!GetArgvForSetHeadTrackingEnabled(env, argc, argv, asyncContext)) {
+        return nullptr;
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "SetHeadTrackingEnabled", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioSpatializationManagerAsyncContext*>(data);
+            if (context->status == SUCCESS) {
+                context->status = context->objectInfo->audioSpatializationMngr_->SetHeadTrackingEnabled(
+                    context->headTrackingEnable);
+            }
+        },
+        SetHeadTrackingEnabledAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        NAPI_CALL(env, napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default));
+        asyncContext.release();
+    }
 
     return result;
 }

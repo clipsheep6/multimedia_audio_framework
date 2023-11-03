@@ -29,56 +29,25 @@
 #include "audio_utils.h"
 #include "audio_focus_parser.h"
 #include "audio_manager_listener_stub.h"
-#include "datashare_helper.h"
-#include "datashare_predicates.h"
-#include "datashare_result_set.h"
-#include "data_share_observer_callback.h"
-#include "device_manager.h"
-#include "device_init_callback.h"
-#include "device_manager_impl.h"
-#include "uri.h"
-
-#ifdef BLUETOOTH_ENABLE
-#include "audio_server_death_recipient.h"
-#include "audio_bluetooth_manager.h"
-#endif
+// #include "datashare_helper.h"
+// #include "datashare_predicates.h"
+// #include "datashare_result_set.h"
+// #include "data_share_observer_callback.h"
+// #include "device_manager.h"
+// #include "device_init_callback.h"
+// #include "device_manager_impl.h"
+// #include "uri.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
 static const SPATIALIZATION_SERVICE_OK = 0;
-static const std::string INNER_CAPTURER_SINK_NAME = "InnerCapturer";
-static const std::string RECEIVER_SINK_NAME = "Receiver";
-static const std::string SINK_NAME_FOR_CAPTURE_SUFFIX = "_CAP";
-static const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
 
-static const std::string SETTINGS_DATA_BASE_URI =
-    "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
-static const std::string SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
-static const std::string SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
-static const std::string SETTINGS_DATA_FIELD_VALUE = "VALUE";
-static const std::string PREDICATES_STRING = "settings.general.device_name";
-const uint32_t PCM_8_BIT = 8;
-const uint32_t PCM_16_BIT = 16;
-const uint32_t PCM_24_BIT = 24;
-const uint32_t PCM_32_BIT = 32;
-const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
-const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
-const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
-const uint32_t PRIORITY_LIST_OFFSET_POSTION = 1;
-std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
-static sptr<IStandardAudioService> g_adProxy = nullptr;
-#ifdef BLUETOOTH_ENABLE
-static sptr<IStandardAudioService> g_btProxy = nullptr;
-#endif
-static int32_t startDeviceId = 1;
-static int32_t startMicrophoneId = 1;
-mutex g_adProxyMutex;
-mutex g_dataShareHelperMutex;
-#ifdef BLUETOOTH_ENABLE
-mutex g_btProxyMutex;
-#endif
+// std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
+// static sptr<IStandardAudioService> g_adProxy = nullptr;
+// mutex g_adProxyMutex;
+// mutex g_dataShareHelperMutex;
 
 AudioSpatializationService::~AudioSpatializationService()
 {
@@ -135,33 +104,33 @@ bool AudioSpatializationService::Init(void)
     return true;
 }
 
-const sptr<IStandardAudioService> AudioSpatializationService::GetAudioServerProxy()
-{
-    AUDIO_DEBUG_LOG("[Policy Service] Start get audio policy service proxy.");
-    lock_guard<mutex> lock(g_adProxyMutex);
+// const sptr<IStandardAudioService> AudioSpatializationService::GetAudioServerProxy()
+// {
+//     AUDIO_DEBUG_LOG("[Policy Service] Start get audio policy service proxy.");
+//     lock_guard<mutex> lock(g_adProxyMutex);
 
-    if (g_adProxy == nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        if (samgr == nullptr) {
-            AUDIO_ERR_LOG("[Policy Service] Get samgr failed.");
-            return nullptr;
-        }
+//     if (g_adProxy == nullptr) {
+//         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+//         if (samgr == nullptr) {
+//             AUDIO_ERR_LOG("[Policy Service] Get samgr failed.");
+//             return nullptr;
+//         }
 
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-        if (object == nullptr) {
-            AUDIO_ERR_LOG("[Policy Service] audio service remote object is NULL.");
-            return nullptr;
-        }
+//         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+//         if (object == nullptr) {
+//             AUDIO_ERR_LOG("[Policy Service] audio service remote object is NULL.");
+//             return nullptr;
+//         }
 
-        g_adProxy = iface_cast<IStandardAudioService>(object);
-        if (g_adProxy == nullptr) {
-            AUDIO_ERR_LOG("[Policy Service] init g_adProxy is NULL.");
-            return nullptr;
-        }
-    }
-    const sptr<IStandardAudioService> gsp = g_adProxy;
-    return gsp;
-}
+//         g_adProxy = iface_cast<IStandardAudioService>(object);
+//         if (g_adProxy == nullptr) {
+//             AUDIO_ERR_LOG("[Policy Service] init g_adProxy is NULL.");
+//             return nullptr;
+//         }
+//     }
+//     const sptr<IStandardAudioService> gsp = g_adProxy;
+//     return gsp;
+// }
 
 void AudioSpatializationService::InitKVStore()
 {

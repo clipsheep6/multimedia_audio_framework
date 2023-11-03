@@ -25,9 +25,9 @@
 
 #include "parcel.h"
 #include "audio_info.h"
-#include "audio_interrupt_callback.h"
-#include "audio_group_manager.h"
-#include "audio_routing_manager.h"
+// #include "audio_interrupt_callback.h"
+// #include "audio_group_manager.h"
+// #include "audio_routing_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -19,7 +19,7 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "audio_spatialization_manager.h"
-#include "audio_manager_callback_napi.h"
+// #include "audio_manager_callback_napi.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,10 +34,11 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
     static napi_value CreateSpatializationManagerWrapper(napi_env env);
 private:
-    static napi_value On(napi_env env, napi_callback_info info);
-
-    static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
+    static napi_value Construct(napi_env env, napi_callback_info info);
+    static napi_value IsSpatializationEnabled(napi_env env, napi_callback_info info);
+    static napi_value IsHeadTrackingEnabled(napi_env env, napi_callback_info info);
+
     std::shared_ptr<AudioSpatializationManager> audioSpatializationMngr_ = nullptr;
 
     napi_env env_;

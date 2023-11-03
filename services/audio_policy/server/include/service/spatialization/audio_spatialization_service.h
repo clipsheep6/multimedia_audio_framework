@@ -34,8 +34,8 @@
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "parser_factory.h"
-#include "audio_effect_manager.h"
-#include "audio_volume_config.h"
+// #include "audio_effect_manager.h"
+// #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
 
 namespace OHOS {
@@ -45,8 +45,8 @@ class AudioSpatializationService : public IPortObserver, public IDeviceStatusObs
 public:
     static AudioSpatializationService& GetAudioSpatializationService()
     {
-        static AudioSpatializationService AudioSpatializationService;
-        return AudioSpatializationService;
+        static AudioSpatializationService audioSpatializationService;
+        return audioSpatializationService;
     }
 
     bool Init(void);
@@ -54,7 +54,7 @@ public:
     void InitKVStore();
     bool ConnectServiceAdapter();
 
-    const sptr<IStandardAudioService> GetAudioServerProxy();
+    // const sptr<IStandardAudioService> GetAudioServerProxy();
     bool IsSpatializationEnabled();
     int32_t SetSpatializationEnabled(const bool enable);
     bool IsHeadTrackingEnabled();
@@ -62,8 +62,10 @@ public:
 private:
     AudioSpatializationService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
+    {}
 
     ~AudioSpatializationService();
+    IAudioPolicyInterface& audioPolicyManager_;
     bool spatializationEnabledFlag_ = true;
     bool headTrackingEnabledFlag_ = false;
 };
