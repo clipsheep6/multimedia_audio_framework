@@ -1660,6 +1660,25 @@ void AudioPolicyServer::OnDstatusUpdated(bool isConnected)
     }
 }
 
+void AudioPolicyServer::OnDstatusUpdated(bool isConnected)
+{
+    static std::mutex mtx;
+    static int count = 0;
+    std::lock_guard<std::mutex> {mtx};
+    if (isConnected) {
+        if (count == 0) {
+            sessionProcessor_.Post({SessionEvent::Type::ADD, DSTATUS_SESSION_ID, {SOURCE_TYPE_MIC, DSTATUS_DEFAULT_RATE}});
+        }
+        count++;
+    }
+    else {
+        count--;
+        if (count == 0) {
+            sessionProcessor_.Post({SessionEvent::Type::REMOVE, DSTATUS_SESSION_ID});
+        }
+    }
+}
+
 AudioStreamType AudioPolicyServer::GetStreamInFocus()
 {
     AudioStreamType streamInFocus = STREAM_DEFAULT;
