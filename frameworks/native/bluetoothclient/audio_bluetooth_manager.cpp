@@ -58,6 +58,9 @@ static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioSt
         case A2DP_SBC_SAMPLE_RATE_16000_USER:
             audioStreamInfo.samplingRate = SAMPLE_RATE_16000;
             break;
+        case A2DP_SBC_SAMPLE_RATE_96000_USER:
+            audioStreamInfo.samplingRate = SAMPLE_RATE_96000;
+            break;
         default:
             return false;
     }
