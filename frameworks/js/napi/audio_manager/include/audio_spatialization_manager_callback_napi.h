@@ -17,66 +17,33 @@
 #define AUDIO_SPATIALIZATION_MANAGER_CALLBACK_NAPI_H
 
 #include "audio_common_napi.h"
-#include "audio_routing_manager_napi.h"
-#include "audio_routing_manager.h"
+// #include "audio_routing_manager_napi.h"
+#include "audio_spatialization_manager.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include <algorithm>
 
-namespace {
-    const std::string PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME = "preferredOutputDeviceChangeForRendererInfo";
-    const std::string PREFER_OUTPUT_DEVICE_CALLBACK_NAME = "preferOutputDeviceChangeForRendererInfo";
-    const std::string PREFERRED_INPUT_DEVICE_CALLBACK_NAME  = "preferredInputDeviceChangeForCapturerInfo";
-}
-
 namespace OHOS {
 namespace AudioStandard {
-class AudioPreferredOutputDeviceChangeCallbackNapi : public AudioPreferredOutputDeviceChangeCallback {
+class AudioSpatializationEnabledChangeCallbackNapi : public AudioSpatializationEnabledChangeCallback {
 public:
-    explicit AudioPreferredOutputDeviceChangeCallbackNapi(napi_env env);
-    virtual ~AudioPreferredOutputDeviceChangeCallbackNapi();
-    void SaveCallbackReference(AudioStreamType streamType, napi_value callback);
-    void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
-    void RemoveCallbackReference(napi_env env, napi_value args);
-    void RemoveAllCallbacks();
+    explicit AudioSpatializationEnabledChangeCallbackNapi(napi_env env);
+    virtual ~AudioSpatializationEnabledChangeCallbackNapi();
+    void SaveCallbackReference(napi_value callback);
+    void RemoveCallbackReference();
+    void OnSpatializationEnabledChange(const bool &enabled) override;
 
 private:
-    struct AudioActiveOutputDeviceChangeJsCallback {
+    struct AudioSpatializationEnabledJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
-        std::string callbackName = "unknown";
-        std::vector<sptr<AudioDeviceDescriptor>> desc;
+        bool enabled;
     };
 
-    void OnJsCallbackActiveOutputDeviceChange(std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> &jsCb);
+    void OnJsCallbackSpatializationEnabled(std::unique_ptr<AudioSpatializationEnabledJsCallback> &jsCb);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
-    std::shared_ptr<AutoRef> preferredOutputDeviceCallback_ = nullptr;
-    std::list<std::pair<std::shared_ptr<AutoRef>, AudioStreamType>> preferredOutputDeviceCbList_;
-};
-
-class AudioPreferredInputDeviceChangeCallbackNapi : public AudioPreferredInputDeviceChangeCallback {
-public:
-    explicit AudioPreferredInputDeviceChangeCallbackNapi(napi_env env);
-    virtual ~AudioPreferredInputDeviceChangeCallbackNapi();
-    void SaveCallbackReference(SourceType sourceType, napi_value callback);
-    void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
-    void RemoveCallbackReference(napi_env env, napi_value args);
-    void RemoveAllCallbacks();
-
-private:
-    struct AudioActiveInputDeviceChangeJsCallback {
-        std::shared_ptr<AutoRef> callback = nullptr;
-        std::string callbackName = "unknown";
-        std::vector<sptr<AudioDeviceDescriptor>> desc;
-    };
-
-    void OnJsCallbackActiveInputDeviceChange(std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> &jsCb);
-
-    std::mutex preferredInputListMutex_;
-    napi_env env_ = nullptr;
-    std::shared_ptr<AutoRef> preferredInputDeviceCallback_ = nullptr;
-    std::list<std::pair<std::shared_ptr<AutoRef>, SourceType>> preferredInputDeviceCbList_;
+    std::shared_ptr<AutoRef> spatializationEnabledCallback_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

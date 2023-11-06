@@ -31,6 +31,30 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioSpatializationEnabledChangeCallback {
+public:
+    virtual ~AudioSpatializationEnabledChangeCallback() = default;
+    /**
+     * @brief AudioSpatializationEnabledChangeCallback will be executed when spatialization enabled state changes
+     *
+     * @param enabled the spatialization enabled state.
+     * @since 11
+     */
+    virtual void OnSpatializationEnabledChange(const bool &enabled) = 0;
+};
+
+class AudioHeadTrackingEnabledChangeCallback {
+public:
+    virtual ~AudioHeadTrackingEnabledChangeCallback() = default;
+    /**
+     * @brief AudioHeadTrackingEnabledChangeCallback will be executed when head tracking enabled state changes
+     *
+     * @param enabled the head tracking enabled state.
+     * @since 11
+     */
+    virtual void OnHeadTrackingEnabledChange(const bool &enabled) = 0;
+};
+
 /**
  * @brief The AudioSpatializationManager class is an abstract definition of audio spatialization manager.
  *        Provides a series of client/interfaces for audio spatialization management

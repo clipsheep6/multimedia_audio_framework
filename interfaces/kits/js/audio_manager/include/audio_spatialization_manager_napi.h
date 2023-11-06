@@ -42,6 +42,9 @@ private:
     static napi_value SetHeadTrackingEnabled(napi_env env, napi_callback_info info);
 
     AudioSpatializationManager *audioSpatializationMngr_;
+    int32_t cachedClientId_ = -1;
+    std::shared_ptr<AudioSpatializationEnabledChangeCallback> spatializationEnabledChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> headTrackingEnabledChangeCallbackNapi_ = nullptr;
 
     napi_env env_;
 };

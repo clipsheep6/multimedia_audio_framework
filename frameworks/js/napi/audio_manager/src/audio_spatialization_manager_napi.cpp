@@ -14,6 +14,7 @@
  */
 
 #include "audio_spatialization_manager_napi.h"
+#include "audio_spatialization_manager_callback_napi.h"
 
 #include "audio_common_napi.h"
 #include "audio_errors.h"
@@ -42,6 +43,8 @@ namespace {
     const int PARAM0 = 0;
     const int PARAM1 = 1;
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioSpatializationManagerNapi"};
+    const std::string SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME = "spatializationEnabledChange";
+    const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackerEnabledChange";
 }
 
 struct AudioSpatializationManagerAsyncContext {
@@ -86,6 +89,7 @@ napi_value AudioSpatializationManagerNapi::Construct(napi_env env, napi_callback
     CHECK_AND_RETURN_RET_LOG(audioSpatializationManagerNapi != nullptr, result, "No memory");
 
     audioSpatializationManagerNapi->audioSpatializationMngr_ = AudioSpatializationManager::GetInstance();
+    audioSpatializationManagerNapi->cachedClientId_ = getpid();
     audioSpatializationManagerNapi->env_ = env;
 
     status = napi_wrap(env, thisVar, static_cast<void*>(audioSpatializationManagerNapi.get()),
@@ -132,6 +136,8 @@ napi_value AudioSpatializationManagerNapi::Init(napi_env env, napi_value exports
         DECLARE_NAPI_FUNCTION("setSpatializationEnabled", SetSpatializationEnabled),
         DECLARE_NAPI_FUNCTION("isHeadTrackingEnabled", IsHeadTrackingEnabled),
         DECLARE_NAPI_FUNCTION("setHeadTrackingEnabled", SetHeadTrackingEnabled),
+        DECLARE_NAPI_FUNCTION("on", On),
+        DECLARE_NAPI_FUNCTION("off", Off),
     };
 
     status = napi_define_class(env, AUDIO_SPATIALIZATION_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
@@ -437,6 +443,91 @@ napi_value AudioSpatializationManagerNapi::SetHeadTrackingEnabled(napi_env env, 
     }
 
     return result;
+}
+
+void AudioSpatializationManagerNapi::RegisterSpatializationEnabledChangeCallback(napi_env env, napi_value* args,
+    const std::string& cbName, AudioSpatializationManagerNapi *spatializationManagerNapi)
+{
+    if (!spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_) {
+        spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_ =
+            std::make_shared<AudioSpatializationEnabledChangeCallbackNapi>(env);
+        if (!spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_) {
+            AUDIO_ERR_LOG("AudioSpatializationManagerNapi: Memory Allocation Failed !!");
+            return;
+        }
+
+        int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->RegisterSpatializationEnabledEventListener(
+            spatializationManagerNapi->cachedClientId_,
+            spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_);
+        if (ret) {
+            AUDIO_ERR_LOG(
+                "AudioSpatializationManagerNapi: Registering of Spatialization Enabled Change Callback Failed");
+            return;
+        }
+    }
+
+    std::shared_ptr<AudioSpatializationEnabledChangeCallbackNapi> cb =
+        std::static_pointer_cast<AudioSpatializationEnabledChangeCallbackNapi>
+        (spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_);
+    cb->SaveCallbackReference(args[PARAM1]);
+
+    AUDIO_INFO_LOG("OnSpatializationEnabledChangeCallback is successful");
+}
+
+void AudioSpatializationManagerNapi::RegisterCallback(napi_env env, napi_value jsThis,
+    napi_value* args, const std::string& cbName)
+{
+    AudioSpatializationManagerNapi *spatializationManagerNapi = nullptr;
+    napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&spatializationManagerNapi));
+    if ((status != napi_ok) || (spatializationManagerNapi == nullptr) ||
+        (spatializationManagerNapi->audioSpatializationMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioSpatializationManagerNapi::Failed to retrieve audio spatialization manager napi instance.");
+        return;
+    }
+
+    if (!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME)) {
+        RegisterSpatializationEnabledChangeCallback(env, args, cbName, spatializationManagerNapi);
+    } else if (!cbName.compare(HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME)) {
+        RegisterHeadTrackingEnabledChangeCallback(env, args, cbName, spatializationManagerNapi);
+    } else {
+        AUDIO_ERR_LOG("AudioSpatializationManagerNapi::No such callback supported");
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+    }
+}
+
+napi_value AudioSpatializationManagerNapi::On(napi_env env, napi_callback_info info)
+{
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    const size_t minArgCount = 2;
+    size_t argCount = 3;
+    napi_value args[minArgCount + 1] = {nullptr, nullptr, nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
+    if (status != napi_ok || argCount < minArgCount) {
+        AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 2 parameters");
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+    }
+
+    napi_valuetype eventType = napi_undefined;
+    if (napi_typeof(env, args[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return undefinedResult;
+    }
+    std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
+    AUDIO_INFO_LOG("On callbackName: %{public}s", callbackName.c_str());
+
+    napi_valuetype handler = napi_undefined;
+    if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
+        AUDIO_ERR_LOG("On type mismatch for parameter 2");
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return undefinedResult;
+    }
+
+    RegisterCallback(env, jsThis, args, callbackName);
+
+    return undefinedResult;
 }
 } // namespace AudioStandard
 } // namespace OHOS
