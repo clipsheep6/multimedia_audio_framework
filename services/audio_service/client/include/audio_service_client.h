@@ -573,7 +573,6 @@ private:
     pa_sample_spec sampleSpec;
 
     std::mutex dataMutex_;
-    std::condition_variable dataCv_;
     std::mutex ctrlMutex_;
     std::mutex capturerMarkReachedMutex_;
     std::mutex capturerPeriodReachedMutex_;
@@ -581,7 +580,6 @@ private:
     std::mutex rendererPeriodReachedMutex_;
     std::mutex runnerMutex_;
     std::mutex writeCallbackMutex_;
-    std::mutex stoppingMutex_;
     bool runnerReleased_ = false;
     AudioCache acache_;
     const void *internalReadBuffer_;
@@ -652,6 +650,7 @@ private:
 
     std::weak_ptr<AudioStreamCallback> streamCallback_;
     State state_;
+    std::atomic<bool> isStopping_ = false;
     StateChangeCmdType stateChangeCmdType_ = CMD_FROM_CLIENT;
     pa_stream_success_cb_t PAStreamCorkSuccessCb;
 
@@ -786,6 +785,8 @@ private:
         const std::shared_ptr<CapturerPeriodPositionCallback> &callback);
     void SendUnsetCapturerPeriodReachedRequestEvent();
     void HandleUnsetCapturerPeriodReachedEvent();
+
+    int32_t DoFlushStreamWithoutLock();
 
     enum {
         WRITE_BUFFER_REQUEST = 0,

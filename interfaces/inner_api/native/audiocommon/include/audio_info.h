@@ -491,9 +491,7 @@ enum State {
     /** Released */
     RELEASED,
     /** Paused */
-    PAUSED,
-    /** Stopping */
-    STOPPING
+    PAUSED
 };
 
 enum StateChangeCmdType {
