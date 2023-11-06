@@ -91,6 +91,7 @@ struct AudioManagerAsyncContext {
     int32_t status = 0;
     int32_t focusType;
     int32_t groupId;
+    double speed;
     bool isMute;
     bool isActive;
     bool isTrue;

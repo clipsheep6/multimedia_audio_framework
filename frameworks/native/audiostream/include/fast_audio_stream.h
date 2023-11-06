@@ -74,6 +74,7 @@ public:
     int32_t GetFrameCount(uint32_t &frameCount) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
+    int32_t SetRenderSpeed(float speed) override;
     int32_t SetVolume(float volume) override;
     float GetVolume() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;

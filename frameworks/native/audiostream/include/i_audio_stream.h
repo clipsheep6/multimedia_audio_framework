@@ -112,6 +112,7 @@ public:
     virtual int32_t GetFrameCount(uint32_t &frameCount) = 0;
     virtual int32_t GetLatency(uint64_t &latency) = 0;
     virtual int32_t SetAudioStreamType(AudioStreamType audioStreamType) = 0;
+    virtual int32_t SetRenderSpeed(float speed) = 0;
     virtual int32_t SetVolume(float volume) = 0;
     virtual float GetVolume() = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;

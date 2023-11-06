@@ -424,6 +424,9 @@ public:
      */
     virtual int32_t SetStreamType(AudioStreamType audioStreamType) = 0;
 
+
+    virtual int32_t SetRenderSpeed(float speed) const = 0;
+
     /**
      * @brief Set the track volume
      *

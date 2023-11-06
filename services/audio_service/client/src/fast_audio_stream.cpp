@@ -197,6 +197,11 @@ int32_t FastAudioStream::SetAudioStreamType(AudioStreamType audioStreamType)
     return ERR_INVALID_OPERATION;
 }
 
+int32_t FastAudioStream::SetRenderSpeed(float speed)
+{
+    return SUCCESS;
+}
+
 int32_t FastAudioStream::SetVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetVolume failed: null process");

@@ -49,6 +49,7 @@ public:
     int32_t GetAudioStreamId(uint32_t &sessionID) const override;
     int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) override;
     int32_t SetStreamType(AudioStreamType audioStreamType) override;
+    int32_t SetRenderSpeed(float speed) const override;
     int32_t SetVolume(float volume) const override;
     float GetVolume() const override;
     int32_t SetRenderRate(AudioRendererRate renderRate) const override;

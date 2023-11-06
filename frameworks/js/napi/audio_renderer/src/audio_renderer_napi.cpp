@@ -506,6 +506,7 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setAudioEffectMode", SetAudioEffectMode),
         DECLARE_NAPI_FUNCTION("setChannelBlendMode", SetChannelBlendMode),
         DECLARE_NAPI_FUNCTION("setVolumeWithRamp", SetVolumeWithRamp),
+        DECLARE_NAPI_FUNCTION("setRendererSpeed", SetRenderSpeed),
         DECLARE_NAPI_GETTER("state", GetState)
     };
 
@@ -2240,6 +2241,78 @@ napi_value AudioRendererNapi::SetVolume(napi_env env, napi_callback_info info)
                     } else {
                         context->status = context->objectInfo->audioRenderer_->
                             SetVolume(static_cast<float>(context->volLevel));
+                    }
+                }
+            },
+            SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
+            result = nullptr;
+        } else {
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
+        }
+    }
+
+    return result;
+}
+
+napi_value AudioRendererNapi::SetRenderSpeed(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_THREE);
+
+    unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
+    if (argc < ARGS_ONE) {
+        asyncContext->status = NAPI_ERR_INVALID_PARAM;
+    }
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        for (size_t i = PARAM0; i < argc; i++) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[i], &valueType);
+            if (i == PARAM0 && valueType == napi_number) {
+                napi_get_value_double(env, argv[i], &asyncContext->speed);
+            } else if (i == PARAM1) {
+                if (valueType == napi_function) {
+                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+                }
+                break;
+            } else {
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
+            }
+        }
+
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
+        } else {
+            napi_get_undefined(env, &result);
+        }
+
+        HiviewDFX::ReportXPowerJsStackSysEvent(env, "SPEED_CHANGE", "SRC=Audio");
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "SetRenderSpeed", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioRendererAsyncContext*>(data);
+                if (!CheckContextStatus(context)) {
+                    return;
+                }
+                if (context->status == SUCCESS) {
+                    if (context->speed < MIN_RENDER_SPEED_DOUBLE || context->speed > MAX_RENDER_SPEED_DOUBLE) {
+                        context->status = NAPI_ERR_UNSUPPORTED;
+                    } else {
+                        context->status = context->objectInfo->audioRenderer_->
+                            SetRenderSpeed(static_cast<float>(context->speed));
                     }
                 }
             },

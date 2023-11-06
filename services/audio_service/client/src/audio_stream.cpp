@@ -623,6 +623,11 @@ int32_t AudioStream::SetAudioStreamType(AudioStreamType audioStreamType)
     return SetStreamType(audioStreamType);
 }
 
+int32_t AudioStream::SetRenderSpeed(float speed)
+{
+    return SetStreamSpeed(speed);
+}
+
 int32_t AudioStream::SetVolume(float volume)
 {
     if (volumeRamp_.IsActive()) {
