@@ -40,8 +40,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioSpatializationService : public IPortObserver, public IDeviceStatusObserver,
-    public IPolicyProvider {
+class AudioSpatializationService {
 public:
     static AudioSpatializationService& GetAudioSpatializationService()
     {
