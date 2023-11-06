@@ -134,5 +134,36 @@ void AudioPolicyManagerListenerCallback::OnInterrupt(const InterruptEventInterna
         listener_->OnInterrupt(interruptEvent);
     }
 }
+
+void AudioPolicyManagerListenerProxy::OnAvailableDeviceChange(const AudioDeviceUsage usage,
+    const DeviceChangeAction &deviceChangeAction)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerListenerProxy: OnAvailableDeviceChange at listener proxy");
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
+
+    auto devices = deviceChangeAction.deviceDescriptors;
+    size_t size = deviceChangeAction.deviceDescriptors.size();
+
+    data.WriteInt32(usage);
+    data.WriteInt32(deviceChangeAction.type);
+    data.WriteInt32(deviceChangeAction.flag);
+    data.WriteInt32(static_cast<int32_t>(size));
+
+    for (size_t i = 0; i < size; i++) {
+        devices[i]->Marshalling(data);
+    }
+
+    int error = Remote()->SendRequest(ON_AVAILABLE_DEVICE_CAHNGE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OnDeviceChange failed, error: %{public}d", error);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
