@@ -474,6 +474,35 @@ void AudioSpatializationManagerNapi::RegisterSpatializationEnabledChangeCallback
     AUDIO_INFO_LOG("OnSpatializationEnabledChangeCallback is successful");
 }
 
+void AudioSpatializationManagerNapi::RegisterHeadTrackingEnabledChangeCallback(napi_env env, napi_value* args,
+    const std::string& cbName, AudioSpatializationManagerNapi *spatializationManagerNapi)
+{
+    if (!spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_) {
+        spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_ =
+            std::make_shared<AudioHeadTrackingEnabledChangeCallbackNapi>(env);
+        if (!spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_) {
+            AUDIO_ERR_LOG("AudioSpatializationManagerNapi: Memory Allocation Failed !!");
+            return;
+        }
+
+        int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->RegisterHeadTrackingEnabledEventListener(
+            spatializationManagerNapi->cachedClientId_,
+            spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_);
+        if (ret) {
+            AUDIO_ERR_LOG(
+                "AudioSpatializationManagerNapi: Registering of Head Tracking Enabled Change Callback Failed");
+            return;
+        }
+    }
+
+    std::shared_ptr<AudioHeadTrackingEnabledChangeCallbackNapi> cb =
+        std::static_pointer_cast<AudioHeadTrackingEnabledChangeCallbackNapi>
+        (spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_);
+    cb->SaveCallbackReference(args[PARAM1]);
+
+    AUDIO_INFO_LOG("OnHeadTrackingEnabledChangeCallback is successful");
+}
+
 void AudioSpatializationManagerNapi::RegisterCallback(napi_env env, napi_value jsThis,
     napi_value* args, const std::string& cbName)
 {

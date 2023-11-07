@@ -45,6 +45,27 @@ private:
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> spatializationEnabledCallback_ = nullptr;
 };
+
+class AudioHeadTrackingEnabledChangeCallbackNapi : public AudioHeadTrackingEnabledChangeCallback {
+public:
+    explicit AudioHeadTrackingEnabledChangeCallbackNapi(napi_env env);
+    virtual ~AudioHeadTrackingEnabledChangeCallbackNapi();
+    void SaveCallbackReference(napi_value callback);
+    void RemoveCallbackReference();
+    void OnHeadTrackingEnabledChange(const bool &enabled) override;
+
+private:
+    struct AudioHeadTrackingEnabledJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        bool enabled;
+    };
+
+    void OnJsCallbackHeadTrackingEnabled(std::unique_ptr<AudioHeadTrackingEnabledJsCallback> &jsCb);
+
+    std::mutex mutex_;
+    napi_env env_ = nullptr;
+    std::shared_ptr<AutoRef> headTrackingEnabledCallback_ = nullptr;
+};
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_SPATIALIZATION_MANAGER_CALLBACK_NAPI_H

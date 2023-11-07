@@ -40,6 +40,12 @@ private:
     static napi_value SetSpatializationEnabled(napi_env env, napi_callback_info info);
     static napi_value IsHeadTrackingEnabled(napi_env env, napi_callback_info info);
     static napi_value SetHeadTrackingEnabled(napi_env env, napi_callback_info info);
+    static void RegisterSpatializationEnabledChangeCallback(napi_env env, napi_value* args,
+        const std::string& cbName, AudioSpatializationManagerNapi *spatializationManagerNapi);
+    static void RegisterHeadTrackingEnabledChangeCallback(napi_env env, napi_value* args,
+        const std::string& cbName, AudioSpatializationManagerNapi *spatializationManagerNapi);
+    static void RegisterCallback(napi_env env, napi_value jsThis, napi_value* args, const std::string& cbName);
+    static napi_value On(napi_env env, napi_callback_info info);
 
     AudioSpatializationManager *audioSpatializationMngr_;
     int32_t cachedClientId_ = -1;
