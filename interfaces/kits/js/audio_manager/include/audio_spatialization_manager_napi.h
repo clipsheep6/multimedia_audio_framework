@@ -46,6 +46,11 @@ private:
         const std::string& cbName, AudioSpatializationManagerNapi *spatializationManagerNapi);
     static void RegisterCallback(napi_env env, napi_value jsThis, napi_value* args, const std::string& cbName);
     static napi_value On(napi_env env, napi_callback_info info);
+    static void UnregisterSpatializationEnabledChangeCallback(napi_env env, napi_value callback,
+        AudioSpatializationManagerNapi *spatializationManagerNapi);
+    static void UnregisterHeadTrackingEnabledChangeCallback(napi_env env, napi_value callback,
+        AudioSpatializationManagerNapi *spatializationManagerNapi);
+    static napi_value Off(napi_env env, napi_callback_info info);
 
     AudioSpatializationManager *audioSpatializationMngr_;
     int32_t cachedClientId_ = -1;

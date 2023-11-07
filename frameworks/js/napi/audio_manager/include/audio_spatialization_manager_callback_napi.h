@@ -29,8 +29,10 @@ class AudioSpatializationEnabledChangeCallbackNapi : public AudioSpatializationE
 public:
     explicit AudioSpatializationEnabledChangeCallbackNapi(napi_env env);
     virtual ~AudioSpatializationEnabledChangeCallbackNapi();
-    void SaveCallbackReference(napi_value callback);
-    void RemoveCallbackReference();
+    void SaveSpatializationEnabledChangeCallbackReference(napi_value args);
+    void RemoveSpatializationEnabledChangeCallbackReference(napi_env env, napi_value args);
+    void RemoveAllSpatializationEnabledChangeCallbackReference();
+    int32_t GetSpatializationEnabledChangeCbListSize();
     void OnSpatializationEnabledChange(const bool &enabled) override;
 
 private:
@@ -43,15 +45,17 @@ private:
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
-    std::shared_ptr<AutoRef> spatializationEnabledCallback_ = nullptr;
+    std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbList_;
 };
 
 class AudioHeadTrackingEnabledChangeCallbackNapi : public AudioHeadTrackingEnabledChangeCallback {
 public:
     explicit AudioHeadTrackingEnabledChangeCallbackNapi(napi_env env);
     virtual ~AudioHeadTrackingEnabledChangeCallbackNapi();
-    void SaveCallbackReference(napi_value callback);
-    void RemoveCallbackReference();
+    void SaveHeadTrackingEnabledChangeCallbackReference(napi_value args);
+    void RemoveHeadTrackingEnabledChangeCallbackReference(napi_env env, napi_value args);
+    void RemoveAllHeadTrackingEnabledChangeCallbackReference();
+    int32_t GetHeadTrackingEnabledChangeCbListSize();
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
 
 private:
@@ -64,7 +68,7 @@ private:
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
-    std::shared_ptr<AutoRef> headTrackingEnabledCallback_ = nullptr;
+    std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbList_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

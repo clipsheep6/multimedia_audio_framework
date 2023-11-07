@@ -35,25 +35,59 @@ AudioSpatializationEnabledChangeCallbackNapi::~AudioSpatializationEnabledChangeC
     AUDIO_DEBUG_LOG("AudioSpatializationEnabledChangeCallbackNapi: instance destroy");
 }
 
-void AudioSpatializationEnabledChangeCallbackNapi::RemoveCallbackReference()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    spatializationEnabledCallback_.reset();
-}
-
-void AudioSpatializationEnabledChangeCallbackNapi::SaveCallbackReference(napi_value args)
+void AudioSpatializationEnabledChangeCallbackNapi::SaveSpatializationEnabledChangeCallbackReference(napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
+
+    for (auto it = spatializationEnabledChangeCbList_.begin(); it != spatializationEnabledChangeCbList_.end(); ++it) {
+        bool isSameCallback = AudioCommonNapi::IsSameCallback(env_, args, (*it).first->cb_);
+        CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
+    }
+
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-                         "AudioSpatializationEnabledChangeCallbackNapi: creating reference for callback fail");
+        "AudioSpatializationEnabledChangeCallbackNapi: creating reference for callback fail");
 
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     CHECK_AND_RETURN_LOG(cb != nullptr, "AudioSpatializationEnabledChangeCallbackNapi: creating callback failed");
 
-    spatializationEnabledCallback_ = cb;
+    spatializationEnabledChangeCbList_.push_back(cb);
+}
+
+void AudioSpatializationEnabledChangeCallbackNapi::RemoveSpatializationEnabledChangeCallbackReference(napi_env env,
+    napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = spatializationEnabledChangeCbList_.begin(); it != spatializationEnabledChangeCbList_.end(); ++it) {
+        bool isSameCallback = AudioCommonNapi::IsSameCallback(env_, args, (*it).first->cb_);
+        if (isSameCallback) {
+            AUDIO_INFO_LOG("RemoveSpatializationEnabledChangeCallbackReference: find js callback, delete it");
+            napi_delete_reference(env, (*it).first->cb_);
+            (*it).first->cb_ = nullptr;
+            spatializationEnabledChangeCbList_.erase(it);
+            return;
+        }
+    }
+    AUDIO_INFO_LOG("RemoveSpatializationEnabledChangeCallbackReference: js callback no find");
+}
+
+void AudioSpatializationEnabledChangeCallbackNapi::RemoveAllSpatializationEnabledChangeCallbackReference()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = spatializationEnabledChangeCbList_.begin(); it != spatializationEnabledChangeCbList_.end(); ++it) {
+        napi_delete_reference(env_, (*it).first->cb_);
+        (*it).first->cb_ = nullptr;
+    }
+    spatializationEnabledChangeCbList_.clear();
+    AUDIO_INFO_LOG("RemoveAllSpatializationEnabledChangeCallbackReference: remove all js callbacks success");
+}
+
+int32_t AudioSpatializationEnabledChangeCallbackNapi::GetSpatializationEnabledChangeCbListSize()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return spatializationEnabledChangeCbList_.size();
 }
 
 void AudioSpatializationEnabledChangeCallbackNapi::OnSpatializationEnabledChange(const bool &enabled)
@@ -62,15 +96,18 @@ void AudioSpatializationEnabledChangeCallbackNapi::OnSpatializationEnabledChange
 
     std::lock_guard<std::mutex> lock(mutex_);
 
-    CHECK_AND_RETURN_LOG(spatializationEnabledCallback_ != nullptr, "spatializationEnabledCallback_ is nullptr!");
+    CHECK_AND_RETURN_LOG(spatializationEnabledChangeCbList_ != nullptr, "CbList_ is nullptr!");
 
-    std::unique_ptr<AudioSpatializationEnabledJsCallback> cb = std::make_unique<AudioSpatializationEnabledJsCallback>();
-    CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
+    for (auto it = spatializationEnabledChangeCbList_.begin(); it != spatializationEnabledChangeCbList_.end(); it++) {
+        std::unique_ptr<AudioSpatializationEnabledJsCallback> cb =
+            std::make_unique<AudioSpatializationEnabledJsCallback>();
+        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
+        cb->callback = (*it).first;
+        cb->changeInfos = enabled;
+        OnJsCallbackSpatializationEnabled(cb);
+    }
 
-    cb->callback = spatializationEnabledCallback_;
-    cb->changeInfos = enabled;
-
-    return OnJsCallbackSpatializationEnabled(cb);
+    return;
 }
 
 void AudioSpatializationEnabledChangeCallbackNapi::OnJsCallbackSpatializationEnabled(
@@ -139,25 +176,59 @@ AudioHeadTrackingEnabledChangeCallbackNapi::~AudioHeadTrackingEnabledChangeCallb
     AUDIO_DEBUG_LOG("AudioHeadTrackingEnabledChangeCallbackNapi: instance destroy");
 }
 
-void AudioHeadTrackingEnabledChangeCallbackNapi::RemoveCallbackReference()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    headTrackingEnabledCallback_.reset();
-}
-
-void AudioHeadTrackingEnabledChangeCallbackNapi::SaveCallbackReference(napi_value args)
+void AudioHeadTrackingEnabledChangeCallbackNapi::SaveHeadTrackingEnabledChangeCallbackReference(napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
+
+    for (auto it = headTrackingEnabledChangeCbList_.begin(); it != headTrackingEnabledChangeCbList_.end(); ++it) {
+        bool isSameCallback = AudioCommonNapi::IsSameCallback(env_, args, (*it).first->cb_);
+        CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
+    }
+
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-                         "AudioHeadTrackingEnabledChangeCallbackNapi: creating reference for callback fail");
+        "AudioHeadTrackingEnabledChangeCallbackNapi: creating reference for callback fail");
 
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     CHECK_AND_RETURN_LOG(cb != nullptr, "AudioHeadTrackingEnabledChangeCallbackNapi: creating callback failed");
 
-    headTrackingEnabledCallback_ = cb;
+    headTrackingEnabledChangeCbList_.push_back(cb);
+}
+
+void AudioHeadTrackingEnabledChangeCallbackNapi::RemoveHeadTrackingEnabledChangeCallbackReference(napi_env env,
+    napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = headTrackingEnabledChangeCbList_.begin(); it != headTrackingEnabledChangeCbList_.end(); ++it) {
+        bool isSameCallback = AudioCommonNapi::IsSameCallback(env_, args, (*it).first->cb_);
+        if (isSameCallback) {
+            AUDIO_INFO_LOG("RemoveHeadTrackingEnabledChangeCallbackReference: find js callback, delete it");
+            napi_delete_reference(env, (*it).first->cb_);
+            (*it).first->cb_ = nullptr;
+            headTrackingEnabledChangeCbList_.erase(it);
+            return;
+        }
+    }
+    AUDIO_INFO_LOG("RemoveHeadTrackingEnabledChangeCallbackReference: js callback no find");
+}
+
+void AudioHeadTrackingEnabledChangeCallbackNapi::RemoveAllHeadTrackingEnabledChangeCallbackReference()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = headTrackingEnabledChangeCbList_.begin(); it != headTrackingEnabledChangeCbList_.end(); ++it) {
+        napi_delete_reference(env_, (*it).first->cb_);
+        (*it).first->cb_ = nullptr;
+    }
+    headTrackingEnabledChangeCbList_.clear();
+    AUDIO_INFO_LOG("RemoveAllHeadTrackingEnabledChangeCallbackReference: remove all js callbacks success");
+}
+
+int32_t AudioHeadTrackingEnabledChangeCallbackNapi::GetHeadTrackingEnabledChangeCbListSize()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return headTrackingEnabledChangeCbList_.size();
 }
 
 void AudioHeadTrackingEnabledChangeCallbackNapi::OnHeadTrackingEnabledChange(const bool &enabled)
@@ -166,15 +237,18 @@ void AudioHeadTrackingEnabledChangeCallbackNapi::OnHeadTrackingEnabledChange(con
 
     std::lock_guard<std::mutex> lock(mutex_);
 
-    CHECK_AND_RETURN_LOG(headTrackingEnabledCallback_ != nullptr, "headTrackingEnabledCallback_ is nullptr!");
+    CHECK_AND_RETURN_LOG(headTrackingEnabledChangeCbList_ != nullptr, "CbList_ is nullptr!");
 
-    std::unique_ptr<AudioHeadTrackingEnabledJsCallback> cb = std::make_unique<AudioHeadTrackingEnabledJsCallback>();
-    CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
+    for (auto it = headTrackingEnabledChangeCbList_.begin(); it != headTrackingEnabledChangeCbList_.end(); it++) {
+        std::unique_ptr<AudioHeadTrackingEnabledJsCallback> cb =
+            std::make_unique<AudioHeadTrackingEnabledJsCallback>();
+        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
+        cb->callback = (*it).first;
+        cb->changeInfos = enabled;
+        OnJsCallbackHeadTrackingEnabled(cb);
+    }
 
-    cb->callback = headTrackingEnabledCallback_;
-    cb->changeInfos = enabled;
-
-    return OnJsCallbackHeadTrackingEnabled(cb);
+    return;
 }
 
 void AudioHeadTrackingEnabledChangeCallbackNapi::OnJsCallbackHeadTrackingEnabled(
