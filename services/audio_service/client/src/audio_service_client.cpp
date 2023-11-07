@@ -2170,6 +2170,73 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::SetStreamSpeed(float speed)
+{
+    lock_guard<mutex> lock(ctrlMutex_);
+    AUDIO_INFO_LOG("SetStreamSpeed speed: %{public}f", speed);
+
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("set stream speed: invalid stream state");
+        return AUDIO_CLIENT_PA_ERR;
+    }
+
+    /* Validate and return INVALID_PARAMS error */
+    if ((speed < MIN_SPEED_LEVEL) || (speed > MAX_SPEED_LEVEL)) {
+        AUDIO_ERR_LOG("Invalid Speed Input!");
+        return AUDIO_CLIENT_INVALID_PARAMS_ERR;
+    }
+
+    pa_threaded_mainloop_lock(mainLoop);
+
+    speed_ = speed;
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_sets(propList, "stream.speed", std::to_string(speed_).c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    if (updatePropOperation == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_proplist_update returned null");
+        pa_proplist_free(propList);
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    if (audioSystemManager_ == nullptr) {
+        AUDIO_ERR_LOG("System manager instance is null");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    // if (!streamInfoUpdated_) {
+    //     uint32_t idx = pa_stream_get_index(paStream);
+    //     pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
+    //         reinterpret_cast<void *>(this));
+    //     if (operation == nullptr) {
+    //         AUDIO_ERR_LOG("pa_context_get_sink_input_info_list returned null");
+    //         pa_threaded_mainloop_unlock(mainLoop);
+    //         return AUDIO_CLIENT_ERR;
+    //     }
+
+    //     pa_threaded_mainloop_accept(mainLoop);
+
+    //     pa_operation_unref(operation);
+    // } else {
+    //     SetPaVolume(*this);
+    // }
+
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 int32_t AudioServiceClient::SetStreamVolume(float volume)
 {
     lock_guard<mutex> lock(ctrlMutex_);

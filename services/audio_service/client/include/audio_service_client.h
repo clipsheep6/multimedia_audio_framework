@@ -403,6 +403,8 @@ public:
     */
     void UnsetCapturerPeriodPositionCallback() override;
 
+    int32_t SetStreamSpeed(float speed);
+
     /**
      * @brief Set the track volume
      *
@@ -609,6 +611,7 @@ private:
     std::string appCookiePath = "";
     std::string cachePath_ = "";
 
+    float speed_ = 1.0f;
     float volumeFactor_ = 1.0f;
     float powerVolumeFactor_ = 1.0f;
     float duckVolumeFactor_ = 1.0f;
@@ -715,6 +718,8 @@ private:
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
+    static constexpr float MAX_SPEED_LEVEL = 2.0f;
+    static constexpr float MIN_SPEED_LEVEL = 0.25f;
 
     // audio channel index
     static const uint8_t CHANNEL1_IDX = 0;

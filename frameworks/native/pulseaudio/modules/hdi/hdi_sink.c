@@ -651,6 +651,10 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
+
+        const char *speedCStr = pa_proplist_gets(sinkIn->proplist, "stream.speed");
+        AUDIO_INFO_LOG("wantao SinkRenderPrimaryCluster %{public}s", speedCStr);
+
         if (IsInnerCapturer(sinkIn) && isCaptureSilently) {
             continue;
         } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||

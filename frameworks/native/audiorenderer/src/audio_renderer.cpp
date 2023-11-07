@@ -599,6 +599,11 @@ int32_t AudioRendererPrivate::SetStreamType(AudioStreamType audioStreamType)
     return audioStream_->SetAudioStreamType(audioStreamType);
 }
 
+int32_t AudioRendererPrivate::SetRenderSpeed(float speed) const
+{
+    return audioStream_->SetRenderSpeed(speed);
+}
+
 int32_t AudioRendererPrivate::SetVolume(float volume) const
 {
     return audioStream_->SetVolume(volume);

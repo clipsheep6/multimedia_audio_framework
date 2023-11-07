@@ -72,6 +72,7 @@ private:
         size_t bufferSize;
         int32_t volType;
         double volLevel;
+        double speed;
         uint32_t rendererSampleRate;
         uint32_t audioStreamId;
         size_t totalBytesWritten;
@@ -114,6 +115,7 @@ private:
     static napi_value GetBufferSizeSync(napi_env env, napi_callback_info info);
     static napi_value GetAudioStreamId(napi_env env, napi_callback_info info);
     static napi_value GetAudioStreamIdSync(napi_env env, napi_callback_info info);
+    static napi_value SetRenderSpeed(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
     static napi_value GetState(napi_env env, napi_callback_info info);
     static napi_value GetRendererInfo(napi_env env, napi_callback_info info);
@@ -234,6 +236,8 @@ private:
     std::shared_ptr<AudioRendererWriteCallback> dataRequestCBNapi_ = nullptr;
     static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
     static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
+    static constexpr double MIN_RENDER_SPEED_DOUBLE = 0.25;
+    static constexpr double MAX_RENDER_SPEED_DOUBLE = 2.0;
     std::shared_ptr<AudioRendererDeviceChangeCallback> rendererDeviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> rendererPolicyServiceDiedCallbackNapi_ = nullptr;
 };
