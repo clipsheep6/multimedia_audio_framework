@@ -48,3 +48,7 @@ HEADSET_CHANGE:
   ISCONNECT: {type: INT32, desc: is plugged in}
   HASMIC: {type: INT32, desc: mic available}
   DEVICETYPE: {type: INT32, desc: device type}
+
+MUTE_DATA:
+  __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: write mute data}
+  BUNDLENAME: {type: STRING, desc: BundleName}

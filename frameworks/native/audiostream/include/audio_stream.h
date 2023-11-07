@@ -26,6 +26,9 @@
 #include "audio_stream_tracker.h"
 #include "volume_ramp.h"
 
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
+
 namespace OHOS {
 namespace AudioStandard {
 static constexpr int32_t MAX_WRITECB_NUM_BUFFERS = 1;
@@ -100,6 +103,8 @@ public:
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
+    std::string GetBundleNameFromUid(const int32_t uid);
+
 private:
     enum {
         BIN_TEST_MODE = 1,   //for bin file test
@@ -143,6 +148,9 @@ private:
     VolumeRamp volumeRamp_;
     FILE *pfd_;
     bool streamTrackerRegistered_ = false;
+    std::time_t startMuteTime_ = 0;
+    bool isUpEvent = false;
+    int32_t appUid_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
