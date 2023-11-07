@@ -223,9 +223,9 @@ void AudioServiceClient::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t s
 
     AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
-    unique_lock<mutex> lockstopping(asClient->stoppingMutex_);
 
     asClient->state_ = STOPPED;
+    asClient->isStopping_ = false;
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
@@ -233,9 +233,9 @@ void AudioServiceClient::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t s
     }
     asClient->streamCmdStatus_ = success;
     AUDIO_DEBUG_LOG("PAStreamAsyncStopSuccessCb: start signal");
-    lockstopping.unlock();
+
     pa_threaded_mainloop_signal(mainLoop, 0);
-    asClient->dataCv_.notify_one();
+    asClient->isStopping_.notify_all();
     AUDIO_DEBUG_LOG("PAStreamAsyncStopSuccessCb out");
 }
 
@@ -1078,14 +1078,9 @@ int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
     AUDIO_INFO_LOG("Enter AudioServiceClient::StartStream");
     int error;
     lock_guard<mutex> lockdata(dataMutex_);
-    unique_lock<mutex> stoppinglock(stoppingMutex_);
 
-    // wait 1 second, timeout return error
-    if (!dataCv_.wait_for(stoppinglock, 1s, [this] {return state_ != STOPPING;})) {
-        AUDIO_ERR_LOG("StartStream: wait stopping timeout");
-        return AUDIO_CLIENT_START_STREAM_ERR;
-    }
-    stoppinglock.unlock();
+    isStopping_.wait(true);
+
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
@@ -1148,7 +1143,18 @@ int32_t AudioServiceClient::StopStream()
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        state_ = STOPPING;
+        if (state_ == PAUSED) {
+            state_ = STOPPED;
+            DoFlushStreamWithoutLock();
+            return AUDIO_CLIENT_SUCCESS;
+        }
+        // if the state is stopping , return directly.
+        bool expected = false;
+        bool desired = true;
+        if (!isStopping_.compare_exchange_strong(expected, desired)) {
+            return AUDIO_CLIENT_ERR;
+        }
+        state_ = STOPPED;
         DrainAudioCache();
 
         if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
@@ -1224,6 +1230,11 @@ int32_t AudioServiceClient::FlushStream()
 {
     AUDIO_INFO_LOG("Enter AudioServiceClient::FlushStream");
     lock_guard<mutex> lock(dataMutex_);
+    return DoFlushStreamWithoutLock();
+}
+
+int32_t AudioServiceClient::DoFlushStreamWithoutLock()
+{
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
@@ -1782,6 +1793,7 @@ int32_t AudioServiceClient::ReleaseStream(bool releaseRunner)
 {
     state_ = RELEASED;
     lock_guard<mutex> lockdata(dataMutex_);
+    isStopping_.wait(true);
     WriteStateChangedSysEvents();
     ResetPAAudioClient();
 
