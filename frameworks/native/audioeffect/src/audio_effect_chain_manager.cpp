@@ -446,6 +446,10 @@ AudioEffectChainManager::AudioEffectChainManager()
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
     isInitialized_ = false;
+    headTracker_ = HeadTracker::GetInstance();
+    headTracker_->SensorInit();
+    headTracker_->SensorSetConfig(1);
+    headTracker_->SensorActive();
 }
 
 AudioEffectChainManager::~AudioEffectChainManager()
@@ -799,6 +803,101 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sce
     }
     audioEffectChain->UpdateMultichannelIoBufferConfig(channels, channelLayout, deviceName);
     return SUCCESS;
+}
+
+HeadPostureData HeadTracker::headPostureData_= {1.0, 0.0, 0.0, 0.0};
+
+void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
+{
+    if (event == nullptr) {
+        AUDIO_ERR_LOG("Audio HeadTracker Sensor event is nullptr!");
+        return;
+    }
+
+    if (event[0].data == nullptr) {
+        AUDIO_ERR_LOG("Audio HeadTracker Sensor event[0].data is nullptr!");
+        return;
+    }
+
+    if (event[0].dataLen < sizeof(HeadPostureData)) {
+        AUDIO_ERR_LOG("Event dataLen less than head posture data size, event.dataLen:%{public}u", event[0].dataLen);
+        return;
+    }
+    HeadPostureData *headPostureDataTmp = reinterpret_cast<HeadPostureData *>(event[0].data);
+    headPostureData_.w = headPostureDataTmp->w;
+    headPostureData_.x = headPostureDataTmp->x;
+    headPostureData_.y = headPostureDataTmp->y;
+    headPostureData_.z = headPostureDataTmp->z;
+
+    AUDIO_INFO_LOG("sensorId:%{public}d, version:%{public}d, dataLen:%{public}u, "
+        "w:%{public}f, x:%{public}f, y:%{public}f, z:%{public}f", event[0].sensorTypeId, event[0].version,
+        event[0].dataLen, headPostureData_.w, headPostureData_.x, headPostureData_.y, headPostureData_.z);
+}
+
+HeadTracker::HeadTracker()
+{
+    AUDIO_INFO_LOG("Audio Spatializer HeadTracker ctor!");
+    spatializerEngineState_ = 1;
+    sensorSamplingInterval_ = 30000000; // 30000000 ns = 30 ms
+}
+
+HeadTracker::~HeadTracker()
+{
+    SensorDeactive();
+    UnsubscribeSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
+}
+
+HeadTracker* HeadTracker::GetInstance()
+{
+    static HeadTracker headTracker;
+    return &headTracker;
+}
+
+int32_t HeadTracker::SensorInit()
+{
+    int32_t ret;
+    sensorUser_.callback = HeadPostureDataProcCb;
+    ret = SubscribeSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
+    return ret;
+}
+
+int32_t HeadTracker::SensorSetConfig(int32_t spatializerEngineState)
+{
+    int32_t ret;
+    switch (spatializerEngineState)
+    {
+    case NONE_SPATIALIZER_ENGINE:
+        AUDIO_INFO_LOG("system has no spatializer engine!");
+        ret = ERROR;
+        break;
+    case ARM_SPATIALIZER_ENGINE:
+        AUDIO_INFO_LOG("system uses arm spatializer engine!");
+        ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_, sensorSamplingInterval_, sensorSamplingInterval_);
+        break;
+    case DSP_SPATIALIZER_ENGINE:
+        AUDIO_INFO_LOG("system uses dsp spatializer engine!");
+        ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_, sensorSamplingInterval_, 0);
+        break;
+    default:
+        AUDIO_INFO_LOG("spatializerEngineState error!");
+        ret = ERROR;
+        break;
+    }
+    return ret;
+}
+
+int32_t HeadTracker::SensorActive()
+{
+    int32_t ret;
+    ret = ActivateSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
+    return ret;
+}
+
+int32_t HeadTracker::SensorDeactive()
+{
+    int32_t ret;
+    ret = DeactivateSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
+    return ret;
 }
 }
 }

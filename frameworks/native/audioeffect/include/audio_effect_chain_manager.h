@@ -31,6 +31,7 @@
 
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
+#include "sensor_agent.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,6 +44,9 @@ const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
 const uint32_t FACTOR_TWO = 2;
 const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
+const uint32_t NONE_SPATIALIZER_ENGINE = 0;
+const uint32_t ARM_SPATIALIZER_ENGINE = 1;
+const uint32_t DSP_SPATIALIZER_ENGINE = 2;
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_STEREO,
@@ -85,6 +89,23 @@ private:
     AudioBuffer audioBufOut;
 };
 
+class HeadTracker {
+public:
+    HeadTracker();
+    ~HeadTracker();
+    static HeadTracker *GetInstance();
+    int32_t SensorInit();
+    int32_t SensorSetConfig(int32_t spatializerEngineState);
+    int32_t SensorActive();
+    int32_t SensorDeactive();
+private:
+    uint32_t spatializerEngineState_; // 0 : NO engines ready; 1 : ARM engines ready; 2: DSP engines ready.
+    static HeadPostureData headPostureData_;
+    SensorUser sensorUser_;
+    int64_t sensorSamplingInterval_;
+    static void HeadPostureDataProcCb(SensorEvent *event);
+};
+
 class AudioEffectChainManager {
 public:
     AudioEffectChainManager();
@@ -120,8 +141,8 @@ private:
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
+    HeadTracker *headTracker_;
 };
-
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_EFFECT_CHAIN_MANAGER_H
