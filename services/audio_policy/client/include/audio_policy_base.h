@@ -95,7 +95,9 @@ public:
 
     virtual int32_t UnregisterRingerModeCallbackClient(const int32_t code) = 0;
 
-    virtual int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterMicStateChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code) = 0;
+
+    virtual int32_t UnregisterMicStateChangeCallbackClient(const int32_t code) = 0;
 
     virtual int32_t RegisterAudioInterruptCallbackClient(const sptr<IRemoteObject>& object, const uint32_t sessionID,
         const uint32_t code) = 0;

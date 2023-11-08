@@ -34,7 +34,8 @@ enum class AudioPolicyClientCode {
     ON_DEVICE_CHANGE,
     ON_INTERRUPT,
     ON_RINGERMODE_UPDATE,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_RINGERMODE_UPDATE,
+    ON_MIC_STATE_UPDATED,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_MIC_STATE_UPDATED,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -43,6 +44,7 @@ public:
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) =0;
     virtual void OnInterrupt(const InterruptEventInternal &interruptEvent) = 0;
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
+    virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicyClient");

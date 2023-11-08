@@ -35,6 +35,7 @@ private:
     void HandleDeviceChange(MessageParcel &data, MessageParcel &reply);
     void HandleAudioInterrupt(MessageParcel &data, MessageParcel &reply);
     void HandleRingerModeUpdated(MessageParcel &data, MessageParcel &reply);
+    void HandleMicStateChange(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void (AudioPolicyClientStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[]  = {
@@ -43,6 +44,7 @@ private:
         &AudioPolicyClientStub::HandleDeviceChange,
         &AudioPolicyClientStub::HandleAudioInterrupt,
         &AudioPolicyClientStub::HandleRingerModeUpdated,
+        &AudioPolicyClientStub::HandleMicStateChange,
     };
 };
 } // namespace AudioStandard

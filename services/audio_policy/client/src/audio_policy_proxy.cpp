@@ -789,14 +789,14 @@ int32_t AudioPolicyProxy::UnregisterRingerModeCallbackClient(const int32_t code)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterMicStateChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetMicStateChangeCallback object is null");
+        AUDIO_ERR_LOG("AudioPolicyProxy: RegisterMicStateChangeCallbackClient object is null");
         return ERR_NULL_OBJECT;
     }
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -804,12 +804,33 @@ int32_t AudioPolicyProxy::SetMicStateChangeCallback(const int32_t clientId, cons
         return -1;
     }
 
-    data.WriteInt32(clientId);
+    data.WriteInt32(code);
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MIC_STATE_CHANGE_CALLBACK), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_MIC_STATE_CHANGE_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetMicStateChangeCallback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("AudioPolicyProxy: RegisterMicStateChangeCallbackClient failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnregisterMicStateChangeCallbackClient(const int32_t code)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(code);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_MIC_STATE_CHANGE_CALLBACK), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: unset mic state change callback failed, error: %{public}d", error);
         return error;
     }
 

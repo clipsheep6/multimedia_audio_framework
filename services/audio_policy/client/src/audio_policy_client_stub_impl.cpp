@@ -115,6 +115,25 @@ void AudioPolicyClientStubImpl::OnRingerModeUpdated(const AudioRingerMode &ringe
     }
 }
 
+int32_t AudioPolicyClientStubImpl::SetMicStateChangeCallback(
+    const std::shared_ptr<AudioManagerMicStateChangeCallback> &cb)
+{
+    micStateChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+int32_t AudioPolicyClientStubImpl::UnsetMicStateChangeCallback()
+{
+    micStateChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+void AudioPolicyClientStubImpl::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
+{
+    for (auto it = micStateChangeCallbackList_.begin(); it != micStateChangeCallbackList_.end(); ++it) {
+        (*it)->OnMicStateUpdated(micStateChangeEvent);
+    }
+}
+
 void AudioPolicyClientStubImpl::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     uint32_t eventId = event->GetInnerEventId();
@@ -134,6 +153,9 @@ void AudioPolicyClientStubImpl::ProcessEvent(const AppExecFwk::InnerEvent::Point
     } else if (eventId == static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE)) {
         AudioRingerMode ringerMode = *(event->GetUniqueObject<AudioRingerMode>());
         OnRingerModeUpdated(ringerMode);
+    } else if (eventId == static_cast<uint32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED)) {
+        MicStateChangeEvent micStateChangeEvent = *(event->GetUniqueObject<MicStateChangeEvent>());
+        OnMicStateUpdated(micStateChangeEvent);
     }
 }
 } // namespace AudioStandard

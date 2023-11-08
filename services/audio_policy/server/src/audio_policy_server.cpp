@@ -946,15 +946,15 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_
     bool isMicrophoneMute = IsMicrophoneMute(api_v);
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute) {
-        for (auto it = micStateChangeCbsMap_.begin(); it != micStateChangeCbsMap_.end(); ++it) {
-            std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangeListenerCb = it->second;
-            if (micStateChangeListenerCb == nullptr) {
+        for (auto it = micStateChangeProxyCbsMap_.begin(); it != micStateChangeProxyCbsMap_.end(); ++it) {
+            std::shared_ptr<AudioPolicyClientProxy> micStateChangeListenerProxyCb = it->second;
+            if (micStateChangeListenerProxyCb == nullptr) {
                 AUDIO_ERR_LOG("callback is nullptr for client %{public}d", it->first);
                 continue;
             }
             MicStateChangeEvent micStateChangeEvent;
             micStateChangeEvent.mute = isMute;
-            micStateChangeListenerCb->OnMicStateUpdated(micStateChangeEvent);
+            micStateChangeListenerProxyCb->OnMicStateUpdated(micStateChangeEvent);
         }
     }
     return ret;
@@ -1052,7 +1052,7 @@ int32_t AudioPolicyServer::UnregisterRingerModeCallbackClient(const int32_t code
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t /* clientId */, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterMicStateChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code)
 {
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
 
@@ -1063,13 +1063,32 @@ int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t /* clientId *
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
         "SetMicStateChangeCallback listener obj cast failed");
 
-    std::shared_ptr<AudioManagerMicStateChangeCallback> callback =
-        std::make_shared<AudioRoutingManagerListenerCallback>(listener);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "SetMicStateChangeCallback failed to create cb obj");
-
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "RegisterMicStateChangeCallback object is nullptr");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    micStateChangeCbsMap_[clientPid] = callback;
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, object,
+        micStateChangeProxyCbsMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    return proxy->RegisterPolicyCallbackClient(object, code);
+}
+
+int32_t AudioPolicyServer::UnregisterMicStateChangeCallbackClient(const int32_t code)
+{
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, nullptr,
+    micStateChangeProxyCbsMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    proxy->UnregisterPolicyCallbackClient(code);
+
+
+    std::lock_guard<std::mutex> lock(ringerModeMutex_);
+    if (micStateChangeProxyCbsMap_.erase(clientPid) == 0) {
+        AUDIO_ERR_LOG("UnregisterMicStateChangeCallbackClient does not exist for client %{public}d", clientPid);
+        return ERR_INVALID_OPERATION;
+    }
 
     return SUCCESS;
 }

@@ -35,6 +35,8 @@ public:
     int32_t UnSetAudioInterruptCallback();
     int32_t SetRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
     int32_t UnsetRingerModeCallback();
+    int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &cb);
+    int32_t UnsetMicStateChangeCallback();
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
 private:
@@ -43,12 +45,14 @@ private:
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
+    void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
 
     std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::shared_ptr<AudioManagerDeviceChangeCallback>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioInterruptCallback>> audioInterruptCallbackList_;
     std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCallbackList_;
+    std::vector<std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCallbackList_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

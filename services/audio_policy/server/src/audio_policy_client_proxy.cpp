@@ -58,6 +58,9 @@ void AudioPolicyClientProxy::UnregisterPolicyCallbackClient(const uint32_t code)
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE):
             audioRingerModeCallbackList_.clear();
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED):
+            amMicStateChangeCallbackList_.clear();
+            break;
         default:
             break;
     }
@@ -219,7 +222,7 @@ void AudioPolicyClientProxy::OnInterrupt(const InterruptEventInternal &interrupt
         AUDIO_ERR_LOG("AudioPolicyClientProxy::OnInterrupt: WriteInterfaceToken failed");
         return;
     }
-
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_INTERRUPT));
     data.WriteInt32(static_cast<int32_t>(interruptEvent.eventType));
     data.WriteInt32(static_cast<int32_t>(interruptEvent.forceType));
     data.WriteInt32(static_cast<int32_t>(interruptEvent.hintType));
@@ -260,6 +263,7 @@ void AudioPolicyClientProxy::OnRingerModeUpdated(const AudioRingerMode &ringerMo
         return;
     }
 
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE));
     data.WriteInt32(static_cast<int32_t>(ringerMode));
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
         data, reply, option);
@@ -269,6 +273,42 @@ void AudioPolicyClientProxy::OnRingerModeUpdated(const AudioRingerMode &ringerMo
     reply.ReadInt32();
 }
 
+int32_t AudioPolicyClientProxy::SetMicStateChangeCallback(const sptr<IRemoteObject> &object)
+{
+    sptr<IAudioPolicyClient> listener = iface_cast<IAudioPolicyClient>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
+        "SetMicStateChangeCallback listener obj cast failed");
+    std::shared_ptr<AudioManagerMicStateChangeCallback> callback =
+        std::make_shared<AudioEnhancementMonitoringCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "SetMicStateChangeCallback failed to create cb obj");
+    amMicStateChangeCallbackList_.push_back(callback);
 
+    return SUCCESS;
+}
+
+void AudioPolicyClientProxy::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
+{
+    if (amMicStateChangeCallbackList_.empty()) {
+        return;
+    }
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnRingerModeUpdated: WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED));
+    data.WriteBool(micStateChangeEvent.mute);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
+        data, reply, option);
+    if (error != 0) {
+        AUDIO_DEBUG_LOG("Error while sending ringer mode updated info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -110,5 +110,13 @@ void AudioPolicyClientStub::HandleRingerModeUpdated(MessageParcel &data, Message
     SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE), object));
     reply.WriteInt32(SUCCESS);
 }
+
+void AudioPolicyClientStub::HandleMicStateChange(MessageParcel &data, MessageParcel &reply)
+{
+    std::unique_ptr<MicStateChangeEvent> object = std::make_unique<MicStateChangeEvent>();
+    object->mute = data.ReadBool();
+    SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED), object));
+    reply.WriteInt32(SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

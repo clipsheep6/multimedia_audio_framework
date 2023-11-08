@@ -397,15 +397,22 @@ void AudioPolicyManagerStub::UnregisterRingerModeCallbackClientInternal(MessageP
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetMicStateChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterMicStateChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
+    int32_t code = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
-    int32_t result = SetMicStateChangeCallback(clientId, object);
+    int32_t result = RegisterMicStateChangeCallbackClient(object, code);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnregisterMicStateChangeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t code = data.ReadInt32();
+    int32_t result = UnregisterRingerModeCallbackClient(code);
     reply.WriteInt32(result);
 }
 

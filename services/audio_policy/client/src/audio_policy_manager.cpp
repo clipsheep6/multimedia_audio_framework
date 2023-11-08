@@ -671,7 +671,7 @@ int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback()
     return gsp->UnsetPreferredInputDeviceChangeCallback();
 }
 
-int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
+int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t /*clientId*/,
     const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -684,20 +684,31 @@ int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
         return ERR_INVALID_PARAM;
     }
 
-    auto micStateChangeCbStub = new(std::nothrow) AudioRoutingManagerListenerStub();
-    if (micStateChangeCbStub == nullptr) {
-        AUDIO_ERR_LOG("SetMicStateChangeCallback: object null");
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient();
+    if (audioPolicyClientStub == nullptr) {
+        AUDIO_ERR_LOG("SetMicStateChangeCallback: audioPolicyClientStub get error");
         return ERROR;
     }
-
-    micStateChangeCbStub->SetMicStateChangeCallback(callback);
-
-    sptr<IRemoteObject> object = micStateChangeCbStub->AsObject();
+    audioPolicyClientStub->SetMicStateChangeCallback(callback);
+    sptr<IRemoteObject> object = audioPolicyClientStub->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetMicStateChangeCallback: listenerStub->AsObject is nullptr..");
+        AUDIO_ERR_LOG("SetMicStateChangeCallback: audioPolicyClientStub->AsObject is nullptr.");
         return ERROR;
     }
-    return gsp->SetMicStateChangeCallback(clientId, object);
+
+    return gsp->RegisterMicStateChangeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED));
+}
+
+int32_t AudioPolicyManager::UnsetMicStateChangeCallback()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+        return -1;
+    }
+    return gsp->UnregisterMicStateChangeCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED));
 }
 
 int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,

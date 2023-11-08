@@ -153,7 +153,9 @@ public:
 
     int32_t UnregisterRingerModeCallbackClient(const int32_t code) override;
 
-    int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t RegisterMicStateChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code) override;
+
+    int32_t UnregisterMicStateChangeCallbackClient(const int32_t code) override;
 
     int32_t RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
         const DeviceFlag flag) override;
@@ -435,11 +437,11 @@ private:
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> volumeKeyEventPolicyProxyCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> focusInfoChangePolicyProxyCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> audioInterruptPolicyProxyCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> ringerModeProxyCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> micStateChangeProxyCbsMap_;
 
     std::mutex volumeKeyEventMutex_;
     std::mutex interruptMutex_;

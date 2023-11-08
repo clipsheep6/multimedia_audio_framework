@@ -531,7 +531,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize
 
     uint32_t sessionID_ = AudioPolicyUnitTest::GetSessionId(audioStream);
     sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->SetAudioInterruptCallback(RegisterAudioInterruptCallbackClient(object, sessionID,
+    int32_t ret = audioPolicyProxy->RegisterAudioInterruptCallbackClient(object, sessionID_,
         static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 }
@@ -738,8 +738,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, Audio_Ringermode_Update_Listener_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioRingerModeUpdateListenerStub> ringermodeStub =
-        std::make_shared<AudioRingerModeUpdateListenerStub>();
+    std::shared_ptr<AudioPolicyClientStubImpl> ringermodeStub =
+        std::make_shared<AudioPolicyClientStubImpl>();
     std::weak_ptr<AudioRingerModeCallbackTest> callback = std::make_shared<AudioRingerModeCallbackTest>();
     AudioRingerMode ringerMode = AudioRingerMode::RINGER_MODE_SILENT;
     
@@ -865,16 +865,18 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetRingerMode_001, TestSize.Level1)
     AudioRingerMode ringModeRet = audioPolicyProxy->GetRingerMode();
     EXPECT_EQ(ringMode, ringModeRet);
 
-    int32_t clientId= getpid();
     sptr<IRemoteObject> object = nullptr;
-    ret = audioPolicyProxy->SetRingerModeCallback(clientId, object, api_v);
+    ret = audioPolicyProxy->RegisterRingerModeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE), api_v);
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
     AudioPolicyUnitTest::GetIRemoteObject(object);
-    ret = audioPolicyProxy->SetRingerModeCallback(clientId, object, api_v);
+    ret = audioPolicyProxy->RegisterRingerModeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE), api_v);
     EXPECT_EQ(FAILURE, ret);
 
-    ret = audioPolicyProxy->UnsetRingerModeCallback(clientId);
+    ret = audioPolicyProxy->UnregisterRingerModeCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE));
     EXPECT_EQ(FAILURE, ret);
 }
 

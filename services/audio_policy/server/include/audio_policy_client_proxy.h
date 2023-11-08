@@ -41,6 +41,7 @@ public:
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
+    void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
@@ -51,6 +52,7 @@ private:
     int32_t SetDeviceChangeCallback(const sptr<IRemoteObject> &object);
     int32_t SetAudioInterruptCallback(const sptr<IRemoteObject> &object);
     int32_t SetRingerModeUpdatedCallback(const sptr<IRemoteObject> &object);
+    int32_t SetMicStateChangeCallback(const sptr<IRemoteObject> &object);
 
     using HandlerFunc = int32_t(AudioPolicyClientProxy::*)(const sptr<IRemoteObject> &object);
     static inline HandlerFunc handlers[] = {
@@ -59,6 +61,7 @@ private:
         &AudioPolicyClientProxy::SetDeviceChangeCallback,
         &AudioPolicyClientProxy::SetAudioInterruptCallback,
         &AudioPolicyClientProxy::SetRingerModeUpdatedCallback,
+        &AudioPolicyClientProxy::SetMicStateChangeCallback,
     };
 
     std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
@@ -66,6 +69,7 @@ private:
     std::vector<std::shared_ptr<AudioManagerDeviceChangeCallback>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioInterruptCallback>> audioInterruptCallbackList_;
     std::vector<std::shared_ptr<AudioRingerModeCallback>> audioRingerModeCallbackList_;
+    std::vector<std::shared_ptr<AudioManagerMicStateChangeCallback>> amMicStateChangeCallbackList_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -28,8 +28,8 @@ public:
 
     int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
-    void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
-    void SetMicStateChangeCallback(const std::weak_ptr<AudioManagerMicStateChangeCallback> &callback);
+    // void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
+    // void SetMicStateChangeCallback(const std::weak_ptr<AudioManagerMicStateChangeCallback> &callback);
 
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
@@ -37,7 +37,7 @@ public:
         const std::weak_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
     void SetPreferredInputDeviceChangeCallback(const std::weak_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
 private:
-    std::weak_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallback_;
+    //std::weak_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallback_;
     std::weak_ptr<AudioPreferredOutputDeviceChangeCallback> activeOutputDeviceChangeCallback_;
     std::weak_ptr<AudioPreferredInputDeviceChangeCallback> activeInputDeviceChangeCallback_;
 };
