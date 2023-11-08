@@ -19,6 +19,7 @@
 #include "audio_policy_client_stub.h"
 #include "audio_system_manager.h"
 #include "audio_interrupt_info.h"
+#include "audio_group_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,6 +33,8 @@ public:
     int32_t UnSetDeviceChangeCallback();
     int32_t SetAudioInterruptCallback(const std::shared_ptr<AudioInterruptCallback> &cb);
     int32_t UnSetAudioInterruptCallback();
+    int32_t SetRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
+    int32_t UnsetRingerModeCallback();
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
 private:
@@ -39,11 +42,13 @@ private:
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
+    void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
 
     std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::shared_ptr<AudioManagerDeviceChangeCallback>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioInterruptCallback>> audioInterruptCallbackList_;
+    std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCallbackList_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

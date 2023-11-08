@@ -90,10 +90,10 @@ public:
 
     virtual AudioScene GetAudioScene() = 0;
 
-    virtual int32_t SetRingerModeCallback(const int32_t clientId,
-        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) = 0;
+    virtual int32_t RegisterRingerModeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code,
+        API_VERSION api_v = API_9) = 0;
 
-    virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
+    virtual int32_t UnregisterRingerModeCallbackClient(const int32_t code) = 0;
 
     virtual int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 

@@ -740,26 +740,26 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId,
-    const sptr<IRemoteObject> &object, API_VERSION api_v)
+int32_t AudioPolicyProxy::RegisterRingerModeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code,
+    API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetRingerModeCallback object is null");
+        AUDIO_ERR_LOG("AudioPolicyProxy: RegisterRingerModeCallbackClient object is null");
         return ERR_NULL_OBJECT;
     }
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
-    data.WriteInt32(clientId);
-    (void)data.WriteRemoteObject(object);
+    data.WriteInt32(code);
     data.WriteInt32(static_cast<int32_t>(api_v));
+    (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGERMODE_CALLBACK), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_RINGERMODE_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioPolicyProxy: set ringermode callback failed, error: %{public}d", error);
         return error;
@@ -768,7 +768,7 @@ int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId,
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
+int32_t AudioPolicyProxy::UnregisterRingerModeCallbackClient(const int32_t code)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -778,9 +778,9 @@ int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
-    data.WriteInt32(clientId);
+    data.WriteInt32(code);
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_RINGERMODE_CALLBACK), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_RINGERMODE_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioPolicyProxy: unset ringermode callback failed, error: %{public}d", error);
         return error;

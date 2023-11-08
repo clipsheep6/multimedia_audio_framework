@@ -22,7 +22,7 @@
 namespace OHOS {
 namespace AudioStandard {
 class AudioEnhancementMonitoringCallback  : public VolumeKeyEventCallback, public AudioFocusInfoChangeCallback, 
-    public AudioManagerDeviceChangeCallback, public AudioInterruptCallback {
+    public AudioManagerDeviceChangeCallback, public AudioInterruptCallback, public AudioRingerModeCallback {
 public:
     explicit AudioEnhancementMonitoringCallback(const sptr<IAudioPolicyClient> &listener);
     virtual ~AudioEnhancementMonitoringCallback();
@@ -52,6 +52,13 @@ public:
     {
         if (listener_ != nullptr) {
             listener_->OnInterrupt(interruptEvent);
+        }
+    }
+
+    void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override
+    {
+        if (listener_ != nullptr) {
+            listener_->OnRingerModeUpdated(ringerMode);
         }
     }
 private:

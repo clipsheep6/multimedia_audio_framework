@@ -377,16 +377,23 @@ void AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackClientInternal(Mes
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterRingerModeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    int32_t code = data.ReadInt32();
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: RegisterRingerModeCallbackClient obj is null");
         return;
     }
-    int32_t result = SetRingerModeCallback(clientId, object, api_v);
+    int32_t result = RegisterRingerModeCallbackClient(object, code, api_v);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnregisterRingerModeCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t code = data.ReadInt32();
+    int32_t result = UnregisterRingerModeCallbackClient(code);
     reply.WriteInt32(result);
 }
 
@@ -399,13 +406,6 @@ void AudioPolicyManagerStub::SetMicStateChangeCallbackInternal(MessageParcel &da
         return;
     }
     int32_t result = SetMicStateChangeCallback(clientId, object);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::UnsetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientId = data.ReadInt32();
-    int32_t result = UnsetRingerModeCallback(clientId);
     reply.WriteInt32(result);
 }
 

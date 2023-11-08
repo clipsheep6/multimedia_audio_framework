@@ -33,7 +33,8 @@ enum class AudioPolicyClientCode {
     ON_FOCUS_INFO_CHANGED,
     ON_DEVICE_CHANGE,
     ON_INTERRUPT,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_INTERRUPT,
+    ON_RINGERMODE_UPDATE,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_RINGERMODE_UPDATE,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -41,6 +42,7 @@ public:
     virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) =0;
     virtual void OnInterrupt(const InterruptEventInternal &interruptEvent) = 0;
+    virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicyClient");

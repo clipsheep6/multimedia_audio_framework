@@ -146,7 +146,6 @@ ohos_shared_library("audio_policy_service") {
     "server/src/audio_policy_manager_stub.cpp",
     "server/src/audio_policy_server.cpp",
     "server/src/audio_renderer_state_change_listener_proxy.cpp",
-    "server/src/audio_ringermode_update_listener_proxy.cpp",
     "server/src/audio_routing_manager_listener_proxy.cpp",
     "server/src/audio_stream_collector.cpp",
     "server/src/audio_stream_event_dispatcher.cpp",
@@ -344,7 +343,6 @@ ohos_shared_library("audio_policy_client") {
     "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_policy_proxy.cpp",
     "client/src/audio_renderer_state_change_listener_stub.cpp",
-    "client/src/audio_ringermode_update_listener_stub.cpp",
     "client/src/audio_routing_manager_listener_stub.cpp",
     "client/src/audio_volume_group_info.cpp",
   ]

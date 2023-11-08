@@ -23,7 +23,6 @@
 #include "audio_interrupt_callback.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_renderer_state_change_listener_stub.h"
-#include "audio_ringermode_update_listener_stub.h"
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"
 #include "audio_system_manager.h"
@@ -264,7 +263,6 @@ private:
     std::mutex clientTrackerStubMutex_;
     std::mutex ringerModelistenerStubMutex_;
     std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientCB = nullptr;
-    sptr<AudioRingerModeUpdateListenerStub> ringerModelistenerStub_ = nullptr;
     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;

@@ -43,7 +43,6 @@
 #include "audio_utils.h"
 #include "audio_policy_manager_listener_proxy.h"
 #include "audio_routing_manager_listener_proxy.h"
-#include "audio_ringermode_update_listener_proxy.h"
 #include "i_standard_audio_policy_manager_listener.h"
 #include "microphone_descriptor.h"
 #include "parameter.h"
@@ -913,15 +912,15 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
     
     std::lock_guard<std::mutex> lock(ringerModeMutex_);
     if (ret == SUCCESS) {
-        for (auto it = ringerModeCbsMap_.begin(); it != ringerModeCbsMap_.end(); ++it) {
-            std::shared_ptr<AudioRingerModeCallback> ringerModeListenerCb = it->second;
-            if (ringerModeListenerCb == nullptr) {
+        for (auto it = ringerModeProxyCbsMap_.begin(); it != ringerModeProxyCbsMap_.end(); ++it) {
+            std::shared_ptr<AudioPolicyClientProxy> ringerModeProxyListenerCb = it->second;
+            if (ringerModeProxyListenerCb == nullptr) {
                 AUDIO_ERR_LOG("ringerModeListenerCb nullptr for client %{public}d", it->first);
                 continue;
             }
 
-            AUDIO_DEBUG_LOG("ringerModeListenerCb client %{public}d", it->first);
-            ringerModeListenerCb->OnRingerModeUpdated(ringMode);
+            AUDIO_DEBUG_LOG("ringerModeProxyListenerCb client %{public}d", it->first);
+            ringerModeProxyListenerCb->OnRingerModeUpdated(ringMode);
         }
     }
 
@@ -1017,36 +1016,36 @@ AudioScene AudioPolicyServer::GetAudioScene()
     return audioPolicyService_.GetAudioScene(hasSystemPermission);
 }
 
-int32_t AudioPolicyServer::SetRingerModeCallback(const int32_t /* clientId */,
-    const sptr<IRemoteObject> &object, API_VERSION api_v)
+int32_t AudioPolicyServer::RegisterRingerModeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code,
+    API_VERSION api_v)
 {
-    std::lock_guard<std::mutex> lock(ringerModeMutex_);
-
     if (api_v == API_8 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("SetRingerModeCallback: No system permission");
+        AUDIO_ERR_LOG("RegisterRingerModeCallbackClient: No system permission");
         return ERR_PERMISSION_DENIED;
     }
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "SetRingerModeCallback object is nullptr");
-
-    sptr<IStandardRingerModeUpdateListener> listener = iface_cast<IStandardRingerModeUpdateListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "SetRingerModeCallback object cast failed");
-
-    std::shared_ptr<AudioRingerModeCallback> callback = std::make_shared<AudioRingerModeListenerCallback>(listener);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "SetRingerModeCallback failed to  create cb obj");
-
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    ringerModeCbsMap_[clientPid] = callback;
-
-    return SUCCESS;
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, object,
+        ringerModeProxyCbsMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    return proxy->RegisterPolicyCallbackClient(object, code);
 }
 
-int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t /* clientId */)
+int32_t AudioPolicyServer::UnregisterRingerModeCallbackClient(const int32_t code)
 {
-    std::lock_guard<std::mutex> lock(ringerModeMutex_);
-
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    if (ringerModeCbsMap_.erase(clientPid) == 0) {
-        AUDIO_ERR_LOG("UnsetRingerModeCallback Cb does not exist for client %{public}d", clientPid);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, nullptr,
+    ringerModeProxyCbsMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    proxy->UnregisterPolicyCallbackClient(code);
+
+    std::lock_guard<std::mutex> lock(ringerModeMutex_);
+    if (ringerModeProxyCbsMap_.erase(clientPid) == 0) {
+        AUDIO_ERR_LOG("UnregisterRingerModeCallbackClient Cb does not exist for client %{public}d", clientPid);
         return ERR_INVALID_OPERATION;
     }
 

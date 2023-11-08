@@ -102,5 +102,13 @@ void AudioPolicyClientStub::HandleAudioInterrupt(MessageParcel &data, MessagePar
     SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT), object));
     reply.WriteInt32(SUCCESS);
 }
+
+void AudioPolicyClientStub::HandleRingerModeUpdated(MessageParcel &data, MessageParcel &reply)
+{
+    std::unique_ptr<AudioRingerMode> object = std::make_unique<AudioRingerMode>();
+    *object = static_cast<AudioRingerMode>(data.ReadInt32());
+    SendEvent(AppExecFwk::InnerEvent::Get(static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE), object));
+    reply.WriteInt32(SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

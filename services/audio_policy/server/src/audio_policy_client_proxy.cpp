@@ -55,6 +55,9 @@ void AudioPolicyClientProxy::UnregisterPolicyCallbackClient(const uint32_t code)
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT):
             audioInterruptCallbackList_.clear();
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE):
+            audioRingerModeCallbackList_.clear();
+            break;
         default:
             break;
     }
@@ -184,7 +187,7 @@ void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChan
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
         data, reply, option);
     if (error != 0) {
-        AUDIO_DEBUG_LOG("Error while sending focus change info: %{public}d", error);
+        AUDIO_DEBUG_LOG("Error while sending device change info: %{public}d", error);
     }
     reply.ReadInt32();
 }
@@ -224,7 +227,44 @@ void AudioPolicyClientProxy::OnInterrupt(const InterruptEventInternal &interrupt
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
         data, reply, option);
     if (error != 0) {
-        AUDIO_DEBUG_LOG("Error while sending focus change info: %{public}d", error);
+        AUDIO_DEBUG_LOG("Error while sending interrupt info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
+int32_t AudioPolicyClientProxy::SetRingerModeUpdatedCallback(const sptr<IRemoteObject> &object)
+{
+    sptr<IAudioPolicyClient> listener = iface_cast<IAudioPolicyClient>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
+        "SetRingerModeUpdatedCallback listener obj cast failed");
+    std::shared_ptr<AudioRingerModeCallback> callback =
+        std::make_shared<AudioEnhancementMonitoringCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "SetRingerModeUpdatedCallback failed to create cb obj");
+    audioRingerModeCallbackList_.push_back(callback);
+
+    return SUCCESS;
+}
+
+void AudioPolicyClientProxy::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
+{
+    if (audioRingerModeCallbackList_.empty()) {
+        return;
+    }
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnRingerModeUpdated: WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(ringerMode));
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
+        data, reply, option);
+    if (error != 0) {
+        AUDIO_DEBUG_LOG("Error while sending ringer mode updated info: %{public}d", error);
     }
     reply.ReadInt32();
 }

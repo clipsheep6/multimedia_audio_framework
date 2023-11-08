@@ -192,18 +192,20 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_DeviceChangeCallback_001, TestSize.Leve
     AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
     ASSERT_NE(nullptr, audioPolicyProxy);
 
-    int32_t clientId = getpid();
     DeviceFlag flag = DeviceFlag::OUTPUT_DEVICES_FLAG;
     sptr<IRemoteObject> object = nullptr;
 
-    int32_t ret = audioPolicyProxy->SetDeviceChangeCallback(clientId, flag, object);
+    int32_t ret = audioPolicyProxy->RegisterDeviceChangeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), flag);
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
     AudioPolicyUnitTest::GetIRemoteObject(object);
-    ret = audioPolicyProxy->SetDeviceChangeCallback(clientId, flag, object);
+    ret = audioPolicyProxy->RegisterDeviceChangeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), flag);
     EXPECT_EQ(FAILURE, ret);
 
-    ret = audioPolicyProxy->UnsetDeviceChangeCallback(clientId, flag);
+    ret = audioPolicyProxy->UnregisterDeviceChangeCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), flag);
     EXPECT_EQ(FAILURE, ret);
 }
 
@@ -529,7 +531,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize
 
     uint32_t sessionID_ = AudioPolicyUnitTest::GetSessionId(audioStream);
     sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->SetAudioInterruptCallback(sessionID_, object);
+    int32_t ret = audioPolicyProxy->SetAudioInterruptCallback(RegisterAudioInterruptCallbackClient(object, sessionID,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 }
 
@@ -893,10 +896,12 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetCallback_001, TestSize.Level1)
     ret = audioPolicyProxy->SetPreferredOutputDeviceChangeCallback(clientId, object);
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
-    ret = audioPolicyProxy->RegisterFocusInfoChangeCallback(clientId, object);
+    ret = audioPolicyProxy->RegisterFocusInfoChangeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
-    ret = audioPolicyProxy->SetVolumeKeyEventCallback(clientId, object, api_v);
+    ret = audioPolicyProxy->RegisterVolumeKeyEventCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT), api_v);
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
     ret = audioPolicyProxy->RegisterAudioRendererEventListener(clientId, object);
