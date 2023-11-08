@@ -141,15 +141,12 @@ ohos_shared_library("audio_policy_service") {
     "server/src/audio_capturer_state_change_listener_proxy.cpp",
     "server/src/audio_client_tracker_callback_proxy.cpp",
     "server/src/audio_group_handle.cpp",
-    "server/src/audio_policy_manager_listener_proxy.cpp",
+    "server/src/audio_policy_client_proxy.cpp",
     "server/src/audio_policy_manager_stub.cpp",
     "server/src/audio_policy_server.cpp",
     "server/src/audio_renderer_state_change_listener_proxy.cpp",
-    "server/src/audio_ringermode_update_listener_proxy.cpp",
-    "server/src/audio_routing_manager_listener_proxy.cpp",
     "server/src/audio_stream_collector.cpp",
     "server/src/audio_stream_event_dispatcher.cpp",
-    "server/src/audio_volume_key_event_callback_proxy.cpp",
     "server/src/service/audio_policy_service.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
     "server/src/service/config/audio_volume_parser.cpp",
@@ -338,14 +335,12 @@ ohos_shared_library("audio_policy_client") {
     "../audio_service/client/src/microphone_descriptor.cpp",
     "client/src/audio_capturer_state_change_listener_stub.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
+    "client/src/audio_policy_client_stub.cpp",
+    "client/src/audio_policy_client_stub_impl.cpp",
     "client/src/audio_policy_manager.cpp",
-    "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_policy_proxy.cpp",
     "client/src/audio_renderer_state_change_listener_stub.cpp",
-    "client/src/audio_ringermode_update_listener_stub.cpp",
-    "client/src/audio_routing_manager_listener_stub.cpp",
     "client/src/audio_volume_group_info.cpp",
-    "client/src/audio_volume_key_event_callback_stub.cpp",
   ]
 
   public_configs = [ ":audio_policy_client_config" ]
@@ -354,6 +349,7 @@ ohos_shared_library("audio_policy_client") {
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
