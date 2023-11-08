@@ -55,6 +55,11 @@ public:
     vector<unique_ptr<AudioDeviceDescriptor>> GetMediaCapturePublicDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePrivacyDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePublicDevices();
+    unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> GetDevicePrivacyMaps();
+    vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableDevicesByusage(AudioDeviceUsage usage);
+    void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
+        const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
+        std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
 private:
     AudioDeviceManager() {};
@@ -72,6 +77,7 @@ private:
     void AddRemoteRenderDev(const AudioDeviceDescriptor &devDesc);
     void AddRemoteCaptureDev(const AudioDeviceDescriptor &devDesc);
 
+
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;
 
@@ -87,6 +93,7 @@ private:
     vector<unique_ptr<AudioDeviceDescriptor>> mediaCapturePublicDevices_;
     vector<unique_ptr<AudioDeviceDescriptor>> capturePrivacyDevices_;
     vector<unique_ptr<AudioDeviceDescriptor>> capturePublicDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
 };
 } // namespace AudioStandard

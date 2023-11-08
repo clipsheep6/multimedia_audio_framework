@@ -125,7 +125,6 @@ void AudioDeviceManager::AddNewDevice(AudioDeviceDescriptor &devDesc)
     if (devDesc.connectTimeStamp_ == 0) {
         devDesc.connectTimeStamp_ = GetCurrentTimeMS();
     }
-
     AddRemoteRenderDev(devDesc);
     AddRemoteCaptureDev(devDesc);
 
@@ -304,6 +303,71 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
+}
+
+void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
+    const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
+    std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    for (auto &deviceInfo : deviceInfos) {
+        if (dev->deviceType_ != deviceInfo.deviceType) {
+            continue;
+        }
+        switch (usage) {
+            case MEDIA_OUTPUT_DEVICES:
+                if ((dev->deviceRole_ & OUTPUT_DEVICE) && (deviceInfo.deviceUsage & MEDIA)) {
+                    audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+                }
+                break;
+            case MEDIA_INPUT_DEVICES:
+                if ((dev->deviceRole_ & INPUT_DEVICE) && (deviceInfo.deviceUsage & MEDIA)) {
+                    audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+                }
+                break;
+            case ALL_MEDIA_DEVICES:
+                if (deviceInfo.deviceUsage & MEDIA) {
+                    audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+                }
+                break;
+            case CALL_OUTPUT_DEVICES:
+                if ((dev->deviceRole_ & OUTPUT_DEVICE) && (deviceInfo.deviceUsage & VOICE)) {
+                    audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+                }
+                break;
+            case CALL_INPUT_DEVICES:
+                if ((dev->deviceRole_ & INPUT_DEVICE) && (deviceInfo.deviceUsage & VOICE)) {
+                    audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+                }
+                break;
+            case ALL_CALL_DEVICES:
+                if (deviceInfo.deviceUsage & VOICE) {
+                    audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableDevicesByusage(AudioDeviceUsage usage)
+{
+    std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    for (auto &dev : connectedDevices_) {
+        for (auto &devicePrivacy : devicePrivacyMaps_) {
+            list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
+            sptr<AudioDeviceDescriptor> desc = new(std::nothrow) AudioDeviceDescriptor(*dev);
+            GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
+            delete desc;
+        }
+    }
+    return audioDeviceDescriptors;
+}
+
+unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> AudioDeviceManager::GetDevicePrivacyMaps()
+{
+    return devicePrivacyMaps_;
 }
 }
 }
