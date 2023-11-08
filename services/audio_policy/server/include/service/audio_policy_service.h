@@ -45,6 +45,7 @@
 #include "parser_factory.h"
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
+#include "audio_policy_client_proxy.h"
 #include "policy_provider_stub.h"
 
 namespace OHOS {
@@ -199,10 +200,11 @@ public:
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
+    int32_t RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        const DeviceFlag flag, const int32_t clientId, bool hasBTPermission);
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag);
+    int32_t UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag,
+        const int32_t clientId, bool hasBTPermission);
 
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
         bool hasBTPermission);
@@ -325,6 +327,10 @@ public:
     void OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);
 
     void OnCapturerSessionRemoved(uint64_t sessionID);
+
+    std::shared_ptr<AudioPolicyClientProxy> GetAudioPolicyClientProxyAPS(
+        const int32_t clientPid, const DeviceFlag flag, bool hasBTPermission, const sptr<IRemoteObject> &object);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -579,7 +585,7 @@ private:
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
 
-    std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
+    std::map<std::pair<int32_t, DeviceFlag>, std::shared_ptr<AudioPolicyClientProxy>> deviceChangePolicyProxyCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredOutputDeviceCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredInputDeviceCbsMap_;
 
