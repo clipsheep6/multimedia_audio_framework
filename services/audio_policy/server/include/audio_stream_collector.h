@@ -19,6 +19,8 @@
 #include "audio_info.h"
 #include "audio_stream_event_dispatcher.h"
 
+#include "audio_system_manager.h"
+
 namespace OHOS {
 namespace AudioStandard {
 class AudioStreamCollector {
@@ -74,6 +76,9 @@ private:
     int32_t UpdateRendererDeviceInfo(DeviceInfo &outputDeviceInfo);
     int32_t UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceInfo);
     AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
+    AudioStreamType GetStreamTypeFromSourceType(SourceType sourceType);
+
+    AudioSystemManager *mAudioSystemMgr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

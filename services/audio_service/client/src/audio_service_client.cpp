@@ -1992,6 +1992,11 @@ int32_t AudioServiceClient::GetFrameCountForCapturer(uint32_t &frameCount)
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::GetClientPid()
+{
+    return clientPid_;
+}
+
 uint32_t AudioServiceClient::GetSamplingRate() const
 {
     return DEFAULT_SAMPLING_RATE;
