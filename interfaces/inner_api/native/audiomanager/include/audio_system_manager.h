@@ -224,6 +224,19 @@ public:
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
 };
 
+class AudioManagerAvailableDeviceChangeCallback{
+public:
+    /**
+     * Called when an interrupt is received.
+     *
+     * @param deviceChangeAction Indicates the DeviceChangeAction information needed by client.
+     * For details, refer DeviceChangeAction struct
+     * @since 11
+     */
+    virtual void OnAvailableDeviceChange(const AudioDeviceUsage usage,
+        const DeviceChangeAction &deviceChangeAction) = 0;
+};
+
 class VolumeKeyEventCallback {
 public:
     virtual ~VolumeKeyEventCallback() = default;
@@ -984,6 +997,25 @@ public:
      * @since 11
      */
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
+    /**
+     * @brief Registers the availbale deviceChange callback listener.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * 
+     * @since 11
+     */
+    int32_t SetAvailableDeviceChangeCallback(const AudioDeviceUsage usage,
+        const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback);
+    /**
+     * @brief UnRegisters the availbale deviceChange callback listener.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * 
+     * @since 11
+     */
+    int32_t UnSetAvailableDeviceChangeCallback(AudioDeviceUsage usage);
 
     static void AudioServerDied(pid_t pid);
 private:
