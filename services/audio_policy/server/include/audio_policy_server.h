@@ -179,9 +179,10 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t RegisterAudioManagerInterruptCallbackClient(const sptr<IRemoteObject> &object,
+        const int32_t code) override;
 
-    int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) override;
+    int32_t UnregisterAudioManagerInterruptCallbackClient(const int32_t code) override;
 
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
@@ -435,13 +436,14 @@ private:
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;
     std::vector<pid_t> clientDiedListenerState_;
 
-    std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
+    // std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap_;
+    // std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> volumeKeyEventPolicyProxyCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> focusInfoChangePolicyProxyCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> audioInterruptPolicyProxyCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> ringerModeProxyCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> micStateChangeProxyCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> amInterruptPolicyProxyCBMap_;
 
     std::mutex volumeKeyEventMutex_;
     std::mutex interruptMutex_;

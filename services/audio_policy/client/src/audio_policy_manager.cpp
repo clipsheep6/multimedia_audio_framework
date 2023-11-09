@@ -776,7 +776,7 @@ int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
     return gsp->DeactivateAudioInterrupt(audioInterrupt);
 }
 
-int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clientId,
+int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t /*clientId*/,
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -790,31 +790,34 @@ int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clien
     }
 
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    sptr<AudioPolicyManagerListenerStub> interruptListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
-    if (interruptListenerStub == nullptr) {
-        AUDIO_ERR_LOG("SetAudioManagerInterruptCallback: object null");
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient();
+    if (audioPolicyClientStub == nullptr) {
+        AUDIO_ERR_LOG("SetAudioManagerInterruptCallback: audioPolicyClientStub get error");
+        lock.unlock();
         return ERROR;
     }
-    interruptListenerStub->SetInterruptCallback(callback);
-
-    sptr<IRemoteObject> object = interruptListenerStub->AsObject();
+    audioPolicyClientStub->SetAudioInterruptCallback(callback);
+    sptr<IRemoteObject> object = audioPolicyClientStub->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetAudioManagerInterruptCallback: onInterruptListenerStub->AsObject is nullptr.");
+        AUDIO_ERR_LOG("SetAudioManagerInterruptCallback: audioPolicyClientStub->AsObject is nullptr.");
+        lock.unlock();
         return ERROR;
     }
     lock.unlock();
 
-    return gsp->SetAudioManagerInterruptCallback(clientId, object);
+    return gsp->RegisterAudioManagerInterruptCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
 }
 
-int32_t AudioPolicyManager::UnsetAudioManagerInterruptCallback(const int32_t clientId)
+int32_t AudioPolicyManager::UnsetAudioManagerInterruptCallback(const int32_t /*clientId*/)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("UnsetAudioManagerInterruptCallback: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->UnsetAudioManagerInterruptCallback(clientId);
+    return gsp->UnregisterAudioManagerInterruptCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
 }
 
 int32_t AudioPolicyManager::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)

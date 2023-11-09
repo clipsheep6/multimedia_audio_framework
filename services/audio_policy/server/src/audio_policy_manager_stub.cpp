@@ -540,22 +540,24 @@ void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, Me
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::RegisterAudioManagerInterruptCallbackClientInternal(MessageParcel &data,
+    MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
+    int32_t code = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
-    int32_t result = SetAudioManagerInterruptCallback(clientId, object);
+    int32_t result = RegisterAudioManagerInterruptCallbackClient(object, code);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnregisterAudioManagerInterruptCallbackClientInternal(MessageParcel &data,
+    MessageParcel &reply)
 {
-    int32_t clientId = data.ReadInt32();
-    int32_t result = UnsetAudioManagerInterruptCallback(clientId);
+    int32_t code = data.ReadInt32();
+    int32_t result = UnregisterAudioManagerInterruptCallbackClient(code);
     reply.WriteInt32(result);
 }
 

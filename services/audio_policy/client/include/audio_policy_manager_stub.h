@@ -50,8 +50,8 @@ private:
     void UnRegisterAudioInterruptCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
     void DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
-    void SetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterAudioManagerInterruptCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterAudioManagerInterruptCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
     void RequestAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
     void AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply);
@@ -147,8 +147,8 @@ private:
         &AudioPolicyManagerStub::UnRegisterAudioInterruptCallbackClientInternal,
         &AudioPolicyManagerStub::ActivateInterruptInternal,
         &AudioPolicyManagerStub::DeactivateInterruptInternal,
-        &AudioPolicyManagerStub::SetAudioManagerInterruptCbInternal,
-        &AudioPolicyManagerStub::UnsetAudioManagerInterruptCbInternal,
+        &AudioPolicyManagerStub::RegisterAudioManagerInterruptCallbackClientInternal,
+        &AudioPolicyManagerStub::UnregisterAudioManagerInterruptCallbackClientInternal,
         &AudioPolicyManagerStub::RequestAudioFocusInternal,
         &AudioPolicyManagerStub::AbandonAudioFocusInternal,
         &AudioPolicyManagerStub::GetStreamInFocusInternal,

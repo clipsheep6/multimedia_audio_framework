@@ -21,7 +21,6 @@
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_effect.h"
 #include "audio_interrupt_callback.h"
-#include "audio_policy_manager_listener_stub.h"
 #include "audio_renderer_state_change_listener_stub.h"
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"
@@ -259,7 +258,6 @@ private:
     }
     ~AudioPolicyManager() {}
 
-    sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
     std::mutex listenerStubMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;

@@ -41,9 +41,7 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include "audio_policy_manager_listener_proxy.h"
 #include "audio_routing_manager_listener_proxy.h"
-#include "i_standard_audio_policy_manager_listener.h"
 #include "microphone_descriptor.h"
 #include "parameter.h"
 #include "parameters.h"
@@ -1178,7 +1176,7 @@ int32_t AudioPolicyServer::RegisterAudioInterruptCallbackClient(const sptr<IRemo
 int32_t AudioPolicyServer::UnRegisterAudioInterruptCallbackClient(const uint32_t sessionID, const uint32_t code)
 {
     std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(sessionID, nullptr,
-    focusInfoChangePolicyProxyCBMap_);
+        audioInterruptPolicyProxyCBMap_);
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
@@ -1186,7 +1184,7 @@ int32_t AudioPolicyServer::UnRegisterAudioInterruptCallbackClient(const uint32_t
 
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
-    if (focusInfoChangePolicyProxyCBMap_.erase(sessionID) == 0) {
+    if (audioInterruptPolicyProxyCBMap_.erase(sessionID) == 0) {
         AUDIO_ERR_LOG("UnsetAudioInterruptCallback session %{public}d not present", sessionID);
         return ERR_INVALID_OPERATION;
     }
@@ -1194,35 +1192,34 @@ int32_t AudioPolicyServer::UnRegisterAudioInterruptCallbackClient(const uint32_t
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const int32_t /* clientId */,
-                                                            const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterAudioManagerInterruptCallbackClient(const sptr<IRemoteObject> &object,
+    const int32_t code)
 {
-    std::lock_guard<std::mutex> lock(amInterruptMutex_);
-
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "SetAudioManagerInterruptCallback object is nullptr");
-
-    sptr<IStandardAudioPolicyManagerListener> listener = iface_cast<IStandardAudioPolicyManagerListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
-        "SetAudioManagerInterruptCallback obj cast failed");
-
-    std::shared_ptr<AudioInterruptCallback> callback = std::make_shared<AudioPolicyManagerListenerCallback>(listener);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "SetAudioManagerInterruptCallback create cb failed");
-
+        "RegisterAudioManagerInterruptCallbackClient object is nullptr");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    amInterruptCbsMap_[clientPid] = callback;
-    AUDIO_INFO_LOG("SetAudioManagerInterruptCallback for client id %{public}d done", clientPid);
-
-    return SUCCESS;
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, object,
+        amInterruptPolicyProxyCBMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    return proxy->RegisterPolicyCallbackClient(object, code);
 }
 
-int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const int32_t /* clientId */)
+int32_t AudioPolicyServer::UnregisterAudioManagerInterruptCallbackClient(const int32_t code)
 {
-    std::lock_guard<std::mutex> lock(amInterruptMutex_);
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    if (amInterruptCbsMap_.erase(clientPid) == 0) {
-        AUDIO_ERR_LOG("UnsetAudioManagerInterruptCallback client %{public}d not present", clientPid);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, nullptr,
+        amInterruptPolicyProxyCBMap_);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    proxy->UnregisterPolicyCallbackClient(code);
+
+    std::lock_guard<std::mutex> lock(amInterruptMutex_);
+    if (amInterruptPolicyProxyCBMap_.erase(clientPid) == 0) {
+        AUDIO_ERR_LOG("UnregisterAudioManagerInterruptCallbackClient client %{public}d not present", clientPid);
         return ERR_INVALID_OPERATION;
     }
 
@@ -1269,12 +1266,12 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
 void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus granted in: %{public}d", clientId);
-    if (amInterruptCbsMap_.find(clientId) == amInterruptCbsMap_.end()) {
+    if (amInterruptPolicyProxyCBMap_.find(clientId) == amInterruptPolicyProxyCBMap_.end()) {
         AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback does not exist", clientId);
         return;
     }
-    std::shared_ptr<AudioInterruptCallback> interruptCb = amInterruptCbsMap_[clientId];
-    if (interruptCb == nullptr) {
+    std::shared_ptr<AudioPolicyClientProxy> interruptCbProxy = amInterruptPolicyProxyCBMap_[clientId];
+    if (interruptCbProxy == nullptr) {
         AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback is nullptr", clientId);
         return;
     } else {
@@ -1285,7 +1282,7 @@ void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioIn
         interruptEvent.duckVolume = 0;
 
         AUDIO_DEBUG_LOG("callback focus granted");
-        interruptCb->OnInterrupt(interruptEvent);
+        interruptCbProxy->OnInterrupt(interruptEvent);
 
         unique_ptr<AudioInterrupt> tempAudioInterruptInfo = make_unique<AudioInterrupt>();
         tempAudioInterruptInfo->streamUsage = audioInterrupt.streamUsage;
@@ -1300,9 +1297,9 @@ void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioIn
 int32_t AudioPolicyServer::NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus abandoned in: %{public}d", clientId);
-    std::shared_ptr<AudioInterruptCallback> interruptCb = nullptr;
-    interruptCb = amInterruptCbsMap_[clientId];
-    if (!interruptCb) {
+    std::shared_ptr<AudioPolicyClientProxy> interruptCbProxy = nullptr;
+    interruptCbProxy = amInterruptPolicyProxyCBMap_[clientId];
+    if (!interruptCbProxy) {
         AUDIO_ERR_LOG("Notify failed, callback not present");
         return ERR_INVALID_PARAM;
     }
@@ -1313,7 +1310,7 @@ int32_t AudioPolicyServer::NotifyFocusAbandoned(const int32_t clientId, const Au
     interruptEvent.hintType = INTERRUPT_HINT_STOP;
     interruptEvent.duckVolume = 0;
     AUDIO_DEBUG_LOG("callback focus abandoned");
-    interruptCb->OnInterrupt(interruptEvent);
+    interruptCbProxy->OnInterrupt(interruptEvent);
 
     return SUCCESS;
 }
@@ -1848,7 +1845,7 @@ int32_t AudioPolicyServer::UnregisterFocusInfoChangeCallbackClient(const uint32_
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, nullptr,
-    focusInfoChangePolicyProxyCBMap_);
+        focusInfoChangePolicyProxyCBMap_);
     if (proxy == nullptr) {
         return ERR_INVALID_OPERATION;
     }
