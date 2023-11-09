@@ -1288,6 +1288,15 @@ int32_t AudioServiceClient::FlushStream()
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
+    pa_proplist *propList = pa_proplist_new();
+    pa_proplist_sets(propList, "stream.flush", "true");
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_sets(propList, "stream.flush", "false");
+    updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -1987,8 +1996,9 @@ int32_t AudioServiceClient::GetBufferSizeForCapturer(size_t &bufferSize)
 int32_t AudioServiceClient::GetFrameCountForCapturer(uint32_t &frameCount)
 {
     size_t bufferSize;
-    GetBufferSize(bufferSize);
-    frameCount = bufferSize / (sampleSpec.rate * sampleSpec.channels);
+    GetBufferSizeForCapturer(bufferSize);
+    size_t sampleSize = pa_sample_size_of_format(sampleSpec.format);
+    frameCount = bufferSize / (sampleSize * sampleSpec.channels);
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -2266,6 +2276,7 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "media.name", streamName.c_str());
     pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
+    pa_proplist_sets(propList, "stream.flush", "false");
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);
