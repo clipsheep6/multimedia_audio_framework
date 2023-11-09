@@ -305,42 +305,57 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
     return descs;
 }
 
+bool AudioDeviceManager::IsDefaultDevice(DeviceType deviceType)
+{
+    if ((deviceType == DEVICE_TYPE_SPEAKER) ||
+        (deviceType == DEVICE_TYPE_EARPIECE) ||
+        (deviceType == DEVICE_TYPE_MIC)) {
+        return true;
+    }
+    return false;
+}
+
 void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
     const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
     std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
     for (auto &deviceInfo : deviceInfos) {
-        if (dev->deviceType_ != deviceInfo.deviceType) {
+        if ((dev->deviceType_ != deviceInfo.deviceType) && !IsDefaultDevice(dev->deviceType_)) {
             continue;
         }
         switch (usage) {
             case MEDIA_OUTPUT_DEVICES:
-                if ((dev->deviceRole_ & OUTPUT_DEVICE) && (deviceInfo.deviceUsage & MEDIA)) {
+                if (((dev->deviceRole_ & OUTPUT_DEVICE) && (deviceInfo.deviceUsage & MEDIA)) ||
+                    (dev->deviceType_ == DEVICE_TYPE_SPEAKER || dev->deviceType_ == DEVICE_TYPE_EARPIECE)) {
                     audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
                 }
                 break;
             case MEDIA_INPUT_DEVICES:
-                if ((dev->deviceRole_ & INPUT_DEVICE) && (deviceInfo.deviceUsage & MEDIA)) {
+                if (((dev->deviceRole_ & INPUT_DEVICE) && (deviceInfo.deviceUsage & MEDIA)) ||
+                    (dev->deviceType_ == DEVICE_TYPE_MIC)) {
                     audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
                 }
                 break;
             case ALL_MEDIA_DEVICES:
-                if (deviceInfo.deviceUsage & MEDIA) {
+                if ((deviceInfo.deviceUsage & MEDIA) || (dev->deviceType_ == DEVICE_TYPE_MIC) ||
+                    (dev->deviceType_ == DEVICE_TYPE_SPEAKER)) {
                     audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
                 }
                 break;
             case CALL_OUTPUT_DEVICES:
-                if ((dev->deviceRole_ & OUTPUT_DEVICE) && (deviceInfo.deviceUsage & VOICE)) {
+                if (((dev->deviceRole_ & OUTPUT_DEVICE) && (deviceInfo.deviceUsage & VOICE)) ||
+                    (dev->deviceType_ == DEVICE_TYPE_SPEAKER || dev->deviceType_ == DEVICE_TYPE_EARPIECE)) {
                     audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
                 }
                 break;
             case CALL_INPUT_DEVICES:
-                if ((dev->deviceRole_ & INPUT_DEVICE) && (deviceInfo.deviceUsage & VOICE)) {
+                if (((dev->deviceRole_ & INPUT_DEVICE) && (deviceInfo.deviceUsage & VOICE)) ||
+                    (dev->deviceType_ == DEVICE_TYPE_MIC)) {
                     audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
                 }
                 break;
             case ALL_CALL_DEVICES:
-                if (deviceInfo.deviceUsage & VOICE) {
+                if ((deviceInfo.deviceUsage & VOICE) || (IsDefaultDevice(dev->deviceType_))) {
                     audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
                 }
                 break;

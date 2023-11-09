@@ -76,7 +76,7 @@ private:
 
     void AddRemoteRenderDev(const AudioDeviceDescriptor &devDesc);
     void AddRemoteCaptureDev(const AudioDeviceDescriptor &devDesc);
-
+    bool IsDefaultDevice(DeviceType deviceType);
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;
