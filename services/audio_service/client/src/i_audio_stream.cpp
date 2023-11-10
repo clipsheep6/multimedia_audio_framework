@@ -126,12 +126,22 @@ const std::string IAudioStream::GetEffectSceneName(AudioStreamType audioType)
     return sceneName;
 }
 
-bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params)
+bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params, bool isCapturerStream)
 {
     // 0 for normal stream
     if (streamFlags == 0) {
         return true;
     }
+
+    if (isCapturerStream) {
+        if (static_cast<AudioSamplingRate>(params.samplingRate) != AudioSamplingRate::SAMPLE_RATE_48000 ||
+            static_cast<AudioChannel>(params.channels) != AudioChannel::STEREO ||
+            static_cast<AudioSampleFormat>(params.format) != AudioSampleFormat::SAMPLE_S16LE)
+        {
+            return false;
+        }
+    }
+
     // 1 for fast stream
     if (streamFlags == STREAM_FLAG_FAST) {
         // check audio sample rate

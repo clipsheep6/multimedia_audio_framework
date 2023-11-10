@@ -171,7 +171,17 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     if (capturerInfo_.capturerFlags == STREAM_FLAG_FAST) {
-        streamClass = IAudioStream::FAST_STREAM;
+        if (IAudioStream::IsStreamSupported(capturerInfo_.capturerFlags, audioStreamParams, true)) {
+            AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FAST");
+            streamClass = IAudioStream::FAST_STREAM;
+            DeviceType deviceType = AudioPolicyManager::GetInstance().GetActiveInputDevice();
+            if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+                streamClass = IAudioStream::PA_STREAM;
+            }
+        } else {
+            AUDIO_ERR_LOG("Unsupported parameter, try to create a normal stream");
+            streamClass = IAudioStream::PA_STREAM;
+        }
     }
 
     // check AudioStreamParams for fast stream
