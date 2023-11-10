@@ -39,14 +39,14 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
         return -1;
     }
     switch (code) {
-        case ON_MIC_STATE_UPDATED: {
-            MicStateChangeEvent micStateChangeEvent = {};
+        // case ON_MIC_STATE_UPDATED: {
+        //     MicStateChangeEvent micStateChangeEvent = {};
 
-            micStateChangeEvent.mute = data.ReadBool();
-            OnMicStateUpdated(micStateChangeEvent);
+        //     micStateChangeEvent.mute = data.ReadBool();
+        //     OnMicStateUpdated(micStateChangeEvent);
 
-            return AUDIO_OK;
-        }
+        //     return AUDIO_OK;
+        // }
         case ON_ACTIVE_OUTPUT_DEVICE_UPDATED: {
             std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
             int32_t size = data.ReadInt32();
@@ -75,24 +75,24 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
     }
 }
 
-void AudioRoutingManagerListenerStub::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
-{
-    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnMicStateChange start");
-    std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangedCallback = micStateChangeCallback_.lock();
+// void AudioRoutingManagerListenerStub::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
+// {
+//     AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnMicStateChange start");
+//     std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangedCallback = micStateChangeCallback_.lock();
 
-    if (micStateChangedCallback == nullptr) {
-        AUDIO_ERR_LOG("OnMicStateUpdated: micStateChangeCallback_ or micStateChangeEvent is nullptr");
-        return;
-    }
+//     if (micStateChangedCallback == nullptr) {
+//         AUDIO_ERR_LOG("OnMicStateUpdated: micStateChangeCallback_ or micStateChangeEvent is nullptr");
+//         return;
+//     }
 
-    micStateChangedCallback->OnMicStateUpdated(micStateChangeEvent);
-}
+//     micStateChangedCallback->OnMicStateUpdated(micStateChangeEvent);
+// }
 
-void AudioRoutingManagerListenerStub::SetMicStateChangeCallback(
-    const std::weak_ptr<AudioManagerMicStateChangeCallback> &cb)
-{
-    micStateChangeCallback_ = cb;
-}
+// void AudioRoutingManagerListenerStub::SetMicStateChangeCallback(
+//     const std::weak_ptr<AudioManagerMicStateChangeCallback> &cb)
+// {
+//     micStateChangeCallback_ = cb;
+// }
 
 void AudioRoutingManagerListenerStub::OnPreferredOutputDeviceUpdated(
     const std::vector<sptr<AudioDeviceDescriptor>> &desc)

@@ -17,13 +17,13 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "parcel.h"
+#include "audio_policy_client.h"
 #include "audio_policy_unit_test.h"
 #include "audio_system_manager.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "audio_capturer_state_change_listener_stub.h"
 #include "audio_renderer_state_change_listener_stub.h"
-#include "audio_ringermode_update_listener_stub.h"
 #include "audio_routing_manager_listener_stub.h"
 #include "audio_client_tracker_callback_stub.h"
 
@@ -192,18 +192,20 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_DeviceChangeCallback_001, TestSize.Leve
     AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
     ASSERT_NE(nullptr, audioPolicyProxy);
 
-    int32_t clientId = getpid();
     DeviceFlag flag = DeviceFlag::OUTPUT_DEVICES_FLAG;
     sptr<IRemoteObject> object = nullptr;
 
-    int32_t ret = audioPolicyProxy->SetDeviceChangeCallback(clientId, flag, object);
+    int32_t ret = audioPolicyProxy->RegisterDeviceChangeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), flag);
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
     AudioPolicyUnitTest::GetIRemoteObject(object);
-    ret = audioPolicyProxy->SetDeviceChangeCallback(clientId, flag, object);
+    ret = audioPolicyProxy->RegisterDeviceChangeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), flag);
     EXPECT_EQ(FAILURE, ret);
 
-    ret = audioPolicyProxy->UnsetDeviceChangeCallback(clientId, flag);
+    ret = audioPolicyProxy->UnregisterDeviceChangeCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE), flag);
     EXPECT_EQ(FAILURE, ret);
 }
 
@@ -529,7 +531,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize
 
     uint32_t sessionID_ = AudioPolicyUnitTest::GetSessionId(audioStream);
     sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->SetAudioInterruptCallback(sessionID_, object);
+    int32_t ret = audioPolicyProxy->RegisterAudioInterruptCallbackClient(object, sessionID_,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 }
 
@@ -735,8 +738,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, Audio_Ringermode_Update_Listener_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioRingerModeUpdateListenerStub> ringermodeStub =
-        std::make_shared<AudioRingerModeUpdateListenerStub>();
+    std::shared_ptr<AudioPolicyClientStubImpl> ringermodeStub =
+        std::make_shared<AudioPolicyClientStubImpl>();
     std::weak_ptr<AudioRingerModeCallbackTest> callback = std::make_shared<AudioRingerModeCallbackTest>();
     AudioRingerMode ringerMode = AudioRingerMode::RINGER_MODE_SILENT;
     
@@ -862,16 +865,18 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetRingerMode_001, TestSize.Level1)
     AudioRingerMode ringModeRet = audioPolicyProxy->GetRingerMode();
     EXPECT_EQ(ringMode, ringModeRet);
 
-    int32_t clientId= getpid();
     sptr<IRemoteObject> object = nullptr;
-    ret = audioPolicyProxy->SetRingerModeCallback(clientId, object, api_v);
+    ret = audioPolicyProxy->RegisterRingerModeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE), api_v);
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
     AudioPolicyUnitTest::GetIRemoteObject(object);
-    ret = audioPolicyProxy->SetRingerModeCallback(clientId, object, api_v);
+    ret = audioPolicyProxy->RegisterRingerModeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE), api_v);
     EXPECT_EQ(FAILURE, ret);
 
-    ret = audioPolicyProxy->UnsetRingerModeCallback(clientId);
+    ret = audioPolicyProxy->UnregisterRingerModeCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE));
     EXPECT_EQ(FAILURE, ret);
 }
 
@@ -893,10 +898,12 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetCallback_001, TestSize.Level1)
     ret = audioPolicyProxy->SetPreferredOutputDeviceChangeCallback(clientId, object);
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
-    ret = audioPolicyProxy->RegisterFocusInfoChangeCallback(clientId, object);
+    ret = audioPolicyProxy->RegisterFocusInfoChangeCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
-    ret = audioPolicyProxy->SetVolumeKeyEventCallback(clientId, object, api_v);
+    ret = audioPolicyProxy->RegisterVolumeKeyEventCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT), api_v);
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
     ret = audioPolicyProxy->RegisterAudioRendererEventListener(clientId, object);

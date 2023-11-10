@@ -26,22 +26,11 @@ public:
     explicit AudioRoutingManagerListenerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioRoutingManagerListenerProxy();
     DISALLOW_COPY_AND_MOVE(AudioRoutingManagerListenerProxy);
-    void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
 
 private:
     static inline BrokerDelegator<AudioRoutingManagerListenerProxy> delegator_;
-};
-
-class AudioRoutingManagerListenerCallback : public AudioManagerMicStateChangeCallback {
-public:
-    AudioRoutingManagerListenerCallback(const sptr<IStandardAudioRoutingManagerListener> &listener);
-    virtual ~AudioRoutingManagerListenerCallback();
-    DISALLOW_COPY_AND_MOVE(AudioRoutingManagerListenerCallback);
-    void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
-private:
-    sptr<IStandardAudioRoutingManagerListener> listener_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

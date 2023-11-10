@@ -91,38 +91,32 @@ public:
 
     AudioScene GetAudioScene() override;
 
-    int32_t SetRingerModeCallback(const int32_t clientId,
-        const sptr<IRemoteObject> &object, API_VERSION api_v) override;
+    int32_t RegisterRingerModeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code,
+        API_VERSION api_v) override;
 
-    int32_t UnsetRingerModeCallback(const int32_t clientId) override;
+    int32_t UnregisterRingerModeCallbackClient(const int32_t code) override;
 
-    int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t RegisterMicStateChangeCallbackClient(const sptr<IRemoteObject> &object, const int32_t code) override;
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
-        const sptr<IRemoteObject>& object) override;
+    int32_t UnregisterMicStateChangeCallbackClient(const int32_t code) override;
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) override;
+    int32_t RegisterAudioInterruptCallbackClient(const sptr<IRemoteObject>& object, const uint32_t sessionID,
+        const uint32_t code) override;
 
-    int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
-
-    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) override;
+    int32_t UnRegisterAudioInterruptCallbackClient(const uint32_t sessionID, const uint32_t code) override;
 
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t RegisterAudioManagerInterruptCallbackClient(const sptr<IRemoteObject> &object,
+        const int32_t code) override;
 
-    int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) override;
+    int32_t UnregisterAudioManagerInterruptCallbackClient(const int32_t code) override;
 
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
-
-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
-        const sptr<IRemoteObject> &object, API_VERSION api_v) override;
-
-    int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) override;
 
     AudioStreamType GetStreamInFocus() override;
 
@@ -184,9 +178,9 @@ public:
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 
-    int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) override;
+    int32_t RegisterFocusInfoChangeCallbackClient(const sptr<IRemoteObject>& object, const uint32_t code) override;
 
-    int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId) override;
+    int32_t UnregisterFocusInfoChangeCallbackClient(const uint32_t code) override;
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) override;
 
@@ -216,9 +210,20 @@ public:
 
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() override;
 
+    int32_t RegisterVolumeKeyEventCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        API_VERSION api_v) override;
+    
+    int32_t UnregisterVolumeKeyEventCallbackClient(const uint32_t code) override;
+
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
+
+    int32_t RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        const DeviceFlag flag) override;
+
+    int32_t UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

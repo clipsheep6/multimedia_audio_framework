@@ -3205,32 +3205,51 @@ void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, 
     interruptGroupData_ = interruptGroupData;
 }
 
-int32_t AudioPolicyService::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
-    const sptr<IRemoteObject> &object, bool hasBTPermission)
+std::shared_ptr<AudioPolicyClientProxy> AudioPolicyService::GetAudioPolicyClientProxyAPS(
+    const int32_t clientPid, const DeviceFlag flag, bool hasBTPermission, const sptr<IRemoteObject> &object)
 {
-    sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
-
-    if (callback != nullptr) {
-        callback->hasBTPermission_ = hasBTPermission;
-        deviceChangeCbsMap_[{clientId, flag}] = callback;
+    std::shared_ptr<AudioPolicyClientProxy> proxy = deviceChangePolicyProxyCbsMap_[{clientPid, flag}];
+    if (proxy == nullptr && object != nullptr) {
+        proxy = std::make_shared<AudioPolicyClientProxy>(object);
+        proxy->hasBTPermission_ = hasBTPermission;
+        deviceChangePolicyProxyCbsMap_[{clientPid, flag}] = proxy;
     }
-    AUDIO_DEBUG_LOG("SetDeviceChangeCallback:: deviceChangeCbsMap_ size: %{public}zu", deviceChangeCbsMap_.size());
-    return SUCCESS;
+    return proxy;
 }
 
-int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag)
+int32_t AudioPolicyService::RegisterDeviceChangeCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+    const DeviceFlag flag, const int32_t clientId, bool hasBTPermission)
+{
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+
+    std::shared_ptr<AudioPolicyClientProxy> proxy =
+        GetAudioPolicyClientProxyAPS(clientId, flag, hasBTPermission, object);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    return proxy->RegisterPolicyCallbackClient(object, code);
+}
+
+int32_t AudioPolicyService::UnregisterDeviceChangeCallbackClient(const uint32_t code, DeviceFlag flag,
+    const int32_t clientId, bool hasBTPermission)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    std::shared_ptr<AudioPolicyClientProxy> proxy =
+        GetAudioPolicyClientProxyAPS(clientId, flag, hasBTPermission, nullptr);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    proxy->UnregisterPolicyCallbackClient(code);
 
-    if (deviceChangeCbsMap_.erase({clientId, flag}) == 0) {
+    if (deviceChangePolicyProxyCbsMap_.erase({clientId, flag}) == 0) {
         AUDIO_INFO_LOG("client not present in %{public}s", __func__);
     }
     // for audio manager napi remove all device change callback
     if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
-        for (auto it = deviceChangeCbsMap_.begin(); it != deviceChangeCbsMap_.end();) {
+        for (auto it = deviceChangePolicyProxyCbsMap_.begin(); it != deviceChangePolicyProxyCbsMap_.end();) {
             if ((*it).first.first == clientId && ((*it).first.second == DeviceFlag::INPUT_DEVICES_FLAG ||
                 (*it).first.second == DeviceFlag::OUTPUT_DEVICES_FLAG)) {
-                it = deviceChangeCbsMap_.erase(it);
+                it = deviceChangePolicyProxyCbsMap_.erase(it);
             } else {
                 it++;
             }
@@ -3238,16 +3257,18 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId, De
     }
     // for routing manager napi remove all device change callback
     if (flag == DeviceFlag::ALL_L_D_DEVICES_FLAG) {
-        for (auto it = deviceChangeCbsMap_.begin(); it != deviceChangeCbsMap_.end();) {
+        for (auto it = deviceChangePolicyProxyCbsMap_.begin(); it != deviceChangePolicyProxyCbsMap_.end();) {
             if ((*it).first.first == clientId) {
-                it = deviceChangeCbsMap_.erase(it);
+                it = deviceChangePolicyProxyCbsMap_.erase(it);
             } else {
                 it++;
             }
         }
     }
 
-    AUDIO_DEBUG_LOG("UnsetDeviceChangeCallback:: deviceChangeCbsMap_ size: %{public}zu", deviceChangeCbsMap_.size());
+    AUDIO_DEBUG_LOG("UnsetDeviceChangeCallback:: deviceChangePolicyProxyCbsMap_ size: %{public}zu", \
+        deviceChangePolicyProxyCbsMap_.size());
+
     return SUCCESS;
 }
 
@@ -3879,7 +3900,7 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
 
     WriteDeviceChangedSysEvents(desc, isConnected);
 
-    for (auto it = deviceChangeCbsMap_.begin(); it != deviceChangeCbsMap_.end(); ++it) {
+    for (auto it = deviceChangePolicyProxyCbsMap_.begin(); it != deviceChangePolicyProxyCbsMap_.end(); ++it) {
         deviceChangeAction.flag = it->first.second;
         deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first.second, desc);
         if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {

@@ -31,22 +31,22 @@ AudioRoutingManagerListenerProxy::~AudioRoutingManagerListenerProxy()
     AUDIO_DEBUG_LOG("~AudioRoutingManagerListenerProxy: Instance destroy");
 }
 
-void AudioRoutingManagerListenerProxy::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
-        return;
-    }
+// void AudioRoutingManagerListenerProxy::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
+// {
+//     MessageParcel data;
+//     MessageParcel reply;
+//     MessageOption option(MessageOption::TF_ASYNC);
+//     if (!data.WriteInterfaceToken(GetDescriptor())) {
+//         AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+//         return;
+//     }
 
-    data.WriteBool(micStateChangeEvent.mute);
-    int error = Remote()->SendRequest(ON_MIC_STATE_UPDATED, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OnMicStateUpdated failed, error: %{public}d", error);
-    }
-}
+//     data.WriteBool(micStateChangeEvent.mute);
+//     int error = Remote()->SendRequest(ON_MIC_STATE_UPDATED, data, reply, option);
+//     if (error != ERR_NONE) {
+//         AUDIO_ERR_LOG("OnMicStateUpdated failed, error: %{public}d", error);
+//     }
+// }
 
 
 void AudioRoutingManagerListenerProxy::OnPreferredOutputDeviceUpdated(
@@ -90,24 +90,6 @@ void AudioRoutingManagerListenerProxy::OnPreferredInputDeviceUpdated(
     int error = Remote()->SendRequest(ON_ACTIVE_INPUT_DEVICE_UPDATED, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("OnPreferredInputDeviceUpdated failed, error: %{public}d", error);
-    }
-}
-
-AudioRoutingManagerListenerCallback::AudioRoutingManagerListenerCallback(
-    const sptr<IStandardAudioRoutingManagerListener> &listener) : listener_(listener)
-{
-        AUDIO_DEBUG_LOG("AudioRoutingManagerListenerCallback: Instance create");
-}
-
-AudioRoutingManagerListenerCallback::~AudioRoutingManagerListenerCallback()
-{
-    AUDIO_DEBUG_LOG("AudioRoutingManagerListenerCallback: Instance destroy");
-}
-
-void AudioRoutingManagerListenerCallback::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
-{
-    if (listener_ != nullptr) {
-        listener_->OnMicStateUpdated(micStateChangeEvent);
     }
 }
 } // namespace AudioStandard
