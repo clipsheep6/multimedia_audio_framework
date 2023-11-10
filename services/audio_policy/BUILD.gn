@@ -242,7 +242,10 @@ ohos_shared_library("audio_policy_service") {
 
   if (bluetooth_part_enable == true) {
     deps += [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
-    external_deps += [ "bluetooth:btframework" ]
+    external_deps += [
+      "bluetooth:btframework",
+      "bluetooth:btcommon",
+    ]
     include_dirs += [ "../../../../foundation/communication/bluetooth/interfaces/inner_api/include" ]
   }
 

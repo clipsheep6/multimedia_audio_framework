@@ -112,6 +112,7 @@ public:
     virtual ~AudioHfpManager() = default;
     static void RegisterBluetoothScoListener();
     static void UnregisterBluetoothScoListener();
+    static void DisconnectScoDevice();
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;

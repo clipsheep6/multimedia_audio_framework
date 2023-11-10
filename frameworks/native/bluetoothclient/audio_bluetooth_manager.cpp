@@ -360,6 +360,17 @@ void AudioHfpManager::UnregisterBluetoothScoListener()
     hfpInstance_ = nullptr;
 }
 
+void AudioHfpManager::DisconnectScoDevice() {
+    bool bluetoothSinkLoaded = AudioA2dpManager::GetBluetoothSinkLoaded();
+    if (!bluetoothSinkLoaded) {
+        AUDIO_INFO_LOG("DisconnectScoDevice: bluetooth is disconnected");
+        return;
+    }
+    BluetoothRemoteDevice device = AudioA2dpManager::GetBluetoothRemoteDevice();
+    int disconncected = static_cast<int>(HfpScoConnectState::SCO_DISCONNECTED);
+    hfpListener_.OnScoStateChanged(device, disconncected);
+}
+
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state)
 {
     AUDIO_INFO_LOG("Entered %{public}s [%{public}d]", __func__, state);
