@@ -44,8 +44,6 @@ private:
     void SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply);
     void IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
-    void SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
@@ -56,8 +54,6 @@ private:
     void AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply);
-    void SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
@@ -89,7 +85,6 @@ private:
     void GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply);
 #endif
     void IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply);
-    void SetMicStateChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
@@ -98,8 +93,6 @@ private:
     void UnsetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);
-    void RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
@@ -116,6 +109,9 @@ private:
     void GetAvailableMicrophonesInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceAbsVolumeSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
@@ -140,8 +136,6 @@ private:
         &AudioPolicyManagerStub::SetMicrophoneMuteInternal,
         &AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal,
         &AudioPolicyManagerStub::IsMicrophoneMuteInternal,
-        &AudioPolicyManagerStub::SetRingerModeCallbackInternal,
-        &AudioPolicyManagerStub::UnsetRingerModeCallbackInternal,
         &AudioPolicyManagerStub::SetInterruptCallbackInternal,
         &AudioPolicyManagerStub::UnsetInterruptCallbackInternal,
         &AudioPolicyManagerStub::ActivateInterruptInternal,
@@ -152,8 +146,6 @@ private:
         &AudioPolicyManagerStub::AbandonAudioFocusInternal,
         &AudioPolicyManagerStub::GetStreamInFocusInternal,
         &AudioPolicyManagerStub::GetSessionInfoInFocusInternal,
-        &AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal,
-        &AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal,
         &AudioPolicyManagerStub::GetDevicesInternal,
         &AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal,
         &AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal,
@@ -185,7 +177,6 @@ private:
         &AudioPolicyManagerStub::GetSupportedTonesInternal,
 #endif
         &AudioPolicyManagerStub::IsAudioRendererLowLatencySupportedInternal,
-        &AudioPolicyManagerStub::SetMicStateChangeCallbackInternal,
         &AudioPolicyManagerStub::CheckRecordingStateChangeInternal,
         &AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal,
         &AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal,
@@ -194,8 +185,6 @@ private:
         &AudioPolicyManagerStub::UnsetPreferredOutputDeviceChangeCallbackInternal,
         &AudioPolicyManagerStub::UnsetPreferredInputDeviceChangeCallbackInternal,
         &AudioPolicyManagerStub::GetAudioFocusInfoListInternal,
-        &AudioPolicyManagerStub::RegisterFocusInfoChangeCallbackInternal,
-        &AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackInternal,
         &AudioPolicyManagerStub::SetSystemSoundUriInternal,
         &AudioPolicyManagerStub::GetSystemSoundUriInternal,
         &AudioPolicyManagerStub::GetMinStreamVolumeInternal,
@@ -212,6 +201,8 @@ private:
         &AudioPolicyManagerStub::GetAvailableMicrophonesInternal,
         &AudioPolicyManagerStub::SetDeviceAbsVolumeSupportedInternal,
         &AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal,
+        &AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal,
+        &AudioPolicyManagerStub::UnregisterPolicyCallbackClientInternal,
     };
 };
 } // namespace AudioStandard

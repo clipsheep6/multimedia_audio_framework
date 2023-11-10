@@ -21,6 +21,7 @@
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_effect.h"
 #include "audio_interrupt_callback.h"
+#include "audio_policy_client_stub_impl.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_renderer_state_change_listener_stub.h"
 #include "audio_ringermode_update_listener_stub.h"
@@ -251,6 +252,9 @@ public:
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
+
+    std::shared_ptr<AudioPolicyClientStubImpl> GetAudioPolicyClient();
+
 private:
     AudioPolicyManager()
     {
@@ -261,6 +265,7 @@ private:
     sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
     std::mutex listenerStubMutex_;
     std::mutex volumeCallbackMutex_;
+    std::mutex micStateCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
     std::mutex ringerModelistenerStubMutex_;
@@ -271,6 +276,8 @@ private:
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::unordered_map<int32_t, OHOS::wptr<AudioCapturerStateChangeListenerStub>> capturerStateChangeCBMap_;
+
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientCBMap_;
 };
 } // namespce AudioStandard
 } // namespace OHOS

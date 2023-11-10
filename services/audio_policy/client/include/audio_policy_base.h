@@ -91,13 +91,6 @@ public:
 
     virtual AudioScene GetAudioScene() = 0;
 
-    virtual int32_t SetRingerModeCallback(const int32_t clientId,
-        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) = 0;
-
-    virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
-
-    virtual int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
-
     virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const sptr<IRemoteObject> &object) = 0;
 
@@ -122,11 +115,6 @@ public:
     virtual AudioStreamType GetStreamInFocus() = 0;
 
     virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) = 0;
-
-    virtual int32_t SetVolumeKeyEventCallback(const int32_t clientId,
-        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) = 0;
-
-    virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) = 0;
 
     virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) = 0;
 
@@ -192,10 +180,6 @@ public:
 
     virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
 
-    virtual int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) = 0;
-
-    virtual int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId) = 0;
-
     virtual int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) = 0;
 
     virtual std::string GetSystemSoundUri(const std::string &key) = 0;
@@ -227,6 +211,10 @@ public:
     virtual int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) = 0;
 
     virtual int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool updateUi) = 0;
+
+    virtual int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t code) = 0;
+
+    virtual int32_t UnregisterPolicyCallbackClient(const int32_t code) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

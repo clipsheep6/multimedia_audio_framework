@@ -91,13 +91,6 @@ public:
 
     AudioScene GetAudioScene() override;
 
-    int32_t SetRingerModeCallback(const int32_t clientId,
-        const sptr<IRemoteObject> &object, API_VERSION api_v) override;
-
-    int32_t UnsetRingerModeCallback(const int32_t clientId) override;
-
-    int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
-
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const sptr<IRemoteObject>& object) override;
 
@@ -118,11 +111,6 @@ public:
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
-
-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
-        const sptr<IRemoteObject> &object, API_VERSION api_v) override;
-
-    int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) override;
 
     AudioStreamType GetStreamInFocus() override;
 
@@ -184,10 +172,6 @@ public:
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 
-    int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) override;
-
-    int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId) override;
-
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) override;
 
     std::string GetSystemSoundUri(const std::string &key) override;
@@ -219,6 +203,11 @@ public:
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
+
+    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t code) override;
+
+    int32_t UnregisterPolicyCallbackClient(const int32_t code) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

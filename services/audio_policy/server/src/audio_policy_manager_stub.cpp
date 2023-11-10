@@ -358,57 +358,6 @@ void AudioPolicyManagerStub::GetAudioFocusInfoListInternal(MessageParcel &data, 
     }
 }
 
-void AudioPolicyManagerStub::RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientId = data.ReadInt32();
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioFocusInfoCallback obj is null");
-        return;
-    }
-    int32_t result = RegisterFocusInfoChangeCallback(clientId, object);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientId = data.ReadInt32();
-    int32_t result = UnregisterFocusInfoChangeCallback(clientId);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientId = data.ReadInt32();
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
-        return;
-    }
-    int32_t result = SetRingerModeCallback(clientId, object, api_v);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetMicStateChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientId = data.ReadInt32();
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
-        return;
-    }
-    int32_t result = SetMicStateChangeCallback(clientId, object);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::UnsetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientId = data.ReadInt32();
-    int32_t result = UnsetRingerModeCallback(clientId);
-    reply.WriteInt32(result);
-}
-
 void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioRendererFilter> audioRendererFilter = AudioRendererFilter::Unmarshalling(data);
@@ -581,26 +530,6 @@ void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel & /* da
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
     int32_t ret = GetSessionInfoInFocus(audioInterrupt);
     audioInterrupt.Marshalling(reply);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientPid =  data.ReadInt32();
-    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    if (remoteObject == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
-        return;
-    }
-    int ret = SetVolumeKeyEventCallback(clientPid, remoteObject, api_v);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientPid = data.ReadInt32();
-    int ret = UnsetVolumeKeyEventCallback(clientPid);
     reply.WriteInt32(ret);
 }
 
@@ -1006,6 +935,25 @@ void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, Me
     int32_t volume = data.ReadInt32();
     bool updateUi = data.ReadBool();
     int32_t result = SetA2dpDeviceVolume(macAddress, volume, updateUi);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t code = data.ReadUint32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterPolicyCallbackClientInternal obj is null");
+        return;
+    }
+    int32_t result = RegisterPolicyCallbackClient(object, code);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnregisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t code = data.ReadUint32();
+    int32_t result = UnregisterPolicyCallbackClient(code);
     reply.WriteInt32(result);
 }
 
