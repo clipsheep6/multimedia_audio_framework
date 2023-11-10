@@ -56,6 +56,13 @@ public:
     virtual ~AudioFocusInfoChangeCallbackFuzz() = default;
     virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) {};
 };
+
+class AudioManagerAvailableDeviceChangeCallbackFUZZ : public AudioManagerAvailableDeviceChangeCallback {
+public:
+    explicit AudioManagerAvailableDeviceChangeCallbackFUZZ() = default;
+    virtual ~AudioManagerAvailableDeviceChangeCallbackFUZZ() = default;
+    void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
+};
 } // namespace AudioStandard
 } // namesapce OHOS
 

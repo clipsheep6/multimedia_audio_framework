@@ -34,6 +34,10 @@ void AudioRendererStateCallbackFuzz::OnRendererStateChange(
 
 void AudioCapturerStateCallbackFuzz::OnCapturerStateChange(
     const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
+
+void AudioManagerAvailableDeviceChangeCallbackFUZZ::OnAvailableDeviceChange(
+    const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) {}
+
 const int32_t LIMITSIZE = 4;
 void AudioManagerFuzzTest(const uint8_t* data, size_t size)
 {
@@ -75,6 +79,11 @@ void AudioManagerFuzzTest(const uint8_t* data, size_t size)
         std::make_shared<AudioFocusInfoChangeCallbackFuzz>();
     AudioSystemManager::GetInstance()->RegisterFocusInfoChangeCallback(focusInfoChangeCallbackFuzz);
     AudioSystemManager::GetInstance()->UnregisterFocusInfoChangeCallback();
+    AudioDeviceUsage usage = *reinterpret_cast<const AudioDeviceUsage *>(data);
+    shared_ptr<AudioManagerAvailableDeviceChangeCallbackFUZZ> availableDeviceChangeCallbackFUZZ =
+        std::make_shared<AudioManagerAvailableDeviceChangeCallbackFUZZ>();
+    AudioSystemManager::GetInstance()->SetAvailableDeviceChangeCallback(usage, availableDeviceChangeCallbackFUZZ);
+    AudioSystemManager::GetInstance()->UnsetAvailableDeviceChangeCallback(usage);
 }
 
 void AudioRoutingManagerFuzzTest(const uint8_t* data, size_t size)
@@ -105,6 +114,8 @@ void AudioRoutingManagerFuzzTest(const uint8_t* data, size_t size)
     AudioRoutingManager::GetInstance()->SetPreferredInputDeviceChangeCallback(capturerInfo, preferredInputCallbackFuzz);
     AudioRoutingManager::GetInstance()->UnsetPreferredInputDeviceChangeCallback();
     AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
+    AudioDeviceUsage usage = *reinterpret_cast<const AudioDeviceUsage *>(data);
+    AudioRoutingManager::GetInstance()->GetAvailableDevices(usage);
 }
 
 void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
