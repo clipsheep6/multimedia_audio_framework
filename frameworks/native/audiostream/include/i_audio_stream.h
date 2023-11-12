@@ -198,6 +198,20 @@ public:
     virtual void SetWakeupCapturerState(bool isWakeupCapturer) = 0;
 
     virtual void SetCapturerSource(int capturerSource) = 0;
+
+    bool IsFormatValid(uint8_t format);
+
+    bool IsRendererChannelValid(uint8_t channel);
+
+    bool IsCapturerChannelValid(uint8_t channel);
+
+    bool IsEncodingTypeValid(uint8_t encodingType);
+
+    bool IsSamplingRateValid(uint32_t samplingRate);
+
+    bool IsRendererChannelLayoutValid(uint64_t channelLayout);
+
+    bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
 };
 } // namespace AudioStandard
 } // namespace OHOS
