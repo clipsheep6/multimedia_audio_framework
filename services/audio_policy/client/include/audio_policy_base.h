@@ -234,6 +234,11 @@ public:
         const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) = 0;
+
+    virtual int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t code) = 0;
+
+    virtual int32_t UnregisterPolicyCallbackClient(const int32_t code) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

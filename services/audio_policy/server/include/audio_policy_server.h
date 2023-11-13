@@ -36,6 +36,7 @@
 #include "audio_session_callback.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_manager_stub.h"
+#include "audio_policy_client_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_service_dump.h"
 #include "session_processor.h"
@@ -299,6 +300,10 @@ public:
 
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) override;
 
+    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t code) override;
+
+    int32_t UnregisterPolicyCallbackClient(const int32_t code) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -383,6 +388,9 @@ private:
     void UpdateAudioScene(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void ProcessInterrupt(const InterruptHint& hint);
     AudioScene GetHighestPriorityAudioSceneFromAudioFocusInfoList() const;
+    std::shared_ptr<AudioPolicyClientProxy> GetAudioPolicyClientProxy(
+        const int32_t clientPid, const sptr<IRemoteObject> &object,
+        std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> &audioPolicyclientProxyMap);
 
     // for audio volume and mute status
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
@@ -442,6 +450,7 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
 
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> audioPolicyClientProxyCBMap_;
     std::mutex volumeKeyEventMutex_;
     std::mutex interruptMutex_;
     std::mutex amInterruptMutex_;
