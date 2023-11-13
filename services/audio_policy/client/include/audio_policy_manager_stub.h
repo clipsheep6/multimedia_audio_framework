@@ -120,6 +120,10 @@ private:
     void SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void SetHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterSpatializationEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterSpatializationEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
@@ -220,6 +224,10 @@ private:
         &AudioPolicyManagerStub::SetSpatializationEnabledInternal,
         &AudioPolicyManagerStub::IsHeadTrackingEnabledInternal,
         &AudioPolicyManagerStub::SetHeadTrackingEnabledInternal,
+        &AudioPolicyManagerStub::RegisterSpatializationEnabledEventListenerInternal,
+        &AudioPolicyManagerStub::RegisterHeadTrackingEnabledEventListenerInternal,
+        &AudioPolicyManagerStub::UnregisterSpatializationEnabledEventListenerInternal,
+        &AudioPolicyManagerStub::UnregisterHeadTrackingEnabledEventListenerInternal,
     };
 };
 } // namespace AudioStandard

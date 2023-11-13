@@ -27,15 +27,12 @@
 #include "audio_info.h"
 #include "audio_manager_base.h"
 #include "audio_policy_manager_factory.h"
-#include "audio_stream_collector.h"
 #include "ipc_skeleton.h"
 
 #include "device_status_listener.h"
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "parser_factory.h"
-// #include "audio_effect_manager.h"
-// #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
 
 namespace OHOS {
@@ -50,7 +47,6 @@ public:
 
     bool Init(void);
     void Deinit(void);
-    void InitKVStore();
     bool ConnectServiceAdapter();
 
     // const sptr<IStandardAudioService> GetAudioServerProxy();
@@ -58,6 +54,14 @@ public:
     int32_t SetSpatializationEnabled(const bool enable);
     bool IsHeadTrackingEnabled();
     int32_t SetHeadTrackingEnabled(const bool enable);
+    int32_t RegisterSpatializationEnabledEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
+        bool hasSystemPermission);
+    int32_t RegisterHeadTrackingEnabledEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
+        bool hasSystemPermission);
+    int32_t UnregisterSpatializationEnabledEventListener(int32_t clientPid);
+    int32_t UnregisterHeadTrackingEnabledEventListener(int32_t clientPid);
+    void HandleSpatializationEnabledChange(const bool &enabled);
+    void HandleHeadTrackingEnabledChange(const bool &enabled);
 private:
     AudioSpatializationService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
@@ -67,6 +71,10 @@ private:
     IAudioPolicyInterface& audioPolicyManager_;
     bool spatializationEnabledFlag_ = true;
     bool headTrackingEnabledFlag_ = false;
+    std::mutex spatializationEnabledChangeListnerMutex_;
+    std::mutex headTrackingEnabledChangeListnerMutex_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledCBMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledCBMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

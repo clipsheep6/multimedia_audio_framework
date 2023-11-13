@@ -71,5 +71,35 @@ int32_t AudioSpatializationManager::SetHeadTrackingEnabled(const bool enable)
 {
     return AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(enable);
 }
+
+int32_t AudioSpatializationManager::RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback)
+{
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
+    }
+    return AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(clientPid, callback);
+}
+
+int32_t AudioSpatializationManager::RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback)
+{
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
+    }
+    return AudioPolicyManager::GetInstance().RegisterHeadTrackingEnabledEventListener(clientPid, callback);
+}
+
+int32_t AudioSpatializationManager::UnregisterSpatializationEnabledEventListener(const int32_t clientPid)
+{
+    return AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledEventListener(clientPid);
+}
+
+int32_t AudioSpatializationManager::UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid)
+{
+    return AudioPolicyManager::GetInstance().UnregisterHeadTrackingEnabledEventListener(clientPid);
+}
 } // namespace AudioStandard
 } // namespace OHOS

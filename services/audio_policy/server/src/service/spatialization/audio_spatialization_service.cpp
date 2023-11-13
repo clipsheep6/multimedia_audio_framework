@@ -27,16 +27,9 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-#include "audio_focus_parser.h"
-#include "audio_manager_listener_stub.h"
-// #include "datashare_helper.h"
-// #include "datashare_predicates.h"
-// #include "datashare_result_set.h"
-// #include "data_share_observer_callback.h"
-// #include "device_manager.h"
-// #include "device_init_callback.h"
-// #include "device_manager_impl.h"
-// #include "uri.h"
+
+#include "audio_spatialization_state_change_listener_proxy.h"
+#include "i_standard_spatialization_state_change_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,50 +50,6 @@ AudioSpatializationService::~AudioSpatializationService()
 
 bool AudioSpatializationService::Init(void)
 {
-    // AUDIO_INFO_LOG("AudioSpatializationService init");
-    // serviceFlag_.reset();
-    // audioPolicyManager_.Init();
-    // audioEffectManager_.EffectManagerInit();
-
-    // if (!configParser_.LoadConfiguration()) {
-    //     AUDIO_ERR_LOG("Audio Config Load Configuration failed");
-    //     return false;
-    // }
-    // if (!configParser_.Parse()) {
-    //     AUDIO_ERR_LOG("Audio Config Parse failed");
-    //     return false;
-    // }
-
-    // std::unique_ptr<AudioFocusParser> audioFocusParser = make_unique<AudioFocusParser>();
-    // CHECK_AND_RETURN_RET_LOG(audioFocusParser != nullptr, false, "Failed to create AudioFocusParser");
-    // std::string AUDIO_FOCUS_CONFIG_FILE = "system/etc/audio/audio_interrupt_policy_config.xml";
-
-    // if (audioFocusParser->LoadConfig(focusMap_)) {
-    //     AUDIO_ERR_LOG("Failed to load audio interrupt configuration!");
-    //     return false;
-    // }
-    // AUDIO_INFO_LOG("Audio interrupt configuration has been loaded. FocusMap.size: %{public}zu", focusMap_.size());
-
-    // if (deviceStatusListener_->RegisterDeviceStatusListener()) {
-    //     AUDIO_ERR_LOG("[Policy Service] Register for device status events failed");
-    //     return false;
-    // }
-
-    // RegisterRemoteDevStatusCallback();
-
-    // // Get device type from const.product.devicetype when starting.
-    // char devicesType[100] = {0}; // 100 for system parameter usage
-    // (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
-    // localDevicesType_ = devicesType;
-
-    // if (policyVolumeMap_ == nullptr) {
-    //     size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
-    //     AUDIO_INFO_LOG("InitSharedVolume create shared volume map with size %{public}zu", mapSize);
-    //     policyVolumeMap_ = AudioSharedMemory::CreateFormLocal(mapSize, "PolicyVolumeMap");
-    //     CHECK_AND_RETURN_RET_LOG(policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr,
-    //         false, "Get shared memory failed!");
-    //     volumeVector_ = reinterpret_cast<Volume *>(policyVolumeMap_->GetBase());
-    // }
     return true;
 }
 
@@ -132,42 +81,13 @@ bool AudioSpatializationService::Init(void)
 //     return gsp;
 // }
 
-void AudioSpatializationService::InitKVStore()
-{
-    // audioPolicyManager_.InitKVStore();
-}
-
 bool AudioSpatializationService::ConnectServiceAdapter()
 {
-    // if (!audioPolicyManager_.ConnectServiceAdapter()) {
-    //     AUDIO_ERR_LOG("AudioSpatializationService::ConnectServiceAdapter  Error in connecting to audio service adapter");
-    //     return false;
-    // }
-
-    // OnServiceConnected(AudioServiceIndex::AUDIO_SERVICE_INDEX);
-
     return true;
 }
 
 void AudioSpatializationService::Deinit(void)
 {
-//     AUDIO_ERR_LOG("Policy service died. closing active ports");
-//     std::for_each(IOHandles_.begin(), IOHandles_.end(), [&](std::pair<std::string, AudioIOHandle> handle) {
-//         audioPolicyManager_.CloseAudioPort(handle.second);
-//     });
-
-//     IOHandles_.clear();
-// #ifdef ACCESSIBILITY_ENABLE
-//     accessibilityConfigListener_->UnsubscribeObserver();
-// #endif
-//     deviceStatusListener_->UnRegisterDeviceStatusListener();
-
-//     if (isBtListenerRegistered) {
-//         UnregisterBluetoothListener();
-//     }
-//     volumeVector_ = nullptr;
-//     policyVolumeMap_ = nullptr;
-
     return;
 }
 
@@ -182,6 +102,7 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
         return SPATIALIZATION_SERVICE_OK;
     }
     spatializationEnabledFlag_ = enable;
+    HandleSpatializationEnabledChange(enable);
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -196,7 +117,88 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
         return SPATIALIZATION_SERVICE_OK;
     }
     headTrackingEnabledFlag_ = enable;
+    HandleHeadTrackingEnabledChange(enable);
     return SPATIALIZATION_SERVICE_OK;
+}
+
+int32_t AudioSpatializationService::RegisterSpatializationEnabledEventListener(int32_t clientPid,
+    const sptr<IRemoteObject> &object, bool hasSystemPermission)
+{
+    std::lock_guard<std::mutex> lock(spatializationEnabledChangeListnerMutex_);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "set spatialization enabled event listener object is nullptr");
+    sptr<IStandardSpatializationEnabledChangeListener> listener =
+        iface_cast<IStandardSpatializationEnabledChangeListener>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "spatialization enabled obj cast failed");
+
+    std::shared_ptr<AudioSpatializationEnabledChangeCallback> callback =
+        std::make_shared<AudioSpatializationEnabledChangeListenerCallback>(listener, hasSystemPermission);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "failed to create spatialization enabled cb obj");
+
+    spatializationEnabledCBMap_[clientPid] = callback;
+    return SUCCESS;
+}
+
+int32_t AudioSpatializationService::RegisterHeadTrackingEnabledEventListener(int32_t clientPid,
+    const sptr<IRemoteObject> &object, bool hasSystemPermission)
+{
+    std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "set head tracking enabled event listener object is nullptr");
+    sptr<IStandardHeadTrackingEnabledChangeListener> listener =
+        iface_cast<IStandardHeadTrackingEnabledChangeListener>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "head tracking enabled obj cast failed");
+
+    std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> callback =
+        std::make_shared<AudioHeadTrackingEnabledChangeListenerCallback>(listener, hasSystemPermission);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "failed to create head tracking enabled cb obj");
+
+    headTrackingEnabledCBMap_[clientPid] = callback;
+    return SUCCESS;
+}
+
+int32_t AudioSpatializationService::UnregisterSpatializationEnabledEventListener(int32_t clientPid)
+{
+    std::lock_guard<std::mutex> lock(spatializationEnabledChangeListnerMutex_);
+    spatializationEnabledCBMap_.erase(clientPid);
+    return SUCCESS;
+}
+
+int32_t AudioSpatializationService::UnregisterHeadTrackingEnabledEventListener(int32_t clientPid)
+{
+    std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
+    headTrackingEnabledCBMap_.erase(clientPid);
+    return SUCCESS;
+}
+
+void AudioSpatializationService::HandleSpatializationEnabledChange(const bool &enabled)
+{
+    std::lock_guard<std::mutex> lock(spatializationEnabledChangeListnerMutex_);
+    for (auto it = spatializationEnabledCBMap_.begin(); it != spatializationEnabledCBMap_.end(); ++it) {
+        std::shared_ptr<AudioSpatializationEnabledChangeCallback> spatializationEnabledChangeCb = it->second;
+        if (spatializationEnabledChangeCb == nullptr) {
+            AUDIO_ERR_LOG("spatializationEnabledChangeCb : nullptr for client : %{public}d", it->first);
+            it = spatializationEnabledCBMap_.erase(it);
+            continue;
+        }
+        spatializationEnabledChangeCb->OnSpatializationEnabledChange(enabled);
+    }
+}
+
+void AudioSpatializationService::HandleHeadTrackingEnabledChange(const bool &enabled)
+{
+    std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
+    for (auto it = headTrackingEnabledCBMap_.begin(); it != headTrackingEnabledCBMap_.end(); ++it) {
+        std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> headTrackingEnabledChangeCb = it->second;
+        if (headTrackingEnabledChangeCb == nullptr) {
+            AUDIO_ERR_LOG("headTrackingEnabledChangeCb : nullptr for client : %{public}d", it->first);
+            it = headTrackingEnabledCBMap_.erase(it);
+            continue;
+        }
+        headTrackingEnabledChangeCb->OnHeadTrackingEnabledChange(enabled);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

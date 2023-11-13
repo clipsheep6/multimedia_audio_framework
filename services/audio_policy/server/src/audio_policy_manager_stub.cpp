@@ -1035,6 +1035,48 @@ void AudioPolicyManagerStub::SetHeadTrackingEnabledInternal(MessageParcel &data,
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::RegisterSpatializationEnabledEventListenerInternal(MessageParcel &data,
+    MessageParcel &reply)
+{
+    int32_t clientUid =  data.ReadInt32();
+    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioSpatializationEnabledChangeCallback obj is null");
+        return;
+    }
+    int ret = RegisterSpatializationEnabledEventListener(clientUid, remoteObject);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::RegisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data,
+    MessageParcel &reply)
+{
+    int32_t clientUid =  data.ReadInt32();
+    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioHeadTrackingEnabledChangeCallback obj is null");
+        return;
+    }
+    int ret = RegisterHeadTrackingEnabledEventListener(clientUid, remoteObject);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::UnregisterSpatializationEnabledEventListenerInternal(MessageParcel &data,
+    MessageParcel &reply)
+{
+    int32_t clientUid = data.ReadInt32();
+    int ret = UnregisterSpatializationEnabledEventListener(clientUid);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::UnregisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data,
+    MessageParcel &reply)
+{
+    int32_t clientUid = data.ReadInt32();
+    int ret = UnregisterHeadTrackingEnabledEventListener(clientUid);
+    reply.WriteInt32(ret);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {

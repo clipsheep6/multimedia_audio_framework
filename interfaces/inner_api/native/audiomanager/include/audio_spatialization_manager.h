@@ -98,6 +98,44 @@ public:
      * @since 11
      */
     int32_t SetHeadTrackingEnabled(const bool enable);
+
+    /**
+     * @brief Register the spatialization enabled change callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
+
+    /**
+     * @brief Register the head tracking enabled change callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
+
+    /**
+     * @brief Unregister the spatialization enabled change callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid);
+
+    /**
+     * @brief Unregister the head tracking enabled change callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid);
 private:
     AudioSpatializationManager();
     virtual ~AudioSpatializationManager();

@@ -235,6 +235,16 @@ public:
     virtual bool IsHeadTrackingEnabled() = 0;
 
     virtual int32_t SetHeadTrackingEnabled(const bool enable) = 0;
+
+    virtual int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) = 0;
+
+    virtual int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

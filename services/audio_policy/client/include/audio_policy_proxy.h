@@ -227,6 +227,16 @@ public:
     bool IsHeadTrackingEnabled() override;
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
+
+    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) override;
+
+    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

@@ -46,7 +46,7 @@ namespace {
     const int PARAM3 = 3;
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioSpatializationManagerNapi"};
     const std::string SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME = "spatializationEnabledChange";
-    const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackerEnabledChange";
+    const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackingEnabledChange";
 }
 
 struct AudioSpatializationManagerAsyncContext {
@@ -574,8 +574,8 @@ void AudioSpatializationManagerNapi::UnregisterSpatializationEnabledChangeCallba
         }
         if (callback == nullptr || cb->GetSpatializationEnabledChangeCbListSize() == 0) {
             int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->
-                UnsetSpatializationEnabledChangeCallback(spatializationManagerNapi->cachedClientId_);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetSpatializationEnabledChangeCallback Failed");
+                UnregisterSpatializationEnabledEventListener(spatializationManagerNapi->cachedClientId_);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterSpatializationEnabledEventListener Failed");
             spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_.reset();
             spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_ = nullptr;
             cb->RemoveAllSpatializationEnabledChangeCallbackReference();
@@ -597,8 +597,8 @@ void AudioSpatializationManagerNapi::UnregisterHeadTrackingEnabledChangeCallback
         }
         if (callback == nullptr || cb->GetHeadTrackingEnabledChangeCbListSize() == 0) {
             int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->
-                UnsetHeadTrackingEnabledChangeCallback(spatializationManagerNapi->cachedClientId_);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetHeadTrackingEnabledChangeCallback Failed");
+                UnregisterHeadTrackingEnabledEventListener(spatializationManagerNapi->cachedClientId_);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterHeadTrackingEnabledEventListener Failed");
             spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_.reset();
             spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_ = nullptr;
             cb->RemoveAllHeadTrackingEnabledChangeCallbackReference();
@@ -639,13 +639,15 @@ napi_value AudioSpatializationManagerNapi::Off(napi_env env, napi_callback_info 
     }
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
 
-    if (argc == minArgCount) {
+    if (argc == requireArgc) {
         args[PARAM1] = nullptr;
     }
     AUDIO_DEBUG_LOG("AudioSpatializationManagerNapi: Off callbackName: %{public}s", callbackName.c_str());
 
     AudioSpatializationManagerNapi *spatializationManagerNapi = nullptr;
-    napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&spatializationManagerNapi));
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&spatializationManagerNapi));
+    NAPI_ASSERT(env, status == napi_ok && spatializationManagerNapi != nullptr, "Failed to retrieve napi instance.");
+    NAPI_ASSERT(env, spatializationManagerNapi->audioSpatializationMngr_ != nullptr, "spatialization instance null.");
 
     if (!callbackName.compare(SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME)) {
         UnregisterSpatializationEnabledChangeCallback(env, args[PARAM1], spatializationManagerNapi);

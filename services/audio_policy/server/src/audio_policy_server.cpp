@@ -2584,5 +2584,36 @@ int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
 {
     return audioSpatializationService_.SetHeadTrackingEnabled(enable);
 }
+
+int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(int32_t clientPid,
+    const sptr<IRemoteObject> &object)
+{
+    clientPid = IPCSkeleton::GetCallingPid();
+    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    return audioSpatializationService_.RegisterSpatializationEnabledEventListener(
+        clientPid, object, hasSystemPermission);
+}
+
+int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(int32_t clientPid,
+    const sptr<IRemoteObject> &object)
+{
+    clientPid = IPCSkeleton::GetCallingPid();
+    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    return audioSpatializationService_.RegisterHeadTrackingEnabledEventListener(clientPid, object, hasSystemPermission);
+}
+
+int32_t AudioPolicyServer::UnregisterSpatializationEnabledEventListener(int32_t clientPid)
+{
+    clientPid = IPCSkeleton::GetCallingPid();
+    return audioSpatializationService_.UnregisterSpatializationEnabledEventListener(clientPid);
+}
+
+int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener(int32_t clientPid)
+{
+    clientPid = IPCSkeleton::GetCallingPid();
+    return audioSpatializationService_.UnregisterHeadTrackingEnabledEventListener(clientPid);
+}
 } // namespace AudioStandard
 } // namespace OHOS

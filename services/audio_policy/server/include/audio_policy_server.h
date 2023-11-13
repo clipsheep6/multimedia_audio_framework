@@ -296,6 +296,16 @@ public:
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
 
+    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) override;
+
+    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
