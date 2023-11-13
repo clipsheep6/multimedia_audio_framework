@@ -561,6 +561,22 @@ int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
 int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
     const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    switch (flag) {
+        case NONE_DEVICES_FLAG:
+        case DISTRIBUTED_OUTPUT_DEVICES_FLAG:
+        case DISTRIBUTED_INPUT_DEVICES_FLAG:
+        case ALL_DISTRIBUTED_DEVICES_FLAG:
+        case ALL_L_D_DEVICES_FLAG:
+            if (!hasSystemPermission) {
+                AUDIO_ERR_LOG("SetDeviceChangeCallback: No system permission");
+                return ERR_PERMISSION_DENIED;
+            }
+            break;
+        default:
+            break;
+    }
+
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetDeviceChangeCallback: audio policy manager proxy is NULL.");
@@ -571,22 +587,21 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
         return ERR_INVALID_PARAM;
     }
 
-    auto deviceChangeCbStub = new(std::nothrow) AudioPolicyManagerListenerStub();
-    if (deviceChangeCbStub == nullptr) {
-        AUDIO_ERR_LOG("SetDeviceChangeCallback: object null");
+    std::unique_lock<std::mutex> lock(deviceChangeMutex_);
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient();
+    if (audioPolicyClientStub == nullptr) {
+        AUDIO_ERR_LOG("SetDeviceChangeCallback: audioPolicyClientStub get error");
         return ERROR;
     }
-
-    deviceChangeCbStub->SetDeviceChangeCallback(callback);
-
-    sptr<IRemoteObject> object = deviceChangeCbStub->AsObject();
+    audioPolicyClientStub->SetDeviceChangeCallback(callback);
+    sptr<IRemoteObject> object = audioPolicyClientStub->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetDeviceChangeCallback: listenerStub->AsObject is nullptr..");
-        delete deviceChangeCbStub;
+        AUDIO_ERR_LOG("SetDeviceChangeCallback: audioPolicyClientStub->AsObject is nullptr");
         return ERROR;
     }
+    lock.unlock();
 
-    return gsp->SetDeviceChangeCallback(clientId, flag, object);
+    return gsp->RegisterPolicyCallbackClient(object, static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE));
 }
 
 int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag)
@@ -597,7 +612,7 @@ int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, De
         AUDIO_ERR_LOG("UnsetDeviceChangeCallback: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->UnsetDeviceChangeCallback(clientId, flag);
+    return gsp->UnregisterPolicyCallbackClient(static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE));
 }
 
 int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const int32_t clientId,

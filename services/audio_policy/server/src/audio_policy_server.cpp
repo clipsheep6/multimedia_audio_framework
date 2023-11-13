@@ -2763,9 +2763,8 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     if ((code == static_cast<int32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE)) ||
         (code == static_cast<int32_t>(AudioPolicyClientCode::ON_ACTIVE_OUTPUT_DEVICE_UPDATED)) ||
         (code == static_cast<int32_t>(AudioPolicyClientCode::ON_ACTIVE_INPUT_DEVICE_UPDATED))) {
-        //bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
-        //return audioPolicyService_.RegisterAPSPolicyCallbackClient(object, code, clientPid, hasBTPermission);
-        return SUCCESS;
+        bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
+        return audioPolicyService_.RegisterAPSPolicyCallbackClient(object, code, clientPid, hasBTPermission);
     } else {
         std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, object,
             audioPolicyClientProxyCBMap_);
@@ -2782,9 +2781,8 @@ int32_t AudioPolicyServer::UnregisterPolicyCallbackClient(const int32_t code)
     if ((code == static_cast<int32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE)) ||
         (code == static_cast<int32_t>(AudioPolicyClientCode::ON_ACTIVE_OUTPUT_DEVICE_UPDATED)) ||
         (code == static_cast<int32_t>(AudioPolicyClientCode::ON_ACTIVE_INPUT_DEVICE_UPDATED))) {
-        //bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
-        //return audioPolicyService_.UnregisterAPSPolicyCallbackClient(code, clientPid, hasBTPermission);
-        return SUCCESS;
+        bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
+        return audioPolicyService_.UnregisterAPSPolicyCallbackClient(code, clientPid, hasBTPermission);
     } else {
         std::shared_ptr<AudioPolicyClientProxy> proxy = GetAudioPolicyClientProxy(clientPid, nullptr,
             audioPolicyClientProxyCBMap_);

@@ -272,6 +272,7 @@ private:
     sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
     std::mutex listenerStubMutex_;
     std::mutex volumeCallbackMutex_;
+    std::mutex deviceChangeMutex_;
     std::mutex micStateCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
