@@ -137,7 +137,7 @@ void XMLParser::ParseModules(xmlNode &node, std::string &className)
             for (std::sregex_token_iterator it(rates.begin(), rates.end(), regexDelimiter, -1); it != itEnd; ++it) {
                 moduleInfo.supportedRate_.insert(atoi(it->str().c_str()));
             }
-            moduleInfo.rate = *(moduleInfo.supportedRate_.rbegin());
+            moduleInfo.rate = std::to_string(*(moduleInfo.supportedRate_.rbegin()));
 
             moduleInfo.format = ExtractPropertyValue("format", *moduleNode);
 
@@ -146,7 +146,7 @@ void XMLParser::ParseModules(xmlNode &node, std::string &className)
                 it != itEnd; ++it) {
                 moduleInfo.supportedChannels_.insert(atoi(it->str().c_str()));
             }
-            moduleInfo.channels = *(moduleInfo.supportedChannels_.rbegin());
+            moduleInfo.channels = std::to_string(*(moduleInfo.supportedChannels_.rbegin()));
 
             moduleInfo.bufferSize = ExtractPropertyValue("buffer_size", *moduleNode);
             moduleInfo.fileName = ExtractPropertyValue("file", *moduleNode);
@@ -188,7 +188,8 @@ void XMLParser::ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo)
             // if some parameter is not configured inside <Port>, take data from moduleinfo
             std::string value = ExtractPropertyValue("rate", *portNode);
             if (!value.empty()) {
-                moduleInfo.rate = value;
+                moduleInfo.supportedRate_ = SeparatedListParser<uint32_t>(value);
+                moduleInfo.rate = std::to_string(*(moduleInfo.supportedRate_.rbegin()));
             }
 
             value = ExtractPropertyValue("format", *portNode);
@@ -198,7 +199,8 @@ void XMLParser::ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo)
 
             value = ExtractPropertyValue("channels", *portNode);
             if (!value.empty()) {
-                moduleInfo.channels = value;
+                moduleInfo.supportedChannels_ = SeparatedListParser<uint32_t>(value);
+                moduleInfo.channels = std::to_string(*(moduleInfo.supportedChannels_.rbegin()));
             }
 
             value = ExtractPropertyValue("buffer_size", *portNode);
