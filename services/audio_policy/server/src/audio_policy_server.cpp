@@ -1260,11 +1260,11 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
 void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus granted in: %{public}d", clientId);
-    if (amInterruptCbsMap_.find(clientId) == amInterruptCbsMap_.end()) {
+    if (audioPolicyClientProxyCBMap_.find(clientId) == audioPolicyClientProxyCBMap_.end()) {
         AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback does not exist", clientId);
         return;
     }
-    std::shared_ptr<AudioInterruptCallback> interruptCb = amInterruptCbsMap_[clientId];
+    std::shared_ptr<AudioPolicyClientProxy> interruptCb = audioPolicyClientProxyCBMap_[clientId];
     if (interruptCb == nullptr) {
         AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback is nullptr", clientId);
         return;
@@ -1291,8 +1291,8 @@ void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioIn
 int32_t AudioPolicyServer::NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus abandoned in: %{public}d", clientId);
-    std::shared_ptr<AudioInterruptCallback> interruptCb = nullptr;
-    interruptCb = amInterruptCbsMap_[clientId];
+    std::shared_ptr<AudioPolicyClientProxy> interruptCb = nullptr;
+    interruptCb = audioPolicyClientProxyCBMap_[clientId];
     if (!interruptCb) {
         AUDIO_ERR_LOG("Notify failed, callback not present");
         return ERR_INVALID_PARAM;
