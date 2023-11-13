@@ -23,8 +23,6 @@
 #include "system_ability_definition.h"
 #include "audio_capturer_state_change_listener_stub.h"
 #include "audio_renderer_state_change_listener_stub.h"
-#include "audio_ringermode_update_listener_stub.h"
-#include "audio_routing_manager_listener_stub.h"
 #include "audio_client_tracker_callback_stub.h"
 
 using namespace std;

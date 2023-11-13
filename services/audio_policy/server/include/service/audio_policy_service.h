@@ -26,6 +26,7 @@
 #include "audio_group_handle.h"
 #include "audio_info.h"
 #include "audio_manager_base.h"
+#include "audio_policy_client_proxy.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 #include "ipc_skeleton.h"
@@ -48,6 +49,7 @@
 #include "policy_provider_stub.h"
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
+#include "i_standard_audio_policy_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -211,20 +213,10 @@ public:
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
+    int32_t RegisterAPSPolicyCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        int32_t clientPid, bool hasBTPermission);
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag);
-
-    int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
-
-    int32_t SetPreferredInputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
-
-    int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId);
-
-    int32_t UnsetPreferredInputDeviceChangeCallback(const int32_t clientId);
+    int32_t UnregisterAPSPolicyCallbackClient(const uint32_t code, int32_t clientPid, bool hasBTPermission);
 
     int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSysPermission);
@@ -561,6 +553,9 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
         const std::vector<sptr<AudioDeviceDescriptor>>& descs);
 
+    std::shared_ptr<AudioPolicyClientProxy> GetAPSAudioPolicyClientProxy(const int32_t clientPid,
+        bool hasBTPermission, const sptr<IRemoteObject> &object);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -605,11 +600,9 @@ private:
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
 
-    std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
-    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredOutputDeviceCbsMap_;
-    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredInputDeviceCbsMap_;
     std::map<std::pair<int32_t, AudioDeviceUsage>,
         sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> audioPolicyClientProxyAPSCbsMap_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
