@@ -1241,7 +1241,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
     Trace trace("AudioPolicyService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    for (auto it = preferredOutputDeviceCbsMap_.begin(); it != preferredOutputDeviceCbsMap_.end(); ++it) {
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioRendererInfo rendererInfo;
         auto deviceDescs = GetPreferredOutputDeviceDescriptors(rendererInfo);
         if (!(it->second->hasBTPermission_)) {
@@ -1257,7 +1257,7 @@ void AudioPolicyService::OnPreferredInputDeviceUpdated(DeviceType deviceType, st
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     std::lock_guard<std::mutex> lock(preferredInputMapMutex_);
-    for (auto it = preferredInputDeviceCbsMap_.begin(); it != preferredInputDeviceCbsMap_.end(); ++it) {
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioCapturerInfo captureInfo;
         auto deviceDescs = GetPreferredInputDeviceDescriptors(captureInfo);
         if (!(it->second->hasBTPermission_)) {

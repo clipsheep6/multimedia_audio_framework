@@ -628,22 +628,20 @@ int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const int32_t
         return ERR_INVALID_PARAM;
     }
 
-    auto activeOutputDeviceChangeCbStub = new(std::nothrow) AudioRoutingManagerListenerStub();
-    if (activeOutputDeviceChangeCbStub == nullptr) {
-        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback: object null");
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient();
+    if (audioPolicyClientStub == nullptr) {
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback: audioPolicyClientStub get error");
         return ERROR;
     }
-
-    activeOutputDeviceChangeCbStub->SetPreferredOutputDeviceChangeCallback(callback);
-
-    sptr<IRemoteObject> object = activeOutputDeviceChangeCbStub->AsObject();
+    audioPolicyClientStub->SetPreferredOutputDeviceChangeCallback(callback);
+    sptr<IRemoteObject> object = audioPolicyClientStub->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback: activeOutputDeviceChangeCbStub->AsObject is nullptr..");
-        delete activeOutputDeviceChangeCbStub;
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback: audioPolicyClientStub->AsObject is nullptr");
         return ERROR;
     }
 
-    return gsp->SetPreferredOutputDeviceChangeCallback(clientId, object);
+    return gsp->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_ACTIVE_OUTPUT_DEVICE_UPDATED));
 }
 
 int32_t AudioPolicyManager::SetPreferredInputDeviceChangeCallback(
@@ -655,22 +653,20 @@ int32_t AudioPolicyManager::SetPreferredInputDeviceChangeCallback(
         return -1;
     }
 
-    auto activeInputDeviceChangeCbStub = new(std::nothrow) AudioRoutingManagerListenerStub();
-    if (activeInputDeviceChangeCbStub == nullptr) {
-        AUDIO_ERR_LOG("AudioPreferredInputDeviceChangeCallback: object null");
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStub = GetAudioPolicyClient();
+    if (audioPolicyClientStub == nullptr) {
+        AUDIO_ERR_LOG("SetPreferredInputDeviceChangeCallback: audioPolicyClientStub get error");
         return ERROR;
     }
-
-    activeInputDeviceChangeCbStub->SetPreferredInputDeviceChangeCallback(callback);
-
-    sptr<IRemoteObject> object = activeInputDeviceChangeCbStub->AsObject();
+    audioPolicyClientStub->SetPreferredInputDeviceChangeCallback(callback);
+    sptr<IRemoteObject> object = audioPolicyClientStub->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPreferredInputDeviceChangeCallback: activeInputDeviceChangeCbStub->AsObject is nullptr.");
-        delete activeInputDeviceChangeCbStub;
+        AUDIO_ERR_LOG("SetPreferredInputDeviceChangeCallback: audioPolicyClientStub->AsObject is nullptr");
         return ERROR;
     }
 
-    return gsp->SetPreferredInputDeviceChangeCallback(object);
+    return gsp->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_ACTIVE_INPUT_DEVICE_UPDATED));
 }
 
 int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId)
@@ -681,7 +677,8 @@ int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(const int32
         AUDIO_ERR_LOG("UnsetDeviceChangeCallback: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->UnsetPreferredOutputDeviceChangeCallback(clientId);
+    return gsp->UnregisterPolicyCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_ACTIVE_OUTPUT_DEVICE_UPDATED));
 }
 
 int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback()
@@ -691,7 +688,8 @@ int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback()
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->UnsetPreferredInputDeviceChangeCallback();
+    return gsp->UnregisterPolicyCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_ACTIVE_INPUT_DEVICE_UPDATED));
 }
 
 int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
