@@ -1478,5 +1478,55 @@ std::vector<bool> AudioPolicyManager::GetSpatializationState(const StreamUsage s
     }
     return gsp->GetSpatializationState(streamUsage);
 }
+
+bool AudioPolicyManager::IsSpatializationSupported()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("IsSpatializationSupported: audio policy manager proxy is NULL.");
+        return false;
+    }
+    return gsp->IsSpatializationSupported();
+}
+
+bool AudioPolicyManager::IsSpatializationSupportedForDevice(const std::string address)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("IsSpatializationSupportedForDevice: audio policy manager proxy is NULL.");
+        return false;
+    }
+    return gsp->IsSpatializationSupportedForDevice(address);
+}
+
+bool AudioPolicyManager::IsHeadTrackingSupported()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("IsHeadTrackingSupported: audio policy manager proxy is NULL.");
+        return false;
+    }
+    return gsp->IsHeadTrackingSupported();
+}
+
+bool AudioPolicyManager::IsHeadTrackingSupportedForDevice(const std::string address)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("IsHeadTrackingSupportedForDevice: audio policy manager proxy is NULL.");
+        return false;
+    }
+    return gsp->IsHeadTrackingSupportedForDevice(address);
+}
+
+int32_t AudioPolicyManager::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("UpdateSpatialDeviceState: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->UpdateSpatialDeviceState(audioSpatialDeviceState);
+}
 } // namespace AudioStandard
 } // namespace OHOS

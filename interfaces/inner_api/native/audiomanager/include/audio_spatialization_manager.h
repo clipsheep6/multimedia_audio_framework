@@ -25,6 +25,9 @@
 
 #include "parcel.h"
 #include "audio_info.h"
+#include "audio_effect.h"
+#include "audio_system_manager.h"
+
 // #include "audio_interrupt_callback.h"
 // #include "audio_group_manager.h"
 // #include "audio_routing_manager.h"
@@ -136,6 +139,45 @@ public:
      * @since 11
      */
     int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid);
+    
+    /**
+     * @brief Check whether the spatialization is supported
+     *
+     * @return Returns <b>true</b> if the spatialization is supported; returns <b>false</b> otherwise.
+     * @since 11
+     */
+    bool IsSpatializationSupported();
+
+    /**
+     * @brief Check whether the spatialization is supported for some device
+     *
+     * @return Returns <b>true</b> if the spatialization is supported; returns <b>false</b> otherwise.
+     * @since 11
+     */
+    bool IsSpatializationSupportedForDevice(const sptr<AudioDeviceDescriptor> &selectedAudioDevice);
+
+    /**
+     * @brief Check whether the Head Tracking is supported
+     *
+     * @return Returns <b>true</b> if the Head Tracking is supported; returns <b>false</b> otherwise.
+     * @since 11
+     */
+    bool IsHeadTrackingSupported();
+
+    /**
+     * @brief Check whether the head tracking is supported for some device
+     *
+     * @return Returns <b>true</b> if the head tracking is supported; returns <b>false</b> otherwise.
+     * @since 11
+     */
+    bool IsHeadTrackingSupportedForDevice(const sptr<AudioDeviceDescriptor> &selectedAudioDevice);
+
+    /**
+     * @brief Update the state of the spatial Device
+     *
+     * @since 11
+     */
+	int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
 private:
     AudioSpatializationManager();
     virtual ~AudioSpatializationManager();

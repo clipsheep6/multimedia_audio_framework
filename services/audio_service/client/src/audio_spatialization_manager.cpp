@@ -101,5 +101,32 @@ int32_t AudioSpatializationManager::UnregisterHeadTrackingEnabledEventListener(c
 {
     return AudioPolicyManager::GetInstance().UnregisterHeadTrackingEnabledEventListener(clientPid);
 }
+
+bool AudioSpatializationManager::IsSpatializationSupported()
+{
+    return AudioPolicyManager::GetInstance().IsSpatializationSupported();
+}
+
+bool AudioSpatializationManager::IsSpatializationSupportedForDevice(const sptr<AudioDeviceDescriptor>
+    &selectedAudioDevice)
+{
+    return AudioPolicyManager::GetInstance().IsSpatializationSupportedForDevice(selectedAudioDevice->macAddress_);
+}
+
+bool AudioSpatializationManager::IsHeadTrackingSupported()
+{
+    return AudioPolicyManager::GetInstance().IsHeadTrackingSupported();
+}
+
+bool AudioSpatializationManager::IsHeadTrackingSupportedForDevice(const sptr<AudioDeviceDescriptor>
+    &selectedAudioDevice)
+{
+    return AudioPolicyManager::GetInstance().IsHeadTrackingSupportedForDevice(selectedAudioDevice->macAddress_);
+}
+
+int32_t AudioSpatializationManager::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
+{
+    return AudioPolicyManager::GetInstance().UpdateSpatialDeviceState(audioSpatialDeviceState);
+}
 } // namespace AudioStandard
 } // namespace OHOS

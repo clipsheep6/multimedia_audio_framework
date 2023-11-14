@@ -1088,6 +1088,45 @@ void AudioPolicyManagerStub::GetSpatializationStateInternal(MessageParcel &data,
     }
 }
 
+void AudioPolicyManagerStub::IsSpatializationSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isSupported = IsSpatializationSupported();
+    reply.WriteBool(isSupported);
+}
+
+void AudioPolicyManagerStub::IsSpatializationSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string address = data.ReadString();
+    // AUDIO_INFO_LOG("CXX in pol_mng_stub:Address:%{public}s", address.c_str());
+    bool result = IsSpatializationSupportedForDevice(address);
+    // AUDIO_INFO_LOG("CXX in pol_mng_stub:resul:%{public}d", result);
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::IsHeadTrackingSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isSupported = IsHeadTrackingSupported();
+    reply.WriteBool(isSupported);
+}
+
+void AudioPolicyManagerStub::IsHeadTrackingSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string address = data.ReadString();
+    bool result = IsHeadTrackingSupportedForDevice(address);
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::UpdateSpatialDeviceStateInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioSpatialDeviceState audioSpatialDeviceState;
+    audioSpatialDeviceState.address = data.ReadString();
+    audioSpatialDeviceState.isSpatializationSupported = data.ReadBool();
+    audioSpatialDeviceState.isHeadTrackingSupported = data.ReadBool();
+    audioSpatialDeviceState.spatialDeviceType = static_cast<AudioSpatialDeviceType>(data.ReadInt32());
+    int32_t result = UpdateSpatialDeviceState(audioSpatialDeviceState);
+    reply.WriteInt32(result);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {

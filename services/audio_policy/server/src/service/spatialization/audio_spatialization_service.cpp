@@ -208,5 +208,43 @@ std::vector<bool> AudioSpatializationService::GetSpatializationState(const Strea
     spatializationState.push_back(headTrackingEnabledReal_);
     return spatializationState;
 }
+
+bool AudioSpatializationService::IsSpatializationSupported()
+{
+    return true;
+}
+
+bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::string address)
+{
+    if (!addressToSpatialDeviceStateMap_.count(address)) {
+        return false;
+    }
+    return addressToSpatialDeviceStateMap_[address].isSpatializationSupported;
+}
+
+bool AudioSpatializationService::IsHeadTrackingSupported()
+{
+    return true;
+}
+
+bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::string address)
+{
+    if (!addressToSpatialDeviceStateMap_.count(address)) {
+        return false;
+    }
+    return addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported;
+}
+
+int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
+{
+    if (!addressToSpatialDeviceStateMap_.count(audioSpatialDeviceState.address)) {
+        addressToSpatialDeviceStateMap_.insert(std::make_pair(audioSpatialDeviceState.address,
+            audioSpatialDeviceState));
+            AudioSpatialDeviceState res = addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address];
+        return SPATIALIZATION_SERVICE_OK;
+    }
+    addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address] = audioSpatialDeviceState;
+    return SPATIALIZATION_SERVICE_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

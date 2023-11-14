@@ -2620,5 +2620,30 @@ std::vector<bool> AudioPolicyServer::GetSpatializationState(const StreamUsage st
 {
     return audioSpatializationService_.GetSpatializationState(streamUsage);
 }
+
+bool AudioPolicyServer::IsSpatializationSupported()
+{
+    return audioSpatializationService_.IsSpatializationSupported();
+}
+
+bool AudioPolicyServer::IsSpatializationSupportedForDevice(const std::string address)
+{
+    return audioSpatializationService_.IsSpatializationSupportedForDevice(address);
+}
+
+bool AudioPolicyServer::IsHeadTrackingSupported()
+{
+    return audioSpatializationService_.IsHeadTrackingSupported();
+}
+
+bool AudioPolicyServer::IsHeadTrackingSupportedForDevice(const std::string address)
+{
+    return audioSpatializationService_.IsHeadTrackingSupportedForDevice(address);
+}
+
+int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
+{
+    return audioSpatializationService_.UpdateSpatialDeviceState(audioSpatialDeviceState);
+}
 } // namespace AudioStandard
 } // namespace OHOS
