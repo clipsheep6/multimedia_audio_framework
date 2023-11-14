@@ -247,6 +247,16 @@ public:
     virtual int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) = 0;
 
     virtual std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) = 0;
+
+    virtual bool IsSpatializationSupported() = 0;
+
+    virtual bool IsSpatializationSupportedForDevice(const std::string address) = 0;
+
+    virtual bool IsHeadTrackingSupported() = 0;
+
+    virtual bool IsHeadTrackingSupportedForDevice(const std::string address) = 0;
+
+    virtual int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

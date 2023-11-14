@@ -2433,5 +2433,111 @@ std::vector<bool> AudioPolicyProxy::GetSpatializationState(const StreamUsage str
 
     return spatializationState;
 }
+
+bool AudioPolicyProxy::IsSpatializationSupported()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("IsSpatializationSupported WriteInterfaceToken failed");
+        return false;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_SUPPORTED), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("IsSpatializationSupported failed, error: %d", error);
+        return false;
+    }
+    return reply.ReadBool();
+}
+
+bool AudioPolicyProxy::IsSpatializationSupportedForDevice(const std::string address)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("IsSpatializationSupportedForDevice WriteInterfaceToken failed");
+        return ERROR;
+    }
+    data.WriteString(address);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("IsSpatializationSupportedForDevice failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadBool();
+}
+
+bool AudioPolicyProxy::IsHeadTrackingSupported()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("IsHeadTrackingSupported WriteInterfaceToken failed");
+        return false;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_SUPPORTED), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("IsHeadTrackingSupported failed, error: %d", error);
+        return false;
+    }
+    return reply.ReadBool();
+}
+
+bool AudioPolicyProxy::IsHeadTrackingSupportedForDevice(const std::string address)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG(" IsHeadTrackingSupportedForDevice WriteInterfaceToken failed");
+        return ERROR;
+    }
+    data.WriteString(address);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("IsHeadTrackingSupportedForDevice failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadBool();
+}
+
+int32_t AudioPolicyProxy::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG(" UpdateSpatialDeviceState WriteInterfaceToken failed");
+        return ERROR;
+    }
+    data.WriteString(audioSpatialDeviceState.address);
+    data.WriteBool(audioSpatialDeviceState.isSpatializationSupported);
+    data.WriteBool(audioSpatialDeviceState.isHeadTrackingSupported);
+    data.WriteInt32(static_cast<int32_t>(audioSpatialDeviceState.spatialDeviceType));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_SPATIAL_DEVICE_STATE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UpdateSpatialDeviceState failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

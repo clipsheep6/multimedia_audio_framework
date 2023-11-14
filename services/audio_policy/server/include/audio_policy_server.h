@@ -308,6 +308,16 @@ public:
 
     std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) override;
 
+    bool IsSpatializationSupported() override;
+
+    bool IsSpatializationSupportedForDevice(const std::string address) override;
+
+    bool IsHeadTrackingSupported() override;
+
+    bool IsHeadTrackingSupportedForDevice(const std::string address) override;
+
+    int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

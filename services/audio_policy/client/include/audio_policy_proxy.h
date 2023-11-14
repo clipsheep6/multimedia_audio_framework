@@ -239,6 +239,16 @@ public:
     int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) override;
 
     std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) override;
+
+    bool IsSpatializationSupported() override;
+
+    bool IsSpatializationSupportedForDevice(const std::string address) override;
+
+    bool IsHeadTrackingSupported() override;
+
+    bool IsHeadTrackingSupportedForDevice(const std::string address) override;
+
+    int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

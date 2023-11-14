@@ -125,6 +125,11 @@ private:
     void UnregisterSpatializationEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void UnregisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void GetSpatializationStateInternal(MessageParcel &data, MessageParcel &reply);
+    void IsSpatializationSupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void IsSpatializationSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void IsHeadTrackingSupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void IsHeadTrackingSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void UpdateSpatialDeviceStateInternal(MessageParcel &data, MessageParcel &reply);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
@@ -230,6 +235,11 @@ private:
         &AudioPolicyManagerStub::UnregisterSpatializationEnabledEventListenerInternal,
         &AudioPolicyManagerStub::UnregisterHeadTrackingEnabledEventListenerInternal,
         &AudioPolicyManagerStub::GetSpatializationStateInternal,
+        &AudioPolicyManagerStub::IsSpatializationSupportedInternal,
+        &AudioPolicyManagerStub::IsSpatializationSupportedForDeviceInternal,
+        &AudioPolicyManagerStub::IsHeadTrackingSupportedInternal,
+        &AudioPolicyManagerStub::IsHeadTrackingSupportedForDeviceInternal,
+        &AudioPolicyManagerStub::UpdateSpatialDeviceStateInternal,
     };
 };
 } // namespace AudioStandard

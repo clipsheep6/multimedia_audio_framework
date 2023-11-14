@@ -63,6 +63,11 @@ public:
     void HandleSpatializationEnabledChange(const bool &enabled);
     void HandleHeadTrackingEnabledChange(const bool &enabled);
     std::vector<bool> GetSpatializationState(const StreamUsage streamUsage);
+    bool IsSpatializationSupported();
+    bool IsSpatializationSupportedForDevice(const std::string address);
+    bool IsHeadTrackingSupported();
+    bool IsHeadTrackingSupportedForDevice(const std::string address);
+    int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
 private:
     AudioSpatializationService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
@@ -78,6 +83,7 @@ private:
     std::mutex headTrackingEnabledChangeListnerMutex_;
     std::unordered_map<int32_t, std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledCBMap_;
+    std::map<std::string, AudioSpatialDeviceState> addressToSpatialDeviceStateMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
