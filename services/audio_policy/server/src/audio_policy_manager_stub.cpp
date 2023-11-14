@@ -1097,9 +1097,7 @@ void AudioPolicyManagerStub::IsSpatializationSupportedInternal(MessageParcel &da
 void AudioPolicyManagerStub::IsSpatializationSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::string address = data.ReadString();
-    // AUDIO_INFO_LOG("CXX in pol_mng_stub:Address:%{public}s", address.c_str());
     bool result = IsSpatializationSupportedForDevice(address);
-    // AUDIO_INFO_LOG("CXX in pol_mng_stub:resul:%{public}d", result);
     reply.WriteBool(result);
 }
 
