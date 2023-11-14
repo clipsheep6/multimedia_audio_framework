@@ -200,5 +200,13 @@ void AudioSpatializationService::HandleHeadTrackingEnabledChange(const bool &ena
         headTrackingEnabledChangeCb->OnHeadTrackingEnabledChange(enabled);
     }
 }
+
+std::vector<bool> AudioSpatializationService::GetSpatializationState(const StreamUsage streamUsage)
+{
+    std::vector<bool> spatializationState;
+    spatializationState.push_back(spatializationEnabledReal_);
+    spatializationState.push_back(headTrackingEnabledReal_);
+    return spatializationState;
+}
 } // namespace AudioStandard
 } // namespace OHOS

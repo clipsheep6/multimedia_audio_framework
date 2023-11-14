@@ -306,6 +306,8 @@ public:
 
     int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) override;
 
+    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

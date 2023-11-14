@@ -2405,5 +2405,33 @@ int32_t AudioPolicyProxy::UnregisterHeadTrackingEnabledEventListener(const int32
 
     return reply.ReadInt32();
 }
+
+std::vector<bool> AudioPolicyProxy::GetSpatializationState(const StreamUsage streamUsage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<bool> spatializationState;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetSpatializationState:: WriteInterfaceToken failed");
+        return spatializationState;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
+    int32_t error = Remote() ->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SPATIALIZATION_STATE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetSpatializationState failed , error: %{public}d", error);
+        return spatializationState;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        spatializationState.push_back(reply.ReadBool());
+    }
+
+    return spatializationState;
+}
 } // namespace AudioStandard
 } // namespace OHOS

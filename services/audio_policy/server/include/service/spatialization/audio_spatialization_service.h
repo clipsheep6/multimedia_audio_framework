@@ -62,6 +62,7 @@ public:
     int32_t UnregisterHeadTrackingEnabledEventListener(int32_t clientPid);
     void HandleSpatializationEnabledChange(const bool &enabled);
     void HandleHeadTrackingEnabledChange(const bool &enabled);
+    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage);
 private:
     AudioSpatializationService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
@@ -71,6 +72,8 @@ private:
     IAudioPolicyInterface& audioPolicyManager_;
     bool spatializationEnabledFlag_ = true;
     bool headTrackingEnabledFlag_ = false;
+    bool spatializationEnabledReal_ = spatializationEnabledFlag_;
+    bool headTrackingEnabledReal_ = headTrackingEnabledFlag_;
     std::mutex spatializationEnabledChangeListnerMutex_;
     std::mutex headTrackingEnabledChangeListnerMutex_;
     std::unordered_map<int32_t, std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledCBMap_;

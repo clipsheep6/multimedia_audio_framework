@@ -1467,5 +1467,16 @@ int32_t AudioPolicyManager::UnregisterHeadTrackingEnabledEventListener(const int
     }
     return gsp->UnregisterHeadTrackingEnabledEventListener(clientPid);
 }
+
+std::vector<bool> AudioPolicyManager::GetSpatializationState(const StreamUsage streamUsage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetSpatializationState: audio policy manager proxy is NULL.");
+        std::vector<bool> spatializationState;
+        return spatializationState;
+    }
+    return gsp->GetSpatializationState(streamUsage);
+}
 } // namespace AudioStandard
 } // namespace OHOS

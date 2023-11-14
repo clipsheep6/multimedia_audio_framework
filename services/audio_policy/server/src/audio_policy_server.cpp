@@ -2615,5 +2615,10 @@ int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener(int32_t cl
     clientPid = IPCSkeleton::GetCallingPid();
     return audioSpatializationService_.UnregisterHeadTrackingEnabledEventListener(clientPid);
 }
+
+std::vector<bool> AudioPolicyServer::GetSpatializationState(const StreamUsage streamUsage)
+{
+    return audioSpatializationService_.GetSpatializationState(streamUsage);
+}
 } // namespace AudioStandard
 } // namespace OHOS

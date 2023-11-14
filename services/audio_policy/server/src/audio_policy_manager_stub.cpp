@@ -1077,6 +1077,17 @@ void AudioPolicyManagerStub::UnregisterHeadTrackingEnabledEventListenerInternal(
     reply.WriteInt32(ret);
 }
 
+void AudioPolicyManagerStub::GetSpatializationStateInternal(MessageParcel &data, MessageParcel &reply)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    std::vector<bool> spatializationState = GetSpatializationState(streamUsage);
+    int32_t size = static_cast<int32_t>(spatializationState.size());
+    reply.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        reply.WriteBool(spatializationState[i]);
+    }
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {

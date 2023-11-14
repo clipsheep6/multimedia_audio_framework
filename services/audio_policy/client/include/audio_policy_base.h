@@ -245,6 +245,8 @@ public:
     virtual int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) = 0;
 
     virtual int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) = 0;
+
+    virtual std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

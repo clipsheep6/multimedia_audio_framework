@@ -45,6 +45,7 @@ const uint32_t T_LENGTH_FACTOR = 4;
 const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
+const uint32_t SPATIALIZATION_STATE_SIZE = 2;
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
@@ -2152,6 +2153,17 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
     mStreamType = audioStreamType;
     const std::string streamName = GetStreamName(audioStreamType);
     effectSceneName = IAudioStream::GetEffectSceneName(audioStreamType);
+    std::vector<bool> enableState = AudioPolicyManager::GetInstance().GetSpatializationState(mStreamUsage);
+    std::string spatializationEnabled;
+    std::string headTrackingEnabled;
+    if (enableState.size() != SPATIALIZATION_STATE_SIZE) {
+        AUDIO_WARNING_LOG("spatialization state vector size is incorrect");
+        spatializationEnabled = "Invalid";
+        headTrackingEnabled = "Invalid";
+    } else {
+        spatializationEnabled = std::to_string(enableState[0]);
+        headTrackingEnabled = std::to_string(enableState[1]);
+    }
 
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
@@ -2163,6 +2175,8 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "media.name", streamName.c_str());
     pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
+    pa_proplist_sets(propList, "spatialization.enabled", spatializationEnabled.c_str());
+    pa_proplist_sets(propList, "headtracking.enabled", headTrackingEnabled.c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);
