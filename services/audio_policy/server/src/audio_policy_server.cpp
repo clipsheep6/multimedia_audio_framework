@@ -821,6 +821,12 @@ int32_t AudioPolicyServer::SetWakeUpAudioCapturer(InternalAudioCapturerOptions o
     return audioPolicyService_.SetWakeUpAudioCapturer(options);
 }
 
+int32_t AudioPolicyServer::SetVoiceCallRecCapturer()
+{
+    //todo 权限校验
+    return audioPolicyService_.SetVoiceCallRecCapturer();
+}
+
 int32_t AudioPolicyServer::CloseWakeUpAudioCapturer()
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
@@ -1731,6 +1737,11 @@ void AudioPolicyServer::OnPlaybackCapturerStop()
 void AudioPolicyServer::OnWakeupCapturerStop()
 {
     audioPolicyService_.CloseWakeUpAudioCapturer();
+}
+
+void AudioPolicyServer::OnVoiceCallRecCapturerStop()
+{
+    audioPolicyService_.CloseVoiceCallRecCapturer();
 }
 
 void AudioPolicyServer::OnDstatusUpdated(bool isConnected)
