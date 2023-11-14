@@ -738,31 +738,6 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
         }
 
     }
-    /*if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-        BufferDesc curWriteBuffer = {nullptr, 0, 0};
-        uint64_t curWritePos = audioBuffer_->GetCurWriteFrame();
-        Trace writeProcessDataTrace("AudioProcessInClient::WriteProcessData->" + std::to_string(curWritePos));
-        int32_t ret = audioBuffer_->GetWriteBuffer(curWritePos, curWriteBuffer);
-        if (ret != SUCCESS || curWriteBuffer.buffer == nullptr || curWriteBuffer.bufLength != spanSizeInByte_ ||
-            curWriteBuffer.dataLength != spanSizeInByte_) {
-            AUDIO_ERR_LOG("%{public}s get write buffer fail, ret:%{public}d", __func__, ret);
-            return ERR_OPERATION_FAILED;
-        }
-
-        if (!needConvert_) {
-            ret = memcpy_s(static_cast<void *>(curWriteBuffer.buffer), spanSizeInByte_,
-                static_cast<void *>(bufDesc.buffer), spanSizeInByte_);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Copy data failed!");
-        } else {
-            Trace traceConvert("AudioProcessInClient::ChannelFormatConvert");
-            AudioStreamData srcData = {processConfig_.streamInfo, bufDesc, 0, 0};
-            AudioStreamData dstData = {g_targetStreamInfo, curWriteBuffer, 0, 0};
-            bool succ = ChannelFormatConvert(srcData, dstData);
-            CHECK_AND_RETURN_RET_LOG(succ == true, ERR_OPERATION_FAILED, "Convert data failed!");
-        }
-
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), clientSpanSizeInByte_);
-    }*/
 
     CHECK_AND_BREAK_LOG(memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) == EOK,
         "%{public}s reset callback buffer fail.", __func__);
@@ -1293,10 +1268,7 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
             wakeUpTime = curTime;
         }
         curWritePos = audioBuffer_->GetCurWriteFrame();
-        /*if (!PrepareCurrent(curWritePos)) {
-            AUDIO_ERR_LOG("PrepareCurrent failed!");
-            continue;
-        }*/
+
 
         size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
         bool prepared = true;
@@ -1317,10 +1289,6 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         CallClientHandleCurrent();
 
         // client write done, check if time out
-        /*if (!FinishHandleCurrent(curWritePos, clientWriteCost)) {
-            AUDIO_ERR_LOG("FinishHandleCurrent failed!");
-            continue;
-        }*/
 
         bool finished = true;
         for (size_t count = 0; count < round; count++) 
@@ -1334,12 +1302,6 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         }
         if (!finished)
             continue;
-
-        // prepare next sleep
-        /*if (!PrepareNext(curWritePos, wakeUpTime)) {
-            AUDIO_ERR_LOG("PrepareNextLoop in process failed!");
-            break;
-        }*/
 
         for (size_t count = 0; count < round; count++)
         {
