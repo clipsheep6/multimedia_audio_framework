@@ -800,5 +800,21 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sce
     audioEffectChain->UpdateMultichannelIoBufferConfig(channels, channelLayout, deviceName);
     return SUCCESS;
 }
+
+int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spatializationState)
+{
+    if (spatializationState.size() != SIZE_OF_SPATIALIZATION_STATE) {
+        return ERROR;
+    }
+    if (spatializatonEnabled_ != spatializationState[0]) {
+        spatializatonEnabled_ = spatializationState[0];
+        AUDIO_INFO_LOG("spatialization enabled state is %{public}s", std::to_string(spatializatonEnabled_).c_str());
+    }
+    if (headTrackingEnabled_ != spatializationState[1]) {
+        headTrackingEnabled_ = spatializationState[1];
+        AUDIO_INFO_LOG("head tracking enabled state is %{public}s", std::to_string(headTrackingEnabled_).c_str());
+    }
+    return SUCCESS;
+}
 }
 }

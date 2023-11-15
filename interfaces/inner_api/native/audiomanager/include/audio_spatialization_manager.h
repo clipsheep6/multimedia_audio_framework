@@ -58,6 +58,18 @@ public:
     virtual void OnHeadTrackingEnabledChange(const bool &enabled) = 0;
 };
 
+class AudioSpatializationStateChangeCallback {
+public:
+    virtual ~AudioSpatializationStateChangeCallback() = default;
+    /**
+     * @brief AudioSpatializationStateChangeCallback will be executed when spatialization state changes
+     *
+     * @param enabled the spatialization state.
+     * @since 11
+     */
+    virtual void OnSpatializationStateChange(const std::vector<bool> &spatializationState) = 0;
+};
+
 /**
  * @brief The AudioSpatializationManager class is an abstract definition of audio spatialization manager.
  *        Provides a series of client/interfaces for audio spatialization management

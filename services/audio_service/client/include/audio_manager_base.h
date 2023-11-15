@@ -246,6 +246,15 @@ public:
     */
     virtual int32_t SetCaptureSilentState(bool state) = 0;
 
+    /**
+     * Update spatialization enabled state and head tracking enabled state.
+     *
+     * @param state identify the enabled state
+     *
+     * @return result of setting. 0 if success, error number else.
+    */
+    virtual int32_t UpdateSpatializationState(std::vector<bool> spatializationState) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -285,6 +294,7 @@ private:
     int HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply);
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
     int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -317,6 +327,7 @@ private:
         &AudioManagerStub::HandleRegiestPolicyProvider,
         &AudioManagerStub::HandleSetWakeupSourceCallback,
         &AudioManagerStub::HandleSetCaptureSilentState,
+        &AudioManagerStub::HandleUpdateSpatializationState,
     };
 };
 } // namespace AudioStandard

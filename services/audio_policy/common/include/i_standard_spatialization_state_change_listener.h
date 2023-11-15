@@ -48,6 +48,19 @@ public:
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardHeadTrackingEnabledChangeListener");
 };
+
+class IStandardSpatializationStateChangeListener : public IRemoteBroker {
+public:
+    virtual ~IStandardSpatializationStateChangeListener() = default;
+    virtual void OnSpatializationStateChange(const std::vector<bool> &spatializationState) = 0;
+
+    enum AudioSpatializationStateChangeListenerMsg {
+        ON_ERROR = 0,
+        ON_SPATIALIZATION_STATE_CHANGE,
+    };
+
+    DECLARE_INTERFACE_DESCRIPTOR(u"IStandardSpatializationStateChangeListener");
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // I_STANDARD_SPATIALIZATION_STATE_CHANGE_LISTENER_H

@@ -49,7 +49,7 @@ public:
     void Deinit(void);
     bool ConnectServiceAdapter();
 
-    // const sptr<IStandardAudioService> GetAudioServerProxy();
+    const sptr<IStandardAudioService> GetAudioServerProxy();
     bool IsSpatializationEnabled();
     int32_t SetSpatializationEnabled(const bool enable);
     bool IsHeadTrackingEnabled();
@@ -68,12 +68,17 @@ public:
     bool IsHeadTrackingSupported();
     bool IsHeadTrackingSupportedForDevice(const std::string address);
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
+    int32_t UpdateSpatializationState();
+    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const sptr<IRemoteObject> &object);
+    void HandleSpatializationStateChange();
 private:
     AudioSpatializationService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
     {}
 
     ~AudioSpatializationService();
+    int32_t UpdateSpatializationEnabledReal();
+    int32_t UpdateHeadTrackingEnabledReal();
     IAudioPolicyInterface& audioPolicyManager_;
     bool spatializationEnabledFlag_ = true;
     bool headTrackingEnabledFlag_ = false;
@@ -81,8 +86,10 @@ private:
     bool headTrackingEnabledReal_ = headTrackingEnabledFlag_;
     std::mutex spatializationEnabledChangeListnerMutex_;
     std::mutex headTrackingEnabledChangeListnerMutex_;
+    std::mutex spatializationStateChangeListnerMutex_;
     std::unordered_map<int32_t, std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledCBMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<AudioSpatializationStateChangeCallback>> spatializationStateCBMap_;
     std::map<std::string, AudioSpatialDeviceState> addressToSpatialDeviceStateMap_;
 };
 } // namespace AudioStandard

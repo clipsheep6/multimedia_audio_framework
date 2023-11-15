@@ -51,6 +51,12 @@ private:
     static void UnregisterHeadTrackingEnabledChangeCallback(napi_env env, napi_value callback,
         AudioSpatializationManagerNapi *spatializationManagerNapi);
     static napi_value Off(napi_env env, napi_callback_info info);
+    static bool ParseSpatialDeviceState(napi_env env, napi_value root, AudioSpatialDeviceState *spatialDeviceState);
+    static napi_value IsSpatializationSupported(napi_env env, napi_callback_info info);
+    static napi_value IsSpatializationSupportedForDevice(napi_env env, napi_callback_info info);
+    static napi_value IsHeadTrackingSupported(napi_env env, napi_callback_info info);
+    static napi_value IsHeadTrackingSupportedForDevice(napi_env env, napi_callback_info info);
+    static napi_value UpdateSpatialDeviceState(napi_env env, napi_callback_info info);
 
     AudioSpatializationManager *audioSpatializationMngr_;
     int32_t cachedClientId_ = -1;

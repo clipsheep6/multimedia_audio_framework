@@ -48,7 +48,7 @@ void AudioSpatializationEnabledChangeListenerProxy::OnSpatializationEnabledChang
 
     data.WriteBool(enabled);
 
-    int error = Remote()->SendRequest(ON_SPATIALIZATION_ENABLED_CHANGE, data, reply, option);
+    int32_t error = Remote()->SendRequest(ON_SPATIALIZATION_ENABLED_CHANGE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioSpatializationEnabledChangeListener failed, error: %{public}d", error);
     }
@@ -83,9 +83,49 @@ void AudioHeadTrackingEnabledChangeListenerProxy::OnHeadTrackingEnabledChange(co
 
     data.WriteBool(enabled);
 
-    int error = Remote()->SendRequest(ON_HEAD_TRACKING_ENABLED_CHANGE, data, reply, option);
+    int32_t error = Remote()->SendRequest(ON_HEAD_TRACKING_ENABLED_CHANGE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioHeadTrackingEnabledChangeListener failed, error: %{public}d", error);
+    }
+
+    return;
+}
+
+AudioSpatializationStateChangeListenerProxy::AudioSpatializationStateChangeListenerProxy(
+    const sptr<IRemoteObject> &impl)
+    : IRemoteProxy<IStandardSpatializationStateChangeListener>(impl)
+{
+    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerProxy:Instances create");
+}
+
+AudioSpatializationStateChangeListenerProxy::~AudioSpatializationStateChangeListenerProxy()
+{
+    AUDIO_DEBUG_LOG("~AudioSpatializationStateChangeListenerProxy: Instance destroy");
+}
+
+void AudioSpatializationStateChangeListenerProxy::OnSpatializationStateChange(
+    const std::vector<bool> &spatializationState)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+
+    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerProxy OnSpatializationStateChange entered");
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioSpatializationStateChangeListener: WriteInterfaceToken failed");
+        return;
+    }
+
+    int32_t size = static_cast<int32_t>(spatializationState.size());
+    data.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        data.WriteBool(spatializationState[i]);
+    }
+
+    int32_t error = Remote()->SendRequest(ON_SPATIALIZATION_STATE_CHANGE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("AudioSpatializationStateChangeListener failed, error: %{public}d", error);
     }
 
     return;
@@ -136,6 +176,27 @@ void AudioHeadTrackingEnabledChangeListenerCallback::OnHeadTrackingEnabledChange
         } else {
             listener_->OnHeadTrackingEnabledChange(false);
         }
+    }
+}
+
+AudioSpatializationStateChangeListenerCallback::AudioSpatializationStateChangeListenerCallback(
+    const sptr<IStandardSpatializationStateChangeListener> &listener)
+    : listener_(listener)
+{
+    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerCallback: Instance create");
+}
+
+AudioSpatializationStateChangeListenerCallback::~AudioSpatializationStateChangeListenerCallback()
+{
+    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerCallback: Instance destroy");
+}
+
+void AudioSpatializationStateChangeListenerCallback::OnSpatializationStateChange(
+    const std::vector<bool> &spatializationState)
+{
+    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerCallback OnSpatializationStateChange entered");
+    if (listener_ != nullptr) {
+        listener_->OnSpatializationStateChange(spatializationState);
     }
 }
 } // namespace AudioStandard

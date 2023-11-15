@@ -97,6 +97,8 @@ public:
 
     int32_t SetCaptureSilentState(bool state) override;
 
+    int32_t UpdateSpatializationState(std::vector<bool> spatializationState) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

@@ -318,6 +318,9 @@ public:
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) override;
 
+    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID,
+        const sptr<IRemoteObject> &object) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

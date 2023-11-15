@@ -37,6 +37,8 @@ std::unordered_map<int32_t, OHOS::wptr<AudioSpatializationEnabledChangeListenerS
     AudioPolicyManager::spatializationEnabledChangeCBMap_;
 std::unordered_map<int32_t, OHOS::wptr<AudioHeadTrackingEnabledChangeListenerStub>>
     AudioPolicyManager::headTrackingEnabledChangeCBMap_;
+std::unordered_map<uint32_t, OHOS::wptr<AudioSpatializationStateChangeListenerStub>>
+    AudioPolicyManager::spatializationStateChangeCBMap_;
 
 inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 {
@@ -1367,7 +1369,7 @@ int32_t AudioPolicyManager::SetHeadTrackingEnabled(const bool enable)
 }
 
 int32_t AudioPolicyManager::RegisterSpatializationEnabledEventListener(const int32_t clientPid,
-        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback)
+    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -1402,7 +1404,7 @@ int32_t AudioPolicyManager::RegisterSpatializationEnabledEventListener(const int
 }
 
 int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
-        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback)
+    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -1527,6 +1529,40 @@ int32_t AudioPolicyManager::UpdateSpatialDeviceState(const AudioSpatialDeviceSta
         return ERROR;
     }
     return gsp->UpdateSpatialDeviceState(audioSpatialDeviceState);
+}
+
+int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint32_t sessionID,
+    const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("RegisterSpatializationStateEventListener: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("RegisterSpatializationStateEventListener: Spatialization state callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    std::unique_lock<std::mutex> lock(spatializationStateListenerMutex_);
+    spatializationStateChangeListenerStub_ = new(std::nothrow) AudioSpatializationStateChangeListenerStub();
+    if (spatializationStateChangeListenerStub_ == nullptr) {
+        AUDIO_ERR_LOG("RegisterSpatializationStateEventListener: object null");
+        return ERROR;
+    }
+
+    spatializationStateChangeListenerStub_->SetCallback(callback);
+
+    sptr<IRemoteObject> object = spatializationStateChangeListenerStub_->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterSpatializationStateEventListener:IPC object creation failed");
+        return ERROR;
+    }
+    headTrackingEnabledChangeCBMap_[sessionID] = spatializationStateChangeListenerStub_;
+    lock.unlock();
+
+    return gsp->RegisterSpatializationStateEventListener(sessionID, object);
 }
 } // namespace AudioStandard
 } // namespace OHOS

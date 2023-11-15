@@ -249,6 +249,9 @@ public:
     bool IsHeadTrackingSupportedForDevice(const std::string address) override;
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) override;
+
+    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID,
+        const sptr<IRemoteObject> &object) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

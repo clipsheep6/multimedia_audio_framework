@@ -130,6 +130,7 @@ private:
     void IsHeadTrackingSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateSpatialDeviceStateInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterSpatializationStateEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
@@ -240,6 +241,7 @@ private:
         &AudioPolicyManagerStub::IsHeadTrackingSupportedInternal,
         &AudioPolicyManagerStub::IsHeadTrackingSupportedForDeviceInternal,
         &AudioPolicyManagerStub::UpdateSpatialDeviceStateInternal,
+        &AudioPolicyManagerStub::RegisterSpatializationStateEventListenerInternal,
     };
 };
 } // namespace AudioStandard

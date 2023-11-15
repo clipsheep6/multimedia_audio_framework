@@ -45,6 +45,18 @@ private:
     static inline BrokerDelegator<AudioHeadTrackingEnabledChangeListenerProxy> delegator_;
 };
 
+class AudioSpatializationStateChangeListenerProxy :
+    public IRemoteProxy<IStandardSpatializationStateChangeListener> {
+public:
+    explicit AudioSpatializationStateChangeListenerProxy(const sptr<IRemoteObject> &impl);
+    virtual ~AudioSpatializationStateChangeListenerProxy();
+    DISALLOW_COPY_AND_MOVE(AudioSpatializationStateChangeListenerProxy);
+    void OnSpatializationStateChange(const std::vector<bool> &spatializationState) override;
+
+private:
+    static inline BrokerDelegator<AudioSpatializationStateChangeListenerProxy> delegator_;
+};
+
 class AudioSpatializationEnabledChangeListenerCallback : public AudioSpatializationEnabledChangeCallback {
 public:
     AudioSpatializationEnabledChangeListenerCallback(const sptr<IStandardSpatializationEnabledChangeListener> &listener,
@@ -67,6 +79,16 @@ public:
 private:
     sptr<IStandardHeadTrackingEnabledChangeListener> listener_ = nullptr;
     bool hasSystemPermission_ = true;
+};
+
+class AudioSpatializationStateChangeListenerCallback : public AudioSpatializationStateChangeCallback {
+public:
+    AudioSpatializationStateChangeListenerCallback(const sptr<IStandardSpatializationStateChangeListener> &listener);
+    virtual ~AudioSpatializationStateChangeListenerCallback();
+    DISALLOW_COPY_AND_MOVE(AudioSpatializationStateChangeListenerCallback);
+    void OnSpatializationStateChange(const std::vector<bool> &spatializationState) override;
+private:
+    sptr<IStandardSpatializationStateChangeListener> listener_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

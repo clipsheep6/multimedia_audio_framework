@@ -36,50 +36,18 @@ namespace AudioStandard {
 using namespace std;
 
 static const int32_t SPATIALIZATION_SERVICE_OK = 0;
-
-// std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
-// static sptr<IStandardAudioService> g_adProxy = nullptr;
-// mutex g_adProxyMutex;
-// mutex g_dataShareHelperMutex;
+static sptr<IStandardAudioService> g_adProxy = nullptr;
+mutex g_adSpatializationProxyMutex;
 
 AudioSpatializationService::~AudioSpatializationService()
 {
     AUDIO_ERR_LOG("~AudioSpatializationService()");
-    // Deinit();
 }
 
 bool AudioSpatializationService::Init(void)
 {
     return true;
 }
-
-// const sptr<IStandardAudioService> AudioSpatializationService::GetAudioServerProxy()
-// {
-//     AUDIO_DEBUG_LOG("[Policy Service] Start get audio policy service proxy.");
-//     lock_guard<mutex> lock(g_adProxyMutex);
-
-//     if (g_adProxy == nullptr) {
-//         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-//         if (samgr == nullptr) {
-//             AUDIO_ERR_LOG("[Policy Service] Get samgr failed.");
-//             return nullptr;
-//         }
-
-//         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-//         if (object == nullptr) {
-//             AUDIO_ERR_LOG("[Policy Service] audio service remote object is NULL.");
-//             return nullptr;
-//         }
-
-//         g_adProxy = iface_cast<IStandardAudioService>(object);
-//         if (g_adProxy == nullptr) {
-//             AUDIO_ERR_LOG("[Policy Service] init g_adProxy is NULL.");
-//             return nullptr;
-//         }
-//     }
-//     const sptr<IStandardAudioService> gsp = g_adProxy;
-//     return gsp;
-// }
 
 bool AudioSpatializationService::ConnectServiceAdapter()
 {
@@ -89,6 +57,34 @@ bool AudioSpatializationService::ConnectServiceAdapter()
 void AudioSpatializationService::Deinit(void)
 {
     return;
+}
+
+const sptr<IStandardAudioService> AudioSpatializationService::GetAudioServerProxy()
+{
+    AUDIO_DEBUG_LOG("[Spatialization Service] Start get audio spatialization service proxy.");
+    lock_guard<mutex> lock(g_adSpatializationProxyMutex);
+
+    if (g_adProxy == nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (samgr == nullptr) {
+            AUDIO_ERR_LOG("[Spatialization Service] Get samgr failed.");
+            return nullptr;
+        }
+
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+        if (object == nullptr) {
+            AUDIO_ERR_LOG("[Spatialization Service] audio service remote object is NULL.");
+            return nullptr;
+        }
+
+        g_adProxy = iface_cast<IStandardAudioService>(object);
+        if (g_adProxy == nullptr) {
+            AUDIO_ERR_LOG("[Spatialization Service] init g_adProxy is NULL.");
+            return nullptr;
+        }
+    }
+    const sptr<IStandardAudioService> gsp = g_adProxy;
+    return gsp;
 }
 
 bool AudioSpatializationService::IsSpatializationEnabled()
@@ -102,7 +98,14 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
         return SPATIALIZATION_SERVICE_OK;
     }
     spatializationEnabledFlag_ = enable;
+    if (UpdateSpatializationEnabledReal() != 0) {
+        return ERROR;
+    }
+    if (UpdateSpatializationState() != 0) {
+        return ERROR;
+    }
     HandleSpatializationEnabledChange(enable);
+    HandleSpatializationStateChange();
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -117,7 +120,14 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
         return SPATIALIZATION_SERVICE_OK;
     }
     headTrackingEnabledFlag_ = enable;
+    if (UpdateHeadTrackingEnabledReal() != 0) {
+        return ERROR;
+    }
+    if (UpdateSpatializationState() != 0) {
+        return ERROR;
+    }
     HandleHeadTrackingEnabledChange(enable);
+    HandleSpatializationStateChange();
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -245,6 +255,74 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
     }
     addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address] = audioSpatialDeviceState;
     return SPATIALIZATION_SERVICE_OK;
+}
+
+int32_t AudioSpatializationService::UpdateSpatializationState()
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("Service proxy unavailable: g_adProxy null");
+        return -1;
+    }
+    std::vector<bool> spatializationState;
+    spatializationState.push_back(spatializationEnabledReal_);
+    spatializationState.push_back(headTrackingEnabledReal_);
+    int32_t ret = gsp->UpdateSpatializationState(spatializationState);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("UpdateSpatializationState fail");
+        return -1;
+    } else {
+        return SPATIALIZATION_SERVICE_OK;
+    }
+}
+
+int32_t AudioSpatializationService::UpdateSpatializationEnabledReal()
+{
+    spatializationEnabledReal_ = spatializationEnabledFlag_;
+    return SPATIALIZATION_SERVICE_OK;
+}
+
+int32_t AudioSpatializationService::UpdateHeadTrackingEnabledReal()
+{
+    headTrackingEnabledReal_ = headTrackingEnabledFlag_;
+    return SPATIALIZATION_SERVICE_OK;
+}
+
+int32_t AudioSpatializationService::RegisterSpatializationStateEventListener(const uint32_t sessionID,
+    const sptr<IRemoteObject> &object)
+{
+    std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "set spatialization state event listener object is nullptr");
+    sptr<IStandardSpatializationStateChangeListener> listener =
+        iface_cast<IStandardSpatializationStateChangeListener>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "spatialization state obj cast failed");
+
+    std::shared_ptr<AudioSpatializationStateChangeCallback> callback =
+        std::make_shared<AudioSpatializationStateChangeListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "failed to create spatialization state cb obj");
+
+    spatializationStateCBMap_[sessionID] = callback;
+    return SUCCESS;
+}
+
+void AudioSpatializationService::HandleSpatializationStateChange()
+{
+    std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
+    std::vector<bool> spatializationState;
+    spatializationState.push_back(spatializationEnabledReal_);
+    spatializationState.push_back(headTrackingEnabledReal_);
+    for (auto it = spatializationStateCBMap_.begin(); it != spatializationStateCBMap_.end(); ++it) {
+        std::shared_ptr<AudioSpatializationStateChangeCallback> spatializationStateChangeCb = it->second;
+        if (spatializationStateChangeCb == nullptr) {
+            AUDIO_ERR_LOG("spatializationStateChangeCb : nullptr for sessionID : %{public}d",
+                static_cast<int32_t>(it->first));
+            it = spatializationStateCBMap_.erase(it);
+            continue;
+        }
+        spatializationStateChangeCb->OnSpatializationStateChange(spatializationState);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

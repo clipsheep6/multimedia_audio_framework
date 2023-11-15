@@ -43,6 +43,7 @@ const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
 const uint32_t FACTOR_TWO = 2;
 const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
+const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_STEREO,
@@ -107,6 +108,7 @@ public:
     void Dump();
     int32_t UpdateMultichannelConfig(const std::string &sceneTypeString, const uint32_t &channels,
         const uint64_t &channelLayout);
+    int32_t UpdateSpatializationState(std::vector<bool> spatializationState);
 private:
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
@@ -120,6 +122,8 @@ private:
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
+    bool spatializatonEnabled_ = true;
+    bool headTrackingEnabled_ = false;
 };
 
 }  // namespace AudioStandard

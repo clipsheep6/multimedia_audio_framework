@@ -2539,5 +2539,33 @@ int32_t AudioPolicyProxy::UpdateSpatialDeviceState(const AudioSpatialDeviceState
     }
     return reply.ReadInt32();
 }
+
+int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_t sessionID,
+    const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("RegisterSpatializationStateEventListener:: WriteInterfaceToken failed");
+        return ERROR;
+    }
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterSpatializationStateEventListener Event object is null");
+        return ERR_NULL_OBJECT;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(sessionID));
+    data.WriteRemoteObject(object);
+    int32_t error = Remote() ->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_SPATIALIZATION_STATE_EVENT), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RegisterSpatializationStateEventListener failed , error: %{public}d", error);
+        return ERROR;
+    }
+
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

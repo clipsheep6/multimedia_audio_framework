@@ -126,5 +126,62 @@ void AudioHeadTrackingEnabledChangeListenerStub::SetCallback(
     AUDIO_DEBUG_LOG("AudioHeadTrackingEnabledChangeListenerStub SetCallback");
     callback_ = callback;
 }
+
+AudioSpatializationStateChangeListenerStub::AudioSpatializationStateChangeListenerStub()
+{
+    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerStub Instance create");
+}
+
+AudioSpatializationStateChangeListenerStub::~AudioSpatializationStateChangeListenerStub()
+{
+    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerStub Instance destroy");
+}
+
+int AudioSpatializationStateChangeListenerStub::OnRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    if (data.ReadInterfaceToken() != GetDescriptor()) {
+        AUDIO_ERR_LOG("AudioSpatializationStateChangeListenerStub: ReadInterfaceToken failed");
+        return -1;
+    }
+
+    switch (code) {
+        case ON_SPATIALIZATION_STATE_CHANGE: {
+            std::vector<bool> spatializationState;
+            int32_t size = data.ReadInt32();
+            for (int32_t i = 0; i < size; i++) {
+                spatializationState.push_back(data.ReadBool());
+            }
+            OnSpatializationStateChange(spatializationState);
+            return AUDIO_OK;
+        }
+        default: {
+            AUDIO_ERR_LOG("default case, need check AudioListenerStub");
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+        }
+    }
+}
+
+void AudioSpatializationStateChangeListenerStub::OnSpatializationStateChange(
+    const std::vector<bool> &spatializationState)
+{
+    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerStub OnSpatializationStateChange");
+
+    shared_ptr<AudioSpatializationStateChangeCallback> cb = callback_.lock();
+    if (cb == nullptr) {
+        AUDIO_ERR_LOG("AudioSpatializationStateChangeListenerStub: callback_ is nullptr");
+        return;
+    }
+
+    cb->OnSpatializationStateChange(spatializationState);
+    return;
+}
+
+void AudioSpatializationStateChangeListenerStub::SetCallback(
+    const weak_ptr<AudioSpatializationStateChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerStub SetCallback");
+    callback_ = callback;
+}
 } // namespace AudioStandard
 } // namespace OHOS

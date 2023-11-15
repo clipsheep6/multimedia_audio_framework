@@ -2645,5 +2645,12 @@ int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceStat
 {
     return audioSpatializationService_.UpdateSpatialDeviceState(audioSpatialDeviceState);
 }
+
+int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32_t sessionID,
+    const sptr<IRemoteObject> &object)
+{
+    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
+    return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, object);
+}
 } // namespace AudioStandard
 } // namespace OHOS

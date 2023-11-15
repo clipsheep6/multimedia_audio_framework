@@ -44,6 +44,18 @@ public:
 private:
     std::weak_ptr<AudioHeadTrackingEnabledChangeCallback> callback_;
 };
+
+class AudioSpatializationStateChangeListenerStub : public IRemoteStub<IStandardSpatializationStateChangeListener> {
+public:
+    AudioSpatializationStateChangeListenerStub();
+    virtual ~AudioSpatializationStateChangeListenerStub();
+
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
+    void OnSpatializationStateChange(const std::vector<bool> &spatializationState) override;
+    void SetCallback(const std::weak_ptr<AudioSpatializationStateChangeCallback> &callback);
+private:
+    std::weak_ptr<AudioSpatializationStateChangeCallback> callback_;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_SPATIALIZATION_STATE_CHANGE_LISTENER_STUB_H

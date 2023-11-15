@@ -257,6 +257,9 @@ public:
     virtual bool IsHeadTrackingSupportedForDevice(const std::string address) = 0;
 
     virtual int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) = 0;
+
+    virtual int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID,
+        const sptr<IRemoteObject> &object) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
