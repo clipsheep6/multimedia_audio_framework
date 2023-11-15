@@ -870,8 +870,7 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
         g_wakeupCapturerSourceOutputIndexs.insert(i->index);
     }
 
-    auto capturerSource =  pa_proplist_gets(i->proplist, "stream.capturerSource");
-    if (std::to_string(static_cast<int>(SourceType::SOURCE_TYPE_VOICE_CALL)).c_str() == capturerSource) {
+    if (SourceType::SOURCE_TYPE_VOICE_CALL == sourceType) {
         g_voiceCallSourceOutputIndexs.insert(i->index);
     }
 }
@@ -1009,8 +1008,7 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
             pa_threaded_mainloop_once_unlocked(thiz->mMainLoop,
                 []([[maybe_unused]] pa_threaded_mainloop *m, void *userdata) {
                     g_audioServiceAdapterCallback->OnWakeupCapturerStop();
-                },
-                nullptr);
+                }, nullptr);
         }
 
         it = g_voiceCallSourceOutputIndexs.find(idx);
@@ -1020,8 +1018,7 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
             pa_threaded_mainloop_once_unlocked(thiz->mMainLoop,
                 []([[maybe_unused]] pa_threaded_mainloop *m, void *userdata) {
                     g_audioServiceAdapterCallback->OnVoiceCallRecCapturerStop();
-                },
-                nullptr);
+                }, nullptr);
         }
     }
 }
