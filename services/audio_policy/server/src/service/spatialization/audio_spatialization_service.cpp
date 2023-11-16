@@ -98,14 +98,10 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
         return SPATIALIZATION_SERVICE_OK;
     }
     spatializationEnabledFlag_ = enable;
-    if (UpdateSpatializationEnabledReal() != 0) {
-        return ERROR;
-    }
-    if (UpdateSpatializationState() != 0) {
-        return ERROR;
-    }
     HandleSpatializationEnabledChange(enable);
-    HandleSpatializationStateChange();
+    if (UpdateSpatializationStateReal() != 0) {
+        return ERROR;
+    }
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -120,14 +116,10 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
         return SPATIALIZATION_SERVICE_OK;
     }
     headTrackingEnabledFlag_ = enable;
-    if (UpdateHeadTrackingEnabledReal() != 0) {
-        return ERROR;
-    }
-    if (UpdateSpatializationState() != 0) {
-        return ERROR;
-    }
     HandleHeadTrackingEnabledChange(enable);
-    HandleSpatializationStateChange();
+    if (UpdateSpatializationStateReal() != 0) {
+        return ERROR;
+    }
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -214,8 +206,13 @@ void AudioSpatializationService::HandleHeadTrackingEnabledChange(const bool &ena
 std::vector<bool> AudioSpatializationService::GetSpatializationState(const StreamUsage streamUsage)
 {
     std::vector<bool> spatializationState;
-    spatializationState.push_back(spatializationEnabledReal_);
-    spatializationState.push_back(headTrackingEnabledReal_);
+    if (streamUsage == STREAM_USAGE_GAME) {
+        spatializationState.push_back(false);
+        spatializationState.push_back(false);
+    } else {
+        spatializationState.push_back(spatializationEnabledReal_);
+        spatializationState.push_back(headTrackingEnabledReal_);
+    }
     return spatializationState;
 }
 
@@ -257,6 +254,43 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
     return SPATIALIZATION_SERVICE_OK;
 }
 
+int32_t AudioSpatializationService::RegisterSpatializationStateEventListener(const uint32_t sessionID,
+    const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
+{
+    std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "set spatialization state event listener object is nullptr");
+    sptr<IStandardSpatializationStateChangeListener> listener =
+        iface_cast<IStandardSpatializationStateChangeListener>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "spatialization state obj cast failed");
+
+    std::shared_ptr<AudioSpatializationStateChangeCallback> callback =
+        std::make_shared<AudioSpatializationStateChangeListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "failed to create spatialization state cb obj");
+
+    spatializationStateCBMap_[sessionID] = std::make_pair(callback, streamUsage);
+    return SUCCESS;
+}
+
+int32_t AudioSpatializationService::UpdateSpatializationStateReal()
+{
+    bool spatializationEnabled = spatializationEnabledFlag_ && IsSpatializationSupported() &&
+        IsHeadTrackingSupportedForDevice(currentDeviceAddress_);
+    bool headTrackingEnabled = headTrackingEnabledFlag_ && IsHeadTrackingSupported() &&
+        IsHeadTrackingSupportedForDevice(currentDeviceAddress_) && spatializationEnabled;
+    if ((spatializationEnabledReal_ == spatializationEnabled) && (headTrackingEnabledReal_ == headTrackingEnabled)) {
+        return SUCCESS;
+    }
+    spatializationEnabledReal_ = spatializationEnabled;
+    headTrackingEnabledReal_ = headTrackingEnabled;
+    if (UpdateSpatializationState() != 0) {
+        return ERROR;
+    }
+    HandleSpatializationStateChange();
+    return SPATIALIZATION_SERVICE_OK;
+}
+
 int32_t AudioSpatializationService::UpdateSpatializationState()
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -276,52 +310,31 @@ int32_t AudioSpatializationService::UpdateSpatializationState()
     }
 }
 
-int32_t AudioSpatializationService::UpdateSpatializationEnabledReal()
-{
-    spatializationEnabledReal_ = spatializationEnabledFlag_;
-    return SPATIALIZATION_SERVICE_OK;
-}
-
-int32_t AudioSpatializationService::UpdateHeadTrackingEnabledReal()
-{
-    headTrackingEnabledReal_ = headTrackingEnabledFlag_;
-    return SPATIALIZATION_SERVICE_OK;
-}
-
-int32_t AudioSpatializationService::RegisterSpatializationStateEventListener(const uint32_t sessionID,
-    const sptr<IRemoteObject> &object)
-{
-    std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "set spatialization state event listener object is nullptr");
-    sptr<IStandardSpatializationStateChangeListener> listener =
-        iface_cast<IStandardSpatializationStateChangeListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "spatialization state obj cast failed");
-
-    std::shared_ptr<AudioSpatializationStateChangeCallback> callback =
-        std::make_shared<AudioSpatializationStateChangeListenerCallback>(listener);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "failed to create spatialization state cb obj");
-
-    spatializationStateCBMap_[sessionID] = callback;
-    return SUCCESS;
-}
-
 void AudioSpatializationService::HandleSpatializationStateChange()
 {
     std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
+
     std::vector<bool> spatializationState;
     spatializationState.push_back(spatializationEnabledReal_);
     spatializationState.push_back(headTrackingEnabledReal_);
+
+    std::vector<bool> spatializationNotSupported;
+    spatializationNotSupported.push_back(false);
+    spatializationNotSupported.push_back(false);
+
     for (auto it = spatializationStateCBMap_.begin(); it != spatializationStateCBMap_.end(); ++it) {
-        std::shared_ptr<AudioSpatializationStateChangeCallback> spatializationStateChangeCb = it->second;
+        std::shared_ptr<AudioSpatializationStateChangeCallback> spatializationStateChangeCb = (it->second).first;
         if (spatializationStateChangeCb == nullptr) {
             AUDIO_ERR_LOG("spatializationStateChangeCb : nullptr for sessionID : %{public}d",
                 static_cast<int32_t>(it->first));
             it = spatializationStateCBMap_.erase(it);
             continue;
         }
-        spatializationStateChangeCb->OnSpatializationStateChange(spatializationState);
+        if ((it->second).second == STREAM_USAGE_GAME) {
+            spatializationStateChangeCb->OnSpatializationStateChange(spatializationNotSupported);
+        } else {
+            spatializationStateChangeCb->OnSpatializationStateChange(spatializationState);
+        }
     }
 }
 } // namespace AudioStandard

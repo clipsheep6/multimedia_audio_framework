@@ -2647,10 +2647,10 @@ int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceStat
 }
 
 int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32_t sessionID,
-    const sptr<IRemoteObject> &object)
+    const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
 {
     RegisterClientDeathRecipient(object, LISTENER_CLIENT);
-    return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, object);
+    return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
 } // namespace AudioStandard
 } // namespace OHOS

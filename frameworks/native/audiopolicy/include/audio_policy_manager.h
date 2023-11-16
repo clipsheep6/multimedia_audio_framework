@@ -285,7 +285,7 @@ public:
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
 
-    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID,
+    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback);
 private:
     AudioPolicyManager()

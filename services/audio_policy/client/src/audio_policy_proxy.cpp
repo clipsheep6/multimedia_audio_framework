@@ -2541,7 +2541,7 @@ int32_t AudioPolicyProxy::UpdateSpatialDeviceState(const AudioSpatialDeviceState
 }
 
 int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_t sessionID,
-    const sptr<IRemoteObject> &object)
+    const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2557,6 +2557,7 @@ int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_
     }
 
     data.WriteInt32(static_cast<int32_t>(sessionID));
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_SPATIALIZATION_STATE_EVENT), data, reply, option);

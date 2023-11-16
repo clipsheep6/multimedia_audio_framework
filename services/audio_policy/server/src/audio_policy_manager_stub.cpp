@@ -1128,13 +1128,14 @@ void AudioPolicyManagerStub::UpdateSpatialDeviceStateInternal(MessageParcel &dat
 void AudioPolicyManagerStub::RegisterSpatializationStateEventListenerInternal(MessageParcel &data,
     MessageParcel &reply)
 {
-    int32_t sessionID = data.ReadInt32();
+    uint32_t sessionID = static_cast<uint32_t>(data.ReadInt32());
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
     if (remoteObject == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioSpatializationStateChangeCallback obj is null");
         return;
     }
-    int32_t ret = RegisterSpatializationStateEventListener(static_cast<uint32_t>(sessionID), remoteObject);
+    int32_t ret = RegisterSpatializationStateEventListener(sessionID, streamUsage, remoteObject);
     reply.WriteInt32(ret);
 }
 

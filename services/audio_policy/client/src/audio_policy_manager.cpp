@@ -1532,7 +1532,7 @@ int32_t AudioPolicyManager::UpdateSpatialDeviceState(const AudioSpatialDeviceSta
 }
 
 int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint32_t sessionID,
-    const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback)
+    const StreamUsage streamUsage, const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -1562,7 +1562,7 @@ int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint3
     headTrackingEnabledChangeCBMap_[sessionID] = spatializationStateChangeListenerStub_;
     lock.unlock();
 
-    return gsp->RegisterSpatializationStateEventListener(sessionID, object);
+    return gsp->RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
 } // namespace AudioStandard
 } // namespace OHOS
