@@ -17,15 +17,13 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "parcel.h"
+#include "audio_policy_client.h"
 #include "audio_policy_unit_test.h"
 #include "audio_system_manager.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
-#include "audio_capturer_state_change_listener_stub.h"
-#include "audio_renderer_state_change_listener_stub.h"
-#include "audio_ringermode_update_listener_stub.h"
-#include "audio_routing_manager_listener_stub.h"
 #include "audio_client_tracker_callback_stub.h"
+#include "audio_policy_client_stub_impl.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -192,19 +190,19 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_DeviceChangeCallback_001, TestSize.Leve
     AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
     ASSERT_NE(nullptr, audioPolicyProxy);
 
-    int32_t clientId = getpid();
-    DeviceFlag flag = DeviceFlag::OUTPUT_DEVICES_FLAG;
     sptr<IRemoteObject> object = nullptr;
-
-    int32_t ret = audioPolicyProxy->SetDeviceChangeCallback(clientId, flag, object);
+    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
     AudioPolicyUnitTest::GetIRemoteObject(object);
-    ret = audioPolicyProxy->SetDeviceChangeCallback(clientId, flag, object);
-    EXPECT_EQ(FAILURE, ret);
+    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE));
+    EXPECT_EQ(ERROR, ret);
 
-    ret = audioPolicyProxy->UnsetDeviceChangeCallback(clientId, flag);
-    EXPECT_EQ(FAILURE, ret);
+    ret = audioPolicyProxy->UnregisterPolicyCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE));
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -252,13 +250,14 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterAudioRendererEventListener_001,
     AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
     ASSERT_NE(nullptr, audioPolicyProxy);
 
-    int32_t clientId = getpid();
     sptr<IRemoteObject> object;
     AudioPolicyUnitTest::GetIRemoteObject(object);
-    int32_t ret = audioPolicyProxy->RegisterAudioRendererEventListener(clientId, object);
+    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE));
     EXPECT_EQ(ERROR, ret);
 
-    ret = audioPolicyProxy->UnregisterAudioRendererEventListener(clientId);
+    ret = audioPolicyProxy->UnregisterPolicyCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE));
     EXPECT_EQ(ERROR, ret);
 }
 
@@ -275,12 +274,13 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterAudioCapturerEventListener_001,
 
     sptr<IRemoteObject> object;
     AudioPolicyUnitTest::GetIRemoteObject(object);
-    int32_t clientId = getpid();
 
-    int32_t ret = audioPolicyProxy->RegisterAudioCapturerEventListener(clientId, object);
+    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE));
     EXPECT_EQ(ERROR, ret);
 
-    ret = audioPolicyProxy->UnregisterAudioCapturerEventListener(clientId);
+    ret = audioPolicyProxy->UnregisterPolicyCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE));
     EXPECT_EQ(ERROR, ret);
 }
 
@@ -479,14 +479,15 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicStateChangeCallback_001, TestSize
     AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
     ASSERT_NE(nullptr, audioPolicyProxy);
 
-    int32_t clientId = getpid();
     sptr<IRemoteObject> object;
     AudioPolicyUnitTest::GetIRemoteObject(object);
-    int32_t ret = audioPolicyProxy->SetMicStateChangeCallback(clientId, object);
+    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED));
     EXPECT_LE(ret, 0);
 
     object = nullptr;
-    ret = audioPolicyProxy->SetMicStateChangeCallback(clientId, object);
+    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED));
     EXPECT_EQ(true, ret > 0);
 }
 
@@ -501,9 +502,9 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicStateChangeCallback_002, TestSize
     AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
     ASSERT_NE(nullptr, audioPolicyProxy);
 
-    int32_t clientId = getpid();
     sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->SetMicStateChangeCallback(clientId, object);
+    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 }
 
@@ -529,7 +530,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize
 
     uint32_t sessionID_ = AudioPolicyUnitTest::GetSessionId(audioStream);
     sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->SetAudioInterruptCallback(sessionID_, object);
+    int32_t ret = audioPolicyProxy->RegisterAudioInterruptCallbackClient(object, sessionID_,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 }
 
@@ -544,9 +546,9 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioManagerInterruptCallback_001, T
     AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
     ASSERT_NE(nullptr, audioPolicyProxy);
 
-    int32_t clientId = getpid();
     sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->SetAudioManagerInterruptCallback(clientId, object);
+    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_INTERRUPT));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 }
 
@@ -679,25 +681,22 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetCurrentCapturerChangeInfos_0
  */
 HWTEST(AudioPolicyUnitTest, Audio_Capturer_State_Change_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioCapturerStateChangeListenerStub> capturerStub =
-        std::make_shared<AudioCapturerStateChangeListenerStub>();
+    std::shared_ptr<AudioPolicyClientStubImpl> capturerStub =
+        std::make_shared<AudioPolicyClientStubImpl>();
 
     vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     capturerStub->OnCapturerStateChange(audioCapturerChangeInfos);
 
-    weak_ptr<AudioCapturerStateChangeCallbackTest> callback =
+    std::shared_ptr<AudioCapturerStateChangeCallbackTest> callback =
         std::make_shared<AudioCapturerStateChangeCallbackTest>();
-    capturerStub->SetCallback(callback);
+    capturerStub->SetCapturerStateChangeCallback(callback);
 
-    uint32_t code = capturerStub->ON_CAPTURERSTATE_CHANGE;
+    uint32_t code = static_cast<uint32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
     int ret = capturerStub->OnRemoteRequest(code, data, reply, option);
     EXPECT_LE(ret, 0);
-
-    code = capturerStub->ON_ERROR;
-    capturerStub->OnRemoteRequest(code, data, reply, option);
 }
 
 /**
@@ -707,25 +706,22 @@ HWTEST(AudioPolicyUnitTest, Audio_Capturer_State_Change_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioRendererStateChangeListenerStub> rendererStub =
-        std::make_shared<AudioRendererStateChangeListenerStub>();
+    std::shared_ptr<AudioPolicyClientStubImpl> rendererStub =
+        std::make_shared<AudioPolicyClientStubImpl>();
 
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     rendererStub->OnRendererStateChange(audioRendererChangeInfos);
 
-    weak_ptr<AudioRendererStateChangeCallbackTest> callback =
+    std::shared_ptr<AudioRendererStateChangeCallbackTest> callback =
         std::make_shared<AudioRendererStateChangeCallbackTest>();
-    rendererStub->SetCallback(callback);
+    rendererStub->SetRendererStateChangeCallback(callback);
 
-    uint32_t code = rendererStub->ON_RENDERERSTATE_CHANGE;
+    uint32_t code = static_cast<uint32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
     int ret = rendererStub->OnRemoteRequest(code, data, reply, option);
     EXPECT_LE(ret, 0);
-
-    code = rendererStub->ON_ERROR;
-    rendererStub->OnRemoteRequest(code, data, reply, option);
 }
 
 /**
@@ -735,25 +731,22 @@ HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, Audio_Ringermode_Update_Listener_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioRingerModeUpdateListenerStub> ringermodeStub =
-        std::make_shared<AudioRingerModeUpdateListenerStub>();
-    std::weak_ptr<AudioRingerModeCallbackTest> callback = std::make_shared<AudioRingerModeCallbackTest>();
+    std::shared_ptr<AudioPolicyClientStubImpl> ringermodeStub =
+        std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioRingerModeCallbackTest> callback = std::make_shared<AudioRingerModeCallbackTest>();
     AudioRingerMode ringerMode = AudioRingerMode::RINGER_MODE_SILENT;
     
     ringermodeStub->OnRingerModeUpdated(ringerMode);
 
-    ringermodeStub->SetCallback(callback);
+    ringermodeStub->SetRingerModeCallback(callback);
 
     ringermodeStub->OnRingerModeUpdated(ringerMode);
 
-    uint32_t code = ringermodeStub->ON_RINGERMODE_UPDATE;
+    uint32_t code = static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
     int ret = ringermodeStub->OnRemoteRequest(code, data, reply, option);
-
-    code = ringermodeStub->ON_ERROR;
-    ret = ringermodeStub->OnRemoteRequest(code, data, reply, option);
     EXPECT_LE(ret, 0);
 }
 
@@ -764,27 +757,24 @@ HWTEST(AudioPolicyUnitTest, Audio_Ringermode_Update_Listener_001, TestSize.Level
  */
 HWTEST(AudioPolicyUnitTest, Audio_Rounting_Manager_Listener_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioRoutingManagerListenerStub> routingManagerStub =
-        std::make_shared<AudioRoutingManagerListenerStub>();
-    std::weak_ptr<AudioManagerMicStateChangeCallbackTest> callback =
+    std::shared_ptr<AudioPolicyClientStubImpl> audioPolicyClientStubImpl =
+        std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioManagerMicStateChangeCallbackTest> callback =
         std::make_shared<AudioManagerMicStateChangeCallbackTest>();
     MicStateChangeEvent micStateChangeEvent;
     micStateChangeEvent.mute = true;
     
-    routingManagerStub->OnMicStateUpdated(micStateChangeEvent);
+    audioPolicyClientStubImpl->OnMicStateUpdated(micStateChangeEvent);
 
-    routingManagerStub->SetMicStateChangeCallback(callback);
+    audioPolicyClientStubImpl->SetMicStateChangeCallback(callback);
 
-    routingManagerStub->OnMicStateUpdated(micStateChangeEvent);
+    audioPolicyClientStubImpl->OnMicStateUpdated(micStateChangeEvent);
 
-    uint32_t code = routingManagerStub->ON_MIC_STATE_UPDATED;
+    uint32_t code = static_cast<uint32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    int ret = routingManagerStub->OnRemoteRequest(code, data, reply, option);
-
-    code = routingManagerStub->ON_ERROR;
-    ret = routingManagerStub->OnRemoteRequest(code, data, reply, option);
+    int ret = audioPolicyClientStubImpl->OnRemoteRequest(code, data, reply, option);
     EXPECT_LE(ret, 0);
 }
 
@@ -862,17 +852,19 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetRingerMode_001, TestSize.Level1)
     AudioRingerMode ringModeRet = audioPolicyProxy->GetRingerMode();
     EXPECT_EQ(ringMode, ringModeRet);
 
-    int32_t clientId= getpid();
     sptr<IRemoteObject> object = nullptr;
-    ret = audioPolicyProxy->SetRingerModeCallback(clientId, object, api_v);
+    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
     AudioPolicyUnitTest::GetIRemoteObject(object);
-    ret = audioPolicyProxy->SetRingerModeCallback(clientId, object, api_v);
-    EXPECT_EQ(FAILURE, ret);
+    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE));
+    EXPECT_EQ(ERROR, ret);
 
-    ret = audioPolicyProxy->UnsetRingerModeCallback(clientId);
-    EXPECT_EQ(FAILURE, ret);
+    ret = audioPolicyProxy->UnregisterPolicyCallbackClient(
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE));
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -887,22 +879,25 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetCallback_001, TestSize.Level1)
     ASSERT_NE(nullptr, audioPolicyProxy);
 
     int32_t ret = -1;
-    int32_t clientId= getpid();
-    API_VERSION api_v = API_9;
     sptr<IRemoteObject> object = nullptr;
-    ret = audioPolicyProxy->SetPreferredOutputDeviceChangeCallback(clientId, object);
+    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_ACTIVE_OUTPUT_DEVICE_UPDATED));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
-    ret = audioPolicyProxy->RegisterFocusInfoChangeCallback(clientId, object);
+    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
-    ret = audioPolicyProxy->SetVolumeKeyEventCallback(clientId, object, api_v);
+    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
-    ret = audioPolicyProxy->RegisterAudioRendererEventListener(clientId, object);
+    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
-    ret = audioPolicyProxy->RegisterAudioCapturerEventListener(clientId, object);
+    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object,
+        static_cast<uint32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE));
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
     const std::string key = "testkey";

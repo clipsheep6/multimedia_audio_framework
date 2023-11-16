@@ -31,12 +31,10 @@ public:
 
     AudioStreamCollector();
     ~AudioStreamCollector();
-    int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
-        bool hasBTPermission, bool hasSystemPermission = true);
-    int32_t UnregisterAudioRendererEventListener(int32_t clientPid);
-    int32_t RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
-        bool hasBTPermission, bool hasSystemPermission = true);
-    int32_t UnregisterAudioCapturerEventListener(int32_t clientPid);
+    int32_t RegisterRendererOrCapturerEventListenerCbClient(const sptr<IRemoteObject> &object, int32_t clientPid,
+        int32_t code, bool hasBTPermission, bool hasSystemPermission = true);
+    int32_t UnregisterRendererOrCapturerEventListenerCbClient(int32_t clientPid, int32_t code,
+        bool hasBTPermission, bool hasSysPermission);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
@@ -47,7 +45,8 @@ public:
     int32_t GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
-    void RegisteredStreamListenerClientDied(int32_t uid);
+    void RegisteredStreamListenerClientDied(pid_t pid, const int32_t code, bool hasBTPermission,
+        bool hasSysPermission);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     bool IsStreamActive(AudioStreamType volumeType);
     int32_t GetRunningStream();

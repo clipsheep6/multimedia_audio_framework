@@ -14,14 +14,9 @@
  */
 #include "audio_stream_collector.h"
 
-#include "audio_capturer_state_change_listener_proxy.h"
 #include "audio_errors.h"
-#include "audio_renderer_state_change_listener_proxy.h"
 #include "audio_client_tracker_callback_proxy.h"
 #include "ipc_skeleton.h"
-
-#include "i_standard_renderer_state_change_listener.h"
-#include "i_standard_capturer_state_change_listener.h"
 #include "i_standard_client_tracker.h"
 
 namespace OHOS {
@@ -96,58 +91,22 @@ AudioStreamCollector::~AudioStreamCollector()
     AUDIO_INFO_LOG("~AudioStreamCollector()");
 }
 
-int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
-    bool hasBTPermission, bool hasSystemPermission)
+int32_t AudioStreamCollector::RegisterRendererOrCapturerEventListenerCbClient(const sptr<IRemoteObject> &object,
+    int32_t clientPid, int32_t code, bool hasBTPermission, bool hasSystemPermission)
 {
-    AUDIO_INFO_LOG("RegisterAudioRendererEventListener client id %{public}d done", clientPid);
+    AUDIO_INFO_LOG("RegisterRendererOrCapturerEventListenerCbClient client id %{public}d done", clientPid);
 
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "set renderer state change event listener object is nullptr");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "set renderer event listener object is nullptr");
 
-    sptr<IStandardRendererStateChangeListener> listener = iface_cast<IStandardRendererStateChangeListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
-        "renderer listener obj cast failed");
-
-    std::shared_ptr<AudioRendererStateChangeCallback> callback =
-         std::make_shared<AudioRendererStateChangeListenerCallback>(listener, hasBTPermission, hasSystemPermission);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "failed to  create cb obj");
-
-    mDispatcherService.addRendererListener(clientPid, callback);
-    return SUCCESS;
+    return mDispatcherService.addRendererOrCapturerListener(object, clientPid, code, hasBTPermission,
+        hasSystemPermission);
 }
 
-int32_t AudioStreamCollector::UnregisterAudioRendererEventListener(int32_t clientPid)
+int32_t AudioStreamCollector::UnregisterRendererOrCapturerEventListenerCbClient(int32_t clientPid, int32_t code,
+    bool hasBTPermission, bool hasSysPermission)
 {
-    AUDIO_INFO_LOG("UnregisterAudioRendererEventListener()");
-    mDispatcherService.removeRendererListener(clientPid);
-    return SUCCESS;
-}
-
-int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
-    bool hasBTPermission, bool hasSystemPermission)
-{
-    AUDIO_INFO_LOG("RegisterAudioCapturerEventListener for client id %{public}d done", clientPid);
-
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "set capturer event listener object is nullptr");
-
-    sptr<IStandardCapturerStateChangeListener> listener = iface_cast<IStandardCapturerStateChangeListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "capturer obj cast failed");
-
-    std::shared_ptr<AudioCapturerStateChangeCallback> callback =
-        std::make_shared<AudioCapturerStateChangeListenerCallback>(listener, hasBTPermission, hasSystemPermission);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "failed to create capturer cb obj");
-
-    mDispatcherService.addCapturerListener(clientPid, callback);
-    return SUCCESS;
-}
-
-int32_t AudioStreamCollector::UnregisterAudioCapturerEventListener(int32_t clientPid)
-{
-    AUDIO_INFO_LOG("UnregisterAudioCapturerEventListener client id %{public}d done", clientPid);
-    mDispatcherService.removeCapturerListener(clientPid);
-    return SUCCESS;
+    AUDIO_INFO_LOG("UnregisterRendererOrCapturerEventListenerCbClient()");
+    return mDispatcherService.removeRendererOrCapturerListener(clientPid, code, hasBTPermission, hasSysPermission);
 }
 
 int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamChangeInfo)
@@ -566,11 +525,11 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     }
 }
 
-void AudioStreamCollector::RegisteredStreamListenerClientDied(int32_t uid)
+void AudioStreamCollector::RegisteredStreamListenerClientDied(pid_t pid, const int32_t code, bool hasBTPermission,
+    bool hasSysPermission)
 {
-    AUDIO_INFO_LOG("StreamListenerClientDied:client %{public}d", uid);
-    mDispatcherService.removeRendererListener(uid);
-    mDispatcherService.removeCapturerListener(uid);
+    AUDIO_INFO_LOG("StreamListenerClientDied:client %{public}d", pid);
+    mDispatcherService.removeRendererOrCapturerListener(pid, code, hasBTPermission, hasSysPermission);
 }
 
 bool AudioStreamCollector::GetAndCompareStreamType(AudioStreamType requiredType, AudioRendererInfo rendererInfo)

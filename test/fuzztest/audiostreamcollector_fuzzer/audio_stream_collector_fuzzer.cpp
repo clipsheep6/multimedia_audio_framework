@@ -18,6 +18,7 @@
 #include <cstdint>
 #include "audio_info.h"
 #include "audio_stream_collector.h"
+#include "audio_policy_client.h"
 #include "message_parcel.h"
 using namespace std;
 
@@ -40,16 +41,22 @@ void AudioStreamCollectorFuzzTest(const uint8_t *rawData, size_t size)
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     int32_t clientPid = *reinterpret_cast<const int32_t *>(rawData);
     bool hasBTPermission = *reinterpret_cast<const bool *>(rawData);
-    AudioStreamCollector::GetAudioStreamCollector()
-        .RegisterAudioRendererEventListener(clientPid, object, hasBTPermission);
-    AudioStreamCollector::GetAudioStreamCollector().UnregisterAudioRendererEventListener(clientPid);
-    AudioStreamCollector::GetAudioStreamCollector()
-        .RegisterAudioCapturerEventListener(clientPid, object, hasBTPermission);
-    AudioStreamCollector::GetAudioStreamCollector().UnregisterAudioCapturerEventListener(clientPid);
+    bool hasSysPermission = *reinterpret_cast<const bool *>(rawData);
+    AudioStreamCollector::GetAudioStreamCollector().RegisterRendererOrCapturerEventListenerCbClient(object, clientPid,
+        static_cast<int32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE), hasBTPermission, hasSysPermission);
+    AudioStreamCollector::GetAudioStreamCollector().UnregisterRendererOrCapturerEventListenerCbClient(clientPid,
+        static_cast<int32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE), hasBTPermission, hasSysPermission);
+    AudioStreamCollector::GetAudioStreamCollector().RegisterRendererOrCapturerEventListenerCbClient(object, clientPid,
+        static_cast<int32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE), hasBTPermission, hasSysPermission);
+    AudioStreamCollector::GetAudioStreamCollector().UnregisterRendererOrCapturerEventListenerCbClient(clientPid,
+        static_cast<int32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE), hasBTPermission, hasSysPermission);
 
     int32_t uid = *reinterpret_cast<const int32_t *>(rawData);
     AudioStreamCollector::GetAudioStreamCollector().RegisteredTrackerClientDied(uid);
-    AudioStreamCollector::GetAudioStreamCollector().RegisteredStreamListenerClientDied(uid);
+    AudioStreamCollector::GetAudioStreamCollector().RegisteredStreamListenerClientDied(uid,
+        static_cast<int32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE), hasBTPermission, hasSysPermission);
+    AudioStreamCollector::GetAudioStreamCollector().RegisteredStreamListenerClientDied(uid,
+        static_cast<int32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE), hasBTPermission, hasSysPermission);
 
     int32_t clientUid = *reinterpret_cast<const int32_t *>(rawData);
     StreamSetStateEventInternal streamSetStateEventInternal = {};

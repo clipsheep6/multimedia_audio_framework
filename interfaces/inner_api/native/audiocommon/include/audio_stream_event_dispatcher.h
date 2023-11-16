@@ -25,6 +25,7 @@
 #include <vector>
 #include "audio_log.h"
 #include "audio_stream_manager.h"
+#include "audio_policy_client_proxy.h"
 #include "iremote_proxy.h"
 
 namespace OHOS {
@@ -47,12 +48,10 @@ public:
     AudioStreamEventDispatcher();
     ~AudioStreamEventDispatcher();
 
-    void addRendererListener(int32_t clientPid,
-                                const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
-    void removeRendererListener(int32_t clientPid);
-    void addCapturerListener(int32_t clientPid,
-                                const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
-    void removeCapturerListener(int32_t clientPid);
+    int32_t addRendererOrCapturerListener(const sptr<IRemoteObject> &object, int32_t clientPid, int32_t code,
+        bool hasBTPermission, bool hasSystemPermission);
+    int32_t removeRendererOrCapturerListener(int32_t clientPid, int32_t code, bool hasBTPermission,
+        bool hasSystemPermission);
     void SendRendererInfoEventToDispatcher(AudioMode mode,
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
     void SendCapturerInfoEventToDispatcher(AudioMode mode,
@@ -62,11 +61,16 @@ public:
     void DispatcherEvent();
 
 private:
+    std::shared_ptr<AudioPolicyClientProxy> GetRendererOrCapturerAPCProxy(
+        const int32_t clientPid, bool hasBTPermission, bool hasSystemPermission, const sptr<IRemoteObject> &object);
+
     std::mutex rendererStateChangeListnerMutex_;
     std::mutex capturerStateChangeListnerMutex_;
+    std::mutex StateChangeListnerMutex_;
     std::mutex streamStateChangeQueueMutex_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRendererStateChangeCallback>> rendererCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioCapturerStateChangeCallback>> capturerCBMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientProxy>> rendererOrCapturerProxyCBMap_;
     std::queue<unique_ptr<StreamStateChangeRequest>> streamStateChangeQueue_;
     std::unique_ptr<StreamStateChangeRequest> request;
 };
