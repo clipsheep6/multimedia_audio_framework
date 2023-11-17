@@ -109,7 +109,7 @@ void AudioPolicyManager::RecoverAudioCapturerEventListener()
     }
 
     for (auto it = audioCallbacksMap_.begin(); it != audioCallbacksMap_.end(); ++it) {
-        sptr<AudioPolicyClientStubImpl> listenerStub = it->second.promote();;
+        sptr<AudioPolicyClientStubImpl> listenerStub = it->second.promote();
         if (listenerStub != nullptr) {
             sptr<IRemoteObject> object = listenerStub->AsObject();
             gsp->RegisterPolicyCallbackClient(object, it->first);

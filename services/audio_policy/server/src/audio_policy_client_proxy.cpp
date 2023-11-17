@@ -30,7 +30,7 @@ AudioPolicyClientProxy::~AudioPolicyClientProxy()
 {}
 
 AudioEnhancementMonitoringCallback::AudioEnhancementMonitoringCallback(const sptr<IAudioPolicyClient> &listener)
-: listener_(listener) {}
+    : listener_(listener) {}
 
 AudioEnhancementMonitoringCallback::~AudioEnhancementMonitoringCallback() {}
 

@@ -1225,7 +1225,8 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
 {
     auto focusMap = audioPolicyService_.GetAudioFocusMap();
     AudioFocuState incomingState = ACTIVE;
-    std::shared_ptr<AudioPolicyClientProxy> policyListenerCb = audioPolicyClientProxyCBMap_[incomingInterrupt.sessionID];
+    std::shared_ptr<AudioPolicyClientProxy> policyListenerCb =
+        audioPolicyClientProxyCBMap_[incomingInterrupt.sessionID];
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
     for (auto iterActive = audioFocusInfoList_.begin(); iterActive != audioFocusInfoList_.end(); ++iterActive) {
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) {
