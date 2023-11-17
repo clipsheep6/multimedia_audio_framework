@@ -47,7 +47,6 @@ public:
 
     bool Init(void);
     void Deinit(void);
-    bool ConnectServiceAdapter();
 
     const sptr<IStandardAudioService> GetAudioServerProxy();
     bool IsSpatializationEnabled();
@@ -70,6 +69,7 @@ public:
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object);
+    void UpdateCurrentDevice(const std::string macAddress);
 private:
     AudioSpatializationService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
@@ -85,6 +85,7 @@ private:
     bool headTrackingEnabledFlag_ = false;
     bool spatializationEnabledReal_ = spatializationEnabledFlag_;
     bool headTrackingEnabledReal_ = headTrackingEnabledFlag_;
+    std::mutex spatializationServiceMutex_;
     std::mutex spatializationEnabledChangeListnerMutex_;
     std::mutex headTrackingEnabledChangeListnerMutex_;
     std::mutex spatializationStateChangeListnerMutex_;

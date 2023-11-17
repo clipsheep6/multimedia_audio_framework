@@ -45,6 +45,7 @@
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {

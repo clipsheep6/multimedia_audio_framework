@@ -16,7 +16,7 @@
 
 #include "audio_spatialization_service.h"
 
-#include "audio_policy_service.h"
+// #include "audio_policy_service.h"
 
 #include "ipc_skeleton.h"
 #include "hisysevent.h"
@@ -45,11 +45,6 @@ AudioSpatializationService::~AudioSpatializationService()
 }
 
 bool AudioSpatializationService::Init(void)
-{
-    return true;
-}
-
-bool AudioSpatializationService::ConnectServiceAdapter()
 {
     return true;
 }
@@ -89,11 +84,13 @@ const sptr<IStandardAudioService> AudioSpatializationService::GetAudioServerProx
 
 bool AudioSpatializationService::IsSpatializationEnabled()
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     return spatializationEnabledFlag_;
 }
 
 int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     if (spatializationEnabledFlag_ == enable) {
         return SPATIALIZATION_SERVICE_OK;
     }
@@ -107,11 +104,13 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
 
 bool AudioSpatializationService::IsHeadTrackingEnabled()
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     return headTrackingEnabledFlag_;
 }
 
 int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     if (headTrackingEnabledFlag_ == enable) {
         return SPATIALIZATION_SERVICE_OK;
     }
@@ -205,6 +204,7 @@ void AudioSpatializationService::HandleHeadTrackingEnabledChange(const bool &ena
 
 std::vector<bool> AudioSpatializationService::GetSpatializationState(const StreamUsage streamUsage)
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     std::vector<bool> spatializationState;
     if (streamUsage == STREAM_USAGE_GAME) {
         spatializationState.push_back(false);
@@ -218,11 +218,13 @@ std::vector<bool> AudioSpatializationService::GetSpatializationState(const Strea
 
 bool AudioSpatializationService::IsSpatializationSupported()
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     return true;
 }
 
 bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::string address)
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     if (!addressToSpatialDeviceStateMap_.count(address)) {
         return false;
     }
@@ -231,11 +233,13 @@ bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::s
 
 bool AudioSpatializationService::IsHeadTrackingSupported()
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     return true;
 }
 
 bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::string address)
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     if (!addressToSpatialDeviceStateMap_.count(address)) {
         return false;
     }
@@ -244,6 +248,7 @@ bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::str
 
 int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     if (!addressToSpatialDeviceStateMap_.count(audioSpatialDeviceState.address)) {
         addressToSpatialDeviceStateMap_.insert(std::make_pair(audioSpatialDeviceState.address,
             audioSpatialDeviceState));
@@ -251,6 +256,9 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
         return SPATIALIZATION_SERVICE_OK;
     }
     addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address] = audioSpatialDeviceState;
+    if (UpdateSpatializationStateReal() != 0) {
+        return ERROR;
+    }
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -271,6 +279,15 @@ int32_t AudioSpatializationService::RegisterSpatializationStateEventListener(con
 
     spatializationStateCBMap_[sessionID] = std::make_pair(callback, streamUsage);
     return SUCCESS;
+}
+
+void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddress)
+{
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    currentDeviceAddress_ = macAddress;
+    if (UpdateSpatializationStateReal() != 0) {
+        AUDIO_WARNING_LOG("UpdateSpatializationStateReal fail");
+    }
 }
 
 int32_t AudioSpatializationService::UpdateSpatializationStateReal()
