@@ -13,10 +13,8 @@
  * limitations under the License.
  */
 
-
+#include "audio_errors.h"
 #include "audio_stream_event_dispatcher.h"
-#include "i_standard_capturer_state_change_listener.h"
-#include "i_standard_renderer_state_change_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -30,40 +28,48 @@ AudioStreamEventDispatcher::~AudioStreamEventDispatcher()
     AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::~AudioStreamEventDispatcher()");
 }
 
-void AudioStreamEventDispatcher::addRendererListener(int32_t clientPid,
-    const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
+std::shared_ptr<AudioPolicyClientProxy> AudioStreamEventDispatcher::GetRendererOrCapturerAPCProxy(
+    const int32_t clientPid, bool hasBTPermission, bool hasSystemPermission, const sptr<IRemoteObject> &object)
 {
-    std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
-    rendererCBMap_[clientPid] = callback;
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::addRendererListener:client %{public}d added", clientPid);
-}
-
-void AudioStreamEventDispatcher::removeRendererListener(int32_t clientPid)
-{
-    std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
-    if (rendererCBMap_.erase(clientPid)) {
-        AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeRendererListener:client %{public}d done", clientPid);
-        return;
+    std::shared_ptr<AudioPolicyClientProxy> proxy = rendererOrCapturerProxyCBMap_[clientPid];
+    if (proxy == nullptr && object != nullptr) {
+        proxy = std::make_shared<AudioPolicyClientProxy>(object);
+        proxy->hasBTPermission_ = hasBTPermission;
+        proxy->hasSystemPermission_ = hasSystemPermission;
+        rendererOrCapturerProxyCBMap_[clientPid] = proxy;
     }
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::removeRendererListener:client %{public}d not present", clientPid);
+
+    return proxy;
 }
 
-void AudioStreamEventDispatcher::addCapturerListener(int32_t clientPid,
-    const std::shared_ptr<AudioCapturerStateChangeCallback> &callback)
+int32_t AudioStreamEventDispatcher::addRendererOrCapturerListener(const sptr<IRemoteObject> &object, int32_t clientPid,
+    int32_t code, bool hasBTPermission, bool hasSystemPermission)
 {
-    std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
-    capturerCBMap_[clientPid] = callback;
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::addCapturerListener:client %{public}d added", clientPid);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetRendererOrCapturerAPCProxy(clientPid, hasBTPermission,
+        hasSystemPermission, object);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    return proxy->RegisterPolicyCallbackClient(object, code);
 }
 
-void AudioStreamEventDispatcher::removeCapturerListener(int32_t clientPid)
+int32_t AudioStreamEventDispatcher::removeRendererOrCapturerListener(int32_t clientPid, int32_t code,
+    bool hasBTPermission, bool hasSystemPermission)
 {
-    std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
-    if (capturerCBMap_.erase(clientPid)) {
-        AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeCapturerListener:client %{public}d done", clientPid);
-        return;
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetRendererOrCapturerAPCProxy(clientPid, hasBTPermission,
+        hasSystemPermission, nullptr);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    proxy->UnregisterPolicyCallbackClient(code);
+
+    std::lock_guard<std::mutex> lock(StateChangeListnerMutex_);
+    if (rendererOrCapturerProxyCBMap_.erase(clientPid) == 0) {
+        AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeRendererOrCapturerListener:cId %{public}d done", clientPid);
+        return ERR_INVALID_OPERATION;
     }
     AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::removeCapturerListener:client %{public}d not present", clientPid);
+    return SUCCESS;
 }
 
 void AudioStreamEventDispatcher::SendRendererInfoEventToDispatcher(AudioMode mode,
@@ -116,11 +122,11 @@ void AudioStreamEventDispatcher::HandleRendererStreamStateChange(
     const unique_ptr<StreamStateChangeRequest> &streamStateChangeRequest)
 {
     std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
-    for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
-        std::shared_ptr<AudioRendererStateChangeCallback> rendererStateChangeCb = it->second;
+    for (auto it = rendererOrCapturerProxyCBMap_.begin(); it != rendererOrCapturerProxyCBMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientProxy> rendererStateChangeCb = it->second;
         if (rendererStateChangeCb == nullptr) {
             AUDIO_ERR_LOG("rendererStateChangeCb : nullptr for client : %{public}d", it->first);
-            it = rendererCBMap_.erase(it);
+            it = rendererOrCapturerProxyCBMap_.erase(it);
             continue;
         }
         rendererStateChangeCb->OnRendererStateChange(streamStateChangeRequest->audioRendererChangeInfos);
@@ -131,11 +137,11 @@ void AudioStreamEventDispatcher::HandleCapturerStreamStateChange(
     const unique_ptr<StreamStateChangeRequest> &streamStateChangeRequest)
 {
     std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
-    for (auto it = capturerCBMap_.begin(); it != capturerCBMap_.end(); ++it) {
-        std::shared_ptr<AudioCapturerStateChangeCallback> capturerStateChangeCb = it->second;
+    for (auto it = rendererOrCapturerProxyCBMap_.begin(); it != rendererOrCapturerProxyCBMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientProxy> capturerStateChangeCb = it->second;
         if (capturerStateChangeCb == nullptr) {
             AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}d", it->first);
-            it = capturerCBMap_.erase(it);
+            it = rendererOrCapturerProxyCBMap_.erase(it);
             continue;
         }
         capturerStateChangeCb->OnCapturerStateChange(streamStateChangeRequest->audioCapturerChangeInfos);
