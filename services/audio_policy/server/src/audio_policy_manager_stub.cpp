@@ -1047,6 +1047,25 @@ void AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal(MessageP
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t code = data.ReadUint32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterPolicyCallbackClientInternal obj is null");
+        return;
+    }
+    int32_t result = RegisterPolicyCallbackClient(object, code);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnregisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t code = data.ReadUint32();
+    int32_t result = UnregisterPolicyCallbackClient(code);
+    reply.WriteInt32(result);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {

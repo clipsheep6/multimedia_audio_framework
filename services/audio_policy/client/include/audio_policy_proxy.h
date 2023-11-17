@@ -229,6 +229,11 @@ public:
         const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) override;
+
+    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t code) override;
+
+    int32_t UnregisterPolicyCallbackClient(const int32_t code) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

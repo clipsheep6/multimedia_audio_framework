@@ -339,6 +339,17 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
     return volumeGroupType;
 }
 
+std::shared_ptr<AudioPolicyClientProxy> AudioPolicyService::GetAPSAudioPolicyClientProxy(
+    const int32_t clientPid, bool hasBTPermission, const sptr<IRemoteObject> &object)
+{
+    std::shared_ptr<AudioPolicyClientProxy> proxy = audioPolicyClientProxyAPSCbsMap_[clientPid];
+    if (proxy == nullptr && object != nullptr) {
+        proxy = std::make_shared<AudioPolicyClientProxy>(object);
+        proxy->hasBTPermission_ = hasBTPermission;
+        audioPolicyClientProxyAPSCbsMap_[clientPid] = proxy;
+    }
+    return proxy;
+}
 
 int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey) const
 {
@@ -1297,7 +1308,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
     Trace trace("AudioPolicyService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    for (auto it = preferredOutputDeviceCbsMap_.begin(); it != preferredOutputDeviceCbsMap_.end(); ++it) {
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioRendererInfo rendererInfo;
         auto deviceDescs = GetPreferredOutputDeviceDescriptors(rendererInfo);
         if (!(it->second->hasBTPermission_)) {
@@ -1313,7 +1324,7 @@ void AudioPolicyService::OnPreferredInputDeviceUpdated(DeviceType deviceType, st
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     std::lock_guard<std::mutex> lock(preferredInputMapMutex_);
-    for (auto it = preferredInputDeviceCbsMap_.begin(); it != preferredInputDeviceCbsMap_.end(); ++it) {
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioCapturerInfo captureInfo;
         auto deviceDescs = GetPreferredInputDeviceDescriptors(captureInfo);
         if (!(it->second->hasBTPermission_)) {
@@ -4029,10 +4040,10 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
 
     WriteDeviceChangedSysEvents(desc, isConnected);
 
-    for (auto it = deviceChangeCbsMap_.begin(); it != deviceChangeCbsMap_.end(); ++it) {
-        deviceChangeAction.flag = it->first.second;
-        deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first.second, desc);
-        if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        //deviceChangeAction.flag = it->first.second;
+        //deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first.second, desc);
+        if (it->second/* && deviceChangeAction.deviceDescriptors.size() > 0*/) {
             if (!(it->second->hasBTPermission_)) {
                 UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
             }
@@ -4902,6 +4913,37 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetAvailableD
 
     audioDeviceDescriptors = audioDeviceManager_.GetAvailableDevicesByUsage(usage);
     return audioDeviceDescriptors;
+}
+
+int32_t AudioPolicyService::RegisterAPSPolicyCallbackClient(const sptr<IRemoteObject> &object, const uint32_t code,
+        int32_t clientPid, bool hasBTPermission)
+{
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAPSAudioPolicyClientProxy(clientPid, hasBTPermission, object);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+
+    return proxy->RegisterPolicyCallbackClient(object, code);
+}
+
+int32_t AudioPolicyService::UnregisterAPSPolicyCallbackClient(const uint32_t code, int32_t clientPid,
+    bool hasBTPermission)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    std::shared_ptr<AudioPolicyClientProxy> proxy = GetAPSAudioPolicyClientProxy(clientPid, hasBTPermission, nullptr);
+    if (proxy == nullptr) {
+        return ERR_INVALID_OPERATION;
+    }
+    proxy->UnregisterPolicyCallbackClient(code);
+
+    if (audioPolicyClientProxyAPSCbsMap_.erase(clientPid) == 0) {
+        AUDIO_ERR_LOG("client not present in %{public}s", __func__);
+        return ERR_INVALID_OPERATION;
+    }
+
+    AUDIO_DEBUG_LOG("UnregisterAPSPolicyCallbackClient:: audioPolicyClientProxyAPSCbsMap_ size: %{public}zu",
+        audioPolicyClientProxyAPSCbsMap_.size());
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

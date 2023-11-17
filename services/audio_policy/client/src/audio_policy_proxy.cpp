@@ -2314,5 +2314,52 @@ int32_t AudioPolicyProxy::UnsetAvailableDeviceChangeCallback(const int32_t clien
 
     return reply.ReadInt32();
 }
+
+int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t code)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterPolicyCallbackClient object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteUint32(code);
+    data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_POLICY_CALLBACK_CLIENT), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RegisterPolicyCallbackClient failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnregisterPolicyCallbackClient(const int32_t code)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteUint32(code);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_POLICY_CALLBACK_CLIENT), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RegisterPolicyCallbackClient failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS
