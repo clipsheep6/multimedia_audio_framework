@@ -806,7 +806,7 @@ public:
      * @since 10
      */
     virtual int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
-        const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback);
+        const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback) = 0;
 
     /**
      * @brief Unregisters the renderer event callback listener.
@@ -816,7 +816,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
      */
-    virtual int32_t UnregisterAudioRendererEventListener(const int32_t clientPid);
+    virtual int32_t UnregisterAudioRendererEventListener(const int32_t clientPid) = 0;
 
     /**
      * @brief Register audio policy service died callback.

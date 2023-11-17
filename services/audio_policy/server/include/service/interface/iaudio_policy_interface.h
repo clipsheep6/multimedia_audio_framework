@@ -66,7 +66,7 @@ public:
 
     virtual int32_t CloseAudioPort(AudioIOHandle ioHandle) = 0;
 
-    virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
+    virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name) = 0;
 
     virtual int32_t SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
                                     std::string name, bool active) = 0;
@@ -102,7 +102,7 @@ public:
 
     virtual bool IsVolumeUnadjustable() = 0;
 
-    virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
+    virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos) = 0;
 
     virtual void SetAbsVolumeScene(bool isAbsVolumeScene) = 0;
 
