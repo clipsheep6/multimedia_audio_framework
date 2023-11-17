@@ -4900,6 +4900,18 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetAvailableD
 {
     std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
+    unique_ptr<AudioStrategyRouterParser> audioStrategyRouterParser = make_unique<AudioStrategyRouterParser>();
+    if (audioStrategyRouterParser->LoadConfiguration()) {
+        AUDIO_INFO_LOG("AudioStrategyRouterParser load configuration successfully.");
+        audioStrategyRouterParser->Parse();
+    }
+
+    unique_ptr<AudioUsageStrategyParser> audioUsageStrategyParser = make_unique<AudioUsageStrategyParser>();
+    if (audioUsageStrategyParser->LoadConfiguration()) {
+        AUDIO_INFO_LOG("AudioUsageStrategyParser load configuration successfully.");
+        audioUsageStrategyParser->Parse();
+    }
+
     audioDeviceDescriptors = audioDeviceManager_.GetAvailableDevicesByUsage(usage);
     return audioDeviceDescriptors;
 }

@@ -29,16 +29,20 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioStrategyRouterParser;
+class AudioUsageStrategyParser;
 class AudioRouterCenter {
+    friend class AudioStrategyRouterParser;
+    friend class AudioUsageStrategyParser;
 public:
     static AudioRouterCenter& GetAudioRouterCenter()
     {
         static AudioRouterCenter audioRouterCenter;
         return audioRouterCenter;
     }
-
     std::unique_ptr<AudioDeviceDescriptor> FetchOutputDevice(StreamUsage streamUsage, int32_t clientUID);
     std::unique_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID);
+
 private:
     AudioRouterCenter()
     {
@@ -68,9 +72,23 @@ private:
         callCaptureRouters_.push_back(std::make_unique<PrivacyPriorityRouter>());
         callCaptureRouters_.push_back(std::make_unique<CockpitPhoneRouter>());
         callCaptureRouters_.push_back(std::make_unique<DefaultRouter>());
-    };
 
-    ~AudioRouterCenter() {};
+        // ring render router
+        ringRenderRouters_.push_back(std::make_unique<UserSelectRouter>());
+        ringRenderRouters_.push_back(std::make_unique<PrivacyPriorityRouter>());
+        ringRenderRouters_.push_back(std::make_unique<PublicPriorityRouter>());
+        ringRenderRouters_.push_back(std::make_unique<StreamFilterRouter>());
+        ringRenderRouters_.push_back(std::make_unique<DefaultRouter>());
+
+        // tone render router
+        toneRenderRouters_.push_back(std::make_unique<UserSelectRouter>());
+        toneRenderRouters_.push_back(std::make_unique<PrivacyPriorityRouter>());
+        toneRenderRouters_.push_back(std::make_unique<PublicPriorityRouter>());
+        toneRenderRouters_.push_back(std::make_unique<StreamFilterRouter>());
+        toneRenderRouters_.push_back(std::make_unique<DefaultRouter>());
+    }
+
+    ~AudioRouterCenter() {}
 
     unique_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID);
     unique_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID);

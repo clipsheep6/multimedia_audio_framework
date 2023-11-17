@@ -49,6 +49,8 @@
 #include "policy_provider_stub.h"
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
+#include "audio_strategy_router_parser.h"
+#include "audio_usage_strategy_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
