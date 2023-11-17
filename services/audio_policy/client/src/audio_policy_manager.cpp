@@ -1092,15 +1092,15 @@ int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
     }
 
     std::unique_lock<std::mutex> lock(clientTrackerStubMutex_);
-    clientTrackerCbStub_ = new(std::nothrow) AudioClientTrackerCallbackStub();
-    if (clientTrackerCbStub_ == nullptr) {
+    sptr<AudioClientTrackerCallbackStub> callback = new(std::nothrow) AudioClientTrackerCallbackStub();
+    if (callback == nullptr) {
         AUDIO_ERR_LOG("clientTrackerCbStub: memory allocation failed");
         return ERROR;
     }
 
-    clientTrackerCbStub_->SetClientTrackerCallback(clientTrackerObj);
+    callback->SetClientTrackerCallback(clientTrackerObj);
 
-    sptr<IRemoteObject> object = clientTrackerCbStub_->AsObject();
+    sptr<IRemoteObject> object = callback->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("clientTrackerCbStub: IPC object creation failed");
         return ERROR;
