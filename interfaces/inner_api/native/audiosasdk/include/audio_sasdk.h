@@ -31,8 +31,7 @@ enum SaSdkAudioVolumeType {
 };
 
 /**
- * @brief The AudioSystemManager class is an abstract definition of audio manager.
- *        Provides a series of client/interfaces for audio management
+ * @brief The AudioSaSdk class is an abstract definition of audio sasdk abilities.
  */
 class AudioSaSdk {
 public:
