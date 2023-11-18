@@ -745,7 +745,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     }
 #endif
 
-    if ((GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP") && (spatializationEnabled == "0")) {
+    if (spatializationEnabled == "0") {
         return false;
     }
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
