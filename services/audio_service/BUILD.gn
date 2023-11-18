@@ -159,7 +159,6 @@ ohos_shared_library("audio_client") {
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [
     "platformsdk",
-    "sasdk",
   ]
 
   subsystem_name = "multimedia"
@@ -307,6 +306,44 @@ ohos_shared_library("audio_service") {
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
   }
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_shared_library("audio_sasdk") {
+  stack_protector_ret = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  install_enable = true
+  sources = [
+    "client/src/audio_sasdk.cpp",
+  ]
+
+  include_dirs = [
+    "../../interfaces/inner_api/native/audiosasdk/include",
+    "../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  deps = [
+    "../audio_policy:audio_policy_client",
+    ":audio_common",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+
+  version_script = "../../audio_framework.versionscript"
+  innerapi_tags = [
+    "platformsdk",
+    "sasdk",
+  ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
