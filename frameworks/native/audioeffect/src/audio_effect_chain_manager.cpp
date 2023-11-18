@@ -791,6 +791,10 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     }
 #endif
 
+    if (offloadEnabled_ == true) {
+        return false;
+    }
+
     if (spatializationEnabled == "0") {
         return false;
     }
