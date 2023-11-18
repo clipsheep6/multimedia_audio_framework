@@ -22,8 +22,14 @@
 #include "audio_utils.h"
 #include "parameters.h"
 #include "audio_stream.h"
+#include "hisysevent.h"
+
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 
 using namespace std;
+using namespace OHOS::HiviewDFX;
+using namespace OHOS::AppExecFwk;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,7 +53,8 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
       isFirstRead_(false),
       isFirstWrite_(false),
       isPausing_(false),
-      pfd_(nullptr)
+      pfd_(nullptr),
+      appUid_(appUid)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
@@ -76,7 +83,7 @@ AudioStream::~AudioStream()
         AudioRendererInfo rendererInfo = {};
         AudioCapturerInfo capturerInfo = {};
         state_ = RELEASED;
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo, capturerInfo);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo, capturerInfo);
     }
 
     if (pfd_ != nullptr) {
@@ -287,7 +294,16 @@ void AudioStream::RegisterTracker(const std::shared_ptr<AudioClientTracker> &pro
     if (audioStreamTracker_ && audioStreamTracker_.get() && !streamTrackerRegistered_) {
         (void)GetSessionID(sessionId_);
         AUDIO_DEBUG_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
-        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, proxyObj);
+
+        AudioRegisterTrackerInfo registerTrackerInfo;
+
+        registerTrackerInfo.sessionId = sessionId_;
+        registerTrackerInfo.clientPid = GetClientPid();
+        registerTrackerInfo.state = state_;
+        registerTrackerInfo.rendererInfo = rendererInfo_;
+        registerTrackerInfo.capturerInfo = capturerInfo_;
+
+        audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;
     }
 }
@@ -385,7 +401,7 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
 
     OpenDumpFile();
@@ -460,6 +476,27 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
         return ERR_ILLEGAL_STATE;
     }
 
+    if (buffer[0] == 0) {
+        if (startMuteTime_ == 0) {
+            startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        }
+        std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+        if ((currentTime - startMuteTime_ >= 60) && !isUpEvent) {
+            isUpEvent = true;
+            std::string bundleName = GetBundleNameFromUid(appUid_);
+
+            AUDIO_INFO_LOG("isUpEvent = true");
+            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+                "MUTE_DATA", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+                "BUNDLENAME", bundleName);
+        }
+        AUDIO_ERR_LOG("zero data");
+    } else if (buffer[0] != 0 && startMuteTime_ != 0) {
+        AUDIO_INFO_LOG("startMuteTime_ = 0");
+        startMuteTime_ = 0;
+    }
+
     int32_t writeError;
     StreamBuffer stream;
     stream.buffer = buffer;
@@ -524,7 +561,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
     isPausing_ = false;
     return true;
@@ -537,6 +574,7 @@ bool AudioStream::StopAudioStream()
         AUDIO_ERR_LOG("StopAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
         return false;
     }
+    startMuteTime_ = 0;
     State oldState = state_;
     state_ = STOPPED; // Set it before stopping as Read/Write and Stop can be called from different threads
 
@@ -563,7 +601,7 @@ bool AudioStream::StopAudioStream()
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
 
     if (pfd_ != nullptr) {
@@ -626,7 +664,7 @@ bool AudioStream::ReleaseAudioStream(bool releaseRunner)
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
     return true;
 }
@@ -1114,6 +1152,29 @@ void AudioStream::ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize)
     if (volumeRamp_.IsActive()) {
         SetStreamVolume(volumeRamp_.GetRampVolume());
     }
+}
+
+std::string AudioStream::GetBundleNameFromUid(const int32_t uid)
+{
+    std::string bundleName {""};
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        return "";
+    }
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (remoteObject == nullptr) {
+        return "";
+    }
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    if (bundleMgrProxy == nullptr) {
+        return "";
+    }
+    if (bundleMgrProxy != nullptr) {
+        bundleMgrProxy->GetNameForUid(uid, bundleName);
+    }
+    return bundleName;
 }
 } // namespace AudioStandard
 } // namespace OHOS
