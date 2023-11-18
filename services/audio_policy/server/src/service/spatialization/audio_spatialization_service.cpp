@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,8 +15,6 @@
 
 
 #include "audio_spatialization_service.h"
-
-// #include "audio_policy_service.h"
 
 #include "ipc_skeleton.h"
 #include "hisysevent.h"
@@ -225,7 +223,7 @@ bool AudioSpatializationService::IsSpatializationSupported()
 bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::string address)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    if (address) {
+    if (!address.empty()) {
         return true;
     }
     if (!addressToSpatialDeviceStateMap_.count(address)) {
@@ -243,7 +241,7 @@ bool AudioSpatializationService::IsHeadTrackingSupported()
 bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::string address)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    if (address) {
+    if (!address.empty()) {
         return true;
     }
     if (!addressToSpatialDeviceStateMap_.count(address)) {

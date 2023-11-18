@@ -17,7 +17,6 @@
 #define AUDIO_SPATIALIZATION_MANAGER_CALLBACK_NAPI_H
 
 #include "audio_common_napi.h"
-// #include "audio_routing_manager_napi.h"
 #include "audio_spatialization_manager.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"

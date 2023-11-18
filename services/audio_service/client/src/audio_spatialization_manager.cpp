@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,16 +25,11 @@
 #include "audio_manager_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_policy_manager.h"
-// #include "audio_volume_key_event_callback_stub.h"
 #include "audio_utils.h"
-// #include "audio_manager_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-
-// mutex g_asProxyMutex;
-// sptr<IStandardAudioService> g_asProxy = nullptr;
 
 AudioSpatializationManager::AudioSpatializationManager()
 {
