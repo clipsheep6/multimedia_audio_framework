@@ -272,7 +272,7 @@ public:
      *
      * @return Returns <b>true</b> if the object is successfully released; returns <b>false</b> otherwise.
      */
-    virtual bool Release() const = 0;
+    virtual bool Release() = 0;
 
     /**
      * @brief Obtains a reasonable minimum buffer size for capturer, however, the capturer can
@@ -443,6 +443,14 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t GetBufQueueState(BufferQueueState &bufState) const = 0;
+
+    /**
+     * @brief Set audiocapture valid state.
+     *
+     * @param valid Valid or not.
+     * @since 10
+     */
+    virtual void SetValid(bool valid) = 0;
 
     virtual ~AudioCapturer();
 };
