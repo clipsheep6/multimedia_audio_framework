@@ -28,10 +28,6 @@
 #include "audio_effect.h"
 #include "audio_system_manager.h"
 
-// #include "audio_interrupt_callback.h"
-// #include "audio_group_manager.h"
-// #include "audio_routing_manager.h"
-
 namespace OHOS {
 namespace AudioStandard {
 class AudioSpatializationEnabledChangeCallback {

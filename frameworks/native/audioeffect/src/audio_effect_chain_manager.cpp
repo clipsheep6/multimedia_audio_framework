@@ -1018,7 +1018,7 @@ void AudioEffectChainManager::UpdateSensorState()
     }
 }
 
-HeadPostureData HeadTracker::headPostureData_= {1, 1.0, 0.0, 0.0, 0.0};
+HeadPostureData HeadTracker::headPostureData_ = {1, 1.0, 0.0, 0.0, 0.0};
 
 void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
 {
@@ -1044,8 +1044,8 @@ void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
     headPostureData_.z = headPostureDataTmp->z;
 
     AUDIO_INFO_LOG("sensorId:%{public}d, version:%{public}d, dataLen:%{public}u, "
-        "order:%{public}d, w:%{public}f, x:%{public}f, y:%{public}f, z:%{public}f", 
-        event[0].sensorTypeId, event[0].version, event[0].dataLen, 
+        "order:%{public}d, w:%{public}f, x:%{public}f, y:%{public}f, z:%{public}f",
+        event[0].sensorTypeId, event[0].version, event[0].dataLen,
         headPostureData_.order, headPostureData_.w, headPostureData_.x, headPostureData_.y, headPostureData_.z);
 }
 
@@ -1078,24 +1078,23 @@ int32_t HeadTracker::SensorInit()
 int32_t HeadTracker::SensorSetConfig(int32_t spatializerEngineState)
 {
     int32_t ret;
-    switch (spatializerEngineState)
-    {
-    case NONE_SPATIALIZER_ENGINE:
-        AUDIO_INFO_LOG("system has no spatializer engine!");
-        ret = ERROR;
-        break;
-    case ARM_SPATIALIZER_ENGINE:
-        AUDIO_INFO_LOG("system uses arm spatializer engine!");
-        ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_, sensorSamplingInterval_, sensorSamplingInterval_);
-        break;
-    case DSP_SPATIALIZER_ENGINE:
-        AUDIO_INFO_LOG("system uses dsp spatializer engine!");
-        ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_, sensorSamplingInterval_, 0);
-        break;
-    default:
-        AUDIO_INFO_LOG("spatializerEngineState error!");
-        ret = ERROR;
-        break;
+    switch (spatializerEngineState) {
+        case NONE_SPATIALIZER_ENGINE:
+            AUDIO_INFO_LOG("system has no spatializer engine!");
+            ret = ERROR;
+            break;
+        case ARM_SPATIALIZER_ENGINE:
+            AUDIO_INFO_LOG("system uses arm spatializer engine!");
+            ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_, sensorSamplingInterval_, sensorSamplingInterval_);
+            break;
+        case DSP_SPATIALIZER_ENGINE:
+            AUDIO_INFO_LOG("system uses dsp spatializer engine!");
+            ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_, sensorSamplingInterval_, 0);
+            break;
+        default:
+            AUDIO_INFO_LOG("spatializerEngineState error!");
+            ret = ERROR;
+            break;
     }
     return ret;
 }

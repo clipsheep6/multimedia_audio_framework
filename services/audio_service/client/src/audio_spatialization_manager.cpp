@@ -68,7 +68,7 @@ int32_t AudioSpatializationManager::SetHeadTrackingEnabled(const bool enable)
 }
 
 int32_t AudioSpatializationManager::RegisterSpatializationEnabledEventListener(const int32_t clientPid,
-        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback)
+    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback)
 {
     if (callback == nullptr) {
         AUDIO_ERR_LOG("callback is null");
@@ -78,7 +78,7 @@ int32_t AudioSpatializationManager::RegisterSpatializationEnabledEventListener(c
 }
 
 int32_t AudioSpatializationManager::RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
-        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback)
+    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback)
 {
     if (callback == nullptr) {
         AUDIO_ERR_LOG("callback is null");

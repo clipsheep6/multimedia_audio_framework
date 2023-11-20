@@ -3091,7 +3091,8 @@ void AudioSpatializationStateChangeCallbackImpl::setAudioServiceClientObj(AudioS
     serviceClient_ = serviceClientObj;
 }
 
-void AudioSpatializationStateChangeCallbackImpl::OnSpatializationStateChange(const std::vector<bool> &spatializationState)
+void AudioSpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
+    const std::vector<bool> &spatializationState)
 {
     serviceClient_->OnSpatializationStateChange(spatializationState);
 }
