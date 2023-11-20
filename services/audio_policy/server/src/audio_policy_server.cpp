@@ -1335,7 +1335,6 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         uint32_t activeSessionID = (iterActive->first).sessionID;
         std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[activeSessionID];
 
-        float volumeDb = 0.0f;
         switch (focusEntry.hintType) {
             case INTERRUPT_HINT_STOP:
                 iterActive = audioFocusInfoList_.erase(iterActive);
@@ -1347,8 +1346,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
                 break;
             case INTERRUPT_HINT_DUCK:
                 iterActive->second = DUCK;
-                volumeDb = GetSystemVolumeDb(activeFocusType.streamType);
-                interruptEvent.duckVolume = DUCK_FACTOR * volumeDb;
+                interruptEvent.duckVolume = DUCK_FACTOR * GetSystemVolumeDb(activeFocusType.streamType);
                 break;
             default:
                 break;

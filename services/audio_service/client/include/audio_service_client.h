@@ -568,6 +568,8 @@ public:
 
     void OnSpatializationStateChange(const std::vector<bool> &spatializationState);
 
+    int32_t GetClientPid();
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
