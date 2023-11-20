@@ -1042,16 +1042,10 @@ void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
     headPostureData_.x = headPostureDataTmp->x;
     headPostureData_.y = headPostureDataTmp->y;
     headPostureData_.z = headPostureDataTmp->z;
-
-    AUDIO_INFO_LOG("sensorId:%{public}d, version:%{public}d, dataLen:%{public}u, "
-        "order:%{public}d, w:%{public}f, x:%{public}f, y:%{public}f, z:%{public}f",
-        event[0].sensorTypeId, event[0].version, event[0].dataLen,
-        headPostureData_.order, headPostureData_.w, headPostureData_.x, headPostureData_.y, headPostureData_.z);
 }
 
 HeadTracker::HeadTracker()
 {
-    AUDIO_INFO_LOG("Audio Spatializer HeadTracker ctor!");
     spatializerEngineState_ = 1;
     sensorSamplingInterval_ = 30000000; // 30000000 ns = 30 ms
 }
@@ -1069,10 +1063,8 @@ HeadTracker* HeadTracker::GetInstance()
 
 int32_t HeadTracker::SensorInit()
 {
-    int32_t ret;
     sensorUser_.callback = HeadPostureDataProcCb;
-    ret = SubscribeSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
-    return ret;
+    return SubscribeSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
 }
 
 int32_t HeadTracker::SensorSetConfig(int32_t spatializerEngineState)
@@ -1080,19 +1072,19 @@ int32_t HeadTracker::SensorSetConfig(int32_t spatializerEngineState)
     int32_t ret;
     switch (spatializerEngineState) {
         case NONE_SPATIALIZER_ENGINE:
-            AUDIO_INFO_LOG("system has no spatializer engine!");
+            AUDIO_ERR_LOG("system has no spatializer engine!");
             ret = ERROR;
             break;
         case ARM_SPATIALIZER_ENGINE:
-            AUDIO_INFO_LOG("system uses arm spatializer engine!");
+            AUDIO_DEBUG_LOG("system uses arm spatializer engine!");
             ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_, sensorSamplingInterval_, sensorSamplingInterval_);
             break;
         case DSP_SPATIALIZER_ENGINE:
-            AUDIO_INFO_LOG("system uses dsp spatializer engine!");
+            AUDIO_DEBUG_LOG("system uses dsp spatializer engine!");
             ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_, sensorSamplingInterval_, 0);
             break;
         default:
-            AUDIO_INFO_LOG("spatializerEngineState error!");
+            AUDIO_ERR_LOG("spatializerEngineState error!");
             ret = ERROR;
             break;
     }
@@ -1101,17 +1093,12 @@ int32_t HeadTracker::SensorSetConfig(int32_t spatializerEngineState)
 
 int32_t HeadTracker::SensorActive()
 {
-    int32_t ret;
-    ret = ActivateSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
-    AUDIO_INFO_LOG("HeadTracker active, sensorTypeID = %{public}d", SENSOR_TYPE_ID_HEADPOSTURE);
-    return ret;
+    return ActivateSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
 }
 
 int32_t HeadTracker::SensorDeactive()
 {
-    int32_t ret = DeactivateSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
-    AUDIO_INFO_LOG("HeadTracker deactive, sensorTypeID = %{public}d", SENSOR_TYPE_ID_HEADPOSTURE);
-    return ret;
+    return DeactivateSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
 }
 
 HeadPostureData HeadTracker::GetHeadPostureData()
