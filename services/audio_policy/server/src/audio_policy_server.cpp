@@ -105,7 +105,7 @@ const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-      mPolicyService(AudioPolicyService::GetAudioPolicyService())
+      mPolicyService(AudioPolicyService::GetAudioPolicyService()),
       audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService())
 {
     if (mPolicyService.SetAudioSessionCallback(this)) {
