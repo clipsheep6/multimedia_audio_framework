@@ -2630,7 +2630,6 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioVolumeGroupManagerNapi::Init(env, exports);
     AudioVolumeManagerNapi::Init(env, exports);
     AudioInterruptManagerNapi::Init(env, exports);
-    AudioSpatializationManagerNapi::Init(env, exports);
 
     return exports;
 }

@@ -1022,14 +1022,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     sampleSpec = ConvertToPAAudioParams(audioParams);
     mFrameSize = pa_frame_size(&sampleSpec);
     channelLayout_ = audioParams.channelLayout;
-    std::vector<bool> spatializationState = AudioPolicyManager::GetInstance().GetSpatializationState(mStreamUsage);
-    if (spatializationState.size() != SPATIALIZATION_STATE_SIZE) {
-        AUDIO_WARNING_LOG("spatialization state vector size is incorrect");
-    } else {
-        spatializationEnabled_ = std::to_string(spatializationState[0]);
-        headTrackingEnabled_ = std::to_string(spatializationState[1]);
-    }
-    RegisterSpatializationStateEventListener();
 
     pa_proplist *propList = pa_proplist_new();
     pa_channel_map map;
