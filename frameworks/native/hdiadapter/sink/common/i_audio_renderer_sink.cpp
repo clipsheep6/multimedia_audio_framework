@@ -24,6 +24,7 @@
 #include "bluetooth_renderer_sink.h"
 #include "remote_audio_renderer_sink.h"
 #include "offload_audio_renderer_sink.h"
+#include "multichannel_audio_renderer_sink.h"
 
 #include <memory>
 
@@ -42,6 +43,7 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     const char *deviceClassFile = "file_io";
     const char *deviceClassRemote = "remote";
     const char *deviceClassOffload = "offload";
+    const char *devicecClassMultiChannel = "multichannel";
 
     IAudioRendererSink *iAudioRendererSink = nullptr;
     if (!strcmp(devceClass, deviceClassPrimary)) {
@@ -61,6 +63,9 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     }
     if (!strcmp(devceClass, deviceClassOffload)) {
         iAudioRendererSink = OffloadRendererSink::GetInstance();
+    }
+    if (!strcmp(devceClass, devicecClassMultiChannel)) {
+        iAudioRendererSink = MultiChannelRendererSink::GetInstance();
     }
 
     if (iAudioRendererSink == nullptr) {
