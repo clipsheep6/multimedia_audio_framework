@@ -30,6 +30,7 @@ static sptr<IAudioPolicy> g_apProxy = nullptr;
 mutex g_apProxyMutex;
 constexpr int64_t SLEEP_TIME = 1;
 constexpr int32_t RETRY_TIMES = 3;
+std::mutex g_cBMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 std::unordered_map<int32_t, OHOS::wptr<AudioCapturerStateChangeListenerStub>>
     AudioPolicyManager::capturerStateChangeCBMap_;
@@ -110,18 +111,22 @@ void AudioPolicyManager::RecoverAudioCapturerEventListener()
 
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
 {
-    g_apProxyMutex.lock();
-    AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
-    std::shared_ptr<AudioRendererPolicyServiceDiedCallback> cb;
-    for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
-        cb = it->second.lock();
-        if (cb != nullptr) {
-            cb->OnAudioPolicyServiceDied();
-            rendererCBMap_.erase(getpid());
+    {
+        std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
+        AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
+        std::shared_ptr<AudioRendererPolicyServiceDiedCallback> cb;
+        for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
+            cb = it->second.lock();
+            if (cb != nullptr) {
+                cb->OnAudioPolicyServiceDied();
+                rendererCBMap_.erase(getpid());
+            }
         }
     }
-    g_apProxy = nullptr;
-    g_apProxyMutex.unlock();
+    {
+        std::lock_guard<std::mutex> lock(g_apProxyMutex);
+        g_apProxy = nullptr;
+    }
     RecoverAudioCapturerEventListener();
 }
 
