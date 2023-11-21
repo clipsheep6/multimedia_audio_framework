@@ -43,6 +43,7 @@ const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
 const uint32_t FACTOR_TWO = 2;
 const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
+const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_STEREO,
