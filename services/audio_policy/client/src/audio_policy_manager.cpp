@@ -30,6 +30,7 @@ static sptr<IAudioPolicy> g_apProxy = nullptr;
 mutex g_apProxyMutex;
 constexpr int64_t SLEEP_TIME = 1;
 constexpr int32_t RETRY_TIMES = 3;
+std::mutex g_cBMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 std::unordered_map<int32_t, OHOS::wptr<AudioCapturerStateChangeListenerStub>>
     AudioPolicyManager::capturerStateChangeCBMap_;
@@ -116,18 +117,22 @@ void AudioPolicyManager::RecoverAudioCapturerEventListener()
 
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
 {
-    g_apProxyMutex.lock();
-    AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
-    std::shared_ptr<AudioRendererPolicyServiceDiedCallback> cb;
-    for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
-        cb = it->second.lock();
-        if (cb != nullptr) {
-            cb->OnAudioPolicyServiceDied();
-            rendererCBMap_.erase(getpid());
+    {
+        std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
+        AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
+        std::shared_ptr<AudioRendererPolicyServiceDiedCallback> cb;
+        for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
+            cb = it->second.lock();
+            if (cb != nullptr) {
+                cb->OnAudioPolicyServiceDied();
+                rendererCBMap_.erase(getpid());
+            }
         }
     }
-    g_apProxy = nullptr;
-    g_apProxyMutex.unlock();
+    {
+        std::lock_guard<std::mutex> lock(g_apProxyMutex);
+        g_apProxy = nullptr;
+    }
     RecoverAudioCapturerEventListener();
 }
 
@@ -1017,14 +1022,15 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return gsp->UpdateTracker(mode, streamChangeInfo);
 }
 
-bool AudioPolicyManager::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
+bool AudioPolicyManager::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    SourceType sourceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("CheckRecordingCreate: audio policy manager proxy is NULL.");
         return false;
     }
-    return gsp->CheckRecordingCreate(appTokenId, appFullTokenId, appUid);
+    return gsp->CheckRecordingCreate(appTokenId, appFullTokenId, appUid, sourceType);
 }
 
 bool AudioPolicyManager::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
@@ -1182,13 +1188,14 @@ float AudioPolicyManager::GetMaxStreamVolume()
 int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
     const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
 {
-    lock_guard<mutex> lock(g_apProxyMutex);
+    std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
     rendererCBMap_[clientPid] = callback;
     return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clientPid)
 {
+    std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
     AUDIO_DEBUG_LOG("UnregisterAudioPolicyServerDiedCb client pid: %{public}d", clientPid);
     for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
         rendererCBMap_.erase(getpid());
