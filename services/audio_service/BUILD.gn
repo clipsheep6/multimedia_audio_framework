@@ -118,6 +118,7 @@ ohos_shared_library("audio_client") {
     "client/src/i_audio_stream.cpp",
     "client/src/microphone_descriptor.cpp",
     "client/src/policy_provider_stub.cpp",
+    "client/src/audio_spatialization_manager.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]
@@ -300,6 +301,9 @@ ohos_shared_library("audio_service") {
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "sensor:sensor_interface_native",
+    "drivers_interface_audio:effect_idl_headers",
+    "drivers_interface_audio:libeffect_proxy_1.0",
   ]
 
   if (ressche_enable == true) {
