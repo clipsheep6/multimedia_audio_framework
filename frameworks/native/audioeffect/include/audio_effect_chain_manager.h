@@ -99,7 +99,7 @@ public:
     int32_t SetAudioEffectChainDynamic(std::string sceneType, std::string effectMode);
     bool CheckAndRemoveSessionID(std::string sessionID);
     int32_t ReleaseAudioEffectChainDynamic(std::string sceneType);
-    bool ExistAudioEffectChain(std::string sceneType, std::string effectMode);
+    bool ExistAudioEffectChain(std::string sceneType, std::string effectMode, std::string spatializationEnabled);
     int32_t ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetOutputDeviceSink(int32_t device, std::string &sinkName);
     std::string GetDeviceTypeName();
@@ -109,6 +109,7 @@ public:
     int32_t UpdateMultichannelConfig(const std::string &sceneTypeString, const uint32_t &channels,
         const uint64_t &channelLayout);
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
+    int32_t UpdateSpatializationState(std::vector<bool> spatializationState);
 private:
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
@@ -122,8 +123,9 @@ private:
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
+    bool spatializatonEnabled_ = true;
+    bool headTrackingEnabled_ = false;
 };
-
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_EFFECT_CHAIN_MANAGER_H
