@@ -1852,50 +1852,6 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailab
     return audioDeviceDescriptors;
 }
 
-int32_t AudioPolicyProxy::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
-    const sptr<IRemoteObject> &object)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "SetAvailableDeviceChangeCallback object is null");
-
-    bool token = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data WriteInterfaceToken failed");
-    token = data.WriteInt32(clientId) && data.WriteInt32(usage);
-    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data write failed");
-
-    token = data.WriteRemoteObject(object);
-    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data WriteRemoteObject failed");
-
-    int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AVAILABLE_DEVICE_CHANGE_CALLBACK), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
-        "AudioPolicyProxy: SetAvailableDeviceChangeCallback failed, error: %{public}d", error);
-
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool token = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data WriteInterfaceToken failed");
-    token = data.WriteInt32(clientId) && data.WriteInt32(usage);
-    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data write failed");
-
-    int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AVAILABLE_DEVICE_CHANGE_CALLBACK), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
-        "AudioPolicyProxy: UnsetAvailableDeviceChangeCallback failed, error: %{public}d", error);
-
-    return reply.ReadInt32();
-}
-
 bool AudioPolicyProxy::IsSpatializationEnabled()
 {
     MessageParcel data;
