@@ -41,7 +41,7 @@ const char *g_deviceClassA2DP = "a2dp";
 const char *g_deviceClassFile = "file_io";
 const char *g_deviceClassRemote = "remote";
 const char *g_deviceClassOffload = "offload";
-const char *g_deviceClassMultiChannel = "multichannel"
+const char *g_deviceClassMultiChannel = "multichannel";
 
 int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter **sinkAdapter)
 {

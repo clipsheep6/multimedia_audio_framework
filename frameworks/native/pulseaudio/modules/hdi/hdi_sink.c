@@ -81,7 +81,7 @@ const char *DEVICE_CLASS_PRIMARY = "primary";
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
-const char *DEVICE_CLASS_MULTICHANNEL = "multichannel"
+const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -1158,7 +1158,7 @@ int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneT
     return nSinkInput;
 }
 
-int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
+int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
 {
     pa_memchunk chunk;
     size_t l, d;
@@ -1376,7 +1376,7 @@ static bool InputIsMultiChannel(pa_sink_input *i)
         AUDIO_DEBUG_LOG("InputIsMultiChannel sinkChannels %{public}d", sinkChannels);
         return true;
     }
-    return !isOffload && !isHD && isRunning;
+    return false;
 }
 
 static bool InputIsPrimary(pa_sink_input *i)
@@ -2166,12 +2166,12 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
         if (!existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             sceneTypeLenRef = sinkIn->sample_spec.channels;
-            sinkIn->thread_info.resampler->map.required = false;
+            sinkIn->thread_info.resampler->map_required = false;
         }
         maxInfo--;
     }
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
-    size_t tmpLength = length * sceneTypeLenRed / DEFAULT_IN_CHANNEL_NUM;
+    size_t tmpLength = length * sceneTypeLenRef / DEFAULT_IN_CHANNEL_NUM;
     chunkIn->index = 0;
     chunkIn->length = tmpLength;
     SinkRenderMultiChannelGetData(si, chunkIn);
@@ -2861,6 +2861,7 @@ static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSink
     enum HdiAdapterFormat format = ConvertPaToHdiAdapterFormat(u->ss.format);
 
     u->multiChannel.sample_attrs.format = format;
+    u->multiChannel.sample_attrs.sampleRate = format;
     u->multiChannel.sample_attrs.adapterName = u->adapterName;
     u->multiChannel.sample_attrs.openMicSpeaker = u->open_mic_speaker;
     u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
@@ -3022,7 +3023,7 @@ int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module* m, pa_modargs* ma, struct 
     u->multiChannel.fdq = pa_asyncmsgq_new(0);
     u->multiChannel_enable = true;
 
-    if (!strcmp(u->sink->name, "Speaker") && u->multiChannel_enable) {
+    if (!strcmp(u->sink->name, "Speaker") && u->multichannel_enable) {
         ret = LoadSinkAdapter(DEVICE_CLASS_MULTICHANNEL, "LocalDevice", &u->multiChannel.sinkAdapter);
         if (ret) {
             AUDIO_ERR_LOG("Load mch adapter failed");
@@ -3045,7 +3046,7 @@ int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module* m, pa_modargs* ma, struct 
         u->multiChannel.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
             (pa_hook_cb_t)SinkInputPutMchCb, u);
-        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK], PA_HOOK_EARLY,
+        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK], PA_HOOK_LATE,
             (pa_hook_cb_t)SinkInputUnlinkCb, u);
     }
     return 0;
@@ -3245,7 +3246,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
             goto fail;
         }
 
-        hdiThreadName = "write-hdi-multichannel";
+        hdiThreadNameMch = "write-hdi-multichannel";
         if (!(u->multiChannel.thread_hdi = pa_thread_new(hdiThreadNameMch, ThreadFuncWriteHDIMultiChannel, u))) {
             AUDIO_ERR_LOG("Failed to write-hdi-multichannel thread.");
             goto fail;

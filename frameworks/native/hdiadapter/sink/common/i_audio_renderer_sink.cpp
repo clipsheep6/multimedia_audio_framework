@@ -43,7 +43,7 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     const char *deviceClassFile = "file_io";
     const char *deviceClassRemote = "remote";
     const char *deviceClassOffload = "offload";
-    const char *devicecClassMultiChannel = "multichannel";
+    const char *deviceClassMultiChannel = "multichannel";
 
     IAudioRendererSink *iAudioRendererSink = nullptr;
     if (!strcmp(devceClass, deviceClassPrimary)) {
@@ -64,8 +64,8 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     if (!strcmp(devceClass, deviceClassOffload)) {
         iAudioRendererSink = OffloadRendererSink::GetInstance();
     }
-    if (!strcmp(devceClass, devicecClassMultiChannel)) {
-        iAudioRendererSink = MultiChannelRendererSink::GetInstance();
+    if (!strcmp(devceClass, deviceClassMultiChannel)) {
+        iAudioRendererSink = MultiChannelRendererSink::GetInstance("multichannel");
     }
 
     if (iAudioRendererSink == nullptr) {
