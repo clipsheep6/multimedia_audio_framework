@@ -21,7 +21,9 @@
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_effect.h"
 #include "audio_interrupt_callback.h"
+#include "audio_policy_base.h"
 #include "audio_policy_manager_listener_stub.h"
+#include "audio_policy_client_stub_impl.h"
 #include "audio_renderer_state_change_listener_stub.h"
 #include "audio_ringermode_update_listener_stub.h"
 #include "audio_routing_manager.h"
@@ -268,8 +270,11 @@ private:
     }
     ~AudioPolicyManager() {}
 
+    int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
+
     std::mutex listenerStubMutex_;
     std::mutex volumeCallbackMutex_;
+    std::mutex micStateCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
     std::mutex ringerModelistenerStubMutex_;
@@ -279,6 +284,8 @@ private:
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::unordered_map<int32_t, OHOS::wptr<AudioCapturerStateChangeListenerStub>> capturerStateChangeCBMap_;
+
+    sptr<AudioPolicyClientStubImpl> audioPolicyClientStubCB_;
 };
 } // namespce AudioStandard
 } // namespace OHOS
