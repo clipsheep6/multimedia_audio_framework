@@ -73,9 +73,6 @@ public:
 
 class AudioSpatializationManager {
 public:
-    // AudioSpatializationManager() = default;
-    // virtual ~AudioSpatializationManager() = default;
-
     static AudioSpatializationManager *GetInstance();
 
     /**

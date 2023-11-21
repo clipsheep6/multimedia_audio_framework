@@ -1029,10 +1029,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         spatializationEnabled_ = std::to_string(spatializationState[0]);
         headTrackingEnabled_ = std::to_string(spatializationState[1]);
     }
-    int32_t ret = RegisterSpatializationStateEventListener();
-    if (ret != AUDIO_CLIENT_SUCCESS) {
-        AUDIO_WARNING_LOG("registering spatialization state change listener failed");
-    }
+    RegisterSpatializationStateEventListener();
 
     pa_proplist *propList = pa_proplist_new();
     pa_channel_map map;

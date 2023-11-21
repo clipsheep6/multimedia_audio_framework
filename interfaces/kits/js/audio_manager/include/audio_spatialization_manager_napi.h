@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_SPATIALIZATION_MANAGER_NAPI_H_
-#define AUDIO_SPATIALIZATION_MANAGER_NAPI_H_
+#ifndef AUDIO_SPATIALIZATION_MANAGER_NAPI_H
+#define AUDIO_SPATIALIZATION_MANAGER_NAPI_H
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
@@ -66,4 +66,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif /* AUDIO_SPATIALIZATION_MANAGER_NAPI_H_ */
+#endif /* AUDIO_SPATIALIZATION_MANAGER_NAPI_H */
