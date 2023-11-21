@@ -185,7 +185,7 @@ public:
      *
      * @since 11
      */
-	int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
+    int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
 private:
     AudioSpatializationManager();
     virtual ~AudioSpatializationManager();
