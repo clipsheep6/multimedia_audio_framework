@@ -575,7 +575,7 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
 
     converter_->GetOutputBufferStream(stream.buffer, stream.bufferLen);
 
-    if (isFirstWrite_ && !offloadEnable_) {
+    if (isFirstWrite_) {
         if (RenderPrebuf(stream.bufferLen)) {
             AUDIO_ERR_LOG("ERR_WRITE_FAILED");
             return ERR_WRITE_FAILED;
