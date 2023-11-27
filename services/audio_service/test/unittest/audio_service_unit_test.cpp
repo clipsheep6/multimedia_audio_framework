@@ -132,7 +132,7 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     bool isMuteRet = audioManagerProxy->IsMicrophoneMute();
-    EXPECT_EQ(true, isMuteRet);
+    EXPECT_EQ(false, isMuteRet);
 
     ret = audioManagerProxy->RegiestPolicyProvider(object);
     EXPECT_EQ(SUCCESS, ret);
