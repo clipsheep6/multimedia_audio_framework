@@ -564,6 +564,8 @@ public:
 
     int32_t RegisterSpatializationStateEventListener();
 
+    int32_t UnregisterSpatializationStateEventListener();
+
     void OnSpatializationStateChange(const std::vector<bool> &spatializationState);
 
 protected:

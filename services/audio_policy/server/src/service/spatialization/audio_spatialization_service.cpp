@@ -285,6 +285,13 @@ int32_t AudioSpatializationService::RegisterSpatializationStateEventListener(con
     return SUCCESS;
 }
 
+int32_t AudioSpatializationService::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+{
+    std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
+    spatializationStateCBMap_.erase(sessionID);
+    return SUCCESS;
+}
+
 void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddress)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
@@ -297,7 +304,7 @@ void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddres
 int32_t AudioSpatializationService::UpdateSpatializationStateReal()
 {
     bool spatializationEnabled = spatializationEnabledFlag_ && IsSpatializationSupported() &&
-        IsHeadTrackingSupportedForDevice(currentDeviceAddress_);
+        IsSpatializationSupportedForDevice(currentDeviceAddress_);
     bool headTrackingEnabled = headTrackingEnabledFlag_ && IsHeadTrackingSupported() &&
         IsHeadTrackingSupportedForDevice(currentDeviceAddress_) && spatializationEnabled;
     if ((spatializationEnabledReal_ == spatializationEnabled) && (headTrackingEnabledReal_ == headTrackingEnabled)) {

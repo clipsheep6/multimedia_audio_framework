@@ -270,6 +270,8 @@ public:
 
     virtual int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

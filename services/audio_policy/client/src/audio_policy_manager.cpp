@@ -1629,5 +1629,23 @@ int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint3
 
     return gsp->RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
+
+int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("UnregisterSpatializationStateEventListener: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    std::unique_lock<std::mutex> lock(spatializationStateListenerMutex_);
+    auto it = spatializationStateChangeCBMap_.find(sessionID);
+    if (it != spatializationStateChangeCBMap_.end()) {
+        spatializationStateChangeCBMap_.erase(it);
+    }
+    lock.unlock();
+
+    return gsp->UnregisterSpatializationStateEventListener(sessionID);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2196,5 +2196,27 @@ int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_
 
     return reply.ReadInt32();
 }
+
+int32_t AudioPolicyProxy::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("UnregisterSpatializationStateEventListener:: WriteInterfaceToken failed");
+        return ERROR;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(sessionID));
+    int32_t error = Remote() ->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_SPATIALIZATION_STATE_EVENT), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UnregisterSpatializationStateEventListener failed , error: %{public}d", error);
+        return ERROR;
+    }
+
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS
