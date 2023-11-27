@@ -642,7 +642,7 @@ AudioServiceClient::~AudioServiceClient()
 {
     lock_guard<mutex> lockdata(dataMutex_);
     AUDIO_INFO_LOG("start ~AudioServiceClient");
-    UnregisterSpatializationStateEventListener();
+    UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
     ResetPAAudioClient();
     StopTimer();
 }
@@ -3029,6 +3029,12 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
 
 int32_t AudioServiceClient::RegisterSpatializationStateEventListener()
 {
+    if (firstSpatializationRegistered_) {
+        firstSpatializationRegistered_ = false;
+    } else {
+        UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
+    }
+
     if (!spatializationStateChangeCallback_) {
         spatializationStateChangeCallback_ = std::make_shared<AudioSpatializationStateChangeCallbackImpl>();
         if (!spatializationStateChangeCallback_) {
@@ -3036,6 +3042,7 @@ int32_t AudioServiceClient::RegisterSpatializationStateEventListener()
             return ERROR;
         }
     }
+    spatializationStateChangeCallback_->setAudioServiceClientObj(this);
 
     int32_t ret = AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(
         sessionID_, mStreamUsage, spatializationStateChangeCallback_);
@@ -3043,14 +3050,14 @@ int32_t AudioServiceClient::RegisterSpatializationStateEventListener()
         AUDIO_ERR_LOG("AudioServiceClient::RegisterSpatializationStateEventListener failed");
         return ERROR;
     }
+    spatializationRegisteredSessionID_ = sessionID_;
 
-    spatializationStateChangeCallback_->setAudioServiceClientObj(this);
     return SUCCESS;
 }
 
-int32_t AudioServiceClient::UnregisterSpatializationStateEventListener()
+int32_t AudioServiceClient::UnregisterSpatializationStateEventListener(uint32_t sessionID)
 {
-    int32_t ret = AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionID_);
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionID);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioServiceClient::UnregisterSpatializationStateEventListener failed");
         return ERROR;
