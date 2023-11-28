@@ -1172,30 +1172,26 @@ int32_t AudioServiceClient::StopStream()
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        if (state_ != PAUSED) {
-            state_ = STOPPING;
-            DrainAudioCache();
+        state_ = STOPPING;
+        DrainAudioCache();
 
-            if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
-                return AUDIO_CLIENT_PA_ERR;
-            }
-
-            pa_threaded_mainloop_lock(mainLoop);
-
-            streamDrainStatus_ = 0;
-            pa_operation *operation = pa_stream_drain(paStream, PAStreamDrainInStopCb, (void *)this);
-
-            if (operation == nullptr) {
-                pa_threaded_mainloop_unlock(mainLoop);
-                AUDIO_ERR_LOG("pa_stream_drain operation is null");
-                return AUDIO_CLIENT_ERR;
-            }
-
-            pa_operation_unref(operation);
-            pa_threaded_mainloop_unlock(mainLoop);
-        } else {
-            state_ = STOPPED;
+        if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+            return AUDIO_CLIENT_PA_ERR;
         }
+
+        pa_threaded_mainloop_lock(mainLoop);
+
+        streamDrainStatus_ = 0;
+        pa_operation *operation = pa_stream_drain(paStream, PAStreamDrainInStopCb, (void *)this);
+
+        if (operation == nullptr) {
+            pa_threaded_mainloop_unlock(mainLoop);
+            AUDIO_ERR_LOG("pa_stream_drain operation is null");
+            return AUDIO_CLIENT_ERR;
+        }
+
+        pa_operation_unref(operation);
+        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_SUCCESS;
     } else {
         PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
