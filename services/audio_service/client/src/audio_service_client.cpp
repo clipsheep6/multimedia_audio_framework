@@ -1195,10 +1195,6 @@ int32_t AudioServiceClient::StopStream()
             pa_threaded_mainloop_unlock(mainLoop);
         } else {
             state_ = STOPPED;
-            std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
-            if (streamCb != nullptr) {
-                streamCb->OnStateChange(STOPPED);
-            }
         }
         return AUDIO_CLIENT_SUCCESS;
     } else {
