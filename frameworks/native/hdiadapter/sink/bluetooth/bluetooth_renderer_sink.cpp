@@ -55,6 +55,7 @@ const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 constexpr uint32_t BIT_TO_BYTES = 8;
+const uint32_t TIME_OUT_SECONDS = 1;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
@@ -444,6 +445,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
     while (true) {
         Trace trace1("BluetoothRendererSinkInner::RenderFrame in");
+        AudioXCollie audioXCollie("BluetoothRendererSinkInner::RenderFrame", TIME_OUT_SECONDS);
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
         AUDIO_DEBUG_LOG("A2dp RenderFrame returns: %{public}x", ret);
         if (ret == RENDER_FRAME_NUM) {
