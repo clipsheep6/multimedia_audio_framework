@@ -26,6 +26,7 @@
 #include "key_event.h"
 #include "key_option.h"
 #endif
+#include "power_mgr_client.h"
 
 #include "privacy_kit.h"
 #include "accesstoken_kit.h"
@@ -117,6 +118,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 
     clientOnFocus_ = 0;
     focussedAudioInterruptInfo_ = nullptr;
+    powerStateCallbackRegister_ = false;
 }
 
 void AudioPolicyServer::OnDump()
@@ -150,6 +152,10 @@ void AudioPolicyServer::OnStart()
     if (iRes < 0) {
         AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
     }
+
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    SubscribeVolumeKeyEvents();
+#endif
 }
 
 void AudioPolicyServer::OnStop()
@@ -198,6 +204,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case POWER_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
+            SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
             break;
         default:
@@ -253,6 +260,9 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         AUDIO_ERR_LOG("VolumeKeyEvents: invalid key type : %{public}d", keyType);
         return;
     }
+    AUDIO_INFO_LOG("RegisterVolumeKeyEvents: volume key: %{public}s.",
+        (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
+
     MMI::InputManager *im = MMI::InputManager::GetInstance();
     CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
 
@@ -297,6 +307,7 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 {
+    AUDIO_INFO_LOG("RegisterVolumeKeyMuteEvents: volume key: mute");
     MMI::InputManager *im = MMI::InputManager::GetInstance();
     CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
 
@@ -323,6 +334,13 @@ void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 void AudioPolicyServer::SubscribeVolumeKeyEvents()
 {
+    if (hasSubscribedVolumeKeyEvents_.load()) {
+        AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: volume key events has been sunscirbed!");
+        return;
+    }
+
+    AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: first time.");
+    hasSubscribedVolumeKeyEvents_.store(true);
     RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
     RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
     RegisterVolumeKeyMuteEvents();
@@ -396,6 +414,79 @@ bool AudioPolicyServer::IsVolumeLevelValid(AudioStreamType streamType, int32_t v
         result = false;
     }
     return result;
+}
+
+void AudioPolicyServer::SubscribePowerStateChangeEvents()
+{
+    sptr<PowerMgr::IPowerStateCallback> powerStateCallback_;
+
+    if (powerStateCallback_ == nullptr) {
+        powerStateCallback_ = new (std::nothrow) AudioPolicyServerPowerStateCallback(this);
+    }
+    
+    if (powerStateCallback_ == nullptr) {
+        AUDIO_ERR_LOG("subscribe create power state callback Create Error");
+        return;
+    }
+    
+    bool RegisterSuccess = PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback(powerStateCallback_);
+    if (!RegisterSuccess) {
+        AUDIO_ERR_LOG("register power state callback failed");
+    } else {
+        AUDIO_INFO_LOG("register power state callback success");
+        powerStateCallbackRegister_ = true;
+    }
+}
+
+void AudioPolicyServer::CheckSubscribePowerStateChange()
+{
+    if (!powerStateCallbackRegister_) {
+        SubscribePowerStateChangeEvents();
+    }
+
+    if (!powerStateCallbackRegister_) {
+        AUDIO_ERR_LOG("PowerState CallBack Register Failed");
+    } else {
+        AUDIO_DEBUG_LOG("PowerState CallBack Register Success");
+    }
+}
+
+void AudioPolicyServer::HandlePowerStateChanged(PowerMgr::PowerState state)
+{
+    audioPolicyService_.HandlePowerStateChanged(state);
+}
+
+int32_t AudioPolicyServer::SetOffloadStream(uint32_t sessionId)
+{
+    CheckSubscribePowerStateChange();
+    return audioPolicyService_.SetOffloadStream(sessionId);
+}
+
+int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
+{
+    return audioPolicyService_.ReleaseOffloadStream(sessionId);
+}
+
+void AudioPolicyServer::InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType,
+    uint32_t incomingSessionId)
+{
+    ReleaseOffloadStream(activeSessionId);
+    if ((incomingStreamType == AudioStreamType::STREAM_MUSIC) ||
+        (incomingStreamType == AudioStreamType::STREAM_SPEECH)) {
+        SetOffloadStream(incomingSessionId);
+    } else {
+        AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", incomingSessionId,
+            incomingStreamType);
+    }
+}
+
+AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerStateCallback(
+    AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
+{}
+
+void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
+{
+    policyServer_->HandlePowerStateChanged(state);
 }
 
 void AudioPolicyServer::InitKVStore()
@@ -1281,7 +1372,6 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         std::unique_lock<std::mutex> lock(interruptMutex_);
         std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[activeSessionID];
         lock.unlock();
-        float volumeDb = 0.0f;
         switch (focusEntry.hintType) {
             case INTERRUPT_HINT_STOP:
                 iterActive = audioFocusInfoList_.erase(iterActive);
@@ -1293,8 +1383,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
                 break;
             case INTERRUPT_HINT_DUCK:
                 iterActive->second = DUCK;
-                float volumeDb = GetSystemVolumeDb(activeFocusType.streamType);
-                interruptEvent.duckVolume = DUCK_FACTOR * volumeDb;
+                interruptEvent.duckVolume = DUCK_FACTOR * GetSystemVolumeDb(activeFocusType.streamType);
                 break;
             default:
                 break;
@@ -1310,6 +1399,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         if (!iterActiveErased) {
             ++iterActive;
         }
+        InterruptOffload(activeSessionID, incomingInterrupt.audioFocusType.streamType, incomingInterrupt.sessionID);
     }
 }
 
@@ -1402,6 +1492,13 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         return SUCCESS;
     }
 
+    if ((streamType == AudioStreamType::STREAM_MUSIC) || (streamType == AudioStreamType::STREAM_SPEECH)) {
+        SetOffloadStream(audioInterrupt.sessionID);
+    } else {
+        AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", audioInterrupt.sessionID,
+            streamType);
+    }
+    
     if (!audioPolicyService_.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
@@ -1571,6 +1668,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
 
+    ReleaseOffloadStream(audioInterrupt.sessionID);
     if (!audioPolicyService_.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
@@ -1622,6 +1720,8 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     }
 
     UpdateAudioScene(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
+    
+    OffloadStopPlaying(audioInterrupt);
 
     // resume if other session was forced paused or ducked
     ResumeAudioFocusList();
@@ -1671,14 +1771,19 @@ void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
     audioPolicyService_.OnCapturerSessionAdded(sessionEvent.sessionID, sessionEvent.sessionInfo_);
 }
 
+void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
+{
+    audioPolicyService_.CloseWakeUpAudioCapturer();
+}
+
 void AudioPolicyServer::OnPlaybackCapturerStop()
 {
     audioPolicyService_.UnloadLoopback();
 }
 
-void AudioPolicyServer::OnWakeupCapturerStop()
+void AudioPolicyServer::OnWakeupCapturerStop(uint32_t sessionID)
 {
-    audioPolicyService_.CloseWakeUpAudioCapturer();
+    sessionProcessor_.Post({SessionEvent::Type::CLOSE_WAKEUP_SOURCE, sessionID});
 }
 
 void AudioPolicyServer::OnDstatusUpdated(bool isConnected)
@@ -2621,8 +2726,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     }
 
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-    if ((audioPolicyService_.GetLocalDevicesType().compare("tablet") == 0) ||
-            (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0)) {
+    if (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0) {
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
         streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
@@ -2732,6 +2836,11 @@ int32_t AudioPolicyServer::UnsetAvailableDeviceChangeCallback(const int32_t /*cl
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioPolicyService_.UnsetAvailableDeviceChangeCallback(clientPid, usage);
+}
+
+int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterrupt)
+{
+    return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.sessionID));
 }
 
 void AudioPolicyServer::RegisterPowerStateListener()

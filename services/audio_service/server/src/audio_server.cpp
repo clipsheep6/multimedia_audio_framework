@@ -135,9 +135,11 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     AudioXCollie audioXCollie("AudioServer::SetAudioParameter", TIME_OUT_SECONDS);
     AUDIO_DEBUG_LOG("server: set audio parameter");
-    if (!VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
-        AUDIO_ERR_LOG("SetAudioParameter: MODIFY_AUDIO_SETTINGS permission denied");
-        return;
+    if (key !="AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
+        if (!VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
+            AUDIO_ERR_LOG("SetAudioParameter: MODIFY_AUDIO_SETTINGS permission denied");
+            return;
+        }
     }
 
     AudioServer::audioParameters[key] = value;
@@ -168,6 +170,11 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         parmKey = AudioParamKey::BT_HEADSET_NREC;
     } else if (key == "bt_wbs") {
         parmKey = AudioParamKey::BT_WBS;
+    } else if (key == "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
+        parmKey = AudioParamKey::A2DP_OFFLOAD_STATE;
+        std::string value_new = "a2dpOffloadConfig=" + value;
+        audioRendererSinkInstance->SetAudioParameter(parmKey, "", value_new);
+        return;
     } else if (key == "mmi") {
         parmKey = AudioParamKey::MMI;
     } else if (key == "perf_info") {
@@ -407,6 +414,22 @@ int32_t AudioServer::SetVoiceVolume(float volume)
         return audioRendererSinkInstance->SetVoiceVolume(volume);
     }
     return ERROR;
+}
+
+int32_t AudioServer::OffloadSetVolume(float volume)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+        AUDIO_ERR_LOG("OffloadSetVolume refused for %{public}d", callingUid);
+        return ERR_NOT_SUPPORTED;
+    }
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("Renderer is null.");
+        return ERROR;
+    }
+    return audioRendererSinkInstance->SetVolume(volume, 0);
 }
 
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
@@ -805,6 +828,42 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     }
 
     return true;
+}
+
+int32_t AudioServer::OffloadDrain()
+{
+    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
+        "offload", ""));
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("Renderer is null.");
+        return ERROR;
+    }
+    return audioRendererSinkInstance->Drain(AUDIO_DRAIN_EARLY_NOTIFY);
+}
+
+int32_t AudioServer::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
+        "offload", ""));
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("Renderer is null.");
+        return ERROR;
+    }
+    return audioRendererSinkInstance->GetPresentationPosition(frames, timeSec, timeNanoSec);
+}
+
+int32_t AudioServer::OffloadSetBufferSize(uint32_t sizeMs)
+{
+    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
+        "offload", ""));
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("Renderer is null.");
+        return ERROR;
+    }
+    return audioRendererSinkInstance->SetBufferSize(sizeMs);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag deviceFlag)

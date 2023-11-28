@@ -172,6 +172,25 @@ enum ConnectType {
 
 typedef AudioStreamType AudioVolumeType;
 
+enum AudioOffloadType {
+    /**
+     * Indicates audio offload state default.
+     */
+    OFFLOAD_DEFAULT = -1,
+    /**
+     * Indicates audio offload state : screen is active & app is foreground.
+     */
+    OFFLOAD_ACTIVE_FOREGROUND = 0,
+    /**
+     * Indicates audio offload state : screen is active & app is background.
+     */
+    OFFLOAD_ACTIVE_BACKGROUND = 1,
+    /**
+     * Indicates audio offload state : screen is inactive & app is background.
+     */
+    OFFLOAD_INACTIVE_BACKGROUND = 3,
+};
+
 enum FocusType {
     /**
      * Recording type.
@@ -722,6 +741,7 @@ enum AudioParamKey {
     A2DP_SUSPEND_STATE = 6,  // for bluetooth sink
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
+    A2DP_OFFLOAD_STATE = 9, //for a2dp offload
     USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PERF_INFO = 201,
     MMI = 301,
@@ -789,6 +809,12 @@ struct SessionInfo {
     SourceType sourceType;
     uint32_t rate;
     uint32_t channels;
+};
+
+enum BluetoothOffloadState {
+    NO_A2DP_DEVICE = 0,
+    A2DP_NOT_OFFLOAD = 1,
+    A2DP_OFFLOAD = 2,
 };
 } // namespace AudioStandard
 } // namespace OHOS

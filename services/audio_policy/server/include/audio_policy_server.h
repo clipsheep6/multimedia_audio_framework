@@ -26,6 +26,7 @@
 
 #include "accesstoken_kit.h"
 #include "perm_state_change_callback_customize.h"
+#include "power_state_callback_stub.h"
 #include "power_state_listener.h"
 
 #include "bundle_mgr_interface.h"
@@ -203,7 +204,9 @@ public:
 
     void OnPlaybackCapturerStop() override;
 
-    void OnWakeupCapturerStop() override;
+    void OnWakeupCapturerStop(uint32_t sessionID) override;
+
+    void ProcessorCloseWakeupSource(const uint64_t sessionID);
 
     void OnDstatusUpdated(bool isConnected) override;
 
@@ -391,6 +394,23 @@ private:
 
     int32_t VerifyVoiceCallPermission();
 
+    class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
+    public:
+        AudioPolicyServerPowerStateCallback(AudioPolicyServer *policyServer);
+        void OnPowerStateChanged(PowerMgr::PowerState state) override;
+
+    private:
+        AudioPolicyServer *policyServer_;
+    };
+
+    void HandlePowerStateChanged(PowerMgr::PowerState state);
+
+    // offload session
+    int32_t SetOffloadStream(uint32_t sessionId);
+    int32_t ReleaseOffloadStream(uint32_t sessionId);
+    void InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId);
+    void CheckSubscribePowerStateChange();
+    
     // for audio interrupt
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);
@@ -433,14 +453,17 @@ private:
     void GetPolicyData(PolicyData &policyData);
     void GetDeviceInfo(PolicyData &policyData);
     void GetGroupInfo(PolicyData &policyData);
+    
+    int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
 
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
     // externel function call
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
     void RegisterVolumeKeyEvents(const int32_t keyType);
     void RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
 #endif
+    void SubscribePowerStateChangeEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
@@ -450,10 +473,14 @@ private:
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
 
+    bool powerStateCallbackRegister_;
     AudioPolicyService& audioPolicyService_;
     int32_t clientOnFocus_;
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
+#endif
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
     std::recursive_mutex focussedAudioInterruptInfoMutex_;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;
@@ -479,7 +506,8 @@ private:
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
         this, std::placeholders::_1),
         std::bind(&AudioPolicyServer::ProcessSessionAdded,
-            this, std::placeholders::_1)};
+            this, std::placeholders::_1),
+        std::bind(&AudioPolicyServer::ProcessorCloseWakeupSource, this, std::placeholders::_1)};
 
     AudioSpatializationService& audioSpatializationService_;
 };
