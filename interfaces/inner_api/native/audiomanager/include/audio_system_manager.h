@@ -59,6 +59,7 @@ public:
     int64_t connectTimeStamp_;
     std::shared_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
     ConnectState connectState_;
+    bool isScoRealConnected_;
 
     AudioDeviceDescriptor();
     AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId, int32_t volumeGroupId,
