@@ -324,6 +324,11 @@ int32_t FastAudioStream::Enqueue(const BufferDesc &bufDesc)
     return SUCCESS;
 }
 
+void FastAudioStream::SetPreferredFrameSize(int32_t frameSize)
+{
+    processClient_->SetPreferredFrameSize(frameSize);
+}
+
 int32_t FastAudioStream::Clear()
 {
     AUDIO_INFO_LOG("Clear will do nothing.");
@@ -508,6 +513,12 @@ int32_t FastAudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingR
 }
 
 int32_t FastAudioStream::Write(uint8_t *buffer, size_t buffer_size)
+{
+    AUDIO_ERR_LOG("Unsupported operation: Write");
+    return ERR_INVALID_OPERATION;
+}
+
+int32_t FastAudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
 {
     AUDIO_ERR_LOG("Unsupported operation: Write");
     return ERR_INVALID_OPERATION;

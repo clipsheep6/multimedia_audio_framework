@@ -38,6 +38,7 @@ public:
     int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
     bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
+    int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     RendererState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool Drain() const override;
@@ -66,6 +67,7 @@ public:
     int32_t SetRenderMode(AudioRenderMode renderMode) const override;
     AudioRenderMode GetRenderMode() const override;
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
+    void SetPreferredFrameSize(int32_t frameSize) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) const override;
     int32_t Enqueue(const BufferDesc &bufDesc) const override;
     int32_t Clear() const override;

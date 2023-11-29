@@ -51,6 +51,13 @@
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
 #include "audio_state_manager.h"
+#include "audio_spatialization_service.h"
+
+#ifdef BLUETOOTH_ENABLE
+#include "audio_server_death_recipient.h"
+#include "audio_bluetooth_manager.h"
+#include "bluetooth_device_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -193,16 +200,16 @@ public:
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
 
+    void ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
+        const std::string &deviceName, const AudioStreamInfo &streamInfo);
+
     void OnDeviceStatusUpdated(DStatusInfo statusInfo);
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
 
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
-    {
-        AUDIO_INFO_LOG("enter the OnForcedDeviceSelected");
-    }
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
 
     void OnMonoAudioConfigChanged(bool audioMono);
 
@@ -308,6 +315,8 @@ public:
 
     float GetMaxStreamVolume(void);
 
+    void MaxRenderInstanceInit();
+
     int32_t GetMaxRendererInstances();
 
     void RegisterDataObserver();
@@ -349,6 +358,22 @@ public:
     std::vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     void TriggerAvailableDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+
+    void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
+
+    int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionsId, const std::vector<int32_t> &streamTypes,
+        bool isNewDeviceActive = false);
+
+    int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsId);
+
+    void UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+
+    void GetA2dpOffloadCodecAndSendToDsp();
+
+    int32_t HandleA2dpDeviceInOffload();
+
+    int32_t HandleA2dpDeviceOutOffload();
 
 private:
     AudioPolicyService()
@@ -435,11 +460,17 @@ private:
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
+    int32_t HandleA2dpOffloadDeviceSuspend(DeviceType deviceType);
+
     int32_t LoadUsbModule(string deviceInfo);
 
     int32_t LoadDefaultUsbModule();
 
     int32_t HandleArmUsbDevice(DeviceType deviceType);
+
+    int32_t HandleFileDevice(DeviceType deviceType);
+
+    int32_t ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
@@ -472,6 +503,14 @@ private:
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
  
+    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
+        const std::vector<sptr<AudioDeviceDescriptor>>& desc);
+
+    void GetAllRunningStreamSessionAndType(std::vector<int32_t> &allSessions, std::vector<int32_t> &streamTypes,
+        bool doStop = false);
+
+    void GetAllRunningStreamSessionAndType(std::vector<int32_t> &allSessions, bool doStop = false);
+
     void WriteDeviceChangedSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
     bool GetActiveDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
@@ -499,8 +538,6 @@ private:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
-    void SetEarpieceState();
-
     void SetVolumeForSwitchDevice(DeviceType deviceType);
 
     void SetVoiceCallVolume(int32_t volume);
@@ -520,10 +557,10 @@ private:
     void RegisterRemoteDevStatusCallback();
 
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
-        const std::string& deviceName, const AudioStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);
+        const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);
 
     int32_t HandleLocalDeviceConnected(DeviceType devType, const std::string& macAddress, const std::string& deviceName,
-        const AudioStreamInfo& streamInfo);
+        const DeviceStreamInfo& streamInfo);
 
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
@@ -579,8 +616,11 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
         const std::vector<sptr<AudioDeviceDescriptor>>& descs);
 
-    sptr<AudioPolicyClientProxy> GetAPSAudioPolicyClientProxy(const int32_t clientPid,
-        bool hasBTPermission, const sptr<IRemoteObject> &object);
+    void AddEarpiece();
+
+    void FetchOutputDeviceWhenNoRunningStream();
+
+    void FetchInputDeviceWhenNoRunningStream();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
@@ -592,10 +632,15 @@ private:
     bool hasModulesLoaded = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
-    int32_t maxRendererInstances_ = 16;
+    int32_t maxRendererInstances_ = 128;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
     bool isOffloadAvailable_ = false;
+
+    BluetoothOffloadState a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    BluetoothOffloadState preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    std::mutex switchA2dpOffloadMutex_;
+    bool sameDeviceSwitchFlag_ = false;
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -676,6 +721,7 @@ private:
     std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
+
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;
 
@@ -683,6 +729,7 @@ private:
     PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;
     bool currentOffloadSessionIsBackground_ = false;
     std::mutex offloadMutex_;
+
     AudioModuleInfo primaryMicModuleInfo_ = {};
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;

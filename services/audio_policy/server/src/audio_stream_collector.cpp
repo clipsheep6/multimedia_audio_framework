@@ -260,9 +260,6 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             // Capturer state not changed
             return SUCCESS;
         }
-    } else {
-        AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d not found in capturerStatequeue_",
-            streamChangeInfo.audioCapturerChangeInfo.clientUID);
     }
 
     // Update the capturer info in audioCapturerChangeInfos_
@@ -299,7 +296,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
                     audioCapturerChangeInfo.sessionId));
                 clientTracker_.erase(audioCapturerChangeInfo.sessionId);
             }
-        return SUCCESS;
+            return SUCCESS;
         }
     }
     AUDIO_DEBUG_LOG("UpdateCapturerStream: clientUI not in audioCapturerChangeInfos_::%{public}d",
@@ -437,6 +434,18 @@ AudioStreamType AudioStreamCollector::GetStreamType(ContentType contentType, Str
     return streamType;
 }
 
+AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
+{
+    AudioStreamType streamType = STREAM_MUSIC;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->sessionId == sessionId) {
+            streamType = GetStreamType(changeInfo->rendererInfo.contentType, changeInfo->rendererInfo.streamUsage);
+        }
+    }
+    return streamType;
+}
+
 int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
@@ -522,22 +531,6 @@ bool AudioStreamCollector::GetAndCompareStreamType(AudioStreamType requiredType,
         defaultStreamType = pos->second;
     }
     return defaultStreamType == requiredType;
-}
-
-AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
-{
-    AudioStreamType defaultStreamType = STREAM_MUSIC;
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->sessionId == sessionId) {
-            auto pos = streamTypeMap_.find(
-                make_pair(changeInfo->rendererInfo.contentType, changeInfo->rendererInfo.streamUsage));
-            if (pos != streamTypeMap_.end()) {
-                defaultStreamType = pos->second;
-            }
-        }
-    }
-    return defaultStreamType;
 }
 
 int32_t AudioStreamCollector::GetUid(int32_t sessionId)

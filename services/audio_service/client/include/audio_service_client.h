@@ -42,9 +42,12 @@
 #include "audio_renderer.h"
 #include "audio_system_manager.h"
 #include "i_audio_stream.h"
+#include "audio_spatialization_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioSpatializationStateChangeCallbackImpl;
+
 enum ASClientType {
     AUDIO_SERVICE_CLIENT_PLAYBACK,
     AUDIO_SERVICE_CLIENT_RECORD,
@@ -173,6 +176,8 @@ public:
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
     int32_t StopStream();
+
+    int32_t StopStreamPlayback();
 
     int32_t OffloadStopStream();
 
@@ -564,6 +569,10 @@ public:
 
     int32_t GetClientPid();
 
+    int32_t RegisterSpatializationStateEventListener();
+
+    void OnSpatializationStateChange(const std::vector<bool> &spatializationState);
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -665,6 +674,12 @@ private:
     bool breakingWritePa_ = false;
     StateChangeCmdType stateChangeCmdType_ = CMD_FROM_CLIENT;
     pa_stream_success_cb_t PAStreamCorkSuccessCb;
+
+    std::string spatializationEnabled_ = "Invalid";
+    std::string headTrackingEnabled_ = "Invalid";
+    std::shared_ptr<AudioSpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
+    pa_usec_t paLatency_ = 0;
+    bool isGetLatencySuccess_ = true;
 
     // To be set while using audio stream
     // functionality for callbacks
@@ -771,6 +786,7 @@ private:
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);
     static void PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void GetSinkInputInfoOffloadCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
@@ -831,6 +847,17 @@ private:
         SET_CAPTURER_MARK_REACHED_REQUEST,
         UNSET_CAPTURER_MARK_REACHED_REQUEST,
     };
+};
+
+class AudioSpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {
+public:
+    AudioSpatializationStateChangeCallbackImpl();
+    virtual ~AudioSpatializationStateChangeCallbackImpl();
+
+    void OnSpatializationStateChange(const std::vector<bool> &spatializationState) override;
+    void setAudioServiceClientObj(AudioServiceClient *serviceClientObj);
+private:
+    AudioServiceClient *serviceClient_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

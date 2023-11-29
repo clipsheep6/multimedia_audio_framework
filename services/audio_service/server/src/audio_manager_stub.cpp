@@ -79,14 +79,6 @@ int AudioManagerStub::HandleSetMicrophoneMute(MessageParcel &data, MessageParcel
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleIsMicrophoneMute(MessageParcel &data, MessageParcel &reply)
-{
-    AUDIO_DEBUG_LOG("IS_MICROPHONE_MUTE AudioManagerStub");
-    bool isMute = IsMicrophoneMute();
-    reply.WriteBool(isMute);
-    return AUDIO_OK;
-}
-
 int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("SET_AUDIO_SCENE AudioManagerStub");
@@ -381,6 +373,18 @@ int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    std::vector<bool> spatializationState;
+    for (int32_t i = 0; i < size; i++) {
+        spatializationState.push_back(data.ReadBool());
+    }
+    int32_t ret = UpdateSpatializationState(spatializationState);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply)
 {
     const float volume = data.ReadFloat();
@@ -405,7 +409,7 @@ int AudioManagerStub::HandleOffloadGetPresentationPosition(MessageParcel &data, 
     reply.WriteUint64(frames);
     reply.WriteInt64(timeSec);
     reply.WriteInt64(timeNanoSec);
-                    
+
     return AUDIO_OK;
 }
 

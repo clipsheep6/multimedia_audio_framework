@@ -54,7 +54,6 @@ public:
         std::unordered_map<std::string, std::string> &map) override;
     bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     int32_t SetMicrophoneMute(bool isMute) override;
-    bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
@@ -103,6 +102,8 @@ public:
     int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     
     int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
+
+    int32_t UpdateSpatializationState(std::vector<bool> spatializationState) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

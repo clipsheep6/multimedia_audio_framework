@@ -41,6 +41,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_service_dump.h"
 #include "session_processor.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -179,7 +180,9 @@ public:
 
     void OnPlaybackCapturerStop() override;
 
-    void OnWakeupCapturerStop() override;
+    void OnWakeupCapturerStop(uint32_t sessionID) override;
+
+    void ProcessorCloseWakeupSource(const uint64_t sessionID);
 
     void OnDstatusUpdated(bool isConnected) override;
 
@@ -270,6 +273,38 @@ public:
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object) override;
 
     int32_t UnregisterPolicyCallbackClient() override;
+    bool IsSpatializationEnabled() override;
+
+    int32_t SetSpatializationEnabled(const bool enable) override;
+
+    bool IsHeadTrackingEnabled() override;
+
+    int32_t SetHeadTrackingEnabled(const bool enable) override;
+
+    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) override;
+
+    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) override;
+
+    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) override;
+
+    bool IsSpatializationSupported() override;
+
+    bool IsSpatializationSupportedForDevice(const std::string address) override;
+
+    bool IsHeadTrackingSupported() override;
+
+    bool IsHeadTrackingSupportedForDevice(const std::string address) override;
+
+    int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) override;
+
+    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
+        const sptr<IRemoteObject> &object) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -385,9 +420,11 @@ private:
     void GetPolicyData(PolicyData &policyData);
     void GetDeviceInfo(PolicyData &policyData);
     void GetGroupInfo(PolicyData &policyData);
+    
+    int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
 
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
     // externel function call
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
     void RegisterVolumeKeyEvents(const int32_t keyType);
     void RegisterVolumeKeyMuteEvents();
@@ -402,12 +439,15 @@ private:
     void RegisterDataObserver();
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
-    
+
     bool powerStateCallbackRegister_;
     AudioPolicyService& audioPolicyService_;
     int32_t clientOnFocus_;
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
+#endif
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
     std::recursive_mutex focussedAudioInterruptInfoMutex_;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;
@@ -433,7 +473,10 @@ private:
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
         this, std::placeholders::_1),
         std::bind(&AudioPolicyServer::ProcessSessionAdded,
-            this, std::placeholders::_1)};
+            this, std::placeholders::_1),
+        std::bind(&AudioPolicyServer::ProcessorCloseWakeupSource, this, std::placeholders::_1)};
+
+    AudioSpatializationService& audioSpatializationService_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

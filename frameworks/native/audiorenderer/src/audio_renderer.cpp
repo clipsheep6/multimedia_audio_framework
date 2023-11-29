@@ -463,6 +463,7 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
 
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 {
+    Trace trace("AudioRenderer::Start");
     AUDIO_INFO_LOG("AudioRenderer::Start");
     RendererState state = GetStatus();
     if ((state != RENDERER_PREPARED) && (state != RENDERER_STOPPED) && (state != RENDERER_PAUSED)) {
@@ -507,6 +508,13 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
     return size;
 }
 
+int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize)
+{
+    Trace trace("Write");
+    int32_t size = audioStream_->Write(pcmBuffer, pcmSize, metaBuffer, metaSize);
+    return size;
+}
+
 RendererState AudioRendererPrivate::GetStatus() const
 {
     return static_cast<RendererState>(audioStream_->GetState());
@@ -529,6 +537,7 @@ bool AudioRendererPrivate::Flush() const
 
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
+    Trace trace("AudioRenderer::Pause");
     AUDIO_INFO_LOG("AudioRenderer::Pause");
     if (isSwitching_) {
         AUDIO_ERR_LOG("AudioRenderer::Pause failed. Switching state: %{public}d", isSwitching_);
@@ -1286,6 +1295,11 @@ void AudioRendererPrivate::SetSelfRendererStateCallback()
 int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 {
     return audioStream_->SetVolumeWithRamp(volume, duration);
+}
+
+void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
+{
+    audioStream_->SetPreferredFrameSize(frameSize);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

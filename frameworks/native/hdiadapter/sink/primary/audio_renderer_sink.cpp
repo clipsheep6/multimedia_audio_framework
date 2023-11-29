@@ -29,7 +29,7 @@
 #include "power_mgr_client.h"
 #include "running_lock.h"
 #endif
-#include "v1_1/iaudio_manager.h"
+#include "v2_0/iaudio_manager.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -673,6 +673,10 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
             sink.ext.device.type = PIN_OUT_BLUETOOTH_SCO;
             sink.ext.device.desc = (char *)"pin_out_bluetooth_sco";
             break;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            sink.ext.device.type = PIN_OUT_BLUETOOTH_A2DP;
+            sink.ext.device.desc = (char *)"pin_out_bluetooth_a2dp";
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
@@ -683,16 +687,16 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 
 int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
 {
+    if (outputDevice == currentActiveDevice_) {
+        AUDIO_INFO_LOG("SetOutputRoute output device not change");
+        return SUCCESS;
+    }
     AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
     return SetOutputRoute(outputDevice, outputPortPin);
 }
 
 int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
 {
-    if (outputDevice == currentActiveDevice_) {
-        AUDIO_INFO_LOG("SetOutputRoute output device not change");
-        return SUCCESS;
-    }
     currentActiveDevice_ = outputDevice;
 
     AudioRouteNode source = {};
@@ -764,6 +768,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
 
         AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
         int32_t ret = SUCCESS;
+        bool isAudioSceneUpdate = false;
         if (audioScene != currentAudioScene_) {
             struct AudioSceneDescriptor scene;
             scene.scene.id = GetAudioCategory(audioScene);
@@ -776,11 +781,16 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
                 return ERR_OPERATION_FAILED;
             }
             currentAudioScene_ = audioScene;
+            isAudioSceneUpdate = true;
         }
 
-        ret = SetOutputRoute(activeDevice, audioSceneOutPort);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
+        if (activeDevice != currentActiveDevice_ ||
+            (isAudioSceneUpdate &&
+                (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
+            ret = SetOutputRoute(activeDevice, audioSceneOutPort);
+            if (ret < 0) {
+                AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
+            }
         }
     }
     return SUCCESS;

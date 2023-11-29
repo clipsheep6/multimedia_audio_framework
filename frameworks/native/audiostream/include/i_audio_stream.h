@@ -156,6 +156,7 @@ public:
     // Playback related APIs
     virtual bool DrainAudioStream() = 0;
     virtual int32_t Write(uint8_t *buffer, size_t buffer_size) = 0;
+    virtual int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) = 0;
 
     // Recording related APIs
     virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) = 0;
@@ -188,7 +189,7 @@ public:
     virtual void SetApplicationCachePath(const std::string cachePath) = 0;
     virtual int32_t SetChannelBlendMode(ChannelBlendMode blendMode) = 0;
     virtual int32_t SetVolumeWithRamp(float volume, int32_t duration) = 0;
-
+    virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
     virtual IAudioStream::StreamClass GetStreamClass() = 0;
     virtual void SetStreamTrackerState(bool trackerRegisteredState) = 0;
     virtual void GetSwitchInfo(SwitchInfo& info) = 0;

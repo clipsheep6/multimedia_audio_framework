@@ -19,6 +19,7 @@
 #include <cstring>
 #include <string>
 #include <list>
+#include <cinttypes>
 
 #include <dlfcn.h>
 #include <unistd.h>
@@ -53,6 +54,7 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
+constexpr uint32_t BIT_TO_BYTES = 8;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
@@ -112,6 +114,8 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+
+    int64_t lastCallWriteTime_ = 0;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 #endif
@@ -121,8 +125,8 @@ private:
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
+    int64_t BytesToNanoTime(size_t lens);
     FILE *dumpFile_ = nullptr;
-    std::mutex mutex_; // add lock, when stop and renderframe call in same millisecond, cause crash some time
 };
 
 BluetoothRendererSinkInner::BluetoothRendererSinkInner()
@@ -421,7 +425,6 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
 
 int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     int32_t ret = SUCCESS;
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Bluetooth Render Handle is nullptr!");
@@ -440,6 +443,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
     while (true) {
+        Trace trace1("BluetoothRendererSinkInner::RenderFrame in");
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
         AUDIO_DEBUG_LOG("A2dp RenderFrame returns: %{public}x", ret);
         if (ret == RENDER_FRAME_NUM) {
@@ -455,6 +459,14 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
         break;
     }
+    Trace trace2("BluetoothRendererSinkInner::RenderFrame sleep");
+    int64_t writeTime = BytesToNanoTime(len);
+    int64_t timeBetweenCall = ClockTime::GetCurNano() - lastCallWriteTime_;
+    int64_t sleepTime = writeTime - timeBetweenCall;
+    if (timeBetweenCall < writeTime) {
+        ClockTime::RelativeSleep(sleepTime);
+    }
+    timeBetweenCall += writeTime;
     return ret;
 }
 
@@ -480,6 +492,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
     int32_t ret;
 
     if (!started_) {
+        lastCallWriteTime_ = ClockTime::GetCurNano();
         ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (!ret) {
             started_ = true;
@@ -569,7 +582,6 @@ int32_t BluetoothRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t BluetoothRendererSinkInner::Stop(void)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     Trace trace("BluetoothRendererSinkInner::Stop");
     AUDIO_INFO_LOG("Stop in");
 #ifdef FEATURE_POWER_MANAGER
@@ -649,6 +661,7 @@ int32_t BluetoothRendererSinkInner::Resume(void)
     if (paused_) {
         ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
         if (!ret) {
+            lastCallWriteTime_ = ClockTime::GetCurNano();
             paused_ = false;
             return SUCCESS;
         } else {
@@ -791,6 +804,17 @@ void BluetoothRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
             break;
         }
     }
+}
+
+static uint32_t HdiFormatToByte(HDI::Audio_Bluetooth::AudioFormat format)
+{
+    return PcmFormatToBits(format) / BIT_TO_BYTES;
+}
+
+int64_t BluetoothRendererSinkInner::BytesToNanoTime(size_t lens)
+{
+    int64_t res = AUDIO_NS_PER_SECOND * lens / (attr_.sampleRate * attr_.channel * HdiFormatToByte(attr_.format));
+    return res;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -54,6 +54,7 @@ namespace AudioStandard {
 std::map<std::string, std::string> AudioServer::audioParameters;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 const unsigned int TIME_OUT_SECONDS = 10;
+const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
@@ -134,9 +135,11 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     AudioXCollie audioXCollie("AudioServer::SetAudioParameter", TIME_OUT_SECONDS);
     AUDIO_DEBUG_LOG("server: set audio parameter");
-    if (!VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
-        AUDIO_ERR_LOG("SetAudioParameter: MODIFY_AUDIO_SETTINGS permission denied");
-        return;
+    if (key !="AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
+        if (!VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
+            AUDIO_ERR_LOG("SetAudioParameter: MODIFY_AUDIO_SETTINGS permission denied");
+            return;
+        }
     }
 
     AudioServer::audioParameters[key] = value;
@@ -167,6 +170,11 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         parmKey = AudioParamKey::BT_HEADSET_NREC;
     } else if (key == "bt_wbs") {
         parmKey = AudioParamKey::BT_WBS;
+    } else if (key == "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
+        parmKey = AudioParamKey::A2DP_OFFLOAD_STATE;
+        std::string value_new = "a2dpOffloadConfig=" + value;
+        audioRendererSinkInstance->SetAudioParameter(parmKey, "", value_new);
+        return;
     } else if (key == "mmi") {
         parmKey = AudioParamKey::MMI;
     } else if (key == "perf_info") {
@@ -391,18 +399,6 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
     return SUCCESS;
 }
 
-bool AudioServer::IsMicrophoneMute()
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
-        AUDIO_ERR_LOG("IsMicrophoneMute refused for %{public}d", callingUid);
-    }
-
-    AUDIO_ERR_LOG("unused IsMicrophoneMute func");
-
-    return false;
-}
-
 int32_t AudioServer::SetVoiceVolume(float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -446,6 +442,20 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
         return ERR_NOT_SUPPORTED;
     }
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS);
+    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+
+    if (audioCapturerSourceInstance == nullptr || !audioCapturerSourceInstance->IsInited()) {
+        AUDIO_WARNING_LOG("Capturer is not initialized.");
+    } else {
+        audioCapturerSourceInstance->SetAudioScene(audioScene, activeDevice);
+    }
+
+    if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->IsInited()) {
+        AUDIO_WARNING_LOG("Renderer is not initialized.");
+    } else {
+        audioRendererSinkInstance->SetAudioScene(audioScene, activeDevice);
+    }
 
     audioScene_ = audioScene;
     return SUCCESS;
@@ -891,6 +901,7 @@ void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
     AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
 
     uint32_t pid = IPCSkeleton::GetCallingPid();
+    AudioXCollie audioXCollie("AudioServer::ScheduleReportData", SCHEDULE_REPORT_TIME_OUT_SECONDS);
     ScheduleReportData(pid, tid, bundleName.c_str());
 }
 
@@ -946,5 +957,20 @@ int32_t AudioServer::SetCaptureSilentState(bool state)
     return SUCCESS;
 }
 
+int32_t AudioServer::UpdateSpatializationState(std::vector<bool> spatializationState)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+        AUDIO_ERR_LOG("UpdateSpatializationState refused for %{public}d", callingUid);
+        return ERR_NOT_SUPPORTED;
+    }
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+        return ERROR;
+    } else {
+        return audioEffectChainManager->UpdateSpatializationState(spatializationState);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

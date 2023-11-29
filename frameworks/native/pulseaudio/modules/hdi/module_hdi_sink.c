@@ -55,7 +55,7 @@ PA_MODULE_USAGE(
         "offload_enable<if device support offload>"
         );
 
-static const char *const VALID_MODARGS[] = {
+static const char * const VALID_MODARGS[] = {
     "sink_name",
     "device_class",
     "sink_properties",

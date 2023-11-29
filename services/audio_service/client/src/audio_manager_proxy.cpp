@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
-#include <cinttypes>
 #include "audio_manager_proxy.h"
+
+#include <cinttypes>
+
 #include "audio_system_manager.h"
 #include "audio_log.h"
 #include "i_audio_process.h"
@@ -48,26 +50,6 @@ int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)
 
     int32_t result = reply.ReadInt32();
     return result;
-}
-
-bool AudioManagerProxy::IsMicrophoneMute()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return false;
-    }
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::IS_MICROPHONE_MUTE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("IsMicrophoneMute failed, error: %d", error);
-        return false;
-    }
-
-    bool isMute = reply.ReadBool();
-    return isMute;
 }
 
 int32_t AudioManagerProxy::SetVoiceVolume(float volume)
@@ -649,7 +631,7 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
+    MessageOption option(MessageOption::TF_ASYNC);
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
@@ -805,5 +787,31 @@ int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
     return reply.ReadInt32();
 }
 
+int32_t AudioManagerProxy::UpdateSpatializationState(std::vector<bool> spatializationState)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("UpdateSpatializationState: WriteInterfaceToken failed");
+        return -1;
+    }
+    int32_t size = static_cast<int32_t>(spatializationState.size());
+    data.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        data.WriteBool(spatializationState[i]);
+    }
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UpdateSpatializationState failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS
