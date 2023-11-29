@@ -15,8 +15,6 @@
 
 
 #include "audio_stream_event_dispatcher.h"
-#include "i_standard_capturer_state_change_listener.h"
-#include "i_standard_renderer_state_change_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -30,40 +28,12 @@ AudioStreamEventDispatcher::~AudioStreamEventDispatcher()
     AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::~AudioStreamEventDispatcher()");
 }
 
-void AudioStreamEventDispatcher::addRendererListener(int32_t clientPid,
-    const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
+void AudioStreamEventDispatcher::SetAudioPolicyClientProxy(
+    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> &proxyCbMap)
 {
-    std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
-    rendererCBMap_[clientPid] = callback;
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::addRendererListener:client %{public}d added", clientPid);
-}
-
-void AudioStreamEventDispatcher::removeRendererListener(int32_t clientPid)
-{
-    std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
-    if (rendererCBMap_.erase(clientPid)) {
-        AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeRendererListener:client %{public}d done", clientPid);
-        return;
-    }
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::removeRendererListener:client %{public}d not present", clientPid);
-}
-
-void AudioStreamEventDispatcher::addCapturerListener(int32_t clientPid,
-    const std::shared_ptr<AudioCapturerStateChangeCallback> &callback)
-{
-    std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
-    capturerCBMap_[clientPid] = callback;
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::addCapturerListener:client %{public}d added", clientPid);
-}
-
-void AudioStreamEventDispatcher::removeCapturerListener(int32_t clientPid)
-{
-    std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
-    if (capturerCBMap_.erase(clientPid)) {
-        AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeCapturerListener:client %{public}d done", clientPid);
-        return;
-    }
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::removeCapturerListener:client %{public}d not present", clientPid);
+    audioPolicyClientRCProxyCBMap_ = proxyCbMap;
+    AUDIO_INFO_LOG("AudioPolicyService::SetAudioPolicyClientProxy, group data num [%{public}zu]",
+        audioPolicyClientRCProxyCBMap_.size());
 }
 
 void AudioStreamEventDispatcher::SendRendererInfoEventToDispatcher(AudioMode mode,
@@ -116,11 +86,11 @@ void AudioStreamEventDispatcher::HandleRendererStreamStateChange(
     const unique_ptr<StreamStateChangeRequest> &streamStateChangeRequest)
 {
     std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
-    for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
-        std::shared_ptr<AudioRendererStateChangeCallback> rendererStateChangeCb = it->second;
+    for (auto it = audioPolicyClientRCProxyCBMap_.begin(); it != audioPolicyClientRCProxyCBMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> rendererStateChangeCb = it->second;
         if (rendererStateChangeCb == nullptr) {
             AUDIO_ERR_LOG("rendererStateChangeCb : nullptr for client : %{public}d", it->first);
-            it = rendererCBMap_.erase(it);
+            it = audioPolicyClientRCProxyCBMap_.erase(it);
             continue;
         }
         rendererStateChangeCb->OnRendererStateChange(streamStateChangeRequest->audioRendererChangeInfos);
@@ -131,11 +101,11 @@ void AudioStreamEventDispatcher::HandleCapturerStreamStateChange(
     const unique_ptr<StreamStateChangeRequest> &streamStateChangeRequest)
 {
     std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
-    for (auto it = capturerCBMap_.begin(); it != capturerCBMap_.end(); ++it) {
-        std::shared_ptr<AudioCapturerStateChangeCallback> capturerStateChangeCb = it->second;
+    for (auto it = audioPolicyClientRCProxyCBMap_.begin(); it != audioPolicyClientRCProxyCBMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> capturerStateChangeCb = it->second;
         if (capturerStateChangeCb == nullptr) {
             AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}d", it->first);
-            it = capturerCBMap_.erase(it);
+            it = audioPolicyClientRCProxyCBMap_.erase(it);
             continue;
         }
         capturerStateChangeCb->OnCapturerStateChange(streamStateChangeRequest->audioCapturerChangeInfos);
