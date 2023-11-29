@@ -105,6 +105,8 @@ public:
 
     int32_t UpdateSpatializationState(std::vector<bool> spatializationState) override;
 
+    int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
