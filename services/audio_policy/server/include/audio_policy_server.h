@@ -345,6 +345,13 @@ public:
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object) override;
 
+    int32_t ConfigDistributedRoutingRole(AudioDeviceDescriptor *descriptor, CastType type) override;
+
+    int32_t SetDistributedRoutingRoleCallback(int32_t clientId,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetDistributedRoutingRoleCallback(const int32_t clientId) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -481,6 +488,8 @@ private:
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
 
+    void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor, const CastType type);
+
     bool powerStateCallbackRegister_;
     AudioPolicyService& audioPolicyService_;
     int32_t clientOnFocus_;
@@ -501,6 +510,7 @@ private:
     std::unordered_map<int32_t, sptr<IStandardAudioPolicyManagerListener>> focusInfoChangeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
+    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
 
     std::mutex keyEventMutex_;
     std::mutex volumeKeyEventMutex_;
@@ -510,6 +520,7 @@ private:
     std::mutex ringerModeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
+    std::mutex configDistributedRoutingMutex_;
 
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
         this, std::placeholders::_1),

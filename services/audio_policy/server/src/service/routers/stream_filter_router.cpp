@@ -15,6 +15,7 @@
 
 #include "stream_filter_router.h"
 #include "audio_log.h"
+#include "audio_policy_service.h"
 
 using namespace std;
 
@@ -24,7 +25,38 @@ namespace AudioStandard {
 unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().getDistributedRoutingRoleInfo();
+    AudioDeviceDescriptor *deviceDescriptor = routingInfo.descriptor;
+    CastType type = routingInfo.type;
+
+    switch (type) {
+        case CAST_TYPE_NULL: {
+            return make_unique<AudioDeviceDescriptor>();
+        }
+        case CAST_TYPE_ALL: {
+            bool hasDescriptor = AudioPolicyService::GetAudioPolicyService().isIncomingDeviceInRemoteRender(deviceDescriptor);
+            if (hasDescriptor) {
+                unique_ptr<AudioDeviceDescriptor> incomingDevice = make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+                return incomingDevice;
+            }
+            return make_unique<AudioDeviceDescriptor>();
+        }
+        case CAST_TYPE_PROJECTION: {
+            if (STREAM_USAGE_MUSIC == streamUsage) {
+                bool hasDescriptor = AudioPolicyService::GetAudioPolicyService().isIncomingDeviceInRemoteRender(deviceDescriptor);
+                unique_ptr<AudioDeviceDescriptor> incomingDevice = make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+                return incomingDevice;
+            }
+            return make_unique<AudioDeviceDescriptor>();
+        }
+        case CAST_TYPE_COOPERATION: {
+            return make_unique<AudioDeviceDescriptor>();
+        }
+        default: {
+            AUDIO_ERR_LOG("GetMediaRenderDevice unhandled cast type: %{public}d", type);
+            return make_unique<AudioDeviceDescriptor>();
+        }
+    }
 }
 
 unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(StreamUsage streamUsage,
