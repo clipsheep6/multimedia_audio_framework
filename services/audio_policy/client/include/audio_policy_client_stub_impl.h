@@ -27,31 +27,33 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioPolicyClientStubImpl : public AudioPolicyClientStub {
 public:
-    int32_t SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
-    int32_t UnsetVolumeKeyEventCallback();
-    int32_t SetFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &cb);
-    int32_t UnsetFocusInfoChangeCallback();
-    int32_t SetDeviceChangeCallback(const DeviceFlag &flag,
+    int32_t AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
+    int32_t RemoveVolumeKeyEventCallback();
+    int32_t AddFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &cb);
+    int32_t RemoveFocusInfoChangeCallback();
+    int32_t AddDeviceChangeCallback(const DeviceFlag &flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback> &cb);
-    int32_t UnSetDeviceChangeCallback();
-    int32_t SetRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
-    int32_t UnsetRingerModeCallback();
-    int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &cb);
-    int32_t UnsetMicStateChangeCallback();
-    int32_t SetPreferredOutputDeviceChangeCallback(
+    int32_t RemoveDeviceChangeCallback();
+    int32_t AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
+    int32_t RemoveRingerModeCallback();
+    int32_t AddMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &cb);
+    int32_t RemoveMicStateChangeCallback();
+    int32_t AddPreferredOutputDeviceChangeCallback(
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb);
-    int32_t UnsetPreferredOutputDeviceChangeCallback();
-    int32_t SetPreferredInputDeviceChangeCallback(
+    int32_t RemovePreferredOutputDeviceChangeCallback();
+    int32_t AddPreferredInputDeviceChangeCallback(
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb);
-    int32_t UnsetPreferredInputDeviceChangeCallback();
-    int32_t SetRendererStateChangeCallback(const std::shared_ptr<AudioRendererStateChangeCallback> &cb);
-    int32_t UnsetRendererStateChangeCallback();
-    int32_t SetCapturerStateChangeCallback(const std::shared_ptr<AudioCapturerStateChangeCallback> &cb);
-    int32_t UnsetCapturerStateChangeCallback();
+    int32_t RemovePreferredInputDeviceChangeCallback();
+    int32_t AddRendererStateChangeCallback(const std::shared_ptr<AudioRendererStateChangeCallback> &cb);
+    int32_t RemoveRendererStateChangeCallback();
+    int32_t AddCapturerStateChangeCallback(const std::shared_ptr<AudioCapturerStateChangeCallback> &cb);
+    int32_t RemoveCapturerStateChangeCallback();
 
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
-    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction, bool hasBTPermission) override;
+    void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
+    void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
@@ -64,7 +66,6 @@ public:
 private:
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
         const std::vector<sptr<AudioDeviceDescriptor>>& desc);
-    void UpdateDescWhenNoBTPermission(std::vector<sptr<AudioDeviceDescriptor>> &deviceDescs);
 
     std::vector<std::shared_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
@@ -75,6 +76,16 @@ private:
     std::vector<std::shared_ptr<AudioPreferredInputDeviceChangeCallback>> preferredInputDeviceCallbackList_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
+
+    std::mutex volumeKeyEventMutex_;
+    std::mutex focusInfoChangeMutex_;
+    std::mutex deviceChangeMutex_;
+    std::mutex ringerModeMutex_;
+    std::mutex micStateChangeMutex_;
+    std::mutex pOutputDeviceChangeMutex_;
+    std::mutex pInputDeviceChangeMutex_;
+    std::mutex rendererStateChangeMutex_;
+    std::mutex capturerStateChangeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -32,6 +32,8 @@ static const int32_t UPDATE_CALLBACK_CLIENT = 0;
 enum class AudioPolicyClientCode {
     ON_VOLUME_KEY_EVENT = 0,
     ON_FOCUS_INFO_CHANGED,
+    ON_FOCUS_REQUEST_CHANGED,
+    ON_FOCUS_ABANDON_CHANGED,
     ON_DEVICE_CHANGE,
     ON_RINGERMODE_UPDATE,
     ON_MIC_STATE_UPDATED,
@@ -45,7 +47,9 @@ class IAudioPolicyClient : public IRemoteBroker {
 public:
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
     virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
-    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction, bool hasBTPermission) =0;
+    virtual void OnAudioFocusRequested(const AudioInterrupt &requestFocus) = 0;
+    virtual void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) = 0;
+    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) =0;
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;

@@ -98,7 +98,7 @@ void AudioPolicyManagerListenerProxy::OnAvailableDeviceChange(const AudioDeviceU
     }
 
     int error = Remote()->SendRequest(ON_AVAILABLE_DEVICE_CAHNGE, data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnDeviceChange failed, error: %{public}d", error);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnAvailableDeviceChange failed, error: %{public}d", error);
 }
 } // namespace AudioStandard
 } // namespace OHOS

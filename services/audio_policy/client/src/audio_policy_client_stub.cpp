@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include <utility>
 #include "audio_policy_client_stub.h"
+#include <utility>
 #include "audio_errors.h"
 #include "audio_log.h"
 
@@ -75,10 +75,23 @@ void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, Mess
     OnAudioFocusInfoChange(infoList);
 }
 
+void AudioPolicyClientStub::HandleAudioFocusRequested(MessageParcel &data, MessageParcel &reply)
+{
+    AudioInterrupt requestFocus = {};
+    requestFocus.Unmarshalling(data);
+    OnAudioFocusRequested(requestFocus);
+}
+
+void AudioPolicyClientStub::HandleAudioFocusAbandoned(MessageParcel &data, MessageParcel &reply)
+{
+    AudioInterrupt abandonFocus = {};
+    abandonFocus.Unmarshalling(data);
+    OnAudioFocusAbandoned(abandonFocus);
+}
+
 void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParcel &reply)
 {
     std::unique_ptr<DeviceChangeAction> object = std::make_unique<DeviceChangeAction>();
-    bool hasBTPermission = data.ReadBool();
     DeviceChangeAction deviceChange;
     deviceChange.type = static_cast<DeviceChangeType>(data.ReadUint32());
     deviceChange.flag = static_cast<DeviceFlag>(data.ReadUint32());
@@ -86,7 +99,7 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
     for (uint32_t i = 0; i < size; i++) {
         deviceChange.deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
-    OnDeviceChange(deviceChange, hasBTPermission);
+    OnDeviceChange(deviceChange);
 }
 
 void AudioPolicyClientStub::HandleRingerModeUpdated(MessageParcel &data, MessageParcel &reply)

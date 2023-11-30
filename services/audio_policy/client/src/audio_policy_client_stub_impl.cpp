@@ -19,13 +19,14 @@
 
 namespace OHOS {
 namespace AudioStandard {
-int32_t AudioPolicyClientStubImpl::SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
+int32_t AudioPolicyClientStubImpl::AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
 {
+    std::lock_guard<std::mutex> lockCbMap(volumeKeyEventMutex_);
     volumeKeyEventCallbackList_.push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::UnsetVolumeKeyEventCallback()
+int32_t AudioPolicyClientStubImpl::RemoveVolumeKeyEventCallback()
 {
     volumeKeyEventCallbackList_.clear();
     return SUCCESS;
@@ -38,13 +39,14 @@ void AudioPolicyClientStubImpl::OnVolumeKeyEvent(VolumeEvent volumeEvent)
     }
 }
 
-int32_t AudioPolicyClientStubImpl::SetFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &cb)
+int32_t AudioPolicyClientStubImpl::AddFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &cb)
 {
+    std::lock_guard<std::mutex> lockCbMap(focusInfoChangeMutex_);
     focusInfoChangeCallbackList_.push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::UnsetFocusInfoChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemoveFocusInfoChangeCallback()
 {
     focusInfoChangeCallbackList_.clear();
     return SUCCESS;
@@ -55,6 +57,20 @@ void AudioPolicyClientStubImpl::OnAudioFocusInfoChange(
 {
     for (auto it = focusInfoChangeCallbackList_.begin(); it != focusInfoChangeCallbackList_.end(); ++it) {
         (*it)->OnAudioFocusInfoChange(focusInfoList);
+    }
+}
+
+void AudioPolicyClientStubImpl::OnAudioFocusRequested(const AudioInterrupt &requestFocus)
+{
+    for (auto it = focusInfoChangeCallbackList_.begin(); it != focusInfoChangeCallbackList_.end(); ++it) {
+        (*it)->OnAudioFocusRequested(requestFocus);
+    }
+}
+
+void AudioPolicyClientStubImpl::OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus)
+{
+    for (auto it = focusInfoChangeCallbackList_.begin(); it != focusInfoChangeCallbackList_.end(); ++it) {
+        (*it)->OnAudioFocusAbandoned(abandonFocus);
     }
 }
 
@@ -106,55 +122,40 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilter
     return descRet;
 }
 
-void AudioPolicyClientStubImpl::UpdateDescWhenNoBTPermission(std::vector<sptr<AudioDeviceDescriptor>> &deviceDescs)
-{
-    AUDIO_WARNING_LOG("UpdateDescWhenNoBTPermission: No bt permission");
-
-    for (sptr<AudioDeviceDescriptor> &desc : deviceDescs) {
-        if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
-            sptr<AudioDeviceDescriptor> copyDesc = new AudioDeviceDescriptor(desc);
-            copyDesc->deviceName_ = "";
-            copyDesc->macAddress_ = "";
-            desc = copyDesc;
-        }
-    }
-}
-
-int32_t AudioPolicyClientStubImpl::SetDeviceChangeCallback(const DeviceFlag &flag,
+int32_t AudioPolicyClientStubImpl::AddDeviceChangeCallback(const DeviceFlag &flag,
     const std::shared_ptr<AudioManagerDeviceChangeCallback> &cb)
 {
+    std::lock_guard<std::mutex> lockCbMap(deviceChangeMutex_);
     deviceChangeCallbackList_.push_back(std::make_pair(flag, cb));
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::UnSetDeviceChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemoveDeviceChangeCallback()
 {
     deviceChangeCallbackList_.clear();
     return SUCCESS;
 }
 
-void AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca, bool hasBTPermission)
+void AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca)
 {
     DeviceChangeAction deviceChangeAction;
     for (auto it = deviceChangeCallbackList_.begin(); it != deviceChangeCallbackList_.end(); ++it) {
         deviceChangeAction.flag = it->first;
         deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first, dca.deviceDescriptors);
         if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
-            if (!(hasBTPermission)) {
-                UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
-            }
             it->second->OnDeviceChange(deviceChangeAction);
         }
     }
 }
 
-int32_t AudioPolicyClientStubImpl::SetRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb)
+int32_t AudioPolicyClientStubImpl::AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb)
 {
+    std::lock_guard<std::mutex> lockCbMap(ringerModeMutex_);
     ringerModeCallbackList_.push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::UnsetRingerModeCallback()
+int32_t AudioPolicyClientStubImpl::RemoveRingerModeCallback()
 {
     ringerModeCallbackList_.clear();
     return SUCCESS;
@@ -167,13 +168,14 @@ void AudioPolicyClientStubImpl::OnRingerModeUpdated(const AudioRingerMode &ringe
     }
 }
 
-int32_t AudioPolicyClientStubImpl::SetMicStateChangeCallback(
+int32_t AudioPolicyClientStubImpl::AddMicStateChangeCallback(
     const std::shared_ptr<AudioManagerMicStateChangeCallback> &cb)
 {
+    std::lock_guard<std::mutex> lockCbMap(micStateChangeMutex_);
     micStateChangeCallbackList_.push_back(cb);
     return SUCCESS;
 }
-int32_t AudioPolicyClientStubImpl::UnsetMicStateChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemoveMicStateChangeCallback()
 {
     micStateChangeCallbackList_.clear();
     return SUCCESS;
@@ -186,14 +188,15 @@ void AudioPolicyClientStubImpl::OnMicStateUpdated(const MicStateChangeEvent &mic
     }
 }
 
-int32_t AudioPolicyClientStubImpl::SetPreferredOutputDeviceChangeCallback(
+int32_t AudioPolicyClientStubImpl::AddPreferredOutputDeviceChangeCallback(
     const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb)
 {
+    std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
     preferredOutputDeviceCallbackList_.push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::UnsetPreferredOutputDeviceChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemovePreferredOutputDeviceChangeCallback()
 {
     preferredOutputDeviceCallbackList_.clear();
     return SUCCESS;
@@ -206,14 +209,15 @@ void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(const std::vector
     }
 }
 
-int32_t AudioPolicyClientStubImpl::SetPreferredInputDeviceChangeCallback(
+int32_t AudioPolicyClientStubImpl::AddPreferredInputDeviceChangeCallback(
     const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb)
 {
+    std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
     preferredInputDeviceCallbackList_.push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::UnsetPreferredInputDeviceChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemovePreferredInputDeviceChangeCallback()
 {
     preferredInputDeviceCallbackList_.clear();
     return SUCCESS;
@@ -226,14 +230,15 @@ void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const std::vector<
     }
 }
 
-int32_t AudioPolicyClientStubImpl::SetRendererStateChangeCallback(
+int32_t AudioPolicyClientStubImpl::AddRendererStateChangeCallback(
     const std::shared_ptr<AudioRendererStateChangeCallback> &cb)
 {
+    std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
     rendererStateChangeCallbackList_.push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::UnsetRendererStateChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemoveRendererStateChangeCallback()
 {
     rendererStateChangeCallbackList_.clear();
     return SUCCESS;
@@ -247,14 +252,15 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
     }
 }
 
-int32_t AudioPolicyClientStubImpl::SetCapturerStateChangeCallback(
+int32_t AudioPolicyClientStubImpl::AddCapturerStateChangeCallback(
     const std::shared_ptr<AudioCapturerStateChangeCallback> &cb)
 {
+    std::lock_guard<std::mutex> lockCbMap(capturerStateChangeMutex_);
     capturerStateChangeCallbackList_.push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::UnsetCapturerStateChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemoveCapturerStateChangeCallback()
 {
     capturerStateChangeCallbackList_.clear();
     return SUCCESS;

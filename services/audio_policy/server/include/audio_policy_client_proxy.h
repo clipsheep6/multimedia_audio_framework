@@ -31,7 +31,9 @@ public:
 
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
-    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction, bool hasBTPermission) override;
+    void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
+    void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;

@@ -237,47 +237,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001,
 }
 
 /**
- * @tc.name  : Test Audio_Policy_RegisterAudioRendererEventListener_001 via illegal state
- * @tc.number: Audio_Policy_RegisterAudioRendererEventListener_001
- * @tc.desc  : Test RegisterAudioRendererEventListener interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterAudioRendererEventListener_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
-    sptr<IRemoteObject> object;
-    AudioPolicyUnitTest::GetIRemoteObject(object);
-    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
-    EXPECT_EQ(ERROR, ret);
-
-    ret = audioPolicyProxy->UnregisterPolicyCallbackClient();
-    EXPECT_EQ(ERROR, ret);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_RegisterAudioCapturerEventListener_001 via illegal state
- * @tc.number: Audio_Policy_RegisterAudioCapturerEventListener_001
- * @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterAudioCapturerEventListener_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
-    sptr<IRemoteObject> object;
-    AudioPolicyUnitTest::GetIRemoteObject(object);
-
-    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
-    EXPECT_EQ(ERROR, ret);
-
-    ret = audioPolicyProxy->UnregisterPolicyCallbackClient();
-    EXPECT_EQ(ERROR, ret);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_Manager_IsStreamActive_001 via illegal state
  * @tc.number: Audio_Policy_Manager_IsStreamActive_001
  * @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
@@ -459,43 +418,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_001,
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = audioPolicyProxy->GetPreferredInputDeviceDescriptors(capturerInfo);
     EXPECT_EQ(true, deviceInfo.size() >= 0);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_SetMicStateChangeCallback_001 via legal state
- * @tc.number: Audio_Policy_SetMicStateChangeCallback_001
- * @tc.desc  : Test SetMicStateChangeCallback interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicStateChangeCallback_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
-    sptr<IRemoteObject> object;
-    AudioPolicyUnitTest::GetIRemoteObject(object);
-    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
-    EXPECT_LE(ret, 0);
-
-    object = nullptr;
-    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
-    EXPECT_EQ(true, ret > 0);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_SetMicStateChangeCallback_002 via illegal state
- * @tc.number: Audio_Policy_SetMicStateChangeCallback_002
- * @tc.desc  : Test SetMicStateChangeCallback interface. Returns invalid.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicStateChangeCallback_002, TestSize.Level1)
-{
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
-    sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
 }
 
 /**
@@ -820,59 +742,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Client_Tracker_Callback_Stub_001, TestSize.Lev
 
     streamSetStateEventInternal.streamSetState= StreamSetState::STREAM_PAUSE;
     audioClientTrackerCallbackStub->PausedStreamImpl(streamSetStateEventInternal);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_SetRingerMode_001 via legal state
- * @tc.number: Audio_Policy_SetRingerMode_001
- * @tc.desc  : Test SetRingerMode interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_SetRingerMode_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
-    API_VERSION api_v = API_9;
-    AudioRingerMode ringMode = AudioRingerMode::RINGER_MODE_SILENT;
-    int32_t ret = audioPolicyProxy->SetRingerMode(ringMode, api_v);
-    EXPECT_EQ(FAILURE, ret);
-
-    AudioRingerMode ringModeRet = audioPolicyProxy->GetRingerMode();
-    EXPECT_EQ(ringMode, ringModeRet);
-
-    sptr<IRemoteObject> object = nullptr;
-    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
-
-    AudioPolicyUnitTest::GetIRemoteObject(object);
-    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
-    EXPECT_EQ(ERROR, ret);
-
-    ret = audioPolicyProxy->UnregisterPolicyCallbackClient();
-    EXPECT_EQ(ERROR, ret);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_Callback via illegal state
- * @tc.number: Audio_Policy_SetCallback_001
- * @tc.desc  : Test set callback interface when object is nullptr
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_SetCallback_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
-    int32_t ret = -1;
-    sptr<IRemoteObject> object = nullptr;
-    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
-
-    const std::string key = "testkey";
-    const std::string uri = "testuri";
-    ret = audioPolicyProxy->SetSystemSoundUri(key, uri);
-    EXPECT_EQ(FAILURE, ret);
 }
 
 /**

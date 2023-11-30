@@ -441,7 +441,7 @@ int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t client
         }
     }
 
-    audioPolicyClientStubCB_->SetFocusInfoChangeCallback(callback);
+    audioPolicyClientStubCB_->AddFocusInfoChangeCallback(callback);
     return SUCCESS;
 }
 
@@ -553,7 +553,7 @@ int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
             return ret;
         }
     }
-    audioPolicyClientStubCB_->SetRingerModeCallback(callback);
+    audioPolicyClientStubCB_->AddRingerModeCallback(callback);
     return SUCCESS;
 }
 
@@ -610,7 +610,7 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
         }
     }
 
-    audioPolicyClientStubCB_->SetDeviceChangeCallback(flag, callback);
+    audioPolicyClientStubCB_->AddDeviceChangeCallback(flag, callback);
     return SUCCESS;
 }
 
@@ -652,7 +652,7 @@ int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const int32_t
         }
     }
 
-    audioPolicyClientStubCB_->SetPreferredOutputDeviceChangeCallback(callback);
+    audioPolicyClientStubCB_->AddPreferredOutputDeviceChangeCallback(callback);
     return SUCCESS;
 }
 
@@ -677,7 +677,7 @@ int32_t AudioPolicyManager::SetPreferredInputDeviceChangeCallback(
         }
     }
 
-    audioPolicyClientStubCB_->SetPreferredInputDeviceChangeCallback(callback);
+    audioPolicyClientStubCB_->AddPreferredInputDeviceChangeCallback(callback);
     return SUCCESS;
 }
 
@@ -734,7 +734,7 @@ int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
         }
     }
 
-    audioPolicyClientStubCB_->SetMicStateChangeCallback(callback);
+    audioPolicyClientStubCB_->AddMicStateChangeCallback(callback);
     return SUCCESS;
 }
 
@@ -904,7 +904,7 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
         }
     }
 
-    audioPolicyClientStubCB_->SetVolumeKeyEventCallback(callback);
+    audioPolicyClientStubCB_->AddVolumeKeyEventCallback(callback);
     return SUCCESS;
 }
 
@@ -946,7 +946,7 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
         }
     }
 
-    audioPolicyClientStubCB_->SetRendererStateChangeCallback(callback);
+    audioPolicyClientStubCB_->AddRendererStateChangeCallback(callback);
     return SUCCESS;
 }
 
@@ -989,7 +989,7 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
         }
     }
 
-    audioPolicyClientStubCB_->SetCapturerStateChangeCallback(callback);
+    audioPolicyClientStubCB_->AddCapturerStateChangeCallback(callback);
     return SUCCESS;
 }
 

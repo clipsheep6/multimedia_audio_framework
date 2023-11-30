@@ -32,6 +32,8 @@ public:
 private:
     void HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply);
     void HandleAudioFocusInfoChange(MessageParcel &data, MessageParcel &reply);
+    void HandleAudioFocusRequested(MessageParcel &data, MessageParcel &reply);
+    void HandleAudioFocusAbandoned(MessageParcel &data, MessageParcel &reply);
     void HandleDeviceChange(MessageParcel &data, MessageParcel &reply);
     void HandleRingerModeUpdated(MessageParcel &data, MessageParcel &reply);
     void HandleMicStateChange(MessageParcel &data, MessageParcel &reply);
@@ -44,6 +46,8 @@ private:
     static inline HandlerFunc handlers[]  = {
         &AudioPolicyClientStub::HandleVolumeKeyEvent,
         &AudioPolicyClientStub::HandleAudioFocusInfoChange,
+        &AudioPolicyClientStub::HandleAudioFocusRequested,
+        &AudioPolicyClientStub::HandleAudioFocusAbandoned,
         &AudioPolicyClientStub::HandleDeviceChange,
         &AudioPolicyClientStub::HandleRingerModeUpdated,
         &AudioPolicyClientStub::HandleMicStateChange,

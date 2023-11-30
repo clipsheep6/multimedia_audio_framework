@@ -43,8 +43,7 @@ void AudioPolicyClientProxy::OnVolumeKeyEvent(VolumeEvent volumeEvent)
     data.WriteBool(volumeEvent.updateUi);
     data.WriteInt32(volumeEvent.volumeGroupId);
     data.WriteString(volumeEvent.networkId);
-    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
-        data, reply, option);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending volume key event %{public}d", error);
     }
@@ -68,15 +67,52 @@ void AudioPolicyClientProxy::OnAudioFocusInfoChange(
         iter->first.Marshalling(data);
         data.WriteInt32(iter->second);
     }
-    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
-        data, reply, option);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending focus change info: %{public}d", error);
     }
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChangeAction, bool hasBTPermission)
+void AudioPolicyClientProxy::OnAudioFocusRequested(const AudioInterrupt &requestFocus)
+{
+    AUDIO_DEBUG_LOG("OnAudioFocusRequested in listener proxy.");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_FOCUS_REQUEST_CHANGED));
+    requestFocus.Marshalling(data);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OnAudioFocusRequested failed, error: %{public}d", error);
+    }
+}
+
+void AudioPolicyClientProxy::OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus)
+{
+    AUDIO_DEBUG_LOG("OnAudioFocusRequested in listener proxy.");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_FOCUS_ABANDON_CHANGED));
+    abandonFocus.Marshalling(data);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OnAudioFocusAbandoned failed, error: %{public}d", error);
+    }
+}
+
+void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -86,19 +122,16 @@ void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChan
         return;
     }
 
-    data.WriteBool(hasBTPermission);
     auto devices = deviceChangeAction.deviceDescriptors;
     size_t size = deviceChangeAction.deviceDescriptors.size();
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE));
     data.WriteInt32(deviceChangeAction.type);
     data.WriteInt32(deviceChangeAction.flag);
     data.WriteInt32(static_cast<int32_t>(size));
-
     for (size_t i = 0; i < size; i++) {
         devices[i]->Marshalling(data);
     }
-    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
-        data, reply, option);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending device change info: %{public}d", error);
     }
@@ -117,8 +150,7 @@ void AudioPolicyClientProxy::OnRingerModeUpdated(const AudioRingerMode &ringerMo
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE));
     data.WriteInt32(static_cast<int32_t>(ringerMode));
-    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
-        data, reply, option);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending ringer mode updated info: %{public}d", error);
     }
@@ -137,8 +169,7 @@ void AudioPolicyClientProxy::OnMicStateUpdated(const MicStateChangeEvent &micSta
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED));
     data.WriteBool(micStateChangeEvent.mute);
-    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
-        data, reply, option);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending ringer mode updated info: %{public}d", error);
     }
@@ -162,8 +193,7 @@ void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const std::vector<sp
         desc[i]->Marshalling(data);
     }
 
-    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
-        data, reply, option);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending preferred output device updated info: %{public}d", error);
     }
@@ -187,8 +217,7 @@ void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const std::vector<spt
         desc[i]->Marshalling(data);
     }
 
-    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT),
-        data, reply, option);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending preferred input device updated info: %{public}d", error);
     }

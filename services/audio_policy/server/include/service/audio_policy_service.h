@@ -502,9 +502,6 @@ private:
         std::vector<sptr<AudioDeviceDescriptor>> &desc);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
- 
-    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
-        const std::vector<sptr<AudioDeviceDescriptor>>& desc);
 
     void GetAllRunningStreamSessionAndType(std::vector<int32_t> &allSessions, std::vector<int32_t> &streamTypes,
         bool doStop = false);

@@ -4013,8 +4013,11 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
     WriteDeviceChangedSysEvents(desc, isConnected);
 
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        if (it->second) {
-            it->second->OnDeviceChange(deviceChangeAction, it->second->hasBTPermission_);
+        if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
+            if (!(it->second->hasBTPermission_)) {
+                UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
+            }
+            it->second->OnDeviceChange(deviceChangeAction);
         }
     }
 }
