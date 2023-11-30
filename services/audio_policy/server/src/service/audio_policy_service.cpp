@@ -1125,6 +1125,43 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
     return streamCollector_.IsStreamActive(streamType);
 }
 
+void AudioPolicyService::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
+{
+    StoreDistributedRoutingRoleInfo(descriptor, type);
+    FetchDevice(true);
+    FetchDevice(false);
+}
+
+void AudioPolicyService::StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
+{
+    distributedRoutingInfo_.descriptor = descriptor;
+    distributedRoutingInfo_.type = type;
+}
+
+DistributedRoutingInfo AudioPolicyService::GetDistributedRoutingRoleInfo()
+{
+    return distributedRoutingInfo_;
+}
+
+bool AudioPolicyService::IsIncomingDeviceInRemoteRender(sptr<AudioDeviceDescriptor> incomingDevice)
+{
+    bool hasDescriptor = false;
+    vector<unique_ptr<AudioDeviceDescriptor>> descriptors = audioDeviceManager_.GetRemoteRenderDevices();
+    for (const auto &desc : descriptors) {
+        if (desc != nullptr) {
+            if (desc->deviceRole_ == incomingDevice->deviceRole_ &&
+                desc->deviceType_ == incomingDevice->deviceType_ &&
+                desc->interruptGroupId_ == incomingDevice->interruptGroupId_ &&
+                desc->volumeGroupId_ == incomingDevice->volumeGroupId_ &&
+                desc->networkId_ == incomingDevice->networkId_ &&
+                desc->macAddress_ == incomingDevice->macAddress_) {
+                hasDescriptor = true;
+            }
+        }
+    }
+    return hasDescriptor;
+}
+
 std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType)
 {
     std::string portName = PORT_NONE;
