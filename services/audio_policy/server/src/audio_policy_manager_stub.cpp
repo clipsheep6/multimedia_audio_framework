@@ -1048,6 +1048,33 @@ void AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal(MessageP
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    CastType type = static_cast<CastType>(data.ReadInt32());
+    int32_t result = ConfigDistributedRoutingRole(descriptor, type);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetDistributedRoutingRoleCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetDistributedRoutingRoleCallback obj is null");
+        return;
+    }
+    int32_t result = SetDistributedRoutingRoleCallback(clientId, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetDistributedRoutingRoleCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    int32_t result = UnsetDistributedRoutingRoleCallback(clientId);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::IsSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply)
 {
     bool result = IsSpatializationEnabled();
