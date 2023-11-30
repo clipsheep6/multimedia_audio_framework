@@ -1471,7 +1471,7 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = tru
     return priorityDevice;
 }
 
-void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
+void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType)
 {
     AUDIO_INFO_LOG("UpdateActiveDeviceRoute Device type[%{public}d]", deviceType);
 
@@ -1480,6 +1480,10 @@ void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
         return;
     }
     auto ret = SUCCESS;
+
+    if (deviceType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
+        deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    }
 
     switch (deviceType) {
         case DEVICE_TYPE_BLUETOOTH_SCO:
@@ -1606,11 +1610,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
                 FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
                 return;
             }
-
-            if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
-                Bluetooth::AudioA2dpManager::OffloadStartPlaying(std::vector<int32_t>(1,
-                    rendererChangeInfo->sessionId));
-            }
+            OffloadStartPlayingIfOffloadMode(rendererChangeInfo->sessionId);
         }
         if (needUpdateActiveDevice) {
             if (currentActiveDevice_.deviceType_ != desc->deviceType_ ||
@@ -1634,6 +1634,15 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     } else if (needUpdateActiveDevice) {
         FetchOutputDeviceWhenNoRunningStream();
     }
+}
+
+void AudioPolicyService::OffloadStartPlayingIfOffloadMode(uint64_t sessionId)
+{
+#ifdef BLUETOOTH_ENABLE
+    if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+        Bluetooth::AudioA2dpManager::OffloadStartPlaying(std::vector<int32_t>(1, sessionId));
+    }
+#endif
 }
 
 void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
@@ -2074,7 +2083,6 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
         }
         std::string activePort = GetSinkPortName(DEVICE_TYPE_USB_ARM_HEADSET);
         AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), DEVICE_TYPE_USB_ARM_HEADSET);
-        audioPolicyManager_.SuspendAudioDevice(activePort, true);
     } else if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
         std::string activePort = GetSinkPortName(DEVICE_TYPE_USB_ARM_HEADSET);
         audioPolicyManager_.SuspendAudioDevice(activePort, true);
@@ -2265,7 +2273,12 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     audioScene_ = audioScene;
 
-    int32_t result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
+    int32_t result = SUCCESS;
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
+        result = gsp->SetAudioScene(audioScene, DEVICE_TYPE_USB_ARM_HEADSET);
+    } else {
+        result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
+    }
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
 
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
@@ -2746,6 +2759,7 @@ std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype)
 
 void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType)
 {
+#ifdef BLUETOOTH_ENABLE
     vector<Bluetooth::A2dpStreamInfo> allSessionInfos;
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -2773,6 +2787,8 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType
         GetA2dpOffloadCodecAndSendToDsp();
         return;
     }
+#endif
+    AUDIO_DEBUG_LOG("deviceType %{public}d", deviceType);
 }
 
 void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, const std::string &macAddress,
@@ -2792,12 +2808,10 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
             * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
         AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
         connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
-
         if ((preA2dpOffloadFlag_ == A2DP_OFFLOAD) && (a2dpOffloadFlag_ == A2DP_NOT_OFFLOAD)) {
             HandleA2dpDeviceOutOffload();
             return;
         }
-
         ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
     }
 }
@@ -4851,6 +4865,7 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetAvailableD
 int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sessionsId,
     const std::vector<int32_t> &streamTypes, bool isNewDeviceActive)
 {
+#ifdef BLUETOOTH_ENABLE
     if (isNewDeviceActive) {
         GetA2dpOffloadCodecAndSendToDsp();
         return Bluetooth::AudioA2dpManager::OffloadStartPlaying(sessionsId);
@@ -4885,19 +4900,25 @@ int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sess
         GetA2dpOffloadCodecAndSendToDsp();
         return Bluetooth::AudioA2dpManager::OffloadStartPlaying(sessionsId);
     }
+#endif
     return SUCCESS;
 }
 
 int32_t AudioPolicyService::OffloadStopPlaying(const std::vector<int32_t> &sessionsId)
 {
+#ifdef BLUETOOTH_ENABLE
     if (a2dpOffloadFlag_ != A2DP_OFFLOAD) {
         return ERROR;
     }
     return Bluetooth::AudioA2dpManager::OffloadStopPlaying(sessionsId);
+#else
+    return ERROR;
+#endif
 }
 
 void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
 {
+#ifdef BLUETOOTH_ENABLE
     if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
         return;
     }
@@ -4909,6 +4930,7 @@ void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
         + std::to_string(offloadCodeStatus.offloadInfo.mPt) + ","
         + std::to_string(offloadCodeStatus.offloadInfo.ssrc) + ","
         + std::to_string(offloadCodeStatus.offloadInfo.boundaryFlag) + ","
+        + std::to_string(offloadCodeStatus.offloadInfo.broadcastFlag) + ","
         + std::to_string(offloadCodeStatus.offloadInfo.codecType) + ","
         + std::to_string(offloadCodeStatus.offloadInfo.maxLatency) + ","
         + std::to_string(offloadCodeStatus.offloadInfo.scmsTEnable) + ","
@@ -4929,8 +4951,10 @@ void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
         + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific7) + ";";
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     gsp->SetAudioParameter(key, value);
+#endif
 }
 
+#ifdef BLUETOOTH_ENABLE
 void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
     DeviceType deviceType)
 {
@@ -4958,9 +4982,11 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
         return;
     }
 }
+#endif
 
 int32_t AudioPolicyService::HandleA2dpDeviceOutOffload()
 {
+#ifdef BLUETOOTH_ENABLE
     if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
         return ERROR;
     }
@@ -4980,10 +5006,14 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload()
     int32_t ret = HandleA2dpOffloadDeviceSuspend(DEVICE_TYPE_BLUETOOTH_A2DP);
     preA2dpOffloadFlag_ = a2dpOffloadFlag_;
     return ret;
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyService::HandleA2dpDeviceInOffload()
 {
+#ifdef BLUETOOTH_ENABLE
     if (a2dpOffloadFlag_ != A2DP_OFFLOAD) {
         return ERROR;
     }
@@ -5005,11 +5035,15 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload()
     audioPolicyManager_.SuspendAudioDevice(activePort, true);
     preA2dpOffloadFlag_ = a2dpOffloadFlag_;
     return OffloadStartPlaying(allSessions, streamTypes, isNewdeviceActive);
+#else
+    return ERROR;
+#endif
 }
 
 void AudioPolicyService::GetAllRunningStreamSessionAndType(std::vector<int32_t> &allSessions,
     std::vector<int32_t> &streamTypes, bool doStop)
 {
+#ifdef BLUETOOTH_ENABLE
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     for (auto &changeInfo : rendererChangeInfos) {
@@ -5022,10 +5056,12 @@ void AudioPolicyService::GetAllRunningStreamSessionAndType(std::vector<int32_t> 
         allSessions.push_back(changeInfo->sessionId);
         streamTypes.push_back(GetStreamType(changeInfo->sessionId));
     }
+#endif
 }
 
 void AudioPolicyService::GetAllRunningStreamSessionAndType(std::vector<int32_t> &allSessions, bool doStop)
 {
+#ifdef BLUETOOTH_ENABLE
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     for (auto &changeInfo : rendererChangeInfos) {
@@ -5037,6 +5073,7 @@ void AudioPolicyService::GetAllRunningStreamSessionAndType(std::vector<int32_t> 
         }
         allSessions.push_back(changeInfo->sessionId);
     }
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS
