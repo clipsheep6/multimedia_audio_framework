@@ -21,6 +21,7 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 group("audio_service_packages") {
   deps = [
     ":audio_common",
+    ":audio_converter_config",
     ":audio_service",
     ":audio_service_init",
   ]
@@ -82,6 +83,19 @@ config("audio_client_public_config") {
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../interfaces/inner_api/native/audiorenderer/include",
   ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+}
+
+config("audio_sasdk_public_config") {
+  include_dirs = [ "../../interfaces/inner_api/native/audiosasdk/include" ]
 
   cflags = [
     "-Wall",
@@ -161,10 +175,24 @@ ohos_shared_library("audio_client") {
     "samgr:samgr_proxy",
   ]
 
+  defines = []
+  if (audio_framework_feature_power_manager) {
+    external_deps += [ "power_manager:powermgr_client" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
+  }
+
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
 
   subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_converter_config") {
+  source = "client/config/audio_converter_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
   part_name = "audio_framework"
 }
 
@@ -197,6 +225,7 @@ config("audio_service_config") {
     "../../frameworks/native/hdiadapter/sink/remote",
     "../../frameworks/native/hdiadapter/sink/remote_fast",
     "../../frameworks/native/hdiadapter/sink/primary",
+    "../../frameworks/native/hdiadapter/sink/offload",
     "../../frameworks/native/hdiadapter/source/common",
     "../../frameworks/native/hdiadapter/source/fast",
     "../../frameworks/native/hdiadapter/source/primary",
@@ -285,6 +314,7 @@ ohos_shared_library("audio_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:offload_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
@@ -297,6 +327,8 @@ ohos_shared_library("audio_service") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
+    "drivers_interface_audio:effect_idl_headers",
+    "drivers_interface_audio:libeffect_proxy_1.0",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
@@ -328,6 +360,8 @@ ohos_shared_library("audio_sasdk") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiosasdk/include",
   ]
+
+  public_configs = [ ":audio_sasdk_public_config" ]
 
   deps = [
     ":audio_common",

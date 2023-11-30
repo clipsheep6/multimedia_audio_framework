@@ -89,6 +89,7 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
       isReadyToRead_(false),
       isFirstRead_(false),
       isFirstWrite_(false),
+      isPausing_(false),
       pfd_(nullptr)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
@@ -166,6 +167,13 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
     }
     uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
+        if (offloadEnable_) {
+            if (paTimeStamp < offloadTsLast_) {
+                offloadTsOffset_ += offloadTsLast_;
+            }
+            offloadTsLast_ = paTimeStamp;
+            paTimeStamp += offloadTsOffset_;
+        }
         if (resetTime_) {
             AUDIO_INFO_LOG("AudioStream::GetAudioTime resetTime_ %{public}d", resetTime_);
             resetTime_ = false;
@@ -177,9 +185,10 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
             timestamp.framePosition = GetStreamFramesRead();
         }
 
-        timestamp.time.tv_sec = static_cast<time_t>((paTimeStamp - resetTimestamp_) / TIME_CONVERSION_US_S);
+        uint64_t delta = paTimeStamp > resetTimestamp_ ? paTimeStamp - resetTimestamp_ : 0;
+        timestamp.time.tv_sec = static_cast<time_t>(delta / TIME_CONVERSION_US_S);
         timestamp.time.tv_nsec
-            = static_cast<time_t>(((paTimeStamp - resetTimestamp_) - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
+            = static_cast<time_t>((delta - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
                                   * TIME_CONVERSION_NS_US);
         timestamp.time.tv_sec += baseTimestamp_.tv_sec;
         timestamp.time.tv_nsec += baseTimestamp_.tv_nsec;
@@ -199,7 +208,7 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
     }
 
     if (streamParams_.encoding == ENCODING_AUDIOVIVID) {
-        if (!converter_->GetInputBufferSize(bufferSize)) {
+        if (converter_ == nullptr || !converter_->GetInputBufferSize(bufferSize)) {
             return ERR_OPERATION_FAILED;
         }
         return SUCCESS;
@@ -384,6 +393,10 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
         AUDIO_ERR_LOG("StartAudioStream Illegal state:%{public}u", state_);
         return false;
     }
+    if (isPausing_) {
+        AUDIO_ERR_LOG("StartAudioStream Illegal isPausing_:%{public}u", isPausing_);
+        return false;
+    }
 
     int32_t ret = StartStream(cmdType);
     if (ret != SUCCESS) {
@@ -497,7 +510,7 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     stream.buffer = buffer;
     stream.bufferLen = bufferSize;
 
-    if (isFirstWrite_) {
+    if (isFirstWrite_ && !offloadEnable_) {
         if (RenderPrebuf(stream.bufferLen)) {
             AUDIO_ERR_LOG("ERR_WRITE_FAILED");
             return ERR_WRITE_FAILED;
@@ -532,6 +545,11 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
     BufferDesc pcmDesc = {pcmBuffer, pcmBufferSize};
     BufferDesc metaDesc = {metaBuffer, metaBufferSize};
 
+    if (converter_ == nullptr) {
+        AUDIO_ERR_LOG("Write: converter isn't init.");
+        return ERR_WRITE_FAILED;
+    }
+    
     if (!converter_->CheckInputValid(pcmDesc, metaDesc)) {
         AUDIO_ERR_LOG("Write: Invalid input.");
         return ERR_INVALID_PARAM;
@@ -580,6 +598,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     State oldState = state_;
     // Update state to stop write thread
     state_ = PAUSED;
+    isPausing_ = true;
 
     if (captureMode_ == CAPTURE_MODE_CALLBACK) {
         isReadyToRead_ = false;
@@ -603,6 +622,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     if (ret != SUCCESS) {
         AUDIO_DEBUG_LOG("StreamPause fail,ret:%{public}d", ret);
         state_ = oldState;
+        isPausing_ = false;
         return false;
     }
 
@@ -612,6 +632,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
+    isPausing_ = false;
     return true;
 }
 
@@ -757,6 +778,31 @@ int32_t AudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback
     return SUCCESS;
 }
 
+inline size_t GetFormatSize(const AudioStreamParams& info)
+{
+    size_t result = 0;
+    size_t bitWidthSize = 0;
+    switch (info.format) {
+        case SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            bitWidthSize = 2; // size is 2
+            break;
+    }
+    result = bitWidthSize * info.channels;
+    return result;
+}
+
 void AudioStream::SetPreferredFrameSize(int32_t frameSize)
 {
     AUDIO_INFO_LOG("Not Supported Yet");
@@ -778,7 +824,8 @@ int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
         GetMinimumBufferSize(length);
         AUDIO_INFO_LOG("AudioServiceClient:: GetMinimumBufferSize: %{public}zu", length);
 
-        writeBufferPool_[i] = std::make_unique<uint8_t[]>(length);
+        writeBufferPool_[i] = std::make_unique<uint8_t[]>(max(length,
+            (size_t)(0.2 * GetFormatSize(streamParams_) * streamParams_.samplingRate))); // 0.2: 200ms is init size
         if (writeBufferPool_[i] == nullptr) {
             AUDIO_ERR_LOG(
                 "AudioServiceClient::GetBufferDescriptor writeBufferPool_[i]==nullptr. Allocate memory failed.");
@@ -1065,6 +1112,16 @@ int32_t AudioStream::SetLowPowerVolume(float volume)
 float AudioStream::GetLowPowerVolume()
 {
     return GetStreamLowPowerVolume();
+}
+
+int32_t AudioStream::SetOffloadMode(int32_t state, bool isAppBack)
+{
+    return SetStreamOffloadMode(state, isAppBack);
+}
+
+int32_t AudioStream::UnsetOffloadMode()
+{
+    return UnsetStreamOffloadMode();
 }
 
 float AudioStream::GetSingleStreamVolume()

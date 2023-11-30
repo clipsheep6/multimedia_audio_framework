@@ -120,7 +120,7 @@ void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDevice
     DeviceRole devRole)
 {
     auto isPresent = [&devDesc, &devRole] (const shared_ptr<AudioDeviceDescriptor> &desc) {
-        if (desc->deviceRole_ != devRole) {
+        if (desc->networkId_ != devDesc->networkId_ || desc->deviceRole_ != devRole) {
             return false;
         }
         if (devDesc->macAddress_ != "" && devDesc->macAddress_ == desc->macAddress_) {
@@ -246,7 +246,8 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
         if (descriptor->deviceType_ == deviceDescriptor->deviceType_ &&
             descriptor->networkId_ == deviceDescriptor->networkId_ &&
             descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
-            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
                 return true;
             } else {
                 // if the disconnecting device is A2DP, need to compare mac address in addition.
@@ -258,6 +259,13 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
 
     auto iter = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (iter != connectedDevices_.end()) {
+        if ((deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) &&
+            (*iter)->deviceCategory_ != deviceDescriptor->deviceCategory_) {
+            AUDIO_INFO_LOG("A2DP device category changed,RemoveConnectedDevices");
+            RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(deviceDescriptor));
+            return false;
+        }
         **iter = deviceDescriptor;
         UpdateDeviceInfo(*iter);
         return true;
@@ -268,26 +276,26 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
 void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
-    if (!devDesc) {
-        AUDIO_ERR_LOG("Memory allocation failed");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(devDesc != nullptr, "Memory allocation failed");
 
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
+        AUDIO_INFO_LOG("The device has been added and will not be added again.");
         return;
     }
 
     UpdateDeviceInfo(devDesc);
     AddConnectedDevices(devDesc);
 
-    HandleScoWithDefaultCategory(devDesc);
-    AddDefaultDevices(deviceDescriptor);
-    AddRemoteRenderDev(devDesc);
-    AddRemoteCaptureDev(devDesc);
-
-    AddCommunicationDevices(devDesc);
-    AddMediaDevices(devDesc);
-    AddCaptureDevices(devDesc);
+    if (devDesc->networkId_ != LOCAL_NETWORK_ID) {
+        AddRemoteRenderDev(devDesc);
+        AddRemoteCaptureDev(devDesc);
+    } else {
+        HandleScoWithDefaultCategory(devDesc);
+        AddDefaultDevices(deviceDescriptor);
+        AddCommunicationDevices(devDesc);
+        AddMediaDevices(devDesc);
+        AddCaptureDevices(devDesc);
+    }
 }
 
 void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
@@ -295,7 +303,8 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
 {
     auto isPresent = [&devDesc] (const shared_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-        return devDesc.deviceType_ == desc->deviceType_ && devDesc.macAddress_ == desc->macAddress_;
+        return devDesc.deviceType_ == desc->deviceType_ && devDesc.macAddress_ == desc->macAddress_ &&
+            devDesc.networkId_ == desc->networkId_;
     };
 
     auto itr = find_if(descArray.begin(), descArray.end(), isPresent);
@@ -527,12 +536,28 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
     }
 }
 
+bool AudioDeviceManager::IsExistedDevice(const sptr<AudioDeviceDescriptor> &device,
+    const vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    bool isExistedDev = false;
+    for (const auto &dev : audioDeviceDescriptors) {
+        if (device->deviceType_ == dev->deviceType_ &&
+            device->networkId_ == dev->networkId_ &&
+            device->deviceRole_ == dev->deviceRole_ &&
+            device->macAddress_ == dev->macAddress_) {
+            isExistedDev = true;
+        }
+    }
+    return isExistedDev;
+}
+
 void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
     const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
     vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
     for (auto &deviceInfo : deviceInfos) {
-        if (dev->deviceType_ != deviceInfo.deviceType) {
+        if (dev->deviceType_ != deviceInfo.deviceType ||
+            IsExistedDevice(dev, audioDeviceDescriptors)) {
             continue;
         }
         AddAvailableDevicesByUsage(usage, deviceInfo, dev, audioDeviceDescriptors);
@@ -580,6 +605,18 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
 unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> AudioDeviceManager::GetDevicePrivacyMaps()
 {
     return devicePrivacyMaps_;
+}
+
+std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableBluetoothDevice(DeviceType devType,
+    const std::string &macAddress)
+{
+    std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    for (auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == devType && desc->macAddress_ == macAddress) {
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+        }
+    }
+    return audioDeviceDescriptors;
 }
 }
 }

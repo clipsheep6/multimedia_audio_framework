@@ -463,6 +463,7 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
 
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 {
+    Trace trace("AudioRenderer::Start");
     AUDIO_INFO_LOG("AudioRenderer::Start");
     RendererState state = GetStatus();
     if ((state != RENDERER_PREPARED) && (state != RENDERER_STOPPED) && (state != RENDERER_PAUSED)) {
@@ -536,6 +537,7 @@ bool AudioRendererPrivate::Flush() const
 
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
+    Trace trace("AudioRenderer::Pause");
     AUDIO_INFO_LOG("AudioRenderer::Pause");
     if (isSwitching_) {
         AUDIO_ERR_LOG("AudioRenderer::Pause failed. Switching state: %{public}d", isSwitching_);
@@ -926,6 +928,16 @@ int32_t AudioRendererPrivate::SetLowPowerVolume(float volume) const
 float AudioRendererPrivate::GetLowPowerVolume() const
 {
     return audioStream_->GetLowPowerVolume();
+}
+
+int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) const
+{
+    return audioStream_->SetOffloadMode(state, isAppBack);
+}
+
+int32_t AudioRendererPrivate::UnsetOffloadMode() const
+{
+    return audioStream_->UnsetOffloadMode();
 }
 
 float AudioRendererPrivate::GetSingleStreamVolume() const

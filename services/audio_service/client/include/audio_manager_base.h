@@ -36,13 +36,6 @@ public:
      */
     virtual int32_t SetMicrophoneMute(bool isMute) = 0;
 
-     /**
-     * Gets Microphone Mute status.
-     *
-     * @return Returns true or false
-     */
-    virtual bool IsMicrophoneMute() = 0;
-
     /**
      * @brief Set the Voice Volume.
      *
@@ -50,6 +43,11 @@ public:
      * @return int32_t Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
     virtual int32_t SetVoiceVolume(float volume) = 0;
+
+    virtual int32_t OffloadSetVolume(float volume) = 0;
+    virtual int32_t OffloadDrain() = 0;
+    virtual int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
+    virtual int32_t OffloadSetBufferSize(uint32_t sizeMs) = 0;
 
     /**
      * Sets Audio modes.
@@ -271,7 +269,6 @@ private:
     int HandleGetAudioParameter(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioParameter(MessageParcel &data, MessageParcel &reply);
     int HandleSetMicrophoneMute(MessageParcel &data, MessageParcel &reply);
-    int HandleIsMicrophoneMute(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioScene(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply);
     int HandleRetrieveCookie(MessageParcel &data, MessageParcel &reply);
@@ -295,6 +292,10 @@ private:
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
     int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadDrain(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -304,7 +305,6 @@ private:
         &AudioManagerStub::HandleGetAudioParameter,
         &AudioManagerStub::HandleSetAudioParameter,
         &AudioManagerStub::HandleSetMicrophoneMute,
-        &AudioManagerStub::HandleIsMicrophoneMute,
         &AudioManagerStub::HandleSetAudioScene,
         &AudioManagerStub::HandleUpdateActiveDeviceRoute,
         &AudioManagerStub::HandleRetrieveCookie,
@@ -328,7 +328,11 @@ private:
         &AudioManagerStub::HandleSetWakeupSourceCallback,
         &AudioManagerStub::HandleSetCaptureSilentState,
         &AudioManagerStub::HandleUpdateSpatializationState,
-  };
+        &AudioManagerStub::HandleOffloadSetVolume,
+        &AudioManagerStub::HandleOffloadDrain,
+        &AudioManagerStub::HandleOffloadGetPresentationPosition,
+        &AudioManagerStub::HandleOffloadSetBufferSize,
+    };
 };
 } // namespace AudioStandard
 } // namespace OHOS

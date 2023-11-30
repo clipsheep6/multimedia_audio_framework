@@ -14,6 +14,9 @@
  */
 
 #include "audio_manager_proxy.h"
+
+#include <cinttypes>
+
 #include "audio_system_manager.h"
 #include "audio_log.h"
 #include "i_audio_process.h"
@@ -49,26 +52,6 @@ int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)
     return result;
 }
 
-bool AudioManagerProxy::IsMicrophoneMute()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return false;
-    }
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::IS_MICROPHONE_MUTE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("IsMicrophoneMute failed, error: %d", error);
-        return false;
-    }
-
-    bool isMute = reply.ReadBool();
-    return isMute;
-}
-
 int32_t AudioManagerProxy::SetVoiceVolume(float volume)
 {
     MessageParcel data;
@@ -86,6 +69,103 @@ int32_t AudioManagerProxy::SetVoiceVolume(float volume)
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_VOICE_VOLUME), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("SetVoiceVolume failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::OffloadSetVolume(float volume)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteFloat(volume);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_VOLUME), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OffloadSetVolume failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::OffloadDrain()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_DRAIN), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OffloadDrain failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_GET_PRESENTATION_POSITION), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OffloadGetPresentationPosition failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    frames = reply.ReadUint64();
+    timeSec = reply.ReadInt64();
+    timeNanoSec = reply.ReadInt64();
+    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}" PRIu64 ", sec %{public}" PRId64 ", Nasec %{public}" PRId64,
+        result, frames, timeSec, timeNanoSec);
+    return result;
+}
+
+int32_t AudioManagerProxy::OffloadSetBufferSize(uint32_t sizeMs)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteUint32(sizeMs);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_BUFFER_SIZE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OffloadSetBufferSize failed, error: %d", error);
         return false;
     }
 
@@ -551,7 +631,7 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
+    MessageOption option(MessageOption::TF_ASYNC);
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
