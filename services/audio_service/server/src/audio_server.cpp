@@ -345,7 +345,7 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
     std::vector<Effect>& successEffectList)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("LoadAudioEffectLibraries refused for %{public}d", callingUid);
         return false;
     }
@@ -385,7 +385,7 @@ bool AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("SetMicrophoneMute refused for %{public}d", callingUid);
         return ERR_PERMISSION_DENIED;
     }
@@ -402,7 +402,7 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
 int32_t AudioServer::SetVoiceVolume(float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("SetVoiceVolume refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
@@ -419,7 +419,7 @@ int32_t AudioServer::SetVoiceVolume(float volume)
 int32_t AudioServer::OffloadSetVolume(float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("OffloadSetVolume refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
@@ -437,7 +437,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
 
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("UpdateActiveDeviceRoute refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
@@ -512,7 +512,7 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
 int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("UpdateActiveDeviceRoute refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
@@ -524,7 +524,7 @@ void AudioServer::SetAudioMonoState(bool audioMono)
 {
     AUDIO_INFO_LOG("SetAudioMonoState: audioMono = %{public}s", audioMono? "true": "false");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("NotifyDeviceInfo refused for %{public}d", callingUid);
         return;
     }
@@ -548,7 +548,7 @@ void AudioServer::SetAudioMonoState(bool audioMono)
 void AudioServer::SetAudioBalanceValue(float audioBalance)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("NotifyDeviceInfo refused for %{public}d", callingUid);
         return;
     }
@@ -578,7 +578,7 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("NotifyDeviceInfo refused for %{public}d", callingUid);
         return ;
     }
@@ -603,7 +603,7 @@ inline bool IsParamEnabled(std::string key, bool &isEnabled)
 int32_t AudioServer::RegiestPolicyProvider(const sptr<IRemoteObject> &object)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("RegiestPolicyProvider refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
@@ -660,7 +660,7 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
         networkId.c_str(), static_cast<int32_t>(deviceRole), (isStartDevice ? "true" : "false"));
 
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("CheckRemoteDeviceState refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
@@ -754,7 +754,7 @@ void AudioServer::OnCapturerState(bool isActive)
 int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("SetParameterCallback refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
@@ -812,11 +812,6 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     auto callerUid = IPCSkeleton::GetCallingUid();
     AUDIO_INFO_LOG("AudioServer: ==[%{public}s] [uid:%{public}d]==", permissionName.c_str(), callerUid);
 
-    // Root users should be whitelisted
-    if (callerUid == ROOT_UID) {
-        AUDIO_INFO_LOG("Root user. Permission GRANTED!!!");
-        return true;
-    }
     Security::AccessToken::AccessTokenID clientTokenId = tokenId;
     if (clientTokenId == Security::AccessToken::INVALID_TOKENID) {
         clientTokenId = IPCSkeleton::GetCallingTokenID();
@@ -960,7 +955,7 @@ int32_t AudioServer::SetCaptureSilentState(bool state)
 int32_t AudioServer::UpdateSpatializationState(std::vector<bool> spatializationState)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+    if (callingUid != audioUid_) {
         AUDIO_ERR_LOG("UpdateSpatializationState refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }

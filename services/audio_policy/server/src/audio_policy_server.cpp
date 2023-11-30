@@ -2054,12 +2054,6 @@ uint64_t AudioPolicyServer::GetTargetFullTokenId(uid_t callingUid, uint64_t call
 
 int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
-    // Only root users should have access to this api
-    if (ROOT_UID != IPCSkeleton::GetCallingUid()) {
-        AUDIO_INFO_LOG("Unautorized user. Cannot modify channel");
-        return ERR_PERMISSION_DENIED;
-    }
-
     return audioPolicyService_.ReconfigureAudioChannel(count, deviceType);
 }
 
