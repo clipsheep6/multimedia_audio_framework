@@ -238,6 +238,12 @@ public:
 
     virtual int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) = 0;
 
+    virtual int32_t ConfigDistributedRoutingRole(AudioDeviceDescriptor *desciptor, CastType type) = 0;
+
+    virtual int32_t SetDistributedRoutingRoleCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetDistributedRoutingRoleCallback(const int32_t clientId) = 0;
+
     virtual bool IsSpatializationEnabled() = 0;
 
     virtual int32_t SetSpatializationEnabled(const bool enable) = 0;

@@ -741,7 +741,7 @@ enum AudioParamKey {
     A2DP_SUSPEND_STATE = 6,  // for bluetooth sink
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
-    A2DP_OFFLOAD_STATE = 9, //for a2dp offload
+    A2DP_OFFLOAD_STATE = 9,
     USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PERF_INFO = 201,
     MMI = 301,
@@ -815,6 +815,13 @@ enum BluetoothOffloadState {
     NO_A2DP_DEVICE = 0,
     A2DP_NOT_OFFLOAD = 1,
     A2DP_OFFLOAD = 2,
+};
+
+enum CastType {
+    CAST_TYPE_NULL = 0;
+    CAST_TYPE_ALL;
+    CAST_TYPE_PROJECTION;
+    CAST_TYPE_COOPERATION;
 };
 } // namespace AudioStandard
 } // namespace OHOS
