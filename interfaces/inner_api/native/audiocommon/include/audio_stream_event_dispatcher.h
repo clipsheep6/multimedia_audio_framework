@@ -61,9 +61,11 @@ public:
     void HandleCapturerStreamStateChange(const unique_ptr<StreamStateChangeRequest> &streamStateChangeRequest);
     void HandleRendererStreamStateChange(const unique_ptr<StreamStateChangeRequest> &streamStateChangeRequest);
     void DispatcherEvent();
-    void SetAudioPolicyClientProxy(std::unordered_map<int32_t, sptr<IAudioPolicyClient>> &proxyCbMap);
+    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
+    void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
 
 private:
+    std::mutex updatePolicyPorxyMapMutex_;
     std::mutex rendererStateChangeListnerMutex_;
     std::mutex capturerStateChangeListnerMutex_;
     std::mutex streamStateChangeQueueMutex_;

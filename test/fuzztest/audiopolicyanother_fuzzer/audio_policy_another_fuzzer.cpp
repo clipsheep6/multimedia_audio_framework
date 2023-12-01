@@ -84,10 +84,6 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
 
     bool mute = *reinterpret_cast<const bool *>(rawData);
     AudioPolicyServerPtr->SetMicrophoneMute(mute);
-
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    AudioPolicyServerPtr->RegisterPolicyCallbackClient(object);
-    AudioPolicyServerPtr->UnregisterPolicyCallbackClient();
 }
 
 void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
@@ -132,9 +128,6 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     focusInfo.second = *reinterpret_cast<const AudioFocuState *>(rawData);
     focusInfoList.push_back(focusInfo);
     AudioPolicyServerPtr->GetAudioFocusInfoList(focusInfoList);
-
-    AudioPolicyServerPtr->RegisterPolicyCallbackClient(object);
-    AudioPolicyServerPtr->UnregisterPolicyCallbackClient();
 }
 
 void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
@@ -152,7 +145,6 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
 
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     AudioPolicyServerPtr->RegisterPolicyCallbackClient(object);
-    AudioPolicyServerPtr->UnregisterPolicyCallbackClient();
 
     uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
     AudioPolicyServerPtr->OnSessionRemoved(sessionID);

@@ -1015,12 +1015,6 @@ void AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal(MessageParcel 
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnregisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t result = UnregisterPolicyCallbackClient();
-    reply.WriteInt32(result);
-}
-
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {

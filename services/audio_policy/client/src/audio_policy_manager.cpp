@@ -447,19 +447,11 @@ int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t client
 
 int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clientId)
 {
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("UnsetDeviceChangeCallback: audio policy manager proxy is NULL.");
-        return -1;
-    }
-
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     if (audioPolicyClientStubCB_ == nullptr) {
-        AUDIO_INFO_LOG("UnregisterFocusInfoChangeCallback: audioPolicyClientStubCB_ is NULL.");
-        return SUCCESS;
+        audioPolicyClientStubCB_->RemoveFocusInfoChangeCallback();
     }
-    delete audioPolicyClientStubCB_;
-    audioPolicyClientStubCB_ = nullptr;
-    return gsp->UnregisterPolicyCallbackClient();
+    return SUCCESS;
 }
 
 #ifdef FEATURE_DTMF_TONE
@@ -559,19 +551,11 @@ int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
 
 int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
 {
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("UnsetRingerModeCallback: audio policy manager proxy is NULL.");
-        return -1;
-    }
-
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     if (audioPolicyClientStubCB_ == nullptr) {
-        AUDIO_INFO_LOG("UnsetRingerModeCallback: audioPolicyClientStubCB_ is NULL.");
-        return SUCCESS;
+        audioPolicyClientStubCB_->RemoveRingerModeCallback();
     }
-    delete audioPolicyClientStubCB_;
-    audioPolicyClientStubCB_ = nullptr;
-    return gsp->UnregisterPolicyCallbackClient();
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
@@ -616,20 +600,11 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
 
 int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("UnsetDeviceChangeCallback: audio policy manager proxy is NULL.");
-        return -1;
-    }
-
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     if (audioPolicyClientStubCB_ == nullptr) {
-        AUDIO_INFO_LOG("UnsetDeviceChangeCallback: audioPolicyClientStubCB_ is NULL.");
-        return SUCCESS;
+        audioPolicyClientStubCB_->RemoveDeviceChangeCallback();
     }
-    delete audioPolicyClientStubCB_;
-    audioPolicyClientStubCB_ = nullptr;
-    return gsp->UnregisterPolicyCallbackClient();
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
@@ -683,35 +658,20 @@ int32_t AudioPolicyManager::SetPreferredInputDeviceChangeCallback(
 
 int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("UnsetDeviceChangeCallback: audio policy manager proxy is NULL.");
-        return -1;
-    }
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     if (audioPolicyClientStubCB_ == nullptr) {
-        AUDIO_INFO_LOG("UnsetPreferredOutputDeviceChangeCallback: audioPolicyClientStubCB_ is NULL.");
-        return SUCCESS;
+        audioPolicyClientStubCB_->RemovePreferredOutputDeviceChangeCallback();
     }
-    delete audioPolicyClientStubCB_;
-    audioPolicyClientStubCB_ = nullptr;
-    return gsp->UnregisterPolicyCallbackClient();
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback()
 {
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-        return -1;
-    }
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     if (audioPolicyClientStubCB_ == nullptr) {
-        AUDIO_INFO_LOG("UnsetPreferredInputDeviceChangeCallback: audioPolicyClientStubCB_ is NULL.");
-        return SUCCESS;
+        audioPolicyClientStubCB_->RemovePreferredInputDeviceChangeCallback();
     }
-    delete audioPolicyClientStubCB_;
-    audioPolicyClientStubCB_ = nullptr;
-    return gsp->UnregisterPolicyCallbackClient();
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
@@ -910,18 +870,11 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
 
 int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
 {
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("UnsetVolumeKeyEventCallback: audio policy manager proxy is NULL.");
-        return -1;
-    }
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     if (audioPolicyClientStubCB_ == nullptr) {
-        AUDIO_INFO_LOG("UnsetVolumeKeyEventCallback: audioPolicyClientStubCB_ is NULL.");
-        return SUCCESS;
+        audioPolicyClientStubCB_->RemoveVolumeKeyEventCallback();
     }
-    delete audioPolicyClientStubCB_;
-    audioPolicyClientStubCB_ = nullptr;
-    return gsp->UnregisterPolicyCallbackClient();
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t clientPid,
@@ -952,19 +905,11 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
 
 int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
-    AUDIO_DEBUG_LOG("UnregisterAudioRendererEventListener");
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("UnregisterAudioRendererEventListener: audio policy manager proxy is NULL.");
-        return ERROR;
-    }
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     if (audioPolicyClientStubCB_ == nullptr) {
-        AUDIO_INFO_LOG("UnregisterAudioRendererEventListener: audioPolicyClientStubCB_ is NULL.");
-        return SUCCESS;
+        audioPolicyClientStubCB_->RemoveRendererStateChangeCallback();
     }
-    delete audioPolicyClientStubCB_;
-    audioPolicyClientStubCB_ = nullptr;
-    return gsp->UnregisterPolicyCallbackClient();
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t clientPid,
@@ -995,18 +940,11 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
 
 int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t clientPid)
 {
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("UnregisterAudioCapturerEventListener: audio policy manager proxy is NULL.");
-        return ERROR;
-    }
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     if (audioPolicyClientStubCB_ == nullptr) {
-        AUDIO_INFO_LOG("UnregisterAudioCapturerEventListener: audioPolicyClientStubCB_ is NULL.");
-        return SUCCESS;
+        audioPolicyClientStubCB_->RemoveCapturerStateChangeCallback();
     }
-    delete audioPolicyClientStubCB_;
-    audioPolicyClientStubCB_ = nullptr;
-    return gsp->UnregisterPolicyCallbackClient();
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,

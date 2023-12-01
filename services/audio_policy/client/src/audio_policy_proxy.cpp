@@ -2123,25 +2123,5 @@ int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject>
     }
     return reply.ReadInt32();
 }
-
-int32_t AudioPolicyProxy::UnregisterPolicyCallbackClient()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return -1;
-    }
-
-    int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_POLICY_CALLBACK_CLIENT), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("RegisterPolicyCallbackClient failed, error: %d", error);
-        return ERROR;
-    }
-    return reply.ReadInt32();
-}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2093,7 +2093,7 @@ int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
 
 void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id)
 {
-    AUDIO_INFO_LOG("Register clients death recipient!!");
+    AUDIO_INFO_LOG("Register clients death recipient!! RecipientId: %{public}d", id);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     CHECK_AND_RETURN_LOG(object != nullptr, "Client proxy obj NULL!!");
 
@@ -2144,10 +2144,11 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t uid)
 void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 {
     AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, uid %{public}d", pid);
+    std::lock_guard<std::mutex> lock(policyCallbackMutex_);
     if (audioPolicyClientProxyCBMap_.erase(pid) == 0) {
         AUDIO_ERR_LOG("RegisteredStreamListenerClientDied client %{public}d not exist.", pid);
     }
-    audioPolicyService_.SetAudioPolicyClientProxy(audioPolicyClientProxyCBMap_);
+    audioPolicyService_.ReduceAudioPolicyClientProxyMap(pid);
 }
 
 int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
@@ -2806,20 +2807,9 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     bool hasSysPermission = PermissionUtil::VerifySystemPermission();
     callback->hasBTPermission_ = hasBTPermission;
     callback->hasSystemPermission_ = hasSysPermission;
-    audioPolicyClientProxyCBMap_[clientPid] = callback;
-    audioPolicyService_.SetAudioPolicyClientProxy(audioPolicyClientProxyCBMap_);
-    return SUCCESS;
-}
-
-int32_t AudioPolicyServer::UnregisterPolicyCallbackClient()
-{
-    std::lock_guard<std::mutex> lock(policyCallbackMutex_);
-    int32_t clientPid = IPCSkeleton::GetCallingPid();
-    if (audioPolicyClientProxyCBMap_.erase(clientPid) == 0) {
-        AUDIO_ERR_LOG("UnregisterPolicyCallbackClient client %{public}d not present", clientPid);
-        return ERR_INVALID_OPERATION;
-    }
-    audioPolicyService_.SetAudioPolicyClientProxy(audioPolicyClientProxyCBMap_);
+    audioPolicyClientProxyCBMap_.emplace(clientPid, callback);
+    audioPolicyService_.AddAudioPolicyClientProxyMap(clientPid, callback);
+    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
     return SUCCESS;
 }
 } // namespace AudioStandard

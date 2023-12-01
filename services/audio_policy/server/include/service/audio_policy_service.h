@@ -224,7 +224,9 @@ public:
 
     int32_t UnregisterAPSPolicyCallbackClient(const uint32_t code, int32_t clientPid, bool hasBTPermission);
 
-    void SetAudioPolicyClientProxy(std::unordered_map<int32_t, sptr<IAudioPolicyClient>> &proxyCbMap);
+    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
+
+    void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
 
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
         bool hasBTPermission);
@@ -653,7 +655,6 @@ private:
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     mutable std::mutex a2dpDeviceMapMutex_;
-    std::mutex preferredInputMapMutex_;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, Role>
     IAudioPolicyInterface& audioPolicyManager_;
@@ -748,6 +749,10 @@ private:
     SourceType currentSourceType = SOURCE_TYPE_MIC;
     uint32_t currentRate = 0;
 
+    std::mutex updatePolicyPorxyMapMutex_;
+    std::mutex preferredOutputMapMutex_;
+    std::mutex preferredInputMapMutex_;
+    std::mutex deviceChangedMpaMutex_;
     std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
 };
 } // namespace AudioStandard

@@ -28,12 +28,18 @@ AudioStreamEventDispatcher::~AudioStreamEventDispatcher()
     AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::~AudioStreamEventDispatcher()");
 }
 
-void AudioStreamEventDispatcher::SetAudioPolicyClientProxy(
-    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> &proxyCbMap)
+void AudioStreamEventDispatcher::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)
 {
-    audioPolicyClientRCProxyCBMap_ = proxyCbMap;
-    AUDIO_INFO_LOG("AudioPolicyService::SetAudioPolicyClientProxy, group data num [%{public}zu]",
+    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    audioPolicyClientRCProxyCBMap_.emplace(clientPid, cb);
+    AUDIO_INFO_LOG("AudioStreamEventDispatcher::SetAudioPolicyClientProxy, group data num [%{public}zu]",
         audioPolicyClientRCProxyCBMap_.size());
+}
+
+void AudioStreamEventDispatcher::ReduceAudioPolicyClientProxyMap(pid_t clientPid)
+{
+    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    audioPolicyClientRCProxyCBMap_.erase(clientPid);
 }
 
 void AudioStreamEventDispatcher::SendRendererInfoEventToDispatcher(AudioMode mode,

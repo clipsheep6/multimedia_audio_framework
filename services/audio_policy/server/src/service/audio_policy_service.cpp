@@ -1249,7 +1249,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
 {
     Trace trace("AudioPolicyService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-
+    std::lock_guard<std::mutex> lock(preferredOutputMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioRendererInfo rendererInfo;
         auto deviceDescs = GetPreferredOutputDeviceDescriptors(rendererInfo);
@@ -3416,12 +3416,20 @@ void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, 
     interruptGroupData_ = interruptGroupData;
 }
 
-void AudioPolicyService::SetAudioPolicyClientProxy(std::unordered_map<int32_t, sptr<IAudioPolicyClient>> &proxyCbMap)
+void AudioPolicyService::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)
 {
-    audioPolicyClientProxyAPSCbsMap_ = proxyCbMap;
-    AUDIO_INFO_LOG("AudioPolicyService::SetAudioPolicyClientProxy, group data num [%{public}zu]",
+    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    audioPolicyClientProxyAPSCbsMap_.emplace(clientPid, cb);
+    AUDIO_INFO_LOG("AudioPolicyService::AddAudioPolicyClientProxyMap, group data num [%{public}zu]",
         audioPolicyClientProxyAPSCbsMap_.size());
-    streamCollector_.SetAudioPolicyClientProxy(proxyCbMap);
+    streamCollector_.AddAudioPolicyClientProxyMap(clientPid, cb);
+}
+
+void AudioPolicyService::ReduceAudioPolicyClientProxyMap(pid_t clientPid)
+{
+    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    audioPolicyClientProxyAPSCbsMap_.erase(clientPid);
+    streamCollector_.ReduceAudioPolicyClientProxyMap(clientPid);
 }
 
 int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
@@ -4025,7 +4033,7 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
     deviceChangeAction.deviceDescriptors = desc;
 
     WriteDeviceChangedSysEvents(desc, isConnected);
-
+    std::lock_guard<std::mutex> lock(deviceChangedMpaMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
             if (!(it->second->hasBTPermission_)) {

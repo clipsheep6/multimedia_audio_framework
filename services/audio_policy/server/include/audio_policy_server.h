@@ -311,8 +311,6 @@ public:
 
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterPolicyCallbackClient() override;
-
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

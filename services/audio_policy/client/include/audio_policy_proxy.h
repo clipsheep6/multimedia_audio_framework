@@ -228,7 +228,6 @@ public:
 
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterPolicyCallbackClient() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

@@ -197,9 +197,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_DeviceChangeCallback_001, TestSize.Leve
     AudioPolicyUnitTest::GetIRemoteObject(object);
     ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
     EXPECT_EQ(ERROR, ret);
-
-    ret = audioPolicyProxy->UnregisterPolicyCallbackClient();
-    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -600,7 +597,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Capturer_State_Change_001, TestSize.Level1)
 
     std::shared_ptr<AudioCapturerStateChangeCallbackTest> callback =
         std::make_shared<AudioCapturerStateChangeCallbackTest>();
-    capturerStub->SetCapturerStateChangeCallback(callback);
+    capturerStub->AddCapturerStateChangeCallback(callback);
 
     uint32_t code = static_cast<uint32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE);
     MessageParcel data;
@@ -625,7 +622,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
 
     std::shared_ptr<AudioRendererStateChangeCallbackTest> callback =
         std::make_shared<AudioRendererStateChangeCallbackTest>();
-    rendererStub->SetRendererStateChangeCallback(callback);
+    rendererStub->AddRendererStateChangeCallback(callback);
 
     uint32_t code = static_cast<uint32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE);
     MessageParcel data;
@@ -649,7 +646,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Ringermode_Update_Listener_001, TestSize.Level
     
     ringermodeStub->OnRingerModeUpdated(ringerMode);
 
-    ringermodeStub->SetRingerModeCallback(callback);
+    ringermodeStub->AddRingerModeCallback(callback);
 
     ringermodeStub->OnRingerModeUpdated(ringerMode);
 
@@ -677,7 +674,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Rounting_Manager_Listener_001, TestSize.Level1
     
     audioPolicyClientStubImpl->OnMicStateUpdated(micStateChangeEvent);
 
-    audioPolicyClientStubImpl->SetMicStateChangeCallback(callback);
+    audioPolicyClientStubImpl->AddMicStateChangeCallback(callback);
 
     audioPolicyClientStubImpl->OnMicStateUpdated(micStateChangeEvent);
 

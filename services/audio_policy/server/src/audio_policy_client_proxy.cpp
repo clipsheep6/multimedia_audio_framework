@@ -76,7 +76,6 @@ void AudioPolicyClientProxy::OnAudioFocusInfoChange(
 
 void AudioPolicyClientProxy::OnAudioFocusRequested(const AudioInterrupt &requestFocus)
 {
-    AUDIO_DEBUG_LOG("OnAudioFocusRequested in listener proxy.");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
@@ -95,7 +94,6 @@ void AudioPolicyClientProxy::OnAudioFocusRequested(const AudioInterrupt &request
 
 void AudioPolicyClientProxy::OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus)
 {
-    AUDIO_DEBUG_LOG("OnAudioFocusRequested in listener proxy.");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);

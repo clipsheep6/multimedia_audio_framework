@@ -233,7 +233,6 @@ public:
 		
     virtual int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnregisterPolicyCallbackClient() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

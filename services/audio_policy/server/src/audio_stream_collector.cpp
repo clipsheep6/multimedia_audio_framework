@@ -93,10 +93,14 @@ AudioStreamCollector::~AudioStreamCollector()
     AUDIO_INFO_LOG("~AudioStreamCollector()");
 }
 
-void AudioStreamCollector::SetAudioPolicyClientProxy(
-    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> &proxyCbMap)
+void AudioStreamCollector::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)
 {
-    mDispatcherService.SetAudioPolicyClientProxy(proxyCbMap);
+    mDispatcherService.AddAudioPolicyClientProxyMap(clientPid, cb);
+}
+
+void AudioStreamCollector::ReduceAudioPolicyClientProxyMap(pid_t clientPid)
+{
+    mDispatcherService.ReduceAudioPolicyClientProxyMap(clientPid);
 }
 
 int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamChangeInfo)

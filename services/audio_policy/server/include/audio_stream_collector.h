@@ -34,7 +34,8 @@ public:
     AudioStreamCollector();
     ~AudioStreamCollector();
 
-    void SetAudioPolicyClientProxy(std::unordered_map<int32_t, sptr<IAudioPolicyClient>> &proxyCbMap);
+    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
+    void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);

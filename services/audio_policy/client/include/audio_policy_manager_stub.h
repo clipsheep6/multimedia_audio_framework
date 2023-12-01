@@ -122,7 +122,6 @@ private:
     void UpdateSpatialDeviceStateInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterSpatializationStateEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -219,7 +218,6 @@ private:
         &AudioPolicyManagerStub::UpdateSpatialDeviceStateInternal,
         &AudioPolicyManagerStub::RegisterSpatializationStateEventListenerInternal,
         &AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal,
-        &AudioPolicyManagerStub::UnregisterPolicyCallbackClientInternal,
     };
 };
 } // namespace AudioStandard
