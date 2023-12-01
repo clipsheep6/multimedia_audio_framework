@@ -376,6 +376,12 @@ public:
 
     int32_t HandleA2dpDeviceOutOffload();
 
+    void ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
+
+    DistributedRoutingInfo GetDistributedRoutingRoleInfo();
+
+    bool IsIncomingDeviceInRemoteRender(sptr<AudioDeviceDescriptor> incomingDevice);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -609,6 +615,8 @@ private:
 
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
 
+    void StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
+
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
@@ -739,6 +747,8 @@ private:
     AudioModuleInfo primaryMicModuleInfo_ = {};
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
+
+    DistributedRoutingInfo distributedRoutingInfo_;
 
     // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
