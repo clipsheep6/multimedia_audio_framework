@@ -3002,5 +3002,14 @@ int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32
     }
     return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
+
+int32_t AudioPolicyServer::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioSpatializationService_.UnregisterSpatializationStateEventListener(sessionID);
+}
 } // namespace AudioStandard
 } // namespace OHOS

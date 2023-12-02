@@ -571,6 +571,8 @@ public:
 
     int32_t RegisterSpatializationStateEventListener();
 
+    int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
+
     void OnSpatializationStateChange(const std::vector<bool> &spatializationState);
 
 protected:
@@ -677,6 +679,8 @@ private:
 
     std::string spatializationEnabled_ = "Invalid";
     std::string headTrackingEnabled_ = "Invalid";
+    uint32_t spatializationRegisteredSessionID_ = 0;
+    bool firstSpatializationRegistered_ = true;
     std::shared_ptr<AudioSpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
     pa_usec_t paLatency_ = 0;
     bool isGetLatencySuccess_ = true;

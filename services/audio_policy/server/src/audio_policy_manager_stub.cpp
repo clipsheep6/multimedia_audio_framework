@@ -1178,6 +1178,14 @@ void AudioPolicyManagerStub::RegisterSpatializationStateEventListenerInternal(Me
     reply.WriteInt32(ret);
 }
 
+void AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal(MessageParcel &data,
+    MessageParcel &reply)
+{
+    uint32_t sessionID = static_cast<uint32_t>(data.ReadInt32());
+    int32_t ret = UnregisterSpatializationStateEventListener(sessionID);
+    reply.WriteInt32(ret);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {

@@ -675,6 +675,7 @@ AudioServiceClient::~AudioServiceClient()
 {
     lock_guard<mutex> lockdata(dataMutex_);
     AUDIO_INFO_LOG("start ~AudioServiceClient");
+    UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
     ResetPAAudioClient();
     StopTimer();
 }
@@ -1093,6 +1094,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         ResetPAAudioClient();
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
+    RegisterSpatializationStateEventListener();
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         error = InitializeAudioCache();
@@ -3448,6 +3450,12 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
 
 int32_t AudioServiceClient::RegisterSpatializationStateEventListener()
 {
+    if (firstSpatializationRegistered_) {
+        firstSpatializationRegistered_ = false;
+    } else {
+        UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
+    }
+
     if (!spatializationStateChangeCallback_) {
         spatializationStateChangeCallback_ = std::make_shared<AudioSpatializationStateChangeCallbackImpl>();
         if (!spatializationStateChangeCallback_) {
@@ -3455,6 +3463,7 @@ int32_t AudioServiceClient::RegisterSpatializationStateEventListener()
             return ERROR;
         }
     }
+    spatializationStateChangeCallback_->setAudioServiceClientObj(this);
 
     int32_t ret = AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(
         sessionID_, mStreamUsage, spatializationStateChangeCallback_);
@@ -3462,13 +3471,27 @@ int32_t AudioServiceClient::RegisterSpatializationStateEventListener()
         AUDIO_ERR_LOG("AudioServiceClient::RegisterSpatializationStateEventListener failed");
         return ERROR;
     }
+    spatializationRegisteredSessionID_ = sessionID_;
 
-    spatializationStateChangeCallback_->setAudioServiceClientObj(this);
+    return SUCCESS;
+}
+
+int32_t AudioServiceClient::UnregisterSpatializationStateEventListener(uint32_t sessionID)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionID);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioServiceClient::UnregisterSpatializationStateEventListener failed");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
 void AudioServiceClient::OnSpatializationStateChange(const std::vector<bool> &spatializationState)
 {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("OnSpatializationStateChange: invalid stream state");
+        return;
+    }
     if (spatializationState.size() != SPATIALIZATION_STATE_SIZE) {
         AUDIO_WARNING_LOG("spatialization state vector size is incorrect");
         return;
