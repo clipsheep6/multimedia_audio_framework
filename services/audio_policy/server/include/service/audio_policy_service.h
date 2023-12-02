@@ -625,6 +625,8 @@ private:
 
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType);
 
+    void ResetToSpeaker(DeviceType devType);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
