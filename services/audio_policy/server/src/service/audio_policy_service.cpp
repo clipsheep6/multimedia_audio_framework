@@ -60,6 +60,8 @@ const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t MEDIA_SERVICE_UID = 1013;
 const uint32_t AUDIO_UID = 1041;
+const uint32_t USER_NOT_SELECT_BLE = 1;
+const uint32_t USER_SELECT_BLE = 2;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -771,6 +773,11 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     // check size == 1 && output device
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
+
+    if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
+        return SelectFastOutputDevice(audioRendererFilter, audioDeviceDescriptors[0]);
+    }
+
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
     if (strUsage == STREAM_USAGE_VOICE_COMMUNICATION || strUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
         audioStateManager_.SetPerferredCallRenderDevice(audioDeviceDescriptors[0]);
@@ -778,6 +785,20 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
     }
     FetchDevice(true);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    sptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    AUDIO_INFO_LOG("SelectFastOutputDevice for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
+        deviceDescriptor->networkId_.c_str());
+    // note: check if stream is already running
+    // if is running, call moveProcessToEndpoint.
+
+    // otherwises, keep router info in the map
+    std::lock_guard<std::mutex> lock(routerMapMutex_);
+    fastRouterMap_[audioRendererFilter->uid] = std::make_pair(deviceDescriptor->networkId_, OUTPUT_DEVICE);
     return SUCCESS;
 }
 
@@ -1003,46 +1024,14 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         return SelectFastInputDevice(audioCapturerFilter, audioDeviceDescriptors[0]);
     }
 
-    std::string networkId = audioDeviceDescriptors[0]->networkId_;
-    DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
-
-    // switch between local devices
-    if (LOCAL_NETWORK_ID == networkId && currentActiveInputDevice_.deviceType_ != deviceType) {
-        if (deviceType == DeviceType::DEVICE_TYPE_DEFAULT) {
-            deviceType = FetchHighPriorityDevice(false);
-        }
-        return SelectNewDevice(DeviceRole::INPUT_DEVICE, audioDeviceDescriptors[0]);
+    SourceType srcType = audioCapturerFilter->captureInfo.sourceType;
+    if (srcType == SOURCE_TYPE_VOICE_CALL || srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        audioStateManager_.SetPerferredCallCaptureDevice(audioDeviceDescriptors[0]);
+    } else {
+        audioStateManager_.SetPerferredRecordCaptureDevice(audioDeviceDescriptors[0]);
     }
-
-    if (!remoteCapturerSwitch_) {
-        AUDIO_DEBUG_LOG("remote capturer capbility is not open now.");
-        return SUCCESS;
-    }
-    int32_t targetUid = audioCapturerFilter->uid;
-    // move all source-output.
-    bool moveAll = false;
-    if (targetUid == -1) {
-        AUDIO_DEBUG_LOG("Move all source outputs.");
-        moveAll = true;
-    }
-
-    // find source-output id with audioCapturerFilter
-    std::vector<SourceOutput> targetSourceOutputs = {};
-    vector<SourceOutput> sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
-    for (size_t i = 0; i < sourceOutputs.size();i++) {
-        AUDIO_DEBUG_LOG("SourceOutput[%{public}zu]:%{public}s", i, PrintSourceOutput(sourceOutputs[i]).c_str());
-        if (moveAll || (targetUid == sourceOutputs[i].uid)) {
-            targetSourceOutputs.push_back(sourceOutputs[i]);
-        }
-    }
-
-    int32_t ret = LOCAL_NETWORK_ID == networkId ?
-        MoveToLocalInputDevice(targetSourceOutputs, audioDeviceDescriptors[0]) :
-        MoveToRemoteInputDevice(targetSourceOutputs, audioDeviceDescriptors[0]);
-
-    OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, LOCAL_NETWORK_ID);
-    AUDIO_DEBUG_LOG("SelectInputDevice result[%{public}d]", ret);
-    return ret;
+    FetchDevice(false);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyService::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
@@ -1563,7 +1552,7 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
         return;
     }
     if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(desc->deviceType_)) {
-        SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
+        SetVolumeForSwitchDevice(desc->deviceType_);
     }
     currentActiveDevice_ = AudioDeviceDescriptor(*desc);
     AUDIO_INFO_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
