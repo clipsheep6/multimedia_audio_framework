@@ -1443,7 +1443,7 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink *s, pa
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
-    pa_assert(is);
+    pa_assert(s);
 
     while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
         pa_sink_input_assert_ref(i);
@@ -1499,7 +1499,7 @@ static int32_t GetInputsType(pa_sink *s, unsigned *nPrimary, unsigned *nOffload,
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
-    pa_assert(is);
+    pa_assert(s);
     while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
         pa_sink_input_assert_ref(i);
         if (isRunning && i->thread_info.state != PA_SINK_INPUT_RUNNING) {
