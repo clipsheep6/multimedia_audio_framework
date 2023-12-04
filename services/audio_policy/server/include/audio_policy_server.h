@@ -487,7 +487,7 @@ private:
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
 
-    void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor, const CastType type);
+    void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
     bool powerStateCallbackRegister_;
     AudioPolicyService& audioPolicyService_;

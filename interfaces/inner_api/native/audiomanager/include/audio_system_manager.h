@@ -76,7 +76,7 @@ public:
 };
 
 struct DistributedRoutingInfo {
-    AudioDeviceDescriptor *descriptor;
+    sptr<AudioDeviceDescriptor> descriptor;
     CastType type;
 };
 
