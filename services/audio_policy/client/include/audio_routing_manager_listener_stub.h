@@ -33,7 +33,7 @@ public:
 
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
-    void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor, const CastType type) override;
+    void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type) override;
     void SetPreferredOutputDeviceChangeCallback(
         const std::weak_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
     void SetPreferredInputDeviceChangeCallback(const std::weak_ptr<AudioPreferredInputDeviceChangeCallback> &callback);

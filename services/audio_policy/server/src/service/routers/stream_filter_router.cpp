@@ -25,13 +25,14 @@ namespace AudioStandard {
 unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
+    AUDIO_ERR_LOG("StreamfilterRouter GetMediaRenderDevice streamUsage %{public}d clientUid %{public}d fetch device",
+        streamUsage, clientUID, );
     DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
-    if (routingInfo.descriptor == nullptr) {
-        return make_unique<AudioDeviceDescriptor>();
-    }
-    AudioDeviceDescriptor *deviceDescriptor = routingInfo.descriptor;
+    sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
     CastType type = routingInfo.type;
     bool hasDescriptor = false;
+    AUDIO_ERR_LOG("StreamfilterRouter GetMediaRenderDevice streamUsage %{public}d clientUid %{public}d fetch device %{public}d",
+        streamUsage, clientUID, deviceDescriptor->deviceType_);
 
     switch (type) {
         case CAST_TYPE_NULL: {
@@ -56,7 +57,8 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(Strea
         }
     }
     if (hasDescriptor) {
-        return make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+        unique_ptr<AudioDeviceDescriptor> incomingDevice = make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+        return incomingDevice;
     }
     return make_unique<AudioDeviceDescriptor>();
 }

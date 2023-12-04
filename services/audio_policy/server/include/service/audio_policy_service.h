@@ -202,7 +202,9 @@ public:
     void ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
 
-    void OnDeviceStatusUpdated(DStatusInfo statusInfo);
+    void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
+
+    void HandleOfflineDistributedDevice();
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 

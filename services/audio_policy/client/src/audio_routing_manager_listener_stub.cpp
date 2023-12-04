@@ -128,7 +128,7 @@ void AudioRoutingManagerListenerStub::OnPreferredInputDeviceUpdated(
     activeInputDeviceChangeCallback->OnPreferredInputDeviceUpdated(desc);
 }
 
-void AudioRoutingManagerListenerStub::OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor,
+void AudioRoutingManagerListenerStub::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
     const CastType type)
 {
     std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback =
