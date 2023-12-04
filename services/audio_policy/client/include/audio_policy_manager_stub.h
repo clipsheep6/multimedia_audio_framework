@@ -121,6 +121,7 @@ private:
     void IsHeadTrackingSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateSpatialDeviceStateInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterSpatializationStateEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterSpatializationStateEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
@@ -217,6 +218,7 @@ private:
         &AudioPolicyManagerStub::IsHeadTrackingSupportedForDeviceInternal,
         &AudioPolicyManagerStub::UpdateSpatialDeviceStateInternal,
         &AudioPolicyManagerStub::RegisterSpatializationStateEventListenerInternal,
+        &AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal,
         &AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal,
     };
 };

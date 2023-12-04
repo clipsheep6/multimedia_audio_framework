@@ -1836,8 +1836,7 @@ int32_t AudioPolicyProxy::SetHeadTrackingEnabled(const bool enable)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::RegisterSpatializationEnabledEventListener(const int32_t clientPid,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1852,7 +1851,6 @@ int32_t AudioPolicyProxy::RegisterSpatializationEnabledEventListener(const int32
         return ERR_NULL_OBJECT;
     }
 
-    data.WriteInt32(clientPid);
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_SPATIALIZATION_ENABLED_EVENT), data, reply, option);
@@ -1864,8 +1862,7 @@ int32_t AudioPolicyProxy::RegisterSpatializationEnabledEventListener(const int32
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1880,7 +1877,6 @@ int32_t AudioPolicyProxy::RegisterHeadTrackingEnabledEventListener(const int32_t
         return ERR_NULL_OBJECT;
     }
 
-    data.WriteInt32(clientPid);
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_HEAD_TRACKING_ENABLED_EVENT), data, reply, option);
@@ -1892,7 +1888,7 @@ int32_t AudioPolicyProxy::RegisterHeadTrackingEnabledEventListener(const int32_t
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnregisterSpatializationEnabledEventListener(const int32_t clientPid)
+int32_t AudioPolicyProxy::UnregisterSpatializationEnabledEventListener()
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1903,7 +1899,6 @@ int32_t AudioPolicyProxy::UnregisterSpatializationEnabledEventListener(const int
         return ERROR;
     }
 
-    data.WriteInt32(clientPid);
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_SPATIALIZATION_ENABLED_EVENT), data, reply, option);
     if (error != ERR_NONE) {
@@ -1914,7 +1909,7 @@ int32_t AudioPolicyProxy::UnregisterSpatializationEnabledEventListener(const int
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid)
+int32_t AudioPolicyProxy::UnregisterHeadTrackingEnabledEventListener()
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1925,7 +1920,6 @@ int32_t AudioPolicyProxy::UnregisterHeadTrackingEnabledEventListener(const int32
         return ERROR;
     }
 
-    data.WriteInt32(clientPid);
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_HEAD_TRACKING_ENABLED_EVENT), data, reply, option);
     if (error != ERR_NONE) {
@@ -1936,12 +1930,12 @@ int32_t AudioPolicyProxy::UnregisterHeadTrackingEnabledEventListener(const int32
     return reply.ReadInt32();
 }
 
-std::vector<bool> AudioPolicyProxy::GetSpatializationState(const StreamUsage streamUsage)
+AudioSpatializationState AudioPolicyProxy::GetSpatializationState(const StreamUsage streamUsage)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<bool> spatializationState;
+    AudioSpatializationState spatializationState = {false, false};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("GetSpatializationState:: WriteInterfaceToken failed");
@@ -1956,10 +1950,8 @@ std::vector<bool> AudioPolicyProxy::GetSpatializationState(const StreamUsage str
         return spatializationState;
     }
 
-    int32_t size = reply.ReadInt32();
-    for (int32_t i = 0; i < size; i++) {
-        spatializationState.push_back(reply.ReadBool());
-    }
+    spatializationState.spatializationEnabled = reply.ReadBool();
+    spatializationState.headTrackingEnabled = reply.ReadBool();
 
     return spatializationState;
 }
@@ -2093,6 +2085,28 @@ int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_SPATIALIZATION_STATE_EVENT), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("RegisterSpatializationStateEventListener failed , error: %{public}d", error);
+        return ERROR;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("UnregisterSpatializationStateEventListener:: WriteInterfaceToken failed");
+        return ERROR;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(sessionID));
+    int32_t error = Remote() ->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_SPATIALIZATION_STATE_EVENT), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UnregisterSpatializationStateEventListener failed , error: %{public}d", error);
         return ERROR;
     }
 

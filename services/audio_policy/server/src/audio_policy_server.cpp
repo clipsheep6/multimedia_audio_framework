@@ -69,6 +69,8 @@ constexpr uid_t UID_MEDIA_SA = 1013;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
+constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
+constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -93,7 +95,8 @@ const std::list<uid_t> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
     UID_AUDIO,
-    UID_FOUNDATION_SA
+    UID_FOUNDATION_SA,
+    UID_DISTRIBUTED_CALL_SA
 };
 
 const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
@@ -251,21 +254,21 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
 #endif
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
+int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 {
     if ((keyType != OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) && (keyType != OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN)) {
         AUDIO_ERR_LOG("VolumeKeyEvents: invalid key type : %{public}d", keyType);
-        return;
+        return ERR_INVALID_PARAM;
     }
     AUDIO_INFO_LOG("RegisterVolumeKeyEvents: volume key: %{public}s.",
         (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
 
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
+    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
 
     std::set<int32_t> preKeys;
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_LOG(keyOption != nullptr, "Invalid key option");
+    CHECK_AND_RETURN_RET_LOG(keyOption != nullptr, ERR_INVALID_PARAM, "Invalid key option");
     keyOption->SetPreKeys(preKeys);
     keyOption->SetFinalKey(keyType);
     keyOption->SetFinalKeyDown(true);
@@ -298,18 +301,19 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for volume key: %{public}s option failed",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
     }
+    return keySubId;
 }
 #endif
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
+int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 {
     AUDIO_INFO_LOG("RegisterVolumeKeyMuteEvents: volume key: mute");
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
+    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
 
     std::shared_ptr<OHOS::MMI::KeyOption> keyOptionMute = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_LOG(keyOptionMute != nullptr, "keyOptionMute: Invalid key option");
+    CHECK_AND_RETURN_RET_LOG(keyOptionMute != nullptr, ERR_INVALID_PARAM, "keyOptionMute: Invalid key option");
     std::set<int32_t> preKeys;
     keyOptionMute->SetPreKeys(preKeys);
     keyOptionMute->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_MUTE);
@@ -325,6 +329,7 @@ void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
     if (muteKeySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
     }
+    return muteKeySubId;
 }
 #endif
 
@@ -337,10 +342,15 @@ void AudioPolicyServer::SubscribeVolumeKeyEvents()
     }
 
     AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: first time.");
-    hasSubscribedVolumeKeyEvents_.store(true);
-    RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
-    RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
-    RegisterVolumeKeyMuteEvents();
+    int32_t resultOfVolumeUp = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    int32_t resultOfVolumeDown = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
+    int32_t resultOfMute = RegisterVolumeKeyMuteEvents();
+    if (resultOfVolumeUp >= 0 && resultOfVolumeDown >= 0 && resultOfMute >= 0) {
+        hasSubscribedVolumeKeyEvents_.store(true);
+    } else {
+        AUDIO_ERR_LOG("SubscribeVolumeKeyEvents: failed to subscribe key events.");
+        hasSubscribedVolumeKeyEvents_.store(false);
+    }
 }
 #endif
 
@@ -437,43 +447,34 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
 
 void AudioPolicyServer::CheckSubscribePowerStateChange()
 {
-    if (!powerStateCallbackRegister_) {
-        SubscribePowerStateChangeEvents();
+    if (powerStateCallbackRegister_) {
+        return;
     }
 
-    if (!powerStateCallbackRegister_) {
-        AUDIO_ERR_LOG("PowerState CallBack Register Failed");
-    } else {
+    SubscribePowerStateChangeEvents();
+
+    if (powerStateCallbackRegister_) {
         AUDIO_DEBUG_LOG("PowerState CallBack Register Success");
+    } else {
+        AUDIO_ERR_LOG("PowerState CallBack Register Failed");
     }
 }
 
-void AudioPolicyServer::HandlePowerStateChanged(PowerMgr::PowerState state)
-{
-    audioPolicyService_.HandlePowerStateChanged(state);
-}
-
-int32_t AudioPolicyServer::SetOffloadStream(uint32_t sessionId)
+void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
+    int64_t deactivateSessionId)
 {
     CheckSubscribePowerStateChange();
-    return audioPolicyService_.SetOffloadStream(sessionId);
-}
-
-int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
-{
-    return audioPolicyService_.ReleaseOffloadStream(sessionId);
-}
-
-void AudioPolicyServer::InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType,
-    uint32_t incomingSessionId)
-{
-    ReleaseOffloadStream(activeSessionId);
-    if ((incomingStreamType == AudioStreamType::STREAM_MUSIC) ||
-        (incomingStreamType == AudioStreamType::STREAM_SPEECH)) {
-        SetOffloadStream(incomingSessionId);
-    } else {
-        AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", incomingSessionId,
-            incomingStreamType);
+    if (deactivateSessionId != OFFLOAD_NO_SESSION_ID) {
+        audioPolicyService_.OffloadStreamReleaseCheck(deactivateSessionId);
+    }
+    if (activateSessionId != OFFLOAD_NO_SESSION_ID) {
+        if (activateStreamType == AudioStreamType::STREAM_MUSIC ||
+            activateStreamType == AudioStreamType::STREAM_SPEECH) {
+            audioPolicyService_.OffloadStreamSetCheck(activateSessionId);
+        } else {
+            AUDIO_DEBUG_LOG("session:%{public}d not get offload stream, type is %{public}d",
+                (int32_t)activateSessionId, (int32_t)activateStreamType);
+        }
     }
 }
 
@@ -483,7 +484,7 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
 
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
 {
-    policyServer_->HandlePowerStateChanged(state);
+    policyServer_->audioPolicyService_.HandlePowerStateChanged(state);
 }
 
 void AudioPolicyServer::InitKVStore()
@@ -980,6 +981,11 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != EDM_SERVICE_UID && system::GetBoolParameter("persist.edm.mic_disable", false)) {
+        AUDIO_ERR_LOG("set microphone mute failed cause feature is disabled by edm");
+        return ERR_MICROPHONE_DISABLED_BY_EDM;
+    }
     bool isMicrophoneMute = IsMicrophoneMute(api_v);
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute) {
@@ -1275,7 +1281,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         if (!iterActiveErased) {
             ++iterActive;
         }
-        InterruptOffload(activeSessionID, incomingInterrupt.audioFocusType.streamType, incomingInterrupt.sessionID);
+        OffloadStreamCheck(incomingInterrupt.sessionID, incomingInterrupt.audioFocusType.streamType, activeSessionID);
     }
 }
 
@@ -1366,12 +1372,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         return SUCCESS;
     }
 
-    if ((streamType == AudioStreamType::STREAM_MUSIC) || (streamType == AudioStreamType::STREAM_SPEECH)) {
-        SetOffloadStream(audioInterrupt.sessionID);
-    } else {
-        AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", audioInterrupt.sessionID,
-            streamType);
-    }
+    OffloadStreamCheck(audioInterrupt.sessionID, streamType, OFFLOAD_NO_SESSION_ID);
     
     if (!audioPolicyService_.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
@@ -1540,7 +1541,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
 
-    ReleaseOffloadStream(audioInterrupt.sessionID);
+    OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, audioInterrupt.sessionID);
     if (!audioPolicyService_.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
@@ -2695,44 +2696,35 @@ int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
     return audioSpatializationService_.SetHeadTrackingEnabled(enable);
 }
 
-int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(int32_t clientPid,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object)
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     return audioSpatializationService_.RegisterSpatializationEnabledEventListener(
         clientPid, object, hasSystemPermission);
 }
 
-int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(int32_t clientPid,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object)
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     return audioSpatializationService_.RegisterHeadTrackingEnabledEventListener(clientPid, object, hasSystemPermission);
 }
 
-int32_t AudioPolicyServer::UnregisterSpatializationEnabledEventListener(int32_t clientPid)
+int32_t AudioPolicyServer::UnregisterSpatializationEnabledEventListener()
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioSpatializationService_.UnregisterSpatializationEnabledEventListener(clientPid);
 }
 
-int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener(int32_t clientPid)
+int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener()
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioSpatializationService_.UnregisterHeadTrackingEnabledEventListener(clientPid);
 }
 
-std::vector<bool> AudioPolicyServer::GetSpatializationState(const StreamUsage streamUsage)
+AudioSpatializationState AudioPolicyServer::GetSpatializationState(const StreamUsage streamUsage)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        std::vector<bool> spatializationState;
-        spatializationState.push_back(false);
-        spatializationState.push_back(false);
-        return spatializationState;
-    }
     return audioSpatializationService_.GetSpatializationState(streamUsage);
 }
 
@@ -2784,11 +2776,12 @@ int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceStat
 int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32_t sessionID,
     const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        return ERR_PERMISSION_DENIED;
-    }
     return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
+}
+
+int32_t AudioPolicyServer::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+{
+    return audioSpatializationService_.UnregisterSpatializationStateEventListener(sessionID);
 }
 
 int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object)
