@@ -263,7 +263,7 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
             deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) &&
             (*iter)->deviceCategory_ != deviceDescriptor->deviceCategory_) {
             AUDIO_INFO_LOG("A2DP device category changed,RemoveConnectedDevices");
-            RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(deviceDescriptor));
+            RemoveNewDevice(deviceDescriptor);
             return false;
         }
         **iter = deviceDescriptor;
@@ -596,7 +596,6 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
             sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor(*dev);
             GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
-            delete desc;
         }
     }
     return audioDeviceDescriptors;

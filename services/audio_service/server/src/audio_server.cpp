@@ -442,8 +442,15 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
         return ERR_NOT_SUPPORTED;
     }
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS);
-    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    AudioCapturerSource *audioCapturerSourceInstance;
+    IAudioRendererSink *audioRendererSinkInstance;
+    if (activeDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
+        audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
+    } else {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
+        audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    }
 
     if (audioCapturerSourceInstance == nullptr || !audioCapturerSourceInstance->IsInited()) {
         AUDIO_WARNING_LOG("Capturer is not initialized.");
@@ -957,7 +964,7 @@ int32_t AudioServer::SetCaptureSilentState(bool state)
     return SUCCESS;
 }
 
-int32_t AudioServer::UpdateSpatializationState(std::vector<bool> spatializationState)
+int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (callingUid != audioUid_ && callingUid != ROOT_UID) {
@@ -968,9 +975,8 @@ int32_t AudioServer::UpdateSpatializationState(std::vector<bool> spatializationS
     if (audioEffectChainManager == nullptr) {
         AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
         return ERROR;
-    } else {
-        return audioEffectChainManager->UpdateSpatializationState(spatializationState);
     }
+    return audioEffectChainManager->UpdateSpatializationState(spatializationState);
 }
 } // namespace AudioStandard
 } // namespace OHOS
