@@ -100,7 +100,6 @@ struct AutoRef {
 const int32_t NAPI_ERROR_INVALID_PARAM = 6800101;
 const int32_t NAPI_ERR_NO_PERMISSION = 201;
 const int32_t NAPI_ERR_PERMISSION_DENIED = 202;
-const int32_t NAPI_ERR_EDM_DISABLED = 203;
 const int32_t NAPI_ERR_INPUT_INVALID = 401;
 const int32_t NAPI_ERR_INVALID_PARAM = 6800101;
 const int32_t NAPI_ERR_NO_MEMORY = 6800102;
@@ -121,8 +120,6 @@ const std::string NAPI_ERR_TIMEOUT_INFO = "time out";
 const std::string NAPI_ERR_STREAM_LIMIT_INFO = "stream number limited";
 const std::string NAPI_ERR_SYSTEM_INFO = "system error";
 const std::string NAPI_ERR_NO_PERMISSION_INFO = "permission denied";
-const std::string NAPI_ERR_MICROPHONE_DISABLED_BY_EDM_INFO =
-    "your organization prohibits the use of the system microphone feature";
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_COMMON_NAPI_H_

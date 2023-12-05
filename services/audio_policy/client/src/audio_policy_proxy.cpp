@@ -740,6 +740,74 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    if (descriptor == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: ConfigDistributedRoutingRole descriptor is null");
+        return -1;
+    }
+    if (!descriptor->Marshalling(data)) {
+        AUDIO_ERR_LOG("AudioDeviceDescriptor marshalling failed");
+        return -1;
+    }
+    data.WriteInt32(static_cast<int32_t>(type));
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::CONFIG_DISTRIBUTED_ROUTING_ROLE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("ConfigDistributedRoutingRole failed error : %{public}d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetDistributedRoutingRoleCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DISTRIBUTED_ROUTING_ROLE_CALLBACK), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback failed error : %{public}d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetDistributedRoutingRoleCallback()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool token = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data writeInterfaceToken failed");
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_DISTRIBUTED_ROUTING_ROLE_CALLBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "AudioPolicyProxy UnsetDistributedRoutingRoleCallback failed error : %{public}d", error);
+    return reply.ReadInt32();
+}
+
 void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
@@ -1934,7 +2002,8 @@ int32_t AudioPolicyProxy::SetHeadTrackingEnabled(const bool enable)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+    const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1949,6 +2018,7 @@ int32_t AudioPolicyProxy::RegisterSpatializationEnabledEventListener(const sptr<
         return ERR_NULL_OBJECT;
     }
 
+    data.WriteInt32(clientPid);
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_SPATIALIZATION_ENABLED_EVENT), data, reply, option);
@@ -1960,7 +2030,8 @@ int32_t AudioPolicyProxy::RegisterSpatializationEnabledEventListener(const sptr<
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+    const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1975,6 +2046,7 @@ int32_t AudioPolicyProxy::RegisterHeadTrackingEnabledEventListener(const sptr<IR
         return ERR_NULL_OBJECT;
     }
 
+    data.WriteInt32(clientPid);
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_HEAD_TRACKING_ENABLED_EVENT), data, reply, option);
@@ -1986,7 +2058,7 @@ int32_t AudioPolicyProxy::RegisterHeadTrackingEnabledEventListener(const sptr<IR
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnregisterSpatializationEnabledEventListener()
+int32_t AudioPolicyProxy::UnregisterSpatializationEnabledEventListener(const int32_t clientPid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1997,6 +2069,7 @@ int32_t AudioPolicyProxy::UnregisterSpatializationEnabledEventListener()
         return ERROR;
     }
 
+    data.WriteInt32(clientPid);
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_SPATIALIZATION_ENABLED_EVENT), data, reply, option);
     if (error != ERR_NONE) {
@@ -2007,7 +2080,7 @@ int32_t AudioPolicyProxy::UnregisterSpatializationEnabledEventListener()
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnregisterHeadTrackingEnabledEventListener()
+int32_t AudioPolicyProxy::UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2018,6 +2091,7 @@ int32_t AudioPolicyProxy::UnregisterHeadTrackingEnabledEventListener()
         return ERROR;
     }
 
+    data.WriteInt32(clientPid);
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_HEAD_TRACKING_ENABLED_EVENT), data, reply, option);
     if (error != ERR_NONE) {
@@ -2028,12 +2102,12 @@ int32_t AudioPolicyProxy::UnregisterHeadTrackingEnabledEventListener()
     return reply.ReadInt32();
 }
 
-AudioSpatializationState AudioPolicyProxy::GetSpatializationState(const StreamUsage streamUsage)
+std::vector<bool> AudioPolicyProxy::GetSpatializationState(const StreamUsage streamUsage)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    AudioSpatializationState spatializationState = {false, false};
+    std::vector<bool> spatializationState;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("GetSpatializationState:: WriteInterfaceToken failed");
@@ -2048,8 +2122,10 @@ AudioSpatializationState AudioPolicyProxy::GetSpatializationState(const StreamUs
         return spatializationState;
     }
 
-    spatializationState.spatializationEnabled = reply.ReadBool();
-    spatializationState.headTrackingEnabled = reply.ReadBool();
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        spatializationState.push_back(reply.ReadBool());
+    }
 
     return spatializationState;
 }
@@ -2183,28 +2259,6 @@ int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_SPATIALIZATION_STATE_EVENT), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("RegisterSpatializationStateEventListener failed , error: %{public}d", error);
-        return ERROR;
-    }
-
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("UnregisterSpatializationStateEventListener:: WriteInterfaceToken failed");
-        return ERROR;
-    }
-
-    data.WriteInt32(static_cast<int32_t>(sessionID));
-    int32_t error = Remote() ->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_SPATIALIZATION_STATE_EVENT), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UnregisterSpatializationStateEventListener failed , error: %{public}d", error);
         return ERROR;
     }
 

@@ -50,6 +50,7 @@
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
 #include "audio_state_manager.h"
+#include "audio_spatialization_service.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -88,6 +89,10 @@ public:
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
 
     float GetLowPowerVolume(int32_t streamId) const;
+
+    int32_t SetOffloadStream(uint32_t sessionId, DeviceType devicesType = DEVICE_TYPE_NONE);
+
+    int32_t ReleaseOffloadStream(uint32_t sessionId);
 
     void HandlePowerStateChanged(PowerMgr::PowerState state);
 
@@ -197,7 +202,9 @@ public:
     void ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
 
-    void OnDeviceStatusUpdated(DStatusInfo statusInfo);
+    void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
+
+    void HandleOfflineDistributedDevice();
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
@@ -353,10 +360,6 @@ public:
 
     void TriggerAvailableDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
-    void OffloadStreamSetCheck(uint32_t sessionId);
-
-    void OffloadStreamReleaseCheck(uint32_t sessionId);
-
     void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
 
     void OffloadStartPlayingIfOffloadMode(uint64_t sessionId);
@@ -374,6 +377,12 @@ public:
     int32_t HandleA2dpDeviceInOffload();
 
     int32_t HandleA2dpDeviceOutOffload();
+
+    void ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
+
+    DistributedRoutingInfo GetDistributedRoutingRoleInfo();
+
+    bool IsIncomingDeviceInRemoteRender(sptr<AudioDeviceDescriptor> incomingDevice);
 
 private:
     AudioPolicyService()
@@ -596,17 +605,22 @@ private:
 
     void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
 
-    void SetOffloadMode();
+    int32_t SetStreamOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
 
-    void ResetOffloadMode();
+    int32_t SetOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
 
-    bool GetOffloadAvailableFromXml() const;
+    int32_t SetOffloadMode();
 
-    void SetOffloadAvailableFromXML(AudioModuleInfo &moduleInfo);
+    int32_t UnsetOffloadMode();
 
-    bool CheckActiveOutputDeviceSupportOffload();
+    int32_t ResetOffloadMode();
 
+    int32_t PresetOffloadMode(DeviceType deviceType);
+
+    bool GetAudioOffloadAvailableFromXml() const;
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
+
+    void StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
 
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
@@ -620,11 +634,6 @@ private:
     void FetchInputDeviceWhenNoRunningStream();
 
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType);
-
-    int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool isStreamStatusUpdated);
-
-    void ResetToSpeaker(DeviceType devType);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
@@ -741,12 +750,14 @@ private:
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
-    // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VIRTUAL_CAPTURE
+    DistributedRoutingInfo distributedRoutingInfo_;
+
+    // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
     static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
         SOURCE_TYPE_PLAYBACK_CAPTURE,
         SOURCE_TYPE_WAKEUP,
-        SOURCE_TYPE_VIRTUAL_CAPTURE
+        SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
     };
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;

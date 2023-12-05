@@ -338,15 +338,13 @@ describe("AudioStreamManagerJsTest", function () {
     let count = 0;
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
-      let flag = false;
       audioStreamManager.on('audioRendererChange', (AudioRendererChangeInfoArray) =>{
 
         expect(AudioRendererChangeInfoArray.length).assertLarger(0);
         count ++;
-        if (AudioRendererChangeInfoArray[0].deviceDescriptors[0].displayName !== ""
-            && AudioRendererChangeInfoArray[0].deviceDescriptors[0].displayName !== undefined) {
-          flag = true;
-        }
+        expect(AudioRendererChangeInfoArray[0].deviceDescriptors[0].displayName!==""
+        && AudioRendererChangeInfoArray[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
+
         if (count == 3) {
           done();
         }
@@ -355,8 +353,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioRenderer = await audio.createAudioRenderer(AudioRendererOptions);
       await audioRenderer.start();
       await audioRenderer.release();
-      sleep(1);
-      expect(flag).assertTrue();
+
     } catch(e) {
       console.error(`${TAG} getCurrentAudioRendererInfoArray007 ERROR: ${e.message}`);
       expect().assertFail();
@@ -383,7 +380,7 @@ describe("AudioStreamManagerJsTest", function () {
       done();
       return;
     }
-    sleep(1);
+
     try {
       let audioRendererInfos = audioStreamManager.getCurrentAudioRendererInfoArraySync();
       console.info("getCurrentAudioRendererInfoArraySync001:"+JSON.stringify(audioRendererInfos));

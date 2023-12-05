@@ -141,21 +141,18 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level1)
 {
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto outputDevice =  audioDeviceDescriptors[0];
 
-    for (auto outputDevice : audioDeviceDescriptors) {
-        EXPECT_EQ(outputDevice->deviceRole_, DeviceRole::OUTPUT_DEVICE);
-        if (outputDevice->deviceType_ != DeviceType::DEVICE_TYPE_SPEAKER) {
-            continue;
-        }
-        EXPECT_GE(outputDevice->deviceId_, MIN_DEVICE_ID);
-        EXPECT_EQ(true, (*outputDevice->audioStreamInfo_.samplingRate.rbegin() >= SAMPLE_RATE_8000)
-            && ((*outputDevice->audioStreamInfo_.samplingRate.begin() <= SAMPLE_RATE_96000)));
-        EXPECT_EQ(outputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
-        EXPECT_EQ(true, (*outputDevice->audioStreamInfo_.channels.rbegin() >= MONO)
-            && ((*outputDevice->audioStreamInfo_.channels.rbegin() <= CHANNEL_8)));
-        EXPECT_EQ(true, (outputDevice->audioStreamInfo_.format >= SAMPLE_U8)
-            && ((outputDevice->audioStreamInfo_.format <= SAMPLE_F32LE)));
-    }
+    EXPECT_EQ(outputDevice->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(outputDevice->deviceType_, DeviceType::DEVICE_TYPE_SPEAKER);
+    EXPECT_GE(outputDevice->deviceId_, MIN_DEVICE_ID);
+    EXPECT_EQ(true, (*outputDevice->audioStreamInfo_.samplingRate.rbegin() >= SAMPLE_RATE_8000)
+        && ((*outputDevice->audioStreamInfo_.samplingRate.begin() <= SAMPLE_RATE_96000)));
+    EXPECT_EQ(outputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
+    EXPECT_EQ(true, (*outputDevice->audioStreamInfo_.channels.rbegin() >= MONO)
+        && ((*outputDevice->audioStreamInfo_.channels.rbegin() <= CHANNEL_8)));
+    EXPECT_EQ(true, (outputDevice->audioStreamInfo_.format >= SAMPLE_U8)
+        && ((outputDevice->audioStreamInfo_.format <= SAMPLE_F32LE)));
 }
 
 /**
@@ -1128,21 +1125,16 @@ HWTEST(AudioManagerUnitTest, IsStreamMute_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, ReconfigureChannel_001, TestSize.Level1)
 {
-    int32_t ret = SUCCESS;
-
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE);
-    if (isActive) {
-        ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, false);
-        EXPECT_EQ(SUCCESS, ret);
-    }
-
-    ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(CHANNEL_4, DeviceType::DEVICE_TYPE_FILE_SINK);
-    EXPECT_NE(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, false);
+    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, true);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::SPEAKER, true);
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE);
+    EXPECT_TRUE(isActive);
+
+    ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(CHANNEL_4, DeviceType::DEVICE_TYPE_FILE_SINK);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, false);
     EXPECT_EQ(SUCCESS, ret);
 
     isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
@@ -1178,8 +1170,11 @@ HWTEST(AudioManagerUnitTest, ReconfigureChannel_002, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, ReconfigureChannel_003, TestSize.Level1)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, false);
+    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, true);
     EXPECT_EQ(SUCCESS, ret);
+
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE);
+    EXPECT_TRUE(isActive);
 
     ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(INV_CHANNEL, DeviceType::DEVICE_TYPE_FILE_SINK);
     EXPECT_NE(SUCCESS, ret);
@@ -1196,7 +1191,7 @@ HWTEST(AudioManagerUnitTest, ReconfigureChannel_003, TestSize.Level1)
     ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::SPEAKER, true);
     EXPECT_EQ(SUCCESS, ret);
 
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
+    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
     EXPECT_TRUE(isActive);
 }
 

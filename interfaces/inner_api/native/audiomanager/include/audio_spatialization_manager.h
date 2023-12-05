@@ -63,7 +63,7 @@ public:
      * @param enabled the spatialization state.
      * @since 11
      */
-    virtual void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) = 0;
+    virtual void OnSpatializationStateChange(const std::vector<bool> &spatializationState) = 0;
 };
 
 /**
@@ -114,7 +114,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 11
      */
-    int32_t RegisterSpatializationEnabledEventListener(
+    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
 
     /**
@@ -124,7 +124,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 11
      */
-    int32_t RegisterHeadTrackingEnabledEventListener(
+    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
 
     /**
@@ -134,7 +134,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 11
      */
-    int32_t UnregisterSpatializationEnabledEventListener();
+    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid);
 
     /**
      * @brief Unregister the head tracking enabled change callback listener
@@ -143,7 +143,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 11
      */
-    int32_t UnregisterHeadTrackingEnabledEventListener();
+    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid);
     
     /**
      * @brief Check whether the spatialization is supported

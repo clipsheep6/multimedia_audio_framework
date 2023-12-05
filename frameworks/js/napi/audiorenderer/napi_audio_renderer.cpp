@@ -338,9 +338,7 @@ napi_value NapiAudioRenderer::SetRenderRate(napi_env env, napi_callback_info inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         AudioRendererRate audioRenderRate = static_cast<AudioRendererRate>(context->audioRendererRate);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
@@ -373,9 +371,7 @@ napi_value NapiAudioRenderer::GetRenderRate(napi_env env, napi_callback_info inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->intValue = napiAudioRenderer->audioRenderer_->GetRenderRate();
@@ -420,9 +416,7 @@ napi_value NapiAudioRenderer::SetRendererSamplingRate(napi_env env, napi_callbac
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         if (context->rendererSampleRate <= 0) {
@@ -455,9 +449,7 @@ napi_value NapiAudioRenderer::GetRendererSamplingRate(napi_env env, napi_callbac
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->rendererSampleRate = napiAudioRenderer->audioRenderer_->GetRendererSamplingRate();
@@ -483,9 +475,7 @@ napi_value NapiAudioRenderer::Start(napi_env env, napi_callback_info info)
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->isTrue = napiAudioRenderer->audioRenderer_->Start();
@@ -535,9 +525,8 @@ napi_value NapiAudioRenderer::Write(napi_env env, napi_callback_info info)
 napi_status NapiAudioRenderer::WriteArrayBufferToNative(std::shared_ptr<AudioRendererAsyncContext> context)
 {
     CHECK_AND_RETURN_RET_LOG(CheckContextStatus(context), napi_generic_failure, "context object state is error.");
-    auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-    ObjectRefMap objectGuard(obj);
-    auto *napiAudioRenderer = objectGuard.GetPtr();
+    auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+
     CHECK_AND_RETURN_RET_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
         napi_generic_failure, "context object state is error.");
     size_t bufferLen = context->bufferLen;
@@ -575,9 +564,7 @@ napi_value NapiAudioRenderer::GetAudioTime(napi_env env, napi_callback_info info
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         Timestamp timestamp;
@@ -629,9 +616,7 @@ napi_value NapiAudioRenderer::Drain(napi_env env, napi_callback_info info)
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->isTrue = napiAudioRenderer->audioRenderer_->Drain();
@@ -658,9 +643,7 @@ napi_value NapiAudioRenderer::Pause(napi_env env, napi_callback_info info)
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->isTrue = napiAudioRenderer->audioRenderer_->Pause();
@@ -687,9 +670,7 @@ napi_value NapiAudioRenderer::Stop(napi_env env, napi_callback_info info)
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->isTrue = napiAudioRenderer->audioRenderer_->Stop();
@@ -716,9 +697,7 @@ napi_value NapiAudioRenderer::Release(napi_env env, napi_callback_info info)
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->isTrue = napiAudioRenderer->audioRenderer_->Release();
@@ -745,9 +724,7 @@ napi_value NapiAudioRenderer::GetBufferSize(napi_env env, napi_callback_info inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         size_t bufferSize;
@@ -794,9 +771,7 @@ napi_value NapiAudioRenderer::GetAudioStreamId(napi_env env, napi_callback_info 
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->intValue = napiAudioRenderer->audioRenderer_->GetAudioStreamId(context->audioStreamId);
@@ -849,9 +824,7 @@ napi_value NapiAudioRenderer::SetVolume(napi_env env, napi_callback_info info)
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         if (context->volLevel < MIN_VOLUME_IN_DOUBLE || context->volLevel > MAX_VOLUME_IN_DOUBLE) {
@@ -883,9 +856,7 @@ napi_value NapiAudioRenderer::GetRendererInfo(napi_env env, napi_callback_info i
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->intValue = napiAudioRenderer->audioRenderer_->GetRendererInfo(context->rendererInfo);
@@ -929,9 +900,7 @@ napi_value NapiAudioRenderer::GetStreamInfo(napi_env env, napi_callback_info inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->intValue = napiAudioRenderer->audioRenderer_->GetStreamInfo(context->streamInfo);
@@ -982,9 +951,7 @@ napi_value NapiAudioRenderer::SetInterruptMode(napi_env env, napi_callback_info 
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         InterruptMode interruptMode = GetNativeInterruptMode(context->interruptMode);
@@ -1038,9 +1005,7 @@ napi_value NapiAudioRenderer::GetMinStreamVolume(napi_env env, napi_callback_inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->volLevel = napiAudioRenderer->audioRenderer_->GetMinStreamVolume();
@@ -1080,9 +1045,7 @@ napi_value NapiAudioRenderer::GetMaxStreamVolume(napi_env env, napi_callback_inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->volLevel = napiAudioRenderer->audioRenderer_->GetMaxStreamVolume();
@@ -1122,9 +1085,7 @@ napi_value NapiAudioRenderer::GetCurrentOutputDevices(napi_env env, napi_callbac
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         DeviceInfo deviceInfo;
@@ -1173,9 +1134,7 @@ napi_value NapiAudioRenderer::GetUnderflowCount(napi_env env, napi_callback_info
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->underflowCount = napiAudioRenderer->audioRenderer_->GetUnderflowCount();
@@ -1214,9 +1173,7 @@ napi_value NapiAudioRenderer::GetAudioEffectMode(napi_env env, napi_callback_inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->intValue = napiAudioRenderer->audioRenderer_->GetAudioEffectMode();
@@ -1249,9 +1206,7 @@ napi_value NapiAudioRenderer::SetAudioEffectMode(napi_env env, napi_callback_inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         AudioEffectMode audioEffectMode = static_cast<AudioEffectMode>(context->audioEffectMode);

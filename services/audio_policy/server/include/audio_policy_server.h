@@ -320,15 +320,17 @@ public:
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
 
-    int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) override;
+    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
 
-    int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) override;
+    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterSpatializationEnabledEventListener() override;
+    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) override;
 
-    int32_t UnregisterHeadTrackingEnabledEventListener() override;
+    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) override;
 
-    AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
+    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) override;
 
     bool IsSpatializationSupported() override;
 
@@ -343,7 +345,11 @@ public:
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) override;
+    int32_t ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type) override;
+
+    int32_t SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetDistributedRoutingRoleCallback() override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -389,7 +395,6 @@ private:
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
     static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 1;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
-    static constexpr int32_t EDM_SERVICE_UID = 3057;
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
@@ -410,9 +415,12 @@ private:
         AudioPolicyServer *policyServer_;
     };
 
+    void HandlePowerStateChanged(PowerMgr::PowerState state);
+
     // offload session
-    void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
-        int64_t deactivateSessionId);
+    int32_t SetOffloadStream(uint32_t sessionId);
+    int32_t ReleaseOffloadStream(uint32_t sessionId);
+    void InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId);
     void CheckSubscribePowerStateChange();
 
     // for audio interrupt
@@ -465,8 +473,8 @@ private:
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
-    int32_t RegisterVolumeKeyEvents(const int32_t keyType);
-    int32_t RegisterVolumeKeyMuteEvents();
+    void RegisterVolumeKeyEvents(const int32_t keyType);
+    void RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
 #endif
     void SubscribePowerStateChangeEvents();
@@ -478,6 +486,8 @@ private:
     void RegisterDataObserver();
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
+
+    void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
     bool powerStateCallbackRegister_;
     AudioPolicyService& audioPolicyService_;
@@ -499,6 +509,7 @@ private:
     std::unordered_map<int32_t, sptr<IStandardAudioPolicyManagerListener>> focusInfoChangeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
+    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
 
     std::mutex keyEventMutex_;
     std::mutex volumeKeyEventMutex_;
@@ -508,6 +519,7 @@ private:
     std::mutex ringerModeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
+    std::mutex configDistributedRoutingMutex_;
 
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
         this, std::placeholders::_1),
