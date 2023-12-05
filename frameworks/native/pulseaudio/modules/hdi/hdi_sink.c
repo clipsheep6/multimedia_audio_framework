@@ -143,6 +143,7 @@ struct Userdata {
     pthread_rwlock_t rwlockSleep;
     int64_t timestampSleep;
     struct {
+        bool used;
         int32_t sessionID;
         bool firstWrite;
         bool firstWriteHdi; // for set volume onstart, avoid mute
@@ -152,7 +153,7 @@ struct Userdata {
         pa_usec_t prewrite;
         pa_usec_t minWait;
         pa_thread *thread;
-        pa_asyncmsgq *msgq;
+        pa_asyncmsgq *fdq;
         bool isHDISinkStarted;
         struct RendererSinkAdapter *sinkAdapter;
         pa_atomic_t hdistate; // 0:need_data 1:wait_consume 2:flushing
@@ -165,7 +166,7 @@ struct Userdata {
         pa_usec_t timestamp;
         pa_thread *thread;
         pa_thread *thread_hdi;
-        pa_asyncmsgq *msgq;
+        pa_asyncmsgq *fdq;
         bool isHDISinkStarted;
         struct RendererSinkAdapter *sinkAdapter;
         pa_asyncmsgq *dq;
@@ -795,22 +796,13 @@ int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
     return nSinkInput;
 }
 
-static bool monitorLinked(pa_sink *si, bool isRunning)
-{
-    if (isRunning) {
-        return si->monitor_source && PA_SOURCE_IS_RUNNING(si->monitor_source->thread_info.state);
-    } else {
-        return si->monitor_source && PA_SOURCE_IS_LINKED(si->monitor_source->thread_info.state);
-    }
-}
-
 static void SinkRenderCapProcess(pa_sink *si, size_t length, pa_memchunk *capResult)
 {
     capResult->memblock = pa_memblock_new(si->core->mempool, length);
     capResult->index = 0;
     capResult->length = length;
     SinkRenderPrimaryGetDataCap(si, capResult);
-    if (monitorLinked(si, false)) {
+    if (si->monitor_source && PA_SOURCE_IS_LINKED(si->monitor_source->thread_info.state)) {
         pa_source_post(si->monitor_source, capResult);
     }
     return;
@@ -1150,12 +1142,19 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 
 static bool InputIsOffload(pa_sink_input *i)
 {
-    const char *offloadEnableStr = pa_proplist_gets(i->proplist, "stream.offload.enable");
-    if (offloadEnableStr == NULL) {
+    pa_sink* s = i->sink;
+    pa_assert(s);
+    struct Userdata *u = s->userdata;
+    const char* adapterName = pa_proplist_gets(s->proplist, PA_PROP_DEVICE_STRING);
+    const char* offloadEnableStr = pa_proplist_gets(i->proplist, "stream.offload.enable");
+    if (adapterName == NULL || offloadEnableStr == NULL) {
         return false;
     }
+    const bool adapterPrimary = !strcmp(adapterName, DEFAULT_DEVICE_CLASS);
     const bool offloadEnable = !strcmp(offloadEnableStr, "1");
-    return offloadEnable;
+    const bool offloadUsed = u->offload.used;
+    const bool result = adapterPrimary && offloadEnable && offloadUsed;
+    return result;
 }
 
 static bool InputIsPrimary(pa_sink_input *i)
@@ -1212,14 +1211,13 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink* s, pa
     return n;
 }
 
-static int32_t GetInputsType(pa_sink* s, unsigned* nPrimary, unsigned* nOffload, unsigned* nHd, bool isRunning)
+static void GetInputsType(pa_sink* s, unsigned* nPrimary, unsigned* nOffload, unsigned* nHd, bool isRunning)
 {
     pa_sink_input *i;
     void *state = NULL;
     *nPrimary = 0;
     *nOffload = 0;
     *nHd = 0;
-    int n = 0;
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
@@ -1229,7 +1227,6 @@ static int32_t GetInputsType(pa_sink* s, unsigned* nPrimary, unsigned* nOffload,
         if (isRunning && i->thread_info.state != PA_SINK_INPUT_RUNNING) {
             continue;
         }
-        n++;
         if (InputIsOffload(i)) {
             (*nOffload)++;
         } else if (false) { // add func is hd
@@ -1238,7 +1235,6 @@ static int32_t GetInputsType(pa_sink* s, unsigned* nPrimary, unsigned* nOffload,
             (*nPrimary)++;
         }
     }
-    return n;
 }
 
 size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
@@ -1747,7 +1743,7 @@ static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
         return;
     }
 
-    if (u->offload_enable && InputIsOffload(i)) {
+    if (u->offload.used && InputIsOffload(i)) {
         PaInputStateChangeCbOffload(u, i, state);
     } else { // primary
         PaInputStateChangeCbPrimary(u, i, state);
@@ -1824,7 +1820,7 @@ static void ThreadFuncRendererTimerOffloadFlag(struct Userdata* u, pa_usec_t now
     *flagOut = flag;
 }
 
-static int32_t WaitMsg(const char* prefix, const char* suffix, struct Userdata* u, pa_asyncmsgq* msgq)
+static int32_t WaitMsg(const char* prefix, const char* suffix, struct Userdata* u, pa_asyncmsgq* fdq)
 {
     int32_t ret;
     int32_t code = 0;
@@ -1832,12 +1828,12 @@ static int32_t WaitMsg(const char* prefix, const char* suffix, struct Userdata* 
     if ((ret = pthread_rwlock_unlock(&u->rwlockSleep)) != 0) {
         AUDIO_WARNING_LOG("WaitMsg pthread_rwlock_unlock ret %d", ret);
     }
-    pa_assert_se(pa_asyncmsgq_get(msgq, NULL, &code, NULL, NULL, NULL, 1) == 0);
+    pa_assert_se(pa_asyncmsgq_get(fdq, NULL, &code, NULL, NULL, NULL, 1) == 0);
     if ((ret = pthread_rwlock_rdlock(&u->rwlockSleep)) != 0) {
         AUDIO_WARNING_LOG("WaitMsg pthread_rwlock_rdlock ret %d", ret);
     }
 
-    pa_asyncmsgq_done(msgq, 0);
+    pa_asyncmsgq_done(fdq, 0);
 
     if (code == QUIT) {
         AUDIO_INFO_LOG("Thread %s(use timing %s) shutting down, pid %d, tid %d", prefix, suffix, getpid(), gettid());
@@ -1869,7 +1865,7 @@ static void ThreadFuncRendererTimerOffload(void* userdata)
         if ((ret = pthread_mutex_unlock(&u->mutexPa)) != 0) {
             AUDIO_WARNING_LOG("ThreadFuncRendererTimerOffload pthread_mutex_unlock ret %d", ret);
         }
-        if (WaitMsg(deviceClass, "offload", u, u->offload.msgq) == -1) {
+        if (WaitMsg(deviceClass, "offload", u, u->offload.fdq) == -1) {
             break;
         }
         if ((ret = pthread_mutex_lock(&u->mutexPa)) != 0) {
@@ -1964,7 +1960,7 @@ static void ThreadFuncRendererTimer(void *userdata)
         if ((ret = pthread_mutex_unlock(&u->mutexPa)) != 0) {
             AUDIO_WARNING_LOG("ThreadFuncRendererTimer pthread_mutex_unlock ret %d", ret);
         }
-        if (WaitMsg(deviceClass, "primary", u, u->primary.msgq) == -1) {
+        if (WaitMsg(deviceClass, "primary", u, u->primary.fdq) == -1) {
             break;
         }
         if ((ret = pthread_mutex_lock(&u->mutexPa)) != 0) {
@@ -1978,10 +1974,11 @@ static void ThreadFuncRendererTimer(void *userdata)
 
         bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
             (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
-            (u->sink->state == PA_SINK_IDLE && monitorLinked(u->sink, true));
+            (u->sink->state == PA_SINK_IDLE && u->sink->monitor_source &&
+            PA_SOURCE_IS_RUNNING(u->sink->monitor_source->thread_info.state));
         unsigned nPrimary, nOffload, nHd;
-        int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-        if (n != 0 && !monitorLinked(u->sink, true)) {
+        GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+        if (u->offload_enable) {
             flag &= nPrimary > 0;
         }
         if (flag) {
@@ -2061,7 +2058,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         }
 
         unsigned nPrimary, nOffload, nHd;
-        int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, false);
+        GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, false);
 
         if (u->timestampSleep < pa_rtclock_now()) {
             u->timestampSleep = -1;
@@ -2069,12 +2066,12 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         pthread_rwlock_unlock(&u->rwlockSleep);
 
-        bool primaryFlag = n == 0 || monitorLinked(u->sink, false);
-        if ((nPrimary > 0 && u->primary.msgq) || primaryFlag) {
-            pa_asyncmsgq_send(u->primary.msgq, NULL, 0, NULL, 0, NULL);
+        // rk need send 0 even if no input in sink after stop
+        if ((nPrimary > 0 && u->primary.fdq) || (nPrimary == 0 && nOffload == 0 && nHd == 0)) { // rk need
+            pa_asyncmsgq_send(u->primary.fdq, NULL, 0, NULL, 0, NULL);
         }
-        if (u->offload_enable && nOffload > 0 && u->offload.msgq) {
-            pa_asyncmsgq_send(u->offload.msgq, NULL, 0, NULL, 0, NULL);
+        if (u->offload.used && nOffload > 0 && u->offload.fdq) {
+            pa_asyncmsgq_send(u->offload.fdq, NULL, 0, NULL, 0, NULL);
         }
     }
 }
@@ -2399,7 +2396,7 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core* core, pa_sink_input* i,
 static pa_hook_result_t SinkInputPutCb(pa_core* core, pa_sink_input* i, struct Userdata* u)
 {
     pa_sink_input_assert_ref(i);
-    if (u->offload_enable) {
+    if (u->offload.used) {
         i->state_change = PaInputStateChangeCb;
         i->update_max_rewind = NULL;
     }
@@ -2587,9 +2584,7 @@ int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
     }
 
     // offload
-    const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
-    if (u->offload_enable) {
-        AUDIO_DEBUG_LOG("PaHdiSinkNew device[%s] sink[%s] init offload thread", deviceClass, u->sink->name);
+    if (!strcmp(u->sink->name, "Speaker") && u->offload_enable) {
         int32_t ret = LoadSinkAdapter(DEVICE_CLASS_OFFLOAD, "LocalDevice", &u->offload.sinkAdapter);
         if (ret) {
             AUDIO_ERR_LOG("Load adapter failed");
@@ -2599,8 +2594,10 @@ int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
             return -1;
         }
 
-        u->offload.msgq = pa_asyncmsgq_new(0);
+        u->offload.fdq = pa_asyncmsgq_new(0);
         pa_atomic_store(&u->offload.hdistate, 0);
+        u->offload.used = true;
+        AUDIO_INFO_LOG("PaHdiSinkNew, set offload state 0");
         u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_START], PA_HOOK_LATE,
             (pa_hook_cb_t)SinkInputMoveStartCb, u);
@@ -2613,8 +2610,6 @@ int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
             AUDIO_ERR_LOG("Failed to write-pa-offload thread.");
             return -1;
         }
-    } else {
-        AUDIO_DEBUG_LOG("PaHdiSinkNew device[%s] sink[%s] skip offload thread", deviceClass, u->sink->name);
     }
     return 0;
 }
@@ -2626,7 +2621,7 @@ int32_t PaHdiSinkNewInitUserData(pa_module* m, pa_modargs* ma, struct Userdata *
 
     pa_memchunk_reset(&u->memchunk);
     u->rtpoll = pa_rtpoll_new();
-    u->primary.msgq = pa_asyncmsgq_new(0);
+    u->primary.fdq = pa_asyncmsgq_new(0);
     pthread_rwlock_init(&u->rwlockSleep, NULL);
     pthread_mutex_init(&u->mutexPa, NULL);
 
@@ -2777,8 +2772,8 @@ fail:
 
 static void UserdataFreeOffload(struct Userdata *u)
 {
-    if (u->offload.msgq) {
-        pa_asyncmsgq_unref(u->offload.msgq);
+    if (u->offload.fdq) {
+        pa_asyncmsgq_unref(u->offload.fdq);
     }
 
     if (u->offload.sinkAdapter) {
@@ -2800,12 +2795,12 @@ static void UserdataFreeThread(struct Userdata *u)
     }
 
     if (u->offload.thread) {
-        pa_asyncmsgq_send(u->offload.msgq, NULL, QUIT, NULL, 0, NULL);
+        pa_asyncmsgq_send(u->offload.fdq, NULL, QUIT, NULL, 0, NULL);
         pa_thread_free(u->offload.thread);
     }
 
     if (u->primary.thread) {
-        pa_asyncmsgq_send(u->primary.msgq, NULL, QUIT, NULL, 0, NULL);
+        pa_asyncmsgq_send(u->primary.fdq, NULL, QUIT, NULL, 0, NULL);
         pa_thread_free(u->primary.thread);
     }
 
@@ -2838,8 +2833,8 @@ static void UserdataFree(struct Userdata *u)
         pa_rtpoll_free(u->rtpoll);
     }
 
-    if (u->primary.msgq) {
-        pa_asyncmsgq_unref(u->primary.msgq);
+    if (u->primary.fdq) {
+        pa_asyncmsgq_unref(u->primary.fdq);
     }
 
     if (u->primary.dq) {

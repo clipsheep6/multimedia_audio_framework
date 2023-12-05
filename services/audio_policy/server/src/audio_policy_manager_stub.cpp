@@ -1102,47 +1102,54 @@ void AudioPolicyManagerStub::SetHeadTrackingEnabledInternal(MessageParcel &data,
 void AudioPolicyManagerStub::RegisterSpatializationEnabledEventListenerInternal(MessageParcel &data,
     MessageParcel &reply)
 {
+    int32_t clientUid = data.ReadInt32();
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
     if (remoteObject == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioSpatializationEnabledChangeCallback obj is null");
         return;
     }
-    int32_t ret = RegisterSpatializationEnabledEventListener(remoteObject);
+    int32_t ret = RegisterSpatializationEnabledEventListener(clientUid, remoteObject);
     reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::RegisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data,
     MessageParcel &reply)
 {
+    int32_t clientUid = data.ReadInt32();
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
     if (remoteObject == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioHeadTrackingEnabledChangeCallback obj is null");
         return;
     }
-    int32_t ret = RegisterHeadTrackingEnabledEventListener(remoteObject);
+    int32_t ret = RegisterHeadTrackingEnabledEventListener(clientUid, remoteObject);
     reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::UnregisterSpatializationEnabledEventListenerInternal(MessageParcel &data,
     MessageParcel &reply)
 {
-    int32_t ret = UnregisterSpatializationEnabledEventListener();
+    int32_t clientUid = data.ReadInt32();
+    int32_t ret = UnregisterSpatializationEnabledEventListener(clientUid);
     reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::UnregisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data,
     MessageParcel &reply)
 {
-    int32_t ret = UnregisterHeadTrackingEnabledEventListener();
+    int32_t clientUid = data.ReadInt32();
+    int32_t ret = UnregisterHeadTrackingEnabledEventListener(clientUid);
     reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::GetSpatializationStateInternal(MessageParcel &data, MessageParcel &reply)
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-    AudioSpatializationState spatializationState = GetSpatializationState(streamUsage);
-    reply.WriteBool(spatializationState.spatializationEnabled);
-    reply.WriteBool(spatializationState.headTrackingEnabled);
+    std::vector<bool> spatializationState = GetSpatializationState(streamUsage);
+    int32_t size = static_cast<int32_t>(spatializationState.size());
+    reply.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        reply.WriteBool(spatializationState[i]);
+    }
 }
 
 void AudioPolicyManagerStub::IsSpatializationSupportedInternal(MessageParcel &data, MessageParcel &reply)
@@ -1193,14 +1200,6 @@ void AudioPolicyManagerStub::RegisterSpatializationStateEventListenerInternal(Me
         return;
     }
     int32_t ret = RegisterSpatializationStateEventListener(sessionID, streamUsage, remoteObject);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal(MessageParcel &data,
-    MessageParcel &reply)
-{
-    uint32_t sessionID = static_cast<uint32_t>(data.ReadInt32());
-    int32_t ret = UnregisterSpatializationStateEventListener(sessionID);
     reply.WriteInt32(ret);
 }
 

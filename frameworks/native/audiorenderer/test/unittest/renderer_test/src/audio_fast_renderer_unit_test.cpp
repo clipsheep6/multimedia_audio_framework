@@ -49,11 +49,6 @@ public:
     void TearDown();
 };
 
-void AudioRenderModeCallbackTest::OnWriteData(size_t length)
-{
-    g_reqBufLen = length;
-}
-
 void InitializeFastRendererOptions(AudioRendererOptions &rendererOptions)
 {
     rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;

@@ -141,7 +141,6 @@ private:
     void ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply);
     void SetDistributedRoutingRoleCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetDistributedRoutingRoleCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterSpatializationStateEventListenerInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -257,7 +256,6 @@ private:
         &AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal,
         &AudioPolicyManagerStub::SetDistributedRoutingRoleCallbackInternal,
         &AudioPolicyManagerStub::UnsetDistributedRoutingRoleCallbackInternal,
-        &AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal,
     };
 };
 } // namespace AudioStandard

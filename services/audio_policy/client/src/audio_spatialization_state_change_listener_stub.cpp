@@ -147,9 +147,11 @@ int AudioSpatializationStateChangeListenerStub::OnRemoteRequest(
 
     switch (code) {
         case ON_SPATIALIZATION_STATE_CHANGE: {
-            AudioSpatializationState spatializationState;
-            spatializationState.spatializationEnabled = data.ReadBool();
-            spatializationState.headTrackingEnabled = data.ReadBool();
+            std::vector<bool> spatializationState;
+            int32_t size = data.ReadInt32();
+            for (int32_t i = 0; i < size; i++) {
+                spatializationState.push_back(data.ReadBool());
+            }
             OnSpatializationStateChange(spatializationState);
             return AUDIO_OK;
         }
@@ -161,7 +163,7 @@ int AudioSpatializationStateChangeListenerStub::OnRemoteRequest(
 }
 
 void AudioSpatializationStateChangeListenerStub::OnSpatializationStateChange(
-    const AudioSpatializationState &spatializationState)
+    const std::vector<bool> &spatializationState)
 {
     AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerStub OnSpatializationStateChange");
 

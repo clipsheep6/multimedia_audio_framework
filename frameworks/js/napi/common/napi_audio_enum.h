@@ -67,26 +67,10 @@ public:
     enum FocusType {
         FOCUS_TYPE_RECORDING
     };
-
-    enum CapturerType {
-        TYPE_INVALID = -1,
-        TYPE_MIC = 0,
-        TYPE_VOICE_RECOGNITION = 1,
-        TYPE_WAKEUP = 3,
-        TYPE_VOICE_CALL = 4,
-        TYPE_PLAYBACK_CAPTURE = 2,
-        TYPE_COMMUNICATION = 7
-    };
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
     static bool IsLegalInputArgumentChannelBlendMode(int32_t blendMode);
-    static bool IsLegalCapturerType(int32_t type);
-    static bool IsLegalInputArgumentVolType(int32_t inputType);
-    static bool IsLegalInputArgumentRingMode(int32_t ringMode);
-    static bool IsLegalInputArgumentVolumeAdjustType(int32_t adjustType);
-    static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
-    static int32_t GetJsAudioVolumeType(AudioStreamType volumeType);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
@@ -151,7 +135,6 @@ private:
     static napi_ref interruptRequestType_;
     static napi_ref interruptRequestResultType_;
     static napi_ref toneType_;
-    static napi_ref audioDviceUsage_;
 
     static const std::map<std::string, int32_t> audioChannelMap;
     static const std::map<std::string, int32_t> samplingRateMap;
@@ -186,7 +169,6 @@ private:
     static const std::map<std::string, int32_t> connectTypeMap;
     static const std::map<std::string, int32_t> audioRingModeMap;
     static const std::map<std::string, int32_t> toneTypeMap;
-    static const std::map<std::string, int32_t> audioDeviceUsageMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;

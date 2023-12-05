@@ -204,7 +204,6 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
 {
     AUDIO_INFO_LOG("AudioStream: Get Buffer size");
     if (eMode_ == AUDIO_MODE_RECORD) {
-        CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Stream state is released");
         return GetBufferSizeForCapturer(bufferSize);
     }
 
@@ -226,7 +225,6 @@ int32_t AudioStream::GetFrameCount(uint32_t &frameCount)
 {
     AUDIO_INFO_LOG("AudioStream: Get frame count");
     if (eMode_ == AUDIO_MODE_RECORD) {
-        CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Stream state is released");
         return GetFrameCountForCapturer(frameCount);
     }
 
@@ -630,11 +628,6 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     }
 
     AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
-
-    // flush stream after stream paused
-    if (!offloadEnable_) {
-        FlushAudioStream();
-    }
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
@@ -1276,9 +1269,10 @@ int32_t AudioStream::InitFromParams(AudioStreamParams &info)
                 converter_->Init(info) != SUCCESS ||
                 !converter_->AllocateMem()) {
                 AUDIO_ERR_LOG("AudioStream: converter construct error");
-                return ERR_NOT_SUPPORTED;
+                return ERROR;
+            } else {
+                converter_->ConverterChannels(info.channels, info.channelLayout);
             }
-            converter_->ConverterChannels(info.channels, info.channelLayout);
         }
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("AudioStream: Initialize recording");
