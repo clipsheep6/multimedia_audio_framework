@@ -15,6 +15,7 @@
 
 #include "stream_filter_router.h"
 #include "audio_log.h"
+#include "audio_policy_service.h"
 
 using namespace std;
 
@@ -24,18 +25,118 @@ namespace AudioStandard {
 unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
+    DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
+    if (routingInfo.descriptor != nullptr) {
+        sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
+        CastType type = routingInfo.type;
+        bool hasDescriptor = false;
+        AUDIO_ERR_LOG("StreamfilterRouter GetMediaRenderDevice streamUsage %{public}d clientUid %{public}d fetch device %{public}d",
+            streamUsage, clientUID, deviceDescriptor->deviceType_);
+
+        switch (type) {
+            case CAST_TYPE_NULL: {
+                break;
+            }
+            case CAST_TYPE_ALL: {
+                hasDescriptor = AudioPolicyService::GetAudioPolicyService().IsIncomingDeviceInRemoteRender(deviceDescriptor);
+                break;
+            }
+            case CAST_TYPE_PROJECTION: {
+                if (streamUsage == STREAM_USAGE_MUSIC) {
+                    hasDescriptor = AudioPolicyService::GetAudioPolicyService().IsIncomingDeviceInRemoteRender(deviceDescriptor);
+                }
+                break;
+            }
+            case CAST_TYPE_COOPERATION: {
+                break;
+            }
+            default: {
+                AUDIO_ERR_LOG("GetMediaRenderDevice unhandled castc type: %{public}d", type);
+                break;
+            }
+        }
+        if (hasDescriptor) {
+            unique_ptr<AudioDeviceDescriptor> incomingDevice = make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+            return incomingDevice;
+        }
+    }
     return make_unique<AudioDeviceDescriptor>();
 }
 
 unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
+    DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
+    if (routingInfo.descriptor != nullptr) {
+        sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
+        CastType type = routingInfo.type;
+        bool hasDescriptor = false;
+        AUDIO_ERR_LOG("StreamfilterRouter GetMediaRenderDevice streamUsage %{public}d clientUid %{public}d fetch device %{public}d",
+            streamUsage, clientUID, deviceDescriptor->deviceType_);
+
+        switch (type) {
+            case CAST_TYPE_NULL: {
+                break;
+            }
+            case CAST_TYPE_ALL: {
+                hasDescriptor = AudioPolicyService::GetAudioPolicyService().IsIncomingDeviceInRemoteRender(deviceDescriptor);
+                break;
+            }
+            case CAST_TYPE_PROJECTION: {
+                break;
+            }
+            case CAST_TYPE_COOPERATION: {
+                break;
+            }
+            default: {
+                AUDIO_ERR_LOG("GetMediaRenderDevice unhandled castc type: %{public}d", type);
+                break;
+            }
+        }
+        if (hasDescriptor) {
+            unique_ptr<AudioDeviceDescriptor> incomingDevice = make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+            return incomingDevice;
+        }
+    }
     return make_unique<AudioDeviceDescriptor>();
 }
 
 unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(SourceType sourceType,
     int32_t clientUID)
 {
+    DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
+    if (routingInfo.descriptor != nullptr) {
+        sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
+        CastType type = routingInfo.type;
+        bool hasDescriptor = false;
+
+        switch (type) {
+            case CAST_TYPE_NULL: {
+                break;
+            }
+            case CAST_TYPE_ALL: {
+                hasDescriptor = AudioPolicyService::GetAudioPolicyService().IsIncomingDeviceInRemoteCapture(deviceDescriptor);
+                break;
+            }
+            case CAST_TYPE_PROJECTION: {
+                if (sourceType == SOURCE_TYPE_MIC) {
+                    hasDescriptor = AudioPolicyService::GetAudioPolicyService().IsIncomingDeviceInRemoteCapture(deviceDescriptor);
+                }
+                break;
+            }
+            case CAST_TYPE_COOPERATION: {
+                break;
+            }
+            default: {
+                AUDIO_ERR_LOG("GetMediaRenderDevice unhandled castc type: %{public}d", type);
+                break;
+            }
+        }
+        if (hasDescriptor) {
+            unique_ptr<AudioDeviceDescriptor> incomingDevice = make_unique<AudioDeviceDescriptor>(deviceDescriptor);
+            return incomingDevice;
+        }
+    }
     return make_unique<AudioDeviceDescriptor>();
 }
 
