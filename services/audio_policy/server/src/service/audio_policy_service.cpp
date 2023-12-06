@@ -756,6 +756,11 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     // check size == 1 && output device
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
+
+    if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
+        return SelectFastOutputDevice(audioRendererFilter, audioDeviceDescriptors[0]);
+    }
+
     if (audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
        audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         audioDeviceDescriptors[0]->isEnable_ = true;
@@ -788,6 +793,20 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
             audioDeviceDescriptors[0]->macAddress_, USER_SELECT_BT);
     }
     FetchDevice(true);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    sptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    AUDIO_INFO_LOG("SelectFastOutputDevice for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
+        deviceDescriptor->networkId_.c_str());
+    // note: check if stream is already running
+    // if is running, call moveProcessToEndpoint.
+
+    // otherwises, keep router info in the map
+    std::lock_guard<std::mutex> lock(routerMapMutex_);
+    fastRouterMap_[audioRendererFilter->uid] = std::make_pair(deviceDescriptor->networkId_, OUTPUT_DEVICE);
     return SUCCESS;
 }
 
@@ -1013,46 +1032,16 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         return SelectFastInputDevice(audioCapturerFilter, audioDeviceDescriptors[0]);
     }
 
-    std::string networkId = audioDeviceDescriptors[0]->networkId_;
-    DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
-
-    // switch between local devices
-    if (LOCAL_NETWORK_ID == networkId && currentActiveInputDevice_.deviceType_ != deviceType) {
-        if (deviceType == DeviceType::DEVICE_TYPE_DEFAULT) {
-            deviceType = FetchHighPriorityDevice(false);
-        }
-        return SelectNewDevice(DeviceRole::INPUT_DEVICE, audioDeviceDescriptors[0]);
+    AudioScene scene = GetAudioScene(true);
+    SourceType srcType = audioCapturerFilter->capturerInfo.sourceType;
+    if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
+        srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        audioStateManager_.SetPerferredCallCaptureDevice(audioDeviceDescriptors[0]);
+    } else {
+        audioStateManager_.SetPerferredRecordCaptureDevice(audioDeviceDescriptors[0]);
     }
-
-    if (!remoteCapturerSwitch_) {
-        AUDIO_DEBUG_LOG("remote capturer capbility is not open now.");
-        return SUCCESS;
-    }
-    int32_t targetUid = audioCapturerFilter->uid;
-    // move all source-output.
-    bool moveAll = false;
-    if (targetUid == -1) {
-        AUDIO_DEBUG_LOG("Move all source outputs.");
-        moveAll = true;
-    }
-
-    // find source-output id with audioCapturerFilter
-    std::vector<SourceOutput> targetSourceOutputs = {};
-    vector<SourceOutput> sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
-    for (size_t i = 0; i < sourceOutputs.size();i++) {
-        AUDIO_DEBUG_LOG("SourceOutput[%{public}zu]:%{public}s", i, PrintSourceOutput(sourceOutputs[i]).c_str());
-        if (moveAll || (targetUid == sourceOutputs[i].uid)) {
-            targetSourceOutputs.push_back(sourceOutputs[i]);
-        }
-    }
-
-    int32_t ret = LOCAL_NETWORK_ID == networkId ?
-        MoveToLocalInputDevice(targetSourceOutputs, audioDeviceDescriptors[0]) :
-        MoveToRemoteInputDevice(targetSourceOutputs, audioDeviceDescriptors[0]);
-
-    OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, LOCAL_NETWORK_ID);
-    AUDIO_DEBUG_LOG("SelectInputDevice result[%{public}d]", ret);
-    return ret;
+    FetchDevice(false);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyService::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
@@ -2358,6 +2347,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+        audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::DisconnectSco();
 #endif
@@ -2488,6 +2478,8 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceD
         audioDeviceManager_.AddNewDevice(audioDescriptor);
         audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+        audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+        audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
     if (IsInputDevice(deviceDescriptor.deviceType_)) {
         AUDIO_INFO_LOG("Filling input device for %{public}d", deviceDescriptor.deviceType_);
@@ -2540,6 +2532,12 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
             }
             if ((*it)->deviceId_ == audioStateManager_.GetPerferredCallRenderDevice()->deviceId_) {
                 audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+            }
+            if ((*it)->deviceId_ == audioStateManager_.GetPerferredCallCaptureDevice()->deviceId_) {
+                audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+            }
+            if ((*it)->deviceId_ == audioStateManager_.GetPerferredRecordCaptureDevice()->deviceId_) {
+                audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
             }
             desc.push_back(*it);
             it = connectedDevices_.erase(it);
