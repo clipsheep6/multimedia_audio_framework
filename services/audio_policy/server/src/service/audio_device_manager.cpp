@@ -74,7 +74,7 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
         return false;
     }
 
-    if (devDesc->connectState_ == VIRTUAL_CONNECTED) {
+    if (devDesc->connectState_ == VIRTUAL_CONNECTED || !devDesc->isEnable_) {
         return false;
     }
 
@@ -258,7 +258,8 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
 
 void AudioDeviceManager::HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && devDesc->deviceCategory_ == CATEGORY_DEFAULT) {
+    if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && devDesc->deviceCategory_ == CATEGORY_DEFAULT &&
+        devDesc->isEnable_) {
         if (devDesc->deviceRole_ == INPUT_DEVICE) {
             commCapturePrivacyDevices_.push_back(devDesc);
         } else if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
@@ -288,7 +289,8 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
     if (iter != connectedDevices_.end()) {
         if ((deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) &&
-            (*iter)->deviceCategory_ != deviceDescriptor->deviceCategory_) {
+            ((*iter)->deviceCategory_ != deviceDescriptor->deviceCategory_ ||
+            (*iter)->isEnable_ != deviceDescriptor->isEnable_)) {
             AUDIO_INFO_LOG("A2DP device category changed,RemoveConnectedDevices");
             RemoveNewDevice(deviceDescriptor);
             return false;
@@ -612,7 +614,6 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
             sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor(*dev);
             GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
-            delete desc;
         }
     }
     return audioDeviceDescriptors;
@@ -736,6 +737,15 @@ void AudioDeviceManager::RemoveCaptureDevices(const AudioDeviceDescriptor &devDe
 {
     RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
+}
+
+void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isConnnected)
+{
+    for (auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->macAddress_ == macAddress) {
+            desc->isScoRealConnected_ = isConnnected;
+        }
+    }
 }
 }
 }
