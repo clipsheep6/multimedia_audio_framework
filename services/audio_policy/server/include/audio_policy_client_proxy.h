@@ -39,15 +39,15 @@ public:
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void OnRendererStateChange(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void OnCapturerStateChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;
 
-    void UpdateRendererDeviceInfo(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
-    void UpdateCapturerDeviceInfo(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+    void UpdateRendererDeviceInfo(std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
+    void UpdateCapturerDeviceInfo(std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 };
 } // namespace AudioStandard
 } // namespace OHOS

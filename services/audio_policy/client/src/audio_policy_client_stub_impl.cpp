@@ -261,7 +261,7 @@ int32_t AudioPolicyClientStubImpl::RemoveRendererStateChangeCallback()
 }
 
 void AudioPolicyClientStubImpl::OnRendererStateChange(
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
     for (auto it = rendererStateChangeCallbackList_.begin(); it != rendererStateChangeCallbackList_.end(); ++it) {
@@ -285,7 +285,7 @@ int32_t AudioPolicyClientStubImpl::RemoveCapturerStateChangeCallback()
 }
 
 void AudioPolicyClientStubImpl::OnCapturerStateChange(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     std::lock_guard<std::mutex> lockCbMap(capturerStateChangeMutex_);
     for (auto it = capturerStateChangeCallbackList_.begin(); it != capturerStateChangeCallbackList_.end(); ++it) {

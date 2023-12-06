@@ -900,14 +900,16 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
     }
 
     audioPolicyClientStubCB_->AddRendererStateChangeCallback(callback);
+    isAudioRendererEventListener = true;
     return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
-    if (audioPolicyClientStubCB_ == nullptr) {
+    if ((audioPolicyClientStubCB_ == nullptr) && isAudioRendererEventListener) {
         audioPolicyClientStubCB_->RemoveRendererStateChangeCallback();
+        isAudioRendererEventListener = false;
     }
     return SUCCESS;
 }

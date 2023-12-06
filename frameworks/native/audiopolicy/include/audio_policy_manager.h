@@ -322,6 +322,8 @@ private:
     static std::unordered_map<uint32_t, OHOS::wptr<AudioSpatializationStateChangeListenerStub>>
         spatializationStateChangeCBMap_;
     static sptr<AudioPolicyClientStubImpl> audioStaticPolicyClientStubCB_;
+
+    bool isAudioRendererEventListener = false;
 };
 } // namespce AudioStandard
 } // namespace OHOS

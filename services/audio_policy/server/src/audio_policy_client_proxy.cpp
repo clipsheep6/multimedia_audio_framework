@@ -223,7 +223,7 @@ void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const std::vector<spt
 }
 
 void AudioPolicyClientProxy::UpdateRendererDeviceInfo(
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
     if (!hasBTPermission_) {
         size_t rendererChangeInfoLength = rendererChangeInfos.size();
@@ -249,7 +249,7 @@ void AudioPolicyClientProxy::UpdateRendererDeviceInfo(
 }
 
 void AudioPolicyClientProxy::OnRendererStateChange(
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -278,7 +278,7 @@ void AudioPolicyClientProxy::OnRendererStateChange(
 }
 
 void AudioPolicyClientProxy::UpdateCapturerDeviceInfo(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
 {
     if (!hasBTPermission_) {
         size_t capturerChangeInfoLength = capturerChangeInfos.size();
@@ -304,7 +304,7 @@ void AudioPolicyClientProxy::UpdateCapturerDeviceInfo(
 }
 
 void AudioPolicyClientProxy::OnCapturerStateChange(
-    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     MessageParcel data;
     MessageParcel reply;
