@@ -978,5 +978,9 @@ int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatiali
     }
     return audioEffectChainManager->UpdateSpatializationState(spatializationState);
 }
+
+int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) {
+    return AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
+}
 } // namespace AudioStandard
 } // namespace OHOS
