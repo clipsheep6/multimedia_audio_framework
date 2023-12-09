@@ -841,15 +841,15 @@ int32_t AudioPolicyServer::SetWakeUpAudioCapturer(InternalAudioCapturerOptions o
     return audioPolicyService_.SetWakeUpAudioCapturer(options);
 }
 
-int32_t AudioPolicyServer::VerifyVoiceCallPermission()
+int32_t AudioPolicyServer::VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     if (!hasSystemPermission) {
         AUDIO_ERR_LOG("VerifyVoiceCallPermission: No system permission");
         return ERR_PERMISSION_DENIED;
     }
 
-    bool hasRecordVoiceCallPermission = VerifyPermission(RECORD_VOICE_CALL_PERMISSION);
+    bool hasRecordVoiceCallPermission = VerifyPermission(RECORD_VOICE_CALL_PERMISSION, tokenId, true);
     if (!hasRecordVoiceCallPermission) {
         AUDIO_ERR_LOG("VerifyVoiceCallPermission: No permission");
         return ERR_PERMISSION_DENIED;
@@ -1967,7 +1967,7 @@ bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFu
     }
 
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {
-        if (VerifyVoiceCallPermission() != SUCCESS) {
+        if (VerifyVoiceCallPermission(targetFullTokenId, targetTokenId) != SUCCESS) {
             return false;
         }
     }
