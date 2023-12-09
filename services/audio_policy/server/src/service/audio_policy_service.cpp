@@ -2621,7 +2621,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForInputDevice(
 void AudioPolicyService::IdentifyAddedMediaOutputDevices(const sptr<AudioDeviceDescriptor> &device,
     const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc)
 {
-    if (AudioDeviceManager::GetAudioDeviceManager()IsExistedDevice(device, desc)) {
+    if (AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(device, desc)) {
         audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
 }
