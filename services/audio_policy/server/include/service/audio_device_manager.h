@@ -70,7 +70,6 @@ public:
     void UpdateScoState(const std::string &macAddress, bool isConnnected);
     bool IsExistedDevice(const sptr<AudioDeviceDescriptor> &device,
         const vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-
 private:
     AudioDeviceManager() {};
     ~AudioDeviceManager() {};
