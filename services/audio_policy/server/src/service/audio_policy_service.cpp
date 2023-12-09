@@ -2561,8 +2561,13 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     UpdateDisplayName(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-    audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
-    audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    const sptr<AudioDeviceDescriptor> &audioDeviceDescriptor = audioDescriptor;
+    const vector<unique_ptr<AudioDeviceDescriptor>> callOutputDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
+    const vector<unique_ptr<AudioDeviceDescriptor>> mediaOutputDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES);
+    IdentifyAddedCallOutputDevices(audioDeviceDescriptor,callOutputDevices);
+    IdentifyAddedMediaInputDevices(audioDeviceDescriptor,mediaOutputDevices);
 }
 
 void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForInputDevice(
@@ -2604,8 +2609,46 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForInputDevice(
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
     AddMicrophoneDescriptor(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-    audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
-    audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+    const sptr<AudioDeviceDescriptor> &audioDeviceDescriptor = audioDescriptor;
+    const vector<unique_ptr<AudioDeviceDescriptor>> callInputDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_INPUT_DEVICES);
+    const vector<unique_ptr<AudioDeviceDescriptor>> mediaInputDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_INPUT_DEVICES);
+    IdentifyAddedCallOutputDevices(audioDeviceDescriptor,callInputDevices);
+    IdentifyAddedMediaInputDevices(audioDeviceDescriptor,mediaInputDevices);
+}
+
+void AudioPolicyService::IdentifyAddedMediaOutputDevices(const sptr<AudioDeviceDescriptor> &device,
+    const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc)
+{
+    if (AudioDeviceManager::GetAudioDeviceManager()IsExistedDevice(device, desc) ||
+        audioStateManager_.GetPerferredMediaRenderDevice()->deviceType_ == DEVICE_TYPE_SPEAKER) {
+        audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    }
+}
+
+void AudioPolicyService::IdentifyAddedMediaInputDevices(const sptr<AudioDeviceDescriptor> &device,
+    const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc)
+{
+    if (AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(device, desc)) {
+        audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+    }
+}
+
+void AudioPolicyService::IdentifyAddedCallOutputDevices(const sptr<AudioDeviceDescriptor> &device,
+    const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc)
+{
+    if (AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(device, desc)) {
+        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    }
+}
+
+void AudioPolicyService::IdentifyAddedCallInputDevices(const sptr<AudioDeviceDescriptor> &device,
+    const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc)
+{
+    if (AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(device, desc)) {
+        audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+    }
 }
 
 void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor &deviceDescriptor,
