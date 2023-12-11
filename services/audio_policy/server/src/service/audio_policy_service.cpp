@@ -2623,7 +2623,7 @@ void AudioPolicyService::IdentifyAddedMediaOutputDevices(const sptr<AudioDeviceD
                                                          const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc)
 {
     if (!(AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(audioDeviceDescriptor, desc)) &&
-                                                                audioDeviceDescriptor.deviceType_ != 7) {
+                                                                audioDeviceDescriptor->deviceType_ != 7) {
         audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
 }
@@ -2640,7 +2640,7 @@ void AudioPolicyService::IdentifyAddedCallOutputDevices(const sptr<AudioDeviceDe
                                                         const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc)
 {
     if (!(AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(audioDeviceDescriptor, desc)) &&
-                                                                audioDeviceDescriptor.deviceType_ != 7) {
+                                                                audioDeviceDescriptor->deviceType_ != 7) {
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
 }
