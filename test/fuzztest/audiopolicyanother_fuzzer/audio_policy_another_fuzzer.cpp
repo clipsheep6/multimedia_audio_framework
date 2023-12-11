@@ -39,18 +39,18 @@ void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
         std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
-    AudioStreamType streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
+    AudioVolumeType volumeType = *reinterpret_cast<const AudioVolumeType *>(rawData);
     int32_t volume = *reinterpret_cast<const int32_t *>(rawData);
     int32_t streamId = *reinterpret_cast<const int32_t *>(rawData);
     bool mute = *reinterpret_cast<const bool *>(rawData);
-    AudioPolicyServerPtr->SetSystemVolumeLevel(streamType, volume);
-    AudioPolicyServerPtr->GetSystemVolumeLevel(streamType);
+    AudioPolicyServerPtr->SetSystemVolumeLevel(volumeType, volume);
+    AudioPolicyServerPtr->GetSystemVolumeLevel(volumeType);
     AudioPolicyServerPtr->SetLowPowerVolume(streamId, volume);
     AudioPolicyServerPtr->GetLowPowerVolume(streamId);
     AudioPolicyServerPtr->GetSingleStreamVolume(streamId);
-    AudioPolicyServerPtr->SetStreamMute(streamType, mute);
-    AudioPolicyServerPtr->GetStreamMute(streamType);
-    AudioPolicyServerPtr->IsStreamActive(streamType);
+    AudioPolicyServerPtr->SetStreamMute(volumeType, mute);
+    AudioPolicyServerPtr->GetStreamMute(volumeType);
+    AudioPolicyServerPtr->IsStreamActive(volumeType);
 }
 
 void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
@@ -210,7 +210,7 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
     sptr<AudioPolicyClientStub> listener =
         static_cast<sptr<AudioPolicyClientStub>>(new(std::nothrow) AudioPolicyClientStubImpl());
     VolumeEvent volumeEvent = {};
-    volumeEvent.volumeType =  *reinterpret_cast<const AudioStreamType *>(rawData);
+    volumeEvent.volumeType =  *reinterpret_cast<const AudioVolumeType *>(rawData);
     volumeEvent.volume = *reinterpret_cast<const int32_t *>(rawData);
     volumeEvent.updateUi = *reinterpret_cast<const bool *>(rawData);
     volumeEvent.volumeGroupId = *reinterpret_cast<const int32_t *>(rawData);

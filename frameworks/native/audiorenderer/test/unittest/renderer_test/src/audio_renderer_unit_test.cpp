@@ -263,18 +263,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_004, TestSize.Level0)
 
 /**
  * @tc.name  : Test Create API via legal input.
- * @tc.number: Audio_Renderer_Create_005
- * @tc.desc  : Test Create interface with STREAM_BLUETOOTH_SCO. Returns audioRenderer instance, if create is successful.
- *             Note: instance will be created but functional support for STREAM_BLUETOOTH_SCO not available yet
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_005, TestSize.Level0)
-{
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_BLUETOOTH_SCO);
-    EXPECT_NE(nullptr, audioRenderer);
-}
-
-/**
- * @tc.name  : Test Create API via legal input.
  * @tc.number: Audio_Renderer_Create_006
  * @tc.desc  : Test Create interface with STREAM_ALARM. Returns audioRenderer instance, if create is successful.
  *             Note: instance will be created but functional support for STREAM_ALARM not available yet.
@@ -5125,7 +5113,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Interrupt_002, TestSiz
     if (appInfo_.appUid < 0) {
         appInfo_.appUid = static_cast<int32_t>(getuid());
     }
-    const std::shared_ptr<AudioStream> audioStream_ = std::make_shared<AudioStream>(AudioStreamType::STREAM_MEDIA,
+    const std::shared_ptr<AudioStream> audioStream_ = std::make_shared<AudioStream>(AudioStreamType::STREAM_MUSIC,
         AUDIO_MODE_PLAYBACK, appInfo_.appUid);
     ASSERT_NE(nullptr, audioStream_);
 
@@ -5203,7 +5191,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_001, TestSize
 
     AppInfo appInfo = {};
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MUSIC, appInfo);
 
     bool isDeviceChanged = audioRendererPrivate->IsDeviceChanged(deviceInfo);
     EXPECT_EQ(false, isDeviceChanged);
@@ -5315,7 +5303,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_004, TestSize
 
     AppInfo appInfo = {};
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MUSIC, appInfo);
 
     audioRendererStateChangeCallbackImpl->setAudioRendererObj(audioRendererPrivate.get());
 
@@ -5335,7 +5323,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_005, TestSize
 {
     AppInfo appInfo = {};
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MUSIC, appInfo);
 
     unique_ptr<AudioRendererProxyObj> audioRendererProxyObj = std::make_unique<AudioRendererProxyObj>();
 

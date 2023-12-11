@@ -84,13 +84,13 @@ namespace {
     {
         while (state.KeepRunning())
         {
-            auto ret = instance->SetVolume(AudioVolumeType::STREAM_RING, MAX_VOL);
+            auto ret = instance->SetVolume(AudioVolumeType::VOLUME_RINGTONE, MAX_VOL);
             if (ret != SUCCESS)
             {
                 state.SkipWithError("SetVolumeAbilityTestCase audioManager SetVolume MAX_VOL failed.");
             }
             state.PauseTiming();
-            ret = instance->SetVolume(AudioVolumeType::STREAM_RING, MIN_VOL);
+            ret = instance->SetVolume(AudioVolumeType::VOLUME_RINGTONE, MIN_VOL);
             if (ret != SUCCESS)
             {
                 state.SkipWithError("SetVolumeAbilityTestCase audioManager SetVolume MIN_VOL failed.");
@@ -107,13 +107,13 @@ namespace {
         while (state.KeepRunning())
         {
             state.PauseTiming();
-            int32_t ret = instance->SetMute(AudioVolumeType::STREAM_RING, true);
+            int32_t ret = instance->SetMute(AudioVolumeType::VOLUME_RINGTONE, true);
             if (ret != SUCCESS)
             {
                 state.SkipWithError("SetVolumeAbilityTestCase audioManager SetDeviceActive false failed.");
             }
             state.ResumeTiming();
-            ret = instance->SetMute(AudioVolumeType::STREAM_RING, false);
+            ret = instance->SetMute(AudioVolumeType::VOLUME_RINGTONE, false);
             if (ret != SUCCESS)
             {
                 state.SkipWithError("SetVolumeAbilityTestCase audioManager SetDeviceActive false failed.");

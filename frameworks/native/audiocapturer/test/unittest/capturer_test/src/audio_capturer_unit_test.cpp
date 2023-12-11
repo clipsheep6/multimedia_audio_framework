@@ -213,18 +213,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_004, TestSize.Level0)
 
 /**
 * @tc.name  : Test Create API via legal input.
-* @tc.number: Audio_Capturer_Create_005
-* @tc.desc  : Test Create interface with STREAM_BLUETOOTH_SCO. Returns audioCapturer instance, if create is successful.
-*             Note: instance will be created but functional support for STREAM_BLUETOOTH_SCO not available yet
-*/
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_005, TestSize.Level0)
-{
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_BLUETOOTH_SCO);
-    EXPECT_NE(nullptr, audioCapturer);
-}
-
-/**
-* @tc.name  : Test Create API via legal input.
 * @tc.number: Audio_Capturer_Create_006
 * @tc.desc  : Test Create interface with STREAM_ALARM. Returns audioCapturer instance, if create is successful.
 *             Note: instance will be created but functional support for STREAM_ALARM not available yet.
@@ -3250,7 +3238,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
 
     AppInfo appInfo = {};
     std::unique_ptr<AudioCapturerPrivate> audioCapturerPrivate =
-        std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+        std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_MUSIC, appInfo);
 
     bool isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
     EXPECT_EQ(false, isDeviceChanged);

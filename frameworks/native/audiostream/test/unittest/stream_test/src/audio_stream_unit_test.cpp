@@ -127,7 +127,7 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_SetStreamType_001, TestSize.Level1)
 {
     std::shared_ptr<AudioStream> audioStream_;
     AudioStreamUnitTest::InitAudioStream(audioStream_);
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_MEDIA;
+    AudioStreamType audioStreamType = AudioStreamType::STREAM_MUSIC;
     int32_t ret = audioStream_->SetStreamType(audioStreamType);
     EXPECT_EQ(FAILURE, ret);
 }

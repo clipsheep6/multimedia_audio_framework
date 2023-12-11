@@ -57,17 +57,17 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_001, TestSize.Level1)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_ALL, volume);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_ALL, volume);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ALL);
+        ret = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_ALL);
         EXPECT_EQ(volume, ret);
 
-        ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_ALL, mute);
+        ret = audioGroupMngr_->SetMute(AudioVolumeType::VOLUME_ALL, mute);
         EXPECT_EQ(SUCCESS, ret);
 
         bool isMute;
-        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_ALL, isMute);
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::VOLUME_ALL, isMute);
         EXPECT_EQ(true, isMute);
     }
 }
@@ -88,18 +88,18 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_002, TestSize.Level1)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_ALARM, volume);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_ALARM, volume);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ALARM);
+        ret = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_ALARM);
         EXPECT_EQ(volume, ret);
 
-        ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_ALARM, mute);
+        ret = audioGroupMngr_->SetMute(AudioVolumeType::VOLUME_ALARM, mute);
         EXPECT_EQ(SUCCESS, ret);
 
         // stream alarm can not set mute
         bool isMute;
-        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_ALARM, isMute);
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::VOLUME_ALARM, isMute);
         EXPECT_EQ(false, isMute);
     }
 }
@@ -120,18 +120,18 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_003, TestSize.Level1)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_ACCESSIBILITY, volume);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_ACCESSIBILITY, volume);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ACCESSIBILITY);
+        ret = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_ACCESSIBILITY);
         EXPECT_EQ(volume, ret);
 
-        ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_ACCESSIBILITY, mute);
+        ret = audioGroupMngr_->SetMute(AudioVolumeType::VOLUME_ACCESSIBILITY, mute);
         EXPECT_EQ(SUCCESS, ret);
 
         // stream accessibility can not set mute
         bool isMute;
-        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_ACCESSIBILITY, isMute);
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::VOLUME_ACCESSIBILITY, isMute);
         EXPECT_EQ(false, isMute);
     }
 }
@@ -152,17 +152,17 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_004, TestSize.Level1)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_ULTRASONIC, volume);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_ULTRASONIC, volume);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ULTRASONIC);
+        ret = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_ULTRASONIC);
         EXPECT_EQ(volume, ret);
 
-        ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_ULTRASONIC, mute);
+        ret = audioGroupMngr_->SetMute(AudioVolumeType::VOLUME_ULTRASONIC, mute);
         EXPECT_EQ(SUCCESS, ret);
 
         bool isMute;
-        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_ULTRASONIC, isMute);
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::VOLUME_ULTRASONIC, isMute);
         EXPECT_EQ(true, isMute);
     }
 }
@@ -181,10 +181,10 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, MAX_VOL);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_RINGTONE, MAX_VOL);
         EXPECT_EQ(SUCCESS, ret);
 
-        int32_t volume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        int32_t volume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_RINGTONE);
         EXPECT_EQ(MAX_VOL, volume);
     }
 }
@@ -203,10 +203,10 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, MIN_VOL);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_RINGTONE, MIN_VOL);
         EXPECT_EQ(SUCCESS, ret);
 
-        int32_t volume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        int32_t volume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_RINGTONE);
         EXPECT_EQ(MIN_VOL, volume);
     }
 }
@@ -225,13 +225,13 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, MAX_VOL);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_MEDIA, MAX_VOL);
         EXPECT_EQ(SUCCESS, ret);
 
-        int32_t mediaVol = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_MUSIC);
+        int32_t mediaVol = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_MEDIA);
         EXPECT_EQ(MAX_VOL, mediaVol);
 
-        int32_t ringVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        int32_t ringVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_RINGTONE);
         EXPECT_EQ(MIN_VOL, ringVolume);
     }
 }
@@ -251,12 +251,12 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_004, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        int32_t FirstVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ALARM);
+        int32_t FirstVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_ALARM);
 
-        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_ALARM, ErrorVolume);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_ALARM, ErrorVolume);
         EXPECT_NE(SUCCESS, ret);
 
-        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ALARM);
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_ALARM);
         EXPECT_EQ(FirstVolume, SecondVolume);
     }
 }
@@ -276,12 +276,12 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_005, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        int32_t FirstVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ACCESSIBILITY);
+        int32_t FirstVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_ACCESSIBILITY);
 
-        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_ACCESSIBILITY, ErrorVolume);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_ACCESSIBILITY, ErrorVolume);
         EXPECT_NE(SUCCESS, ret);
 
-        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ACCESSIBILITY);
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_ACCESSIBILITY);
         EXPECT_EQ(FirstVolume, SecondVolume);
     }
 }
@@ -301,12 +301,12 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_006, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        int32_t FirstVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ULTRASONIC);
+        int32_t FirstVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_ULTRASONIC);
 
-        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_ULTRASONIC, ErrorVolume);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_ULTRASONIC, ErrorVolume);
         EXPECT_NE(SUCCESS, ret);
 
-        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ULTRASONIC);
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_ULTRASONIC);
         EXPECT_EQ(FirstVolume, SecondVolume);
     }
 }
@@ -314,7 +314,7 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_006, TestSize.Level0)
 /**
 * @tc.name  : Test GetMaxVolume API
 * @tc.number: GetMaxVolumeTest_001
-* @tc.desc  : Test GetMaxVolume of media stream
+* @tc.desc  : Test GetMaxVolume of media stream and ringtone stream
 * @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, GetMaxVolumeTest_001, TestSize.Level0)
@@ -325,18 +325,18 @@ HWTEST(AudioGroupManagerUnitTest, GetMaxVolumeTest_001, TestSize.Level0)
     int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        int32_t mediaVol = audioGroupMngr_->GetMaxVolume(AudioVolumeType::STREAM_MUSIC);
+        int32_t mediaVol = audioGroupMngr_->GetMaxVolume(AudioVolumeType::VOLUME_MEDIA);
         EXPECT_EQ(MAX_VOL, mediaVol);
 
-        int32_t ringVolume = audioGroupMngr_->GetMaxVolume(AudioVolumeType::STREAM_RING);
+        int32_t ringVolume = audioGroupMngr_->GetMaxVolume(AudioVolumeType::VOLUME_RINGTONE);
         EXPECT_EQ(MAX_VOL, ringVolume);
     }
 }
 
 /**
-* @tc.name  : Test GetMaxVolume API
+* @tc.name  : Test GetMinVolume API
 * @tc.number: GetMinVolumeTest_001
-* @tc.desc  : Test GetMaxVolume of media stream
+* @tc.desc  : Test GetMinVolume of media stream and ringtone stream
 * @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, GetMinVolumeTest_001, TestSize.Level0)
@@ -347,10 +347,10 @@ HWTEST(AudioGroupManagerUnitTest, GetMinVolumeTest_001, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        int32_t mediaVol = audioGroupMngr_->GetMinVolume(AudioVolumeType::STREAM_MUSIC);
+        int32_t mediaVol = audioGroupMngr_->GetMinVolume(AudioVolumeType::VOLUME_MEDIA);
         EXPECT_EQ(MIN_VOL, mediaVol);
 
-        int32_t ringVolume = audioGroupMngr_->GetMinVolume(AudioVolumeType::STREAM_RING);
+        int32_t ringVolume = audioGroupMngr_->GetMinVolume(AudioVolumeType::VOLUME_RINGTONE);
         EXPECT_EQ(MIN_VOL, ringVolume);
     }
 }
@@ -369,11 +369,11 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_001, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_RING, true);
+        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::VOLUME_RINGTONE, true);
         EXPECT_EQ(SUCCESS, ret);
 
         bool isMute;
-        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING, isMute);
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::VOLUME_RINGTONE, isMute);
         EXPECT_EQ(true, isMute);
     }
 }
@@ -392,11 +392,11 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_002, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_RING, false);
+        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::VOLUME_RINGTONE, false);
         EXPECT_EQ(SUCCESS, ret);
 
         bool isMute;
-        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING, isMute);
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::VOLUME_RINGTONE, isMute);
         EXPECT_EQ(false, isMute);
     }
 }
@@ -415,11 +415,11 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_003, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_MUSIC, true);
+        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::VOLUME_MEDIA, true);
         EXPECT_EQ(SUCCESS, ret);
 
         bool isMute;
-        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_MUSIC, isMute);
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::VOLUME_MEDIA, isMute);
         EXPECT_EQ(true, isMute);
     }
 }
@@ -438,11 +438,11 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level0)
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_MUSIC, false);
+        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::VOLUME_MEDIA, false);
         EXPECT_EQ(SUCCESS, ret);
 
         bool isMute;
-        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING, isMute);
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::VOLUME_RINGTONE, isMute);
         EXPECT_EQ(false, isMute);
     }
 }
@@ -481,7 +481,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_001, Te
     if (infos.size() > 0) {
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, 7);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_MEDIA, 7);
         EXPECT_EQ(SUCCESS, ret);
 
         ret = audioGroupMngr_->AdjustVolumeByStep(VolumeAdjustType::VOLUME_UP);
@@ -514,7 +514,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_002, Te
 /**
 * @tc.name  : Test AdjustSystemVolumeByStep API
 * @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_001
-* @tc.desc  : Test adjust system volume by step to up of STREAM_RECORDING stream
+* @tc.desc  : Test adjust system volume by step to up of ringtone stream
 * @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_001, TestSize.Level0)
@@ -526,15 +526,15 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
     if (infos.size() > 0) {
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, FirstVolume);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_RINGTONE, FirstVolume);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING,
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::VOLUME_RINGTONE,
                                                         VolumeAdjustType::VOLUME_UP);
         GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
         EXPECT_EQ(SUCCESS, ret);
 
-        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_RINGTONE);
         EXPECT_GT(SecondVolume, FirstVolume);
     }
 }
@@ -542,7 +542,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 /**
 * @tc.name  : Test AdjustSystemVolumeByStep API
 * @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_002
-* @tc.desc  : Test adjust system volume by step to down of STREAM_RECORDING stream
+* @tc.desc  : Test adjust system volume by step to down of ringtone stream
 * @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_002, TestSize.Level0)
@@ -554,15 +554,15 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
     if (infos.size() > 0) {
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, FirstVolume);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_RINGTONE, FirstVolume);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING,
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::VOLUME_RINGTONE,
                                                         VolumeAdjustType::VOLUME_DOWN);
         GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
         EXPECT_EQ(SUCCESS, ret);
 
-        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_RINGTONE);
         EXPECT_GT(FirstVolume, SecondVolume);
     }
 }
@@ -570,7 +570,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 /**
 * @tc.name  : Test AdjustSystemVolumeByStep API
 * @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_003
-* @tc.desc  : Test adjust system volume by step to up of STREAM_RING stream when is max volume
+* @tc.desc  : Test adjust system volume by step to up of ringtone stream when is max volume
 * @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_003, TestSize.Level0)
@@ -581,16 +581,16 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
     if (infos.size() > 0) {
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-        auto maxVol = audioGroupMngr_->GetMaxVolume(AudioVolumeType::STREAM_RING);
-        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, maxVol);
+        auto maxVol = audioGroupMngr_->GetMaxVolume(AudioVolumeType::VOLUME_RINGTONE);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_RINGTONE, maxVol);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING,
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::VOLUME_RINGTONE,
                                                         VolumeAdjustType::VOLUME_UP);
         GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
         EXPECT_EQ(ERROR_62980101, ret);
 
-        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_RINGTONE);
         EXPECT_EQ(maxVol, SecondVolume);
     }
 }
@@ -598,7 +598,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 /**
 * @tc.name  : Test AdjustSystemVolumeByStep API
 * @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_003
-* @tc.desc  : Test adjust system volume by step to down of STREAM_MUSIC stream when is min volume
+* @tc.desc  : Test adjust system volume by step to down of media stream when is min volume
 * @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_004, TestSize.Level0)
@@ -609,16 +609,16 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
     if (infos.size() > 0) {
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-        auto minVol = audioGroupMngr_->GetMinVolume(AudioVolumeType::STREAM_MUSIC);
-        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, minVol);
+        auto minVol = audioGroupMngr_->GetMinVolume(AudioVolumeType::VOLUME_MEDIA);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::VOLUME_MEDIA, minVol);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_MUSIC,
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::VOLUME_MEDIA,
                                                         VolumeAdjustType::VOLUME_DOWN);
         GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
         EXPECT_EQ(ERROR_62980101, ret);
 
-        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_MUSIC);
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::VOLUME_MEDIA);
         EXPECT_EQ(minVol, SecondVolume);
     }
 }
@@ -626,7 +626,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 /**
 * @tc.name  : Test GetSystemVolumeInDb API
 * @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_001
-* @tc.desc  : Test get volume db with alarm streamtype and speaker devicetype when volume is 3
+* @tc.desc  : Test get volume db with alarm stream and speaker devicetype when volume is 3
 * @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_001, TestSize.Level0)
@@ -638,7 +638,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_001, T
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ALARM, vol,
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::VOLUME_ALARM, vol,
                                                         DeviceType::DEVICE_TYPE_SPEAKER);
         GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
         EXPECT_LT(SUCCESS, db);
@@ -648,7 +648,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_001, T
 /**
 * @tc.name  : Test GetSystemVolumeInDb API
 * @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_002
-* @tc.desc  : Test get volume db when the stream type is changed to voice call
+* @tc.desc  : Test get volume db when the stream is changed to voice call
 * @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_002, TestSize.Level0)
@@ -660,7 +660,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_002, T
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_VOICE_CALL, vol,
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::VOLUME_VOICE_CALL, vol,
                                                         DeviceType::DEVICE_TYPE_SPEAKER);
         GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
         EXPECT_LT(SUCCESS, db);
@@ -682,7 +682,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_003, T
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ALARM, vol,
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::VOLUME_ALARM, vol,
                                                         DeviceType::DEVICE_TYPE_SPEAKER);
         GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
         EXPECT_LT(SUCCESS, db);
@@ -704,7 +704,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_004, T
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ALARM, vol,
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::VOLUME_ALARM, vol,
                                                         DeviceType::DEVICE_TYPE_EARPIECE);
         GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
         EXPECT_LT(SUCCESS, db);

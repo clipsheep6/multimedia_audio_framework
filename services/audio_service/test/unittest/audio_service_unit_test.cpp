@@ -162,7 +162,7 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_002, TestSize.Level1)
 
     const std::string networkId = "LocalDevice";
     const AudioParamKey key = AudioParamKey::VOLUME;
-    AudioVolumeType volumeType =AudioVolumeType::STREAM_MEDIA;
+    AudioVolumeType volumeType =AudioVolumeType::VOLUME_MEDIA;
     int32_t groupId = 0;
     std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId) + ";AUDIO_VOLUME_TYPE="
         + std::to_string(volumeType) + ";";
@@ -252,7 +252,7 @@ HWTEST(AudioServiceUnitTest, AudioManagerListenerStub_001, TestSize.Level1)
     float volume = 0.1;
     const std::string networkId = "LocalDevice";
     const AudioParamKey key = AudioParamKey::VOLUME;
-    AudioVolumeType volumeType =AudioVolumeType::STREAM_MEDIA;
+    AudioVolumeType volumeType =AudioVolumeType::VOLUME_MEDIA;
     int32_t groupId = 0;
     std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId) + ";AUDIO_VOLUME_TYPE="
         + std::to_string(volumeType) + ";";
@@ -359,11 +359,9 @@ HWTEST(AudioServiceUnitTest, AudioServiceClient_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_NOTIFICATION);
     EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_BLUETOOTH_SCO);
-    EXPECT_EQ(SUCCESS, ret);
     ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_DTMF);
     EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_TTS);
+    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_VOICE_ASSISTANT);
     EXPECT_EQ(SUCCESS, ret);
     ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_DEFAULT);
     EXPECT_EQ(SUCCESS, ret);
