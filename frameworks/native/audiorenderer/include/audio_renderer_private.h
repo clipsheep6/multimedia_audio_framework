@@ -21,6 +21,7 @@
 #include "audio_renderer_proxy_obj.h"
 #include "audio_utils.h"
 #include "i_audio_stream.h"
+#include "sonic.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -99,6 +100,9 @@ public:
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
+    int32_t SetSpeed(float speed) override;
+    float GetSpeed() override;
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize);
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
@@ -148,6 +152,12 @@ private:
     bool isFastRenderer_ = false;
     bool isSwitching_ = false;
     mutable std::mutex switchStreamMutex_;
+    AudioChannel channel_;
+    AudioSampleFormat format_;
+    AudioSamplingRate samplingRate_;
+    float speed_ = 1;
+    sonicStream  sonicStream_;
+    size_t bufferSize_;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

@@ -22,6 +22,7 @@ config("audio_renderer_config") {
   include_dirs = [
     "./include",
     "../audiostream/include",
+    "../audioutils/include",
     "../../../interfaces/inner_api/native/audiorenderer/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiomanager/include",

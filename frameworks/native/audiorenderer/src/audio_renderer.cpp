@@ -21,6 +21,7 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
+#include "sonic.h"
 #ifdef OHCORE
 #include "audio_renderer_gateway.h"
 #endif
@@ -105,6 +106,8 @@ AudioRendererPrivate::~AudioRendererPrivate()
         // Unregister the renderer event callaback in policy server
         (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
     }
+    sonicDestroyStream(sonicStream_);
+    sonicStream_ = nullptr;
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -341,6 +344,12 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     }
     AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Succeeded");
 
+    channel_ = params.channelCount;
+    format_ = params.sampleFormat;
+    samplingRate_ = params.sampleRate;
+    sonicStream_ = sonicCreateStream(samplingRate_, channel_);
+    GetBufferSize(bufferSize_);
+
     if (isFastRenderer_) {
         SetSelfRendererStateCallback();
     }
@@ -498,9 +507,52 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
     return audioStream_->StartAudioStream(cmdType);
 }
 
+int32_t AudioRendererPrivate::ChangeSpeed(uint8_t *buffer, int32_t bufferSize)
+{
+    int32_t numSamples = bufferSize*8/(format_*channel_*16);
+    int32_t outSamples = bufferSize*8/(format_*channel_*16) *5;
+    size_t outBufferLen = 196000;
+    auto outBuffer = std::make_unique<uint8_t[]>(outBufferLen);
+    int32_t res = sonicWriteShortToStream(sonicStream_, (short*)(buffer), numSamples);
+    if (res != 1) {
+        AUDIO_ERR_LOG("AudioRenderer::sonicWriteShortToStream failed: %{public}d", res);
+        return 0;
+    }
+    outSamples = sonicReadShortFromStream(sonicStream_, (short*)(outBuffer.get()), outSamples);
+    if (outSamples == 0) {
+        AUDIO_INFO_LOG("AudioRenderer::sonic stream is not full continue to write %{public}d", outSamples);
+        return bufferSize;
+    }
+
+    outBufferLen = outSamples * format_*channel_*16/8;
+    int32_t writeIndex = 0;
+    int32_t writeSize = bufferSize_;
+    while (outBufferLen > 0) {
+        if (outBufferLen < bufferSize_) {
+            writeSize = outBufferLen;
+        }
+        int32_t writeenSize = audioStream_->Write(outBuffer.get()+writeIndex, writeSize);
+        if (writeenSize < 0) return writeenSize;
+        if (writeenSize == 0) {
+            AUDIO_WARNING_LOG("writeen size is zero");
+            continue;
+        }
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(outBuffer.get() + writeIndex), writeenSize);
+        writeIndex += writeenSize;
+        outBufferLen -= writeenSize;
+    }
+
+    return bufferSize;
+}
+
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
+
+    if (speed_ - 1 > 0.001 || 1 - speed_ > 0.001) {
+        return ChangeSpeed(buffer, bufferSize);
+    }
+
     int32_t size = audioStream_->Write(buffer, bufferSize);
     if (size > 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), size);
@@ -1323,6 +1375,23 @@ int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
 {
     audioStream_->SetPreferredFrameSize(frameSize);
+}
+
+int32_t AudioRendererPrivate::SetSpeed(float speed)
+{
+    AUDIO_INFO_LOG("set speed %{public}f", speed);
+    speed_ = speed;
+    if (sonicStream_ == nullptr) {
+        AUDIO_ERR_LOG("set speed  error, sonicStream is nullptr");
+        return ERROR;
+    }
+    sonicSetSpeed(sonicStream_, speed_);
+    return SUCCESS;
+}
+
+float AudioRendererPrivate::GetSpeed()
+{
+    return speed_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
