@@ -652,17 +652,17 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &deviceDescriptor,
         std::vector<sptr<AudioDeviceDescriptor>> &desc, sptr<AudioDeviceDescriptor> &audioDescriptor);
 
-    void IdentifyAddedMediaOutputDevices(const sptr<AudioDeviceDescriptor> &device,
-        const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc);
+    void IdentifyAddedMediaOutputDevices(const sptr<AudioDeviceDescriptor> &audioDeviceDescriptor,
+                                         const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc);
 
-    void IdentifyAddedMediaInputDevices(const sptr<AudioDeviceDescriptor> &device,
-        const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc);
+    void IdentifyAddedMediaInputDevices(const sptr<AudioDeviceDescriptor> &audioDeviceDescriptor,
+                                        const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc);
 
-    void IdentifyAddedCallOutputDevices(const sptr<AudioDeviceDescriptor> &device,
-        const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc);
+    void IdentifyAddedCallOutputDevices(const sptr<AudioDeviceDescriptor> &audioDeviceDescriptor,
+                                        const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc);
 
-    void IdentifyAddedCallInputDevices(const sptr<AudioDeviceDescriptor> &device,
-        const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc);
+    void IdentifyAddedCallInputDevices(const sptr<AudioDeviceDescriptor> &devaudioDeviceDescriptorice,
+                                       const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc);
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
 
