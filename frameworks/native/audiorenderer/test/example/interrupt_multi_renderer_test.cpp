@@ -128,16 +128,14 @@ void InterruptMultiRendererTest::WriteBuffer(AudioRenderer* audioRenderer, FILE*
             }
         }
 
-        while (!feof(wavFile) &&
-               !cb->isRendererPaused_ && !cb->isRendererStopped_ && !cb->isStopInProgress_) {
+        while (!feof(wavFile) && !cb->isRendererPaused_ && !cb->isRendererStopped_ && !cb->isStopInProgress_) {
             bytesToWrite = fread(buffer.get(), 1, bufferLen, wavFile);
             bytesWritten = 0;
 
             while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
-                int32_t retBytes = audioRenderer->Write(buffer.get() + bytesWritten,
-                                                        bytesToWrite - bytesWritten);
+                int32_t retBytes = audioRenderer->Write(buffer.get() + bytesWritten, bytesToWrite - bytesWritten);
                 if (retBytes < 0) {
-                    AUDIO_ERR_LOG("InterruptMultiRendererTest: Error occurred in writing buffer: %{public}d", retBytes);
+                    AUDIO_ERR_LOG("InterruptMultiRendererTest:Error occurred in writing buffer: %{public}d", retBytes);
                     if (audioRenderer->GetStatus() == RENDERER_PAUSED) {
                         cb->isRendererPaused_ = true;
                         int32_t seekPos = bytesWritten - bytesToWrite;
@@ -250,9 +248,7 @@ int32_t InterruptMultiRendererTest::TestPlayback(int argc, char *argv[]) const
         if (wavFile1 == nullptr) {
             return -1;
         }
-    }
-
-    if (!ValidateFile(file2Path, path2)) {
+    } else if (!ValidateFile(file2Path, path2)) {
         wavFile2 = fopen(path2, "rb");
         if (wavFile2 == nullptr) {
             fclose(wavFile1);
@@ -297,12 +293,9 @@ int32_t InterruptMultiRendererTest::TestPlayback(int argc, char *argv[]) const
     if (audioRenderer2->GetStatus() == RENDERER_PREPARED && StartRender(audioRenderer2)) {
         writeThread2 = make_unique<thread>(&InterruptMultiRendererTest::WriteBuffer, this,
                                            audioRenderer2.get(), wavFile2, cb2Impl);
-    }
-
-    if (writeThread1 && writeThread1->joinable()) {
+    } else if (writeThread1 && writeThread1->joinable()) {
         writeThread1->join();
-    }
-    if (writeThread2 && writeThread2->joinable()) {
+    } else if (writeThread2 && writeThread2->joinable()) {
         writeThread2->join();
     }
     fclose(wavFile1);

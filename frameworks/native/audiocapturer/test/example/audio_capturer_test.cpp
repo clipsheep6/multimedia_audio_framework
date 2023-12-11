@@ -161,9 +161,7 @@ public:
                 break;
             } else if (bytesRead == 0) {
                 continue;
-            }
-
-            if (fwrite(buffer.get(), size, bytesRead, pFile) != bytesRead) {
+            } else if (fwrite(buffer.get(), size, bytesRead, pFile) != bytesRead) {
                 AUDIO_ERR_LOG("error occurred in fwrite");
             }
             numBuffersToCapture--;
@@ -210,9 +208,7 @@ public:
         int32_t status = audioCapturer->SetBufferDuration(bufferMsec);
         if (status) {
             AUDIO_ERR_LOG("Failed to set buffer duration");
-        }
-
-        if (!InitCapture(audioCapturer)) {
+        } else if (!InitCapture(audioCapturer)) {
             AUDIO_ERR_LOG("Initialize capturer failed");
             return false;
         }
@@ -222,9 +218,7 @@ public:
         if (pFile == nullptr) {
             AUDIO_INFO_LOG("AudioCapturerTest: Unable to open file");
             return false;
-        }
-
-        if (!StartCapture(audioCapturer, isBlocking, pFile)) {
+        } else if (!StartCapture(audioCapturer, isBlocking, pFile)) {
             AUDIO_ERR_LOG("Start capturer failed");
             fclose(pFile);
             return false;
@@ -233,13 +227,9 @@ public:
         fflush(pFile);
         if (!audioCapturer->Flush()) {
             AUDIO_ERR_LOG("AudioCapturerTest: flush failed");
-        }
-
-        if (!audioCapturer->Stop()) {
+        } else if (!audioCapturer->Stop()) {
             AUDIO_ERR_LOG("AudioCapturerTest: Stop failed");
-        }
-
-        if (!audioCapturer->Release()) {
+        } else if (!audioCapturer->Release()) {
             AUDIO_ERR_LOG("AudioCapturerTest: Release failed");
         }
         fclose(pFile);

@@ -117,7 +117,7 @@ private:
     void UpdateHandleInfo();
     int64_t GetPredictNextHandleTime(uint64_t posInFrame);
     bool PrepareNext(uint64_t curHandPos, int64_t &wakeUpTime);
-    bool ClientPrepareNextLoop(uint64_t curHandPos, int64_t &wakeUpTime);
+    bool ClientPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
 
     std::string GetStatusInfo(StreamStatus status);
     bool KeepLoopRunning();

@@ -241,8 +241,7 @@ public:
             AUDIO_DEBUG_LOG("start: %{public}d", ++writeCount);
 #endif // LATENCY_ACCURACY_TEST
             while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
-                bytesWritten += audioRenderer->Write(buffer.get() + bytesWritten,
-                                                     bytesToWrite - bytesWritten);
+                bytesWritten += audioRenderer->Write(buffer.get() + bytesWritten, bytesToWrite - bytesWritten);
                 AUDIO_INFO_LOG("AudioRendererTest: Bytes written: %{public}zu", bytesWritten);
                 if (bytesWritten < 0) {
                     break;
@@ -360,25 +359,17 @@ public:
         int32_t status = audioRenderer->SetBufferDuration(bufferMsec);
         if (status) {
             AUDIO_ERR_LOG("Failed to set buffer duration");
-        }
-
-        if (!InitRender(audioRenderer)) {
+        } else if (!InitRender(audioRenderer)) {
             AUDIO_ERR_LOG("AudioRendererTest: Init render failed");
             fclose(wavFile);
             return false;
-        }
-
-        if (!StartRender(audioRenderer, wavFile)) {
+        } else if (!StartRender(audioRenderer, wavFile)) {
             AUDIO_ERR_LOG("AudioRendererTest: Start render failed");
             fclose(wavFile);
             return false;
-        }
-
-        if (!audioRenderer->Stop()) {
+        } else if (!audioRenderer->Stop()) {
             AUDIO_ERR_LOG("AudioRendererTest: Stop failed");
-        }
-
-        if (!audioRenderer->Release()) {
+        } else if (!audioRenderer->Release()) {
             AUDIO_ERR_LOG("AudioRendererTest: Release failed");
         }
 
