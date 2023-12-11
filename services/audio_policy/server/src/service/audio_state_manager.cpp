@@ -20,70 +20,64 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-void AudioStateManager::SetPerferredMediaRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPerferredMediaRenderDevice(const unique_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     perferredMediaRenderDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPerferredCallRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPerferredCallRenderDevice(const unique_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     perferredCallRenderDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPerferredCallCaptureDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPerferredCallCaptureDevice(const unique_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     perferredCallCaptureDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPerferredRingRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPerferredRingRenderDevice(const unique_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     perferredRingRenderDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPerferredRecordCaptureDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPerferredRecordCaptureDevice(const unique_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     perferredRecordCaptureDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPerferredToneRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPerferredToneRenderDevice(const unique_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     perferredToneRenderDevice_ = deviceDescriptor;
 }
 
 unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPerferredMediaRenderDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(perferredMediaRenderDevice_);
-    return devDesc;
+    return perferredMediaRenderDevice_;
 }
 
 unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPerferredCallRenderDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(perferredCallRenderDevice_);
-    return devDesc;
+    return perferredCallRenderDevice_;
 }
 
 unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPerferredCallCaptureDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(perferredCallCaptureDevice_);
-    return devDesc;
+    return perferredCallCaptureDevice_;
 }
 
 unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPerferredRingRenderDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(perferredRingRenderDevice_);
-    return devDesc;
+    return perferredRingRenderDevice_;
 }
 
 unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPerferredRecordCaptureDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(perferredRecordCaptureDevice_);
-    return devDesc;
+    return perferredRecordCaptureDevice_;
 }
 
 unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPerferredToneRenderDevice()
 {
-    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(perferredToneRenderDevice_);
-    return devDesc;
+    return perferredToneRenderDevice_;
 }
 
 } // namespace AudioStandard
