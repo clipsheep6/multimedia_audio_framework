@@ -53,10 +53,7 @@ void AudioStreamEventDispatcher::SendRendererInfoEventToDispatcher(AudioMode mod
     }
 
     unique_ptr<StreamStateChangeRequest> streamStateChangeRequest = make_unique<StreamStateChangeRequest>();
-    if (!streamStateChangeRequest) {
-        AUDIO_ERR_LOG("AudioStreamEventDispatcher::SendRendererInfoEventToDispatcher:Memory alloc failed!!");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(streamStateChangeRequest, "Memory alloc failed!!");
     streamStateChangeRequest->mode = mode;
     streamStateChangeRequest->audioRendererChangeInfos = move(rendererChangeInfos);
     streamStateChangeQueue_.push(move(streamStateChangeRequest));
@@ -76,10 +73,7 @@ void AudioStreamEventDispatcher::SendCapturerInfoEventToDispatcher(AudioMode mod
     }
 
     unique_ptr<StreamStateChangeRequest> streamStateChangeRequest = make_unique<StreamStateChangeRequest>();
-    if (!streamStateChangeRequest) {
-        AUDIO_ERR_LOG("AudioStreamEventDispatcher::Memory alloc failed!!");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(streamStateChangeRequest, "Memory alloc failed!!");
     streamStateChangeRequest->mode = mode;
     streamStateChangeRequest->audioCapturerChangeInfos = move(capturerChangeInfos);
     streamStateChangeQueue_.push(move(streamStateChangeRequest));

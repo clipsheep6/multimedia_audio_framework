@@ -122,17 +122,14 @@ RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
     if (rendererInited_.load()) {
         RemoteAudioRendererSinkInner::DeInit();
     }
-    AUDIO_INFO_LOG("RemoteAudioRendererSink destruction.");
+    AUDIO_DEBUG_LOG("RemoteAudioRendererSink destruction.");
 }
 
 std::map<std::string, RemoteAudioRendererSinkInner *> allsinks;
 RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const std::string &deviceNetworkId)
 {
     AUDIO_INFO_LOG("GetInstance.");
-    if (deviceNetworkId.empty()) {
-        AUDIO_ERR_LOG("Remote render device networkId is null.");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(!deviceNetworkId.empty(), nullptr, "Remote render device networkId is null.");
 
     if (allsinks.count(deviceNetworkId)) {
         return allsinks[deviceNetworkId];
@@ -180,7 +177,7 @@ void RemoteAudioRendererSinkInner::DeInit()
         temp = nullptr;
         allsinks.erase(this->deviceNetworkId_);
     }
-    AUDIO_INFO_LOG("DeInit end.");
+    AUDIO_DEBUG_LOG("DeInit end.");
 }
 
 inline std::string PrintRemoteAttr(const IAudioSinkAttr &attr)
@@ -213,10 +210,8 @@ int32_t RemoteAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
             audioPort_ = desc->ports[port];
             break;
         }
-        if (port == (desc->portNum - 1)) {
-            AUDIO_ERR_LOG("Not found the audio spk port.");
-            return ERR_INVALID_INDEX;
-        }
+        CHECK_AND_RETURN_RET_LOG(port != (desc->portNum - 1), ERR_INVALID_INDEX,
+            "Not found the audio spk port.");
     }
 
     audioAdapter_ = audioManager_->LoadAdapters(deviceNetworkId_, false);
@@ -241,7 +236,7 @@ int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &rende
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    AUDIO_INFO_LOG("Create render format: %{public}d", param.format);
+    AUDIO_DEBUG_LOG("Create render format: %{public}d", param.format);
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
@@ -250,14 +245,12 @@ int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &rende
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateRender: Audio adapter is null.");
     int32_t ret = audioAdapter_->CreateRender(&deviceDesc, &param, &audioRender_, this);
-    if (ret != SUCCESS || audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioDeviceCreateRender fail, ret %{public}d.", ret);
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioRender_ != nullptr, ret,
+        "AudioDeviceCreateRender fail, ret %{public}d.", ret);
 
     isRenderCreated_.store(true);
     int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
-    AUDIO_INFO_LOG("CreateRender cost[%{public}" PRId64 "]ms", cost);
+    AUDIO_DEBUG_LOG("CreateRender cost[%{public}" PRId64 "]ms", cost);
     return SUCCESS;
 }
 
@@ -437,10 +430,8 @@ int32_t RemoteAudioRendererSinkInner::GetVolume(float &left, float &right)
 
 int32_t RemoteAudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
-    if (!latency) {
-        AUDIO_ERR_LOG("GetLatency failed latency null");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(latency, ERR_INVALID_PARAM,
+        "GetLatency failed latency null");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "GetLatency: Audio render is null.");
     uint32_t hdiLatency = 0;
@@ -547,10 +538,7 @@ int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, Devic
     struct AudioSceneDescriptor scene;
     scene.scene.id = GetAudioCategory(audioScene);
     scene.desc.pins = PIN_OUT_SPEAKER;
-    if (audioRender_->scene.SelectScene == nullptr) {
-        AUDIO_ERR_LOG("Select scene nullptr");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_->scene.SelectScene != nullptr, ERR_OPERATION_FAILED, "Select scene nullptr");
 
     AUDIO_DEBUG_LOG("SelectScene start");
     ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);

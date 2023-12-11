@@ -22,12 +22,10 @@ namespace AudioStandard {
 AudioManagerListenerProxy::AudioManagerListenerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioServerManagerListener>(impl)
 {
-    AUDIO_DEBUG_LOG("Instances create");
 }
 
 AudioManagerListenerProxy::~AudioManagerListenerProxy()
 {
-    AUDIO_DEBUG_LOG("~AudioPolicyManagerListenerProxy: Instance destroy");
 }
 
 void AudioManagerListenerProxy::WriteParameterEventParams(MessageParcel& data, const std::string networkId,
@@ -42,15 +40,12 @@ void AudioManagerListenerProxy::WriteParameterEventParams(MessageParcel& data, c
 void AudioManagerListenerProxy::OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
     const std::string& condition, const std::string& value)
 {
-    AUDIO_DEBUG_LOG("AudioManagerListenerProxy: ON_PARAMETER_CHANGED at listener proxy");
 
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
 
     data.WriteString(static_cast<std::string>(networkId));
     data.WriteInt32(static_cast<std::int32_t>(key));
@@ -65,15 +60,11 @@ void AudioManagerListenerProxy::OnAudioParameterChange(const std::string network
 
 void AudioManagerListenerProxy::OnCapturerState(bool isActive)
 {
-    AUDIO_DEBUG_LOG("AudioManagerListenerProxy: OnCapturerState at listener proxy");
-
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
 
     data.WriteBool(isActive);
 
@@ -85,15 +76,11 @@ void AudioManagerListenerProxy::OnCapturerState(bool isActive)
 
 void AudioManagerListenerProxy::OnWakeupClose()
 {
-    AUDIO_DEBUG_LOG("AudioManagerListenerProxy: OnWakeupClose at listener proxy");
-
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
 
     int error = Remote()->SendRequest(ON_WAKEUP_CLOSE, data, reply, option);
     if (error != ERR_NONE) {
@@ -104,12 +91,10 @@ void AudioManagerListenerProxy::OnWakeupClose()
 AudioManagerListenerCallback::AudioManagerListenerCallback(const sptr<IStandardAudioServerManagerListener>& listener)
     : listener_(listener)
 {
-    AUDIO_DEBUG_LOG("AudioManagerListenerCallback: Instance create");
 }
 
 AudioManagerListenerCallback::~AudioManagerListenerCallback()
 {
-    AUDIO_DEBUG_LOG("AudioManagerListenerCallback: Instance destroy");
 }
 
 void AudioManagerListenerCallback::OnAudioParameterChange(const std::string networkId, const AudioParamKey key,

@@ -47,18 +47,16 @@ static bool LoadLibrary(const std::string &relativePath, std::unique_ptr<AudioEf
 {
     std::string absolutePath;
     // find library in adsolutePath
-    if (!ResolveLibrary(relativePath, absolutePath)) {
-        AUDIO_ERR_LOG("<log error> find library falied in effect directories: %{public}s",
-            relativePath.c_str());
-        return false;
-    }
+    bool ret = ResolveLibrary(relativePath, absolutePath);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "<log error> find library falied in effect directories: %{public}s",
+        relativePath.c_str());
 
     void* handle = dlopen(absolutePath.c_str(), 1);
     if (!handle) {
         AUDIO_ERR_LOG("<log error> dlopen lib %{public}s Fail", relativePath.c_str());
         return false;
     } else {
-        AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
+        AUDIO_DEBUG_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
     }
 
     AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(handle,
@@ -69,7 +67,7 @@ static bool LoadLibrary(const std::string &relativePath, std::unique_ptr<AudioEf
         dlclose(handle);
         return false;
     } else {
-        AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful, error: %{public}s", relativePath.c_str(), error);
+        AUDIO_DEBUG_LOG("<log info> dlsym lib %{public}s successful, error: %{public}s", relativePath.c_str(), error);
     }
 
     libEntry->audioEffectLibHandle = audioEffectLibHandle;
@@ -86,10 +84,7 @@ void LoadLibraries(const std::vector<Library> &libs, std::vector<std::unique_ptr
         libEntry->libraryName = library.name;
 
         bool loadLibrarySuccess = LoadLibrary(library.path, libEntry);
-        if (!loadLibrarySuccess) {
-            AUDIO_ERR_LOG("<log error> loadLibrary fail, please check logs!");
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(loadLibrarySuccess, "<log error> loadLibrary fail, please check logs!");
 
         // Register library load success
         libList.emplace_back(std::move(libEntry));
@@ -111,11 +106,9 @@ AudioEffectLibEntry *FindLibrary(const std::string &name,
 static bool LoadEffect(const Effect &effect, const std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
 {
     AudioEffectLibEntry *currentLibEntry = FindLibrary(effect.libraryName, libList);
-    if (currentLibEntry == nullptr) {
-        AUDIO_ERR_LOG("<log error> could not find library %{public}s to load effect %{public}s",
-                      effect.libraryName.c_str(), effect.name.c_str());
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(currentLibEntry != nullptr, false,
+        "<log error> could not find library %{public}s to load effect %{public}s",
+        effect.libraryName.c_str(), effect.name.c_str());
     // check effect
     AudioEffectDescriptor descriptor;
     descriptor.libraryName = effect.libraryName;
@@ -138,10 +131,7 @@ void CheckEffects(const std::vector<Effect> &effects, const std::vector<std::uni
 {
     for (Effect effect: effects) {
         bool ret = LoadEffect(effect, libList);
-        if (!ret) {
-            AUDIO_ERR_LOG("<log error> LoadEffects have failures, please check log!");
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(ret, "<log error> LoadEffects have failures, please check log!");
 
         successEffectList.push_back(effect);
     }

@@ -70,10 +70,7 @@ void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageP
 void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(data.ReadInt32());
-    if (ltoneInfo == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: GetToneInfoInternal obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(ltoneInfo != nullptr, "obj is null");
     ltoneInfo->Marshalling(reply);
 }
 

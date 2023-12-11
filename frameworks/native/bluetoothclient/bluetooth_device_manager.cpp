@@ -198,10 +198,9 @@ void MediaBluetoothDeviceManager::HandleDisconnectDevice(const BluetoothRemoteDe
 
 void MediaBluetoothDeviceManager::HandleWearDevice(const BluetoothRemoteDevice &device)
 {
-    if (!IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
-        AUDIO_ERR_LOG("HandleWearDevice failed for the device has not be reported the connected action.");
-        return;
-    }
+    bool isDeviceExist = IsA2dpBluetoothDeviceExist(device.GetDeviceAddr());
+    CHECK_AND_RETURN_LOG(isDeviceExist,
+        "HandleWearDevice failed for the device has not be reported the connected action.");
     RemoveDeviceInConfigVector(device, negativeDevices_);
     RemoveDeviceInConfigVector(device, privacyDevices_);
     AddDeviceInConfigVector(device, privacyDevices_);
@@ -221,10 +220,8 @@ void MediaBluetoothDeviceManager::HandleWearDevice(const BluetoothRemoteDevice &
 
 void MediaBluetoothDeviceManager::HandleUnwearDevice(const BluetoothRemoteDevice &device)
 {
-    if (!IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
-        AUDIO_ERR_LOG("HandleWearDevice failed for the device has not worn.");
-        return;
-    }
+    bool isDeviceExist = IsA2dpBluetoothDeviceExist(device.GetDeviceAddr());
+    CHECK_AND_RETURN_LOG(isDeviceExist, "HandleWearDevice failed for the device has not worn.");
     RemoveDeviceInConfigVector(device, privacyDevices_);
     RemoveDeviceInConfigVector(device, negativeDevices_);
     AddDeviceInConfigVector(device, negativeDevices_);
@@ -375,10 +372,7 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
         }
     }
     std::lock_guard<std::mutex> observerLock(g_observerLock);
-    if (g_deviceObserver == nullptr) {
-        AUDIO_ERR_LOG("NotifyToUpdateAudioDevice, device observer is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(g_deviceObserver != nullptr, "NotifyToUpdateAudioDevice, device observer is null");
     bool isConnected = deviceStatus == DeviceStatus::ADD ? true : false;
     g_deviceObserver->OnDeviceStatusUpdated(desc, isConnected);
 }
@@ -408,10 +402,7 @@ void MediaBluetoothDeviceManager::UpdateA2dpDeviceConfiguration(const BluetoothR
     const AudioStreamInfo &streamInfo)
 {
     std::lock_guard<std::mutex> observerLock(g_observerLock);
-    if (g_deviceObserver == nullptr) {
-        AUDIO_ERR_LOG("UpdateA2dpDeviceConfiguration, device observer is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(g_deviceObserver != nullptr, "UpdateA2dpDeviceConfiguration, device observer is null");
     g_deviceObserver->OnDeviceConfigurationChanged(DEVICE_TYPE_BLUETOOTH_A2DP, device.GetDeviceAddr(),
         device.GetDeviceName(), streamInfo);
 }
