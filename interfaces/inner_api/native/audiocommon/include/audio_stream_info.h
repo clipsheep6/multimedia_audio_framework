@@ -31,111 +31,111 @@ enum AudioStreamType {
     /**
      * Indicates audio streams default.
      */
-    STREAM_DEFAULT = -1,
-    /**
-     * Indicates audio streams of voices in calls.
-     */
-    STREAM_VOICE_CALL = 0,
+    STREAM_DEFAULT = 0,
     /**
      * Indicates audio streams for music.
      */
     STREAM_MUSIC = 1,
     /**
-     * Indicates audio streams for ringtones.
+     * Indicates audio streams of voices in calls.
      */
-    STREAM_RING = 2,
-    /**
-     * Indicates audio streams for media.
-     * Deprecated
-     */
-    STREAM_MEDIA = 3,
+    STREAM_VOICE_CALL = 2,
     /**
      * Indicates audio streams used for voice assistant and text-to-speech (TTS).
      */
-    STREAM_VOICE_ASSISTANT = 4,
-    /**
-     * Indicates audio streams for system sounds.
-     */
-    STREAM_SYSTEM = 5,
+    STREAM_VOICE_ASSISTANT = 3,
     /**
      * Indicates audio streams for alarms.
      */
-    STREAM_ALARM = 6,
+    STREAM_ALARM = 4,
+    /**
+     * Indicates audio streams for voice message.
+     */
+    STREAM_VOICE_MESSAGE = 5,
+    /**
+     * Indicates audio streams for ringtones.
+     */
+    STREAM_RING = 6,
     /**
      * Indicates audio streams for notifications.
      */
     STREAM_NOTIFICATION = 7,
     /**
-     * Indicates audio streams for voice calls routed through a connected Bluetooth device.
-     * Deprecated
+     * Indicates audio streams used for prompts in terms of accessibility.
      */
-    STREAM_BLUETOOTH_SCO = 8,
+    STREAM_ACCESSIBILITY = 8,
     /**
-     * Indicates audio streams for enforced audible.
+     * Indicates audio streams for system sounds.
      */
-    STREAM_ENFORCED_AUDIBLE = 9,
+    STREAM_SYSTEM = 9,
+    /**
+     * Indicates audio streams for movie.
+     */
+    STREAM_MOVIE = 10,
+    /**
+     * Indicates audio streams for game.
+     */
+    STREAM_GAME = 11,
+    /**
+     * Indicates audio streams for speech (audiobook).
+     */
+    STREAM_SPEECH = 12,
+    /**
+     * Indicates audio streams for navigation.
+     */
+    STREAM_NAVIGATION = 13,
     /**
      * Indicates audio streams for dual-tone multi-frequency (DTMF) tones.
      */
-    STREAM_DTMF = 10,
+    STREAM_DTMF = 14,
     /**
-     * Indicates audio streams exclusively transmitted through the speaker (text-to-speech) of a device.
+     * Indicates audio streams for enforced audible.
+     */
+    STREAM_SYSTEM_ENFORCED = 15,
+    /**
+     * Indicates audio streams used for ultrasonic ranging.
+     */
+    STREAM_ULTRASONIC = 16,
+    /**
+     * Indicates audio streams for ForceStop.
+     */
+    STREAM_INTERNAL_FORCE_STOP = 18,
+
+    // other stream type
+    /**
+     * Indicates audio streams for media.
      * Deprecated
      */
-    STREAM_TTS =  11,
+    STREAM_MEDIA,
     /**
-     * Indicates audio streams used for prompts in terms of accessibility.
+     * Indicates audio streams for voice calls routed through a connected Bluetooth device.
+     * Deprecated
      */
-    STREAM_ACCESSIBILITY = 12,
+    STREAM_BLUETOOTH_SCO,
+    /**
+     * Indicates audio streams for enforced audible.
+     * Replaced by STREAM_SYSTEM_ENFORCED.
+     */
+    STREAM_ENFORCED_AUDIBLE,
+    /**
+     * Indicates audio streams exclusively transmitted through the speaker (text-to-speech) of a device.
+     * Replaced by STREAM_VOICE_ASSISTANT.
+     */
+    STREAM_TTS,
     /**
      * Indicates special scene used for recording.
      * Deprecated
      */
-    STREAM_RECORDING = 13,
-    /**
-     * Indicates audio streams for movie.
-     * New
-     */
-    STREAM_MOVIE = 14,
-    /**
-     * Indicates audio streams for game.
-     * New
-     */
-    STREAM_GAME = 15,
-    /**
-     * Indicates audio streams for speech.
-     * New
-     */
-    STREAM_SPEECH = 16,
-    /**
-     * Indicates audio streams for enforced audible.
-     * New
-     */
-    STREAM_SYSTEM_ENFORCED = 17,
-    /**
-     * Indicates audio streams used for ultrasonic ranging.
-     */
-    STREAM_ULTRASONIC = 18,
+    STREAM_RECORDING,
     /**
      * Indicates audio streams for wakeup.
      */
-    STREAM_WAKEUP = 19,
-    /**
-     * Indicates audio streams for voice message.
-     */
-    STREAM_VOICE_MESSAGE = 20,
-    /**
-     * Indicates audio streams for navigation.
-     */
-    STREAM_NAVIGATION = 21,
-    /**
-     * Indicates audio streams for ForceStop.
-     */
-    STREAM_INTERNAL_FORCE_STOP = 22,
+    STREAM_WAKEUP,
     /**
      * Indicates audio streams for voice call.
      */
-    STREAM_SOURCE_VOICE_CALL = 23,
+    STREAM_SOURCE_VOICE_CALL,
+
     /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
@@ -152,13 +152,13 @@ enum AudioStreamType {
 */
 enum StreamUsage {
     STREAM_USAGE_UNKNOWN = 0,
-    STREAM_USAGE_MEDIA = 1,
+    STREAM_USAGE_MEDIA = 1, // deprecated
     STREAM_USAGE_MUSIC = 1,
     STREAM_USAGE_VOICE_COMMUNICATION = 2,
     STREAM_USAGE_VOICE_ASSISTANT = 3,
     STREAM_USAGE_ALARM = 4,
     STREAM_USAGE_VOICE_MESSAGE = 5,
-    STREAM_USAGE_NOTIFICATION_RINGTONE = 6,
+    STREAM_USAGE_NOTIFICATION_RINGTONE = 6, // deprecated
     STREAM_USAGE_RINGTONE = 6,
     STREAM_USAGE_NOTIFICATION = 7,
     STREAM_USAGE_ACCESSIBILITY = 8,
@@ -170,13 +170,15 @@ enum StreamUsage {
     STREAM_USAGE_DTMF = 14,
     STREAM_USAGE_ENFORCED_TONE = 15,
     STREAM_USAGE_ULTRASONIC = 16,
-    //other StreamUsage
-    STREAM_USAGE_RANGING,
-    STREAM_USAGE_VOICE_MODEM_COMMUNICATION
+    // other StreamUsage
+    STREAM_USAGE_VOICE_MODEM_COMMUNICATION = 17, // (only for call manager)
+    STREAM_USAGE_MAX = STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
+    STREAM_USAGE_RANGING // deprecated
 };
 
 /**
 * Enumerates the audio content type.
+* Deprecated since api 10.
 */
 enum ContentType {
     CONTENT_TYPE_UNKNOWN = 0,
@@ -190,6 +192,49 @@ enum ContentType {
     CONTENT_TYPE_GAME = 7,
     CONTENT_TYPE_DTMF = 8,
     CONTENT_TYPE_ULTRASONIC = 9
+};
+
+/**
+* Enumerates the audio volume type.
+*/
+enum AudioVolumeType {
+    /**
+     * The volume of voice call which includes STREAM_VOICE_CALL and STREAM_VOICE_MESSAGE.
+    */
+    VOLUME_VOICE_CALL = 0,
+    /**
+     * The volume of ringtone which includes STREAM_RING, STREAM_SYSTEM, STREAM_NOTIFICATION,
+     * STREAM_SYSTEM_ENFORCED and STREAM_DTMF.
+    */
+    VOLUME_RINGTONE = 2,
+    /**
+     * The volume of media which includes STREAM_MUSIC, STREAM_MOVIE, STREAM_GAME, STREAM_SPEECH and STREAM_NAVIGATION.
+    */
+    VOLUME_MEDIA = 3,
+    /**
+     * The volume of alarm which includes STREAM_ALARM.
+    */
+    VOLUME_ALARM = 4,
+    /**
+     * The volume of accessibility which includes STREAM_ACCESSIBILITY.
+    */
+    VOLUME_ACCESSIBILITY = 5,
+    /**
+     * The volume of voice assistant which includes STREAM_VOICE_ASSISTANT.
+    */
+    VOLUME_VOICE_ASSISTANT = 9,
+    /**
+     * The volume of ultrasonic which includes STREAM_ULTRASONIC.
+    */
+    VOLUME_ULTRASONIC = 10,
+    /**
+     * The max value of AudioVolumeType except VOLUME_ALL
+    */
+    VOLUME_TYPE_MAX = VOLUME_ULTRASONIC,
+    /**
+     * The value of all volume types which is used for only one volume bar of a device.
+     */
+    VOLUME_ALL = 100
 };
 
 struct AudioStreamParams {
@@ -460,7 +505,6 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_DTMF,
     STREAM_USAGE_ENFORCED_TONE,
     STREAM_USAGE_ULTRASONIC,
-    STREAM_USAGE_RANGING,
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 

@@ -127,9 +127,6 @@ const std::string AudioContainerClientBase::GetStreamNameGa(AudioStreamType audi
         case STREAM_NOTIFICATION:
             name = "notification";
             break;
-        case STREAM_BLUETOOTH_SCO:
-            name = "bluetooth_sco";
-            break;
         case STREAM_DTMF:
             name = "dtmf";
             break;
@@ -138,9 +135,6 @@ const std::string AudioContainerClientBase::GetStreamNameGa(AudioStreamType audi
             break;
         case STREAM_ACCESSIBILITY:
             name = "accessibility";
-            break;
-        case STREAM_WAKEUP:
-            name = "wakeup";
             break;
         default:
             name = "unknown";

@@ -31,10 +31,10 @@ public:
     /**
      * @brief computes the volume to be set in audioserver
      *
-     * @param streamType streamType for which volume will be computed
+     * @param volumeType volumeType for which volume will be computed
      * @return Returns volume level in float
      */
-    virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType) = 0;
+    virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioVolumeType volumeType) = 0;
 
     virtual void OnSessionRemoved(const uint64_t sessionID) = 0;
 
@@ -135,7 +135,7 @@ public:
      * @return Returns {@link SUCCESS} if volume is set successfully; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
-    virtual int32_t SetVolumeDb(AudioStreamType streamType, float volume) = 0;
+    virtual int32_t SetVolumeDb(AudioVolumeType volumeType, float volume) = 0;
 
     /**
      * @brief set mute for give output streamType

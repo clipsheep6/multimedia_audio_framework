@@ -57,7 +57,7 @@ void PolicyHandler::Dump(std::stringstream &dumpStringStream)
     // dump volume
     int formatSize = 2;
     for (size_t i = 0; i < IPolicyProvider::GetVolumeVectorSize(); i++) {
-        dumpStringStream << "streamtype[" << g_volumeIndexVector[i].first << "] ";
+        dumpStringStream << "volumetype[" << g_volumeIndexVector[i].first << "] ";
         dumpStringStream << "device[" << std::setw(formatSize) << g_volumeIndexVector[i].second << "]: ";
         dumpStringStream << "isMute[" << (volumeVector_[i].isMute ? "true" : "false") << "] ";
         dumpStringStream << "volFloat[" << volumeVector_[i].volumeFloat << "] ";
@@ -111,32 +111,31 @@ AudioVolumeType PolicyHandler::GetVolumeTypeFromStreamType(AudioStreamType strea
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
-            return STREAM_VOICE_CALL;
+            return VOLUME_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
-            return STREAM_RING;
+            return VOLUME_RINGTONE;
         case STREAM_MUSIC:
-        case STREAM_MEDIA:
         case STREAM_MOVIE:
         case STREAM_GAME:
         case STREAM_SPEECH:
         case STREAM_NAVIGATION:
-            return STREAM_MUSIC;
-        case STREAM_VOICE_ASSISTANT:
-            return STREAM_VOICE_ASSISTANT;
+            return VOLUME_MEDIA;
         case STREAM_ALARM:
-            return STREAM_ALARM;
+            return VOLUME_ALARM;
         case STREAM_ACCESSIBILITY:
-            return STREAM_ACCESSIBILITY;
+            return VOLUME_ACCESSIBILITY;
+        case STREAM_VOICE_ASSISTANT:
+            return VOLUME_VOICE_ASSISTANT;
         case STREAM_ULTRASONIC:
-            return STREAM_ULTRASONIC;
+            return VOLUME_ULTRASONIC;
         case STREAM_ALL:
-            return STREAM_ALL;
+            return VOLUME_ALL;
         default:
-            return STREAM_MUSIC;
+            return VOLUME_MEDIA;
     }
 }
 

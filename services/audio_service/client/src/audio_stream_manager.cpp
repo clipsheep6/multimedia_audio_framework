@@ -136,21 +136,20 @@ int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneE
 bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
 {
     switch (volumeType) {
-        case STREAM_MUSIC:
-        case STREAM_RING:
-        case STREAM_NOTIFICATION:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-        case STREAM_ALARM:
-        case STREAM_ACCESSIBILITY:
+        case VOLUME_VOICE_CALL:
+        case VOLUME_RINGTONE:
+        case VOLUME_MEDIA:
+        case VOLUME_ALARM:
+        case VOLUME_ACCESSIBILITY:
+        case VOLUME_VOICE_ASSISTANT:
             break;
-        case STREAM_ULTRASONIC:
+        case VOLUME_ULTRASONIC:
             if (!PermissionUtil::VerifySelfPermission()) {
                 AUDIO_ERR_LOG("IsStreamActive: volumeType=%{public}d. No system permission", volumeType);
                 return false;
             }
             break;
-        case STREAM_ALL:
+        case VOLUME_ALL:
         default:
             AUDIO_ERR_LOG("IsStreamActive: volumeType=%{public}d not supported", volumeType);
             return false;

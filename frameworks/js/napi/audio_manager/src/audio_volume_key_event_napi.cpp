@@ -106,35 +106,25 @@ static int32_t GetJsAudioVolumeType(AudioVolumeType volumeType)
 {
     int32_t result = AudioCommonNapi::MEDIA;
     switch (volumeType) {
-        case AudioVolumeType::STREAM_VOICE_CALL:
-        case AudioVolumeType::STREAM_VOICE_MESSAGE:
+        case AudioVolumeType::VOLUME_VOICE_CALL:
             result = AudioCommonNapi::VOICE_CALL;
             break;
-        case AudioVolumeType::STREAM_RING:
-        case AudioVolumeType::STREAM_SYSTEM:
-        case AudioVolumeType::STREAM_NOTIFICATION:
-        case AudioVolumeType::STREAM_SYSTEM_ENFORCED:
-        case AudioVolumeType::STREAM_DTMF:
+        case AudioVolumeType::VOLUME_RINGTONE:
             result = AudioCommonNapi::RINGTONE;
             break;
-        case AudioVolumeType::STREAM_MUSIC:
-        case AudioVolumeType::STREAM_MEDIA:
-        case AudioVolumeType::STREAM_MOVIE:
-        case AudioVolumeType::STREAM_GAME:
-        case AudioVolumeType::STREAM_SPEECH:
-        case AudioVolumeType::STREAM_NAVIGATION:
+        case AudioVolumeType::VOLUME_MEDIA:
             result = AudioCommonNapi::MEDIA;
             break;
-        case AudioVolumeType::STREAM_ALARM:
+        case AudioVolumeType::VOLUME_ALARM:
             result = AudioCommonNapi::ALARM;
             break;
-        case AudioVolumeType::STREAM_ACCESSIBILITY:
+        case AudioVolumeType::VOLUME_ACCESSIBILITY:
             result = AudioCommonNapi::ACCESSIBILITY;
             break;
-        case AudioVolumeType::STREAM_VOICE_ASSISTANT:
+        case AudioVolumeType::VOLUME_VOICE_ASSISTANT:
             result = AudioCommonNapi::VOICE_ASSISTANT;
             break;
-        case AudioVolumeType::STREAM_ULTRASONIC:
+        case AudioVolumeType::VOLUME_ULTRASONIC:
             result =  AudioCommonNapi::ULTRASONIC;
             break;
         default:

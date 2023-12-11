@@ -170,8 +170,6 @@ enum ConnectType {
     CONNECT_TYPE_DISTRIBUTED
 };
 
-typedef AudioStreamType AudioVolumeType;
-
 enum AudioOffloadType {
     /**
      * Indicates audio offload state default.

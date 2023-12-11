@@ -702,7 +702,7 @@ napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const Volum
 {
     napi_create_object(env, &result);
     SetValueInt32(env, "volumeType",
-        NapiAudioEnum::GetJsAudioVolumeType(static_cast<AudioStreamType>(volumeEvent.volumeType)), result);
+        NapiAudioEnum::GetJsAudioVolumeType(static_cast<AudioVolumeType>(volumeEvent.volumeType)), result);
     SetValueInt32(env, "volume", static_cast<int32_t>(volumeEvent.volume), result);
     SetValueBoolean(env, "updateUi", volumeEvent.updateUi, result);
     SetValueInt32(env, "volumeGroupId", volumeEvent.volumeGroupId, result);

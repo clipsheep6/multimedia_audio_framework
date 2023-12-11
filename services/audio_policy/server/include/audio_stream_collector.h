@@ -47,7 +47,7 @@ public:
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
-    bool IsStreamActive(AudioStreamType volumeType);
+    bool IsStreamActive(AudioVolumeType volumeType);
     int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT);
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
     float GetLowPowerVolume(int32_t streamId);
@@ -76,7 +76,7 @@ private:
     int32_t UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateRendererDeviceInfo(DeviceInfo &outputDeviceInfo);
     int32_t UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceInfo);
-    AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
+    AudioVolumeType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
     AudioStreamType GetStreamTypeFromSourceType(SourceType sourceType);
     void WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteRenderStreamReleaseSysEvent(const std::unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfo);

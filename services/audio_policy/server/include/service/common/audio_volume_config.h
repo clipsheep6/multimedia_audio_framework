@@ -34,7 +34,7 @@ struct DeviceVolumeInfo {
 typedef std::map<DeviceVolumeType, std::shared_ptr<DeviceVolumeInfo>> DeviceVolumeInfoMap;
 
 struct StreamVolumeInfo {
-    AudioVolumeType streamType;
+    AudioVolumeType volumeType;
     int minLevel;
     int maxLevel;
     int defaultLevel;

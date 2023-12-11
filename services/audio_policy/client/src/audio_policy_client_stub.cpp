@@ -54,7 +54,7 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
 void AudioPolicyClientStub::HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply)
 {
     VolumeEvent event;
-    event.volumeType = static_cast<AudioStreamType>(data.ReadInt32());
+    event.volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     event.volume = data.ReadInt32();
     event.updateUi = data.ReadBool();
     event.volumeGroupId = data.ReadInt32();
@@ -67,7 +67,7 @@ void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, Mess
     std::list<std::pair<AudioInterrupt, AudioFocuState>> infoList;
     std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
     int32_t size = data.ReadInt32();
-    for (uint32_t i = 0; i < size; i++) {
+    for (int32_t i = 0; i < size; i++) {
         focusInfo.first.Unmarshalling(data);
         focusInfo.second = static_cast<AudioFocuState>(data.ReadInt32());
         infoList.emplace_back(focusInfo);

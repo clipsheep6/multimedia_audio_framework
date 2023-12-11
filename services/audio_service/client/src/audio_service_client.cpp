@@ -58,29 +58,22 @@ const uint64_t AUDIO_US_PER_MS = 1000;
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
-    {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_MUSIC, "music"},
-    {STREAM_RING, "ring"},
-    {STREAM_MEDIA, "media"},
+    {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_VOICE_ASSISTANT, "voice_assistant"},
-    {STREAM_SYSTEM, "system"},
     {STREAM_ALARM, "alarm"},
+    {STREAM_VOICE_MESSAGE, "voice_message"},
+    {STREAM_RING, "ring"},
     {STREAM_NOTIFICATION, "notification"},
-    {STREAM_BLUETOOTH_SCO, "bluetooth_sco"},
-    {STREAM_ENFORCED_AUDIBLE, "enforced_audible"},
-    {STREAM_DTMF, "dtmf"},
-    {STREAM_TTS, "tts"},
     {STREAM_ACCESSIBILITY, "accessibility"},
-    {STREAM_RECORDING, "recording"},
+    {STREAM_SYSTEM, "system"},
     {STREAM_MOVIE, "movie"},
     {STREAM_GAME, "game"},
     {STREAM_SPEECH, "speech"},
+    {STREAM_NAVIGATION, "navigation"},
+    {STREAM_DTMF, "dtmf"},
     {STREAM_SYSTEM_ENFORCED, "system_enforced"},
     {STREAM_ULTRASONIC, "ultrasonic"},
-    {STREAM_WAKEUP, "wakeup"},
-    {STREAM_VOICE_MESSAGE, "voice_message"},
-    {STREAM_NAVIGATION, "navigation"},
-    {STREAM_SOURCE_VOICE_CALL, "source_voice_call"}
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -997,6 +990,7 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(volumeFactor_).c_str());
     pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(powerVolumeFactor_).c_str());
+    pa_proplist_sets(propList, "stream.duckVolumeFactor", std::to_string(duckVolumeFactor_).c_str());
     sessionID_ = pa_context_get_index(context);
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
@@ -2809,32 +2803,96 @@ AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType 
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
-            return STREAM_VOICE_CALL;
+            return VOLUME_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
-            return STREAM_RING;
+            return VOLUME_RINGTONE;
         case STREAM_MUSIC:
-        case STREAM_MEDIA:
         case STREAM_MOVIE:
         case STREAM_GAME:
         case STREAM_SPEECH:
         case STREAM_NAVIGATION:
-            return STREAM_MUSIC;
-        case STREAM_VOICE_ASSISTANT:
-            return STREAM_VOICE_ASSISTANT;
+            return VOLUME_MEDIA;
         case STREAM_ALARM:
-            return STREAM_ALARM;
+            return VOLUME_ALARM;
         case STREAM_ACCESSIBILITY:
-            return STREAM_ACCESSIBILITY;
+            return VOLUME_ACCESSIBILITY;
+        case STREAM_VOICE_ASSISTANT:
+            return VOLUME_VOICE_ASSISTANT;
         case STREAM_ULTRASONIC:
-            return STREAM_ULTRASONIC;
+            return VOLUME_ULTRASONIC;
+        case STREAM_ALL:
+            return VOLUME_ALL;
         default:
-            AUDIO_ERR_LOG("GetVolumeTypeFromStreamType streamType = %{public}d not supported", streamType);
-            return streamType;
+            AUDIO_ERR_LOG("GetVolumeTypeFromStreamType: wrong streamType %{public}d, use VOLUME_MEDIA", streamType);
+            return VOLUME_MEDIA;
     }
+}
+
+int32_t AudioServiceClient::SetStreamDuckVolumeFactor(float duckFactor)
+{
+    lock_guard<mutex> lock(ctrlMutex_);
+    AUDIO_INFO_LOG("SetStreamDuckVolumeFactor: duckFactor %{public}f", duckFactor);
+
+    CHECK_AND_RETURN_RET_LOG(CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) >= 0,
+        AUDIO_CLIENT_PA_ERR, "SetStreamDuckVolumeFactor: invalid stream state");
+
+    /* Validate and return INVALID_PARAMS error */
+    CHECK_AND_RETURN_RET_LOG((duckFactor >= MIN_STREAM_VOLUME_LEVEL && duckFactor <= MAX_STREAM_VOLUME_LEVEL),
+        AUDIO_CLIENT_INVALID_PARAMS_ERR, "Invalid duckFactor Input!");
+
+    pa_threaded_mainloop_lock(mainLoop);
+
+    duckVolumeFactor_ = duckFactor;
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_sets(propList, "stream.duckVolumeFactor", std::to_string(duckVolumeFactor_).c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    if (updatePropOperation == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_proplist_update returned null");
+        pa_proplist_free(propList);
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    if (audioSystemManager_ == nullptr) {
+        AUDIO_ERR_LOG("System manager instance is null");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    if (!streamInfoUpdated_) {
+        uint32_t idx = pa_stream_get_index(paStream);
+        pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
+            reinterpret_cast<void *>(this));
+        if (operation == nullptr) {
+            AUDIO_ERR_LOG("pa_context_get_sink_input_info_list returned null");
+            pa_threaded_mainloop_unlock(mainLoop);
+            return AUDIO_CLIENT_ERR;
+        }
+
+        pa_threaded_mainloop_accept(mainLoop);
+
+        pa_operation_unref(operation);
+    } else {
+        SetPaVolume(*this);
+    }
+
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return AUDIO_CLIENT_SUCCESS;
 }
 
 int32_t AudioServiceClient::SetStreamRenderRate(AudioRendererRate audioRendererRate)
@@ -2985,11 +3043,12 @@ float AudioServiceClient::GetStreamLowPowerVolume()
 
 float AudioServiceClient::GetSingleStreamVol()
 {
-    int32_t systemVolumeLevel = audioSystemManager_->GetVolume(static_cast<AudioVolumeType>(streamType_));
+    AudioVolumeType volumeType = GetVolumeTypeFromStreamType(streamType_);
+    int32_t systemVolumeLevel = audioSystemManager_->GetVolume(volumeType);
     DeviceType deviceType = audioSystemManager_->GetActiveOutputDevice();
-    float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(streamType_,
+    float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType,
         systemVolumeLevel, deviceType);
-    return systemVolumeDb * volumeFactor_ * powerVolumeFactor_;
+    return systemVolumeDb * volumeFactor_ * powerVolumeFactor_ * duckVolumeFactor_;
 }
 
 // OnRenderMarkReach by eventHandler

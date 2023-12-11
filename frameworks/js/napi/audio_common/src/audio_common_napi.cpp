@@ -118,36 +118,36 @@ bool AudioCommonNapi::IsLegalInputArgumentVolType(int32_t inputType)
 
 AudioVolumeType AudioCommonNapi::GetNativeAudioVolumeType(int32_t volumeType)
 {
-    AudioVolumeType result = STREAM_MUSIC;
+    AudioVolumeType result = VOLUME_MEDIA;
 
     switch (volumeType) {
         case NapiAudioVolumeType::VOICE_CALL:
-            result = STREAM_VOICE_CALL;
+            result = VOLUME_VOICE_CALL;
             break;
         case NapiAudioVolumeType::RINGTONE:
-            result = STREAM_RING;
+            result = VOLUME_RINGTONE;
             break;
         case NapiAudioVolumeType::MEDIA:
-            result = STREAM_MUSIC;
+            result = VOLUME_MEDIA;
             break;
         case NapiAudioVolumeType::ALARM:
-            result = STREAM_ALARM;
+            result = VOLUME_ALARM;
             break;
         case NapiAudioVolumeType::ACCESSIBILITY:
-            result = STREAM_ACCESSIBILITY;
+            result = VOLUME_ACCESSIBILITY;
             break;
         case NapiAudioVolumeType::VOICE_ASSISTANT:
-            result = STREAM_VOICE_ASSISTANT;
+            result = VOLUME_VOICE_ASSISTANT;
             break;
         case NapiAudioVolumeType::ULTRASONIC:
-            result = STREAM_ULTRASONIC;
+            result = VOLUME_ULTRASONIC;
             break;
         case NapiAudioVolumeType::ALL:
-            result = STREAM_ALL;
+            result = VOLUME_ALL;
             break;
         default:
-            result = STREAM_MUSIC;
-            AUDIO_ERR_LOG("GetNativeAudioVolumeType: Unknown volume type, Set it to default MEDIA!");
+            result = VOLUME_MEDIA;
+            AUDIO_ERR_LOG("GetNativeAudioVolumeType: Unknown volume type. Return default MEDIA!");
             break;
     }
 

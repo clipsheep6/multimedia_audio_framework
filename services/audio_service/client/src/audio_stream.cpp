@@ -762,6 +762,11 @@ float AudioStream::GetVolume()
     return GetStreamVolume();
 }
 
+int32_t AudioStream::SetDuckFactor(float duckFactor)
+{
+    return SetStreamDuckVolumeFactor(duckFactor);
+}
+
 int32_t AudioStream::SetRenderRate(AudioRendererRate renderRate)
 {
     return SetStreamRenderRate(renderRate);

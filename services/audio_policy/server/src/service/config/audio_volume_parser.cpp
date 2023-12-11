@@ -23,13 +23,13 @@ AudioVolumeParser::AudioVolumeParser()
 {
     AUDIO_INFO_LOG("AudioVolumeParser ctor");
     audioStreamMap_ = {
-        {"VOICE_CALL", STREAM_VOICE_CALL},
-        {"MUSIC", STREAM_MUSIC},
-        {"RING", STREAM_RING},
-        {"VOICE_ASSISTANT", STREAM_VOICE_ASSISTANT},
-        {"ALARM", STREAM_ALARM},
-        {"ACCESSIBILITY", STREAM_ACCESSIBILITY},
-        {"ULTRASONIC", STREAM_ULTRASONIC},
+        {"VOICE_CALL", VOLUME_VOICE_CALL},
+        {"RING", VOLUME_RINGTONE},
+        {"MUSIC", VOLUME_MEDIA},
+        {"ALARM", VOLUME_ALARM},
+        {"ACCESSIBILITY", VOLUME_ACCESSIBILITY},
+        {"VOICE_ASSISTANT", VOLUME_VOICE_ASSISTANT},
+        {"ULTRASONIC", VOLUME_ULTRASONIC},
     };
 
     audioDeviceMap_ = {
@@ -121,8 +121,8 @@ void AudioVolumeParser::ParseStreamInfos(xmlNode *node, StreamVolumeInfoMap &str
             std::shared_ptr<StreamVolumeInfo> streamVolInfo = std::make_shared<StreamVolumeInfo>();
             ParseStreamVolumeInfoAttr(currNode, streamVolInfo);
             ParseDeviceVolumeInfos(currNode->children, streamVolInfo);
-            AUDIO_DEBUG_LOG("Parse streamType:%{public}d ", streamVolInfo->streamType);
-            streamVolumeInfoMap[streamVolInfo->streamType] = streamVolInfo;
+            AUDIO_DEBUG_LOG("Parse streamType:%{public}d ", streamVolInfo->volumeType);
+            streamVolumeInfoMap[streamVolInfo->volumeType] = streamVolInfo;
         }
         currNode = currNode->next;
     }
@@ -134,7 +134,7 @@ void AudioVolumeParser::ParseStreamVolumeInfoAttr(xmlNode *node, std::shared_ptr
     AUDIO_DEBUG_LOG("AudioVolumeParser::ParseStreamVolumeInfoAttr");
     char *pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
         reinterpret_cast<xmlChar*>(const_cast<char*>("type"))));
-    streamVolInfo->streamType = audioStreamMap_[pValue];
+    streamVolInfo->volumeType = audioStreamMap_[pValue];
     AUDIO_DEBUG_LOG("stream type: %{public}s; currNode->name %{public}s;", pValue, currNode->name);
     xmlFree(pValue);
 

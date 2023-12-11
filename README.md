@@ -169,19 +169,19 @@ You can use the APIs provided in the [**audio_system_manager.h**](https://gitee.
 #### Volume Control
 2. Call **GetMaxVolume()** and **GetMinVolume()** to obtain the maximum volume and minimum volume allowed for an audio stream.
     ```
-    AudioVolumeType streamType = AudioVolumeType::STREAM_MUSIC;
-    int32_t maxVol = audioSystemMgr->GetMaxVolume(streamType);
-    int32_t minVol = audioSystemMgr->GetMinVolume(streamType);
+    AudioVolumeType volumeType = AudioVolumeType::VOLUME_MEDIA;
+    int32_t maxVol = audioSystemMgr->GetMaxVolume(volumeType);
+    int32_t minVol = audioSystemMgr->GetMinVolume(volumeType);
     ```
 3. Call **SetVolume()** and **GetVolume()** to set and obtain the volume of the audio stream, respectively.
     ```
-    int32_t result = audioSystemMgr->SetVolume(streamType, 10);
-    int32_t vol = audioSystemMgr->GetVolume(streamType);
+    int32_t result = audioSystemMgr->SetVolume(volumeType, 10);
+    int32_t vol = audioSystemMgr->GetVolume(volumeType);
     ```
 4. Call **SetMute()** and **IsStreamMute** to set and obtain the mute status of the audio stream, respectively.
     ```
-    int32_t result = audioSystemMgr->SetMute(streamType, true);
-    bool isMute = audioSystemMgr->IsStreamMute(streamType);
+    int32_t result = audioSystemMgr->SetMute(volumeType, true);
+    bool isMute = audioSystemMgr->IsStreamMute(volumeType);
     ```
 5. Call **SetRingerMode()** and **GetRingerMode()** to set and obtain the ringer mode, respectively. The supported ringer modes are the enumerated values of **AudioRingerMode** defined in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
     ```

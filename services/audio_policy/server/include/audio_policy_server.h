@@ -64,14 +64,14 @@ public:
         ABANDON_CALLBACK_CATEGORY,
     };
 
-    const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
-        STREAM_MUSIC,
-        STREAM_VOICE_CALL,
-        STREAM_RING,
-        STREAM_VOICE_ASSISTANT,
-        STREAM_ALARM,
-        STREAM_ACCESSIBILITY,
-        STREAM_ULTRASONIC
+    const std::vector<AudioVolumeType> GET_ALL_VOLUME_TYPES {
+        VOLUME_MEDIA,
+        VOLUME_VOICE_CALL,
+        VOLUME_RINGTONE,
+        VOLUME_ALARM,
+        VOLUME_ACCESSIBILITY,
+        VOLUME_VOICE_ASSISTANT,
+        VOLUME_ULTRASONIC
     };
 
     explicit AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate = true);
@@ -89,9 +89,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9) override;
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v = API_9) override;
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
@@ -99,11 +99,11 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v = API_9) override;
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, API_VERSION api_v = API_9) override;
 
-    bool GetStreamMute(AudioStreamType streamType) override;
+    bool GetStreamMute(AudioVolumeType volumeType) override;
 
-    bool IsStreamActive(AudioStreamType streamType) override;
+    bool IsStreamActive(AudioVolumeType volumeType) override;
 
     bool IsVolumeUnadjustable() override;
 
@@ -409,16 +409,16 @@ private:
     int32_t DeactivateAudioInterruptEnable(const AudioInterrupt &audioInterrupt);
 
     // for audio volume and mute status
-    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
-    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
-    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType, bool isFromVolumeKey);
-    float GetSystemVolumeDb(AudioStreamType streamType);
-    int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi);
-    int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi);
-    bool GetStreamMuteInternal(AudioStreamType streamType);
+    int32_t SetSystemVolumeLevelInternal(AudioVolumeType volumeType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t SetSingleStreamVolume(AudioVolumeType volumeType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t GetSystemVolumeLevelInternal(AudioVolumeType volumeType);
+    float GetSystemVolumeDb(AudioVolumeType volumeType);
+    int32_t SetStreamMuteInternal(AudioVolumeType volumeType, bool mute, bool isUpdateUi);
+    int32_t SetSingleStreamMute(AudioVolumeType volumeType, bool mute, bool isUpdateUi);
+    bool GetStreamMuteInternal(AudioVolumeType volumeType);
     AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
-    bool IsVolumeTypeValid(AudioStreamType streamType);
-    bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
+    bool IsVolumeTypeValid(AudioVolumeType volumeType);
+    bool IsVolumeLevelValid(AudioVolumeType volumeType, int32_t volumeLevel);
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
@@ -438,7 +438,7 @@ private:
 
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
+    bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioVolumeType &streamInFocus);
     int32_t RegisterVolumeKeyEvents(const int32_t keyType);
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();

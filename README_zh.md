@@ -193,19 +193,19 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 #### 音量控制<a name="section645572311287_001"></a>
 2. 使用 **GetMaxVolume** 和  **GetMinVolume** 接口去查询音频流支持的最大和最小音量等级，在此范围内设置音量。
     ```
-    AudioVolumeType streamType = AudioVolumeType::STREAM_MUSIC;
-    int32_t maxVol = audioSystemMgr->GetMaxVolume(streamType);
-    int32_t minVol = audioSystemMgr->GetMinVolume(streamType);
+    AudioVolumeType volumeType = AudioVolumeType::VOLUME_MEDIA;
+    int32_t maxVol = audioSystemMgr->GetMaxVolume(volumeType);
+    int32_t minVol = audioSystemMgr->GetMinVolume(volumeType);
     ```
 3. 使用 **SetVolume** 和 **GetVolume** 接口来设置和获取指定音频流的音量等级。
     ```
-    int32_t result = audioSystemMgr->SetVolume(streamType, 10);
-    int32_t vol = audioSystemMgr->GetVolume(streamType);
+    int32_t result = audioSystemMgr->SetVolume(volumeType, 10);
+    int32_t vol = audioSystemMgr->GetVolume(volumeType);
     ```
 4. 使用 **SetMute** 和 **IsStreamMute** 接口来设置和获取指定音频流的静音状态。
     ```
-    int32_t result = audioSystemMgr->SetMute(streamType, true);
-    bool isMute = audioSystemMgr->IsStreamMute(streamType);
+    int32_t result = audioSystemMgr->SetMute(volumeType, true);
+    bool isMute = audioSystemMgr->IsStreamMute(volumeType);
 5. 使用 **SetRingerMode** 和 **GetRingerMode** 接口来设置和获取铃声模式。参考在 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)  定义的 **AudioRingerMode** 枚举来获取支持的铃声模式。
     ```
     int32_t result = audioSystemMgr->SetRingerMode(RINGER_MODE_SILENT);

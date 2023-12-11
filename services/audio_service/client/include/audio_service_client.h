@@ -429,6 +429,15 @@ public:
      */
     float GetStreamVolume();
 
+    /**
+     * @brief Set the duck volume factor
+     *
+     * @param duckFactor The the duck volume factor for audio interrupt.
+     * @return Returns {@link SUCCESS} if duck factor is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetStreamDuckVolumeFactor(float duckFactor);
+
     int32_t SetStreamOffloadMode(int32_t state, bool isAppBack);
     int32_t UnsetStreamOffloadMode();
     /**

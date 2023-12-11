@@ -22,6 +22,25 @@ namespace AudioStandard {
 
 constexpr int STRING_BUFFER_SIZE = 4096;
 
+static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
+    {STREAM_MUSIC, "MUSIC"},
+    {STREAM_VOICE_CALL, "VOICE_CALL"},
+    {STREAM_VOICE_ASSISTANT, "VOICE_ASSISTANT"},
+    {STREAM_ALARM, "ALARM"},
+    {STREAM_VOICE_MESSAGE, "VOICE_MESSAGE"},
+    {STREAM_RING, "RING"},
+    {STREAM_NOTIFICATION, "NOTIFICATION"},
+    {STREAM_ACCESSIBILITY, "ACCESSIBILITY"},
+    {STREAM_SYSTEM, "SYSTEM"},
+    {STREAM_MOVIE, "MOVIE"},
+    {STREAM_GAME, "GAME"},
+    {STREAM_SPEECH, "SPEECH"},
+    {STREAM_NAVIGATION, "NAVIGATION"},
+    {STREAM_DTMF, "DTMF"},
+    {STREAM_SYSTEM_ENFORCED, "SYSTEM_ENFORCED"},
+    {STREAM_ULTRASONIC, "ULTRASONIC"},
+};
+
 template <typename...Args>
 void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
 {
@@ -182,14 +201,16 @@ bool AudioServiceDump::IsValidModule(const std::string moduleName)
     return true;
 }
 
-bool AudioServiceDump::IsStreamSupported(AudioStreamType streamType)
+bool AudioServiceDump::IsVolumeTypeSupported(AudioVolumeType volumeType)
 {
-    switch (streamType) {
-        case STREAM_MUSIC:
-        case STREAM_RING:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-        case STREAM_WAKEUP:
+    switch (volumeType) {
+        case VOLUME_MEDIA:
+        case VOLUME_VOICE_CALL:
+        case VOLUME_RINGTONE:
+        case VOLUME_ALARM:
+        case VOLUME_ACCESSIBILITY:
+        case VOLUME_VOICE_ASSISTANT:
+        case VOLUME_ULTRASONIC:
             return true;
         default:
             return false;
@@ -199,52 +220,51 @@ bool AudioServiceDump::IsStreamSupported(AudioStreamType streamType)
 const std::string AudioServiceDump::GetStreamName(AudioStreamType streamType)
 {
     string name;
-    switch (streamType) {
-        case STREAM_VOICE_ASSISTANT:
-            name = "VOICE_ASSISTANT";
-            break;
-        case STREAM_VOICE_CALL:
+    if (STREAM_TYPE_ENUM_STRING_MAP.find(streamType) != STREAM_TYPE_ENUM_STRING_MAP.end()) {
+        name = STREAM_TYPE_ENUM_STRING_MAP.at(streamType);
+    } else {
+        name = "UNKNOWN";
+    }
+
+    const string streamName = name;
+    return streamName;
+}
+
+
+const std::string AudioServiceDump::GetVolumeName(AudioVolumeType volumeType)
+{
+    string name;
+    switch (volumeType) {
+        case VOLUME_VOICE_CALL:
             name = "VOICE_CALL";
             break;
-        case STREAM_SYSTEM:
-            name = "SYSTEM";
+        case VOLUME_RINGTONE:
+            name = "RINGTONE";
             break;
-        case STREAM_RING:
-            name = "RING";
+        case VOLUME_MEDIA:
+            name = "MEDIA";
             break;
-        case STREAM_MUSIC:
-            name = "MUSIC";
-            break;
-        case STREAM_ALARM:
+        case VOLUME_ALARM:
             name = "ALARM";
             break;
-        case STREAM_NOTIFICATION:
-            name = "NOTIFICATION";
-            break;
-        case STREAM_BLUETOOTH_SCO:
-            name = "BLUETOOTH_SCO";
-            break;
-        case STREAM_DTMF:
-            name = "DTMF";
-            break;
-        case STREAM_TTS:
-            name = "TTS";
-            break;
-        case STREAM_ACCESSIBILITY:
+        case VOLUME_ACCESSIBILITY:
             name = "ACCESSIBILITY";
             break;
-        case STREAM_ULTRASONIC:
+        case VOLUME_VOICE_ASSISTANT:
+            name = "VOICE_ASSISTANT";
+            break;
+        case VOLUME_ULTRASONIC:
             name = "ULTRASONIC";
             break;
-        case STREAM_WAKEUP:
-            name = "WAKEUP";
+        case VOLUME_ALL:
+            name = "ALL";
             break;
         default:
             name = "UNKNOWN";
     }
 
-    const string streamName = name;
-    return streamName;
+    const string volumeName = name;
+    return volumeName;
 }
 
 const std::string AudioServiceDump::GetSourceName(SourceType sourceType)
@@ -345,7 +365,7 @@ const std::string AudioServiceDump::GetDeviceTypeName(DeviceType deviceType)
             device = "WIRED_HEADPHONES";
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
-             device = "BLUETOOTH_SCO";
+            device = "BLUETOOTH_SCO";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             device = "BLUETOOTH_A2DP";
@@ -529,11 +549,11 @@ void AudioServiceDump::RingerModeDump(std::string &dumpString)
 
 void AudioServiceDump::StreamVolumesDump (string &dumpString)
 {
-    dumpString += "\nStream Volumes\n";
-    AppendFormat(dumpString, "   [StreamName]: [Volume]\n");
+    dumpString += "\nVolume Level\n";
+    AppendFormat(dumpString, "   [VolumeType]: [Volume]\n");
     for (auto it = audioData_.policyData.streamVolumes.cbegin(); it != audioData_.policyData.streamVolumes.cend();
         ++it) {
-        AppendFormat(dumpString, " - %s: %d\n", GetStreamName(it->first).c_str(), it->second);
+        AppendFormat(dumpString, " - %s: %d\n", GetVolumeName(it->first).c_str(), it->second);
     }
     dumpString += "\n";
     return;
@@ -1037,7 +1057,7 @@ void AudioServiceDump::StreamVolumeInfosDump(std::string& dumpString)
 
     for (auto it = audioData_.policyData.streamVolumeInfos.cbegin();
         it != audioData_.policyData.streamVolumeInfos.cend(); ++it) {
-        AppendFormat(dumpString, "  %s:  ", GetStreamName(it->first).c_str());
+        AppendFormat(dumpString, "  %s:  ", GetVolumeName(it->first).c_str());
         auto streamVolumeInfo = it->second;
         AppendFormat(dumpString, "minLevel = %d  ", streamVolumeInfo->minLevel);
         AppendFormat(dumpString, "maxLevel = %d  ", streamVolumeInfo->maxLevel);
