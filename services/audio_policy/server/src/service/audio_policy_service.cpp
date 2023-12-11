@@ -2631,7 +2631,7 @@ void AudioPolicyService::IdentifyAddedMediaOutputDevices(const sptr<AudioDeviceD
 void AudioPolicyService::IdentifyAddedMediaInputDevices(const sptr<AudioDeviceDescriptor> &audioDeviceDescriptor,
                                                         const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc)
 {
-    if (AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(audioDeviceDescriptor, desc)) {
+    if (AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(audioDeviceDescriptor, desc) == false) {
         audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
 }
@@ -2639,16 +2639,15 @@ void AudioPolicyService::IdentifyAddedMediaInputDevices(const sptr<AudioDeviceDe
 void AudioPolicyService::IdentifyAddedCallOutputDevices(const sptr<AudioDeviceDescriptor> &audioDeviceDescriptor,
                                                         const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc)
 {
-    if (!(AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(audioDeviceDescriptor, desc)) &&
-                                                                audioDeviceDescriptor->deviceType_ != 7) {
-        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    if (AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(audioDeviceDescriptor, desc)) {
+        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor() == false);
     }
 }
 
 void AudioPolicyService::IdentifyAddedCallInputDevices(const sptr<AudioDeviceDescriptor> &audioDeviceDescriptor,
                                                        const std::vector<unique_ptr<AudioDeviceDescriptor>> &desc)
 {
-    if (AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(audioDeviceDescriptor, desc)) {
+    if (AudioDeviceManager::GetAudioDeviceManager().IsExistedDevice(audioDeviceDescriptor, desc == false) {
         audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
 }
