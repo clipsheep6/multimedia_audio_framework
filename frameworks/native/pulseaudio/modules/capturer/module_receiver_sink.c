@@ -368,6 +368,7 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u
         return -1;
     }
 
+
     pa_sink_new_data_init(&sinkData);
     sinkData.driver = __FILE__;
     sinkData.module = m;
@@ -407,7 +408,6 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u
     u->sink->userdata = u;
     u->sampleSpec = ss;
     u->sinkMap = sinkMap;
-
     pa_sink_set_asyncmsgq(u->sink, master->asyncmsgq);
     return 0;
 }
@@ -416,16 +416,13 @@ int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *master, struct userda
 {
     pa_sink_input_new_data sinkInputData;
     pa_resample_method_t resampleMethod = PA_RESAMPLER_SRC_SINC_FASTEST;
+    int rm;
 
-    if (pa_modargs_get_resample_method(ma, &resampleMethod) < 0) {
-        AUDIO_ERR_LOG("Invalid resampling method");
-        return -1;
-    }
+    rm = pa_modargs_get_resample_method(ma, &resampleMethod);
+    CHECK_AND_RETURN_RET_LOG(rm >= 0, -1, "Invalid resampling method");
 
-    if (u->sinkMap.channels != u->sampleSpec.channels) {
-        AUDIO_ERR_LOG("Number of channels doesn't match");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(u->sinkMap.channels == u->sampleSpec.channels, -1,
+        "Number of channels doesn't match");
 
     if (pa_channel_map_equal(&u->sinkMap, &master->channel_map)) {
         AUDIO_WARNING_LOG("Number of channels doesn't match of [%{public}s] and [%{public}s]",
@@ -472,13 +469,12 @@ int pa__init(pa_module *m)
     struct userdata *u;
     pa_modargs *ma;
     pa_sink *master;
+    int mq, cs, csi;
 
     pa_assert(m);
 
-    if (!(ma = pa_modargs_new(m->argument, VALID_MODARGS))) {
-        AUDIO_ERR_LOG("Failed to parse module arguments.");
-        return InitFail(m, ma);
-    }
+    ma = pa_modargs_new(m->argument, VALID_MODARGS);
+    CHECK_AND_RETURN_RET_LOG(ma != NULL, InitFail(m, ma), "Failed to parse module arguments.");
 
     if (!(master = pa_namereg_get(m->core, pa_modargs_get_value(ma, "master", NULL), PA_NAMEREG_SINK))) {
         pa_log("Master sink not found");
@@ -491,16 +487,13 @@ int pa__init(pa_module *m)
     m->userdata = u;
     u->rtpoll = pa_rtpoll_new();
 
-    if (pa_thread_mq_init(&u->thread_mq, m->core->mainloop, u->rtpoll) < 0) {
-        AUDIO_ERR_LOG("pa_thread_mq_init failed.");
-        return InitFail(m, ma);
-    }
+
+    mq = pa_thread_mq_init(&u->thread_mq, m->core->mainloop, u->rtpoll);
+    CHECK_AND_RETURN_RET_LOG(mq >= 0, InitFail(m, ma), "pa_thread_mq_init failed.");
 
     /* Create sink */
-    if (CreateSink(m, ma, master, u) < 0) {
-        AUDIO_ERR_LOG("CreateSink failed.");
-        return InitFail(m, ma);
-    }
+    cs = CreateSink(m, ma, master, u);
+    CHECK_AND_RETURN_RET_LOG(cs >= 0, InitFail(m, ma), "CreateSink failed.");
     pa_sink_set_rtpoll(u->sink, u->rtpoll);
     u->buffer_size = DEFAULT_BUFFER_SIZE;
     if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
@@ -512,10 +505,8 @@ int pa__init(pa_module *m)
     pa_sink_set_max_request(u->sink, u->buffer_size);
 
     /* Create sink input */
-    if (CreateSinkInput(m, ma, master, u) < 0) {
-        AUDIO_ERR_LOG("CreateSinkInput failed.");
-        return InitFail(m, ma);
-    }
+    csi = CreateSinkInput(m, ma, master, u);
+    CHECK_AND_RETURN_RET_LOG(csi >= 0, InitFail(m, ma), "CreateSinkInput failed.");
 
     /* The order here is important. The input must be put first,
      * otherwise streams might attach to the sink before the sink

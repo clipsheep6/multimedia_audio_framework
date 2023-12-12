@@ -30,10 +30,8 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub::OnRemoteRequest");
-    if (data.ReadInterfaceToken() != GetDescriptor()) {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ReadInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), -1,
+        "AudioClientTrackerCallbackStub: ReadInterfaceToken failed");
 
     switch (code) {
         case PAUSEDSTREAM: {
@@ -76,7 +74,7 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
     }
-    
+
     return 0;
 }
 

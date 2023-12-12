@@ -44,10 +44,7 @@ void AudioDeviceManager::ParseDeviceXml()
 void AudioDeviceManager::OnXmlParsingCompleted(
     const unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> &xmlData)
 {
-    if (xmlData.empty()) {
-        AUDIO_ERR_LOG("Failed to parse xml file.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(!xmlData.empty(), "Failed to parse xml file.");
 
     devicePrivacyMaps_ = xmlData;
 
@@ -307,10 +304,8 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Memory allocation failed");
 
-    if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
-        AUDIO_INFO_LOG("The device has been added and will not be added again.");
-        return;
-    }
+    bool ret = UpdateExistDeviceDescriptor(deviceDescriptor);
+    CHECK_AND_RETURN_LOG(!ret, "The device has been added and will not be added again.");
 
     UpdateDeviceInfo(devDesc);
     AddConnectedDevices(devDesc);

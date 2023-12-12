@@ -67,22 +67,16 @@ const sptr<IStandardAudioService> AudioSpatializationService::GetAudioServerProx
 
     if (g_adProxy == nullptr) {
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        if (samgr == nullptr) {
-            AUDIO_ERR_LOG("[Spatialization Service] Get samgr failed.");
-            return nullptr;
-        }
+        CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr,
+            "[Spatialization Service] Get samgr failed.");
 
         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-        if (object == nullptr) {
-            AUDIO_ERR_LOG("[Spatialization Service] audio service remote object is NULL.");
-            return nullptr;
-        }
+        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr,
+            "[Spatialization Service] audio service remote object is NULL.");
 
         g_adProxy = iface_cast<IStandardAudioService>(object);
-        if (g_adProxy == nullptr) {
-            AUDIO_ERR_LOG("[Spatialization Service] init g_adProxy is NULL.");
-            return nullptr;
-        }
+        CHECK_AND_RETURN_RET_LOG(g_adProxy != nullptr, nullptr,
+            "[Spatialization Service] init g_adProxy is NULL.");
     }
     const sptr<IStandardAudioService> gsp = g_adProxy;
     return gsp;
@@ -102,9 +96,8 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
     }
     spatializationEnabledFlag_ = enable;
     HandleSpatializationEnabledChange(enable);
-    if (UpdateSpatializationStateReal() != 0) {
-        return ERROR;
-    }
+    int32_t ret = UpdateSpatializationStateReal();
+    CHECK_AND_RETURN_RET(ret == 0, ERROR);
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -122,9 +115,9 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
     }
     headTrackingEnabledFlag_ = enable;
     HandleHeadTrackingEnabledChange(enable);
-    if (UpdateSpatializationStateReal() != 0) {
-        return ERROR;
-    }
+
+    int32_t ret = UpdateSpatializationStateReal();
+    CHECK_AND_RETURN_RET(ret == 0, ERROR);
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -320,9 +313,8 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal()
     }
     spatializationEnabledReal_ = spatializationEnabled;
     headTrackingEnabledReal_ = headTrackingEnabled;
-    if (UpdateSpatializationState() != 0) {
-        return ERROR;
-    }
+    int32_t ret = UpdateSpatializationState();
+    CHECK_AND_RETURN_RET(ret == 0, ERROR);
     HandleSpatializationStateChange();
     return SPATIALIZATION_SERVICE_OK;
 }
