@@ -504,8 +504,7 @@ bool TonePlayerPrivate::AudioToneSequenceGen(BufferDesc &bufDesc)
                 tonePlayerState_ = TONE_PLAYER_STOPPED;
                 mutexLock_.unlock();
                 break;
-            }
-            if (tonePlayerState_ == TONE_PLAYER_STOPPED) {
+            } else if (tonePlayerState_ == TONE_PLAYER_STOPPED) {
                 tonePlayerState_ = TONE_PLAYER_INIT;
                 totalBufAvailable = 0;
                 bufDesc.dataLength = 0;
@@ -524,10 +523,8 @@ bool TonePlayerPrivate::AudioToneSequenceGen(BufferDesc &bufDesc)
         } else if (CheckToneStarted(reqSamples, audioBuffer)) {
             bufDesc.dataLength += reqSamples * sizeof(int16_t);
             lSignal = true;
-        } else {
-            if (ContinueToneplay(reqSamples, audioBuffer)) {
+        } else if (ContinueToneplay(reqSamples, audioBuffer)) {
                 bufDesc.dataLength += reqSamples * sizeof(int16_t);
-            }
         }
         totalBufAvailable -= reqSamples;
         audioBuffer += reqSamples * sizeof(int16_t);

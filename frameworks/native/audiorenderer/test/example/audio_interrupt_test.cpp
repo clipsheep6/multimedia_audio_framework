@@ -139,15 +139,13 @@ void AudioInterruptTest::WriteBuffer()
     size_t bytesWritten = 0;
     size_t minBytes = 4;
     while (true) {
-        while (!feof(wavFile_) &&
-               !isRenderPaused_ && !isRenderStopped_ && !isStopInProgress_) {
+        while (!feof(wavFile_) && !isRenderPaused_ && !isRenderStopped_ && !isStopInProgress_) {
             bytesToWrite = fread(buffer.get(), 1, bufferLen, wavFile_);
             bytesWritten = 0;
             AUDIO_INFO_LOG("AudioInterruptTest: Bytes to write: %{public}zu", bytesToWrite);
 
             while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
-                int32_t retBytes = audioRenderer_->Write(buffer.get() + bytesWritten,
-                                                         bytesToWrite - bytesWritten);
+                int32_t retBytes = audioRenderer_->Write(buffer.get() + bytesWritten, bytesToWrite - bytesWritten);
                 AUDIO_INFO_LOG("AudioInterruptTest: Bytes written: %{public}zu", bytesWritten);
                 if (retBytes < 0) {
                     if (audioRenderer_->GetStatus() == RENDERER_PAUSED) {
@@ -168,9 +166,7 @@ void AudioInterruptTest::WriteBuffer()
             AUDIO_INFO_LOG("AudioInterruptTest: EOF set isRenderingCompleted_ true ");
             isRenderingCompleted_ = true;
             break;
-        }
-
-        if (isRenderStopped_) {
+        } else if (isRenderStopped_) {
             AUDIO_INFO_LOG("AudioInterruptTest: Renderer stopping, complete writing ");
             break;
         }

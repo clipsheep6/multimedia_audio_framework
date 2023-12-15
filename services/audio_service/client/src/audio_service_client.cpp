@@ -1926,9 +1926,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                 AUDIO_ERR_LOG("pa_stream_peek failed, retVal: %{public}d", retVal);
                 pa_threaded_mainloop_unlock(mainLoop);
                 return AUDIO_CLIENT_READ_STREAM_ERR;
-            }
-
-            if (internalRdBufLen_ <= 0) {
+            } else if (internalRdBufLen_ <= 0) {
                 if (isBlocking) {
                     StartTimer(READ_TIMEOUT_IN_SEC);
                     pa_threaded_mainloop_wait(mainLoop);
@@ -2439,10 +2437,7 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         AUDIO_ERR_LOG("set stream volume: invalid stream state");
         return AUDIO_CLIENT_PA_ERR;
-    }
-
-    /* Validate and return INVALID_PARAMS error */
-    if ((volume < MIN_STREAM_VOLUME_LEVEL) || (volume > MAX_STREAM_VOLUME_LEVEL)) {
+    } else if ((volume < MIN_STREAM_VOLUME_LEVEL) || (volume > MAX_STREAM_VOLUME_LEVEL)) {
         AUDIO_ERR_LOG("Invalid Volume Input!");
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
@@ -2478,9 +2473,7 @@ int32_t AudioServiceClient::SetStreamVolumeInML(float volume)
     if (audioSystemManager_ == nullptr) {
         AUDIO_ERR_LOG("System manager instance is null");
         return AUDIO_CLIENT_ERR;
-    }
-
-    if (!streamInfoUpdated_) {
+    } else if (!streamInfoUpdated_) {
         uint32_t idx = pa_stream_get_index(paStream);
         pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
             reinterpret_cast<void *>(this));
