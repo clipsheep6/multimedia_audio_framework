@@ -52,6 +52,7 @@ constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 60;
 constexpr int32_t RENDER_STATE_CONTENT_DES_SIZE = 60;
+constexpr size_t MAX_VALID_MAP_SIZE = 1000;
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
@@ -529,7 +530,7 @@ AudioScene AudioPolicyServer::GetAudioScene()
     return mPolicyService.GetAudioScene();
 }
 
-int32_t AudioPolicyServer::SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::SetRingerModeCallback(const int32_t /* clientId */, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(ringerModeMutex_);
 
@@ -541,26 +542,28 @@ int32_t AudioPolicyServer::SetRingerModeCallback(const int32_t clientId, const s
     std::shared_ptr<AudioRingerModeCallback> callback = std::make_shared<AudioRingerModeListenerCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
 
-    ringerModeListenerCbsMap_[clientId] = callback;
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    ringerModeListenerCbsMap_[clientPid] = callback;
 
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
+int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t /* clientId */)
 {
     std::lock_guard<std::mutex> lock(ringerModeMutex_);
 
-    if (ringerModeListenerCbsMap_.find(clientId) != ringerModeListenerCbsMap_.end()) {
-        ringerModeListenerCbsMap_.erase(clientId);
-        AUDIO_ERR_LOG("AudioPolicyServer: UnsetRingerModeCallback for client %{public}d done", clientId);
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    if (ringerModeListenerCbsMap_.find(clientPid) != ringerModeListenerCbsMap_.end()) {
+        ringerModeListenerCbsMap_.erase(clientPid);
+        AUDIO_ERR_LOG("AudioPolicyServer: UnsetRingerModeCallback for client %{public}d done", clientPid);
         return SUCCESS;
     } else {
-        AUDIO_ERR_LOG("AudioPolicyServer: Cb does not exit for client %{public}d cannot unregister", clientId);
+        AUDIO_ERR_LOG("AudioPolicyServer: Cb does not exit for client %{public}d cannot unregister", clientPid);
         return ERR_INVALID_OPERATION;
     }
 }
 
-int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t /* clientId */, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
@@ -572,27 +575,39 @@ int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t clientId, con
         std::make_shared<AudioRoutingManagerListenerCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
 
+    int32_t clientId = IPCSkeleton::GetCallingPid();
     micStateChangeListenerCbsMap_[clientId] = callback;
 
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t /* clientId */, const DeviceFlag flag,
     const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
 
-    return mPolicyService.SetDeviceChangeCallback(clientId, flag, object);
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    return mPolicyService.SetDeviceChangeCallback(clientPid, flag, object);
 }
 
-int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t clientId)
+int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t /* clientId */)
 {
-    return mPolicyService.UnsetDeviceChangeCallback(clientId);
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    return mPolicyService.UnsetDeviceChangeCallback(clientPid);
 }
 
 int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != MEDIA_SERVICE_UID) {
+        int32_t ret = mPolicyService.CheckSessionId(callerUid, sessionID);
+        size_t mapSize = policyListenerCbsMap_.size();
+        if (ret != SUCCESS && mapSize > MAX_VALID_MAP_SIZE) {
+            AUDIO_ERR_LOG("SetAudioInterrupt sessionid check failed:ret %{public}d mapSize:%{public}zu", ret, mapSize);
+            return ERR_INVALID_PARAM;
+        }
+    }
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
 
@@ -622,7 +637,7 @@ int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const uint32_t clientID,
+int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const uint32_t /* clientId */,
                                                             const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
@@ -635,19 +650,21 @@ int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const uint32_t clien
     std::shared_ptr<AudioInterruptCallback> callback = std::make_shared<AudioPolicyManagerListenerCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
 
-    audioManagerListenerCbsMap_[clientID] = callback;
-    AUDIO_INFO_LOG("AudioPolicyServer: SetAudioManagerInterruptCallback for client id %{public}d done", clientID);
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioManagerListenerCbsMap_[clientPid] = callback;
+    AUDIO_INFO_LOG("AudioPolicyServer: SetAudioManagerInterruptCallback for client id %{public}d done", clientPid);
 
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const uint32_t clientID)
+int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const uint32_t clientID /* clientID */)
 {
-    if (audioManagerListenerCbsMap_.erase(clientID)) {
-        AUDIO_INFO_LOG("AudioPolicyServer:UnsetAudioManagerInterruptCallback for client %{public}d done", clientID);
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    if (audioManagerListenerCbsMap_.erase(clientPid)) {
+        AUDIO_INFO_LOG("AudioPolicyServer:UnsetAudioManagerInterruptCallback for client %{public}d done", clientPid);
     } else {
         AUDIO_DEBUG_LOG("AudioPolicyServer:UnsetAudioManagerInterruptCallback client %{public}d not present",
-                        clientID);
+                        clientPid);
     }
 
     return SUCCESS;
@@ -1171,7 +1188,7 @@ int32_t AudioPolicyServer::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::SetVolumeKeyEventCallback(const int32_t /* clientId */, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
     AUDIO_DEBUG_LOG("AudioPolicyServer::SetVolumeKeyEventCallback");
@@ -1186,14 +1203,16 @@ int32_t AudioPolicyServer::SetVolumeKeyEventCallback(const int32_t clientPid, co
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
                              "AudioPolicyServer::SetVolumeKeyEventCallback failed to create cb obj");
 
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     volumeChangeCbsMap_[clientPid] = callback;
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t clientPid)
+int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t /* clientPid */)
 {
     std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
 
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     if (volumeChangeCbsMap_.find(clientPid) != volumeChangeCbsMap_.end()) {
         volumeChangeCbsMap_.erase(clientPid);
         AUDIO_ERR_LOG("AudioPolicyServer::UnsetVolumeKeyEventCallback for clientPid %{public}d done", clientPid);
