@@ -601,6 +601,12 @@ struct AudioProcessConfig {
     AudioCapturerInfo capturerInfo;
 
     AudioStreamType streamType;
+
+    bool isInnerCapturer;
+
+    bool isWakeupCapturer;
+
+    // Waiting for review:  add isWakeupCapturer  isInnerCapturer
 };
 
 struct Volume {
