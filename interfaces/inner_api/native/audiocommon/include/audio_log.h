@@ -29,7 +29,7 @@
 #ifndef OHOS_DEBUG
 #define DECORATOR_HILOG(op, fmt, args...) \
     do {                                  \
-        op(LOG_CORE, "[%{public}s] " fmt, FILENAME, ##args);        \
+        op(LOG_CORE, "[%{public}s] [%{public}s]" fmt, FILENAME, __FUNCTION__, ##args);        \
     } while (0)
 #else
 #define DECORATOR_HILOG(op, fmt, args...)                                                \
@@ -71,6 +71,21 @@
         if (!(cond)) {                                 \
             AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);            \
             break;                                     \
+        }                                              \
+    } while (0)
+
+#define CHECK_AND_RETURN_RET(cond, ret, ...)            \
+    do {                                               \
+        if (!(cond)) {                                 \
+            return ret;                                     \
+        }                                              \
+    } while (0)
+
+#define CHECK_AND_CONTINUE_LOG(cond, fmt, ...)            \
+    do {                                               \
+        if (!(cond)) {                                 \
+            AUDIO_DEBUG_LOG(fmt, ##__VA_ARGS__);            \
+            continue;                                     \
         }                                              \
     } while (0)
 
