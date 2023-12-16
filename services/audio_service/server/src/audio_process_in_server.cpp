@@ -47,10 +47,8 @@ AudioProcessInServer::~AudioProcessInServer()
 
 int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
-    if (!isBufferConfiged_) {
-        AUDIO_ERR_LOG("ResolveBuffer failed, buffer is not configed.");
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(isBufferConfiged_, ERR_ILLEGAL_STATE,
+        "ResolveBuffer failed, buffer is not configed.");
 
     buffer = processBuffer_;
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_ILLEGAL_STATE, "ResolveBuffer failed, processBuffer_ is null.");
@@ -74,10 +72,8 @@ int32_t AudioProcessInServer::Start()
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     std::lock_guard<std::mutex> lock(statusLock_);
-    if (streamStatus_->load() != STREAM_STARTING) {
-        AUDIO_ERR_LOG("Start failed, invalid status. %{public}d", streamStatus_->load());
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING,
+        ERR_ILLEGAL_STATE, "Start failed, invalid status.");
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
@@ -93,10 +89,8 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
 
     (void)isFlush;
     std::lock_guard<std::mutex> lock(statusLock_);
-    if (streamStatus_->load() != STREAM_PAUSING) {
-        AUDIO_ERR_LOG("Pause failed, invalid status.");
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_PAUSING,
+        ERR_ILLEGAL_STATE, "Pause failed, invalid status.");
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
@@ -110,10 +104,8 @@ int32_t AudioProcessInServer::Resume()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     std::lock_guard<std::mutex> lock(statusLock_);
-    if (streamStatus_->load() != STREAM_STARTING) {
-        AUDIO_ERR_LOG("Resume failed, invalid status.");
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING,
+        ERR_ILLEGAL_STATE, "Resume failed, invalid status.");
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
@@ -128,10 +120,8 @@ int32_t AudioProcessInServer::Stop()
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     std::lock_guard<std::mutex> lock(statusLock_);
-    if (streamStatus_->load() != STREAM_STOPPING) {
-        AUDIO_ERR_LOG("Stop failed, invalid status.");
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STOPPING,
+        ERR_ILLEGAL_STATE, "Stop failed, invalid status.");
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this); // notify endpoint?
@@ -173,10 +163,7 @@ int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
     sptr<IProcessCb> processCb = iface_cast<IProcessCb>(object);
     CHECK_AND_RETURN_RET_LOG(processCb != nullptr, ERR_INVALID_PARAM, "RegisterProcessCb obj cast failed");
     bool result = object->AddDeathRecipient(new ProcessDeathRecipient(this, releaseCallback_));
-    if (!result) {
-        AUDIO_ERR_LOG("AddDeathRecipient failed.");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "AddDeathRecipient failed.");
 
     return SUCCESS;
 }
@@ -204,10 +191,8 @@ void AudioProcessInServer::Dump(std::stringstream &dumpStringStream)
 
 std::shared_ptr<OHAudioBuffer> AudioProcessInServer::GetStreamBuffer()
 {
-    if (!isBufferConfiged_ || processBuffer_ == nullptr) {
-        AUDIO_ERR_LOG("GetStreamBuffer failed:process buffer not config.");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(isBufferConfiged_ && processBuffer_ != nullptr,
+        nullptr, "GetStreamBuffer failed:process buffer not config.");
     return processBuffer_;
 }
 
@@ -241,18 +226,14 @@ inline uint32_t PcmFormatToBits(AudioSampleFormat format)
 
 int32_t AudioProcessInServer::InitBufferStatus()
 {
-    if (processBuffer_ == nullptr) {
-        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer.");
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE,
+        "InitBufferStatus failed, null buffer.");
 
     uint32_t spanCount = processBuffer_->GetSpanCount();
     for (uint32_t i = 0; i < spanCount; i++) {
         SpanInfo *spanInfo = processBuffer_->GetSpanInfoByIndex(i);
-        if (spanInfo == nullptr) {
-            AUDIO_ERR_LOG("InitBufferStatus failed, null spaninfo");
-            return ERR_ILLEGAL_STATE;
-        }
+        CHECK_AND_RETURN_RET_LOG(spanInfo != nullptr, ERR_ILLEGAL_STATE,
+            "InitBufferStatus failed, null spaninfo");
         spanInfo->spanStatus = SPAN_READ_DONE;
         spanInfo->offsetInFrame = 0;
 
@@ -277,10 +258,8 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
         return SUCCESS;
     }
     // check
-    if (totalSizeInframe == 0 || spanSizeInframe == 0 || totalSizeInframe % spanSizeInframe != 0) {
-        AUDIO_ERR_LOG("ConfigProcessBuffer failed: ERR_INVALID_PARAM");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(totalSizeInframe != 0 && spanSizeInframe != 0 && totalSizeInframe % spanSizeInframe == 0,
+        ERR_INVALID_PARAM, "ConfigProcessBuffer failed: ERR_INVALID_PARAM");
     totalSizeInframe_ = totalSizeInframe;
     spanSizeInframe_ = spanSizeInframe;
 
@@ -293,10 +272,8 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
         processBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
         CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
 
-        if (processBuffer_->GetBufferHolder() != AudioBufferHolder::AUDIO_SERVER_SHARED) {
-            AUDIO_ERR_LOG("CreateFormLocal in server failed.");
-            return ERR_ILLEGAL_STATE;
-        }
+        CHECK_AND_RETURN_RET_LOG(processBuffer_->GetBufferHolder() == AudioBufferHolder::AUDIO_SERVER_SHARED,
+            ERR_ILLEGAL_STATE, "CreateFormLocal in server failed.");
         AUDIO_INFO_LOG("Config: totalSizeInframe:%{public}d spanSizeInframe:%{public}d byteSizePerFrame:%{public}d",
             totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
 
