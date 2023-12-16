@@ -233,11 +233,9 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetPreferredFrameSize(int32_t frameS
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInfo(StreamUsage usage, ContentType contentType)
 {
-    if (streamType_ == CAPTURER_TYPE || usage == StreamUsage::STREAM_USAGE_UNKNOWN
-        || contentType == ContentType::CONTENT_TYPE_UNKNOWN) {
-        AUDIO_ERR_LOG("Error, invalid type input");
-        return AUDIOSTREAM_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE && usage != StreamUsage::STREAM_USAGE_UNKNOWN
+        && contentType != ContentType::CONTENT_TYPE_UNKNOWN,
+        AUDIOSTREAM_ERROR_INVALID_PARAM, "Error, invalid type input");
     usage_ = usage;
     contentType_ = contentType;
     return AUDIOSTREAM_SUCCESS;
@@ -251,10 +249,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetEncodingType(AudioEncodingType en
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetSourceType(SourceType type)
 {
-    if (streamType_ == RENDERER_TYPE || type == SOURCE_TYPE_INVALID) {
-        AUDIO_ERR_LOG("Error, invalid type input");
-        return AUDIOSTREAM_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE && type != SOURCE_TYPE_INVALID,
+        AUDIOSTREAM_ERROR_INVALID_PARAM, "Error, invalid type input");
 
     sourceType_ = type;
     return AUDIOSTREAM_SUCCESS;
@@ -270,10 +266,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetLatencyMode(int32_t latencyMode)
 OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer)
 {
     AUDIO_INFO_LOG("Generate OHAudioRenderer");
-    if (streamType_ != RENDERER_TYPE) {
-        AUDIO_ERR_LOG("Error, invalid type input");
-        return AUDIOSTREAM_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamType_ == RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "Error, invalid type input");
 
     AudioStreamInfo streamInfo = {
         (AudioSamplingRate)samplingRate_,
@@ -309,10 +303,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
 OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer** capturer)
 {
     AUDIO_INFO_LOG("Generate OHAudioCapturer");
-    if (streamType_ != CAPTURER_TYPE) {
-        AUDIO_ERR_LOG("Error, invalid type input");
-        return AUDIOSTREAM_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamType_ == CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "Error, invalid type input");
     AudioStreamInfo streamInfo = {
         (AudioSamplingRate)samplingRate_,
         encodingType_,
@@ -344,10 +336,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer** capturer
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData)
 {
-    if (streamType_ == CAPTURER_TYPE) {
-        AUDIO_ERR_LOG("SetRendererCallback Error, invalid type input");
-        return AUDIOSTREAM_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetRendererCallback Error, invalid type input");
     rendererCallbacks_ = callbacks;
     userData_ = userData;
     return AUDIOSTREAM_SUCCESS;
@@ -355,10 +345,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererCallback(OH_AudioRenderer
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData)
 {
-    if (streamType_ == RENDERER_TYPE) {
-        AUDIO_ERR_LOG("SetCapturerCallback Error, invalid type input");
-        return AUDIOSTREAM_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetCapturerCallback Error, invalid type input");
     capturerCallbacks_ = callbacks;
     userData_ = userData;
     return AUDIOSTREAM_SUCCESS;

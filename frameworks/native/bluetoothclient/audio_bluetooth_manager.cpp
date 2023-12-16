@@ -116,10 +116,8 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
     a2dpInstance_ = A2dpSource::GetProfile();
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "Failed to obtain A2DP profile instance");
     BluetoothRemoteDevice device;
-    if (MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device) != SUCCESS) {
-        AUDIO_ERR_LOG("SetActiveA2dpDevice: the configuring A2DP device doesn't exist.");
-        return ERROR;
-    }
+    int32_t tmp = MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device);
+    CHECK_AND_RETURN_RET_LOG(tmp == SUCCESS, ERROR, "SetActiveA2dpDevice: the configuring A2DP device doesn't exist.");
     int32_t ret = a2dpInstance_->SetActiveSinkDevice(device);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "SetActiveA2dpDevice failed. result: %{public}d", ret);
     activeA2dpDevice_ = device;
@@ -138,10 +136,8 @@ std::string AudioA2dpManager::GetActiveA2dpDevice()
 int32_t AudioA2dpManager::SetDeviceAbsVolume(const std::string& macAddress, int32_t volume)
 {
     BluetoothRemoteDevice device;
-    if (MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device) != SUCCESS) {
-        AUDIO_ERR_LOG("SetDeviceAbsVolume: the configuring A2DP device doesn't exist.");
-        return ERROR;
-    }
+    int32_t ret = MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetDeviceAbsVolume: the configuring A2DP device doesn't exist.");
     return AvrcpTarget::GetProfile()->SetDeviceAbsoluteVolume(device, volume);
 }
 
@@ -152,24 +148,19 @@ int32_t AudioA2dpManager::GetA2dpDeviceStreamInfo(const std::string& macAddress,
     a2dpInstance_ = A2dpSource::GetProfile();
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "Failed to obtain A2DP profile instance");
     BluetoothRemoteDevice device;
-    if (MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device) != SUCCESS) {
-        AUDIO_ERR_LOG("GetA2dpDeviceStreamInfo: the configuring A2DP device doesn't exist.");
-        return ERROR;
-    }
+    int32_t ret = MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        "GetA2dpDeviceStreamInfo: the configuring A2DP device doesn't exist.");
     A2dpCodecStatus codecStatus = a2dpInstance_->GetCodecStatus(device);
-    if (!GetAudioStreamInfo(codecStatus.codecInfo, streamInfo)) {
-        AUDIO_ERR_LOG("GetA2dpDeviceStreamInfo: Unsupported a2dp codec info");
-        return ERROR;
-    }
+    bool result = GetAudioStreamInfo(codecStatus.codecInfo, streamInfo);
+    CHECK_AND_RETURN_RET_LOG(result, ERROR, "GetA2dpDeviceStreamInfo: Unsupported a2dp codec info");
     return SUCCESS;
 }
 
 bool AudioA2dpManager::HasA2dpDeviceConnected()
 {
     a2dpInstance_ = A2dpSource::GetProfile();
-    if (!a2dpInstance_) {
-        return false;
-    }
+    CHECK_AND_RETURN_RET(a2dpInstance_, false);
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
     a2dpInstance_->GetDevicesByStates(states, devices);
@@ -211,10 +202,8 @@ void AudioA2dpListener::OnConfigurationChanged(const BluetoothRemoteDevice &devi
     AUDIO_INFO_LOG("OnConfigurationChanged: sampleRate: %{public}d, channels: %{public}d, format: %{public}d",
         codecInfo.sampleRate, codecInfo.channelMode, codecInfo.bitsPerSample);
     AudioStreamInfo streamInfo = {};
-    if (!GetAudioStreamInfo(codecInfo, streamInfo)) {
-        AUDIO_ERR_LOG("OnConfigurationChanged: Unsupported a2dp codec info");
-        return;
-    }
+    bool result = GetAudioStreamInfo(codecInfo, streamInfo);
+    CHECK_AND_RETURN_LOG(result, "OnConfigurationChanged: Unsupported a2dp codec info");
     MediaBluetoothDeviceManager::UpdateA2dpDeviceConfiguration(device, streamInfo);
 }
 
