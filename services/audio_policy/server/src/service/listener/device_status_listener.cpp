@@ -179,10 +179,8 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener()
     listener_->priv = (void *)this;
     int32_t status = hdiServiceManager_->RegisterServiceStatusListener(hdiServiceManager_, listener_,
                                                                        DeviceClass::DEVICE_CLASS_AUDIO);
-    if (status != HDF_SUCCESS) {
-        AUDIO_ERR_LOG("[DeviceStatusListener]: Register service status listener failed");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(status == HDF_SUCCESS, ERR_OPERATION_FAILED,
+        "[DeviceStatusListener]: Register service status listener failed");
 
     return SUCCESS;
 }
@@ -192,12 +190,9 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
     if ((hdiServiceManager_ == nullptr) || (listener_ == nullptr)) {
         return ERR_ILLEGAL_STATE;
     }
-
     int32_t status = hdiServiceManager_->UnregisterServiceStatusListener(hdiServiceManager_, listener_);
-    if (status != HDF_SUCCESS) {
-        AUDIO_ERR_LOG("[DeviceStatusListener]: UnRegister service status listener failed");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(status == HDF_SUCCESS, ERR_OPERATION_FAILED,
+        "[DeviceStatusListener]: UnRegister service status listener failed");
 
     hdiServiceManager_ = nullptr;
     listener_ = nullptr;

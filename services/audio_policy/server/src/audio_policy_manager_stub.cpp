@@ -70,10 +70,7 @@ void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageP
 void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(data.ReadInt32());
-    if (ltoneInfo == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: GetToneInfoInternal obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(ltoneInfo != nullptr, "obj is null");
     ltoneInfo->Marshalling(reply);
 }
 
@@ -216,12 +213,10 @@ void AudioPolicyManagerStub::AdjustSystemVolumeByStepInternal(MessageParcel &dat
 
 void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("GET_DEVICES AudioManagerStub");
     int deviceFlag = data.ReadInt32();
     DeviceFlag deviceFlagConfig = static_cast<DeviceFlag>(deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevices(deviceFlagConfig);
     int32_t size = static_cast<int32_t>(devices.size());
-    AUDIO_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
@@ -230,7 +225,6 @@ void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParc
 
 void AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("SetWakeUpAudioCapturerInternal AudioManagerStub");
     InternalAudioCapturerOptions capturerOptions;
     capturerOptions.streamInfo.Unmarshalling(data);
     capturerOptions.capturerInfo.Unmarshalling(data);
@@ -240,18 +234,15 @@ void AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal(MessageParcel &data,
 
 void AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("CloseWakeUpAudioCapturerInternal AudioManagerStub");
     int32_t result = CloseWakeUpAudioCapturer();
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
     AudioRendererInfo rendererInfo;
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredOutputDeviceDescriptors(rendererInfo);
     int32_t size = static_cast<int32_t>(devices.size());
-    AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS size= %{public}d", size);
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
@@ -263,7 +254,6 @@ void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageP
     AudioCapturerInfo captureInfo;
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredInputDeviceDescriptors(captureInfo);
     size_t size = static_cast<int32_t>(devices.size());
-    AUDIO_DEBUG_LOG("GET_PREFERRED_INTPUT_DEVICE_DESCRIPTORS size= %{public}zu", size);
     reply.WriteInt32(size);
     for (size_t i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
@@ -315,7 +305,6 @@ void AudioPolicyManagerStub::GetAudioFocusInfoListInternal(MessageParcel &data, 
     reply.WriteInt32(result);
     reply.WriteInt32(size);
     if (result == SUCCESS) {
-        AUDIO_DEBUG_LOG("GetAudioFocusInfoList size= %{public}d", size);
         for (std::pair<AudioInterrupt, AudioFocuState> focusInfo : focusInfoList) {
             WriteAudioFocusInfo(reply, focusInfo);
         }
@@ -325,10 +314,7 @@ void AudioPolicyManagerStub::GetAudioFocusInfoListInternal(MessageParcel &data, 
 void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioRendererFilter> audioRendererFilter = AudioRendererFilter::Unmarshalling(data);
-    if (audioRendererFilter == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererFilter unmarshall fail.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioRendererFilter != nullptr, "AudioRendererFilter unmarshall fail.");
 
     int validSize = 20; // Use 20 as limit.
     int size = data.ReadInt32();
@@ -339,10 +325,7 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
     std::vector<sptr<AudioDeviceDescriptor>> targetOutputDevice;
     for (int i = 0; i < size; i++) {
         sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
-        if (audioDeviceDescriptor == nullptr) {
-            AUDIO_ERR_LOG("Unmarshalling fail.");
-            return;
-        }
+        CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
         targetOutputDevice.push_back(audioDeviceDescriptor);
     }
 
@@ -363,24 +346,15 @@ void AudioPolicyManagerStub::GetSelectedDeviceInfoInternal(MessageParcel &data, 
 void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioCapturerFilter> audioCapturerFilter = AudioCapturerFilter::Unmarshalling(data);
-    if (audioCapturerFilter == nullptr) {
-        AUDIO_ERR_LOG("AudioCapturerFilter unmarshall fail.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioCapturerFilter != nullptr, "AudioCapturerFilter unmarshall fail.");
 
     int validSize = 10; // Use 10 as limit.
     int size = data.ReadInt32();
-    if (size <= 0 || size > validSize) {
-        AUDIO_ERR_LOG("SelectInputDevice get invalid device size.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "SelectInputDevice get invalid device size.");
     std::vector<sptr<AudioDeviceDescriptor>> targetInputDevice;
     for (int i = 0; i < size; i++) {
         sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
-        if (audioDeviceDescriptor == nullptr) {
-            AUDIO_ERR_LOG("Unmarshalling fail.");
-            return;
-        }
+        CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
         targetInputDevice.push_back(audioDeviceDescriptor);
     }
 
@@ -392,10 +366,7 @@ void AudioPolicyManagerStub::SetInterruptCallbackInternal(MessageParcel &data, M
 {
     uint32_t sessionID = data.ReadUint32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
     int32_t result = SetAudioInterruptCallback(sessionID, object);
     reply.WriteInt32(result);
 }
@@ -427,10 +398,7 @@ void AudioPolicyManagerStub::SetAudioManagerInterruptCbInternal(MessageParcel &d
 {
     int32_t clientId = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
     int32_t result = SetAudioManagerInterruptCallback(clientId, object);
     reply.WriteInt32(result);
 }
@@ -518,38 +486,27 @@ void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data
 
 void AudioPolicyManagerStub::RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:register tracker internal entered");
-
     AudioStreamChangeInfo streamChangeInfo = {};
     AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
     ReadStreamChangeInfo(data, mode, streamChangeInfo);
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    if (remoteObject == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: Client Tracker obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(remoteObject != nullptr, "Client Tracker obj is null");
 
     int ret = RegisterTracker(mode, streamChangeInfo, remoteObject);
     reply.WriteInt32(ret);
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:register tracker internal ret = %{public}d", ret);
 }
 
 void AudioPolicyManagerStub::UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:update tracker internal entered");
-
     AudioStreamChangeInfo streamChangeInfo = {};
     AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
     ReadStreamChangeInfo(data, mode, streamChangeInfo);
     int ret = UpdateTracker(mode, streamChangeInfo);
     reply.WriteInt32(ret);
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:update tracker internal ret = %{public}d", ret);
 }
 
 void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Renderer change info internal entered");
-
     size_t size = 0;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     int ret = GetCurrentRendererChangeInfos(audioRendererChangeInfos);
@@ -568,13 +525,10 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
         }
         rendererChangeInfo->Marshalling(reply);
     }
-
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Renderer change info internal exit");
 }
 
 void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal entered");
     size_t size = 0;
     vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t ret = GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
@@ -593,30 +547,24 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
         }
         capturerChangeInfo->Marshalling(reply);
     }
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }
 
 void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:UpdateStreamStateInternal change info internal entered");
     int32_t clientUid = data.ReadInt32();
     StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
 
     int32_t result = UpdateStreamState(clientUid, streamSetState, streamType);
     reply.WriteInt32(result);
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:UpdateStreamStateInternal change info internal exit");
 }
 
 void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply)
 {
-    AUDIO_DEBUG_LOG("GetVolumeGroupInfoInternal entered");
     std::string networkId = data.ReadString();
     std::vector<sptr<VolumeGroupInfo>> groupInfos;
     int32_t ret = GetVolumeGroupInfos(networkId, groupInfos);
     int32_t size = static_cast<int32_t>(groupInfos.size());
-    AUDIO_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
-    
     if (ret == SUCCESS && size > 0) {
         reply.WriteInt32(size);
         for (int i = 0; i < size; i++) {
@@ -625,13 +573,10 @@ void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, Mes
     } else {
         reply.WriteInt32(ret);
     }
-    
-    AUDIO_DEBUG_LOG("GetVolumeGroups internal exit");
 }
 
 void AudioPolicyManagerStub::GetNetworkIdByGroupIdInternal(MessageParcel& data, MessageParcel& reply)
 {
-    AUDIO_DEBUG_LOG("GetNetworkIdByGroupId entered");
     int32_t groupId = data.ReadInt32();
     std::string networkId;
     int32_t ret = GetNetworkIdByGroupId(groupId, networkId);
@@ -737,10 +682,7 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
     int32_t i;
     SupportedEffectConfig supportedEffectConfig;
     int32_t ret = QueryEffectSceneMode(supportedEffectConfig); // audio_policy_server.cpp
-    if (ret == -1) {
-        AUDIO_ERR_LOG("default mode is unavailable !");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(ret != -1, "default mode is unavailable !");
 
     int32_t countPre = supportedEffectConfig.preProcessNew.stream.size();
     int32_t countPost = supportedEffectConfig.postProcessNew.stream.size();
@@ -789,10 +731,7 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
 void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
-    if (audioDeviceDescriptor == nullptr) {
-        AUDIO_ERR_LOG("Unmarshalling fail.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
 
     int32_t result =  GetHardwareOutputSamplingRate(audioDeviceDescriptor);
     reply.WriteInt32(result);
@@ -858,10 +797,7 @@ void AudioPolicyManagerStub::SetAvailableDeviceChangeCallbackInternal(MessagePar
     int32_t clientId = data.ReadInt32();
     AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(data.ReadInt32());
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioInterruptCallback obj is null");
     int32_t result = SetAvailableDeviceChangeCallback(clientId, usage, object);
     reply.WriteInt32(result);
 }
@@ -885,10 +821,7 @@ void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel 
 void AudioPolicyManagerStub::SetDistributedRoutingRoleCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetDistributedRoutingRoleCallback obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(object != nullptr, "SetDistributedRoutingRoleCallback obj is null");
     int32_t result = SetDistributedRoutingRoleCallback(object);
     reply.WriteInt32(result);
 }
@@ -929,10 +862,7 @@ void AudioPolicyManagerStub::RegisterSpatializationEnabledEventListenerInternal(
     MessageParcel &reply)
 {
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    if (remoteObject == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioSpatializationEnabledChangeCallback obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(remoteObject != nullptr, "AudioSpatializationEnabledChangeCallback obj is null");
     int32_t ret = RegisterSpatializationEnabledEventListener(remoteObject);
     reply.WriteInt32(ret);
 }
@@ -941,10 +871,7 @@ void AudioPolicyManagerStub::RegisterHeadTrackingEnabledEventListenerInternal(Me
     MessageParcel &reply)
 {
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    if (remoteObject == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioHeadTrackingEnabledChangeCallback obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(remoteObject != nullptr, "AudioHeadTrackingEnabledChangeCallback obj is null");
     int32_t ret = RegisterHeadTrackingEnabledEventListener(remoteObject);
     reply.WriteInt32(ret);
 }
@@ -1014,10 +941,7 @@ void AudioPolicyManagerStub::RegisterSpatializationStateEventListenerInternal(Me
     uint32_t sessionID = static_cast<uint32_t>(data.ReadInt32());
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    if (remoteObject == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioSpatializationStateChangeCallback obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(remoteObject != nullptr, "AudioSpatializationStateChangeCallback obj is null");
     int32_t ret = RegisterSpatializationStateEventListener(sessionID, streamUsage, remoteObject);
     reply.WriteInt32(ret);
 }
@@ -1033,10 +957,7 @@ void AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal(
 void AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("RegisterPolicyCallbackClientInternal obj is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(object != nullptr, "RegisterPolicyCallbackClientInternal obj is null");
     int32_t result = RegisterPolicyCallbackClient(object);
     reply.WriteInt32(result);
 }
@@ -1044,10 +965,7 @@ void AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal(MessageParcel 
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    if (data.ReadInterfaceToken() != GetDescriptor()) {
-        AUDIO_ERR_LOG("OnRemoteRequest: ReadInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), -1, "ReadInterfaceToken failed");
     if (code <= static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
         (this->*handlers[code])(data, reply);
         return AUDIO_OK;
