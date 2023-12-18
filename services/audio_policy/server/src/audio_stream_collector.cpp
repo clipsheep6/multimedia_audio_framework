@@ -194,6 +194,16 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     return SUCCESS;
 }
 
+int32_t AudioStreamCollector::CheckSessionId(int32_t callerUid, uint32_t sessionId)
+{
+    if (rendererStatequeue_.count(make_pair(callerUid, sessionId)) ||
+        capturerStatequeue_.count(make_pair(callerUid, sessionId))) {
+        return SUCCESS;
+    }
+    AUDIO_ERR_LOG("CheckSessionId failed callerUid:%{public}d sessionId:%{public}d", callerUid, sessionId);
+    return ERR_INVALID_PARAM;
+}
+
 int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {
