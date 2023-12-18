@@ -342,7 +342,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_007, TestSize.Level1)
     EXPECT_EQ(true, isStarted);
 
     ret = audioRenderer->GetFramesWritten();
-    EXPECT_EQ(WRITE_FRAME_FIRST || WRITE_FRAME_SECOND, ret);
+    EXPECT_EQ(ret = (WRITE_FRAME_FIRST || WRITE_FRAME_SECOND), true);
 
     float setLowPowerVolume = audioRenderer->SetLowPowerVolume(1.0f);
     EXPECT_EQ(setLowPowerVolume, 1);

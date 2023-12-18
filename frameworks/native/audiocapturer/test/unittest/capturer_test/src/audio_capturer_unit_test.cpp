@@ -1471,8 +1471,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_003, TestSize.Level1)
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(false, isStarted);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
+    EXPECT_EQ(SUCCESS, ret);
 
     size_t bufferLen;
     ret = audioCapturer->GetBufferSize(bufferLen);
@@ -1482,7 +1482,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_003, TestSize.Level1)
     ASSERT_NE(nullptr, buffer);
 
     int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
-    EXPECT_EQ(ERR_INVALID_PARAM, bytesRead);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, bytesRead);
 
     audioCapturer->Flush();
     audioCapturer->Stop();
