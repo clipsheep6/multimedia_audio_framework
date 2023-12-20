@@ -1659,6 +1659,10 @@ int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
     UpdateStreamChangeDeviceInfo(mode, streamChangeInfo);
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
+int32_t AudioPolicyService::CheckSessionId(int32_t callerUid, uint32_t sessionId)
+{
+    return streamCollector_.CheckSessionId(callerUid, sessionId);
+}
 
 int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {

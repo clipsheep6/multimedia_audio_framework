@@ -167,6 +167,8 @@ public:
 
     int32_t UnregisterAudioCapturerEventListener(int32_t clientUID);
 
+    int32_t CheckSessionId(int32_t callerUid, uint32_t sessionId);
+
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);
 
