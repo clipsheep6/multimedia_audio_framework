@@ -651,7 +651,7 @@ napi_value NapiAudioRenderer::Flush(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        napiAudioRenderer->audioRenderer_->Flush();
+        context->isTrue = napiAudioRenderer->audioRenderer_->Flush();
         if (!context->isTrue) {
             context->SignError(NAPI_ERR_SYSTEM);
         }
