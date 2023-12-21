@@ -99,21 +99,6 @@ int AudioManagerStub::HandleUpdateActiveDeviceRoute(MessageParcel &data, Message
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleRetrieveCookie(MessageParcel &data, MessageParcel &reply)
-{
-    AUDIO_DEBUG_LOG("RETRIEVE_COOKIE AudioManagerStub");
-    int32_t size = 0;
-    const char *cookieInfo = RetrieveCookie(size);
-    reply.WriteInt32(size);
-    if (size > 0) {
-        AUDIO_DEBUG_LOG("cookie received from server");
-        reply.WriteRawData(static_cast<const void *>(cookieInfo), size);
-        free((void *)cookieInfo);
-        cookieInfo = nullptr;
-    }
-    return AUDIO_OK;
-}
-
 int AudioManagerStub::HandleGetTransactionId(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("GET_TRANSACTION_ID AudioManagerStub");
@@ -416,6 +401,16 @@ int AudioManagerStub::HandleOffloadSetBufferSize(MessageParcel &data, MessagePar
     uint32_t sizeMs = data.ReadUint32();
     int32_t result = OffloadSetBufferSize(sizeMs);
     reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamType type = static_cast<AudioStreamType>(data.ReadInt32());
+    float volume = data.ReadFloat();
+    int32_t ret = NotifyStreamVolumeChanged(type, volume);
+    reply.WriteInt32(ret);
+
     return AUDIO_OK;
 }
 

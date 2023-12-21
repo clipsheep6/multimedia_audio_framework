@@ -32,6 +32,7 @@ namespace AudioStandard {
 static constexpr int32_t MAX_WRITECB_NUM_BUFFERS = 1;
 static constexpr int32_t MAX_READCB_NUM_BUFFERS = 3;
 static constexpr int32_t ONE_MINUTE = 60;
+class AudioStreamPolicyServiceDiedCallbackImpl;
 
 class AudioStream : public AudioServiceClient {
 public:
@@ -98,6 +99,8 @@ public:
     bool DrainAudioStream() override;
     int32_t Write(uint8_t *buffer, size_t buffer_size) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
+    int32_t SetSpeed(float speed) override;
+    float GetSpeed() override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
@@ -105,6 +108,12 @@ public:
     void GetSwitchInfo(SwitchInfo& info) override;
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
+
+    int32_t RegisterRendererOrCapturerPolicyServiceDiedCB(
+        const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback) override;
+    int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
+
+    bool RestoreAudioStream() override;
 
 private:
     enum {
@@ -118,6 +127,10 @@ private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     int32_t InitFromParams(AudioStreamParams &param);
+
+    int32_t RegisterAudioStreamPolicyServerDiedCb();
+    int32_t UnregisterAudioStreamPolicyServerDiedCb();
+
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     State state_;
@@ -154,8 +167,27 @@ private:
     bool streamTrackerRegistered_ = false;
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
+
+    float speed_ = 1.0;
 	
     std::unique_ptr<AudioFormatConverter3DA> converter_;
+
+    std::shared_ptr<AudioStreamPolicyServiceDiedCallbackImpl> audioStreamPolicyServiceDiedCB_ = nullptr;
+    std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
+};
+
+class AudioStreamPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {
+public:
+    AudioStreamPolicyServiceDiedCallbackImpl();
+    virtual ~AudioStreamPolicyServiceDiedCallbackImpl();
+    void OnAudioPolicyServiceDied() override;
+    void SaveRendererOrCapturerPolicyServiceDiedCB(
+        const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback);
+    void RemoveRendererOrCapturerPolicyServiceDiedCB();
+
+private:
+    std::mutex mutex_;
+    std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> policyServiceDiedCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

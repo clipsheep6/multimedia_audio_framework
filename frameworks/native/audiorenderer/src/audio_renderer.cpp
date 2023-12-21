@@ -28,6 +28,12 @@
 namespace OHOS {
 namespace AudioStandard {
 
+static const int32_t MAX_VOLUME_LEVEL = 15;
+static const int32_t CONST_FACTOR = 100;
+#ifdef SONIC_ENABLE
+static const int32_t MAX_BUFFER_SIZE = 200000;
+static const float MINIMUM_SPEED_CHANGE = 0.01;
+#endif
 static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -83,6 +89,7 @@ std::mutex AudioRenderer::createRendererMutex_;
 AudioRenderer::~AudioRenderer() = default;
 AudioRendererPrivate::~AudioRendererPrivate()
 {
+    abortRestore_ = true;
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback = audioDeviceChangeCallback_;
     if (audioDeviceChangeCallback != nullptr) {
         audioDeviceChangeCallback->UnSetAudioRendererObj();
@@ -94,6 +101,14 @@ AudioRendererPrivate::~AudioRendererPrivate()
         Release();
     }
 
+    RemoveRendererPolicyServiceDiedCallback();
+
+#ifdef SONIC_ENABLE
+    if (sonicStream_ != nullptr) {
+        sonicDestroyStream(sonicStream_);
+        sonicStream_ = nullptr;
+    }
+#endif
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -258,6 +273,58 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
     return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_);
 }
 
+inline size_t GetFormatSize(const AudioStreamParams& info)
+{
+    size_t result = 0;
+    size_t bitWidthSize = 0;
+    switch (info.format) {
+        case SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            bitWidthSize = 2; // size is 2
+            break;
+    }
+    result = bitWidthSize * info.channels;
+    return result;
+}
+
+int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParams)
+{
+    AudioRenderer *renderer = this;
+    rendererProxyObj_->SaveRendererObj(renderer);
+    audioStream_->SetRendererInfo(rendererInfo_);
+    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
+
+    SetAudioPrivacyType(privacyType_);
+    audioStream_->SetStreamTrackerState(false);
+
+    int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
+    if (ret) {
+        return ret;
+    }
+
+    if (isFastRenderer_) {
+        SetSelfRendererStateCallback();
+    }
+
+#ifdef SONIC_ENABLE
+    GetBufferSize(bufferSize_);
+    formatSize_ = GetFormatSize(audioStreamParams);
+    sonicStream_ = sonicCreateStream(audioStreamParams.samplingRate, audioStreamParams.channels);
+#endif
+    return SUCCESS;
+}
+
 int32_t AudioRendererPrivate::GetFrameCount(uint32_t &frameCount) const
 {
     return audioStream_->GetFrameCount(frameCount);
@@ -310,26 +377,25 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         audioStream_->SetApplicationCachePath(cachePath_);
     }
 
-    AudioRenderer *renderer = this;
-    rendererProxyObj_->SaveRendererObj(renderer);
-    audioStream_->SetRendererInfo(rendererInfo_);
-
-    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
-
-    SetAudioPrivacyType(privacyType_);
-
-    audioStream_->SetStreamTrackerState(false);
-
-    int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
-    if (ret) {
-        AUDIO_ERR_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Failed");
-        return ret;
+    int32_t ret = InitAudioStream(audioStreamParams);
+    // When the fast stream creation fails, a normal stream is created
+    if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
+        AUDIO_INFO_LOG("Create fast Stream fail, play by normal stream.");
+        streamClass = IAudioStream::PA_STREAM;
+        isFastRenderer_ = false;
+        audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
+            appInfo_.appUid);
+        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr,
+            ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed when create normal stream.");
+        ret = InitAudioStream(audioStreamParams);
+        audioStream_->SetRenderMode(RENDER_MODE_CALLBACK);
     }
+
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioRendererPrivate::SetParams SetAudioStreamInfo Failed");
     AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Succeeded");
 
-    if (isFastRenderer_) {
-        SetSelfRendererStateCallback();
-    }
+    RegisterRendererPolicyServiceDiedCallback();
+
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_);
 
     return InitAudioInterruptCallback();
@@ -484,9 +550,52 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
     return audioStream_->StartAudioStream(cmdType);
 }
 
+#ifdef SONIC_ENABLE
+int32_t AudioRendererPrivate::ChangeSpeed(uint8_t *buffer, int32_t bufferSize)
+{
+    int32_t numSamples = bufferSize/formatSize_;
+    int32_t res = sonicWriteShortToStream(sonicStream_, (short*)(buffer), numSamples);
+    if (res != 1) {
+        AUDIO_ERR_LOG("sonic write short to stream failed: %{public}d", res);
+        return 0;
+    }
+    auto outBuffer = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
+    int32_t outSamples = sonicReadShortFromStream(sonicStream_, (short*)(outBuffer.get()), MAX_BUFFER_SIZE);
+    if (outSamples == 0) {
+        AUDIO_INFO_LOG("sonic stream is not full continue to write %{public}d", outSamples);
+        return bufferSize;
+    }
+
+    size_t outBufferSize = outSamples * formatSize_;
+    int32_t writeIndex = 0;
+    int32_t writeSize = bufferSize_;
+    while (outBufferSize > 0) {
+        if (outBufferSize < bufferSize_) {
+            writeSize = outBufferSize;
+        }
+        int32_t writtenSize = audioStream_->Write(outBuffer.get()+writeIndex, writeSize);
+        if (writtenSize < 0) return writtenSize;
+        if (writtenSize == 0) {
+            AUDIO_WARNING_LOG("writeen size is zero");
+            continue;
+        }
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(outBuffer.get() + writeIndex), writtenSize);
+        writeIndex += writtenSize;
+        outBufferSize -= writtenSize;
+    }
+
+    return bufferSize;
+}
+#endif
+
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
+#ifdef SONIC_ENABLE
+    if ((speed_ - 1 > MINIMUM_SPEED_CHANGE || 1 - speed_ > MINIMUM_SPEED_CHANGE) && sonicStream_ != nullptr) {
+        return ChangeSpeed(buffer, bufferSize);
+    }
+#endif
     int32_t size = audioStream_->Write(buffer, bufferSize);
     if (size > 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), size);
@@ -1288,6 +1397,134 @@ int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
 {
     audioStream_->SetPreferredFrameSize(frameSize);
+}
+
+void AudioRendererPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
+{
+    audioInterrupt = audioInterrupt_;
+}
+
+
+int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
+{
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback");
+    if (!audioPolicyServiceDiedCallback_) {
+        audioPolicyServiceDiedCallback_ = std::make_shared<RendererPolicyServiceDiedCallback>();
+        if (!audioPolicyServiceDiedCallback_) {
+            AUDIO_ERR_LOG("Memory allocation failed!!");
+            return ERROR;
+        }
+        audioStream_->RegisterRendererOrCapturerPolicyServiceDiedCB(audioPolicyServiceDiedCallback_);
+        audioPolicyServiceDiedCallback_->SetAudioRendererObj(this);
+        audioPolicyServiceDiedCallback_->SetAudioInterrupt(audioInterrupt_);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback() const
+{
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback");
+    if (audioPolicyServiceDiedCallback_) {
+        int32_t ret = audioStream_->RemoveRendererOrCapturerPolicyServiceDiedCB();
+        if (ret != 0) {
+            AUDIO_ERR_LOG("RemoveRendererPolicyServiceDiedCallback failed");
+            return ERROR;
+        }
+    }
+    return SUCCESS;
+}
+
+RendererPolicyServiceDiedCallback::RendererPolicyServiceDiedCallback()
+{
+    AUDIO_DEBUG_LOG("RendererPolicyServiceDiedCallback create");
+}
+
+RendererPolicyServiceDiedCallback::~RendererPolicyServiceDiedCallback()
+{
+    AUDIO_DEBUG_LOG("RendererPolicyServiceDiedCallback destroy");
+    if (restoreThread_ != nullptr && restoreThread_->joinable()) {
+        restoreThread_->join();
+        restoreThread_.reset();
+        restoreThread_ = nullptr;
+    }
+}
+
+void RendererPolicyServiceDiedCallback::SetAudioRendererObj(AudioRendererPrivate *rendererObj)
+{
+    renderer_ = rendererObj;
+}
+
+void RendererPolicyServiceDiedCallback::SetAudioInterrupt(AudioInterrupt &audioInterrupt)
+{
+    audioInterrupt_ = audioInterrupt;
+}
+
+void RendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
+{
+    AUDIO_INFO_LOG("RendererPolicyServiceDiedCallback OnAudioPolicyServiceDied");
+    if (restoreThread_ != nullptr) {
+        restoreThread_->detach();
+    }
+    restoreThread_ = std::make_unique<std::thread>(&RendererPolicyServiceDiedCallback::RestoreTheadLoop, this);
+    pthread_setname_np(restoreThread_->native_handle(), "OS_ARPSRestore");
+}
+
+void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
+{
+    int32_t tryCounter = 5;
+    uint32_t sleepTime = 300000;
+    bool result = false;
+    int32_t ret = -1;
+    while (!result && tryCounter-- > 0) {
+        usleep(sleepTime);
+        if (renderer_ == nullptr && renderer_->audioStream_ == nullptr &&
+            renderer_->abortRestore_) {
+            AUDIO_INFO_LOG("RendererPolicyServiceDiedCallback RestoreTheadLoop abort restore");
+            break;
+        }
+        result = renderer_->audioStream_->RestoreAudioStream();
+        if (!result) {
+            AUDIO_ERR_LOG("RestoreAudioStream Failed, %{public}d attempts remaining", tryCounter);
+            continue;
+        } else {
+            renderer_->abortRestore_ = false;
+        }
+        if (renderer_->GetStatus() == RENDERER_RUNNING) {
+            renderer_->GetAudioInterrupt(audioInterrupt_);
+            ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("AudioRenderer::ActivateAudioInterrupt Failed");
+            }
+        }
+    }
+}
+
+int32_t AudioRendererPrivate::SetSpeed(float speed)
+{
+    AUDIO_INFO_LOG("set speed %{public}f", speed);
+    CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL) && (speed <= MAX_STREAM_SPEED_LEVEL),
+        ERR_INVALID_PARAM, "invaild speed index");
+    speed_ = speed;
+#ifdef SONIC_ENABLE
+    CHECK_AND_RETURN_RET_LOG(sonicStream_ != nullptr, ERROR, "change speed failed, sonicStream is nullptr");
+    sonicSetSpeed(sonicStream_, speed_);
+    return audioStream_->SetSpeed(speed_);
+#endif
+    AUDIO_WARNING_LOG("SetSpeed: sonic cannot be used");
+    return SUCCESS;
+}
+
+float AudioRendererPrivate::GetSpeed()
+{
+#ifdef SONIC_ENABLE
+    return audioStream_->GetSpeed();
+#endif
+    return speed_;
+}
+
+bool AudioRendererPrivate::IsFastRenderer()
+{
+    return isFastRenderer_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -56,7 +56,6 @@ private:
     void GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
-    void CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply);
     void SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetSelectedDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
@@ -126,6 +125,10 @@ private:
     void UnsetDistributedRoutingRoleCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnregisterSpatializationStateEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+    void CreateAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply);
+    void AddAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply);
+    void RemoveAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply);
+    void ReleaseAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -159,7 +162,6 @@ private:
         &AudioPolicyManagerStub::GetSessionInfoInFocusInternal,
         &AudioPolicyManagerStub::GetDevicesInternal,
         &AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal,
-        &AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal,
         &AudioPolicyManagerStub::CheckRecordingCreateInternal,
         &AudioPolicyManagerStub::SelectOutputDeviceInternal,
         &AudioPolicyManagerStub::GetSelectedDeviceInfoInternal,
@@ -226,7 +228,14 @@ private:
         &AudioPolicyManagerStub::UnsetDistributedRoutingRoleCallbackInternal,
         &AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal,
         &AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal,
+        &AudioPolicyManagerStub::CreateAudioInterruptZoneInternal,
+        &AudioPolicyManagerStub::AddAudioInterruptZonePidsInternal,
+        &AudioPolicyManagerStub::RemoveAudioInterruptZonePidsInternal,
+        &AudioPolicyManagerStub::ReleaseAudioInterruptZoneInternal,
     };
+    static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
+    static_assert(handlersNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),
+        "please check audio_policy_ipc_interface_code");
 };
 } // namespace AudioStandard
 } // namespace OHOS

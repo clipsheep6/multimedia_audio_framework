@@ -29,6 +29,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class FastPolicyServiceDiedCallbackImpl;
 class FastAudioStreamRenderCallback : public AudioDataCallback {
 public:
     FastAudioStreamRenderCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
@@ -121,6 +122,8 @@ public:
     bool DrainAudioStream() override;
     int32_t Write(uint8_t *buffer, size_t buffer_size) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
+    int32_t SetSpeed(float speed) override;
+    float GetSpeed() override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
@@ -150,8 +153,18 @@ public:
 
     IAudioStream::StreamClass GetStreamClass() override;
 
+    int32_t RegisterRendererOrCapturerPolicyServiceDiedCB(
+        const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback) override;
+    int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
+
+    bool RestoreAudioStream() override;
+
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
+
+    int32_t RegisterAudioStreamPolicyServerDiedCb();
+    int32_t UnregisterAudioStreamPolicyServerDiedCb();
+
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
@@ -172,6 +185,22 @@ private:
     int32_t clientPid_ = 0;
     int32_t clientUid_ = 0;
     bool streamTrackerRegistered_ = false;
+    std::shared_ptr<FastPolicyServiceDiedCallbackImpl> audioStreamPolicyServiceDiedCB_ = nullptr;
+    std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
+};
+
+class FastPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {
+public:
+    FastPolicyServiceDiedCallbackImpl();
+    virtual ~FastPolicyServiceDiedCallbackImpl();
+    void OnAudioPolicyServiceDied() override;
+    void SaveRendererOrCapturerPolicyServiceDiedCB(
+        const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback);
+    void RemoveRendererOrCapturerPolicyServiceDiedCB();
+
+private:
+    std::mutex mutex_;
+    std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> policyServiceDiedCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

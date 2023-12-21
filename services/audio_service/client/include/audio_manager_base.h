@@ -59,13 +59,6 @@ public:
     virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) = 0;
 
     /**
-     * Obtains device array.
-     *
-     * @return Returns the array of audio device descriptor.
-     */
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) = 0;
-
-    /**
      * Set Audio Parameter.
      *
      * @param  key for the audio parameter to be set
@@ -111,13 +104,6 @@ public:
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
     virtual int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) = 0;
-
-    /**
-     * Retrieve cookie information from the service
-     *
-     * @return Returns cookie information, null if failed.
-     */
-    virtual const char *RetrieveCookie(int32_t &size) = 0;
 
     /**
      * Get the transaction Id
@@ -253,6 +239,16 @@ public:
     */
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
 
+    /**
+     * Notify Stream volume changed.
+     *
+     * @param streamType specified streamType whose volume to be notified
+     * @param volume stream volume in float
+     *
+     * @return result of notify. 0 if success, error number else.
+    */
+    virtual int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -263,15 +259,11 @@ public:
         MessageOption &option) override;
 
 private:
-    int HandleGetMaxVolume(MessageParcel &data, MessageParcel &reply) {return 0;}
-    int HandleGetMinVolume(MessageParcel &data, MessageParcel &reply) {return 0;}
-    int HandleGetDevices(MessageParcel &data, MessageParcel &reply) {return 0;}
     int HandleGetAudioParameter(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioParameter(MessageParcel &data, MessageParcel &reply);
     int HandleSetMicrophoneMute(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioScene(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply);
-    int HandleRetrieveCookie(MessageParcel &data, MessageParcel &reply);
     int HandleGetTransactionId(MessageParcel &data, MessageParcel &reply);
     int HandleSetParameterCallback(MessageParcel &data, MessageParcel &reply);
     int HandleGetRemoteAudioParameter(MessageParcel &data, MessageParcel &reply);
@@ -296,18 +288,15 @@ private:
     int HandleOffloadDrain(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
-        &AudioManagerStub::HandleGetMaxVolume,
-        &AudioManagerStub::HandleGetMinVolume,
-        &AudioManagerStub::HandleGetDevices,
         &AudioManagerStub::HandleGetAudioParameter,
         &AudioManagerStub::HandleSetAudioParameter,
         &AudioManagerStub::HandleSetMicrophoneMute,
         &AudioManagerStub::HandleSetAudioScene,
         &AudioManagerStub::HandleUpdateActiveDeviceRoute,
-        &AudioManagerStub::HandleRetrieveCookie,
         &AudioManagerStub::HandleGetTransactionId,
         &AudioManagerStub::HandleSetParameterCallback,
         &AudioManagerStub::HandleGetRemoteAudioParameter,
@@ -332,7 +321,11 @@ private:
         &AudioManagerStub::HandleOffloadDrain,
         &AudioManagerStub::HandleOffloadGetPresentationPosition,
         &AudioManagerStub::HandleOffloadSetBufferSize,
+        &AudioManagerStub::HandleNotifyStreamVolumeChanged,
     };
+    static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
+    static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
+        "please check pulseaudio_ipc_interface_code");
 };
 } // namespace AudioStandard
 } // namespace OHOS

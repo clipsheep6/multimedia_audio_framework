@@ -21,11 +21,15 @@
 #include "audio_renderer_proxy_obj.h"
 #include "audio_utils.h"
 #include "i_audio_stream.h"
+#ifdef SONIC_ENABLE
+#include "sonic.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class AudioRendererStateChangeCallbackImpl;
+class RendererPolicyServiceDiedCallback;
 
 class AudioRendererPrivate : public AudioRenderer {
 public:
@@ -100,6 +104,17 @@ public:
     void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
+    int32_t RegisterRendererPolicyServiceDiedCallback();
+    int32_t RemoveRendererPolicyServiceDiedCallback() const;
+
+    void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
+
+    int32_t SetSpeed(float speed) override;
+    float GetSpeed() override;
+    bool IsFastRenderer() override;
+#ifdef SONIC_ENABLE
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize);
+#endif
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
@@ -116,6 +131,8 @@ public:
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
     std::string cachePath_;
+    std::shared_ptr<IAudioStream> audioStream_;
+    bool abortRestore_ = false;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -129,11 +146,11 @@ protected:
 
 private:
     int32_t InitAudioInterruptCallback();
+    int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass);
     void SetSelfRendererStateCallback();
 
-    std::shared_ptr<IAudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     AppInfo appInfo_ = {};
@@ -144,10 +161,18 @@ private:
     FILE *dumpFile_ = nullptr;
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
+    mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
     bool isFastRenderer_ = false;
     bool isSwitching_ = false;
     mutable std::mutex switchStreamMutex_;
+
+    float speed_ = 1.0;
+#ifdef SONIC_ENABLE
+    size_t bufferSize_;
+    size_t formatSize_;
+    sonicStream sonicStream_ = nullptr;
+#endif
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
@@ -195,6 +220,21 @@ private:
     std::weak_ptr<AudioRendererDeviceChangeCallback> callback_;
     AudioRendererPrivate *renderer_;
     std::mutex mutex_;
+};
+
+class RendererPolicyServiceDiedCallback : public RendererOrCapturerPolicyServiceDiedCallback {
+public:
+    RendererPolicyServiceDiedCallback();
+    virtual ~RendererPolicyServiceDiedCallback();
+    void SetAudioRendererObj(AudioRendererPrivate *rendererObj);
+    void SetAudioInterrupt(AudioInterrupt &audioInterrupt);
+    void OnAudioPolicyServiceDied() override;
+
+private:
+    AudioRendererPrivate *renderer_ = nullptr;
+    AudioInterrupt audioInterrupt_;
+    void RestoreTheadLoop();
+    std::unique_ptr<std::thread> restoreThread_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

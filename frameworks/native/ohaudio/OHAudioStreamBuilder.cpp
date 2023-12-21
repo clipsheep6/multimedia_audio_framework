@@ -90,7 +90,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilde
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
     StreamUsage streamUsage = (StreamUsage)usage;
-    ContentType contentType = ContentType::CONTENT_TYPE_MUSIC;
+    ContentType contentType = ContentType::CONTENT_TYPE_UNKNOWN;
     return audioStreamBuilder->SetRendererInfo(streamUsage, contentType);
 }
 
@@ -233,8 +233,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetPreferredFrameSize(int32_t frameS
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInfo(StreamUsage usage, ContentType contentType)
 {
-    if (streamType_ == CAPTURER_TYPE || usage == StreamUsage::STREAM_USAGE_UNKNOWN
-        || contentType == ContentType::CONTENT_TYPE_UNKNOWN) {
+    if (streamType_ == CAPTURER_TYPE || usage == StreamUsage::STREAM_USAGE_UNKNOWN) {
         AUDIO_ERR_LOG("Error, invalid type input");
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }

@@ -51,8 +51,7 @@ const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
 const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink.c
 const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
-const uint32_t OFFLOAD_SMALL_BUFFER = 20;
-const uint32_t OFFLOAD_BIG_BUFFER = 100;
+const uint32_t OFFLOAD_BUFFER = 50;
 const uint64_t AUDIO_US_PER_MS = 1000;
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
@@ -184,6 +183,7 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
 
     asClient->state_ = RUNNING;
     asClient->breakingWritePa_ = false;
+    asClient->offloadTsLast_ = 0;
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(RUNNING, asClient->stateChangeCmdType_);
@@ -206,6 +206,7 @@ void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t succes
 
     asClient->state_ = STOPPED;
     asClient->breakingWritePa_ = false;
+    asClient->offloadTsLast_ = 0;
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(STOPPED);
@@ -256,6 +257,7 @@ void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t succe
 
     asClient->state_ = PAUSED;
     asClient->breakingWritePa_ = false;
+    asClient->offloadTsLast_ = 0;
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(PAUSED, asClient->stateChangeCmdType_);
@@ -520,7 +522,7 @@ void AudioServiceClient::PAContextStateCb(pa_context *context, void *userdata)
 }
 
 AudioServiceClient::AudioServiceClient()
-    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create("AudioServiceClientRunner"))
+    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create("OS_ACRunner"))
 {
     sinkDevices.clear();
     sourceDevices.clear();
@@ -1347,15 +1349,19 @@ int32_t AudioServiceClient::FlushStream()
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
-    pa_proplist *propList = pa_proplist_new();
-    pa_proplist_sets(propList, "stream.flush", "true");
-    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+    pa_proplist *propListFlushTrue = pa_proplist_new();
+    pa_proplist_sets(propListFlushTrue, "stream.flush", "true");
+    pa_operation *updatePropOperationTrue = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propListFlushTrue,
         nullptr, nullptr);
-    pa_proplist_sets(propList, "stream.flush", "false");
-    updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
-        nullptr, nullptr);
-    pa_proplist_free(propList);
-    pa_operation_unref(updatePropOperation);
+    pa_proplist_free(propListFlushTrue);
+    pa_operation_unref(updatePropOperationTrue);
+
+    pa_proplist *propListFlushFalse = pa_proplist_new();
+    pa_proplist_sets(propListFlushFalse, "stream.flush", "false");
+    pa_operation *updatePropOperationFalse = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE,
+        propListFlushFalse, nullptr, nullptr);
+    pa_proplist_free(propListFlushFalse);
+    pa_operation_unref(updatePropOperationFalse);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -1486,7 +1492,7 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
         buffer = buffer + writableSize;
         length -= writableSize;
 
-        HandleRenderPositionCallbacks(writableSize);
+        HandleRenderPositionCallbacks(writableSize * speed_);
     }
 
     return error;
@@ -1495,7 +1501,20 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 int32_t AudioServiceClient::WaitWriteable(size_t length, size_t& writableSize)
 {
     Trace trace1("PaWriteStream WaitWriteable");
-    while (!(writableSize = pa_stream_writable_size(paStream))) {
+    while (true) {
+        writableSize = pa_stream_writable_size(paStream);
+        if (writableSize != 0) {
+            if (!offloadEnable_) {
+                break;
+            }
+            if (writableSize < acache_.totalCacheSizeTgt) {
+                AUDIO_DEBUG_LOG("PaWriteStream: WaitWriteable writableSize %zu < %u wait for more",
+                    writableSize, acache_.totalCacheSizeTgt);
+            } else {
+                writableSize = writableSize / acache_.totalCacheSizeTgt * acache_.totalCacheSizeTgt;
+                break;
+            }
+        }
         AUDIO_DEBUG_LOG("PaWriteStream: WaitWriteable");
         StartTimer(WRITE_TIMEOUT_IN_SEC);
         if (!breakingWritePa_ && state_ == RUNNING) {
@@ -2105,6 +2124,7 @@ void AudioServiceClient::GetOffloadCurrentTimeStamp(uint64_t& timeStamp, bool be
     if (!offloadEnable_ || eAudioClientType != AUDIO_SERVICE_CLIENT_PLAYBACK) {
         return;
     }
+    bool first = offloadTsLast_ == 0;
     if (beforeLocked) {
         timeStamp = offloadTsLast_;
     } else {
@@ -2114,20 +2134,23 @@ void AudioServiceClient::GetOffloadCurrentTimeStamp(uint64_t& timeStamp, bool be
     uint64_t frames;
     int64_t timeSec, timeNanoSec;
     audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
+    int64_t framesInt = static_cast<int64_t>(frames);
+    int64_t timeStampInt = static_cast<int64_t>(timeStamp);
     if (!beforeLocked && (
-        (int64_t)frames + offloadTsOffset_ <
-        (int64_t)timeStamp - (OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BIG_BUFFER) * AUDIO_US_PER_MS ||
-        (int64_t)frames + offloadTsOffset_ > (int64_t)timeStamp)) {
-        offloadTsOffset_ = (int64_t)timeStamp - (int64_t)frames;
+        framesInt + offloadTsOffset_ <
+        timeStampInt - static_cast<int64_t>(OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BUFFER) *
+                       static_cast<int64_t>(AUDIO_US_PER_MS) ||
+        framesInt + offloadTsOffset_ > timeStampInt || first)) {
+        offloadTsOffset_ = timeStampInt - framesInt;
     }
-    timeStamp = (uint64_t)((int64_t)frames + offloadTsOffset_);
+    timeStamp = static_cast<uint64_t>(framesInt + offloadTsOffset_);
 }
 
 int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
-    if (offloadWaitWriteableMutex_.try_lock_for(chrono::milliseconds(OFFLOAD_BIG_BUFFER))) {
+    if (offloadWaitWriteableMutex_.try_lock_for(chrono::milliseconds(OFFLOAD_HDI_CACHE1))) {
         lock_guard<timed_mutex> lockoffload(offloadWaitWriteableMutex_, adopt_lock);
-    } else if (offloadEnable_ && eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
+    } else if (offloadEnable_ && eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && offloadTsLast_ != 0) {
         GetOffloadCurrentTimeStamp(timeStamp, true);
         return AUDIO_CLIENT_SUCCESS;
     }
@@ -2179,6 +2202,39 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::GetAudioLatencyOffload(uint64_t &latency)
+{
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        return AUDIO_CLIENT_PA_ERR;
+    }
+    pa_threaded_mainloop_lock(mainLoop);
+
+    pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
+    if (operation != nullptr) {
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mainLoop);
+        }
+        pa_operation_unref(operation);
+    } else {
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+    }
+
+    const pa_timing_info *info = pa_stream_get_timing_info(paStream);
+    if (info == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_get_timing_info failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    uint64_t timeStampPa = pa_bytes_to_usec(info->write_index, &sampleSpec);
+    uint64_t timeStampHdi = timeStampPa;
+    GetOffloadCurrentTimeStamp(timeStampHdi, false);
+    latency = timeStampPa > timeStampHdi ? timeStampPa - timeStampHdi : 0;
+
+    pa_threaded_mainloop_unlock(mainLoop);
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 {
     lock_guard<mutex> lock(dataMutex_);
@@ -2188,32 +2244,34 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
     pa_usec_t cacheLatency {0};
 
     // Get PA latency
-    if (offloadEnable_) {
-        int64_t frames, timeSec, timeNanoSec;
-        audioSystemManager_->OffloadGetPresentationPosition((uint64_t&)frames, timeSec, timeNanoSec);
-        uint64_t writePos = pa_bytes_to_usec(mTotalBytesWritten, &sampleSpec);
-        paLatency_ = writePos >= frames ? writePos - frames : 0;
+    pa_threaded_mainloop_lock(mainLoop);
+    pa_operation *operation = pa_stream_update_timing_info(
+        paStream, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
+    if (operation != nullptr) {
+        pa_operation_unref(operation);
     } else {
-        pa_threaded_mainloop_lock(mainLoop);
-        pa_operation *operation = pa_stream_update_timing_info(
-            paStream, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
-        if (operation != nullptr) {
-            pa_operation_unref(operation);
-        } else {
-            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-        }
-        AUDIO_INFO_LOG("waiting for audio latency information");
-        pa_threaded_mainloop_wait(mainLoop);
-        pa_threaded_mainloop_unlock(mainLoop);
-        if (isGetLatencySuccess_ == false) {
-            AUDIO_ERR_LOG("Get audio latency failed");
-            return AUDIO_CLIENT_ERR;
-        }
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+    }
+    AUDIO_INFO_LOG("waiting for audio latency information");
+    pa_threaded_mainloop_wait(mainLoop);
+    pa_threaded_mainloop_unlock(mainLoop);
+    if (isGetLatencySuccess_ == false) {
+        AUDIO_ERR_LOG("Get audio latency failed");
+        return AUDIO_CLIENT_ERR;
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         // Get audio write cache latency
         cacheLatency = pa_bytes_to_usec((acache_.totalCacheSize - acache_.writeIndex), &sampleSpec);
+
+        if (offloadEnable_) {
+            uint64_t offloadLatency;
+            int32_t ret = GetAudioLatencyOffload(offloadLatency);
+            if (ret) {
+                return ret;
+            }
+            paLatency_ += offloadLatency;
+        }
 
         // Total latency will be sum of audio write cache latency + PA latency
         uint64_t fwLatency = paLatency_ + cacheLatency;
@@ -2384,12 +2442,18 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     }
 
     pa_threaded_mainloop_lock(mainLoop);
+    int32_t ret = SetStreamVolumeInML(volume);
+    pa_threaded_mainloop_unlock(mainLoop);
 
+    return ret;
+}
+
+int32_t AudioServiceClient::SetStreamVolumeInML(float volume)
+{
     volumeFactor_ = volume;
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed");
-        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
 
@@ -2399,7 +2463,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     if (updatePropOperation == nullptr) {
         AUDIO_ERR_LOG("pa_stream_proplist_update returned null");
         pa_proplist_free(propList);
-        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
 
@@ -2408,7 +2471,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
 
     if (audioSystemManager_ == nullptr) {
         AUDIO_ERR_LOG("System manager instance is null");
-        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
 
@@ -2418,7 +2480,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
             reinterpret_cast<void *>(this));
         if (operation == nullptr) {
             AUDIO_ERR_LOG("pa_context_get_sink_input_info_list returned null");
-            pa_threaded_mainloop_unlock(mainLoop);
             return AUDIO_CLIENT_ERR;
         }
 
@@ -2430,8 +2491,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     } else {
         SetPaVolume(*this);
     }
-
-    pa_threaded_mainloop_unlock(mainLoop);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -2578,21 +2637,21 @@ int32_t AudioServiceClient::InitializebufferAttrOffload()
 
     // perbuf tlength maxlength minreq should same to hdi_sink.c
     bufferAttrOffloadActiveForeground.fragsize = static_cast<uint32_t>(-1);
-    bufferAttrOffloadActiveForeground.prebuf = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
-    // 4 for reservation factor
-    bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(OFFLOAD_SMALL_BUFFER * 4, sampleSpec);
-    bufferAttrOffloadActiveForeground.maxlength = MsToAlignedSize(OFFLOAD_SMALL_BUFFER * MAX_LENGTH_FACTOR, sampleSpec);
-    bufferAttrOffloadActiveForeground.minreq = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
+    bufferAttrOffloadActiveForeground.prebuf = MsToAlignedSize(0, sampleSpec);
+    bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(
+        OFFLOAD_BUFFER * 2 + 20 * 2, sampleSpec); // 2 for reservation factor, 20ms * 2 for max_req
+    bufferAttrOffloadActiveForeground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
+    bufferAttrOffloadActiveForeground.minreq = MsToAlignedSize(OFFLOAD_BUFFER, sampleSpec);
 
     bufferAttrOffloadActiveBackground = bufferAttrOffloadActiveForeground;
 
     bufferAttrOffloadInactiveBackground.fragsize = static_cast<uint32_t>(-1);
-    bufferAttrOffloadInactiveBackground.prebuf = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
+    bufferAttrOffloadInactiveBackground.prebuf = MsToAlignedSize(0, sampleSpec);
     // +20 for requested_latency, otherwise requested_latency will set to 500us, that may cause problem
     bufferAttrOffloadInactiveBackground.tlength = MsToAlignedSize(
-        OFFLOAD_BIG_BUFFER * 3 + OFFLOAD_SMALL_BUFFER, sampleSpec); // 3 for reservation factor
+        OFFLOAD_BUFFER * 3, sampleSpec); // 3 for reservation factor
     bufferAttrOffloadInactiveBackground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
-    bufferAttrOffloadInactiveBackground.minreq = MsToAlignedSize(OFFLOAD_BIG_BUFFER, sampleSpec);
+    bufferAttrOffloadInactiveBackground.minreq = MsToAlignedSize(OFFLOAD_BUFFER, sampleSpec);
 
     if (bufferAttrStateMap_.count(OFFLOAD_ACTIVE_FOREGROUND)) {
         bufferAttrStateMap_[OFFLOAD_ACTIVE_FOREGROUND] = bufferAttrOffloadActiveForeground;
@@ -2665,8 +2724,7 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
         return AUDIO_CLIENT_ERR;
     }
 
-    AUDIO_INFO_LOG("calling set stream "
-                   "offloadMode PowerState: %{public}d, isAppBack: %{public}d", state, isAppBack);
+    AUDIO_INFO_LOG("calling set stream offloadMode PowerState: %{public}d, isAppBack: %{public}d", state, isAppBack);
 
     if (offloadNextStateTargetPolicy_ == statePolicy) {
         return AUDIO_CLIENT_SUCCESS;
@@ -2740,28 +2798,6 @@ void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_i
 
     SetPaVolume(*thiz);
 
-    return;
-}
-
-void AudioServiceClient::GetSinkInputInfoOffloadCb(pa_context* context, const pa_sink_input_info* info, int eol,
-    void* userdata)
-{
-    AudioServiceClient* thiz = reinterpret_cast<AudioServiceClient*>(userdata);
-
-    if (eol < 0) {
-        AUDIO_ERR_LOG("Failed to get sink input information: %{public}s", pa_strerror(pa_context_errno(context)));
-        return;
-    }
-
-    if (eol) {
-        pa_threaded_mainloop_signal(thiz->mainLoop, 1);
-        return;
-    }
-
-    if (info->proplist == nullptr) {
-        AUDIO_ERR_LOG("Invalid prop list for sink input (%{public}d).", info->index);
-        return;
-    }
     return;
 }
 
@@ -3601,6 +3637,17 @@ void AudioServiceClient::OnSpatializationStateChange(const AudioSpatializationSt
     pa_operation_unref(updatePropOperation);
 
     pa_threaded_mainloop_unlock(mainLoop);
+}
+
+int32_t AudioServiceClient::SetStreamSpeed(float speed)
+{
+    speed_ = speed;
+    return SUCCESS;
+}
+
+float AudioServiceClient::GetStreamSpeed()
+{
+    return speed_;
 }
 
 AudioSpatializationStateChangeCallbackImpl::AudioSpatializationStateChangeCallbackImpl()

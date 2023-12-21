@@ -783,7 +783,7 @@ napi_value NapiAudioVolumeGroupManager::AdjustSystemVolumeByStep(napi_env env, n
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INPUT_INVALID);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentVolType(context->volType) ||
+        NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentVolType(context->volType) &&
             context->volType != NapiAudioEnum::ALL, "volType invaild", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->adjustType, argv[PARAM1]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get adjustType failed",
@@ -889,14 +889,14 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDbSync(napi_env env, na
         napi_typeof(env, args[i], &valueType);
         CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
             "invalid valueType");
-        NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-        CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), ThrowErrorAndReturn(env,
-            NAPI_ERR_INVALID_PARAM), "get volType failed");
-        NapiParamUtils::GetValueInt32(env, volLevel, args[PARAM1]);
-        NapiParamUtils::GetValueInt32(env, deviceType, args[PARAM2]);
-        CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentDeviceType(deviceType), ThrowErrorAndReturn(env,
-            NAPI_ERR_INVALID_PARAM), "get deviceType failed");
     }
+    NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM), "get volType failed");
+    NapiParamUtils::GetValueInt32(env, volLevel, args[PARAM1]);
+    NapiParamUtils::GetValueInt32(env, deviceType, args[PARAM2]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentDeviceType(deviceType), ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM), "get deviceType failed");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,

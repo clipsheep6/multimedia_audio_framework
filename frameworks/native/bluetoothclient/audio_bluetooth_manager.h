@@ -105,6 +105,9 @@ public:
     static int32_t DisconnectSco();
     static int8_t GetScoCategoryFromScene(AudioStandard::AudioScene scene);
     static void DisconnectBluetoothHfpSink();
+    static void UpdateCurrentActiveHfpDevice(BluetoothRemoteDevice &device);
+    static std::string GetCurrentActiveHfpDevice();
+    static void UpdateAudioScene(AudioStandard::AudioScene scene);
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;

@@ -31,12 +31,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-enum ConnectState {
-    CONNECTED,
-    SUSPEND_CONNECTED,
-    VIRTUAL_CONNECTED,
-    DEACTIVE_CONNECTED
-};
 
 class AudioDeviceDescriptor;
 class AudioDeviceDescriptor : public Parcelable {
@@ -245,6 +239,7 @@ public:
 
 class AudioManagerAvailableDeviceChangeCallback {
 public:
+    virtual ~AudioManagerAvailableDeviceChangeCallback() = default;
     /**
      * Called when an interrupt is received.
      *
@@ -608,15 +603,6 @@ public:
      * @since 9
      */
     void SetAudioParameter(const std::string &key, const std::string &value);
-
-    /**
-     * @brief Retrieve cookie.
-     *
-     * @param size size.
-     * @return Returns char.
-     * @since 9
-     */
-    const char *RetrieveCookie(int32_t &size);
 
     /**
      * @brief Get transaction Id.

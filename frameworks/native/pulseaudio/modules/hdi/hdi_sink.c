@@ -62,6 +62,7 @@
 #define MAX_REWIND (7000 * PA_USEC_PER_MSEC)
 #define USEC_PER_SEC 1000000
 #define DEFAULT_IN_CHANNEL_NUM 2
+#define PRIMARY_CHANNEL_NUM 2
 #define IN_CHANNEL_NUM_MAX 16
 #define OUT_CHANNEL_NUM_MAX 2
 #define DEFAULT_FRAMELEN 2048
@@ -69,16 +70,19 @@
 #define HDI_MIN_MS_MAINTAIN 30
 #define OFFLOAD_HDI_CACHE1 200 // ms, should equal with val in audio_service_client.cpp
 #define OFFLOAD_HDI_CACHE2 7000 // ms, should equal with val in audio_service_client.cpp
-#define OFFLOAD_HDI_CACHE1_PLUS (OFFLOAD_HDI_CACHE1 + 20 + 5)   // ms, add 1 frame and 5ms to make sure get full
-#define OFFLOAD_HDI_CACHE2_PLUS (OFFLOAD_HDI_CACHE2 + 100 + 5) // ms, add 1 frame and 5ms to make sure get full
+#define OFFLOAD_FRAME_SIZE 50
+#define OFFLOAD_HDI_CACHE1_PLUS (OFFLOAD_HDI_CACHE1 + OFFLOAD_FRAME_SIZE + 5)   // ms, add 1 frame and 5ms
+#define OFFLOAD_HDI_CACHE2_PLUS (OFFLOAD_HDI_CACHE2 + OFFLOAD_FRAME_SIZE + 5)   // to make sure get full
 #define SPRINTF_STR_LEN 100
+#define DEFAULT_MULTICHANNEL_LAYOUT 6
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
+const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 
-enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_HD };
+enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
 enum {
     HDI_INIT,
@@ -116,6 +120,7 @@ struct Userdata {
     uint32_t render_in_idle_state;
     uint32_t open_mic_speaker;
     bool offload_enable;
+    bool multichannel_enable;
     const char *deviceNetworkId;
     int32_t deviceType;
     size_t bytes_dropped;
@@ -140,6 +145,7 @@ struct Userdata {
     char *sinkSceneMode;
     bool spatialEnabled;
     pthread_mutex_t mutexPa;
+    pthread_mutex_t mutexPa2;
     pthread_rwlock_t rwlockSleep;
     int64_t timestampSleep;
     struct {
@@ -173,6 +179,25 @@ struct Userdata {
         pa_usec_t writeTime;
         pa_usec_t prewrite;
     } primary;
+    struct {
+        bool used;
+        pa_usec_t timestamp;
+        pa_thread *thread;
+        pa_thread *thread_hdi;
+        pa_fdsem *fdsem;
+        pa_rtpoll_item *rtpollItem;
+        pa_rtpoll *rtpoll;
+        bool isHDISinkStarted;
+        struct RendererSinkAdapter *sinkAdapter;
+        pa_asyncmsgq *msgq;
+        pa_asyncmsgq *dq;
+        pa_atomic_t dflag;
+        pa_usec_t writeTime;
+        pa_usec_t prewrite;
+        pa_atomic_t hdistate;
+        pa_memchunk chunk;
+        SinkAttr sample_attrs;
+    } multiChannel;
 };
 
 static void UserdataFree(struct Userdata *u);
@@ -189,6 +214,7 @@ static bool InputIsPrimary(pa_sink_input *i);
 static void GetSinkInputName(pa_sink_input *i, char *str, int len);
 static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr);
 static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i);
+static void StopPrimaryHdiIfNoRunning(struct Userdata* u);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -372,6 +398,11 @@ static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk 
     return count;
 }
 
+static enum AudioOffloadType GetInputPolicyState(pa_sink_input *i)
+{
+    return atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
+}
+
 static int32_t RenderWriteOffload(struct Userdata* u, pa_sink_input* i, pa_memchunk* pchunk)
 {
     size_t index, length;
@@ -405,8 +436,8 @@ static int32_t RenderWriteOffload(struct Userdata* u, pa_sink_input* i, pa_memch
         float left, right;
         u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
         u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
-        const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
-        const uint32_t bufSize = (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
+        const uint32_t bufSize = (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND ?
+                                  OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
         u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, bufSize);
     }
     if (ret == 0 && writeLen == 0) { // is full
@@ -823,6 +854,51 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsign
     }
 }
 
+static void SinkRenderMultiChannelInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
+{
+    AUDIO_DEBUG_LOG("mch inputs drop start");
+    unsigned nUnreffed = 0;
+
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(chunkIn);
+    pa_assert(chunkIn->memblock);
+    pa_assert(chunkIn->length > 0);
+
+    /* We optimize for the case where the order of the inputs has not changed */
+    pa_mix_info *infoCur = NULL;
+    for (uint32_t k = 0; k < n; k++) {
+        pa_sink_input *sceneSinkInput = infoIn[k].userdata;
+        pa_sink_input_assert_ref(sceneSinkInput);
+
+        /* Drop read data */
+        pa_sink_input_drop(sceneSinkInput, chunkIn->length);
+        infoCur = infoIn + k;
+        if (infoCur) {
+            if (infoCur->chunk.memblock) {
+                pa_memblock_unref(infoCur->chunk.memblock);
+                pa_memchunk_reset(&infoCur->chunk);
+            }
+
+            pa_sink_input_unref(infoCur->userdata);
+            infoCur->userdata = NULL;
+
+            nUnreffed += 1;
+        }
+    }
+    /* Now drop references to entries that are included in the
+     * pa_mix_info array but don't exist anymore */
+
+    if (nUnreffed < n) {
+        for (; n > 0; infoIn++, n--) {
+            if (infoIn->userdata)
+                pa_sink_input_unref(infoIn->userdata);
+            if (infoIn->chunk.memblock)
+                pa_memblock_unref(infoIn->chunk.memblock);
+        }
+    }
+}
+
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
     unsigned maxInfo, char *sceneType)
 {
@@ -836,12 +912,17 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
+    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
     bool isCaptureSilently = IsCaptureSilently();
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
+        int32_t sinkChannels = sinkIn->sample_spec.channels;
+        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
+            continue;
+        }
         if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
             continue;
         } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
@@ -873,6 +954,59 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     }
 
     EndCTrace(trace);
+    return n;
+}
+
+
+static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
+    unsigned maxInfo)
+{
+    pa_sink_input *sinkIn;
+    unsigned n = 0;
+    void *state = NULL;
+    size_t mixlength = *length;
+
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(infoIn);
+
+    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
+    if (!a2dpFlag) {
+        return 0;
+    }
+
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
+        int32_t sinkChannels = sinkIn->sample_spec.channels;
+        const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
+        const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
+        const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
+        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
+        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
+            pa_sink_input_assert_ref(sinkIn);
+            pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
+
+            if (mixlength == 0 || infoIn->chunk.length < mixlength)
+                mixlength = infoIn->chunk.length;
+
+            if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
+                pa_memblock_unref(infoIn->chunk.memblock);
+                continue;
+            }
+
+            infoIn->userdata = pa_sink_input_ref(sinkIn);
+            pa_assert(infoIn->chunk.memblock);
+            pa_assert(infoIn->chunk.length > 0);
+
+            infoIn++;
+            n++;
+            maxInfo--;
+        }
+    }
+
+    if (mixlength > 0) {
+        *length = mixlength;
+    }
+
     return n;
 }
 
@@ -914,6 +1048,46 @@ int32_t SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, char *sceneType
     SinkRenderPrimaryInputsDrop(si, info, n, chunkIn);
     pa_sink_unref(si);
     EndCTrace(trace);
+    return n;
+}
+
+int32_t SinkRenderMultiChannelPeek(pa_sink *si, pa_memchunk *chunkIn)
+{
+    pa_mix_info info[MAX_MIX_CHANNELS];
+    unsigned n;
+    size_t length, blockSizeMax;
+
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
+    pa_assert(chunkIn);
+    pa_assert(chunkIn->memblock);
+    pa_assert(chunkIn->length > 0);
+    pa_assert(pa_frame_aligned(chunkIn->length, &si->sample_spec));
+
+    pa_assert(!si->thread_info.rewind_requested);
+    pa_assert(si->thread_info.rewind_nbytes == 0);
+
+    if (si->thread_info.state == PA_SINK_SUSPENDED) {
+        pa_silence_memchunk(chunkIn, &si->sample_spec);
+        return 0;
+    }
+
+    pa_sink_ref(si);
+
+    length = chunkIn->length;
+    blockSizeMax = pa_mempool_block_size_max(si->core->mempool);
+    if (length > blockSizeMax)
+        length = pa_frame_align(blockSizeMax, &si->sample_spec);
+
+    pa_assert(length > 0);
+
+    n = SinkRenderMultiChannelCluster(si, &length, info, MAX_MIX_CHANNELS);
+    SinkRenderPrimaryMix(si, length, info, n, chunkIn);
+
+    SinkRenderMultiChannelInputsDrop(si, info, n, chunkIn);
+    pa_sink_unref(si);
+
     return n;
 }
 
@@ -960,6 +1134,48 @@ int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneT
     return nSinkInput;
 }
 
+int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
+{
+    pa_memchunk chunk;
+    size_t l, d;
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
+    pa_assert(chunkIn);
+    pa_assert(chunkIn->memblock);
+    pa_assert(chunkIn->length > 0);
+    pa_assert(pa_frame_aligned(chunkIn->length, &si->sample_spec));
+
+    pa_assert(!si->thread_info.rewind_requested);
+    pa_assert(si->thread_info.rewind_nbytes == 0);
+
+    if (si->thread_info.state == PA_SINK_SUSPENDED) {
+        pa_silence_memchunk(chunkIn, &si->sample_spec);
+        return 0;
+    }
+
+    pa_sink_ref(si);
+
+    l = chunkIn->length;
+    d = 0;
+
+    int32_t nSinkInput = 0;
+    while (l > 0) {
+        chunk = *chunkIn;
+        chunk.index += d;
+        chunk.length -= d;
+
+        nSinkInput = SinkRenderMultiChannelPeek(si, &chunk);
+
+        d += chunk.length;
+        l -= chunk.length;
+    }
+
+    pa_sink_unref(si);
+
+    return nSinkInput;
+}
+
 static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenRef)
 {
     char *sceneTypeSet[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
@@ -970,12 +1186,17 @@ static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenR
     pa_sink_input *sinkIn;
     void *state = NULL;
     unsigned maxInfo = MAX_MIX_CHANNELS;
+    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         const uint8_t sinkChannels = sinkIn->sample_spec.channels;
         const char *sinkChannelLayout = pa_proplist_gets(sinkIn->proplist, "stream.channelLayout");
         const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
+        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
+        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
+            continue;
+        }
         if (NeedPARemap(sinkSceneType, sinkSceneMode, sinkChannels, sinkChannelLayout, sinkSpatializationEnabled)
             && sinkIn->thread_info.resampler) {
             sinkIn->thread_info.resampler->map_required = true;
@@ -1119,12 +1340,28 @@ static bool InputIsOffload(pa_sink_input *i)
     return offloadEnable;
 }
 
+static bool InputIsMultiChannel(pa_sink_input *i)
+{
+    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
+    if (a2dpFlag) {
+        int32_t sinkChannels = i->sample_spec.channels;
+        const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
+        const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
+        const char *sinkSpatializationEnabled = pa_proplist_gets(i->proplist, "spatialization.enabled");
+        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
+        if (!existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static bool InputIsPrimary(pa_sink_input *i)
 {
     const bool isOffload = InputIsOffload(i);
-    const bool isHD = false; // add func is hd
+    const bool isMultiChannel = InputIsMultiChannel(i); // add func is hd
     const bool isRunning = i->thread_info.state == PA_SINK_INPUT_RUNNING;
-    return !isOffload && !isHD && isRunning;
+    return !isOffload && !isMultiChannel && isRunning;
 }
 
 static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink* s, pa_mix_info* info, unsigned maxinfo)
@@ -1154,7 +1391,7 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink* s, pa
             case HDI_INPUT_TYPE_OFFLOAD:
                 flag = isOffload;
                 break;
-            case HDI_INPUT_TYPE_HD:
+            case HDI_INPUT_TYPE_MULTICHANNEL:
                 flag = isHD;
                 break;
             default:
@@ -1173,13 +1410,20 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink* s, pa
     return n;
 }
 
-static int32_t GetInputsType(pa_sink* s, unsigned* nPrimary, unsigned* nOffload, unsigned* nHd, bool isRunning)
+static int32_t GetInputsType(pa_sink* s, unsigned* nPrimary, unsigned* nOffload,
+    unsigned* nMultiChannel, bool isRunning)
 {
+    int ret;
+    struct Userdata *u;
+    pa_assert_se(u = s->userdata);
+    if ((ret = pthread_mutex_lock(&u->mutexPa2)) != 0) {
+        AUDIO_WARNING_LOG("GetInputsType pthread_mutex_lock ret %d", ret);
+    }
     pa_sink_input *i;
     void *state = NULL;
     *nPrimary = 0;
     *nOffload = 0;
-    *nHd = 0;
+    *nMultiChannel = 0;
     int n = 0;
 
     pa_sink_assert_ref(s);
@@ -1193,11 +1437,14 @@ static int32_t GetInputsType(pa_sink* s, unsigned* nPrimary, unsigned* nOffload,
         n++;
         if (InputIsOffload(i)) {
             (*nOffload)++;
-        } else if (false) { // add func is hd
-            (*nHd)++;
+        } else if (InputIsMultiChannel(i)) { // add func is hd
+            (*nMultiChannel)++;
         } else {
             (*nPrimary)++;
         }
+    }
+    if ((ret = pthread_mutex_unlock(&u->mutexPa2)) != 0) {
+        AUDIO_WARNING_LOG("GetInputsType pthread_mutex_unlock ret %d", ret);
     }
     return n;
 }
@@ -1209,17 +1456,12 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     const bool b = (bool)ps->sink_input->thread_info.resampler;
     const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
     const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
-    const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
+    const int statePolicy = GetInputPolicyState(i);
     u->offload.prewrite = (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ?
                            OFFLOAD_HDI_CACHE2_PLUS : OFFLOAD_HDI_CACHE1_PLUS) * PA_USEC_PER_MSEC;
-    const size_t blockSizeMax = pa_frame_align(pa_mempool_block_size_max(u->sink->core->mempool), &sampleSpecOut);
-    // 100ms 50ms 20ms for frame size
-    size_t size100 = pa_frame_align(pa_usec_to_bytes(100 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 100
-    size_t size50 = pa_frame_align(pa_usec_to_bytes(50 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 50
-    const size_t sizeFirst = size50;
-    size_t sizeMin = pa_frame_align(pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut);  // 20
-    size_t sizeTgt = PA_MIN(blockSizeMax, u->offload.firstWrite ? sizeFirst :
-        (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ? size100 : sizeMin));
+    size_t sizeFrame = pa_frame_align(pa_usec_to_bytes(OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC, &sampleSpecOut),
+        &sampleSpecOut);
+    size_t sizeTgt = sizeFrame;
     const size_t bql = pa_memblockq_get_length(ps->memblockq);
     const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
     const size_t bqlRend = pa_memblockq_get_length(i->thread_info.render_memblockq);
@@ -1231,7 +1473,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
         }
         const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
         *wait = u->offload.pos > hdiPos + HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC ? true : false;
-        length = u->offload.pos > hdiPos + HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC ? 0 : sizeMin;
+        length = u->offload.pos > hdiPos + HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC ? 0 : sizeFrame;
     } else {
         bool waitable = false;
         const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
@@ -1246,7 +1488,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
             length = 0;
         } else if (length < sizeTgt) {
             *wait = waitable || length == 0;
-            length = waitable ? 0 : (length == 0 ? sizeMin : length);
+            length = waitable ? 0 : (length == 0 ? sizeFrame : length);
             if (ps->memblockq->missing > 0) {
                 playback_stream_request_bytes(ps);
             } else if (ps->memblockq->missing < 0 && ps->memblockq->requested > (int64_t)ps->memblockq->minreq) {
@@ -1416,13 +1658,13 @@ int32_t RenderWriteOffloadFunc(struct Userdata* u, size_t length, pa_mix_info* i
     chunk->length = length;
     int64_t l, d;
     l = chunk->length;
-    size_t blockSizeMax = pa_mempool_block_size_max(u->sink->core->mempool);
+    size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
     d = 0;
     while (l > 0) {
         pa_memchunk tchunk;
         tchunk = *chunk;
         tchunk.index += d;
-        tchunk.length = PA_MIN(length, blockSizeMax - tchunk.index);
+        tchunk.length = PA_MIN(length, blockSize - tchunk.index);
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
         d += tchunk.length;
@@ -1439,8 +1681,7 @@ int32_t RenderWriteOffloadFunc(struct Userdata* u, size_t length, pa_mix_info* i
         if (hdistate == 0) {
             pa_atomic_store(&u->offload.hdistate, 1);
         }
-        const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
-        if (statePolicy == OFFLOAD_INACTIVE_BACKGROUND) {
+        if (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND) {
             u->offload.fullTs = pa_rtclock_now();
         }
         pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
@@ -1528,16 +1769,19 @@ static void OffloadRewindAndFlush(struct Userdata* u, pa_sink_input* i, bool aft
             bufSizeInInput += pa_usec_to_bytes(pa_bytes_to_usec(
                 pa_memblockq_get_length(i->thread_info.render_memblockq), &i->sink->sample_spec), &sampleSpecIn);
             uint64_t rewindSize = afterRender ? bufSizeInRender : bufSizeInInput;
-
-            if (afterRender && rewindSize <= i->thread_info.render_memblockq->maxrewind) {
-                pa_memblockq_rewind(i->thread_info.render_memblockq, rewindSize);
-            } else if (!afterRender && rewindSize <= ps->memblockq->maxrewind) {
-                pa_memblockq_rewind(ps->memblockq, rewindSize);
-                pa_memblockq_flush_read(i->thread_info.render_memblockq);
-            } else {
+            uint64_t maxRewind = afterRender ? i->thread_info.render_memblockq->maxrewind : ps->memblockq->maxrewind;
+            if (rewindSize > maxRewind) {
                 AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%u), afterRender(%d)",
                     rewindSize, (uint32_t)(afterRender ? i->thread_info.render_memblockq->maxrewind :
-                    ps->memblockq->maxrewind), afterRender);
+                                           ps->memblockq->maxrewind), afterRender);
+                rewindSize = maxRewind;
+            }
+
+            if (afterRender) {
+                pa_memblockq_rewind(i->thread_info.render_memblockq, rewindSize);
+            } else {
+                pa_memblockq_rewind(ps->memblockq, rewindSize);
+                pa_memblockq_flush_read(i->thread_info.render_memblockq);
             }
         }
     }
@@ -1586,9 +1830,35 @@ static void OffloadUnlock(struct Userdata *u)
     }
 }
 
+static void offloadSetMaxRewind(struct Userdata* u, pa_sink_input* i)
+{
+    pa_sink_input_assert_ref(i);
+    pa_sink_input_assert_io_context(i);
+    pa_assert(PA_SINK_INPUT_IS_LINKED(i->thread_info.state));
+
+    pa_memblockq_set_maxrewind(i->thread_info.render_memblockq, OFFLOAD_FRAME_SIZE);
+
+    size_t nbytes = pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
+
+    if (i->update_max_rewind) {
+        i->update_max_rewind(i, i->thread_info.resampler ?
+                                pa_resampler_request(i->thread_info.resampler, nbytes) : nbytes);
+    }
+}
+
 static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
 {
-    pa_sink_input_update_max_rewind(i, pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec));
+    offloadSetMaxRewind(u, i);
+    pa_sink_input *it;
+    void *state = NULL;
+    while ((it = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
+        if (it != i && pa_memblockq_get_maxrewind(it->thread_info.render_memblockq) != 0) {
+            pa_sink_input_update_max_rewind(it, 0);
+            drop_backlog(it->thread_info.render_memblockq);
+            playback_stream* ps = it->userdata;
+            drop_backlog(ps->memblockq);
+        }
+    }
     int32_t sessionID = getSinkInputSessionID(i);
     if (u->offload.isHDISinkStarted) {
         if (sessionID != u->offload.sessionID) {
@@ -1608,6 +1878,7 @@ static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
             u->offload.sessionID = sessionID;
         }
     }
+    StopPrimaryHdiIfNoRunning(u);
 }
 
 static void PaInputStateChangeCbOffload(struct Userdata* u, pa_sink_input* i, pa_sink_input_state_t state)
@@ -1620,9 +1891,8 @@ static void PaInputStateChangeCbOffload(struct Userdata* u, pa_sink_input* i, pa
         OffloadReset(u);
         StartOffloadHdi(u, i);
     } else if (corking) {
-        // will remove this log
         pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
-        OffloadRewindAndFlush(u, i, true);
+        OffloadRewindAndFlush(u, i, false);
         OffloadUnlock(u);
     } else if (stopping) {
         if (u->offload.isHDISinkStarted) {
@@ -1645,8 +1915,8 @@ static void PaInputStateChangeCbPrimary(struct Userdata* u, pa_sink_input* i, pa
         if (u->primary.isHDISinkStarted) {
             return;
         }
-        AUDIO_INFO_LOG("PaInputStateChangeCb, Restart with rate:%{public}d,channels:%{public}d",
-            u->ss.rate, u->ss.channels);
+        AUDIO_INFO_LOG("PaInputStateChangeCb, Restart with rate:%{public}d,channels:%{public}d, format:%{public}d",
+            u->ss.rate, u->ss.channels, (int)pa_sample_size_of_format(u->format));
         if (u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter)) {
             AUDIO_ERR_LOG("PaInputStateChangeCb, audiorenderer control start failed!");
             u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
@@ -1657,24 +1927,98 @@ static void PaInputStateChangeCbPrimary(struct Userdata* u, pa_sink_input* i, pa
             AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
         }
     } else if (stopping) {
-        unsigned nPrimary, nOffload, nHd;
-        GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-        if (nPrimary > 0) {
+        StopPrimaryHdiIfNoRunning(u);
+    }
+}
+
+static void StopPrimaryHdiIfNoRunning(struct Userdata *u)
+{
+    if (!u->primary.isHDISinkStarted) {
+        return;
+    }
+
+    unsigned nPrimary, nOffload, nHd;
+    GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+    if (nPrimary > 0) {
+        return;
+    }
+
+    // Continuously dropping data clear counter on entering suspended state.
+    if (u->bytes_dropped != 0) {
+        AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, HDI-sink continuously dropping data - clear statistics "
+                       "(%zu -> 0 bytes dropped)", u->bytes_dropped);
+        u->bytes_dropped = 0;
+    }
+
+    u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
+    AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, Stopped HDI renderer");
+    u->primary.isHDISinkStarted = false;
+}
+
+static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *i, pa_sink_input_state_t state)
+{
+    const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
+    const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
+    const bool stopping = state == PA_SINK_INPUT_UNLINKED;
+    int ret;
+    if (starting) {
+        u->multiChannel.timestamp = pa_rtclock_now();
+        if (u->multiChannel.isHDISinkStarted) {
             return;
         }
+        
+        int32_t sinkChannels = i->sample_spec.channels;
+        u->multiChannel.sample_attrs.adapterName = "primary";
+        u->multiChannel.sample_attrs.channel = sinkChannels;
+
+        ret = u->multiChannel.sinkAdapter->RendererSinkInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("PaInputStateChangeCbMultiChannel audiorenderer Init failed!");
+        }
+        if (u->multiChannel.sinkAdapter->RendererSinkStart(u->multiChannel.sinkAdapter)) {
+            AUDIO_ERR_LOG("PaInputStateChangeCbMultiChannel, audiorender control start failed!");
+            u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
+        } else {
+            u->multiChannel.isHDISinkStarted = true;
+            AUDIO_DEBUG_LOG("PaInputStateChangeCbMultiChannel, successfully restarted HDI renderer");
+        }
+    } else if (stopping) {
         // Continuously dropping data clear counter on entering suspended state.
         if (u->bytes_dropped != 0) {
-            AUDIO_INFO_LOG("PaInputStateChangeCb, HDI-sink continuously dropping data - clear statistics "
+            AUDIO_INFO_LOG("PaInputStateChangeCbMultiChannel, HDI-sink continuously dropping data - clear statistics "
                            "(%zu -> 0 bytes dropped)", u->bytes_dropped);
             u->bytes_dropped = 0;
         }
+        if (u->multiChannel.isHDISinkStarted) {
+            u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+            AUDIO_DEBUG_LOG("PaInputStateChangeCbMultiChannel, Stopped mch renderer");
+            u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
+            AUDIO_DEBUG_LOG("PaInputStateChangeCbMultiChannel, deinit mch renderer");
 
-        if (u->primary.isHDISinkStarted) {
-            u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
-            AUDIO_INFO_LOG("PaInputStateChangeCb, Stopped HDI renderer");
-            u->primary.isHDISinkStarted = false;
+            u->multiChannel.isHDISinkStarted = false;
         }
+    } else if (corking) {
+        u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+        u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
+        u->multiChannel.isHDISinkStarted = false;
     }
+
+    unsigned nPrimary, nOffload, nHd;
+    GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+    if (nPrimary > 0) {
+        return;
+    }
+
+    // Continuously dropping data clear counter on entering suspended state.
+    if (u->bytes_dropped != 0) {
+        AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, HDI-sink continuously dropping data - clear statistics "
+                       "(%zu -> 0 bytes dropped)", u->bytes_dropped);
+        u->bytes_dropped = 0;
+    }
+
+    u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
+    AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, Stopped HDI renderer");
+    u->primary.isHDISinkStarted = false;
 }
 
 static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
@@ -1707,7 +2051,9 @@ static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
 
     if (u->offload_enable && InputIsOffload(i)) {
         PaInputStateChangeCbOffload(u, i, state);
-    } else { // primary
+    } else if (u->multichannel_enable && InputIsMultiChannel(i)) {
+        PaInputStateChangeCbMultiChannel(u, i, state);
+    } else {
         PaInputStateChangeCbPrimary(u, i, state);
     }
 }
@@ -1743,7 +2089,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata* u, pa_usec_t 
     } else if (hdistate == 1) {
         blockTime = (int64_t)(pos - hdiPos - HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC);
         if (blockTime < 0) {
-            blockTime = 20 * PA_USEC_PER_MSEC; //20ms for one frame
+            blockTime = OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC; // block for one frame
         }
         u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
     }
@@ -1769,8 +2115,8 @@ static void ThreadFuncRendererTimerOffloadFlag(struct Userdata* u, pa_usec_t now
             flag = false;
             *sleepForUsec = delta;
         } else {
-            unsigned nPrimary, nOffload, nHd;
-            GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+            unsigned nPrimary, nOffload, nMultiChannel;
+            GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
             if (nOffload == 0) {
                 flag = false;
                 OffloadUnlock(u);
@@ -1865,6 +2211,182 @@ static void ThreadFuncRendererTimerOffload(void* userdata)
     }
 }
 
+static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
+{
+    uint8_t sceneTypeLenRef;
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+
+    sceneTypeLenRef = DEFAULT_IN_CHANNEL_NUM;
+    pa_sink_input *sinkIn;
+    void *state = NULL;
+    unsigned maxInfo = MAX_MIX_CHANNELS;
+    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
+    if (!a2dpFlag) {
+        return;
+    }
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
+        int32_t sinkChannels = sinkIn->sample_spec.channels;
+        const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
+        const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
+        const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
+        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
+        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
+            sceneTypeLenRef = sinkIn->sample_spec.channels;
+            sinkIn->thread_info.resampler->map_required = false;
+        }
+        maxInfo--;
+    }
+    chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
+    size_t tmpLength = length * sceneTypeLenRef / DEFAULT_IN_CHANNEL_NUM;
+    chunkIn->index = 0;
+    chunkIn->length = tmpLength;
+    SinkRenderMultiChannelGetData(si, chunkIn);
+    chunkIn->index = 0;
+    chunkIn->length = tmpLength;
+}
+
+void SinkRenderMultiChannel(pa_sink *si, size_t length, pa_memchunk *chunkIn)
+{
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
+    pa_assert(length > 0);
+    pa_assert(pa_frame_aligned(length, &si->sample_spec));
+    pa_assert(chunkIn);
+
+    pa_assert(!si->thread_info.rewind_requested);
+    pa_assert(si->thread_info.rewind_nbytes == 0);
+
+    pa_sink_ref(si);
+
+    size_t blockSizeMax;
+
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+    pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
+    pa_assert(pa_frame_aligned(length, &si->sample_spec));
+    pa_assert(chunkIn);
+
+    pa_assert(!si->thread_info.rewind_requested);
+    pa_assert(si->thread_info.rewind_nbytes == 0);
+
+    if (si->thread_info.state == PA_SINK_SUSPENDED) {
+        chunkIn->memblock = pa_memblock_ref(si->silence.memblock);
+        chunkIn->index = si->silence.index;
+        chunkIn->length = PA_MIN(si->silence.length, length);
+        return;
+    }
+
+    if (length == 0)
+        length = pa_frame_align(MIX_BUFFER_LENGTH, &si->sample_spec);
+
+    blockSizeMax = pa_mempool_block_size_max(si->core->mempool);
+    if (length > blockSizeMax)
+        length = pa_frame_align(blockSizeMax, &si->sample_spec);
+
+    pa_assert(length > 0);
+
+    SinkRenderMultiChannelProcess(si, length, chunkIn);
+
+    pa_sink_unref(si);
+}
+
+static void ProcessRenderUseTimingMultiChannel(struct Userdata *u, pa_usec_t now)
+{
+    pa_assert(u);
+
+    // Fill the buffer up the latency size
+    pa_memchunk chunk;
+
+    // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
+    SinkRenderMultiChannel(u->sink, u->sink->thread_info.max_request, &chunk);
+    pa_assert(chunk.length > 0);
+
+    pa_asyncmsgq_post(u->multiChannel.dq, NULL, HDI_RENDER, NULL, 0, &chunk, NULL);
+    u->multiChannel.timestamp += pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+}
+
+static bool ThreadFuncRendererTimerMultiChannelFlagJudge(struct Userdata *u)
+{
+    pa_assert(u);
+    bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
+        (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
+        (u->sink->state == PA_SINK_IDLE && u->sink->monitor_source &&
+        PA_SOURCE_IS_RUNNING(u->sink->monitor_source->thread_info.state));
+    pa_sink_input *i;
+    void *state = NULL;
+    int nMultiChannel = 0;
+    while ((i = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
+        pa_sink_input_assert_ref(i);
+        if (InputIsMultiChannel(i)) {
+            nMultiChannel++;
+        }
+    }
+    flag &= nMultiChannel > 0;
+    return flag;
+}
+
+static void ThreadFuncRendererTimerMultiChannel(void *userdata)
+{
+    ScheduleReportData(getpid(), gettid(), "pulseaudio"); // set audio thread priority
+
+    struct Userdata *u = userdata;
+
+    pa_assert(u);
+
+    const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+    AUDIO_INFO_LOG("Thread %s(use timing offload) starting up, pid %d, tid %d", deviceClass, getpid(), gettid());
+    pa_thread_mq_install(&u->thread_mq);
+
+    u->multiChannel.timestamp = pa_rtclock_now();
+    const uint64_t pw = u->multiChannel.prewrite;
+    int ret;
+    pthread_rwlock_rdlock(&u->rwlockSleep);
+    while (true) {
+        if ((ret = pthread_mutex_unlock(&u->mutexPa)) != 0) {
+            AUDIO_WARNING_LOG("ThreadFuncRendererTimerMultiChannel pthread_mutex_unlock ret %d", ret);
+        }
+        if (WaitMsg(deviceClass, "multichannel", u, u->multiChannel.msgq) == -1) {
+            break;
+        }
+        if ((ret = pthread_mutex_lock(&u->mutexPa)) != 0) {
+            AUDIO_WARNING_LOG("ThreadFuncRendererTimerMultiChannel pthread_mutex_lock ret %d", ret);
+        }
+
+        pa_usec_t now = 0;
+
+        int64_t sleepForUsec = -1;
+
+        bool flag = ThreadFuncRendererTimerMultiChannelFlagJudge(u);
+        if (flag) {
+            now = pa_rtclock_now();
+        }
+
+        if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
+            pa_sink_process_rewind(u->sink, 0);
+        }
+
+        if (flag) {
+            if (u->multiChannel.timestamp <= now + pw && pa_atomic_load(&u->multiChannel.dflag) == 0) {
+                pa_atomic_add(&u->multiChannel.dflag, 1);
+                ProcessRenderUseTimingMultiChannel(u, now);
+            }
+            pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+            sleepForUsec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->multiChannel.writeTime);
+            sleepForUsec = PA_MAX(sleepForUsec, 0);
+        }
+
+        if (sleepForUsec != -1) {
+            if (u->timestampSleep == -1) {
+                u->timestampSleep = pa_rtclock_now() + sleepForUsec;
+            } else {
+                u->timestampSleep = PA_MIN(u->timestampSleep, pa_rtclock_now() + sleepForUsec);
+            }
+        }
+    }
+}
+
 static void SetHdiParam(struct Userdata *userdata)
 {
     pa_sink_input *i;
@@ -1883,12 +2405,17 @@ static void SetHdiParam(struct Userdata *userdata)
         bool effectEnabled = pa_safe_streq(sinkSceneMode, "EFFECT_DEFAULT") ? true : false;
         bool spatialEnabled = spatializationEnabled && effectEnabled;
         int sessionID = atoi(sinkSessionStr);
-        if (sessionID > sessionIDMax) {
+        if (sessionID > sessionIDMax && !sinkSceneType && !sinkSceneMode && !sinkSpatialization) {
             sessionIDMax = sessionID;
             sinkSceneTypeMax = (char *)sinkSceneType;
             sinkSceneModeMax = (char *)sinkSceneMode;
             spatialEnabledMax = spatialEnabled;
         }
+    }
+
+    if (userdata == NULL || userdata->sinkSceneType == NULL || userdata->sinkSceneMode == NULL) {
+        AUDIO_ERR_LOG("SetHdiParam userdata null pointer");
+        return;
     }
 
     if (!pa_safe_streq(userdata->sinkSceneType, sinkSceneTypeMax) ||
@@ -1899,6 +2426,39 @@ static void SetHdiParam(struct Userdata *userdata)
             userdata->spatialEnabled = spatialEnabledMax;
             EffectChainManagerSetHdiParam(userdata->sinkSceneType, userdata->sinkSceneMode, userdata->spatialEnabled);
         }
+}
+
+static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUsec)
+{
+    pa_usec_t now = 0;
+
+    SetHdiParam(u);
+
+    bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
+                (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
+                (u->sink->state == PA_SINK_IDLE && monitorLinked(u->sink, true));
+    unsigned nPrimary, nOffload, nHd;
+    int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+    if (n != 0 && !monitorLinked(u->sink, true)) {
+        flag &= nPrimary > 0;
+    }
+    if (flag) {
+        now = pa_rtclock_now();
+    }
+
+    if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
+        pa_sink_process_rewind(u->sink, 0);
+    }
+
+    if (flag) {
+        if (u->primary.timestamp <= now + u->primary.prewrite && pa_atomic_load(&u->primary.dflag) == 0) {
+            pa_atomic_add(&u->primary.dflag, 1);
+            ProcessRenderUseTiming(u, now);
+        }
+        pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+        *sleepForUsec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->primary.writeTime);
+        *sleepForUsec = PA_MAX(*sleepForUsec, 0);
+    }
 }
 
 static void ThreadFuncRendererTimer(void *userdata)
@@ -1914,7 +2474,6 @@ static void ThreadFuncRendererTimer(void *userdata)
     pa_thread_mq_install(&u->thread_mq);
 
     u->primary.timestamp = pa_rtclock_now();
-    const uint64_t pw = u->primary.prewrite;
     int32_t ret;
     pthread_rwlock_rdlock(&u->rwlockSleep);
 
@@ -1929,36 +2488,9 @@ static void ThreadFuncRendererTimer(void *userdata)
             AUDIO_WARNING_LOG("ThreadFuncRendererTimer pthread_mutex_lock ret %d", ret);
         }
 
-        pa_usec_t now = 0;
-
-        SetHdiParam(u);
         int64_t sleepForUsec = -1;
 
-        bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
-            (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
-            (u->sink->state == PA_SINK_IDLE && monitorLinked(u->sink, true));
-        unsigned nPrimary, nOffload, nHd;
-        int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-        if (n != 0 && !monitorLinked(u->sink, true)) {
-            flag &= nPrimary > 0;
-        }
-        if (flag) {
-            now = pa_rtclock_now();
-        }
-
-        if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
-            pa_sink_process_rewind(u->sink, 0);
-        }
-
-        if (flag) {
-            if (u->primary.timestamp <= now + pw && pa_atomic_load(&u->primary.dflag) == 0) {
-                pa_atomic_add(&u->primary.dflag, 1);
-                ProcessRenderUseTiming(u, now);
-            }
-            pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-            sleepForUsec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->primary.writeTime);
-            sleepForUsec = PA_MAX(sleepForUsec, 0);
-        }
+        ThreadFuncRendererTimerLoop(u, &sleepForUsec);
 
         if (sleepForUsec != -1) {
             if (u->timestampSleep == -1) {
@@ -1985,7 +2517,6 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
     while (true) {
         int ret;
-
         pthread_rwlock_wrlock(&u->rwlockSleep);
 
         int64_t sleepForUsec;
@@ -2012,14 +2543,13 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         }
 
         if (ret == 0) {
-            AUDIO_INFO_LOG("Thread %s(use timing bus) shutting down, pid %d, tid %d",
-                deviceClass, getpid(), gettid());
+            AUDIO_INFO_LOG("Thread %s(use timing bus) shutting down, pid %d, tid %d", deviceClass, getpid(), gettid());
             pthread_rwlock_unlock(&u->rwlockSleep);
             break;
         }
 
-        unsigned nPrimary, nOffload, nHd;
-        int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, false);
+        unsigned nPrimary, nOffload, nMultiChannel;
+        int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, false);
 
         if (u->timestampSleep < pa_rtclock_now()) {
             u->timestampSleep = -1;
@@ -2034,7 +2564,49 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         if (u->offload_enable && nOffload > 0 && u->offload.msgq) {
             pa_asyncmsgq_send(u->offload.msgq, NULL, 0, NULL, 0, NULL);
         }
+        if (nMultiChannel > 0 && u->multiChannel.msgq) {
+            pa_asyncmsgq_send(u->multiChannel.msgq, NULL, 0, NULL, 0, NULL);
+        }
     }
+}
+
+static void ThreadFuncWriteHDIMultiChannel(void *userdata)
+{
+    AUDIO_DEBUG_LOG("ThreadFuncWriteHDIMultiChannel start");
+    // set audio thread priority
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+
+    struct Userdata *u = userdata;
+    pa_assert(u);
+
+    int32_t quit = 0;
+
+    do {
+        int32_t code = 0;
+        pa_memchunk chunk;
+
+        pa_assert_se(pa_asyncmsgq_get(u->multiChannel.dq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
+
+        switch (code) {
+            case HDI_RENDER: {
+                pa_usec_t now = pa_rtclock_now();
+                if (RenderWrite(u->multiChannel.sinkAdapter, &chunk) < 0) {
+                    u->bytes_dropped += chunk.length;
+                }
+                if (pa_atomic_load(&u->multiChannel.dflag) == 1) {
+                    pa_atomic_sub(&u->multiChannel.dflag, 1);
+                }
+                u->multiChannel.writeTime = pa_rtclock_now() - now;
+                break;
+            }
+            case QUIT:
+                quit = 1;
+                break;
+            default:
+                break;
+        }
+        pa_asyncmsgq_done(u->multiChannel.dq, 0);
+    } while (!quit);
 }
 
 static void ThreadFuncWriteHDI(void *userdata)
@@ -2057,7 +2629,9 @@ static void ThreadFuncWriteHDI(void *userdata)
             case HDI_RENDER: {
                 pa_usec_t now = pa_rtclock_now();
                 if (!u->primary.isHDISinkStarted) {
-                    AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite");
+                    const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+                    AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite, wait sink[%s] suspend", deviceClass);
+                    pa_memblock_unref(chunk.memblock);
                 } else if (RenderWrite(u->primary.sinkAdapter, &chunk) < 0) {
                     u->bytes_dropped += chunk.length;
                     AUDIO_ERR_LOG("RenderWrite failed");
@@ -2253,8 +2827,8 @@ static int32_t SinkSetStateInIoThreadCbStartPrimary(struct Userdata *u, pa_sink_
         return 0;
     }
 
-    unsigned nPrimary, nOffload, nHd;
-    GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+    unsigned nPrimary, nOffload, nMultiChannel;
+    GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
     if (u->offload_enable && nPrimary == 0) {
         return 0;
     }
@@ -2285,7 +2859,16 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
         return RemoteSinkStateChange(s, newState);
     }
 
-    if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT) {
+    if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_A2DP)) {
+        if (s->thread_info.state == PA_SINK_IDLE && newState == PA_SINK_RUNNING) {
+            u->primary.sinkAdapter->RendererSinkResume(u->primary.sinkAdapter);
+        } else if (s->thread_info.state == PA_SINK_RUNNING && newState == PA_SINK_IDLE) {
+            u->primary.sinkAdapter->RendererSinkPause(u->primary.sinkAdapter);
+        }
+    }
+
+    if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
+        newState == PA_SINK_RUNNING) {
         return SinkSetStateInIoThreadCbStartPrimary(u, newState);
     } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
         if (newState != PA_SINK_SUSPENDED) {
@@ -2317,8 +2900,7 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, st
 {
     pa_sink_input_assert_ref(i);
     if (u->offload_enable) {
-        const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) ==
-                                  pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
+        const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) != 0;
         if (maybeOffload || InputIsOffload(i)) {
             OffloadRewindAndFlush(u, i, false);
             OffloadUnlock(u);
@@ -2356,6 +2938,7 @@ static pa_hook_result_t SinkInputPutCb(pa_core* core, pa_sink_input* i, struct U
     if (u->offload_enable) {
         i->state_change = PaInputStateChangeCb;
     }
+    i->state_change = PaInputStateChangeCb;
     return PA_HOOK_OK;
 }
 
@@ -2442,7 +3025,47 @@ static int32_t PrepareDeviceOffload(struct Userdata *u, struct RendererSinkAdapt
         AUDIO_ERR_LOG("PrepareDeviceOffload audiorenderer Init failed!");
         return -1;
     }
+    
+    return 0;
+}
 
+static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSinkAdapter *sinkAdapter,
+    const char* filePath)
+{
+    int32_t ret;
+
+    enum HdiAdapterFormat format = ConvertPaToHdiAdapterFormat(u->ss.format);
+
+    u->multiChannel.sample_attrs.format = format;
+    u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
+    AUDIO_INFO_LOG("PrepareDeviceMultiChannel format: %d ,adapterName %s",
+        u->multiChannel.sample_attrs.format, GetDeviceClass(sinkAdapter->deviceClass));
+    u->multiChannel.sample_attrs.adapterName = u->adapterName;
+    u->multiChannel.sample_attrs.openMicSpeaker = u->open_mic_speaker;
+    u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
+    u->multiChannel.sample_attrs.channel = DEFAULT_MULTICHANNEL_LAYOUT;
+    u->multiChannel.sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
+    u->multiChannel.sample_attrs.filePath = filePath;
+    u->multiChannel.sample_attrs.deviceNetworkId = u->deviceNetworkId;
+    u->multiChannel.sample_attrs.deviceType =  u->deviceType;
+
+    ret = sinkAdapter->RendererSinkInit(sinkAdapter, &u->multiChannel.sample_attrs);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("PrepareDeviceMultiChannel Init failed!");
+        return -1;
+    }
+    AUDIO_DEBUG_LOG("PrepareDeviceMultiChannel init success");
+    // call start in io thread for remote device.
+    if (strcmp(GetDeviceClass(sinkAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
+        ret = sinkAdapter->RendererSinkStart(sinkAdapter);
+    }
+
+    if (ret != 0) {
+        AUDIO_ERR_LOG("PrepareDeviceMultiChannel control start failed!");
+        sinkAdapter->RendererSinkDeInit(sinkAdapter);
+        return -1;
+    }
+    AUDIO_DEBUG_LOG("PrepareDeviceMultiChannel start success");
     return 0;
 }
 
@@ -2523,20 +3146,60 @@ fail:
     return NULL;
 }
 
-int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
+int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module* m, pa_modargs* ma, struct Userdata* u)
 {
+    int ret;
     char *paThreadName = NULL;
-
-    paThreadName = "write-pa-bus";
-    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerBus, u))) {
-        AUDIO_ERR_LOG("Failed to write-pa thread.");
+    pa_atomic_store(&u->multiChannel.dflag, 0);
+    u->multiChannel.msgq = pa_asyncmsgq_new(0);
+    u->multiChannel.dq = pa_asyncmsgq_new(0);
+    ret = LoadSinkAdapter(DEVICE_CLASS_MULTICHANNEL, "LocalDevice", &u->multiChannel.sinkAdapter);
+    if (ret) {
+        AUDIO_ERR_LOG("Load mch adapter failed");
+        return -1;
+    }
+    if (PrepareDeviceMultiChannel(u, u->multiChannel.sinkAdapter, pa_modargs_get_value(ma, "file_path", "")) < 0) {
         return -1;
     }
 
-    paThreadName = "write-pa-primary";
-    if (!(u->primary.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimer, u))) {
-        AUDIO_ERR_LOG("Failed to write-pa-primary thread.");
+    u->multiChannel.used = true;
+
+    u->multiChannel.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
+
+    paThreadName = "OS_write-pa-mch";
+    if (!(u->multiChannel.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerMultiChannel, u))) {
+        AUDIO_ERR_LOG("Failed to write-pa-multiChannel thread.");
         return -1;
+    }
+    AUDIO_DEBUG_LOG("multichannel pa_thread_new success");
+
+    return 0;
+}
+
+int32_t PaHdiSinkNewInitThread(pa_module* m, pa_modargs* ma, struct Userdata* u)
+{
+    char *paThreadName = NULL;
+
+    paThreadName = "OS_WriteBus";
+    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerBus, u))) {
+        AUDIO_ERR_LOG("Failed to create bus thread.");
+        return -1;
+    }
+
+    paThreadName = "OS_WritePrimary";
+    if (!(u->primary.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimer, u))) {
+        AUDIO_ERR_LOG("Failed to create primary thread.");
+        return -1;
+    }
+
+    if (!strcmp(u->sink->name, "Speaker")) {
+        u->multichannel_enable = true;
+        PaHdiSinkNewInitThreadMultiChannel(m, ma, u);
+        
+        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
+            (pa_hook_cb_t)SinkInputPutCb, u);
+    } else {
+        u->multichannel_enable = false;
     }
 
     // offload
@@ -2554,16 +3217,15 @@ int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
 
         u->offload.msgq = pa_asyncmsgq_new(0);
         pa_atomic_store(&u->offload.hdistate, 0);
-        u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
+        u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool,
+            pa_usec_to_bytes(300 * PA_USEC_PER_MSEC, &u->sink->sample_spec)); // 300ms for max len once offload render
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_START], PA_HOOK_LATE,
             (pa_hook_cb_t)SinkInputMoveStartCb, u);
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_NORMAL,
             (pa_hook_cb_t)SinkInputStateChangedCb, u);
-        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
-            (pa_hook_cb_t)SinkInputPutCb, u);
-        paThreadName = "write-pa-offload";
+        paThreadName = "OS_WriteOffload";
         if (!(u->offload.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerOffload, u))) {
-            AUDIO_ERR_LOG("Failed to write-pa-offload thread.");
+            AUDIO_ERR_LOG("Failed to create offload thread.");
             return -1;
         }
     } else {
@@ -2582,6 +3244,7 @@ int32_t PaHdiSinkNewInitUserData(pa_module* m, pa_modargs* ma, struct Userdata *
     u->primary.msgq = pa_asyncmsgq_new(0);
     pthread_rwlock_init(&u->rwlockSleep, NULL);
     pthread_mutex_init(&u->mutexPa, NULL);
+    pthread_mutex_init(&u->mutexPa2, NULL);
 
     if (pa_thread_mq_init(&u->thread_mq, m->core->mainloop, u->rtpoll) < 0) {
         AUDIO_ERR_LOG("pa_thread_mq_init() failed.");
@@ -2680,6 +3343,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
     struct Userdata *u = NULL;
     char *hdiThreadName = NULL;
+    char *hdiThreadNameMch = NULL;
 
     pa_assert(m);
     pa_assert(ma);
@@ -2704,21 +3368,28 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     if (u->test_mode_on) {
         u->writeCount = 0;
         u->renderCount = 0;
-        hdiThreadName = "test-mode-write-hdi";
+        hdiThreadName = "OS_WriteHdiTest";
         if (!(u->primary.thread_hdi = pa_thread_new(hdiThreadName, TestModeThreadFuncWriteHDI, u))) {
             AUDIO_ERR_LOG("Failed to test-mode-write-hdi thread.");
             goto fail;
         }
     } else {
-        hdiThreadName = "write-hdi-primary";
+        hdiThreadName = "OS_WriteHdi";
         if (!(u->primary.thread_hdi = pa_thread_new(hdiThreadName, ThreadFuncWriteHDI, u))) {
             AUDIO_ERR_LOG("Failed to write-hdi-primary thread.");
             goto fail;
         }
+        if (!strcmp(u->sink->name, "Speaker")) {
+            hdiThreadNameMch = "OS_write-hdi-mch";
+            if (!(u->multiChannel.thread_hdi = pa_thread_new(hdiThreadNameMch, ThreadFuncWriteHDIMultiChannel, u))) {
+                AUDIO_ERR_LOG("Failed to write-hdi-multichannel thread.");
+                goto fail;
+            }
+        }
     }
 
     u->primary.writeTime = DEFAULT_WRITE_TIME;
-
+    u->multiChannel.writeTime = DEFAULT_WRITE_TIME;
     pa_sink_put(u->sink);
 
     return u->sink;
@@ -2745,6 +3416,28 @@ static void UserdataFreeOffload(struct Userdata *u)
     }
 }
 
+static void UserdataFreeMultiChannel(struct Userdata *u)
+{
+    AUDIO_DEBUG_LOG("UserdataFreeMultiChannel");
+    if (u->multiChannel.msgq) {
+        pa_asyncmsgq_unref(u->multiChannel.msgq);
+    }
+
+    if (u->multiChannel.dq) {
+        pa_asyncmsgq_unref(u->multiChannel.dq);
+    }
+
+    if (u->multiChannel.sinkAdapter) {
+        u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+        u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
+        UnLoadSinkAdapter(u->multiChannel.sinkAdapter);
+    }
+
+    if (u->multiChannel.chunk.memblock) {
+        pa_memblock_unref(u->multiChannel.chunk.memblock);
+    }
+}
+
 static void UserdataFreeThread(struct Userdata *u)
 {
     if (u->thread) {
@@ -2755,6 +3448,16 @@ static void UserdataFreeThread(struct Userdata *u)
     if (u->offload.thread) {
         pa_asyncmsgq_send(u->offload.msgq, NULL, QUIT, NULL, 0, NULL);
         pa_thread_free(u->offload.thread);
+    }
+
+    if (u->multiChannel.thread) {
+        pa_asyncmsgq_send(u->multiChannel.msgq, NULL, QUIT, NULL, 0, NULL);
+        pa_thread_free(u->multiChannel.thread);
+    }
+    
+    if (u->multiChannel.thread_hdi) {
+        pa_asyncmsgq_post(u->multiChannel.dq, NULL, QUIT, NULL, 0, NULL, NULL);
+        pa_thread_free(u->multiChannel.thread_hdi);
     }
 
     if (u->primary.thread) {
@@ -2806,7 +3509,7 @@ static void UserdataFree(struct Userdata *u)
     }
 
     UserdataFreeOffload(u);
-
+    UserdataFreeMultiChannel(u);
     pa_xfree(u);
     AUDIO_DEBUG_LOG("UserdataFree done");
 }

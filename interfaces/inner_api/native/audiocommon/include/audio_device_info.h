@@ -18,9 +18,12 @@
 #include <parcel.h>
 #include <audio_stream_info.h>
 #include <set>
+#include <limits>
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr size_t AUDIO_DEVICE_INFO_SIZE_LIMIT = 30;
+
 enum DeviceFlag {
     /**
      * Device flag none.
@@ -213,6 +216,14 @@ enum DeviceInfoUpdateCommand {
     CATEGORY_UPDATE = 1,
     CONNECTSTATE_UPDATE,
     ENABLE_UPDATE,
+    EXCEPTION_FLAG_UPDATE,
+};
+
+enum ConnectState {
+    CONNECTED,
+    SUSPEND_CONNECTED,
+    VIRTUAL_CONNECTED,
+    DEACTIVE_CONNECTED
 };
 
 struct DevicePrivacyInfo {
@@ -223,7 +234,7 @@ struct DevicePrivacyInfo {
     DeviceUsage deviceUsage;
 };
 
-template<typename T>bool MarshallingSetInt32(const std::set<T> &value, Parcel &parcel)
+template<typename T> bool MarshallingSetInt32(const std::set<T> &value, Parcel &parcel)
 {
     size_t size = value.size();
     if (!parcel.WriteUint64(size)) {
@@ -237,9 +248,15 @@ template<typename T>bool MarshallingSetInt32(const std::set<T> &value, Parcel &p
     return true;
 }
 
-template<typename T> std::set<T> UnmarshallingSetInt32(Parcel &parcel)
+template<typename T> std::set<T> UnmarshallingSetInt32(Parcel &parcel,
+    const size_t maxSize = std::numeric_limits<size_t>::max())
 {
     size_t size = parcel.ReadUint64();
+    // due to security concerns, sizelimit has been imposed
+    if (size > maxSize) {
+        size = maxSize;
+    }
+
     std::set<T> res;
     for (size_t i = 0; i < size; i++) {
         res.insert(static_cast<T>(parcel.ReadInt32()));
@@ -274,8 +291,8 @@ struct DeviceStreamInfo {
     {
         encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
-        samplingRate = UnmarshallingSetInt32<AudioSamplingRate>(parcel);
-        channels = UnmarshallingSetInt32<AudioChannel>(parcel);
+        samplingRate = UnmarshallingSetInt32<AudioSamplingRate>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
+        channels = UnmarshallingSetInt32<AudioChannel>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
     }
 
     bool CheckParams()
@@ -305,6 +322,7 @@ public:
     int32_t interruptGroupId;
     int32_t volumeGroupId;
     bool isLowLatencyDevice;
+    ConnectState connectState = CONNECTED;
 
     DeviceInfo() = default;
     ~DeviceInfo() = default;

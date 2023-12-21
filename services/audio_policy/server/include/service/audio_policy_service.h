@@ -23,6 +23,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <shared_mutex>
+#include "singleton.h"
 #include "audio_group_handle.h"
 #include "audio_info.h"
 #include "audio_manager_base.h"
@@ -51,6 +52,8 @@
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
 #include "audio_state_manager.h"
+#include "audio_pnp_server.h"
+#include "audio_policy_server_handler.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -103,6 +106,8 @@ public:
     bool IsStreamActive(AudioVolumeType volumeType) const;
 
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
+
+    void NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor> audioDeviceDescriptor);
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
@@ -362,10 +367,13 @@ public:
 
     void OffloadStreamReleaseCheck(uint32_t sessionId);
 
+    void UpdateA2dpOffloadFlagForAllStream(std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+
     void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
 
     void OffloadStartPlayingIfOffloadMode(uint64_t sessionId);
-    
+
     int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionsId, const std::vector<int32_t> &streamTypes,
         bool isNewDeviceActive = false);
 
@@ -391,7 +399,11 @@ public:
 
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
 
-    void UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress);
+    void UpdateA2dpOffloadFlagBySpatialService(
+        const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap);
+
+    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
+        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
 
 private:
     AudioPolicyService()
@@ -401,7 +413,9 @@ private:
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioStateManager_(AudioStateManager::GetAudioStateManager())
+        audioStateManager_(AudioStateManager::GetAudioStateManager()),
+        audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
+        audioPnpServer_(AudioPnpServer::GetAudioPnpServer())
     {
 #ifdef ACCESSIBILITY_ENABLE
         accessibilityConfigListener_ = std::make_shared<AccessibilityConfigListener>(*this);
@@ -477,8 +491,6 @@ private:
     int32_t HandleA2dpDevice(DeviceType deviceType);
 
     int32_t LoadA2dpModule(DeviceType deviceType);
-
-    int32_t HandleA2dpOffloadDeviceSuspend(DeviceType deviceType);
 
     int32_t LoadUsbModule(string deviceInfo);
 
@@ -629,9 +641,6 @@ private:
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
     void StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
-    
-    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
-        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
 
     void AddEarpiece();
 
@@ -655,13 +664,15 @@ private:
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc);
+    
+    void UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
     bool isOpenRemoteDevice = false;
-    bool isBtListenerRegistered = false;
+    static bool isBtListenerRegistered;
     bool isPnpDeviceConnected = false;
     bool hasModulesLoaded = false;
     const int32_t G_UNKNOWN_PID = -1;
@@ -707,9 +718,6 @@ private:
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
     std::string lastBTDevice_;
-
-    std::map<std::pair<int32_t, AudioDeviceUsage>,
-        sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
@@ -760,6 +768,8 @@ private:
 
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+    AudioPnpServer &audioPnpServer_;
 
     std::optional<uint32_t> offloadSessionID_;
     PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;
@@ -784,12 +794,6 @@ private:
 
     SourceType currentSourceType = SOURCE_TYPE_MIC;
     uint32_t currentRate = 0;
-
-    std::mutex updatePolicyPorxyMapMutex_;
-    std::mutex preferredOutputMapMutex_;
-    std::mutex preferredInputMapMutex_;
-    std::mutex deviceChangedMpaMutex_;
-    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

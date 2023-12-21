@@ -85,7 +85,7 @@ HWTEST(AudioServiceUnitTest, AudioProcessProxy_001, TestSize.Level1)
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame - 1;
     uint32_t byteSizePerFrame = 1000;
-    buffer = OHAudioBuffer::CreateFormLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    buffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
 
     ret=audioProcessProxy->ResolveBuffer(buffer);
     EXPECT_LT(ret, TEST_RET_NUM);
@@ -175,41 +175,6 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_002, TestSize.Level1)
     audioManagerProxy->NotifyDeviceInfo(networkId, connected);
     ret = audioManagerProxy->CheckRemoteDeviceState(networkId, DeviceRole::OUTPUT_DEVICE, true);
     EXPECT_LT(ret, TEST_RET_NUM);
-}
-
-/**
- * @tc.name  : Test AudioManagerProxy API
- * @tc.type  : FUNC
- * @tc.number: AudioManagerProxy_003
- * @tc.desc  : Test AudioManagerProxy interface.
- */
-HWTEST(AudioServiceUnitTest, AudioManagerProxy_003, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    AudioScene audioScene = AudioScene::AUDIO_SCENE_DEFAULT;
-    DeviceType activeDevice = DeviceType::DEVICE_TYPE_SPEAKER;
-    ret = audioManagerProxy->SetAudioScene(audioScene, activeDevice);
-    EXPECT_EQ(AUDIO_OK, ret);
-
-    DeviceFlag deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    audioDeviceDescriptors = audioManagerProxy->GetDevices(deviceFlag);
-    EXPECT_EQ(audioDeviceDescriptors.size() > 0, false);
-
-    ret = audioManagerProxy->UpdateActiveDeviceRoute(DeviceType::DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
-    EXPECT_EQ(AUDIO_OK, ret);
-
-    sptr<IRemoteObject> object = nullptr;
-    ret = audioManagerProxy->SetParameterCallback(object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
-
-    auto parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
-    EXPECT_NE(parameterChangeCbStub, nullptr);
-    object = parameterChangeCbStub->AsObject();
-    EXPECT_NE(object, nullptr);
-    ret = audioManagerProxy->SetParameterCallback(object);
-    EXPECT_EQ(AUDIO_OK, ret);
 }
 
 /**
@@ -379,6 +344,43 @@ HWTEST(AudioServiceUnitTest, AudioServiceClient_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS - 2, ret);
     rate = audioServiceClient->GetRendererSamplingRate();
     EXPECT_EQ((uint32_t)SAMPLE_RATE_44100, rate);
+
+    audioServiceClient->OnTimeOut();
+}
+
+/**
+ * @tc.name  : Test AudioServiceClient API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceClient_002
+ * @tc.desc  : Test AudioServiceClient interface.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceClient_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    std::unique_ptr<AudioServiceClient> audioServiceClient = std::make_unique<AudioStream>(STREAM_MUSIC,
+        AUDIO_MODE_PLAYBACK, getuid());
+
+    ASClientType eClientType = ASClientType::AUDIO_SERVICE_CLIENT_PLAYBACK;
+    ret = audioServiceClient->Initialize(eClientType);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioStreamParams audioParams = {};
+    audioParams.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    audioParams.encoding = AudioEncodingType::ENCODING_PCM;
+    audioParams.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioParams.channels = AudioChannel::STEREO;
+
+    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_MUSIC);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->StartStream();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->SetStreamOffloadMode(2, true);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->OffloadStopStream();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->UnsetStreamOffloadMode();
+    EXPECT_EQ(SUCCESS, ret);
 
     audioServiceClient->OnTimeOut();
 }

@@ -382,6 +382,12 @@ napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *
         streamInfo->encoding = static_cast<AudioEncodingType>(intValue);
     }
 
+    int64_t int64Value = 0;
+    status = GetValueInt64(env, "channelLayout", int64Value, in);
+    if (status == napi_ok) {
+        streamInfo->channelLayout = static_cast<AudioChannelLayout>(int64Value);
+    }
+
     return napi_ok;
 }
 
@@ -393,6 +399,7 @@ napi_status NapiParamUtils::SetStreamInfo(const napi_env &env, const AudioStream
     SetValueInt32(env, "channels", static_cast<int32_t>(streamInfo.channels), result);
     SetValueInt32(env, "sampleFormat", static_cast<int32_t>(streamInfo.format), result);
     SetValueInt32(env, "encodingType", static_cast<int32_t>(streamInfo.encoding), result);
+    SetValueInt64(env, "channelLayout", static_cast<uint64_t>(streamInfo.channelLayout), result);
 
     return napi_ok;
 }
@@ -527,7 +534,7 @@ napi_status NapiParamUtils::GetCapturerInfo(const napi_env &env, AudioCapturerIn
     capturerInfo->sourceType = static_cast<SourceType>(intValue);
 
     status = NapiParamUtils::GetValueInt32(env, "capturerFlags", capturerInfo->capturerFlags, in);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetCapturerInfo GetValueInt32 source failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetCapturerInfo GetValueInt32 capturerFlags failed");
     return status;
 }
 
@@ -726,11 +733,19 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
 
     status = GetValueInt32(env, "deviceRole", intValue, in);
     if (status == napi_ok) {
+        if (std::find(DEVICE_ROLE_SET.begin(), DEVICE_ROLE_SET.end(), intValue) == DEVICE_ROLE_SET.end()) {
+            argTransFlag = false;
+            return status;
+        }
         selectedAudioDevice->deviceRole_ = static_cast<DeviceRole>(intValue);
     }
 
     status = GetValueInt32(env, "deviceType", intValue, in);
     if (status == napi_ok) {
+        if (std::find(DEVICE_TYPE_SET.begin(), DEVICE_TYPE_SET.end(), intValue) == DEVICE_TYPE_SET.end()) {
+            argTransFlag = false;
+            return status;
+        }
         selectedAudioDevice->deviceType_ = static_cast<DeviceType>(intValue);
     }
 
@@ -747,6 +762,14 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
     if (status == napi_ok) {
         selectedAudioDevice->volumeGroupId_ = intValue;
     }
+
+    selectedAudioDevice->macAddress_ = GetPropertyString(env, in, "address");
+
+    status = GetValueInt32(env, "id", intValue, in);
+    if (status == napi_ok) {
+        selectedAudioDevice->deviceId_ = intValue;
+    }
+
     return napi_ok;
 }
 
@@ -789,12 +812,21 @@ napi_status NapiParamUtils::GetAudioCapturerFilter(const napi_env &env, sptr<Aud
 
 napi_status NapiParamUtils::GetAudioCapturerInfo(const napi_env &env, AudioCapturerInfo *capturerInfo, napi_value in)
 {
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, in, &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, napi_invalid_arg,
+        "GetRendererInfo failed, vauleType is not object");
+
     int32_t intValue = {0};
-    napi_status status = GetValueInt32(env, "source", intValue, in);
-    if (status == napi_ok && NapiAudioEnum::IsValidSourceType(intValue)) {
-        capturerInfo->sourceType = static_cast<SourceType>(intValue);
-    } else {
-        capturerInfo->sourceType = SourceType::SOURCE_TYPE_INVALID;
+    napi_value tempValue = nullptr;
+    napi_status status = napi_get_named_property(env, in, "source", &tempValue);
+    if (status == napi_ok) {
+        GetValueInt32(env, intValue, tempValue);
+        if (NapiAudioEnum::IsValidSourceType(intValue)) {
+            capturerInfo->sourceType = static_cast<SourceType>(intValue);
+        } else {
+            capturerInfo->sourceType = SourceType::SOURCE_TYPE_INVALID;
+        }
     }
 
     status = GetValueInt32(env, "capturerFlags", intValue, in);

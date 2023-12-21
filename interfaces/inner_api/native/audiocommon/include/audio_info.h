@@ -45,6 +45,9 @@ constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
+constexpr uint32_t STREAM_FLAG_NORMAL = 0;
+constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
+constexpr float MIN_STREAM_SPEED_LEVEL = 0.25f;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
@@ -275,6 +278,18 @@ struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = 0;
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteInt32(rendererFlags);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        contentType = static_cast<ContentType>(parcel.ReadInt32());
+        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        rendererFlags = parcel.ReadInt32();
+    }
 };
 
 class AudioCapturerInfo {
@@ -781,6 +796,17 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
+class AudioStreamPolicyServiceDiedCallback {
+public:
+    virtual ~AudioStreamPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 11
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
+
 /**
  * Describes three-dimensional value.
  * @since 11
@@ -820,6 +846,12 @@ enum CastType {
     CAST_TYPE_ALL,
     CAST_TYPE_PROJECTION,
     CAST_TYPE_COOPERATION,
+};
+
+class AudioPnpDeviceChangeCallback {
+public:
+    virtual ~AudioPnpDeviceChangeCallback() = default;
+    virtual void OnPnpDeviceStatusChanged(const std::string &info) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

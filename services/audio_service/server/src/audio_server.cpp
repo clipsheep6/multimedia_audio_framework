@@ -101,7 +101,7 @@ void AudioServer::OnStart()
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
 #ifdef PA
     int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
-    pthread_setname_np(m_paDaemonThread, "AudioServer");
+    pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
     if (ret != 0) {
         AUDIO_ERR_LOG("pthread_create failed %d", ret);
     }
@@ -266,33 +266,6 @@ const std::string AudioServer::GetAudioParameter(const std::string& networkId, c
         return "";
     }
     return audioRendererSinkInstance->GetAudioParameter(key, condition);
-}
-
-const char *AudioServer::RetrieveCookie(int32_t &size)
-{
-    char *cookieInfo = nullptr;
-    size = 0;
-    std::ifstream cookieFile(DEFAULT_COOKIE_PATH, std::ifstream::binary);
-    if (!cookieFile) {
-        return cookieInfo;
-    }
-
-    cookieFile.seekg (0, cookieFile.end);
-    size = cookieFile.tellg();
-    cookieFile.seekg (0, cookieFile.beg);
-
-    if ((size > 0) && (size < PATH_MAX)) {
-        cookieInfo = (char *)malloc(size * sizeof(char));
-        if (cookieInfo == nullptr) {
-            AUDIO_ERR_LOG("AudioServer::RetrieveCookie: No memory");
-            cookieFile.close();
-            return cookieInfo;
-        }
-        AUDIO_DEBUG_LOG("Reading: %{public}d characters...", size);
-        cookieFile.read(cookieInfo, size);
-    }
-    cookieFile.close();
-    return cookieInfo;
 }
 
 uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
@@ -873,12 +846,6 @@ int32_t AudioServer::OffloadSetBufferSize(uint32_t sizeMs)
     return audioRendererSinkInstance->SetBufferSize(sizeMs);
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag deviceFlag)
-{
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptor = {};
-    return audioDeviceDescriptor;
-}
-
 void AudioServer::AudioServerDied(pid_t pid)
 {
     AUDIO_INFO_LOG("Policy server died: restart pulse audio");
@@ -977,6 +944,16 @@ int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatiali
         return ERROR;
     }
     return audioEffectChainManager->UpdateSpatializationState(spatializationState);
+}
+
+int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (callingUid != audioUid_) {
+        AUDIO_ERR_LOG("NotifyStreamVolumeChanged refused for %{public}d", callingUid);
+        return ERR_NOT_SUPPORTED;
+    }
+    return AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
 }
 } // namespace AudioStandard
 } // namespace OHOS

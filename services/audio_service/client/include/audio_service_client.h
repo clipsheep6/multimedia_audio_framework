@@ -586,6 +586,10 @@ public:
 
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
 
+    int32_t SetStreamSpeed(float speed);
+
+    float GetStreamSpeed();
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -718,6 +722,7 @@ private:
     AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     time_t lastOffloadUpdateFinishTime_ = 0;
+    float speed_ = 1.0;
     int32_t ConnectStreamToPA();
     std::pair<const int32_t, const std::string> GetDeviceNameForConnect();
     int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);
@@ -726,6 +731,7 @@ private:
     int32_t InitializePAProbListOffload();
     int32_t InitializebufferAttrOffload();
     int32_t CheckOffloadPolicyChanged();
+    int32_t GetAudioLatencyOffload(uint64_t &latency);
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();
@@ -736,6 +742,7 @@ private:
     int32_t PaWriteStream(const uint8_t *buffer, size_t &length);
     int32_t WaitWriteable(size_t length, size_t &writableSize);
     int32_t AdjustAcache(const StreamBuffer &stream, size_t &cachedLen);
+    int32_t SetStreamVolumeInML(float volume);
     void HandleRenderPositionCallbacks(size_t bytesWritten);
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
@@ -807,7 +814,6 @@ private:
     static void PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
-    static void GetSinkInputInfoOffloadCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
     static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 
