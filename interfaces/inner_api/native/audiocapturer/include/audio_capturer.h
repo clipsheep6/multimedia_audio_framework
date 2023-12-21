@@ -144,27 +144,6 @@ public:
      * @return Returns unique pointer to the AudioCapturer object
      * @since 8
      */
-    static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType);
-
-    /**
-     * @brief create capturer instance.
-     *
-     * @param options The audio capturer configuration to be used while creating capturer instance.
-     * refer AudioCapturerOptions in audio_info.h.
-     * @param appInfo Originating application's uid and token id can be passed here
-     * @return Returns unique pointer to the AudioCapturer object
-     * @since 9
-     */
-    static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType, const AppInfo &appInfo);
-
-    /**
-     * @brief create capturer instance.
-     *
-     * @param options The audio capturer configuration to be used while creating capturer instance.
-     * refer AudioCapturerOptions in audio_info.h.
-     * @return Returns unique pointer to the AudioCapturer object
-     * @since 8
-     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options);
 
     /**
