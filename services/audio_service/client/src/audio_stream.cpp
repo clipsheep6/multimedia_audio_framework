@@ -413,11 +413,11 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = true;
         writeThread_ = std::make_unique<std::thread>(&AudioStream::WriteCbTheadLoop, this);
-        pthread_setname_np(writeThread_->native_handle(), "AudioWriteCb");
+        pthread_setname_np(writeThread_->native_handle(), "OS_AudioWriteCb");
     } else if (captureMode_ == CAPTURE_MODE_CALLBACK) {
         isReadyToRead_ = true;
         readThread_ = std::make_unique<std::thread>(&AudioStream::ReadCbThreadLoop, this);
-        pthread_setname_np(readThread_->native_handle(), "AudioReadCb");
+        pthread_setname_np(readThread_->native_handle(), "OS_AudioReadCb");
     }
 
     AUDIO_INFO_LOG("StartAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
@@ -1060,11 +1060,12 @@ void AudioStream::WriteCbTheadLoop()
             if (writeError != 0) {
                 AUDIO_ERR_LOG("WriteStreamInCb fail, writeError:%{public}d", writeError);
             } else {
-                AUDIO_DEBUG_LOG("WriteCb WriteStream, bytesWritten:%{public}zu", bytesWritten);
-                freeBufferQ_.emplace(filledBufferQ_.front());
-                filledBufferQ_.pop();
-                SendWriteBufferRequestEvent();
+                AUDIO_DEBUG_LOG("WriteCb WriteStream, bytesWritten:%{public}zu", bytesWritten);   
             }
+
+            freeBufferQ_.emplace(filledBufferQ_.front());
+            filledBufferQ_.pop();
+            SendWriteBufferRequestEvent();
         }
     }
 }
