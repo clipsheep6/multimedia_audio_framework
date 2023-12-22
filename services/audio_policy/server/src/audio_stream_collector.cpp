@@ -606,7 +606,7 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     return SUCCESS;
 }
 
-bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
+bool AudioStreamCollector::IsStreamActive(AudioVolumeType volumeType)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     bool result = false;
@@ -614,7 +614,7 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
         if (changeInfo->rendererState != RENDERER_RUNNING) {
             continue;
         }
-        AudioStreamType rendererVolumeType = GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
+        AudioVolumeType rendererVolumeType = GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
             (changeInfo->rendererInfo).streamUsage);
         if (rendererVolumeType == volumeType) {
             // An active stream has been found, return true directly.
@@ -648,7 +648,7 @@ int32_t AudioStreamCollector::GetRunningStream(AudioStreamType certainType)
     return runningStream;
 }
 
-AudioStreamType AudioStreamCollector::GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage)
+AudioVolumeType AudioStreamCollector::GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage)
 {
     AudioStreamType streamType = STREAM_MUSIC;
     auto pos = streamTypeMap_.find(make_pair(contentType, streamUsage));
@@ -658,30 +658,29 @@ AudioStreamType AudioStreamCollector::GetVolumeTypeFromContentUsage(ContentType 
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
-            return STREAM_VOICE_CALL;
+            return VOLUME_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
-            return STREAM_RING;
+            return VOLUME_RINGTONE;
         case STREAM_MUSIC:
-        case STREAM_MEDIA:
         case STREAM_MOVIE:
         case STREAM_GAME:
         case STREAM_SPEECH:
         case STREAM_NAVIGATION:
-            return STREAM_MUSIC;
+            return VOLUME_MEDIA;
         case STREAM_VOICE_ASSISTANT:
-            return STREAM_VOICE_ASSISTANT;
+            return VOLUME_VOICE_ASSISTANT;
         case STREAM_ALARM:
-            return STREAM_ALARM;
+            return VOLUME_ALARM;
         case STREAM_ACCESSIBILITY:
-            return STREAM_ACCESSIBILITY;
+            return VOLUME_ACCESSIBILITY;
         case STREAM_ULTRASONIC:
-            return STREAM_ULTRASONIC;
+            return VOLUME_ULTRASONIC;
         default:
-            return STREAM_MUSIC;
+            return VOLUME_MEDIA;
     }
 }
 
@@ -791,7 +790,7 @@ void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStre
     uint64_t transactionId = 0;
 
     if (mode == AUDIO_MODE_PLAYBACK) {
-        streamType = GetVolumeTypeFromContentUsage(streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType,
+        streamType = GetStreamType(streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType,
             streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
         transactionId = audioSystemMgr_->GetTransactionId(
             streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType, OUTPUT_DEVICE);
@@ -829,7 +828,7 @@ void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStre
 void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
     const std::unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfo)
 {
-    AudioStreamType streamType = GetVolumeTypeFromContentUsage(audioRendererChangeInfo->rendererInfo.contentType,
+    AudioStreamType streamType = GetStreamType(audioRendererChangeInfo->rendererInfo.contentType,
         audioRendererChangeInfo->rendererInfo.streamUsage);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
         audioRendererChangeInfo->outputDeviceInfo.deviceType, OUTPUT_DEVICE);

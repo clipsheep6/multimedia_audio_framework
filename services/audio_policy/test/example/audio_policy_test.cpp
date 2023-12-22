@@ -419,7 +419,7 @@ static void HandleUpdateStreamState(int type, char *seg1)
     }
 
     StreamSetState sate = StreamSetState::STREAM_PAUSE;
-    AudioStreamType stype = AudioStreamType::STREAM_MEDIA;
+    AudioStreamType stype = AudioStreamType::STREAM_MUSIC;
     int32_t result = 0;
     if (type == 0) {
         cout << "type :: Stream_Pause :: " << type << endl;
@@ -632,7 +632,7 @@ int main(int argc, char* argv[])
         return ERR_INVALID_PARAM;
     }
 
-    int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
+    int streamType = static_cast<int32_t>(AudioVolumeType::VOLUME_MEDIA);
     while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:B:F:vmrucOoIiGgNntp")) != -1) {
         switch (opt) {
             case 'G':

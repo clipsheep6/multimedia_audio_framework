@@ -88,7 +88,7 @@ public:
     static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);
     static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
-    static int32_t GetJsAudioVolumeType(AudioStreamType volumeType);
+    static int32_t GetJsAudioVolumeType(AudioVolumeType volumeType);
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType);
     static bool IsValidSourceType(int32_t intValue);
     static bool IsLegalDeviceUsage(int32_t usage);

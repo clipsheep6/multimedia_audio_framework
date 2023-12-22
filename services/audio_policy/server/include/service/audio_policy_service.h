@@ -83,11 +83,11 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false) const;
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) const;
 
-    float GetSystemVolumeDb(AudioStreamType streamType) const;
+    float GetSystemVolumeDb(AudioVolumeType volumeType) const;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
 
@@ -97,13 +97,13 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) const;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute);
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
-    bool GetStreamMute(AudioStreamType streamType) const;
+    bool GetStreamMute(AudioVolumeType volumeType) const;
 
-    bool IsStreamActive(AudioStreamType streamType) const;
+    bool IsStreamActive(AudioVolumeType volumeType) const;
 
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
 

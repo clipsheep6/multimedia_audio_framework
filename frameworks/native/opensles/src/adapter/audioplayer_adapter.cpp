@@ -169,7 +169,7 @@ SLresult AudioPlayerAdapter::GetVolumeLevelAdapter(SLuint32 id, SLmillibel *leve
 
 SLresult AudioPlayerAdapter::GetMaxVolumeLevelAdapter(SLuint32 id, SLmillibel *level)
 {
-    float volume = AudioSystemManager::GetInstance()->GetMaxVolume(STREAM_MUSIC);
+    float volume = AudioSystemManager::GetInstance()->GetMaxVolume(VOLUME_MEDIA);
     *level = (SLmillibel) (MAGNIFICATION * log10(volume));
     return SL_RESULT_SUCCESS;
 }

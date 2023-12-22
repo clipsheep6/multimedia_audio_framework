@@ -51,15 +51,15 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 
     /* Validate volume type and return INVALID_PARAMS error */
     switch (volumeType) {
-        case STREAM_VOICE_CALL:
-        case STREAM_RING:
-        case STREAM_MUSIC:
-        case STREAM_ALARM:
-        case STREAM_ACCESSIBILITY:
-        case STREAM_VOICE_ASSISTANT:
-                break;
-        case STREAM_ULTRASONIC:
-        case STREAM_ALL:
+        case VOLUME_VOICE_CALL:
+        case VOLUME_RINGTONE:
+        case VOLUME_MEDIA:
+        case VOLUME_ALARM:
+        case VOLUME_ACCESSIBILITY:
+        case VOLUME_VOICE_ASSISTANT:
+            break;
+        case VOLUME_ULTRASONIC:
+        case VOLUME_ALL:
             if (!PermissionUtil::VerifySelfPermission()) {
                 AUDIO_ERR_LOG("SetVolume: No system permission");
                 return ERR_PERMISSION_DENIED;
@@ -87,16 +87,15 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         return std::stoi(value);
     }
     switch (volumeType) {
-        case STREAM_MUSIC:
-        case STREAM_RING:
-        case STREAM_NOTIFICATION:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-        case STREAM_ALARM:
-        case STREAM_ACCESSIBILITY:
+        case VOLUME_VOICE_CALL:
+        case VOLUME_RINGTONE:
+        case VOLUME_MEDIA:
+        case VOLUME_ALARM:
+        case VOLUME_ACCESSIBILITY:
+        case VOLUME_VOICE_ASSISTANT:
             break;
-        case STREAM_ULTRASONIC:
-        case STREAM_ALL:
+        case VOLUME_ULTRASONIC:
+        case VOLUME_ALL:
             if (!PermissionUtil::VerifySelfPermission()) {
                 AUDIO_ERR_LOG("GetVolume: No system permission");
                 return ERR_PERMISSION_DENIED;
@@ -126,19 +125,13 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
         return std::stoi(value);
     }
 
-    if (volumeType == STREAM_ALL) {
+    if (volumeType == VOLUME_ALL || volumeType == VOLUME_ULTRASONIC) {
         if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("GetMaxVolume: No system permission");
             return ERR_PERMISSION_DENIED;
         }
     }
 
-    if (volumeType == STREAM_ULTRASONIC) {
-        if (!PermissionUtil::VerifySelfPermission()) {
-            AUDIO_ERR_LOG("GetMaxVolume: STREAM_ULTRASONIC No system permission");
-            return ERR_PERMISSION_DENIED;
-        }
-    }
     return AudioPolicyManager::GetInstance().GetMaxVolumeLevel(volumeType);
 }
 
@@ -158,19 +151,13 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
         return std::stoi(value);
     }
 
-    if (volumeType == STREAM_ALL) {
+    if (volumeType == VOLUME_ALL || volumeType == VOLUME_ULTRASONIC) {
         if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("GetMinVolume: No system permission");
             return ERR_PERMISSION_DENIED;
         }
     }
 
-    if (volumeType == STREAM_ULTRASONIC) {
-        if (!PermissionUtil::VerifySelfPermission()) {
-            AUDIO_ERR_LOG("GetMinVolume: STREAM_ULTRASONIC No system permission");
-            return ERR_PERMISSION_DENIED;
-        }
-    }
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
 }
 
@@ -186,15 +173,14 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
 
     AUDIO_DEBUG_LOG("AudioSystemManager SetMute for volumeType=%{public}d", volumeType);
     switch (volumeType) {
-        case STREAM_MUSIC:
-        case STREAM_RING:
-        case STREAM_NOTIFICATION:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-        case STREAM_ALARM:
-        case STREAM_ACCESSIBILITY:
-        case STREAM_ULTRASONIC:
-        case STREAM_ALL:
+        case VOLUME_VOICE_CALL:
+        case VOLUME_RINGTONE:
+        case VOLUME_MEDIA:
+        case VOLUME_ALARM:
+        case VOLUME_ACCESSIBILITY:
+        case VOLUME_VOICE_ASSISTANT:
+        case VOLUME_ULTRASONIC:
+        case VOLUME_ALL:
             break;
         default:
             AUDIO_ERR_LOG("SetMute volumeType=%{public}d not supported", volumeType);
@@ -217,16 +203,15 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
     }
 
     switch (volumeType) {
-        case STREAM_MUSIC:
-        case STREAM_RING:
-        case STREAM_NOTIFICATION:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-        case STREAM_ALARM:
-        case STREAM_ACCESSIBILITY:
+        case VOLUME_VOICE_CALL:
+        case VOLUME_RINGTONE:
+        case VOLUME_MEDIA:
+        case VOLUME_ALARM:
+        case VOLUME_ACCESSIBILITY:
+        case VOLUME_VOICE_ASSISTANT:
             break;
-        case STREAM_ULTRASONIC:
-        case STREAM_ALL:
+        case VOLUME_ULTRASONIC:
+        case VOLUME_ALL:
             if (!PermissionUtil::VerifySelfPermission()) {
                 AUDIO_ERR_LOG("IsStreamMute: No system permission");
                 return ERR_PERMISSION_DENIED;

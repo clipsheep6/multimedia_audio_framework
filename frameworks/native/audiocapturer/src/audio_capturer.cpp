@@ -122,7 +122,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
 {
-    if (audioStreamType < STREAM_VOICE_CALL || audioStreamType > STREAM_ALL) {
+    if (audioStreamType <= STREAM_DEFAULT || audioStreamType >= STREAM_TYPE_MAX) {
         AUDIO_ERR_LOG("AudioCapturerPrivate audioStreamType is invalid!");
     }
     audioStreamType_ = audioStreamType;

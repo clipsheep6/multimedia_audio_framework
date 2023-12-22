@@ -578,7 +578,7 @@ HWTEST(AudioManagerUnitTest, RegisterVolumeKeyEventCallback_001, TestSize.Level1
 */
 HWTEST(AudioManagerUnitTest, SetAudioManagerCallback_001, TestSize.Level1)
 {
-    AudioVolumeType streamType = AudioVolumeType::STREAM_VOICE_CALL;
+    AudioVolumeType streamType = AudioVolumeType::VOLUME_VOICE_CALL;
     std::shared_ptr<AudioManagerCallback> callback;
     auto ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, callback);
     EXPECT_EQ(ret, SUCCESS);
@@ -591,7 +591,7 @@ HWTEST(AudioManagerUnitTest, SetAudioManagerCallback_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, UnsetAudioManagerCallback_001, TestSize.Level1)
 {
-    AudioVolumeType streamType = AudioVolumeType::STREAM_VOICE_CALL;
+    AudioVolumeType streamType = AudioVolumeType::VOLUME_VOICE_CALL;
     auto ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1090,13 +1090,19 @@ HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, IsStreamActive_001, TestSize.Level1)
 {
-    auto isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::STREAM_MUSIC);
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::VOLUME_VOICE_CALL);
     EXPECT_FALSE(isActive);
-    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::STREAM_RING);
+    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::VOLUME_RINGTONE);
     EXPECT_FALSE(isActive);
-    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::STREAM_VOICE_CALL);
+    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::VOLUME_MEDIA);
     EXPECT_FALSE(isActive);
-    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::STREAM_VOICE_ASSISTANT);
+    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::VOLUME_ALARM);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::VOLUME_ACCESSIBILITY);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::VOLUME_VOICE_ASSISTANT);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::VOLUME_ULTRASONIC);
     EXPECT_FALSE(isActive);
 }
 
@@ -1107,7 +1113,7 @@ HWTEST(AudioManagerUnitTest, IsStreamActive_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, IsStreamActive_002, TestSize.Level1)
 {
-    auto isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::STREAM_DEFAULT);
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamActive(AudioVolumeType::VOLUME_ALL);
     EXPECT_FALSE(isActive);
 }
 
@@ -1118,8 +1124,31 @@ HWTEST(AudioManagerUnitTest, IsStreamActive_002, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, IsStreamMute_001, TestSize.Level1)
 {
-    auto isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_DEFAULT);
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::VOLUME_VOICE_CALL);
     EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::VOLUME_RINGTONE);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::VOLUME_MEDIA);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::VOLUME_ALARM);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::VOLUME_ACCESSIBILITY);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::VOLUME_VOICE_ASSISTANT);
+    EXPECT_FALSE(isActive);
+    isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::VOLUME_ULTRASONIC);
+    EXPECT_FALSE(isActive);
+}
+
+/**
+* @tc.name  : Test IsStreamMute API
+* @tc.number: IsStreamMute_002
+* @tc.desc  : Test IsStreamMute interface. set AudioVolumeType return false
+*/
+HWTEST(AudioManagerUnitTest, IsStreamMute_002, TestSize.Level1)
+{
+    auto isMute = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::VOLUME_ALL);
+    EXPECT_FALSE(isMute);
 }
 
 /**
@@ -1547,13 +1576,13 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_ALL, volume);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::VOLUME_ALL, volume);
     EXPECT_EQ(SUCCESS, ret);
-    ret = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_ALL);
+    ret = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::VOLUME_ALL);
     EXPECT_EQ(volume, ret);
-    ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_ALL, mute);
+    ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::VOLUME_ALL, mute);
     EXPECT_EQ(SUCCESS, ret);
-    ret = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_ALL);
+    ret = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::VOLUME_ALL);
     EXPECT_EQ(true, ret);
 
     audioRenderer->Release();
@@ -1566,10 +1595,10 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level1)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_RING, MAX_VOL);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::VOLUME_RINGTONE, MAX_VOL);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
+    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::VOLUME_RINGTONE);
     EXPECT_EQ(MAX_VOL, volume);
 }
 
@@ -1580,10 +1609,10 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_002, TestSize.Level1)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_RING, MIN_VOL);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::VOLUME_RINGTONE, MIN_VOL);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
+    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::VOLUME_RINGTONE);
     EXPECT_EQ(MIN_VOL, volume);
 }
 
@@ -1594,27 +1623,14 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_002, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_003, TestSize.Level1)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_MUSIC, MAX_VOL);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::VOLUME_MEDIA, MAX_VOL);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t mediaVol = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_MUSIC);
+    int32_t mediaVol = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::VOLUME_MEDIA);
     EXPECT_EQ(MAX_VOL, mediaVol);
 
-    int32_t ringVolume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
+    int32_t ringVolume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::VOLUME_RINGTONE);
     EXPECT_EQ(MIN_VOL, ringVolume);
-}
-
-/**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_004
-* @tc.desc  : Test setting volume of default stream with max volume
-*/
-HWTEST(AudioManagerUnitTest, SetVolumeTest_004, TestSize.Level1)
-{
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_DEFAULT, MAX_VOL);
-    EXPECT_LT(ret, SUCCESS);
-    int32_t mediaVol = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_DEFAULT);
-    EXPECT_LT(mediaVol, SUCCESS);
 }
 
 /**
@@ -1703,66 +1719,66 @@ HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level1)
 /**
 * @tc.name  : Test SetMute API
 * @tc.number: SetMute_001
-* @tc.desc  : Test mute functionality of ring stream
+* @tc.desc  : Test mute functionality of ringtone stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level1)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_RING, true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::VOLUME_RINGTONE, true);
     EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
 * @tc.name  : Test SetMute API
 * @tc.number: SetMute_002
-* @tc.desc  : Test unmute functionality of ring stream
+* @tc.desc  : Test unmute functionality of ringtone stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level1)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_RING, false);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::VOLUME_RINGTONE, false);
     EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
 * @tc.name  : Test SetMute API
 * @tc.number: SetMute_003
-* @tc.desc  : Test mute functionality of music stream
+* @tc.desc  : Test mute functionality of media stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_003, TestSize.Level1)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_MUSIC, true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::VOLUME_MEDIA, true);
     EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
 * @tc.name  : Test SetMute API
 * @tc.number: SetMute_004
-* @tc.desc  : Test unmute functionality of music stream
+* @tc.desc  : Test unmute functionality of media stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level1)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_MUSIC, false);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::VOLUME_MEDIA, false);
     EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
 * @tc.name  : Test SetMute API
 * @tc.number: SetMute_005
-* @tc.desc  : Test mute functionality of default stream
+* @tc.desc  : Test mute functionality of alarm stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_005, TestSize.Level1)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_DEFAULT, true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::VOLUME_ALARM, true);
     EXPECT_LT(ret, SUCCESS);
 }
 
 /**
 * @tc.name  : Test SetMute API
 * @tc.number: SetMute_006
-* @tc.desc  : Test unmute functionality of default stream
+* @tc.desc  : Test unmute functionality of alarm stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_006, TestSize.Level1)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_DEFAULT, false);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::VOLUME_ALARM, false);
     EXPECT_LT(ret, SUCCESS);
 }
 
@@ -2064,7 +2080,7 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_002, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
-        StreamSetState::STREAM_PAUSE, AudioStreamType::STREAM_MEDIA);
+        StreamSetState::STREAM_PAUSE, AudioStreamType::STREAM_MUSIC);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -2076,7 +2092,7 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
-        StreamSetState::STREAM_RESUME, AudioStreamType::STREAM_MEDIA);
+        StreamSetState::STREAM_RESUME, AudioStreamType::STREAM_MUSIC);
     EXPECT_EQ(SUCCESS, ret);
 }
 

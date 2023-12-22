@@ -151,8 +151,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsStreamActive_001, TestSize.Level1)
     AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
     ASSERT_NE(nullptr, audioPolicyProxy);
 
-    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
-    bool isStreamActive = audioPolicyProxy->IsStreamActive(streamType);
+    AudioVolumeType volumeType = AudioVolumeType::VOLUME_MEDIA;
+    bool isStreamActive = audioPolicyProxy->IsStreamActive(volumeType);
     EXPECT_EQ(false, isStreamActive);
 }
 
@@ -240,7 +240,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001,
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsStreamActive_001, TestSize.Level1)
 {
-    bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(AudioStreamType::STREAM_MUSIC);
+    bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(AudioVolumeType::VOLUME_MEDIA);
     EXPECT_EQ(false, isStreamActive);
 }
 

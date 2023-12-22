@@ -798,7 +798,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetAudioManagerCallback(const AudioVolumeType streamType,
+    int32_t SetAudioManagerCallback(const AudioVolumeType volumeType,
                                     const std::shared_ptr<AudioManagerCallback> &callback);
 
     /**
@@ -808,7 +808,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t UnsetAudioManagerCallback(const AudioVolumeType streamType) const;
+    int32_t UnsetAudioManagerCallback(const AudioVolumeType volumeType) const;
 
     /**
      * @brief Activate audio Interrupt

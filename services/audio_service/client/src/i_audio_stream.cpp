@@ -85,10 +85,6 @@ AudioStreamType IAudioStream::GetStreamType(ContentType contentType, StreamUsage
         streamType = pos->second;
     }
 
-    if (streamType == STREAM_MEDIA) {
-        streamType = STREAM_MUSIC;
-    }
-
     return streamType;
 }
 

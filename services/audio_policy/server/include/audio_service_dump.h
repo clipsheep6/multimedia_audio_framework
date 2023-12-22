@@ -85,7 +85,7 @@ typedef struct {
     std::vector<DevicesInfo> outputDevices;
     DeviceType priorityOutputDevice;
     DeviceType priorityInputDevice;
-    std::map<AudioStreamType, int32_t> streamVolumes;
+    std::map<AudioVolumeType, int32_t> streamVolumes;
     AudioRingerMode ringerMode;
     AudioScene callStatus;
     AudioInterrupt audioFocusInfo;
@@ -112,7 +112,7 @@ public:
     int32_t Initialize();
     void AudioDataDump(PolicyData &policyData, std::string &dumpString,
         std::queue<std::u16string>& argQue);
-    static bool IsStreamSupported(AudioStreamType streamType);
+    static bool IsVolumeTypeSupported(AudioVolumeType volumeType);
     virtual void OnTimeOut();
 
 private:
@@ -146,6 +146,7 @@ private:
     void HelpInfoDump(std::string& dumpString);
     void MicrophoneDescriptorsDump(std::string& dumpString);
     static const std::string GetStreamName(AudioStreamType streamType);
+    static const std::string GetVolumeName(AudioVolumeType volumeType);
     static const std::string GetSourceName(SourceType sourceType);
     static const std::string GetStreamUsgaeName(StreamUsage streamUsage);
     static const std::string GetContentTypeName(ContentType contentType);

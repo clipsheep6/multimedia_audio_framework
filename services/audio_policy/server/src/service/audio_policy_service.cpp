@@ -219,27 +219,27 @@ int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callba
 
 int32_t AudioPolicyService::GetMaxVolumeLevel(AudioVolumeType volumeType) const
 {
-    if (volumeType == STREAM_ALL) {
-        volumeType = STREAM_MUSIC;
+    if (volumeType == VOLUME_ALL) {
+        volumeType = VOLUME_MEDIA;
     }
     return audioPolicyManager_.GetMaxVolumeLevel(volumeType);
 }
 
 int32_t AudioPolicyService::GetMinVolumeLevel(AudioVolumeType volumeType) const
 {
-    if (volumeType == STREAM_ALL) {
-        volumeType = STREAM_MUSIC;
+    if (volumeType == VOLUME_ALL) {
+        volumeType = VOLUME_MEDIA;
     }
     return audioPolicyManager_.GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey)
+int32_t AudioPolicyService::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel)
 {
     int32_t result = SUCCESS;
     // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, set
     // its absolute volume value.
 
-    if (IsStreamActive(streamType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (IsStreamActive(volumeType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel);
 #ifdef BLUETOOTH_ENABLE
         if (result == SUCCESS) {
@@ -252,14 +252,14 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
 #endif
     }
 
-    result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel, isFromVolumeKey);
-    if (result == SUCCESS && streamType == STREAM_VOICE_CALL) {
+    result = audioPolicyManager_.SetSystemVolumeLevel(volumeType, volumeLevel);
+    if (result == SUCCESS && volumeType == VOLUME_VOICE_CALL) {
         SetVoiceCallVolume(volumeLevel);
     }
     // todo
     Volume vol = {false, 1.0f, 0};
-    vol.volumeFloat = GetSystemVolumeInDb(streamType, volumeLevel, currentActiveDevice_.deviceType_);
-    SetSharedVolume(streamType, currentActiveDevice_.deviceType_, vol);
+    vol.volumeFloat = GetSystemVolumeInDb(volumeType, volumeLevel, currentActiveDevice_.deviceType_);
+    SetSharedVolume(volumeType, currentActiveDevice_.deviceType_, vol);
 
     if (result == SUCCESS) {
         SetOffloadVolume(volumeLevel);
@@ -281,7 +281,7 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
         return;
     }
     float volumeDb = static_cast<float>(volumeLevel) /
-        static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL));
+        static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(VOLUME_VOICE_CALL));
     gsp->SetVoiceVolume(volumeDb);
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
@@ -299,9 +299,9 @@ void AudioPolicyService::SetOffloadVolume(int32_t volume)
     }
     float volumeDb;
     if (dev == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        volumeDb = static_cast<float>(volume) / static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(STREAM_MUSIC));
+        volumeDb = static_cast<float>(volume) / static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(VOLUME_MEDIA));
     } else {
-        volumeDb = GetSystemVolumeInDb(STREAM_MUSIC, volume, currentActiveDevice_.deviceType_);
+        volumeDb = GetSystemVolumeInDb(VOLUME_MEDIA, volume, currentActiveDevice_.deviceType_);
     }
     gsp->OffloadSetVolume(volumeDb);
 }
@@ -314,16 +314,16 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
 
     // The volume of voice_call needs to be adjusted separately
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
-        SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+        SetVoiceCallVolume(GetSystemVolumeLevel(VOLUME_VOICE_CALL));
     }
     if (deviceType == DEVICE_TYPE_SPEAKER) {
-        SetOffloadVolume(GetSystemVolumeLevel(STREAM_MUSIC));
+        SetOffloadVolume(GetSystemVolumeLevel(VOLUME_MEDIA));
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         int32_t volume;
         if (GetA2dpDeviceVolume(activeBTDevice_, volume)) {
             SetOffloadVolume(volume);
         } else {
-            SetOffloadVolume(GetSystemVolumeLevel(STREAM_MUSIC));
+            SetOffloadVolume(GetSystemVolumeLevel(VOLUME_MEDIA));
         }
     }
 }
@@ -352,13 +352,13 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
     return volumeGroupType;
 }
 
-int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey) const
+int32_t AudioPolicyService::GetSystemVolumeLevel(AudioVolumeType volumeType) const
 {
     {
         // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, get
         // its absolute volume value.
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
-        if (IsStreamActive(streamType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (IsStreamActive(volumeType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
             if (configInfoPos != connectedA2dpDeviceMap_.end()
                 && configInfoPos->second.absVolumeSupport) {
@@ -368,12 +368,12 @@ int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, boo
             }
         }
     }
-    return audioPolicyManager_.GetSystemVolumeLevel(streamType, isFromVolumeKey);
+    return audioPolicyManager_.GetSystemVolumeLevel(volumeType);
 }
 
-float AudioPolicyService::GetSystemVolumeDb(AudioStreamType streamType) const
+float AudioPolicyService::GetSystemVolumeDb(AudioVolumeType volumeType) const
 {
-    return audioPolicyManager_.GetSystemVolumeDb(streamType);
+    return audioPolicyManager_.GetSystemVolumeDb(volumeType);
 }
 
 int32_t AudioPolicyService::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -546,12 +546,12 @@ float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
     return streamCollector_.GetSingleStreamVolume(streamId);
 }
 
-int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioPolicyService::SetStreamMute(AudioVolumeType volumeType, bool mute)
 {
     int32_t result = SUCCESS;
     // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, set
     // its absolute volume value.
-    if (IsStreamActive(streamType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (IsStreamActive(volumeType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
         auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
         if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
@@ -569,13 +569,13 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
 #endif
         }
     }
-    result = audioPolicyManager_.SetStreamMute(streamType, mute);
+    result = audioPolicyManager_.SetStreamMute(volumeType, mute);
 
     Volume vol = {false, 1.0f, 0};
     vol.isMute = mute;
-    vol.volumeInt = GetSystemVolumeLevel(streamType);
-    vol.volumeFloat = GetSystemVolumeInDb(streamType, vol.volumeInt, currentActiveDevice_.deviceType_);
-    SetSharedVolume(streamType, currentActiveDevice_.deviceType_, vol);
+    vol.volumeInt = GetSystemVolumeLevel(volumeType);
+    vol.volumeFloat = GetSystemVolumeInDb(volumeType, vol.volumeInt, currentActiveDevice_.deviceType_);
+    SetSharedVolume(volumeType, currentActiveDevice_.deviceType_, vol);
     return result;
 }
 
@@ -589,9 +589,9 @@ int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute)
 }
 
 
-bool AudioPolicyService::GetStreamMute(AudioStreamType streamType) const
+bool AudioPolicyService::GetStreamMute(AudioVolumeType volumeType) const
 {
-    if (IsStreamActive(streamType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (IsStreamActive(volumeType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
         auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
         if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
@@ -600,7 +600,7 @@ bool AudioPolicyService::GetStreamMute(AudioStreamType streamType) const
             return configInfoPos->second.mute;
         }
     }
-    return audioPolicyManager_.GetStreamMute(streamType);
+    return audioPolicyManager_.GetStreamMute(volumeType);
 }
 
 inline std::string PrintSinkInput(SinkInput sinkInput)
@@ -1148,13 +1148,13 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<SourceOutput> so
     return SUCCESS;
 }
 
-bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
+bool AudioPolicyService::IsStreamActive(AudioVolumeType volumeType) const
 {
-    if (streamType == STREAM_VOICE_CALL && audioScene_ == AUDIO_SCENE_PHONE_CALL) {
+    if (volumeType == VOLUME_VOICE_CALL && audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         return true;
     }
 
-    return streamCollector_.IsStreamActive(streamType);
+    return streamCollector_.IsStreamActive(volumeType);
 }
 
 void AudioPolicyService::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
@@ -2447,7 +2447,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
-        SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+        SetVoiceCallVolume(GetSystemVolumeLevel(VOLUME_VOICE_CALL));
     }
 
     return SUCCESS;
@@ -4602,7 +4602,7 @@ int32_t AudioPolicyService::InitSharedVolume(std::shared_ptr<AudioSharedMemory> 
     // init volume map
     // todo device
     for (size_t i = 0; i < IPolicyProvider::GetVolumeVectorSize(); i++) {
-        int32_t currentVolumeLevel = audioPolicyManager_.GetSystemVolumeLevel(g_volumeIndexVector[i].first, false);
+        int32_t currentVolumeLevel = audioPolicyManager_.GetSystemVolumeLevel(g_volumeIndexVector[i].first);
         float volFloat =
             GetSystemVolumeInDb(g_volumeIndexVector[i].first, currentVolumeLevel, currentActiveDevice_.deviceType_);
         volumeVector_[i].isMute = false;

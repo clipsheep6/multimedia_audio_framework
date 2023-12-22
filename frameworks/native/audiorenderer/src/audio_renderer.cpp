@@ -72,13 +72,7 @@ static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamIn
     return params;
 }
 
-static float VolumeToDb(int32_t volumeLevel)
-{
-    float value = static_cast<float>(volumeLevel) / MAX_VOLUME_LEVEL;
-    float roundValue = static_cast<int>(value * CONST_FACTOR);
-
-    return static_cast<float>(roundValue) / CONST_FACTOR;
-}
+static constexpr float UNDUCK_FACTOR = 1.0f;
 
 static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
 {
@@ -138,9 +132,6 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
-    if (audioStreamType == STREAM_MEDIA) {
-        audioStreamType = STREAM_MUSIC;
-    }
 #ifdef OHCORE
     return std::make_unique<AudioRendererGateway>(audioStreamType);
 #else
@@ -176,11 +167,11 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
         "Too many renderer instances");
     ContentType contentType = rendererOptions.rendererInfo.contentType;
     CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_UNKNOWN && contentType <= CONTENT_TYPE_ULTRASONIC, nullptr,
-                             "Invalid content type");
+        "Invalid content type");
 
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN &&
-        streamUsage <= STREAM_USAGE_VOICE_MODEM_COMMUNICATION, nullptr, "Invalid stream usage");
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX, nullptr,
+        "Invalid stream usage");
     if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
         if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
@@ -831,32 +822,12 @@ void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &inter
 
 bool AudioRendererInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
 {
-    int32_t systemVolumeLevel =
-        AudioPolicyManager::GetInstance().GetSystemVolumeLevel(audioInterrupt_.audioFocusType.streamType);
-    float systemVolumeDb = VolumeToDb(systemVolumeLevel);
-    float duckVolumeDb = interruptEvent.duckVolume;
-    int32_t ret = 0;
-
-    if (systemVolumeDb <= duckVolumeDb || FLOAT_COMPARE_EQ(systemVolumeDb, 0.0f)) {
-        AUDIO_INFO_LOG("HandleForceDucking: StreamVolume %{public}f <= duckVolumeDb %{public}f. "
-            "No need to duck further", systemVolumeDb, duckVolumeDb);
+    int32_t ret = audioStream_->SetDuckFactor(interruptEvent.duckVolume);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("HandleForceDucking: Failed to set duck factor %{pubic}f", interruptEvent.duckVolume);
         return false;
     }
-
-    instanceVolBeforeDucking_ = audioStream_->GetVolume();
-    float duckInstanceVolume = duckVolumeDb / systemVolumeDb;
-    if (FLOAT_COMPARE_EQ(instanceVolBeforeDucking_, 0.0f) || instanceVolBeforeDucking_ < duckInstanceVolume) {
-        AUDIO_INFO_LOG("HandleForceDucking: No need to duck further");
-        return false;
-    }
-
-    ret = audioStream_->SetVolume(duckInstanceVolume);
-    if (ret) {
-        AUDIO_ERR_LOG("HandleForceDucking: Failed to set duckVolumeDb(instance) %{pubic}f", duckInstanceVolume);
-        return false;
-    }
-
-    AUDIO_INFO_LOG("HandleForceDucking: Set duckVolumeDb(instance) %{pubic}f successfully", duckInstanceVolume);
+    AUDIO_INFO_LOG("HandleForceDucking: Set duck factor %{pubic}f successfully", interruptEvent.duckVolume);
     return true;
 }
 
@@ -908,9 +879,8 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
                 AUDIO_WARNING_LOG("HandleAndNotifyForcedEvent: It is not forced ducked, don't unduck or notify app");
                 return;
             }
-            (void)audioStream_->SetVolume(instanceVolBeforeDucking_);
-            AUDIO_INFO_LOG("HandleAndNotifyForcedEvent: Unduck Volume(instance) successfully: %{public}f",
-                instanceVolBeforeDucking_);
+            (void)audioStream_->SetDuckFactor(UNDUCK_FACTOR);
+            AUDIO_INFO_LOG("HandleAndNotifyForcedEvent: Set unduck factor successfully: %{public}f", UNDUCK_FACTOR);
             isForceDucked_ = false;
             break;
         default: // If the hintType is NONE, don't need to send callbacks

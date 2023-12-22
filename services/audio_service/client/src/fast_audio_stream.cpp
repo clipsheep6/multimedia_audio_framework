@@ -337,6 +337,12 @@ int32_t FastAudioStream::Clear()
     return SUCCESS;
 }
 
+int32_t FastAudioStream::SetDuckFactor(float duckFactor)
+{
+    AUDIO_ERR_LOG("SetDuckFactor not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t FastAudioStream::SetLowPowerVolume(float volume)
 {
     AUDIO_INFO_LOG("SetLowPowerVolume in.");

@@ -1085,39 +1085,29 @@ bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
     return result;
 }
 
-int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
+int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioVolumeType volumeType)
 {
-    int32_t result = MEDIA;
+    int32_t result = NapiAudioEnum::MEDIA;
     switch (volumeType) {
-        case AudioStreamType::STREAM_VOICE_CALL:
-        case AudioStreamType::STREAM_VOICE_MESSAGE:
+        case AudioVolumeType::VOLUME_VOICE_CALL:
             result = NapiAudioEnum::VOICE_CALL;
             break;
-        case AudioStreamType::STREAM_RING:
-        case AudioStreamType::STREAM_SYSTEM:
-        case AudioStreamType::STREAM_NOTIFICATION:
-        case AudioStreamType::STREAM_SYSTEM_ENFORCED:
-        case AudioStreamType::STREAM_DTMF:
+        case AudioVolumeType::VOLUME_RINGTONE:
             result = NapiAudioEnum::RINGTONE;
             break;
-        case AudioStreamType::STREAM_MUSIC:
-        case AudioStreamType::STREAM_MEDIA:
-        case AudioStreamType::STREAM_MOVIE:
-        case AudioStreamType::STREAM_GAME:
-        case AudioStreamType::STREAM_SPEECH:
-        case AudioStreamType::STREAM_NAVIGATION:
+        case AudioVolumeType::VOLUME_MEDIA:
             result = NapiAudioEnum::MEDIA;
             break;
-        case AudioStreamType::STREAM_ALARM:
+        case AudioVolumeType::VOLUME_ALARM:
             result = NapiAudioEnum::ALARM;
             break;
-        case AudioStreamType::STREAM_ACCESSIBILITY:
+        case AudioVolumeType::VOLUME_ACCESSIBILITY:
             result = NapiAudioEnum::ACCESSIBILITY;
             break;
-        case AudioStreamType::STREAM_VOICE_ASSISTANT:
+        case AudioVolumeType::VOLUME_VOICE_ASSISTANT:
             result = NapiAudioEnum::VOICE_ASSISTANT;
             break;
-        case AudioStreamType::STREAM_ULTRASONIC:
+        case AudioVolumeType::VOLUME_ULTRASONIC:
             result = NapiAudioEnum::ULTRASONIC;
             break;
         default:
@@ -1268,35 +1258,35 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
 
 AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
 {
-    AudioVolumeType result = STREAM_MUSIC;
+    AudioVolumeType result = VOLUME_MEDIA;
 
     switch (volumeType) {
         case NapiAudioEnum::VOICE_CALL:
-            result = STREAM_VOICE_CALL;
+            result = VOLUME_VOICE_CALL;
             break;
         case NapiAudioEnum::RINGTONE:
-            result = STREAM_RING;
+            result = VOLUME_RINGTONE;
             break;
         case NapiAudioEnum::MEDIA:
-            result = STREAM_MUSIC;
+            result = VOLUME_MEDIA;
             break;
         case NapiAudioEnum::ALARM:
-            result = STREAM_ALARM;
+            result = VOLUME_ALARM;
             break;
         case NapiAudioEnum::ACCESSIBILITY:
-            result = STREAM_ACCESSIBILITY;
+            result = VOLUME_ACCESSIBILITY;
             break;
         case NapiAudioEnum::VOICE_ASSISTANT:
-            result = STREAM_VOICE_ASSISTANT;
+            result = VOLUME_VOICE_ASSISTANT;
             break;
         case NapiAudioEnum::ULTRASONIC:
-            result = STREAM_ULTRASONIC;
+            result = VOLUME_ULTRASONIC;
             break;
         case NapiAudioEnum::ALL:
-            result = STREAM_ALL;
+            result = VOLUME_ALL;
             break;
         default:
-            result = STREAM_MUSIC;
+            result = VOLUME_MEDIA;
             AUDIO_ERR_LOG("GetNativeAudioVolumeType: Unknown volume type, Set it to default MEDIA!");
             break;
     }

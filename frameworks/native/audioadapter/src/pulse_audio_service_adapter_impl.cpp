@@ -40,28 +40,22 @@ int32_t g_playbackCapturerSourceOutputIndex = -1;
 std::set<uint32_t> g_wakeupCapturerSourceOutputIndexs;
 
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
-    {"voice_call", STREAM_VOICE_CALL},
     {"music", STREAM_MUSIC},
-    {"ring", STREAM_RING},
-    {"media", STREAM_MEDIA},
+    {"voice_call", STREAM_VOICE_CALL},
     {"voice_assistant", STREAM_VOICE_ASSISTANT},
-    {"system", STREAM_SYSTEM},
     {"alarm", STREAM_ALARM},
+    {"voice_message", STREAM_VOICE_MESSAGE},
+    {"ring", STREAM_RING},
     {"notification", STREAM_NOTIFICATION},
-    {"bluetooth_sco", STREAM_BLUETOOTH_SCO},
-    {"enforced_audible", STREAM_ENFORCED_AUDIBLE},
-    {"dtmf", STREAM_DTMF},
-    {"tts", STREAM_TTS},
     {"accessibility", STREAM_ACCESSIBILITY},
-    {"recording", STREAM_RECORDING},
+    {"system", STREAM_SYSTEM},
     {"movie", STREAM_MOVIE},
     {"game", STREAM_GAME},
     {"speech", STREAM_SPEECH},
+    {"navigation", STREAM_NAVIGATION},
+    {"dtmf", STREAM_DTMF},
     {"system_enforced", STREAM_SYSTEM_ENFORCED},
     {"ultrasonic", STREAM_ULTRASONIC},
-    {"wakeup", STREAM_WAKEUP},
-    {"voice_message", STREAM_VOICE_MESSAGE},
-    {"navigation", STREAM_NAVIGATION}
 };
 
 AudioServiceAdapter::~AudioServiceAdapter() = default;
@@ -498,7 +492,7 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
     return SUCCESS;
 }
 
-int32_t PulseAudioServiceAdapterImpl::SetVolumeDb(AudioStreamType streamType, float volumeDb)
+int32_t PulseAudioServiceAdapterImpl::SetVolumeDb(AudioVolumeType volumeType, float volumeDb)
 {
     lock_guard<mutex> lock(lock_);
 
@@ -510,7 +504,7 @@ int32_t PulseAudioServiceAdapterImpl::SetVolumeDb(AudioStreamType streamType, fl
 
     userData->thiz = this;
     userData->volume = volumeDb;
-    userData->streamType = streamType;
+    userData->volumeType = volumeType;
 
     if (mContext == nullptr) {
         AUDIO_ERR_LOG("SetVolumeDb mContext is nullptr");
@@ -655,6 +649,39 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
     return stream;
 }
 
+AudioVolumeType PulseAudioServiceAdapterImpl::GetVolumeTypeFromStreamType(AudioStreamType streamType)
+{
+    switch (streamType) {
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_MESSAGE:
+            return VOLUME_VOICE_CALL;
+        case STREAM_RING:
+        case STREAM_SYSTEM:
+        case STREAM_NOTIFICATION:
+        case STREAM_SYSTEM_ENFORCED:
+        case STREAM_DTMF:
+            return VOLUME_RINGTONE;
+        case STREAM_MUSIC:
+        case STREAM_MOVIE:
+        case STREAM_GAME:
+        case STREAM_SPEECH:
+        case STREAM_NAVIGATION:
+            return VOLUME_MEDIA;
+        case STREAM_ALARM:
+            return VOLUME_ALARM;
+        case STREAM_ACCESSIBILITY:
+            return VOLUME_ACCESSIBILITY;
+        case STREAM_VOICE_ASSISTANT:
+            return VOLUME_VOICE_ASSISTANT;
+        case STREAM_ULTRASONIC:
+            return VOLUME_ULTRASONIC;
+        case STREAM_ALL:
+            return VOLUME_ALL;
+        default:
+            return VOLUME_MEDIA;
+    }
+}
+
 void PulseAudioServiceAdapterImpl::PaMoveSinkInputCb(pa_context *c, int success, void *userdata)
 {
     UserData *userData = reinterpret_cast<UserData *>(userdata);
@@ -766,15 +793,16 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
         return;
     }
 
-    const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
+    const char *streamType = pa_proplist_gets(i->proplist, "stream.type");
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
     const char *streamPowerVolume = pa_proplist_gets(i->proplist, "stream.powerVolumeFactor");
+    const char *streamDuckVolume = pa_proplist_gets(i->proplist, "stream.duckVolumeFactor");
     const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
     int32_t uid = -1;
     int32_t pid = -1;
     CastValue<int32_t>(uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
     CastValue<int32_t>(pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
-    if ((streamtype == nullptr) || (streamVolume == nullptr) || (streamPowerVolume == nullptr) ||
+    if ((streamType == nullptr) || (streamVolume == nullptr) || (streamPowerVolume == nullptr) ||
         (sessionCStr == nullptr)) {
         AUDIO_DEBUG_LOG("Invalid Stream parameter info.");
         return;
@@ -788,20 +816,22 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
 
     sinkIndexSessionIDMap[i->index] = sessionID;
 
-    string streamType(streamtype);
+    string streamTypeStr(streamType);
     float volumeFactor = atof(streamVolume);
     float powerVolumeFactor = atof(streamPowerVolume);
-    AudioStreamType streamTypeID = thiz->GetIdByStreamType(streamType);
-    auto volumePair = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamTypeID);
+    float duckVolumeFactor = atof(streamDuckVolume);
+    AudioStreamType streamTypeID = thiz->GetIdByStreamType(streamTypeStr);
+    AudioVolumeType volumeType = thiz->GetVolumeTypeFromStreamType(streamTypeID);
+    auto volumePair = g_audioServiceAdapterCallback->OnGetVolumeDbCb(volumeType);
     float volumeDbCb = volumePair.first;
     int32_t volumeLevel = volumePair.second;
-    float vol = volumeDbCb * volumeFactor * powerVolumeFactor;
+    float vol = volumeDbCb * volumeFactor * powerVolumeFactor * duckVolumeFactor;
 
     pa_cvolume cv = i->volume;
     uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
 
-    if (streamTypeID == userData->streamType || userData->isSubscribingCb) {
+    if (userData->volumeType == volumeType || userData->isSubscribingCb) {
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
     }
     AUDIO_DEBUG_LOG("volume %{public}f for stream uid %{public}d"\

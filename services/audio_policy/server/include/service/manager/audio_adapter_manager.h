@@ -62,17 +62,17 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false);
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
 
-    float GetSystemVolumeDb(AudioStreamType streamType);
+    float GetSystemVolumeDb(AudioVolumeType volumeType);
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute);
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute);
 
-    bool GetStreamMute(AudioStreamType streamType);
+    bool GetStreamMute(AudioVolumeType volumeType);
 
     std::vector<SinkInfo> GetAllSinks();
 
@@ -120,7 +120,7 @@ public:
 
     bool IsVolumeUnadjustable();
 
-    float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType, int32_t volumeLevel);
+    float CalculateVolumeDbNonlinear(AudioVolumeType volumeType, DeviceType deviceType, int32_t volumeLevel);
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
 
@@ -163,34 +163,31 @@ private:
 
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
     std::string GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const;
-    AudioStreamType GetStreamIDByType(std::string streamType);
-    AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
-    void WriteVolumeToKvStore(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
-    bool LoadVolumeFromKvStore(DeviceType type, AudioStreamType streamType);
-    std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
+    void WriteVolumeToKvStore(DeviceType type, AudioVolumeType volumeType, int32_t volumeLevel);
+    bool LoadVolumeFromKvStore(DeviceType type, AudioVolumeType volumeType);
+    std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioVolumeType volumeType);
     void InitRingerMode(bool isFirstBoot);
     bool LoadRingerMode(void);
     void WriteRingerModeToKvStore(AudioRingerMode ringerMode);
     void InitMuteStatusMap(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
-    bool LoadMuteStatusFromKvStore(DeviceType deviceType, AudioStreamType streamType);
-    void WriteMuteStatusToKvStore(DeviceType deviceType, AudioStreamType streamType, bool muteStatus);
-    std::string GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
+    bool LoadMuteStatusFromKvStore(DeviceType deviceType, AudioVolumeType volumeType);
+    void WriteMuteStatusToKvStore(DeviceType deviceType, AudioVolumeType volumeType, bool muteStatus);
+    std::string GetMuteKeyForKvStore(DeviceType deviceType, AudioVolumeType volumeType);
     int32_t WriteSystemSoundUriToKvStore(const std::string &key, const std::string &uri);
     std::string LoadSystemSoundUriFromKvStore(const std::string &key);
     void InitVolumeMapIndex();
     void UpdateVolumeMapIndex();
-    void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
+    void GetVolumePoints(AudioVolumeType volumeType, DeviceVolumeType deviceType,
         std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
-    void SaveMediaVolumeToLocal(AudioStreamType streamType, int32_t volumeLevel);
-    void UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel);
-    void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
-    int32_t SetVolumeDb(AudioStreamType streamType);
-    int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
+    void SaveMediaVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
+    void UpdateRingerModeForVolume(AudioVolumeType volumeType, int32_t volumeLevel);
+    void UpdateMuteStatusForVolume(AudioVolumeType volumeType, int32_t volumeLevel);
+    int32_t SetVolumeDb(AudioVolumeType volumeType);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -211,11 +208,11 @@ private:
     }
 
     std::unique_ptr<AudioServiceAdapter> audioServiceAdapter_;
-    std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_;
-    std::unordered_map<AudioStreamType, int> minVolumeIndexMap_;
-    std::unordered_map<AudioStreamType, int> maxVolumeIndexMap_;
+    std::unordered_map<AudioVolumeType, int32_t> volumeLevelMap_;
+    std::unordered_map<AudioVolumeType, int> minVolumeIndexMap_;
+    std::unordered_map<AudioVolumeType, int> maxVolumeIndexMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
-    std::unordered_map<AudioStreamType, bool> muteStatusMap_;
+    std::unordered_map<AudioVolumeType, bool> muteStatusMap_;
     DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioRingerMode ringerMode_;
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
@@ -239,14 +236,14 @@ public:
         AUDIO_WARNING_LOG("Destructor PolicyCallbackImpl");
     }
 
-    virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType)
+    virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioVolumeType volumeType)
     {
-        AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(streamType);
-        int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
-        bool muteStatus = audioAdapterManager_->muteStatusMap_[streamForVolumeMap];
+        bool muteStatus = audioAdapterManager_->muteStatusMap_[volumeType];
         if (muteStatus) {
             return {0.0f, 0};
         }
+
+        int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[volumeType];
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
@@ -256,7 +253,7 @@ public:
 
         float volumeDb = 1.0f;
         if (audioAdapterManager_->IsUseNonlinearAlgo()) {
-            volumeDb = audioAdapterManager_->CalculateVolumeDbNonlinear(streamForVolumeMap,
+            volumeDb = audioAdapterManager_->CalculateVolumeDbNonlinear(volumeType,
                 audioAdapterManager_->GetActiveDevice(), volumeLevel);
         } else {
             volumeDb = audioAdapterManager_->CalculateVolumeDb(volumeLevel);

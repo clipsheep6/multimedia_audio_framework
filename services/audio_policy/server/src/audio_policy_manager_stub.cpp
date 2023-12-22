@@ -135,8 +135,8 @@ void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel & /* data */, M
 
 void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    int32_t volumeLevel = GetSystemVolumeLevel(streamType);
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    int32_t volumeLevel = GetSystemVolumeLevel(volumeType);
     reply.WriteInt32(volumeLevel);
 }
 

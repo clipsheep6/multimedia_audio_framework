@@ -262,7 +262,7 @@ int32_t StartRendererPlayback(char *inputPath)
     }
 
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    audioSystemMgr->SetVolume(AudioVolumeType::STREAM_MUSIC, volume);
+    audioSystemMgr->SetVolume(AudioVolumeType::VOLUME_MEDIA, volume);
 
     if (StartPlayback(client, wavFile) < 0) {
         AUDIO_INFO_LOG("Start playback failed");

@@ -38,7 +38,7 @@ struct AudioCapturerParams {
     /** Number of audio channels */
     AudioChannel audioChannel = MONO;
     /** Audio stream type */
-    AudioStreamType streamType = STREAM_MEDIA;
+    AudioStreamType streamType = STREAM_MUSIC;
     /** audioSampleFormat */
     AudioSampleFormat audioSampleFormat = SAMPLE_S16LE;
 };
