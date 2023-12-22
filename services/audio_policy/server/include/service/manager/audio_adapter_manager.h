@@ -142,6 +142,8 @@ private:
     friend class PolicyCallbackImpl;
     bool testModeOn_ {false};
 
+    std::mutex statusMapMutex_;
+
     std::vector<DeviceType> deviceList_ = {
         DEVICE_TYPE_SPEAKER,
         DEVICE_TYPE_USB_HEADSET,

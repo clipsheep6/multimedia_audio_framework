@@ -163,7 +163,10 @@ int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute
         return ERR_OPERATION_FAILED;
     }
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
-    mMuteStatusMap[streamForVolumeMap] = mute;
+    {
+        lock_guard<mutex> lock(statusMapMutex_);
+        mMuteStatusMap[streamForVolumeMap] = mute;
+    }
     WriteMuteStatusToKvStore(currentActiveDevice_, streamType, mute);
     return mAudioServiceAdapter->SetMute(streamType, mute);
 }
@@ -184,6 +187,7 @@ bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
         return false;
     }
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    lock_guard<mutex> lock(statusMapMutex_);
     return mMuteStatusMap[streamForVolumeMap];
 }
 
@@ -858,6 +862,7 @@ bool AudioAdapterManager::LoadMuteStatusFromKvStore(AudioStreamType streamType)
     Status status = mAudioPolicyKvStore->Get(key, value);
     if (status == Status::SUCCESS) {
         int volumeStatus = TransferByteArrayToType<int>(value.Data());
+        lock_guard<mutex> lock(statusMapMutex_);
         mMuteStatusMap[streamType] = volumeStatus;
         return true;
     }
