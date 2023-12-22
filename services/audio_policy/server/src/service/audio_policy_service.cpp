@@ -2805,6 +2805,7 @@ void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::stri
         AUDIO_INFO_LOG("The disconnecting a2dp device is not active. No need to update active device");
         audioPolicyManager_.SetAbsVolumeScene(false);
         isActiveA2dpDevice = false;
+        lock.unlock();
     }
 }
 
