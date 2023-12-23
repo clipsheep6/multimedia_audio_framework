@@ -74,7 +74,7 @@
 #define OFFLOAD_HDI_CACHE1_PLUS (OFFLOAD_HDI_CACHE1 + OFFLOAD_FRAME_SIZE + 5)   // ms, add 1 frame and 5ms
 #define OFFLOAD_HDI_CACHE2_PLUS (OFFLOAD_HDI_CACHE2 + OFFLOAD_FRAME_SIZE + 5)   // to make sure get full
 #define SPRINTF_STR_LEN 100
-#define DEFAULT_MULTICHANNEL_LAYOUT 6
+#define DEFAULT_MULTICHANNEL_NUM 6
 #define DEFAULT_NUM_CHANNEL 2
 #define DEFAULT_CHANNELLAYOUT 3
 
@@ -2958,7 +2958,6 @@ static int32_t SinkSetStateInIoThreadCbStartMultiChannel(struct Userdata *u, pa_
             sinkIn->sample_spec.channels : sinkChannels;
     }
 
-    int32_t sinkChannels = i->sample_spec.channels;
     u->multiChannel.sample_attrs.adapterName = "primary";
     u->multiChannel.sample_attrs.channel = sinkChannels;
 
@@ -3182,7 +3181,7 @@ static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSink
     u->multiChannel.sample_attrs.adapterName = u->adapterName;
     u->multiChannel.sample_attrs.openMicSpeaker = u->open_mic_speaker;
     u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
-    u->multiChannel.sample_attrs.channel = DEFAULT_MULTICHANNEL_LAYOUT;
+    u->multiChannel.sample_attrs.channel = DEFAULT_MULTICHANNEL_NUM;
     u->multiChannel.sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     u->multiChannel.sample_attrs.filePath = filePath;
     u->multiChannel.sample_attrs.deviceNetworkId = u->deviceNetworkId;
