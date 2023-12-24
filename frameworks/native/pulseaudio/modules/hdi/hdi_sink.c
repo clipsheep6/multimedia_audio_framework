@@ -74,7 +74,7 @@
 #define OFFLOAD_HDI_CACHE1_PLUS (OFFLOAD_HDI_CACHE1 + OFFLOAD_FRAME_SIZE + 5)   // ms, add 1 frame and 5ms
 #define OFFLOAD_HDI_CACHE2_PLUS (OFFLOAD_HDI_CACHE2 + OFFLOAD_FRAME_SIZE + 5)   // to make sure get full
 #define SPRINTF_STR_LEN 100
-#define DEFAULT_MULTICHANNEL_LAYOUT 6
+#define DEFAULT_MULTICHANNEL_NUM 6
 #define DEFAULT_NUM_CHANNEL 2
 #define DEFAULT_CHANNELLAYOUT 3
 
@@ -358,11 +358,15 @@ static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, 
     }
 }
 
-static void updateResampler(pa_sink_input *sinkIn, const char *sceneType)
+static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool mchFlag)
 {
     uint32_t processChannels = DEFAULT_NUM_CHANNEL;
     uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
-    EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
+    if (mchFlag) {
+        processChannels = sinkIn->sample_spec.channels;
+    } else {
+        EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
+    }
 
     pa_resampler *r;
     pa_sample_spec ss = sinkIn->thread_info.resampler->o_ss;
@@ -974,7 +978,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
             (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             pa_sink_input_assert_ref(sinkIn);
-            updateResampler(sinkIn, sinkSceneType);
+            updateResampler(sinkIn, sinkSceneType, false);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
 
             if (mixlength == 0 || infoIn->chunk.length < mixlength)
@@ -1029,6 +1033,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
         if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             pa_sink_input_assert_ref(sinkIn);
+            updateResampler(sinkIn, NULL, true);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
 
             if (mixlength == 0 || infoIn->chunk.length < mixlength)
@@ -2321,7 +2326,6 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
         if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             sceneTypeLenRef = sinkIn->sample_spec.channels;
-            sinkIn->thread_info.resampler->map_required = false;
         }
         maxInfo--;
     }
@@ -2931,6 +2935,59 @@ static int32_t SinkSetStateInIoThreadCbStartPrimary(struct Userdata *u, pa_sink_
     }
     return 0;
 }
+
+static int32_t SinkSetStateInIoThreadCbStartMultiChannel(struct Userdata *u, pa_sink_state_t newState)
+{
+    if (!PA_SINK_IS_OPENED(newState)) {
+        return 0;
+    }
+
+    u->multiChannel.timestamp = pa_rtclock_now();
+
+    unsigned nPrimary, nOffload, nMultiChannel;
+    GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
+    if (u->offload_enable && nMultiChannel == 0) {
+        return 0;
+    }
+
+    if (u->multiChannel.isHDISinkStarted) {
+        u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+        AUDIO_DEBUG_LOG("MultiChannel Sink state change: stop");
+        u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
+        AUDIO_DEBUG_LOG("MultiChannel Sink state change: deinit");
+
+        u->multiChannel.isHDISinkStarted = false;
+    }
+
+    int32_t ret;
+    pa_sink_input *sinkIn;
+    void *state = NULL;
+    int32_t sinkChannels;
+    while ((sinkIn = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
+        sinkChannels = sinkIn->sample_spec.channels > PRIMARY_CHANNEL_NUM ?
+            sinkIn->sample_spec.channels : sinkChannels;
+    }
+
+    u->multiChannel.sample_attrs.adapterName = "primary";
+    u->multiChannel.sample_attrs.channel = sinkChannels;
+
+    ret = u->multiChannel.sinkAdapter->RendererSinkInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("MultiChannel Sink state change: Init failed!");
+    }
+
+    if (u->multiChannel.sinkAdapter->RendererSinkStart(u->multiChannel.sinkAdapter)) {
+        AUDIO_ERR_LOG("MultiChannel Sink state change: start failed!");
+        u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
+        AUDIO_DEBUG_LOG("MultiChannel Sink state change: deinit");
+    } else {
+        u->multiChannel.isHDISinkStarted = true;
+        u->writeCount = 0;
+        u->renderCount = 0;
+    }
+    return 0;
+}
+
 // Called from the IO thread.
 static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa_suspend_cause_t newSuspendCause)
 {
@@ -2957,6 +3014,9 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
         newState == PA_SINK_RUNNING) {
+        if (EffectChainManagerCheckA2dpOffload()) {
+            SinkSetStateInIoThreadCbStartMultiChannel(u, newState);
+        }
         return SinkSetStateInIoThreadCbStartPrimary(u, newState);
     } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
         if (newState != PA_SINK_SUSPENDED) {
@@ -3131,7 +3191,7 @@ static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSink
     u->multiChannel.sample_attrs.adapterName = u->adapterName;
     u->multiChannel.sample_attrs.openMicSpeaker = u->open_mic_speaker;
     u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
-    u->multiChannel.sample_attrs.channel = DEFAULT_MULTICHANNEL_LAYOUT;
+    u->multiChannel.sample_attrs.channel = DEFAULT_MULTICHANNEL_NUM;
     u->multiChannel.sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     u->multiChannel.sample_attrs.filePath = filePath;
     u->multiChannel.sample_attrs.deviceNetworkId = u->deviceNetworkId;
