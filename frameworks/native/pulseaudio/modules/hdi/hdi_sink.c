@@ -2996,7 +2996,8 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
         }
     }
 
-    if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT) {
+    if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
+        newState == PA_SINK_RUNNING) {
         if (EffectChainManagerCheckA2dpOffload() && (!strcmp(u->sink->name, "Speaker"))) {
             SinkSetStateInIoThreadCbStartMultiChannel(u, newState);
         }
@@ -3069,7 +3070,7 @@ static pa_hook_result_t SinkInputPutCb(pa_core *core, pa_sink_input *i, struct U
     if (u->offload_enable) {
         i->state_change = PaInputStateChangeCb;
     }
-    i->state_change = PaInputStateChangeCb;
+    // i->state_change = PaInputStateChangeCb;
     return PA_HOOK_OK;
 }
 
