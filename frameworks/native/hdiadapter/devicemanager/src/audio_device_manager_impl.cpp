@@ -83,7 +83,7 @@ std::shared_ptr<IAudioDeviceManager> AudioDeviceManagerFactory::InitRemoteAudioM
 {
     AUDIO_INFO_LOG("AudioDeviceManagerFactory: Init remote audio manager proxy.");
 #ifdef FEATURE_DISTRIBUTE_AUDIO
-#ifdef __aarch64__
+#if defined(__aarch64__) || defined(__x86_64__) || (defined(__riscv) && (__riscv_xlen == 64))
     char resolvedPath[100] = "/system/lib64/libdaudio_client.z.so";
 #else
     char resolvedPath[100] = "/system/lib/libdaudio_client.z.so";
