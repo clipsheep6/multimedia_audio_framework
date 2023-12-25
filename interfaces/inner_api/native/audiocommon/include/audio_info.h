@@ -38,7 +38,6 @@ constexpr int32_t RENDERER_STREAM_USAGE_SHIFT = 16;
 constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t MIN_SERVICE_COUNT = 2;
-constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
 constexpr int32_t NETWORK_ID_SIZE = 80;
