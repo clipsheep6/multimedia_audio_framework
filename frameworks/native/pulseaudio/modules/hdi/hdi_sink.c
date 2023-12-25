@@ -3070,7 +3070,7 @@ static pa_hook_result_t SinkInputPutCb(pa_core *core, pa_sink_input *i, struct U
     if (u->offload_enable) {
         i->state_change = PaInputStateChangeCb;
     }
-    i->state_change = PaInputStateChangeCb;
+    // i->state_change = PaInputStateChangeCb;
     return PA_HOOK_OK;
 }
 
