@@ -2773,6 +2773,10 @@ bool AudioPolicyServer::IsSpatializationEnabled()
 
 int32_t AudioPolicyServer::SetSpatializationEnabled(const bool enable)
 {
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
@@ -2791,6 +2795,10 @@ bool AudioPolicyServer::IsHeadTrackingEnabled()
 
 int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
 {
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
@@ -2868,6 +2876,10 @@ bool AudioPolicyServer::IsHeadTrackingSupportedForDevice(const std::string addre
 
 int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
 {
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
