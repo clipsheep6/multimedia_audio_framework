@@ -223,9 +223,6 @@ bool AudioSpatializationService::IsSpatializationSupported()
 bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::string address)
 {
     std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
-    if (!address.empty()) {
-        return true;
-    }
     if (!addressToSpatialDeviceStateMap_.count(address)) {
         return false;
     }
@@ -241,9 +238,6 @@ bool AudioSpatializationService::IsHeadTrackingSupported()
 bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::string address)
 {
     std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
-    if (!address.empty()) {
-        return true;
-    }
     if (!addressToSpatialDeviceStateMap_.count(address)) {
         return false;
     }
