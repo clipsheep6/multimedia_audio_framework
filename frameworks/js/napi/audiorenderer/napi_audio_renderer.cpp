@@ -96,7 +96,6 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
     };
-
     napi_status status = napi_define_class(env, NAPI_AUDIO_RENDERER_CLASS_NAME.c_str(),
         NAPI_AUTO_LENGTH, Construct, nullptr,
         sizeof(audio_renderer_properties) / sizeof(audio_renderer_properties[PARAM0]),
