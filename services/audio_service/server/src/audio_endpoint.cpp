@@ -1282,7 +1282,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         curTime = ClockTime::GetCurNano();
         Trace loopTrace("Record_loop_trace");
         if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("Wake up too late!");
+            AUDIO_DEBUG_LOG("Wake up too late!");
         }
 
         curReadPos = dstAudioBuffer_->GetCurReadFrame();
@@ -1320,7 +1320,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             continue;
         }
         if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("Wake up too late!");
+            AUDIO_DEBUG_LOG("Wake up too late!");
         }
 
         // First, wake up at client may-write-done time, and check if all process write done.
