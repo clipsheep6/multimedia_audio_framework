@@ -1278,5 +1278,23 @@ int32_t AudioSystemManager::UnsetAvailableDeviceChangeCallback(AudioDeviceUsage 
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
     return AudioPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(clientId, usage);
 }
+
+int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const
+{
+    AUDIO_INFO_LOG("SetCallDeviceActive device: %{public}d", deviceType);
+    switch (deviceType) {
+        case EARPIECE:
+        case SPEAKER:
+        case BLUETOOTH_SCO:
+        case FILE_SINK_DEVICE:
+            break;
+        default:
+            AUDIO_ERR_LOG("SetCallDeviceActive device=%{public}d not supported",deviceType);
+            return ERR_NOT_SUPPORTED;
+    }
+
+    /* Call Audio Policy SetCallDeviceActive */
+    return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType), flag, address));
+}
 } // namespace AudioStandard
 } // namespace OHOS

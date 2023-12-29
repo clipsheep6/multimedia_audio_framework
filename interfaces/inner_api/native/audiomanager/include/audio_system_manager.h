@@ -1019,6 +1019,18 @@ public:
      */
     int32_t UnsetAvailableDeviceChangeCallback(AudioDeviceUsage usage);
 
+    /**
+     * @brief Set device address.
+     *
+     * @param deviceType device type.
+     * @param flag Device activation status.
+     * @param address Device address
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
+    int32_t SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const;
+
     static void AudioServerDied(pid_t pid);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {

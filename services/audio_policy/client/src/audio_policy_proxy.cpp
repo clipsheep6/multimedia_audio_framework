@@ -2193,7 +2193,28 @@ int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_
         AUDIO_ERR_LOG("RegisterSpatializationStateEventListener failed , error: %{public}d", error);
         return ERROR;
     }
+    return reply.ReadInt32();
+}
 
+int32_t AudioPolicyProxy::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    data.WriteBool(active);
+    data.WriteString(address);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALL_DEVICE_ACTIVE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("set device active failed, error: %d", error);
+        return error;
+    }
     return reply.ReadInt32();
 }
 } // namespace AudioStandard

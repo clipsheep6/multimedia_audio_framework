@@ -338,6 +338,8 @@ public:
 
     void TriggerAvailableDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

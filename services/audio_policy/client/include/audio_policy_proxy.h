@@ -263,6 +263,8 @@ public:
 
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object) override;
+    
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

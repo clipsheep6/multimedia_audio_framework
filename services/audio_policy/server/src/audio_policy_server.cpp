@@ -2882,5 +2882,10 @@ int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32
     }
     return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
+
+int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+{
+    return audioPolicyService_.SetCallDeviceActive(deviceType, active, address);
+}
 } // namespace AudioStandard
 } // namespace OHOS
