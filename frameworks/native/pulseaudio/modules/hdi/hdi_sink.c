@@ -1941,6 +1941,11 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
             AUDIO_INFO_LOG("StartOffloadHdi, Successfully restarted offload HDI renderer");
             OffloadLock(u);
             u->offload.sessionID = sessionID;
+            if (u->primary.isHDISinkStarted) {
+                u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
+                AUDIO_INFO_LOG("StartOffloadHdi, Stopped primary HDI renderer");
+                u->primary.isHDISinkStarted = false;
+            }
         }
     }
     StopPrimaryHdiIfNoRunning(u);
