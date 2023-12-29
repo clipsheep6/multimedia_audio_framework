@@ -1354,7 +1354,7 @@ int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, boo
         case FILE_SINK_DEVICE:
             break;
         default:
-            AUDIO_ERR_LOG("SetCallDeviceActive device=%{public}d not supported",deviceType);
+            AUDIO_ERR_LOG("SetCallDeviceActive device=%{public}d not supported", deviceType);
             return ERR_NOT_SUPPORTED;
     }
 
