@@ -214,6 +214,10 @@ napi_value NapiAudioSpatializationManager::SetSpatializationEnabled(napi_env env
             NAPI_ERR_INPUT_INVALID);
     };
     context->GetCbInfo(env, info, inputParser);
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
@@ -267,6 +271,10 @@ napi_value NapiAudioSpatializationManager::SetHeadTrackingEnabled(napi_env env, 
             NAPI_ERR_INPUT_INVALID);
     };
     context->GetCbInfo(env, info, inputParser);
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
@@ -378,7 +386,7 @@ napi_value NapiAudioSpatializationManager::UpdateSpatialDeviceState(napi_env env
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
 
     AudioSpatialDeviceState audioSpatialDeviceState;
-    if (!NapiParamUtils::GetSpatialDeviceState(env, &audioSpatialDeviceState, args[PARAM0])) {
+    if (NapiParamUtils::GetSpatialDeviceState(env, &audioSpatialDeviceState, args[PARAM0]) != napi_ok) {
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
         return result;
     }
