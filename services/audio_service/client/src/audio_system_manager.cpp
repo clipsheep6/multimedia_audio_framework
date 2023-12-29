@@ -1359,7 +1359,8 @@ int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, boo
     }
 
     /* Call Audio Policy SetCallDeviceActive */
-    return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType), flag, address));
+    return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
+        flag, address));
 }
 } // namespace AudioStandard
 } // namespace OHOS
