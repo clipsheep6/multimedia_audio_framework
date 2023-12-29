@@ -3285,5 +3285,10 @@ int32_t AudioPolicyServer::ReleaseAudioInterruptZone(const int32_t zoneID)
     ArchiveToNewAudioInterruptZone(zoneID, DEFAULT_ZONEID);
     return SUCCESS;
 }
+
+int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+{
+    return audioPolicyService_.SetCallDeviceActive(deviceType, active, address);
+}
 } // namespace AudioStandard
 } // namespace OHOS
