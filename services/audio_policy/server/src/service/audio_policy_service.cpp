@@ -5327,7 +5327,8 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
 
 int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
-    AUDIO_INFO_LOG("SetCallDeviceActive: Device type[%{public}d] flag[%{public}d] address[%{public}d]", deviceType, active, address.c_str());
+    AUDIO_INFO_LOG("SetCallDeviceActive: Device type[%{public}d] flag[%{public}d] address[%{public}d]",
+        deviceType, active, address.c_str());
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
     // Activate new device if its already connected
