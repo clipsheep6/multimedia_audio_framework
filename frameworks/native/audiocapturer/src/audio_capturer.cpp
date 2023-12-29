@@ -38,21 +38,6 @@ std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
 AudioCapturer::~AudioCapturer() = default;
 AudioCapturerPrivate::~AudioCapturerPrivate() = default;
 
-std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType)
-{
-    AppInfo appInfo = {};
-    return Create(audioStreamType, appInfo);
-}
-
-std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
-{
-#ifdef OHCORE
-    return std::make_unique<AudioCapturerGateway>(audioStreamType);
-#else
-    return std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, true);
-#endif
-}
-
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options)
 {
     AppInfo appInfo = {};
