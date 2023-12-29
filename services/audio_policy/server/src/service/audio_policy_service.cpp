@@ -2855,7 +2855,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
             isArmUsbDevice_ = false;
         }
-        CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
+        AUDIO_INFO_LOG("Disconnect device [%{public}d] %{public}s", devType, result == SUCCESS ? "success" : "failed");
     }
 
     // fetch input&output device
