@@ -43,7 +43,9 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
         std::string value = std::to_string(volume);
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
         g_sProxy->SetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition, value);
+        IPCSkeleton::SetCallingIdentity(identity);
         return SUCCESS;
     }
 
@@ -79,11 +81,11 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        if (value.empty()) {
-            AUDIO_ERR_LOG("[AudioGroupManger]: invalid value %{public}s", value.c_str());
-            return 0;
-        }
+        IPCSkeleton::SetCallingIdentity(identity);
+        CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
+            "[AudioGroupManger]: invalid value %{public}s", value.c_str());
         return std::stoi(value);
     }
     switch (volumeType) {
@@ -118,11 +120,11 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=3;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE=" +
             std::to_string(volumeType) + ";";
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        if (value.empty()) {
-            AUDIO_ERR_LOG("[AudioGroupManger]: invalid value %{public}s", value.c_str());
-            return 0;
-        }
+        IPCSkeleton::SetCallingIdentity(identity);
+        CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
+            "[AudioGroupManger]: invalid value %{public}s", value.c_str());
         return std::stoi(value);
     }
 
@@ -150,11 +152,11 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=2;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE" +
             std::to_string(volumeType) + ";";
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        if (value.empty()) {
-            AUDIO_ERR_LOG("[AudioGroupManger]: invalid value %{public}s", value.c_str());
-            return 0;
-        }
+        IPCSkeleton::SetCallingIdentity(identity);
+        CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
+            "[AudioGroupManger]: invalid value %{public}s", value.c_str());
         return std::stoi(value);
     }
 
@@ -180,7 +182,9 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
         std::string conditon = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
         std::string value = mute ? "1" : "0";
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
         g_sProxy->SetAudioParameter(netWorkId_, AudioParamKey::VOLUME, conditon, value);
+        IPCSkeleton::SetCallingIdentity(identity);
         return SUCCESS;
     }
 
@@ -211,7 +215,9 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
         std::string ret = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
+        IPCSkeleton::SetCallingIdentity(identity);
 
         return ret == "1" ? true : false;
     }
