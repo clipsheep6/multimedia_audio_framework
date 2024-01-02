@@ -3288,6 +3288,8 @@ int32_t AudioPolicyServer::ReleaseAudioInterruptZone(const int32_t zoneID)
 
 int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "SelectOutputDevice: No system permission");
     return audioPolicyService_.SetCallDeviceActive(deviceType, active, address);
 }
 } // namespace AudioStandard
