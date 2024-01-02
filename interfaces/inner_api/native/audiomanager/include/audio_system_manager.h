@@ -28,6 +28,7 @@
 #include "audio_interrupt_callback.h"
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {

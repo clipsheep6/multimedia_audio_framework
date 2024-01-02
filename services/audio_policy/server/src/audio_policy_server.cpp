@@ -462,7 +462,9 @@ void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, AudioStrea
     if (activateSessionId != OFFLOAD_NO_SESSION_ID) {
         if (activateStreamType == AudioStreamType::STREAM_MUSIC ||
             activateStreamType == AudioStreamType::STREAM_SPEECH) {
+            std::string identity = IPCSkeleton::ResetCallingIdentity();
             audioPolicyService_.OffloadStreamSetCheck(activateSessionId);
+            IPCSkeleton::SetCallingIdentity(identity);
         } else {
             AUDIO_DEBUG_LOG("session:%{public}d not get offload stream, type is %{public}d",
                 (int32_t)activateSessionId, (int32_t)activateStreamType);

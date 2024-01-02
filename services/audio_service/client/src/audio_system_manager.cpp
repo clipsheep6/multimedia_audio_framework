@@ -290,11 +290,10 @@ const std::string AudioSystemManager::GetAudioParameter(const std::string key)
 void AudioSystemManager::SetAudioParameter(const std::string &key, const std::string &value)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    if (gasp == nullptr) {
-        AUDIO_ERR_LOG("SetAudioParameter::Audio service unavailable.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     gasp->SetAudioParameter(key, value);
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 
 const char *AudioSystemManager::RetrieveCookie(int32_t &size)
@@ -859,21 +858,19 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
 void AudioSystemManager::SetAudioMonoState(bool monoState)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    if (gasp == nullptr) {
-        AUDIO_ERR_LOG("SetAudioMonoState::Audio service unavailable.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     gasp->SetAudioMonoState(monoState);
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 
 void AudioSystemManager::SetAudioBalanceValue(float balanceValue)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    if (gasp == nullptr) {
-        AUDIO_ERR_LOG("SetAudioBalanceValue::Audio service unavailable.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     gasp->SetAudioBalanceValue(balanceValue);
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 
 int32_t AudioSystemManager::SetSystemSoundUri(const std::string &key, const std::string &uri)
@@ -1302,7 +1299,11 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
         delete wakeupCloseCbStub;
         return ERROR;
     }
-    return gasp->SetWakeupSourceCallback(object);
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t res = gasp->SetWakeupSourceCallback(object);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
 }
 
 int32_t AudioSystemManager::SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback)
