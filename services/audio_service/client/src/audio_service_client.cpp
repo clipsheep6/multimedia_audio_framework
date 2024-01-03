@@ -2210,6 +2210,19 @@ int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
 
 int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t &timeStamp)
 {
+    // The current frame information of Bluetooth scene is obtained from pulseaudio server
+    DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO)
+        if(GetCurrentTimeStamp(timeStamp) != SUCCESS) {
+            AUDIO_ERR_LOG("GetCurrentPosition failed");
+            return AUDIO_CLIENT_ERR;
+        } else {
+            CHECK_AND_RETURN_RET_LOG(mFrameSize != 0, ERROR, "Error frame size");
+            framePosition = mTotalBytesWritten / mFrameSize;
+            return AUDIO_CLIENT_SUCCESS;
+        }
+    }
+
     int32_t ret = UpdateStreamPosition(UpdatePositionTimeNode::USER_NODE);
     if (ret != AUDIO_CLIENT_SUCCESS) {
         return ret;
