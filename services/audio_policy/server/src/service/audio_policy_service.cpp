@@ -65,6 +65,7 @@ const uint32_t MEDIA_SERVICE_UID = 1013;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
+const unsigned int BLUETOOTH_TIME_OUT_SECONDS = 8;
 static sptr<IStandardAudioService> g_btProxy = nullptr;
 #endif
 static int32_t startDeviceId = 1;
@@ -2974,23 +2975,25 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    for (auto &changeInfo : audioRendererChangeInfos) {
-        if (changeInfo->rendererState != RENDERER_RUNNING) {
-            Bluetooth::AudioA2dpManager::OffloadStopPlaying(std::vector<int32_t>(1, changeInfo->sessionId));
-            continue;
+    {
+        AudioXCollie audioXCollie("AudioPolicyService::UpdateA2dpOffloadFlagForAllStream", BLUETOOTH_TIME_OUT_SECONDS);
+        for (auto &changeInfo : audioRendererChangeInfos) {
+            if (changeInfo->rendererState != RENDERER_RUNNING) {
+                Bluetooth::AudioA2dpManager::OffloadStopPlaying(std::vector<int32_t>(1, changeInfo->sessionId));
+                continue;
+            }
+            Bluetooth::AudioA2dpManager::OffloadStartPlaying(std::vector<int32_t>(1, changeInfo->sessionId));
+            a2dpStreamInfo.sessionId = changeInfo->sessionId;
+            a2dpStreamInfo.streamType = GetStreamType(changeInfo->sessionId);
+            if (sessionIDToSpatializationEnableMap.count(static_cast<uint32_t>(a2dpStreamInfo.sessionId))) {
+                a2dpStreamInfo.isSpatialAudio =
+                    sessionIDToSpatializationEnableMap[static_cast<uint32_t>(a2dpStreamInfo.sessionId)];
+            } else {
+                a2dpStreamInfo.isSpatialAudio = 0;
+            }
+            allSessionInfos.push_back(a2dpStreamInfo);
         }
-        Bluetooth::AudioA2dpManager::OffloadStartPlaying(std::vector<int32_t>(1, changeInfo->sessionId));
-        a2dpStreamInfo.sessionId = changeInfo->sessionId;
-        a2dpStreamInfo.streamType = GetStreamType(changeInfo->sessionId);
-        if (sessionIDToSpatializationEnableMap.count(static_cast<uint32_t>(a2dpStreamInfo.sessionId))) {
-            a2dpStreamInfo.isSpatialAudio =
-                sessionIDToSpatializationEnableMap[static_cast<uint32_t>(a2dpStreamInfo.sessionId)];
-        } else {
-            a2dpStreamInfo.isSpatialAudio = 0;
-        }
-        allSessionInfos.push_back(a2dpStreamInfo);
     }
-
     UpdateA2dpOffloadFlag(allSessionInfos, deviceType);
 #endif
     AUDIO_DEBUG_LOG("deviceType %{public}d", deviceType);
