@@ -1351,7 +1351,6 @@ int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, boo
         case EARPIECE:
         case SPEAKER:
         case BLUETOOTH_SCO:
-        case FILE_SINK_DEVICE:
             break;
         default:
             AUDIO_ERR_LOG("SetCallDeviceActive device=%{public}d not supported", deviceType);
