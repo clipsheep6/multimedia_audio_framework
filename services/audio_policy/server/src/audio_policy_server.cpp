@@ -2105,10 +2105,14 @@ uint32_t AudioPolicyServer::GetSinkLatencyFromXml()
 int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {
+    auto callerPid = IPCSkeleton::GetCallingPid();
+    streamChangeInfo.audioRendererChangeInfo.callerPid = callerPid;
+    streamChangeInfo.audioCapturerChangeInfo.callerPid = callerPid;
+
     // update the clientUid
     auto callerUid = IPCSkeleton::GetCallingUid();
-    streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
-    streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
+    streamChangeInfo.audioRendererChangeInfo.callerUid = callerUid;
+    streamChangeInfo.audioCapturerChangeInfo.callerUid = callerUid;
     AUDIO_INFO_LOG("RegisterTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
         if (mode == AUDIO_MODE_PLAYBACK) {
@@ -2127,10 +2131,14 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
 
 int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
+    auto callerPid = IPCSkeleton::GetCallingPid();
+    streamChangeInfo.audioRendererChangeInfo.callerPid = callerPid;
+    streamChangeInfo.audioCapturerChangeInfo.callerPid = callerPid;
+
     // update the clientUid
     auto callerUid = IPCSkeleton::GetCallingUid();
-    streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
-    streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
+    streamChangeInfo.audioRendererChangeInfo.callerUid = callerUid;
+    streamChangeInfo.audioCapturerChangeInfo.callerUid = callerUid;
     AUDIO_INFO_LOG("UpdateTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
         if (mode == AUDIO_MODE_PLAYBACK) {

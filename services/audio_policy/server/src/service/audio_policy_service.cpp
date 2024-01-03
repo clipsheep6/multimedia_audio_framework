@@ -1532,7 +1532,7 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*outputDevice), true, true);
 
     if (!isStreamStatusUpdated) {
-        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->clientPid,
+        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }
 
@@ -4916,7 +4916,7 @@ void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
     streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 
     for (auto &info : audioCapturerChangeInfos) {
-        if (info->clientUID != uid && info->createrUID != uid) {
+        if (info->clientUID != uid && info->callerUid != uid) {
             continue;
         }
         audioCaptureMicrophoneDescriptor_.erase(info->sessionId);
