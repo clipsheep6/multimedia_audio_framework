@@ -345,6 +345,8 @@ public:
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneID) override;
 
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
