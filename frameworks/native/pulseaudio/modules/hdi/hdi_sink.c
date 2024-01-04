@@ -1123,7 +1123,7 @@ int32_t SinkRenderMultiChannelPeek(pa_sink *si, pa_memchunk *chunkIn)
 
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
-    pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
+    pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     pa_assert(chunkIn);
     pa_assert(chunkIn->memblock);
     pa_assert(chunkIn->length > 0);
