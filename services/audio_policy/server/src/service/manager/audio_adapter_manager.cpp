@@ -223,6 +223,7 @@ void AudioAdapterManager::UpdateMuteStatusForVolume(AudioStreamType streamType, 
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
 
     //The mute status is automatically updated based on the stream volume
+    lock_guard<mutex> lock(statusMapMutex_);
     if (volumeLevel > 0 && GetStreamMute(streamType)) {
         muteStatusMap_[streamForVolumeMap] = false;
         WriteMuteStatusToKvStore(currentActiveDevice_, streamType, false);
@@ -306,6 +307,7 @@ int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute
     }
 
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    lock_guard<mutex> lock(statusMapMutex_);
     muteStatusMap_[streamForVolumeMap] = mute;
     WriteMuteStatusToKvStore(currentActiveDevice_, streamType, mute);
 
@@ -329,6 +331,7 @@ int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute
 bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 {
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    lock_guard<mutex> lock(statusMapMutex_);
     return muteStatusMap_[streamForVolumeMap];
 }
 
@@ -448,6 +451,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     while (iter != VOLUME_TYPE_LIST.end()) {
         // update volume level and mute status for each stream type
         SetVolumeDb(*iter);
+        lock_guard<mutex> lock(statusMapMutex_);
         AUDIO_INFO_LOG("SetVolumeForSwitchDevice: volume: %{public}d, mute: %{public}d for stream type %{public}d",
             volumeLevelMap_[*iter], muteStatusMap_[*iter], *iter);
         iter++;
@@ -1060,6 +1064,7 @@ bool AudioAdapterManager::LoadMuteStatusFromKvStore(DeviceType deviceType, Audio
     Status status = audioPolicyKvStore_->Get(key, value);
     if (status == Status::SUCCESS) {
         bool muteStatus = TransferByteArrayToType<int>(value.Data());
+        lock_guard<mutex> lock(statusMapMutex_);
         muteStatusMap_[streamType] = muteStatus;
         return true;
     }
