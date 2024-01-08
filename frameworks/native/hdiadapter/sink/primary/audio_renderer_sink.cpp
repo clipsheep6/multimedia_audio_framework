@@ -23,6 +23,7 @@
 #include <string>
 #include <unistd.h>
 #include <mutex>
+#include <functional>
 
 #include "securec.h"
 #ifdef FEATURE_POWER_MANAGER
@@ -60,7 +61,9 @@ constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
 const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 120;
 
-const int64_t SECOND_TO_NANOSECOND = 1000000000;
+constexpr int64_t SECOND_TO_NANOSECOND = 1000000000;
+
+constexpr int64_t DEFAULT_DETECTION_INTERVAL = 3 * SECOND_TO_NANOSECOND;
 }
 class AudioRendererSinkInner : public AudioRendererSink {
 public:
@@ -130,6 +133,11 @@ private:
     std::atomic<int32_t> renderEmptyFrameCount_ = 0;
     std::mutex switchMutex_;
     std::condition_variable switchCV_;
+
+    int64_t lastCheckEmptyDataTime_ = 0;
+    int64_t detectionIntervalNano_ = DEFAULT_DETECTION_INTERVAL;
+    std::function<bool(uint64_t, const char&)> emptyDataChecker =
+        static_cast<bool(*)(uint64_t, const char&)> (&CheckHead64BitsEmpty);
 
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -496,8 +504,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 {
     int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
-        "Audio Render Handle is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Audio Render Handle is nullptr!");
 
     if (!started_) {
         AUDIO_WARNING_LOG("AudioRendererSinkInner::RenderFrame invalid state! not started");
@@ -534,6 +541,16 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         &writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED,
         "RenderFrame failed ret: %{public}x", ret);
+
+    if ((stamp < lastCheckEmptyDataTime_ || ((stamp - lastCheckEmptyDataTime_) > detectionIntervalNano_))
+        && emptyDataChecker) {
+        lastCheckEmptyDataTime_ = stamp;
+        if (emptyDataChecker(len, data)) {
+            AUDIO_INFO_LOG("write empty data");
+        } else {
+            AUDIO_INFO_LOG("write data is not empty");
+        }
+    }
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     if (logMode_) {

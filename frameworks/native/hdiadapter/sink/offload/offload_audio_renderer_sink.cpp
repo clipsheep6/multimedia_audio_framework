@@ -53,10 +53,12 @@ const uint32_t STEREO_CHANNEL_COUNT = 2;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
-const int64_t SECOND_TO_NANOSECOND = 1000000000;
+constexpr int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int64_t SECOND_TO_MICROSECOND = 1000000;
 const int64_t SECOND_TO_MILLISECOND = 1000;
 const uint32_t BIT_IN_BYTE = 8;
+
+constexpr int64_t DEFAULT_DETECTION_INTERVAL = 3 * SECOND_TO_NANOSECOND;
 }
 
 struct AudioCallbackService {
@@ -133,6 +135,11 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+
+    int64_t lastCheckEmptyDataTime_ = 0;
+    int64_t detectionIntervalNano_ = DEFAULT_DETECTION_INTERVAL;
+    std::function<bool(uint64_t, const char&)> emptyDataChecker =
+        static_cast<bool(*)(uint64_t, const char&)> (&CheckHead64BitsEmpty);
 
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
@@ -562,6 +569,17 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         &writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrameOffload failed! ret: %{public}x", ret);
     renderPos_ += writeLen;
+
+    int64_t stamp = ClockTime::GetCurNano();
+    if ((stamp < lastCheckEmptyDataTime_ || ((stamp - lastCheckEmptyDataTime_) > detectionIntervalNano_))
+        && emptyDataChecker) {
+        lastCheckEmptyDataTime_ = stamp;
+        if (emptyDataChecker(len, data)) {
+            AUDIO_INFO_LOG("write empty data");
+        } else {
+            AUDIO_INFO_LOG("write data is not empty");
+        }
+    }
     return SUCCESS;
 }
 
