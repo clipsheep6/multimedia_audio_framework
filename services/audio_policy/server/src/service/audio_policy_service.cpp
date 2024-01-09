@@ -5200,6 +5200,9 @@ void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
 void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
     DeviceType deviceType)
 {
+    if (allActiveSessions.size() < 1) {
+        return;
+    }
     auto receiveOffloadFlag = a2dpOffloadFlag_;
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) || (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
         currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID && deviceType == DEVICE_TYPE_NONE)) {
@@ -5290,6 +5293,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload()
 
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
+    sameDeviceSwitchFlag_ = true;
     FetchOutputDevice(rendererChangeInfos, false);
 
     preA2dpOffloadFlag_ = a2dpOffloadFlag_;
@@ -5324,6 +5328,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload()
 
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
+    sameDeviceSwitchFlag_ = true;
     FetchOutputDevice(rendererChangeInfos, false);
 
     std::string activePort = BLUETOOTH_SPEAKER;
