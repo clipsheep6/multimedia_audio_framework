@@ -225,6 +225,8 @@ private:
     float getSystemVolumeInDb_;
     bool useNonlinearAlgo_;
     bool isAbsVolumeScene_ = false;
+    
+    std::mutex statusMapMutex_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
