@@ -590,6 +590,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, interruptRequestResultTypeMap, interruptRequestResultType_)),
         DECLARE_NAPI_PROPERTY("ToneType", CreateEnumObject(env, toneTypeMap, toneType_)),
         DECLARE_NAPI_PROPERTY("DeviceUsage", CreateEnumObject(env, audioDeviceUsageMap, audioDviceUsage_)),
+        DECLARE_NAPI_PROPERTY("AudioStreamDeviceChangeReason", CreateEnumObject(env, audioDeviceChangeReasonMap, audioStreamDeviceChangeReason_)),
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
