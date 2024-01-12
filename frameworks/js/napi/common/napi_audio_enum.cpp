@@ -67,6 +67,7 @@ napi_ref NapiAudioEnum::toneType_ = nullptr;
 napi_ref NapiAudioEnum::audioDviceUsage_ = nullptr;
 napi_ref NapiAudioEnum::audioSpatialDeivceType_ = nullptr;
 napi_ref NapiAudioEnum::audioChannelLayout_ = nullptr;
+napi_ref NapiAudioEnum::audioStreamDeviceChangeReason_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -361,6 +362,12 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioDeviceUsageMap = {
     {"ALL_CALL_DEVICES", ALL_CALL_DEVICES},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::audioDeviceChangeReasonMap = {
+    {"UNKOWN", static_cast<int32_t>(AudioStreamDeviceChangeReason::UNKOWN)},
+    {"NEW_DEVICE_AVAILABLE", static_cast<int32_t>(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE)},
+    {"OLD_DEVICE_UNAVALIABLE", static_cast<int32_t>(AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE)},
+};
+
 const std::map<std::string, int32_t> NapiAudioEnum::audioSpatialDeivceTypeMap = {
     {"SPATIAL_DEVICE_TYPE_NONE", EARPHONE_TYPE_NONE },
     {"SPATIAL_DEVICE_TYPE_IN_EAR_HEADPHONE", EARPHONE_TYPE_INEAR},
@@ -581,6 +588,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, interruptRequestResultTypeMap, interruptRequestResultType_)),
         DECLARE_NAPI_PROPERTY("ToneType", CreateEnumObject(env, toneTypeMap, toneType_)),
         DECLARE_NAPI_PROPERTY("DeviceUsage", CreateEnumObject(env, audioDeviceUsageMap, audioDviceUsage_)),
+        DECLARE_NAPI_PROPERTY("AudioStreamDeviceChangeReason", CreateEnumObject(env, audioDeviceChangeReasonMap, audioStreamDeviceChangeReason_)),
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
