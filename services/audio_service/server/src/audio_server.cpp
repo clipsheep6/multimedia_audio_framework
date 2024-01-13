@@ -569,7 +569,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         resetConfig.appInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
     }
 
-    // check MICROPHONE_PERMISSIONconstexpr uid_t UID_FOUNDATION_SA = 5523;
+    constexpr uid_t UID_FOUNDATION_SA = 5523;
     if (resetConfig.capturerInfo.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE && callerUid == UID_FOUNDATION_SA) {
         AUIDO_INFO_LOG("sourcetype is virtual capture");
     } else {
