@@ -571,7 +571,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
 
     constexpr uid_t UID_FOUNDATION_SA = 5523;
     if (resetConfig.capturerInfo.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE && callerUid == UID_FOUNDATION_SA) {
-        AUDIO_INFO_LOG("sourcetype is virtual capture");
+        AUDIO_INFO_LOG("Sourcetype is virtual capture.");
     } else {
         bool res = VerifyClientPermission(MICROPHONE_PERMISSION, resetConfig.appInfo.appTokenId);
         CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_RECORD || res, nullptr,
