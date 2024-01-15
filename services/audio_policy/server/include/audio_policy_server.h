@@ -504,6 +504,8 @@ private:
 
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
+    void AddOtherSystemAbilityListener();
+
     bool powerStateCallbackRegister_;
     AudioPolicyService& audioPolicyService_;
     int32_t clientOnFocus_;
