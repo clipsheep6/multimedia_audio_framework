@@ -136,11 +136,11 @@ void AudioPolicyServer::OnStart()
 {
     AUDIO_INFO_LOG("AudioPolicyServer OnStart");
     audioPolicyService_.Init();
+    AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
 #endif
-    AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
     AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
@@ -174,6 +174,7 @@ void AudioPolicyServer::OnStop()
 void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
     AUDIO_DEBUG_LOG("OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    int64_t stamp = ClockTime::GetCurNano();
     switch (systemAbilityId) {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         case MULTIMODAL_INPUT_SERVICE_ID:
@@ -184,7 +185,9 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
             InitKVStore();
+            AUDIO_INFO_LOG("InitKVStore done cost [%{public}" PRId64 "]", ClockTime::GetCurNano() - stamp);
             RegisterDataObserver();
+            AUDIO_INFO_LOG("RegisterDataObserver done cost [%{public}" PRId64 "]", ClockTime::GetCurNano() - stamp);
             break;
         case AUDIO_DISTRIBUTED_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
@@ -198,21 +201,35 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             } else {
                 AUDIO_WARNING_LOG("OnAddSystemAbility audio service is not first start");
             }
+            AUDIO_INFO_LOG("OnAddSystemAbility audio service done cost [%{public}" PRId64 "]",
+                ClockTime::GetCurNano() - stamp);
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
             RegisterBluetoothListener();
+            AUDIO_INFO_LOG("RegisterBluetoothListener done cost [%{public}" PRId64 "]",
+                ClockTime::GetCurNano() - stamp);
             break;
         case ACCESSIBILITY_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
             SubscribeAccessibilityConfigObserver();
+            AUDIO_INFO_LOG("SubscribeAccessibilityConfigObserver done cost [%{public}" PRId64 "]",
+                ClockTime::GetCurNano() - stamp);
             InitKVStore();
+            AUDIO_INFO_LOG("InitKVStore done cost [%{public}" PRId64 "]",
+                ClockTime::GetCurNano() - stamp);
             RegisterDataObserver();
+            AUDIO_INFO_LOG("RegisterDataObserver done cost [%{public}" PRId64 "]",
+                ClockTime::GetCurNano() - stamp);
             break;
         case POWER_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
             SubscribePowerStateChangeEvents();
+            AUDIO_INFO_LOG("SubscribePowerStateChangeEvents done cost [%{public}" PRId64 "]",
+                ClockTime::GetCurNano() - stamp);
             RegisterPowerStateListener();
+            AUDIO_INFO_LOG("RegisterPowerStateListener done cost [%{public}" PRId64 "]",
+                ClockTime::GetCurNano() - stamp);
             break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
