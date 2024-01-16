@@ -63,6 +63,7 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("getAudioTime", GetAudioTime),
         DECLARE_NAPI_FUNCTION("getAudioTimeSync", GetAudioTimeSync),
         DECLARE_NAPI_FUNCTION("drain", Drain),
+        DECLARE_NAPI_FUNCTION("flush", Flush),
         DECLARE_NAPI_FUNCTION("pause", Pause),
         DECLARE_NAPI_FUNCTION("stop", Stop),
         DECLARE_NAPI_FUNCTION("release", Release),
@@ -95,7 +96,6 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
     };
-
     napi_status status = napi_define_class(env, NAPI_AUDIO_RENDERER_CLASS_NAME.c_str(),
         NAPI_AUTO_LENGTH, Construct, nullptr,
         sizeof(audio_renderer_properties) / sizeof(audio_renderer_properties[PARAM0]),
@@ -634,6 +634,35 @@ napi_value NapiAudioRenderer::Drain(napi_env env, napi_callback_info info)
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "Drain", executor, complete);
+}
+
+napi_value NapiAudioRenderer::Flush(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("Flush failed : no memory");
+        NapiAudioError::ThrowError(env, "Flush failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info, nullptr, true);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRenderer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        context->isTrue = napiAudioRenderer->audioRenderer_->Flush();
+        if (!context->isTrue) {
+            context->SignError(NAPI_ERR_ILLEGAL_STATE);
+        }
+    };
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "Flush", executor, complete);
 }
 
 napi_value NapiAudioRenderer::Pause(napi_env env, napi_callback_info info)
