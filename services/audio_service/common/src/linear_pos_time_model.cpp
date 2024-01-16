@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,7 +35,7 @@ LinearPosTimeModel::LinearPosTimeModel()
 bool LinearPosTimeModel::ConfigSampleRate(int32_t sampleRate)
 {
     AUDIO_INFO_LOG("ConfigSampleRate:%{public}d", sampleRate);
-    CHECK_AND_RETURN_RET_LOG(!isConfiged, false, "SampleRate already set:%{public}d", sampleRate_);
+    CHECK_AND_RETURN_RET_LOG(!isConfiged_, false, "SampleRate already set:%{public}d", sampleRate_);
     sampleRate_ = sampleRate;
     if (sampleRate_ <= 0 || sampleRate_ > MAX_SUPPORT_SAMPLE_RETE) {
         AUDIO_ERR_LOG("Invalid sample rate!");
@@ -43,7 +43,7 @@ bool LinearPosTimeModel::ConfigSampleRate(int32_t sampleRate)
     } else {
         nanoTimePerFrame_ = NANO_COUNT_PER_SECOND / sampleRate;
     }
-    isConfiged = true;
+    isConfiged_ = true;
     return true;
 }
 
@@ -93,7 +93,7 @@ bool LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
 
 bool LinearPosTimeModel::GetFrameStamp(uint64_t &frame, int64_t &nanoTime)
 {
-    CHECK_AND_RETURN_RET_LOG(isConfiged, false, "GetFrameStamp is not configed!");
+    CHECK_AND_RETURN_RET_LOG(isConfiged_, false, "GetFrameStamp is not configed!");
     frame = stampFrame_;
     nanoTime = stampNanoTime_;
     return true;
@@ -110,7 +110,7 @@ int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame)
 {
     int64_t deltaFrame = 0;
     int64_t invalidTime = -1;
-    CHECK_AND_RETURN_RET_LOG(isConfiged, invalidTime, "SampleRate is not configed!");
+    CHECK_AND_RETURN_RET_LOG(isConfiged_, invalidTime, "SampleRate is not configed!");
     if (posInFrame >= stampFrame_) {
         if (posInFrame - stampFrame_ >= (uint64_t)sampleRate_) {
             AUDIO_WARNING_LOG("posInFrame %{public}" PRIu64" is too"
@@ -127,6 +127,17 @@ int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame)
         return stampNanoTime_ - deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
     }
     return invalidTime;
+}
+
+void LinearPosTimeModel::ResetModel()
+{
+    isConfiged_ = false;
+    sampleRate_ = 0;
+    nanoTimePerFrame_ = 0;
+    spanCountInFrame_ = 0;
+
+    stampFrame_ = 0;
+    stampNanoTime_ = 0;
 }
 } // namespace AudioStandard
 } // namespace OHOS

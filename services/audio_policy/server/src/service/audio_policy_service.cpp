@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -3142,7 +3142,7 @@ void AudioPolicyService::RemoveDeviceInRouterMap(std::string networkId)
 {
     std::lock_guard<std::mutex> lock(routerMapMutex_);
     std::unordered_map<int32_t, std::pair<std::string, int32_t>>::iterator it;
-    for (it = routerMap_.begin();it != routerMap_.end();) {
+    for (it = routerMap_.begin(); it != routerMap_.end();) {
         if (it->second.first == networkId) {
             routerMap_.erase(it++);
         } else {
@@ -3155,7 +3155,7 @@ void AudioPolicyService::RemoveDeviceInFastRouterMap(std::string networkId)
 {
     std::lock_guard<std::mutex> lock(routerMapMutex_);
     std::unordered_map<int32_t, std::pair<std::string, DeviceRole>>::iterator it;
-    for (it = fastRouterMap_.begin();it != fastRouterMap_.end();) {
+    for (it = fastRouterMap_.begin(); it != fastRouterMap_.end();) {
         if (it->second.first == networkId) {
             fastRouterMap_.erase(it++);
         } else {
