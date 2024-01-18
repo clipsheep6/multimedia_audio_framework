@@ -374,6 +374,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
             isFastRenderer_ = false;
         }
     }
+    if (rendererInfo_.rendererFlags == STREAM_FLAG_FORCED_NORMAL) {
+        streamClass = IAudioStream::FORCED_PA_STREAM;
+    }
     // check AudioStreamParams for fast stream
     // As fast stream only support specified audio format, we should call GetPlaybackStream with audioStreamParams.
     if (audioStream_ == nullptr) {
