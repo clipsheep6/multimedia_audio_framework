@@ -205,7 +205,7 @@ bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParam
 }
 
 std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
-    AudioStreamType eStreamType, int32_t appUid)
+    AudioStreamType eStreamType, int32_t appUid, int32_t rendererFlag)
 {
     if (streamClass == FAST_STREAM) {
         (void)params;
@@ -215,7 +215,8 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
 
     int32_t ipcFlag = 0;
     GetSysPara("persist.multimedia.audiostream.ipc.renderer", ipcFlag);
-    if (ipcFlag == IPC_FOR_ALL || (ipcFlag == IPC_FOR_NOT_MEDIA && getuid() != MEDIA_UID)) {
+    if ((ipcFlag == IPC_FOR_NOT_MEDIA && getuid() != MEDIA_UID && rendererFlag != STREAM_FLAG_TONE_PLAYER)
+        || ipcFlag == IPC_FOR_ALL) {
         AUDIO_INFO_LOG("Create ipc playback stream");
         return RendererInClient::GetInstance(eStreamType, appUid);
     }
