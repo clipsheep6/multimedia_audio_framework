@@ -137,7 +137,8 @@ public:
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
 
-    explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
+    explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true,
+        int32_t rendererFlag = STREAM_FLAG_NORMAL);
 
     ~AudioRendererPrivate();
 

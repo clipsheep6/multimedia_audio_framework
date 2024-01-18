@@ -219,7 +219,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 #ifdef OHCORE
     auto audioRenderer = std::make_unique<AudioRendererGateway>(audioStreamType);
 #else
-    auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, false);
+    auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, false,
+        rendererOptions.rendererInfo.rendererFlags);
 #endif
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
     if (!cachePath.empty()) {
@@ -244,7 +245,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return audioRenderer;
 }
 
-AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
+AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream,
+    int32_t rendererFlag)
 {
     appInfo_ = appInfo;
     if (!(appInfo_.appPid)) {
@@ -258,7 +260,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     if (createStream) {
         AudioStreamParams tempParams = {};
         audioStream_ = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, tempParams, audioStreamType,
-            appInfo_.appUid);
+            appInfo_.appUid, rendererFlag);
         if (audioStream_ && STREAM_TYPE_USAGE_MAP.count(audioStreamType) != 0) {
             // Initialize the streamUsage based on the streamType
             rendererInfo_.streamUsage = STREAM_TYPE_USAGE_MAP.at(audioStreamType);
@@ -378,7 +380,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     // As fast stream only support specified audio format, we should call GetPlaybackStream with audioStreamParams.
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
-            appInfo_.appUid);
+            appInfo_.appUid, rendererInfo_.rendererFlags);
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         audioStream_->SetApplicationCachePath(cachePath_);
@@ -391,7 +393,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         streamClass = IAudioStream::PA_STREAM;
         isFastRenderer_ = false;
         audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
-            appInfo_.appUid);
+            appInfo_.appUid, rendererInfo_.rendererFlags);
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr,
             ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed when create normal stream.");
         ret = InitAudioStream(audioStreamParams);
@@ -1255,7 +1257,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         IAudioStream::SwitchInfo info;
         audioStream_->GetSwitchInfo(info);
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, info.params,
-            info.eStreamType, appInfo_.appPid);
+            info.eStreamType, appInfo_.appPid, rendererInfo_.rendererFlags);
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
         AUDIO_INFO_LOG("Get new stream success!");
 
