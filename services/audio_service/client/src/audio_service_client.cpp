@@ -39,7 +39,7 @@ namespace AudioStandard {
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
-const uint32_t INIT_TIMEOUT_IN_SEC = 3;
+const uint32_t INIT_TIMEOUT_IN_SEC = 8;
 const uint32_t DRAIN_TIMEOUT_IN_SEC = 3;
 const uint32_t CORK_TIMEOUT_IN_SEC = 3;
 const uint32_t WRITE_TIMEOUT_IN_SEC = 8;
