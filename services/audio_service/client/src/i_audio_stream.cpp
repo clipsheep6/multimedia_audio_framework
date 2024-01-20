@@ -16,6 +16,11 @@
 #include "i_audio_stream.h"
 #include <map>
 
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
+
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
@@ -28,10 +33,34 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    constexpr int32_t INTELL_VOICE_UID = 1042;
-    constexpr int32_t MEDIA_UID = 1013;
-    constexpr int32_t IPC_FOR_NOT_MEDIA = 1;
-    constexpr int32_t IPC_FOR_ALL = 2;
+constexpr int32_t INTELL_VOICE_UID = 1042;
+constexpr int32_t MEDIA_UID = 1013;
+constexpr int32_t IPC_FOR_NOT_MEDIA = 1;
+constexpr int32_t IPC_FOR_ALL = 2;
+const unsigned int TIME_OUT_SECONDS = 10;
+const std::string CONTACTS_BUNDLE_NAME = "com.ohos.contacts";
+
+static std::string GetBundleName()
+{
+    std::string bundleName = "";
+
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<OHOS::IRemoteObject> remoteObject =
+        systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
+
+    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
+
+    AppExecFwk::BundleInfo bundleInfo;
+    if (iBundleMgr->GetBundleInfoForSelf(0, bundleInfo) == ERR_OK) {
+        bundleName = bundleInfo.name;
+    } else {
+        AUDIO_WARNING_LOG("Get bundle info failed");
+    }
+    return bundleName;
+}
 }
 const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_ = IAudioStream::CreateStreamMap();
 std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::CreateStreamMap()
@@ -216,6 +245,13 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     int32_t ipcFlag = 0;
     GetSysPara("persist.multimedia.audiostream.ipc.renderer", ipcFlag);
     if (ipcFlag == IPC_FOR_ALL || (ipcFlag == IPC_FOR_NOT_MEDIA && getuid() != MEDIA_UID)) {
+        AudioXCollie audioXCollie("IAudioStream::GetBundleName", TIME_OUT_SECONDS);
+        std::string bundleName = GetBundleName();
+        audioXCollie.CancelXCollieTimer();
+        if (bundleName == CONTACTS_BUNDLE_NAME) {
+            AUDIO_INFO_LOG("Create contacts pa playback stream");
+            return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
+        }
         AUDIO_INFO_LOG("Create ipc playback stream");
         return RendererInClient::GetInstance(eStreamType, appUid);
     }
