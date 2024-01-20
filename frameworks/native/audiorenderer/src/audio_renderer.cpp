@@ -367,11 +367,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
                 IAudioStream::FAST_STREAM;
         } else {
             AUDIO_ERR_LOG("Unsupported parameter, try to create a normal stream");
-            streamClass = IAudioStream::PA_STREAM;
             isFastRenderer_ = false;
         }
-    }
-    if (rendererInfo_.rendererFlags == STREAM_FLAG_FORCED_NORMAL) {
+    } else if (rendererInfo_.rendererFlags == STREAM_FLAG_FORCED_NORMAL) {
         streamClass = IAudioStream::FORCED_PA_STREAM;
     }
     // check AudioStreamParams for fast stream
