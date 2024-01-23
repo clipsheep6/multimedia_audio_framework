@@ -1163,6 +1163,7 @@ private:
     std::shared_ptr<WakeUpSourceCloseCallback> audioWakeUpSourceCloseCallback_ = nullptr;
 
     std::shared_ptr<WakeUpCallbackImpl> remoteWakeUpCallback_;
+    std::mutex classMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
