@@ -44,6 +44,7 @@ AudioSystemManager::AudioSystemManager()
 
 AudioSystemManager::~AudioSystemManager()
 {
+    std::lock_guard<std::mutex> lock(classMutex_);
     AUDIO_DEBUG_LOG("AudioSystemManager::~AudioSystemManager");
     if (cbClientId_ != -1) {
         UnsetRingerModeCallback(cbClientId_);
@@ -891,6 +892,9 @@ int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<s
 
 std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
 {
+    std::lock_guard<std::mutex> lock(classMutex_);
+    CHECK_AND_RETURN_RET_LOG(groupManagerMap_ != nullptr, nullptr, "Group manager map is nullptr");
+
     std::vector<std::shared_ptr<AudioGroupManager>>::iterator iter = groupManagerMap_.begin();
     while (iter != groupManagerMap_.end()) {
         if ((*iter)->GetGroupId() == groupId) {
