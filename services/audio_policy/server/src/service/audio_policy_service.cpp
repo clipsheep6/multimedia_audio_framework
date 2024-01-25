@@ -1729,10 +1729,15 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         runningStreamCount++;
         unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(
             rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID);
+        AudioDeviceDescriptor currentActiveDevice = currentActiveDevice_;
         DeviceInfo outputDeviceInfo = rendererChangeInfo->outputDeviceInfo;
         if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, outputDeviceInfo) &&
             !NeedRehandleA2DPDevice(desc) && !sameDeviceSwitchFlag_)) {
             AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
+            if (!IsSameDevice(desc, currentActiveDevice)) {
+                currentActiveDevice_ = AudioDeviceDescriptor(*desc);
+                AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice.deviceType_);
+            }
             continue;
         }
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
