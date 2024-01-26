@@ -655,7 +655,7 @@ struct StreamSetStateEventInternal {
 
 class AudioRendererChangeInfo {
 public:
-    int32_t createrUID;
+    int32_t callerUid;
     int32_t clientUID;
     int32_t sessionId;
     int32_t callerPid;
@@ -674,7 +674,7 @@ public:
     ~AudioRendererChangeInfo() = default;
     bool Marshalling(Parcel &parcel) const
     {
-        return parcel.WriteInt32(createrUID)
+        return parcel.WriteInt32(callerUid)
             && parcel.WriteInt32(clientUID)
             && parcel.WriteInt32(sessionId)
             && parcel.WriteInt32(callerPid)
@@ -705,7 +705,7 @@ public:
     }
     void Unmarshalling(Parcel &parcel)
     {
-        createrUID = parcel.ReadInt32();
+        callerUid = parcel.ReadInt32();
         clientUID = parcel.ReadInt32();
         sessionId = parcel.ReadInt32();
         callerPid = parcel.ReadInt32();
@@ -724,7 +724,7 @@ public:
 
 class AudioCapturerChangeInfo {
 public:
-    int32_t createrUID;
+    int32_t callerUid;
     int32_t clientUID;
     int32_t sessionId;
     int32_t callerPid;
@@ -743,7 +743,7 @@ public:
     ~AudioCapturerChangeInfo() = default;
     bool Marshalling(Parcel &parcel) const
     {
-        return parcel.WriteInt32(createrUID)
+        return parcel.WriteInt32(callerUid)
             && parcel.WriteInt32(clientUID)
             && parcel.WriteInt32(sessionId)
             && parcel.WriteInt32(callerPid)
@@ -756,7 +756,7 @@ public:
     }
     void Unmarshalling(Parcel &parcel)
     {
-        createrUID = parcel.ReadInt32();
+        callerUid = parcel.ReadInt32();
         clientUID = parcel.ReadInt32();
         sessionId = parcel.ReadInt32();
         callerPid = parcel.ReadInt32();

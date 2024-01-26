@@ -107,7 +107,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
         AUDIO_ERR_LOG("AddRendererStream Memory Allocation Failed");
         return ERR_MEMORY_ALLOC_FAILED;
     }
-    rendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
+    rendererChangeInfo->callerUid = streamChangeInfo.audioRendererChangeInfo.callerUid;
     rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     rendererChangeInfo->callerPid = streamChangeInfo.audioRendererChangeInfo.callerPid;
@@ -165,7 +165,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
         AUDIO_ERR_LOG("AddCapturerStream Memory Allocation Failed");
         return ERR_MEMORY_ALLOC_FAILED;
     }
-    capturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
+    capturerChangeInfo->callerUid = streamChangeInfo.audioCapturerChangeInfo.callerUid;
     capturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
     capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
     capturerChangeInfo->callerPid = streamChangeInfo.audioCapturerChangeInfo.callerPid;
@@ -215,7 +215,7 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
 void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamChangeInfo,
     unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
-    rendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
+    rendererChangeInfo->callerUid = streamChangeInfo.audioRendererChangeInfo.callerUid;
     rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     rendererChangeInfo->callerPid = streamChangeInfo.audioRendererChangeInfo.callerPid;
@@ -229,7 +229,7 @@ void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamC
 void AudioStreamCollector::SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
     unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
 {
-    capturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
+    capturerChangeInfo->callerUid = streamChangeInfo.audioCapturerChangeInfo.callerUid;
     capturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
     capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
     capturerChangeInfo->callerPid = streamChangeInfo.audioCapturerChangeInfo.callerPid;
@@ -533,7 +533,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     while (audioRendererBegin != audioRendererChangeInfos_.end()) {
         const auto &audioRendererChangeInfo = *audioRendererBegin;
         if (audioRendererChangeInfo == nullptr ||
-            (audioRendererChangeInfo->clientUID != uid && audioRendererChangeInfo->createrUID != uid)) {
+            (audioRendererChangeInfo->clientUID != uid && audioRendererChangeInfo->callerUid != uid)) {
             audioRendererBegin++;
             continue;
         }
@@ -592,7 +592,7 @@ int32_t AudioStreamCollector::GetUid(int32_t sessionId)
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->sessionId == sessionId) {
-            defaultUid = changeInfo->createrUID;
+            defaultUid = changeInfo->callerUid;
             break;
         }
     }

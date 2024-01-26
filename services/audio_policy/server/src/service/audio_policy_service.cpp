@@ -4990,7 +4990,7 @@ void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
     streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 
     for (auto &info : audioCapturerChangeInfos) {
-        if (info->clientUID != uid && info->createrUID != uid) {
+        if (info->clientUID != uid && info->callerUid != uid) {
             continue;
         }
         audioCaptureMicrophoneDescriptor_.erase(info->sessionId);
