@@ -216,6 +216,20 @@ T *ObjectRefMap<T>::GetPtr()
 {
     return obj_;
 }
+
+inline bool CheckHead64BitsEmpty(uint64_t len, const char *data)
+{
+    if (len >= sizeof(uint64_t)) {
+        const uint64_t *dataToCheck = reinterpret_cast<const uint64_t *> (data);
+        return ((*dataToCheck) == 0);
+    }
+    return true;
+}
+
+inline bool CheckHead64BitsEmpty(uint64_t len, const char& data)
+{
+    return CheckHead64BitsEmpty(len, &data);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

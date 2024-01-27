@@ -229,5 +229,38 @@ HWTEST(AudioUtilsUnitTest, GetSysPara_001, TestSize.Level1)
     bool result4 = GetSysPara(key, strValue);
     EXPECT_EQ(true, result4);
 }
+
+/**
+* @tc.name  : Test CheckHead64BitsEmpty API
+* @tc.type  : FUNC
+* @tc.number: CheckHead64BitsEmpty_001
+* @tc.desc  : Test CheckHead64BitsEmpty interface.
+*/
+HWTEST(AudioUtilsUnitTest, CheckHead64BitsEmpty_001, TestSize.Level1)
+{
+    std::string str = "";
+    bool res = CheckHead64BitsEmpty(str.size(), str.c_str());
+    EXPECT_EQ(true, res);
+    res = CheckHead64BitsEmpty(str.size(), (*str.c_str()));
+    EXPECT_EQ(true, res);
+
+    str = "1";
+    res = CheckHead64BitsEmpty(str.size(), str.c_str());
+    EXPECT_EQ(true, res);
+    res = CheckHead64BitsEmpty(str.size(), (*str.c_str()));
+    EXPECT_EQ(true, res);
+
+    str = "12345678";
+    res = CheckHead64BitsEmpty(str.size(), str.c_str());
+    EXPECT_EQ(false, res);
+    res = CheckHead64BitsEmpty(str.size(), (*str.c_str()));
+    EXPECT_EQ(false, res);
+
+    const char str2[8] = {};
+    res = CheckHead64BitsEmpty(sizeof(str2), str2);
+    EXPECT_EQ(true, res);
+    res = CheckHead64BitsEmpty(sizeof(str2), *str2);
+    EXPECT_EQ(true, res);
+}
 } // namespace AudioStandard
 } // namespace OHOS

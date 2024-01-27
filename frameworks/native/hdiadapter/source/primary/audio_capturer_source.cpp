@@ -37,7 +37,8 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    const int64_t SECOND_TO_NANOSECOND = 1000000000;
+    constexpr int64_t SECOND_TO_NANOSECOND = 1000000000;
+    constexpr int64_t DEFAULT_DETECTION_INTERVAL = 3 * SECOND_TO_NANOSECOND;
 }
 class AudioCapturerSourceInner : public AudioCapturerSource {
 public:
@@ -123,6 +124,11 @@ private:
     bool muteState_ = false;
     DeviceType currentActiveDevice_;
     AudioScene currentAudioScene_;
+
+    int64_t lastCheckEmptyDataTime_ = 0;
+    int64_t detectionIntervalNano_ = DEFAULT_DETECTION_INTERVAL;
+    std::function<bool(uint64_t, const char*)> emptyDataChecker =
+        static_cast<bool(*)(uint64_t, const char*)> (&CheckHead64BitsEmpty);
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
@@ -546,6 +552,16 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     uint32_t frameLen = static_cast<uint32_t>(requestBytes);
     ret = audioCapture_->CaptureFrame(audioCapture_, reinterpret_cast<int8_t*>(frame), &frameLen, &replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
+
+    if ((stamp < lastCheckEmptyDataTime_ || ((stamp - lastCheckEmptyDataTime_) > detectionIntervalNano_))
+        && emptyDataChecker) {
+        lastCheckEmptyDataTime_ = stamp;
+        if (emptyDataChecker(replyBytes, frame)) {
+            AUDIO_INFO_LOG("read empty data");
+        } else {
+            AUDIO_INFO_LOG("read data is not empty");
+        }
+    }
 
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
 
