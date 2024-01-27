@@ -535,16 +535,19 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         }
     }
     Trace trace("AudioRendererSinkInner::RenderFrame");
-    ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
-        &writeLen);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED,
-        "RenderFrame failed ret: %{public}x", ret);
+    if (started_) {
+        ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
+            &writeLen);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED,
+            "RenderFrame failed ret: %{public}x", ret);
 
-    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    if (logMode_) {
-        AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
+        stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+        if (logMode_) {
+            AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
+        }
+        return SUCCESS;
     }
-    return SUCCESS;
+    return ERR_WRITE_FAILED;
 }
 
 int32_t AudioRendererSinkInner::Start(void)
