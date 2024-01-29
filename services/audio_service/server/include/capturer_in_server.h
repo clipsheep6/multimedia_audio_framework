@@ -56,8 +56,6 @@ public:
     BufferDesc DequeueBuffer(size_t length);
     void ReadData(size_t length);
     int32_t DrainAudioBuffer();
-    int32_t ReadOneFrame();
-    std::shared_ptr<OHAudioBuffer> GetOHSharedBuffer();
 
 private:
     std::mutex statusLock_;
@@ -81,6 +79,7 @@ private:
     int32_t underflowCount = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
+    bool overFlowLogFlag = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

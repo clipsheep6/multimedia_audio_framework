@@ -521,11 +521,6 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
     CHECK_AND_RETURN_LOG(userdata, "PAStreamWriteCb: userdata is null");
 
     auto streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
-    if (streamImpl->abortFlag_ != 0) {
-        AUDIO_ERR_LOG("PAStreamWriteCb: Abort pa stream write callback");
-        streamImpl->abortFlag_--;
-        return ;
-    }
     std::shared_ptr<IWriteCallback> writeCallback = streamImpl->writeCallback_.lock();
     if (writeCallback != nullptr) {
         writeCallback->OnWriteData(length);
@@ -712,13 +707,7 @@ const std::string PaRendererStreamImpl::GetEffectSceneName(AudioStreamType audio
     return sceneName;
 }
 
-void PaRendererStreamImpl::AbortCallback(int32_t abortTimes)
-{
-    abortFlag_ += abortTimes;
-}
-
 // offload
-
 size_t PaRendererStreamImpl::GetWritableSize()
 {
     return pa_stream_writable_size(paStream_);
@@ -899,9 +888,7 @@ int32_t PaRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
     auto powerState = static_cast<PowerMgr::PowerState>(state);
     if ((powerState != PowerMgr::PowerState::AWAKE) && (powerState != PowerMgr::PowerState::FREEZE)) {
         statePolicy = OFFLOAD_INACTIVE_BACKGROUND;
-    } else if (isAppBack) {
-        statePolicy = OFFLOAD_ACTIVE_FOREGROUND;
-    } else if (!isAppBack) {
+    } else {
         statePolicy = OFFLOAD_ACTIVE_FOREGROUND;
     }
 
