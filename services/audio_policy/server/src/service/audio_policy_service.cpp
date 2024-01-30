@@ -5462,7 +5462,7 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDev
     std::vector<unique_ptr<AudioDeviceDescriptor>> activeDeviceDescriptors;
 
     for (auto &desc : audioPrivacyDeviceDescriptors) {
-        if (audioPrivacyDeviceDescriptors[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             activeDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
         }
     }
