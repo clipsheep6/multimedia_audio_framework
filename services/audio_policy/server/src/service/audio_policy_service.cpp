@@ -5468,7 +5468,6 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDev
     }
     
     uint32_t btDeviceSize = activeDeviceDescriptors.size();
-
     if (btDeviceSize == 0) {
         return make_unique<AudioDeviceDescriptor>();
     } else if (btDeviceSize == 1) {
