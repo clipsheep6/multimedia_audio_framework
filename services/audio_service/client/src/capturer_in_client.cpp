@@ -1539,10 +1539,10 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Illegal state:%{public}u", state_.load());
     statusLock.unlock();
     size_t readSize = 0;
-    while (readSize < userSize) {
+    do {
         int32_t res = HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
         CHECK_AND_RETURN_RET_LOG(res >= 0, ERROR, "HandleCapturerRead err : %{public}d", res);
-    }
+    } while ((readSize < userSize) && (readSize > 0));
     HandleCapturerPositionChanges(readSize);
     return readSize;
 }
