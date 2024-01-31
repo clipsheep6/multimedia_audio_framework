@@ -58,6 +58,7 @@ std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::st
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
+const unsigned int PRINT_STACKTRACE_TIME_OUT_SECONDS = 1;
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -263,8 +264,23 @@ const std::vector<std::pair<std::string, std::string>> AudioServer::GetExtraPara
     return values;
 }
 
+bool AudioServer::CheckAndPrintStacktrace(const std::string &key)
+{
+    if (key != "dump_pulseaudio_stacktrace") {
+        return false;
+    }
+    AUDIO_WARNING_LOG("Start print stacktrace");
+    AudioXCollie wakeupXCollie("AudioServer::PrintStackTrace", PRINT_STACKTRACE_TIME_OUT_SECONDS);
+    sleep(2); // sleep 2 seconds to dump stacktrace
+    return true;
+}
+
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
+    if (CheckAndPrintStacktrace(key) == true) {
+        return "";
+    }
+
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
     AUDIO_DEBUG_LOG("server: get audio parameter");
