@@ -188,7 +188,7 @@ int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
     return SUCCESS;
 }
 
-bool AudioStream::GetAudioTimeForDev(Timestamp &timestamp, Timestamp::Timestampbase base)
+bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     if (state_ == STOPPED) {
         return false;
@@ -221,12 +221,9 @@ bool AudioStream::GetAudioTimeForDev(Timestamp &timestamp, Timestamp::Timestampb
     return false;
 }
 
-bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+bool AudioStream::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    if (hdiPositionSwitch) {
-        return GetAudioTimeForDev(timestamp, base);
-    }
-    if (state_ == STOPPED) {
+    if (state_ != RUNNING) {
         return false;
     }
     uint64_t framePosition = 0;
@@ -323,6 +320,7 @@ void AudioStream::RegisterTracker(const std::shared_ptr<AudioClientTracker> &pro
         registerTrackerInfo.rendererInfo = rendererInfo_;
         registerTrackerInfo.capturerInfo = capturerInfo_;
         registerTrackerInfo.channelCount = streamParams_.channels;
+        registerTrackerInfo.appTokenId = GetAppTokenId();
 
         audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;
@@ -346,7 +344,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         ReleaseAudioStream(false);
     }
     AudioStreamParams param = info;
-
+    streamOriginParams_ = info;
     int32_t ret = 0;
 
     if ((ret = InitFromParams(param)) != SUCCESS) {
@@ -389,9 +387,6 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
 
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = true;
-        if (writeThread_ && writeThread_->joinable()) {
-            writeThread_->join();
-        }
         writeThread_ = std::make_unique<std::thread>(&AudioStream::WriteCbTheadLoop, this);
         pthread_setname_np(writeThread_->native_handle(), "OS_AudioWriteCb");
     } else if (captureMode_ == CAPTURE_MODE_CALLBACK) {
@@ -566,6 +561,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     // Ends the WriteCb thread
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = false;
+        CheckOffloadBreakWaitWrite();
         // wake write thread to make pause faster
         bufferQueueCV_.notify_all();
         if (writeThread_ && writeThread_->joinable()) {
@@ -615,6 +611,7 @@ bool AudioStream::StopAudioStream()
 
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = false;
+        CheckOffloadBreakWaitWrite();
         if (writeThread_ && writeThread_->joinable()) {
             writeThread_->join();
         }
@@ -646,10 +643,14 @@ bool AudioStream::FlushAudioStream()
     CHECK_AND_RETURN_RET_LOG((state_ == RUNNING) || (state_ == PAUSED) || (state_ == STOPPED),
         false, "State is not RUNNING. Illegal state:%{public}u", state_);
 
+    if (converter_ != nullptr && streamParams_.encoding == ENCODING_AUDIOVIVID) {
+        CHECK_AND_RETURN_RET_LOG(converter_->Flush(), false, "Flush stream fail, failed in converter");
+    }
+
     int32_t ret = FlushStream();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Flush stream fail,ret:%{public}d", ret);
 
-    AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
+    AUDIO_DEBUG_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
 }
 
@@ -1146,7 +1147,7 @@ void AudioStream::SetStreamTrackerState(bool trackerRegisteredState)
 
 void AudioStream::GetSwitchInfo(SwitchInfo& info)
 {
-    GetAudioStreamParams(info.params);
+    info.params = streamOriginParams_;
 
     info.rendererInfo = rendererInfo_;
     info.capturerInfo = capturerInfo_;
@@ -1198,6 +1199,7 @@ void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         }
         std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isUpEvent_) {
+            AUDIO_WARNING_LOG("write silent data for some time");
             isUpEvent_ = true;
             HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "BACKGROUND_SILENT_PLAYBACK",
                 HiviewDFX::HiSysEvent::EventType::STATISTIC,
@@ -1302,7 +1304,7 @@ bool AudioStream::RestoreAudioStream()
     state_ = NEW;
     SetStreamTrackerState(false);
 
-    int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
+    int32_t ret = SetAudioStreamInfo(streamOriginParams_, proxyObj_);
     if (ret != SUCCESS) {
         goto error;
     }
