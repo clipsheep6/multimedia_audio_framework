@@ -404,6 +404,8 @@ public:
 
     void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
 
+    void OnPerferStateUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
+
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
 
     void UpdateA2dpOffloadFlagBySpatialService(
