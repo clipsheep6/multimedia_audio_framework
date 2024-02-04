@@ -23,7 +23,12 @@ namespace AudioStandard {
 
 unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+    unique_ptr<AudioDeviceDescriptor> desc = make_unique<AudioDeviceDescriptor>();
+    if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
+        desc = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderDefaultDevice();
+    } else {
+        desc = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+    }
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
         desc->deviceType_);
     return desc;
