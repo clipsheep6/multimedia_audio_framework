@@ -78,7 +78,7 @@ group("oh_audio_renderer_test_packages") {
 }
 
 ohos_executable("oh_audio_capturer_test") {
-  install_enable = false
+  install_enable = true
 
   include_dirs = [
     "../../../interfaces/kits/c/",
@@ -100,7 +100,7 @@ ohos_executable("oh_audio_capturer_test") {
 }
 
 ohos_executable("oh_audio_renderer_test") {
-  install_enable = false
+  install_enable = true
 
   include_dirs = [
     "../../../interfaces/kits/c/",
