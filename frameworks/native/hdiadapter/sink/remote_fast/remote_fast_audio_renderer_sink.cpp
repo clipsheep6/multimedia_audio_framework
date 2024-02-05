@@ -206,7 +206,7 @@ int32_t RemoteFastAudioRendererSinkInner::InitAdapter()
     int32_t ret = audioManager_->GetAllAdapters(descriptors_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Get adapters failed");
     CHECK_AND_RETURN_RET_LOG(descriptors_.data() != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail");
-    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}lu", descriptors_.size());
+    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}u", descriptors_.size());
 
     int32_t targetIdx = -1;
     for (uint32_t index = 0; index < descriptors_.size(); index++) {
@@ -220,7 +220,7 @@ int32_t RemoteFastAudioRendererSinkInner::InitAdapter()
         }
         targetIdx = index;
         if (desc->ports.size() <= 0) {
-            AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %lu.", index, desc->ports.size());
+            AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %u.", index, desc->ports.size());
         }
     }
     CHECK_AND_RETURN_RET_LOG((targetIdx >= 0), ERR_NOT_STARTED, "can not find target adapter.");
