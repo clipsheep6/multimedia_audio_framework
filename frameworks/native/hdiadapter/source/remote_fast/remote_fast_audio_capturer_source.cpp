@@ -138,7 +138,7 @@ private:
     std::string deviceNetworkId_;
     uint32_t captureId_ = 0;
     std::vector<AudioAdapterDescriptor> descriptors_;
-    struct AudioAdapterDescriptor adapterDesc_;   
+    struct AudioAdapterDescriptor adapterDesc_;
 
 #ifdef DEBUG_DIRECT_USE_HDI
     sptr<Ashmem> ashmemSource_ = nullptr;
