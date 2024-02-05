@@ -386,6 +386,9 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
     state_ = RUNNING;
 
     if (renderMode_ == RENDER_MODE_CALLBACK) {
+        if (writeThread_ && writeThread_->joinable()) {
+            writeThread_->join();
+        }
         isReadyToWrite_ = true;
         if (writeThread_ && writeThread_->joinable()) {
             writeThread_->join();
