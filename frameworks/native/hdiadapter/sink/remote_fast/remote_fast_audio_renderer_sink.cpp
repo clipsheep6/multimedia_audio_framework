@@ -219,7 +219,7 @@ int32_t RemoteFastAudioRendererSinkInner::InitAdapter()
             continue;
         }
         targetIdx = index;
-        if (desc->ports.size() <= 0 ) {
+        if (desc->ports.size() <= 0) {
             AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %lu.", index, desc->ports.size());
         }
     }

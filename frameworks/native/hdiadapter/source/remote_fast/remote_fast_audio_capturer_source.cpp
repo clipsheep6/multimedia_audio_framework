@@ -98,7 +98,7 @@ private:
     uint32_t PcmFormatToBits(HdiAdapterFormat format);
     void ClearCapture();
     int32_t InitAudioManager();
-    int32_t InitAdapter();    
+    int32_t InitAdapter();
 
 private:
     static constexpr int32_t INVALID_FD = -1;
@@ -138,7 +138,7 @@ private:
     std::string deviceNetworkId_;
     uint32_t captureId_ = 0;
     std::vector<AudioAdapterDescriptor> descriptors_;
-    struct AudioAdapterDescriptor adapterDesc_;    
+    struct AudioAdapterDescriptor adapterDesc_;   
 
 #ifdef DEBUG_DIRECT_USE_HDI
     sptr<Ashmem> ashmemSource_ = nullptr;
@@ -271,7 +271,7 @@ int32_t RemoteFastAudioCapturerSourceInner::InitAdapter()
             continue;
         }
         targetIdx = index;
-        if (desc->ports.size() <= 0 ) {
+        if (desc->ports.size() <= 0) {
             AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %lu.", index, desc->ports.size());
         }
     }

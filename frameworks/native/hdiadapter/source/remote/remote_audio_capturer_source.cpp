@@ -225,7 +225,7 @@ int32_t RemoteAudioCapturerSourceInner::InitAdapter()
             continue;
         }
         targetIdx = index;
-        if (desc->ports.size() <= 0 ) {
+        if (desc->ports.size() <= 0) {
             AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %lu.", index, desc->ports.size());
         }
     }
@@ -332,7 +332,7 @@ int32_t RemoteAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t reque
     if (!started_.load()) {
         AUDIO_DEBUG_LOG("RemoteAudioCapturerSourceInner::CaptureFrame invalid state not started.");
     }
-    std::vector<int8_t> frameHal(requestBytes);    
+    std::vector<int8_t> frameHal(requestBytes);  
     int32_t ret = audioCapture_->CaptureFrame(frameHal, replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_READ_FAILED, "Capture frame fail, ret %{public}x.", ret);
 
