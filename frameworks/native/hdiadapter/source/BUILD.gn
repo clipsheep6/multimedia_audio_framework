@@ -162,7 +162,7 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
 
   external_deps = [
     "c_utils:utils",
-    "drivers_interface_distributed_audio:libdaudio_proxy_1.0",    
+    "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
     "hilog:libhilog",
   ]
   defines = []
