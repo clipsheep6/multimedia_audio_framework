@@ -190,6 +190,7 @@ private:
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;
     AudioSpatialDeviceType spatialDeviceType{ EARPHONE_TYPE_NONE };
+    bool initializedLogFlag_ = true;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
