@@ -223,7 +223,7 @@ int AudioManagerStub::HandleLoadAudioEffectLibraries(MessageParcel &data, Messag
         "LOAD_AUDIO_EFFECT_LIBRARIES read data failed");
     LoadEffectLibrariesReadData(libList, effectList, data, countLib, countEff);
     if (countLib > 0) {
-        //load lib and reply success list
+        // load lib and reply success list
         vector<Effect> successEffectList = {};
         bool loadSuccess = LoadAudioEffectLibraries(libList, effectList, successEffectList);
         CHECK_AND_RETURN_RET_LOG(loadSuccess, AUDIO_ERR, "Load audio effect libraries failed, please check log");
@@ -354,6 +354,14 @@ int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, Messa
     spatializationState.spatializationEnabled = data.ReadBool();
     spatializationState.headTrackingEnabled = data.ReadBool();
     int32_t ret = UpdateSpatializationState(spatializationState);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUpdateSpatialDeviceType(MessageParcel& data, MessageParcel& reply)
+{
+    AudioSpatialDeviceType spatialDeviceType = static_cast<AudioSpatialDeviceType>(data.ReadInt32());
+    int32_t ret = UpdateSpatialDeviceType(spatialDeviceType);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }

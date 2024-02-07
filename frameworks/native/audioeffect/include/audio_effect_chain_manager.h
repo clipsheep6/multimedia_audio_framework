@@ -40,7 +40,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM = 3;
+const uint32_t NUM_SET_EFFECT_PARAM = 4;
 const uint32_t DEFAULT_FRAMELEN = 1440;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
@@ -98,18 +98,15 @@ struct AudioEffectProcInfo {
 class AudioEffectChain {
 public:
 #ifdef SENSOR_ENABLE
-    AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker);
+    AudioEffectChain(std::string scene, AudioSpatialDeviceType spatialDevice, std::shared_ptr<HeadTracker> headTracker);
 #else
-    AudioEffectChain(std::string scene);
+    AudioEffectChain(std::string scene, AudioSpatialDeviceType spatialDevice);
 #endif
     ~AudioEffectChain();
     std::string GetEffectMode();
     void SetEffectMode(std::string mode);
     void ReleaseEffectChain();
-    void AddEffectHandleBegin();
-    void AddEffectHandleEnd();
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle);
-    void SetEffectChain(std::vector<AudioEffectHandle> &effHandles, std::vector<AudioEffectLibrary *> &libHandles);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
@@ -119,10 +116,13 @@ public:
     AudioEffectConfig GetIoBufferConfig();
     void InitEffectChain();
     void SetHeadTrackingDisabled();
+    int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDevice);
 private:
+    void SetAudioEffectParam(AudioEffectParam* effectParam);
     std::mutex reloadMutex;
     std::string sceneType;
     std::string effectMode;
+    AudioSpatialDeviceType spatialDeviceType;
     std::vector<AudioEffectHandle> standByEffectHandles;
     std::vector<AudioEffectLibrary*> libHandles;
     AudioEffectConfig ioBufferConfig;
@@ -159,6 +159,7 @@ public:
     int32_t UpdateMultichannelConfig(const std::string &sceneType);
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
+    int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDevice);
     int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
     int32_t SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info);
     int32_t SessionInfoMapDelete(std::string sceneType, std::string sessionID);
@@ -169,6 +170,7 @@ private:
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
+    int32_t UpdateDeviceInfo(int32_t device, std::string& sinkName);
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
@@ -187,6 +189,7 @@ private:
     bool spatializationEnabled_ = false;
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;
+    AudioSpatialDeviceType spatialDeviceType{ EARPHONE_TYPE_NONE };
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

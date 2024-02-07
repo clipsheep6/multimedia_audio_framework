@@ -259,11 +259,20 @@ public:
     /**
      * Update spatialization enabled state and head tracking enabled state.
      *
-     * @param state identify the enabled state
+     * @param spatializationState identify the enabled state.
      *
      * @return result of setting. 0 if success, error number else.
     */
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
+
+    /**
+     * Update spatial device type.
+     *
+     * @param spatialDeviceType identify the spatial device type.
+     *
+     * @return result of setting. 0 if success, error number else.
+    */
+    virtual int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) = 0;
 
     /**
      * Notify Stream volume changed.
@@ -312,6 +321,7 @@ private:
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
     int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateSpatialDeviceType(MessageParcel& data, MessageParcel& reply);
     int HandleGetCapturePresentationPosition(MessageParcel &data, MessageParcel &reply);
     int HandleGetRenderPresentationPosition(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
@@ -349,6 +359,7 @@ private:
         &AudioManagerStub::HandleSetWakeupSourceCallback,
         &AudioManagerStub::HandleSetCaptureSilentState,
         &AudioManagerStub::HandleUpdateSpatializationState,
+        &AudioManagerStub::HandleUpdateSpatialDeviceType,
         &AudioManagerStub::HandleOffloadSetVolume,
         &AudioManagerStub::HandleOffloadDrain,
         &AudioManagerStub::HandleOffloadGetPresentationPosition,
