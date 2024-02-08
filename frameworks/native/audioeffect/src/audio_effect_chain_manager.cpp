@@ -26,10 +26,10 @@
 
 #include "securec.h"
 #include "audio_effect_chain_adapter.h"
-#include "audio_effect_chain_manager.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_effect.h"
+#include "audio_effect_chain_manager.h"
 
 #define DEVICE_FLAG
 
@@ -311,9 +311,11 @@ namespace OHOS {
 namespace AudioStandard {
 
 #ifdef SENSOR_ENABLE
-AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker)
+AudioEffectChain::AudioEffectChain(std::string scene, AudioSpatialDeviceType spatialDevice,
+    std::shared_ptr<HeadTracker> headTracker)
 {
     sceneType = scene;
+    spatialDeviceType = spatialDevice;
     effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
     audioBufIn.frameLength = 0;
     audioBufOut.frameLength = 0;
@@ -328,9 +330,10 @@ AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracke
     headTracker_ = headTracker;
 }
 #else
-AudioEffectChain::AudioEffectChain(std::string scene)
+AudioEffectChain::AudioEffectChain(std::string scene, AudioSpatialDeviceType spatialDevice)
 {
     sceneType = scene;
+    spatialDeviceType = spatialDevice;
     effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
     audioBufIn.frameLength = 0;
     audioBufOut.frameLength = 0;
@@ -347,7 +350,6 @@ AudioEffectChain::AudioEffectChain(std::string scene)
 
 AudioEffectChain::~AudioEffectChain()
 {
-    std::lock_guard<std::mutex> lock(reloadMutex);
     ReleaseEffectChain();
 }
 
@@ -383,6 +385,7 @@ int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, const std
 
 void AudioEffectChain::ReleaseEffectChain()
 {
+    std::lock_guard<std::mutex> lock(reloadMutex);
     for (uint32_t i = 0; i < standByEffectHandles.size() && i < libHandles.size(); ++i) {
         if (!libHandles[i]) {
             continue;
@@ -397,12 +400,6 @@ void AudioEffectChain::ReleaseEffectChain()
     }
     standByEffectHandles.clear();
     libHandles.clear();
-}
-
-void AudioEffectChain::AddEffectHandleBegin()
-{
-    reloadMutex.lock();
-    ReleaseEffectChain();
 }
 
 void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle)
@@ -421,39 +418,34 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail",
         sceneType.c_str(), effectMode.c_str());
     // Set param
-    AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
-        NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
-    effectParam->status = 0;
-    effectParam->paramSize = sizeof(int32_t);
-    effectParam->valueSize = 0;
-    int32_t *data = &(effectParam->data[0]);
-    *data++ = EFFECT_SET_PARAM;
-    *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
-    *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
-    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
+    auto *effectParam = new AudioEffectParam;
+    if (effectParam == nullptr) {
+        AUDIO_ERR_LOG("allocate memory for effectParam failed");
+        return;
+    }
+
+    effectParam->data = new int32_t[NUM_SET_EFFECT_PARAM];
+    if (effectParam->data == nullptr) {
+        AUDIO_ERR_LOG("allocate memory for effectParam->data failed");
+        delete effectParam;
+        effectParam = nullptr;
+        return;
+    }
+
+    SetAudioEffectParam(effectParam);
+    cmdInfo = {sizeof(AudioEffectParam), effectParam};
+
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-    delete[] effectParam;
+    delete[] effectParam->data;
+    effectParam->data = nullptr;
+    delete effectParam;
+    effectParam = nullptr;
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_PARAM fail",
         sceneType.c_str(), effectMode.c_str());
-    standByEffectHandles.emplace_back(handle);
     libHandles.emplace_back(libHandle);
-}
-
-void AudioEffectChain::AddEffectHandleEnd()
-{
-    reloadMutex.unlock();
-}
-
-void AudioEffectChain::SetEffectChain(std::vector<AudioEffectHandle> &effHandles,
-    std::vector<AudioEffectLibrary *> &libHandles)
-{
     std::lock_guard<std::mutex> lock(reloadMutex);
-    AddEffectHandleBegin();
-    for (uint32_t i = 0; i < effHandles.size(); i++) {
-        AddEffectHandle(effHandles[i], libHandles[i]);
-    }
+    standByEffectHandles.emplace_back(handle);
 }
-
 
 void CopyBuffer(const float *bufIn, float *bufOut, uint32_t totalLen)
 {
@@ -526,7 +518,6 @@ bool AudioEffectChain::IsEmptyEffectHandles()
 
 int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout)
 {
-    std::lock_guard<std::mutex> lock(reloadMutex);
     if (ioBufferConfig.inputCfg.channels == channels && ioBufferConfig.inputCfg.channelLayout == channelLayout) {
         return SUCCESS;
     }
@@ -535,6 +526,7 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &chann
     int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+    std::lock_guard<std::mutex> lock(reloadMutex);
     for (AudioEffectHandle handle: standByEffectHandles) {
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
@@ -607,6 +599,70 @@ void AudioEffectChain::InitEffectChain()
     }
 }
 
+void AudioEffectChain::SetAudioEffectParam(AudioEffectParam* effectParam)
+{
+    effectParam->status = 0;
+    effectParam->paramSize = sizeof(int32_t) * 4; // 4: Number of parameters.
+    effectParam->valueSize = 0;
+    effectParam->data[0] = EFFECT_SET_PARAM;
+    effectParam->data[1] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType); // 2: index.
+    effectParam->data[2] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
+    effectParam->data[3] = spatialDeviceType; // 3: index.
+
+    return;
+}
+
+int32_t AudioEffectChain::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDevice)
+{
+    int32_t ret;
+    int32_t replyData{ 0 };
+    AudioEffectTransInfo cmdInfo{};
+    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+    
+    spatialDeviceType = spatialDevice;
+
+    // Set param
+    auto *effectParam = new AudioEffectParam;
+    if (effectParam == nullptr) {
+        AUDIO_ERR_LOG("allocate memory for effectParam failed");
+        return ERROR;
+    }
+
+    effectParam->data = new int32_t[NUM_SET_EFFECT_PARAM];
+    if (effectParam->data == nullptr) {
+        AUDIO_ERR_LOG("allocate memory for effectParam->data failed");
+        delete effectParam;
+        effectParam = nullptr;
+        return ERROR;
+    }
+
+    SetAudioEffectParam(effectParam);
+    cmdInfo = {sizeof(AudioEffectParam), effectParam};
+
+    {
+        std::lock_guard<std::mutex> lock(reloadMutex);
+        for (auto handle : standByEffectHandles) {
+            ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
+            if (ret != 0) {
+                AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_PARAM fail",
+                    sceneType.c_str(), effectMode.c_str());
+                delete[] effectParam->data;
+                effectParam->data = nullptr;
+                delete effectParam;
+                effectParam = nullptr;
+                return ERROR;
+            }
+        }
+    }
+
+    delete[] effectParam->data;
+    effectParam->data = nullptr;
+    delete effectParam;
+    effectParam = nullptr;
+
+    return SUCCESS;
+}
+
 int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, const std::string &effect, const std::string &libName)
 {
     CHECK_AND_RETURN_RET_LOG(libEntry, ERROR, "Effect [%{public}s] in lib [%{public}s] is nullptr",
@@ -632,7 +688,10 @@ AudioEffectChainManager::AudioEffectChainManager()
     EffectToLibraryNameMap_.clear();
     EffectChainToEffectsMap_.clear();
     SceneTypeAndModeToEffectChainNameMap_.clear();
-    SceneTypeToEffectChainMap_.clear();
+    {
+        std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+        SceneTypeToEffectChainMap_.clear();
+    }
     SceneTypeToEffectChainCountMap_.clear();
     SessionIDSet_.clear();
     SceneTypeToSessionIDMap_.clear();
@@ -641,6 +700,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     frameLen_ = DEFAULT_FRAMELEN;
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
+    spatialDeviceType = EARPHONE_TYPE_NONE;
     isInitialized_ = false;
 
 #ifdef SENSOR_ENABLE
@@ -653,6 +713,7 @@ AudioEffectChainManager::AudioEffectChainManager()
 
 AudioEffectChainManager::~AudioEffectChainManager()
 {
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     for (auto effChain = SceneTypeToEffectChainMap_.begin(); effChain != SceneTypeToEffectChainMap_.end(); ++effChain) {
         effChain->second->ReleaseEffectChain();
     }
@@ -664,34 +725,35 @@ AudioEffectChainManager *AudioEffectChainManager::GetInstance()
     return &audioEffectChainManager;
 }
 
-static int32_t UpdateDeviceInfo(DeviceType &deviceType, std::string &deviceSink, const bool isInitialized,
-    int32_t device, std::string &sinkName)
+int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, std::string& sinkName)
 {
-    if (!isInitialized) {
-        deviceType = (DeviceType)device;
-        deviceSink = sinkName;
-        AUDIO_INFO_LOG("has not beed initialized");
+    if (!isInitialized_) {
+        deviceType_ = static_cast<DeviceType>(device);
+        deviceSink_ = sinkName;
+        AUDIO_INFO_LOG("AudioEffectChainManager has not beed initialized yet");
         return ERROR;
     }
 
-    if (deviceSink == sinkName) {
+    if (deviceSink_ == sinkName) {
         AUDIO_INFO_LOG("Same DeviceSinkName");
+    } else {
+        deviceSink_ = sinkName;
     }
-    deviceSink = sinkName;
 
-    if (deviceType == (DeviceType)device) {
+    if (deviceType_ == static_cast<DeviceType>(device)) {
         AUDIO_INFO_LOG("DeviceType do not need to be Updated");
         return ERROR;
+    } else {
+        deviceType_ = static_cast<DeviceType>(device);
     }
 
-    deviceType = (DeviceType)device;
     return SUCCESS;
 }
 
 int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string &sinkName)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    if (UpdateDeviceInfo(deviceType_, deviceSink_, isInitialized_, device, sinkName) != SUCCESS) {
+    if (UpdateDeviceInfo(device, sinkName) != SUCCESS) {
         return SUCCESS;
     }
 
@@ -703,12 +765,7 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
     for (auto key: keys) {
         std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
         std::string sceneTypeAndDeviceKey = sceneType + "_&_" + deviceName;
-        if (SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey)) {
-            SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountMap_[key];
-        } else {
-            SceneTypeToEffectChainCountMap_.insert(
-                std::make_pair(sceneTypeAndDeviceKey, SceneTypeToEffectChainCountMap_[key]));
-        }
+        SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountMap_[key];
         SceneTypeToEffectChainCountMap_.erase(key);
 
         auto *audioEffectChain = SceneTypeToEffectChainMap_[key];
@@ -723,16 +780,12 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
         SceneTypeToEffectChainMap_.erase(key);
 
 #ifdef SENSOR_ENABLE
-        audioEffectChain = new AudioEffectChain(sceneType, headTracker_);
+        audioEffectChain = new AudioEffectChain(sceneType, spatialDeviceType, headTracker_);
 #else
-        audioEffectChain = new AudioEffectChain(sceneType);
+        audioEffectChain = new AudioEffectChain(sceneType, spatialDeviceType);
 #endif
 
-        if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-            SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-        } else {
-            SceneTypeToEffectChainMap_.insert(std::make_pair(sceneTypeAndDeviceKey, audioEffectChain));
-        }
+        SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
 
         if (SetAudioEffectChainDynamic(sceneType, sceneMode) != SUCCESS) {
             AUDIO_ERR_LOG("Fail to set effect chain for [%{public}s]", sceneType.c_str());
@@ -855,9 +908,9 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(std::string scene
         return SUCCESS;
     } else {
 #ifdef SENSOR_ENABLE
-        audioEffectChain = new AudioEffectChain(sceneType, headTracker_);
+        audioEffectChain = new AudioEffectChain(sceneType, spatialDeviceType, headTracker_);
 #else
-        audioEffectChain = new AudioEffectChain(sceneType);
+        audioEffectChain = new AudioEffectChain(sceneType, spatialDeviceType);
 #endif
 
         SceneTypeToEffectChainMap_.insert(std::make_pair(sceneTypeAndDeviceKey, audioEffectChain));
@@ -1003,6 +1056,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
 #ifdef DEVICE_FLAG
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         CopyBuffer(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
@@ -1025,6 +1079,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, Bu
 void AudioEffectChainManager::Dump()
 {
     AUDIO_INFO_LOG("Dump START");
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     for (auto item = SceneTypeToEffectChainMap_.begin(); item != SceneTypeToEffectChainMap_.end(); ++item) {
         AudioEffectChain *audioEffectChain = item->second;
         audioEffectChain->Dump();
@@ -1105,6 +1160,26 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
         headTrackingEnabled_ = spatializationState.headTrackingEnabled;
         UpdateSensorState();
     }
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDevice)
+{
+    int32_t ret{ SUCCESS };
+
+    spatialDeviceType = spatialDevice;
+
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    for (const auto& pair : SceneTypeToEffectChainMap_) {
+        auto *audioEffectChain = pair.second;
+        if (audioEffectChain != nullptr) {
+            ret = audioEffectChain->UpdateSpatialDeviceType(spatialDeviceType);
+            if (ret != 0) {
+                return ERROR;
+            }
+        }
+    }
+
     return SUCCESS;
 }
 

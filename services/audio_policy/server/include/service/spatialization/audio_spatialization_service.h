@@ -77,6 +77,7 @@ private:
     ~AudioSpatializationService();
     int32_t UpdateSpatializationStateReal(bool outputDeviceChange);
     int32_t UpdateSpatializationState();
+    void UpdateSpatialDeviceType(AudioSpatialDeviceType audioSpatialDeviceType);
     void HandleSpatializationStateChange(bool outputDeviceChange);
     IAudioPolicyInterface& audioPolicyManager_;
     std::string currentDeviceAddress_ = "";

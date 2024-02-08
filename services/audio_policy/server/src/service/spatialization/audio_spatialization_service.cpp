@@ -280,6 +280,8 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
         addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address] = audioSpatialDeviceState;
     }
 
+    UpdateSpatialDeviceType(audioSpatialDeviceState.spatialDeviceType);
+
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
@@ -361,6 +363,15 @@ int32_t AudioSpatializationService::UpdateSpatializationState()
         AUDIO_WARNING_LOG("UpdateSpatializationState fail");
     }
     return SPATIALIZATION_SERVICE_OK;
+}
+
+void AudioSpatializationService::UpdateSpatialDeviceType(AudioSpatialDeviceType audioSpatialDeviceType)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: g_adProxy null");
+
+    int32_t ret = gsp->UpdateSpatialDeviceType(audioSpatialDeviceType);
+    CHECK_AND_RETURN_LOG(ret == 0, "UpdateSpatialDeviceType fail");
 }
 
 void AudioSpatializationService::HandleSpatializationStateChange(bool outputDeviceChange)

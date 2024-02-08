@@ -207,7 +207,7 @@ struct AudioEffectParam {
     int32_t status;
     uint32_t paramSize;
     uint32_t valueSize;
-    int32_t data[];
+    int32_t *data{ nullptr };
 };
 
 struct AudioBuffer {
@@ -276,4 +276,4 @@ struct AudioSpatializationState {
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif //AUDIO_FRAMEWORK_AUDIO_EFFECT_H
+#endif // AUDIO_FRAMEWORK_AUDIO_EFFECT_H
