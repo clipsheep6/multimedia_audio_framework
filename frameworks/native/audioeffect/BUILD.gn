@@ -18,6 +18,7 @@ import("../../../sensor.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
+windowmanager_path = "//foundation/window/window_manger"
 
 config("audio_effect_config") {
   include_dirs = [
@@ -30,6 +31,7 @@ config("audio_effect_config") {
     "../../../services/audio_service/test/example",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
+    "$windowmanager_path/interfaces/innerkits/dm",
   ]
 
   cflags = [

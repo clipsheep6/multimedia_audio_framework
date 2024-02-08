@@ -89,6 +89,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
     const uint32_t channels = si->sample_spec.channels;
     const char *channelLayout = pa_proplist_gets(si->proplist, "stream.channelLayout");
     const char *spatializationEnabled = pa_proplist_gets(si->proplist, "spatialization.enabled");
+    uint32_t volume = si->volume.values[0];
     if (pa_safe_streq(deviceString, "remote")) {
         EffectChainManagerReleaseCb(sceneType, sessionID);
         return PA_HOOK_OK;
@@ -106,9 +107,10 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
             EffectChainManagerInitCb(sceneType);
         }
         EffectChainManagerCreateCb(sceneType, sessionID);
-        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled};
+        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, volume};
         if (si->state == PA_SINK_INPUT_RUNNING && !EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
+            // EffectChainManagerVolumeUpdate();
         }
     }
     return PA_HOOK_OK;
@@ -177,9 +179,10 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si)
     const char *spatializationEnabled = pa_proplist_gets(si->proplist, "spatialization.enabled");
     const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
     const char *bootUpMusic = "1003";
+    uint32_t volume = si->volume.values[0];
 
     if (si->state == PA_SINK_INPUT_RUNNING && si->sink && !pa_safe_streq(clientUid, bootUpMusic)) {
-        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled};
+        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, volume};
         if (!EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
         }
@@ -190,6 +193,22 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si)
         if (!EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
             EffectChainManagerMultichannelUpdate(sceneType);
         }
+    }
+    return PA_HOOK_OK;
+}
+
+static pa_hook_result_t SinkInputVolumeChangedCb(void *hook_data, void *call_data, void *slot_data) {
+    pa_dbusiface_stream *s = slot_data;
+
+    // playback
+    if (s->type == 0 && s->has_volume) {
+        pa_cvolume newVolume;
+
+        pa_sink_input_get_volume(s->sink_input, &newVolume, true);
+        // todo test if work when stream create
+        const char *sessionID = pa_proplist_gets(s->sink_input->proplist, "stream.sessionID");
+        const uint32_t volume = newVolume.values[0];
+        EffectChainManagerVolumeUpdate(sessionID, volume);
     }
     return PA_HOOK_OK;
 }
@@ -216,6 +235,8 @@ int pa__init(pa_module *m)
         (pa_hook_cb_t)SourceOutputStateChangedCb, NULL);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SinkInputStateChangedCb, NULL);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_VOLUME_CHANGED], PA_HOOL_LATE,
+        (pa_hook_cb_t)SinkInputVolumeChangedCb, NULL);
 
     pa_modargs_free(ma);
 
