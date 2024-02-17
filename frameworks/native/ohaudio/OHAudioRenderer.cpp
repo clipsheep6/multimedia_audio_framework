@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "securec.h"
 #include "OHAudioRenderer.h"
 #include "audio_errors.h"
 
@@ -433,6 +434,11 @@ void OHAudioRenderer::SetPreferredFrameSize(int32_t frameSize)
     audioRenderer_->SetPreferredFrameSize(frameSize);
 }
 
+bool OHAudioRenderer::IsFastRenderer()
+{
+    return audioRenderer_->IsFastRenderer();
+}
+
 void OHAudioRendererModeCallback::OnWriteData(size_t length)
 {
     OHAudioRenderer* audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
@@ -440,6 +446,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
     CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnWriteData != nullptr, "pointer to the fuction is nullptr");
     BufferDesc bufDesc;
     audioRenderer->GetBufferDesc(bufDesc);
+    memset_s(bufDesc.buffer, bufDesc.bufLength, 0, bufDesc.bufLength);
     callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_,
         userData_,
         (void*)bufDesc.buffer,

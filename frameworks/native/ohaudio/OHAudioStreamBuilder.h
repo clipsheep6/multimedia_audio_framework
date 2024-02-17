@@ -50,6 +50,7 @@ private:
     int32_t streamType_;
     int32_t latencyMode_ = 0; // default value is normal mode
     int32_t preferredFrameSize_ = 240; // initial clientBufferSizeInFrame
+    bool frameSizeChanged_ = false;
 
     // stream params
     int32_t samplingRate_ = SAMPLE_RATE_48000;
@@ -74,6 +75,7 @@ private:
 
     OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;
     void* outputDeviceChangeuserData_ = nullptr;
+    void InitCallbackFrameSize(const AudioRendererOptions &options);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
