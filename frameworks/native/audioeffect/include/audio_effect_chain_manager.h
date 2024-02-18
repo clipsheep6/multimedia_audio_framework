@@ -40,7 +40,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM = 3;
+const uint32_t NUM_SET_EFFECT_PARAM_TWO = 2;
+const uint32_t NUM_SET_EFFECT_PARAM_THREE = 3;
 const uint32_t DEFAULT_FRAMELEN = 1440;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
@@ -60,6 +61,7 @@ typedef struct sessionEffectInfo {
     uint32_t channels;
     uint64_t channelLayout;
     std::string spatializationEnabled;
+    uint32_t volume;
 } sessionEffectInfo;
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
@@ -72,22 +74,6 @@ const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_7POINT1POINT4,
     CH_LAYOUT_9POINT1POINT4,
     CH_LAYOUT_9POINT1POINT6
-};
-
-class AudioEffectHdi {
-public:
-    AudioEffectHdi();
-    ~AudioEffectHdi();
-    void InitHdi();
-    int32_t UpdateHdiState(int8_t *effectHdiInput);
-private:
-    std::string libName;
-    std::string effectId;
-    int8_t input[SEND_HDI_COMMAND_LEN];
-    int8_t output[GET_HDI_BUFFER_LEN];
-    uint32_t replyLen;
-    IEffectModel *hdiModel_ = nullptr;
-    IEffectControl *hdiControl_ = nullptr;
 };
 
 struct AudioEffectProcInfo {
@@ -200,7 +186,9 @@ private:
     std::shared_ptr<HeadTracker> headTracker_;
 #endif
 
-    std::shared_ptr<AudioEffectHdi> audioEffectHdi_;
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam_;
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume_;
+    std::shared_ptr<AudioEffectRotation> audioEffectRotation_;
     int8_t effectHdiInput[SEND_HDI_COMMAND_LEN];
 };
 }  // namespace AudioStandard
