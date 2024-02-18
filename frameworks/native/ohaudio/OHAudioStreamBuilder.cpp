@@ -28,6 +28,9 @@ using OHOS::AudioStandard::SourceType;
 
 static const int32_t RENDERER_TYPE = 1;
 static const int32_t CAPTURER_TYPE = 2;
+constexpr int32_t FAST_STREAM_FLAG = 1;
+const uint64_t OLD_BUF_DURATION_IN_USEC = 92880;
+const uint64_t AUDIO_US_PER_S = 1000000;
 
 static OHOS::AudioStandard::OHAudioStreamBuilder *convertBuilder(OH_AudioStreamBuilder* builder)
 {
@@ -237,6 +240,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSampleFormat(AudioSampleFormat sa
 OH_AudioStream_Result OHAudioStreamBuilder::SetPreferredFrameSize(int32_t frameSize)
 {
     preferredFrameSize_ = frameSize;
+    frameSizeChanged_ = true;
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -271,6 +275,16 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetLatencyMode(int32_t latencyMode)
     return AUDIOSTREAM_SUCCESS;
 }
 
+void OHAudioStreamBuilder::InitCallbackFrameSize(const AudioRendererOptions &options)
+{
+    if (options.rendererInfo.rendererFlags != FAST_STREAM_FLAG) {
+        preferredFrameSize_ = static_cast<uint32_t>(OLD_BUF_DURATION_IN_USEC *
+            options.streamInfo.samplingRate / AUDIO_US_PER_S);
+    }
+    AUDIO_INFO_LOG("Init preferredFrameSize: %{public}d", preferredFrameSize_);
+    return;
+}
+
 OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer)
 {
     AUDIO_INFO_LOG("Generate OHAudioRenderer");
@@ -300,7 +314,14 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
         audioRenderer->SetRendererCallback(rendererCallbacks_, userData_);
         audioRenderer->SetRendererOutputDeviceChangeCallback(outputDeviceChangecallback_, outputDeviceChangeuserData_);
         *renderer = (OH_AudioRenderer*)audioRenderer;
-        audioRenderer->SetPreferredFrameSize(preferredFrameSize_);
+        if (!audioRenderer->IsFastRenderer()) {
+            latencyMode_ = 0;
+            options.rendererInfo.rendererFlags = 0;
+        }
+        InitCallbackFrameSize(options);
+        if (frameSizeChanged_) {
+            audioRenderer->SetPreferredFrameSize(preferredFrameSize_);
+        }
         return AUDIOSTREAM_SUCCESS;
     }
     AUDIO_ERR_LOG("Create OHAudioRenderer failed");
