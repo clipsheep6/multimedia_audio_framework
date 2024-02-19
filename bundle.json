@@ -124,11 +124,10 @@
               "name": "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
               "header": {
                 "header_files": [
-                  "./audiocapturer/include/audio_capturer.h",
-				  "./audiocommon/include/audio_info.h"
+                  "audio_capturer.h"
                 ],
                 "header_base": [
-                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
+                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include"
                  ]
               }
             },
