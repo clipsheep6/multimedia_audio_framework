@@ -44,7 +44,7 @@
 #include "device_status_listener.h"
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
-#include "parser_factory.h"
+#include "audio_policy_parser_factory.h"
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
@@ -171,6 +171,15 @@ public:
 
     bool IsSessionIdValid(int32_t callerUid, int32_t sessionId);
 
+    void GetAudioAdapterInfos(std::map<AdaptersType, AudioAdapterInfo> &adapterInfoMap);
+
+    void GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData);
+
+    void GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData);
+
+    // Audio Policy Parser callbacks
+    void OnAudioPolicyXmlParsingCompleted(const std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap);
+
     // Parser callbacks
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
 
@@ -280,7 +289,7 @@ public:
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
 
     AudioStreamType GetStreamType(int32_t sessionId);
-    
+
     int32_t GetChannelCount(uint32_t sessionId);
 
     int32_t GetUid(int32_t sessionId);
@@ -423,7 +432,7 @@ public:
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-        configParser_(ParserFactory::GetInstance().CreateParser(*this)),
+        audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this)),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
@@ -540,7 +549,7 @@ private:
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         bool isStreamStatusUpdated = false,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
-    
+
     void FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
@@ -559,7 +568,7 @@ private:
         std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
-    
+
     void GetAllRunningStreamSession(std::vector<int32_t> &allSessions, bool doStop = false);
 
     void WriteDeviceChangedSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
@@ -684,7 +693,7 @@ private:
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc);
-    
+
     void UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
 
     bool IsRendererStreamRunning(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
@@ -728,7 +737,7 @@ private:
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, Role>
     IAudioPolicyInterface& audioPolicyManager_;
-    Parser& configParser_;
+    Parser& audioPolicyConfigParser_;
 #ifdef FEATURE_DTMF_TONE
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
 #endif
@@ -748,6 +757,7 @@ private:
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
+    std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap_ {};
 
     std::mutex ioHandlesMutex_;
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
@@ -807,7 +817,7 @@ private:
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
     DistributedRoutingInfo distributedRoutingInfo_;
-    
+
     // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VIRTUAL_CAPTURE
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
     static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
@@ -821,7 +831,6 @@ private:
     SourceType currentSourceType = SOURCE_TYPE_MIC;
     uint32_t currentRate = 0;
     bool updateA2dpOffloadLogFlag = false;
-    
     std::unordered_map<uint32_t, bool> sessionHasBeenSpatialized_;
     std::mutex checkSpatializedMutex_;
 };
