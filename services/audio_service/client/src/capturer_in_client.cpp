@@ -58,7 +58,7 @@ const uint64_t DEFAULT_BUF_DURATION_IN_USEC = 20000; // 20ms
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const int64_t INVALID_FRAME_SIZE = -1;
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
-static constexpr int CB_QUEUE_CAPACITY = 1;
+static constexpr int CB_QUEUE_CAPACITY = 3;
 }
 class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<CapturerInClientInner> {
