@@ -13,12 +13,14 @@
  * limitations under the License.
  */
 
+#include "safe_map.h"
 #include "pa_capturer_stream_impl.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
+static SafeMap<PaCapturerStreamImpl *, bool> paCapturerMap_;
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
     do {
@@ -35,6 +37,7 @@ PaCapturerStreamImpl::PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConf
     mainloop_ = mainloop;
     paStream_ = paStream;
     processConfig_ = processConfig;
+    paCapturerMap_.Insert(this, true);
 }
 
 PaCapturerStreamImpl::~PaCapturerStreamImpl()
@@ -44,6 +47,7 @@ PaCapturerStreamImpl::~PaCapturerStreamImpl()
         fclose(capturerServerDumpFile_);
         capturerServerDumpFile_ = nullptr;
     }
+    paCapturerMap_.Erase(this);
 }
 
 inline uint32_t PcmFormatToBits(uint8_t format)
@@ -450,6 +454,12 @@ void PaCapturerStreamImpl::PAStreamStopSuccessCb(pa_stream *stream, int32_t succ
     }
 
     PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
+    std::lock_guard<std::mutex> lock(streamImpl->streamImplLock_);
+    bool tempBool = true;
+    if (paCapturerMap_.Find(streamImpl, tempBool) == false) {
+        AUDIO_ERR_LOG("PAStreamStopSuccessCb: streamImpl is not find");
+        return;
+    }
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
