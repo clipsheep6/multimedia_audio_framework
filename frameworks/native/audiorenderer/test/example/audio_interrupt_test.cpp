@@ -21,6 +21,8 @@
 #include "audio_interrupt_test.h"
 #include "audio_log.h"
 #include "pcm2wav.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioInterruptTest"
 
 using namespace std;
 

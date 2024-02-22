@@ -20,6 +20,8 @@
 #include "audio_interrupt_info.h"
 #include "audio_device_info.h"
 #include "napi_param_utils.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioEnum"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;

@@ -24,6 +24,8 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioRendererFileSink"
 
 using namespace std;
 

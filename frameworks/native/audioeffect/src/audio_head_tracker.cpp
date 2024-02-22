@@ -16,6 +16,8 @@
 #include "audio_head_tracker.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#undef LOG_TAG
+#define LOG_TAG "HeadTracker"
 
 namespace OHOS {
 namespace AudioStandard {

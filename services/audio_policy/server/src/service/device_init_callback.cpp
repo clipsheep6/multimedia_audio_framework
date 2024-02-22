@@ -15,6 +15,8 @@
 
 
 #include "device_init_callback.h"
+#undef LOG_TAG
+#define LOG_TAG "DeviceStatusCallbackImpl"
 
 namespace OHOS {
 namespace AudioStandard {

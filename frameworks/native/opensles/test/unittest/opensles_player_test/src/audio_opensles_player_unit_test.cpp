@@ -19,6 +19,8 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "pcm2wav.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioOpenslesPlayerUnitTest"
 
 using namespace std;
 using namespace testing::ext;

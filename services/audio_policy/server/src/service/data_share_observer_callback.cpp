@@ -15,6 +15,8 @@
 
 
 #include "data_share_observer_callback.h"
+#undef LOG_TAG
+#define LOG_TAG "DataShareObserverCallBack"
 
 namespace OHOS {
 namespace AudioStandard {

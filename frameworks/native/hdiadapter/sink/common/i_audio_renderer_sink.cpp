@@ -25,6 +25,8 @@
 #include "remote_audio_renderer_sink.h"
 #include "offload_audio_renderer_sink.h"
 #include "multichannel_audio_renderer_sink.h"
+#undef LOG_TAG
+#define LOG_TAG "IAudioRendererSink"
 
 
 namespace OHOS {

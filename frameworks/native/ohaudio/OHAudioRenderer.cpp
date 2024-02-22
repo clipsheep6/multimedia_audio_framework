@@ -14,6 +14,8 @@
  */
 #include "OHAudioRenderer.h"
 #include "audio_errors.h"
+#undef LOG_TAG
+#define LOG_TAG "OHAudioRenderer"
 
 using OHOS::AudioStandard::Timestamp;
 

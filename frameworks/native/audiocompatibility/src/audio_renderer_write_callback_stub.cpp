@@ -15,6 +15,8 @@
 
 #include "audio_renderer_write_callback_stub.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioRendererWriteCallbackStub"
 
 namespace OHOS {
 namespace AudioStandard {

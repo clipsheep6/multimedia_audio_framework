@@ -35,6 +35,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#undef LOG_TAG
+#define LOG_TAG "FastAudioRendererSinkInner"
 
 using namespace std;
 

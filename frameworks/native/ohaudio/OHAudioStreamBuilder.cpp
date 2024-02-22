@@ -18,6 +18,8 @@
 #include "OHAudioStreamBuilder.h"
 #include "OHAudioRenderer.h"
 #include "OHAudioCapturer.h"
+#undef LOG_TAG
+#define LOG_TAG "OHAudioStreamBuilder"
 
 using OHOS::AudioStandard::OHAudioStreamBuilder;
 using OHOS::AudioStandard::AudioSampleFormat;

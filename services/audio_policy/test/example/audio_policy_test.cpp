@@ -23,6 +23,8 @@
 #include "audio_errors.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyTest"
 
 using namespace std;
 using namespace OHOS;

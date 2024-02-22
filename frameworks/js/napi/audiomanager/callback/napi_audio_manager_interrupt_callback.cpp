@@ -19,6 +19,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "napi_audio_manager_callbacks.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioManagerInterruptCallback"
 
 namespace OHOS {
 namespace AudioStandard {

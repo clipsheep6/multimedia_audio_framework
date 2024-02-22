@@ -24,6 +24,8 @@
 #include "audio_capturer_source.h"
 #include "audio_capturer_file_source.h"
 #include "remote_audio_capturer_source.h"
+#undef LOG_TAG
+#define LOG_TAG "IAudioCapturerSource"
 
 using namespace std;
 

@@ -23,6 +23,8 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "xpower_event_js.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioVolumeGroupManager"
 
 namespace OHOS {
 namespace AudioStandard {

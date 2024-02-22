@@ -18,6 +18,8 @@
 #include "audio_log.h"
 #include "napi_audio_error.h"
 #include "napi_audio_renderer_callback.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiRendererPositionCallback"
 
 namespace OHOS {
 namespace AudioStandard {

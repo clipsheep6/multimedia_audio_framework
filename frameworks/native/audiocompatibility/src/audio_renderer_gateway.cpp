@@ -19,6 +19,8 @@
 #include "audio_container_stream_base.h"
 #include "audio_log.h"
 #include "audio_renderer.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioRendererGateway"
 
 namespace OHOS {
 namespace AudioStandard {

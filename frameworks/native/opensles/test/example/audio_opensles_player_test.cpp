@@ -24,6 +24,8 @@
 
 #include "audio_log.h"
 #include "pcm2wav.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioOpenslesPlayerTest"
 
 using namespace std;
 

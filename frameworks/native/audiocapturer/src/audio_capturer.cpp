@@ -22,6 +22,8 @@
 #endif
 #include "audio_log.h"
 #include "audio_policy_manager.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioCapturer"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -25,6 +25,8 @@
 #include "audio_utils.h"
 #include "i_audio_device_adapter.h"
 #include "i_audio_device_manager.h"
+#undef LOG_TAG
+#define LOG_TAG "RemoteAudioCapturerSourceInner"
 
 using namespace std;
 

@@ -16,6 +16,8 @@
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
 #include "audio_effect.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiParamUtils"
 
 namespace OHOS {
 namespace AudioStandard {

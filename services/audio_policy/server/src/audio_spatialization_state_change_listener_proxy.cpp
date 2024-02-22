@@ -16,6 +16,8 @@
 #include "audio_spatialization_state_change_listener_proxy.h"
 #include "audio_spatialization_manager.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioSpatializationStateChangeListenerProxy"
 
 using namespace std;
 

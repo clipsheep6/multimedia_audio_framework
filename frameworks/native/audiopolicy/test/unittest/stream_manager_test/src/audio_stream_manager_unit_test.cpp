@@ -26,6 +26,8 @@
 #include "audio_stream_manager.h"
 #include "audio_system_manager.h"
 #include "refbase.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioStreamManagerUnitTest"
 
 using namespace std;
 using namespace std::chrono;

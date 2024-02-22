@@ -23,6 +23,8 @@
 #include "audio_container_stream_base.h"
 #include "audio_policy_manager.h"
 #include "audio_container_client_base.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioContainerStreamBase"
 
 using namespace std;
 

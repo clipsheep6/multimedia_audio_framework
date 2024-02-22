@@ -18,6 +18,8 @@
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_manager_callbacks.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioSpatializationMgrCallback"
 
 namespace OHOS {
 namespace AudioStandard {

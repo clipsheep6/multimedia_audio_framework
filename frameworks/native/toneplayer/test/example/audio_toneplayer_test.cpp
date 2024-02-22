@@ -22,6 +22,8 @@
 
 #include "tone_player_private.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioTonePlayerTest"
 
 using namespace std;
 using namespace OHOS;

@@ -21,6 +21,8 @@
 #include "audio_log.h"
 #include "interrupt_multi_renderer_test.h"
 #include "pcm2wav.h"
+#undef LOG_TAG
+#define LOG_TAG "InterruptMultiRendererTest"
 
 using namespace std;
 

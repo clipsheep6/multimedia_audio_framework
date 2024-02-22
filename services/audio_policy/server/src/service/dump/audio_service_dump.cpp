@@ -14,6 +14,8 @@
  */
 
 #include "audio_service_dump.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioServiceDump"
 
 using namespace std;
 

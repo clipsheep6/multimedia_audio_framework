@@ -15,6 +15,8 @@
 
 #include "OHAudioCapturer.h"
 #include "audio_errors.h"
+#undef LOG_TAG
+#define LOG_TAG "OHAudioCapturer"
 
 using OHOS::AudioStandard::Timestamp;
 

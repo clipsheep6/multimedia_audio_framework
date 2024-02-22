@@ -20,6 +20,8 @@
 #include "audio_device_adapter_impl.h"
 #include "audio_errors.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioDeviceManagerImpl"
 
 namespace OHOS {
 namespace AudioStandard {

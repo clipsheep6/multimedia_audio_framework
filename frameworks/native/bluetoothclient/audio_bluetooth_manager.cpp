@@ -19,6 +19,8 @@
 #include "audio_log.h"
 #include "bluetooth_device_manager.h"
 #include "bluetooth_device_utils.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioBluetoothManager"
 
 namespace OHOS {
 namespace Bluetooth {

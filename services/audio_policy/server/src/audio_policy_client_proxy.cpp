@@ -18,6 +18,8 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_group_handle.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyClientProxy"
 
 namespace OHOS {
 namespace AudioStandard {
