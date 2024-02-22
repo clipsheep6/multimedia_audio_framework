@@ -580,6 +580,10 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
 
 bool AudioStreamCollector::GetAndCompareStreamType(AudioStreamType requiredType, AudioRendererInfo rendererInfo)
 {
+    if (requiredType == AudioStreamType::STREAM_ALL) {
+        AUDIO_INFO_LOG("check request stream type with all state");
+        return true;
+    }
     AudioStreamType defaultStreamType = STREAM_MUSIC;
     auto pos = streamTypeMap_.find(make_pair(rendererInfo.contentType, rendererInfo.streamUsage));
     if (pos != streamTypeMap_.end()) {
