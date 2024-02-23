@@ -2140,8 +2140,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_006, TestSize.Level1)
     FILE *capFile = fopen(AUDIO_CAPTURE_FILE1.c_str(), "wb");
     ASSERT_NE(nullptr, capFile);
 
-    int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
-    EXPECT_GE(bytesRead, VALUE_ZERO);
     size_t size = 1;
     int32_t bytesRead = 0;
     int32_t numBuffersToCapture = READ_BUFFERS_COUNT;
@@ -2312,8 +2310,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_006, TestSize.Level1)
     FILE *capFile = fopen(AUDIO_CAPTURE_FILE1.c_str(), "wb");
     ASSERT_NE(nullptr, capFile);
 
-    int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
-    EXPECT_GE(bytesRead, VALUE_ZERO);
     size_t size = 1;
     int32_t bytesRead = 0;
     int32_t numBuffersToCapture = READ_BUFFERS_COUNT;
