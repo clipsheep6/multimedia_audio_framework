@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -56,6 +56,8 @@ namespace {
         STOP_SPK_PROCESS = 5,
         CHANGE_SPK_PROCESS_VOL = 6,
         RELEASE_SPK_PROCESS = 7,
+        PICK_LOCAL_SPK = 8,
+        PICK_REMOTE_SPK = 9,
 
         START_LOOP_TEST = 10,
         END_LOOP_TEST = 11,
@@ -71,6 +73,8 @@ namespace {
         STOP_MIC_PROCESS = 25,
         CHANGE_MIC_PROCESS_VOL = 26,
         RELEASE_MIC_PROCESS = 27,
+        PICK_LOCAL_MIC = 28,
+        PICK_REMOTE_MIC = 29,
 
         LOCAL_LATENCY_TEST = 30,
         REMOTE_LATENCY_TEST = 31,
@@ -88,11 +92,19 @@ namespace {
         RENDER_SIGNAL_TEST = 6,
         EXIT_PROC_TEST = 7,
     };
+
     enum TestMode : int32_t {
         RENDER_FILE = 0,
         RENDER_MIC_LOOP_DATA = 1,
         RENDER_SIGNAL_DATA = 2,
     };
+
+    enum AudioDeviceType : int32_t {
+        DEVICE_UNKNOW = 0,
+        LOCAL_DEVICE = 1,
+        REMOTE_DEVICE = 2,
+    };
+
     static constexpr size_t CACHE_BUFFER_SIZE = 960;
     TestMode g_testMode = RENDER_FILE;
     bool g_renderSignal = false;
@@ -123,6 +135,8 @@ string CallResumeSpk();
 string CallStopSpk();
 string SetSpkVolume();
 string CallReleaseSpk();
+string CallPickLocalSpk();
+string CallPickRemoteSpk();
 
 string StartSignalTest();
 string EndSignalTest();
@@ -134,6 +148,8 @@ string CallResumeMic();
 string CallStopMic();
 string SetMicVolume();
 string CallReleaseMic();
+string CallPickLocalMic();
+string CallPickRemoteMic();
 
 void CountLatencyTime();
 string LoopLatencyTest(bool isRemote);
@@ -160,6 +176,8 @@ std::map<int32_t, std::string> g_interactiveOptStrMap = {
     {STOP_SPK_PROCESS, "call stop spk process"},
     {CHANGE_SPK_PROCESS_VOL, "change spk process volume"},
     {RELEASE_SPK_PROCESS, "release spk process"},
+    {PICK_LOCAL_SPK, "pick local spk play"},
+    {PICK_REMOTE_SPK, "pick remote spk play"},
 
     {START_LOOP_TEST, "start loop"},
     {END_LOOP_TEST, "end loop"},
@@ -175,6 +193,8 @@ std::map<int32_t, std::string> g_interactiveOptStrMap = {
     {STOP_MIC_PROCESS, "call stop mic process"},
     {CHANGE_MIC_PROCESS_VOL, "change mic process volume"},
     {RELEASE_MIC_PROCESS, "release mic process"},
+    {PICK_LOCAL_MIC, "pick local mic record"},
+    {PICK_REMOTE_MIC, "pick remote mic record"},
 
     {LOCAL_LATENCY_TEST, "call local loop latency test"},
     {REMOTE_LATENCY_TEST, "call remote loop latency test"},
@@ -189,6 +209,8 @@ std::map<int32_t, CallTestOperationFunc> g_interactiveOptFuncMap = {
     {STOP_SPK_PROCESS, CallStopSpk},
     {CHANGE_SPK_PROCESS_VOL, SetSpkVolume},
     {RELEASE_SPK_PROCESS, CallReleaseSpk},
+    {PICK_LOCAL_SPK, CallPickLocalSpk},
+    {PICK_REMOTE_SPK, CallPickRemoteSpk},
 
     {START_SIGNAL_TEST, StartSignalTest},
     {END_SIGNAL_TEST, EndSignalTest},
@@ -199,6 +221,8 @@ std::map<int32_t, CallTestOperationFunc> g_interactiveOptFuncMap = {
     {STOP_MIC_PROCESS, CallStopMic},
     {CHANGE_MIC_PROCESS_VOL, SetMicVolume},
     {RELEASE_MIC_PROCESS, CallReleaseMic},
+    {PICK_LOCAL_MIC, CallPickLocalMic},
+    {PICK_REMOTE_MIC, CallPickRemoteMic},
 
     {LOCAL_LATENCY_TEST, LocalLoopLatencyTest},
     {REMOTE_LATENCY_TEST, RemoteLoopLatencyTest},
@@ -313,6 +337,8 @@ public:
     bool SetSpkVolume(int32_t vol);
     bool StopSpk();
     bool ReleaseSpk();
+    bool PickLocalSpk();
+    bool PickRemoteSpk();
 
     int32_t InitMic(bool isRemote);
     bool StartMic();
@@ -321,13 +347,20 @@ public:
     bool SetMicVolume(int32_t vol);
     bool StopMic();
     bool ReleaseMic();
+    bool PickLocalMic();
+    bool PickRemoteMic();
 
-    int32_t SelectDevice(DeviceRole deviceRole);
+    int32_t SelectDevice(DeviceFlag deviceFlag);
+    int32_t GetDevicesDescriptor(DeviceFlag deviceFlag,
+    std::vector<sptr<AudioDeviceDescriptor>> &devices)
+
 private:
     std::shared_ptr<AudioProcessInClient> spkProcessClient_ = nullptr;
     std::shared_ptr<AudioProcessInClient> micProcessClient_ = nullptr;
     std::shared_ptr<AudioProcessTestCallback> spkProcClientCb_ = nullptr;
     std::shared_ptr<AudioProcessTestCallback> micProcClientCb_ = nullptr;
+    AudioDeviceType spkDevType_ = AudioDeviceType::DEVICE_UNKNOW;
+    AudioDeviceType micDevType_ = AudioDeviceType::DEVICE_UNKNOW;
     int32_t loopCount_ = -1; // for loop
     bool isInited_ = false;
 };
@@ -493,7 +526,8 @@ inline AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
     }
 }
 
-int32_t AudioProcessTest::SelectDevice(DeviceRole deviceRole)
+int32_t AudioProcessTest::GetDevicesDescriptor(DeviceFlag deviceFlag,
+    std::vector<sptr<AudioDeviceDescriptor>> &devices)
 {
     AudioSystemManager *manager = AudioSystemManager::GetInstance();
     if (manager == nullptr) {
@@ -501,38 +535,66 @@ int32_t AudioProcessTest::SelectDevice(DeviceRole deviceRole)
         return ERR_INVALID_OPERATION;
     }
 
-    std::vector<sptr<AudioDeviceDescriptor>> devices;
-    if (deviceRole == OUTPUT_DEVICE) {
-        devices = manager->GetDevices(DISTRIBUTED_OUTPUT_DEVICES_FLAG);
-    } else {
-        devices = manager->GetDevices(DISTRIBUTED_INPUT_DEVICES_FLAG);
+    devices = manager->GetDevices(deviceFlag);
+    if ((deviceFlag == OUTPUT_DEVICES_FLAG || deviceFlag == INPUT_DEVICES_FLAG) && devices.size() > 1) {
+        for (auto it = devices.begin(); it != devices.end();) {
+            // local hdf spk or mic, networkId_ = "LocalDevice", deviceId_ = 1
+            if ((*it)->deviceId_ != 1) {
+                AUDIO_INFO_LOG("Local device map will erase deviceId %{public}d.", (*it)->deviceId_);
+                devices.erase(it);
+            } else {
+                it++;
+            }
+        }
     }
+
     if (devices.size() != 1) {
-        std::cout << "GetDevices failed, unsupported size:" << devices.size() << std::endl;
+        std::cout << "Get devices failed, unsupported size:" << devices.size() << std::endl;
         return ERR_INVALID_OPERATION;
     }
-
     std::cout << "using device:" << devices[0]->networkId_ << std::endl;
+    std::cout << "using deviceId:" << devices[0]->deviceId_ << std::endl;
+    return SUCCESS;
+}
 
-    int32_t ret = 0;
-    if (deviceRole == OUTPUT_DEVICE) {
-        sptr<AudioRendererFilter> filter = new AudioRendererFilter();
-        filter->uid = getuid();
-        filter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
-        ret = manager->SelectOutputDevice(filter, devices);
-    } else {
-        sptr<AudioCapturerFilter> filter = new AudioCapturerFilter();
-        filter->uid = getuid();
-        filter->capturerInfo.sourceType = SOURCE_TYPE_MIC;
-        filter->capturerInfo.capturerFlags = STREAM_FLAG_FAST;
-        ret = manager->SelectInputDevice(filter, devices);
+int32_t AudioProcessTest::SelectDevice(DeviceFlag deviceFlag)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> devices;
+    int32_t ret = GetDevicesDescriptor(deviceFlag, devices);
+    if (ret != SUCCESS) {
+        std::cout << "Get devices descriptor of deviceFlag " << deviceFlag << " failed, ret:" << ret << std::endl;
+        return ret;
     }
 
-    if (ret == SUCCESS) {
-        std::cout << "SelectDevice seccess" << std::endl;
-    } else {
-        std::cout << "SelectDevice failed, ret:" << ret << std::endl;
+    AudioSystemManager *manager = AudioSystemManager::GetInstance();
+    if (manager == nullptr) {
+        std::cout << "Get AudioSystemManager failed" << std::endl;
+        return ERR_INVALID_OPERATION;
     }
+    switch (deviceFlag) {
+        case OUTPUT_DEVICES_FLAG:
+        case DISTRIBUTED_OUTPUT_DEVICES_FLAG: {
+            sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+            filter->uid = getuid();
+            filter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+            ret = manager->SelectOutputDevice(filter, devices);
+            break;
+        }
+        case INPUT_DEVICES_FLAG:
+        case DISTRIBUTED_INPUT_DEVICES_FLAG: {
+            sptr<AudioCapturerFilter> filter = new AudioCapturerFilter();
+            filter->uid = getuid();
+            filter->capturerInfo.sourceType = SOURCE_TYPE_MIC;
+            filter->capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+            ret = manager->SelectInputDevice(filter, devices);
+            break;
+        }
+        default:
+            std::cout << "SelectDevice failed, unsupported deviceFlag: " << deviceFlag << std::endl;
+    }
+
+    std::string outRetStr = ret == SUCCESS ? "SelectDevice seccess, ret " : "SelectDevice failed, ret ";
+    std::cout << outRetStr << ret << std::endl;
     return ret;
 }
 
@@ -545,7 +607,7 @@ int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
     } else {
         loopCount_ = loopCount;
     }
-    if (isRemote && SelectDevice(OUTPUT_DEVICE) != SUCCESS) {
+    if (isRemote && SelectDevice(DISTRIBUTED_OUTPUT_DEVICES_FLAG) != SUCCESS) {
         std::cout << "Select remote device error." << std::endl;
         return ERROR_UNSUPPORTED;
     }
@@ -592,6 +654,7 @@ int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
     int32_t ret = spkProcessClient_->SaveDataCallback(spkProcClientCb_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
     isInited_ = true;
+    spkDevType_ = isRemote ? REMOTE_DEVICE : LOCAL_DEVICE;
     return SUCCESS;
 }
 
@@ -653,6 +716,42 @@ bool AudioProcessTest::ReleaseSpk()
     return true;
 }
 
+bool AudioProcessTest::PickLocalSpk()
+{
+    CHECK_AND_RETURN_RET_LOG(spkProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    if (spkDevType_ == LOCAL_DEVICE) {
+        std::cout << "Local spk device is already playing." << std::endl;
+        return true;
+    }
+
+    if (SelectDevice(OUTPUT_DEVICES_FLAG) != SUCCESS) {
+        std::cout << "Select local device error before pick local spk." << std::endl;
+        return false;
+    }
+    int32_t ret = spkProcessClient_->PickOutputDevice(false);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test pick local spk fail, ret %{public}d.", ret);
+    spkDevType_ = LOCAL_DEVICE;
+    return true;
+}
+
+bool AudioProcessTest::PickRemoteSpk()
+{
+    CHECK_AND_RETURN_RET_LOG(spkProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    if (spkDevType_ == REMOTE_DEVICE) {
+        std::cout << "Remote spk device is already playing." << std::endl;
+        return true;
+    }
+
+    if (SelectDevice(DISTRIBUTED_OUTPUT_DEVICES_FLAG) != SUCCESS) {
+        std::cout << "Select remote device error before pick remote spk." << std::endl;
+        return false;
+    }
+    int32_t ret = spkProcessClient_->PickOutputDevice(true);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test pick remote spk fail, ret %{public}d.", ret);
+    spkDevType_ = REMOTE_DEVICE;
+    return true;
+}
+
 int32_t AudioProcessTest::InitMic(bool isRemote)
 {
     AudioProcessConfig config;
@@ -668,7 +767,7 @@ int32_t AudioProcessTest::InitMic(bool isRemote)
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
 
-    if (isRemote && SelectDevice(INPUT_DEVICE) != SUCCESS) {
+    if (isRemote && SelectDevice(DISTRIBUTED_INPUT_DEVICES_FLAG) != SUCCESS) {
         std::cout << "Select remote device error." << std::endl;
         return ERROR_UNSUPPORTED;
     }
@@ -680,6 +779,8 @@ int32_t AudioProcessTest::InitMic(bool isRemote)
     micProcClientCb_ = std::make_shared<AudioProcessTestCallback>(micProcessClient_, 0, config.audioMode);
     int32_t ret = micProcessClient_->SaveDataCallback(micProcClientCb_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
+    isInited_ = true;
+    micDevType_ = isRemote ? REMOTE_DEVICE : LOCAL_DEVICE;
     return SUCCESS;
 }
 
@@ -733,6 +834,42 @@ bool AudioProcessTest::ReleaseMic()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test release fail, ret %{public}d.", ret);
     micProcessClient_ = nullptr;
     AUDIO_INFO_LOG("client test set nullptr!");
+    return true;
+}
+
+bool AudioProcessTest::PickLocalMic()
+{
+    CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    if (micDevType_ == LOCAL_DEVICE) {
+        std::cout << "Local mic device is already recording." << std::endl;
+        return true;
+    }
+
+    if (SelectDevice(INPUT_DEVICES_FLAG) != SUCCESS) {
+        std::cout << "Select local device error before pick local mic." << std::endl;
+        return false;
+    }
+    int32_t ret = micProcessClient_->PickInputDevice(false);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test pick local mic fail, ret %{public}d.", ret);
+    micDevType_ = LOCAL_DEVICE;
+    return true;
+}
+
+bool AudioProcessTest::PickRemoteMic()
+{
+    CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    if (micDevType_ == REMOTE_DEVICE) {
+        std::cout << "Local mic device is already recording." << std::endl;
+        return true;
+    }
+
+    if (SelectDevice(DISTRIBUTED_INPUT_DEVICES_FLAG) != SUCCESS) {
+        std::cout << "Select remote device error before pick remote mic." << std::endl;
+        return false;
+    }
+    int32_t ret = micProcessClient_->PickInputDevice(true);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test pick remote mic fail, ret %{public}d.", ret);
+    micDevType_ = REMOTE_DEVICE;
     return true;
 }
 
@@ -1028,7 +1165,7 @@ string LoopLatencyTest(bool isRemote)
     unique_lock<mutex> lock(g_autoRunMutex);
     g_autoRunCV.wait(lock);
     ClockTime::RelativeSleep(MIC_SLEEP_TIME_US);
-    //release
+    // release
     g_audioProcessTest->StopMic();
     g_audioProcessTest->ReleaseMic();
     CloseMicFile();
@@ -1094,6 +1231,22 @@ string CallReleaseSpk()
     return "Spk release SUCCESS";
 }
 
+string CallPickLocalSpk()
+{
+    if (!g_audioProcessTest->PickLocalSpk()) {
+        return "Pick local spk play failed";
+    }
+    return "Pick local spk play SUCCESS";
+}
+
+string CallPickRemoteSpk()
+{
+    if (!g_audioProcessTest->PickRemoteSpk()) {
+        return "Pick remote spk play failed";
+    }
+    return "Pick remote spk play SUCCESS";
+}
+
 string ConfigMicTest(bool isRemote)
 {
     if (!OpenMicFile()) {
@@ -1156,6 +1309,22 @@ string CallReleaseMic()
     }
     CloseMicFile();
     return "Mic release SUCCESS";
+}
+
+string CallPickLocalMic()
+{
+    if (!g_audioProcessTest->PickLocalMic()) {
+        return "Pick local mic record failed";
+    }
+    return "Pick local mic record SUCCESS. Please confirm whether to continue recording and follow the prompts.";
+}
+
+string CallPickRemoteMic()
+{
+    if (!g_audioProcessTest->PickRemoteMic()) {
+        return "Pick remote mic record failed";
+    }
+    return "Pick remote mic record SUCCESS. Please confirm whether to continue recording and follow the prompts.";
 }
 
 string StartLoopTest()

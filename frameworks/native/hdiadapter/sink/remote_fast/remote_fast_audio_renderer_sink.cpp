@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -129,7 +129,8 @@ IMmapAudioRendererSink *RemoteFastAudioRendererSink::GetInstance(const std::stri
     AUDIO_INFO_LOG("GetInstance.");
     CHECK_AND_RETURN_RET_LOG(!deviceNetworkId.empty(), nullptr, "Remote fast render device networkId is null.");
 
-    if (allRFSinks.count(deviceNetworkId)) {
+    if (allRFSinks.count(deviceNetworkId) && allRFSinks[deviceNetworkId] != nullptr) {
+        AUDIO_INFO_LOG("Remote fast device networkId already exists in allRFSinks map.");
         return allRFSinks[deviceNetworkId];
     }
     RemoteFastAudioRendererSinkInner *audioRenderer =
@@ -200,12 +201,18 @@ void RemoteFastAudioRendererSinkInner::DeInit()
     AUDIO_INFO_LOG("RemoteFastAudioRendererSinkInner::DeInit");
     ClearRender();
 
-    RemoteFastAudioRendererSinkInner *temp = allRFSinks[this->deviceNetworkId_];
-    if (temp != nullptr) {
-        delete temp;
-        temp = nullptr;
-        allRFSinks.erase(this->deviceNetworkId_);
+    auto it = allRFSinks.find(this->deviceNetworkId_);
+    if (it == allRFSinks.end()) {
+        AUDIO_INFO_LOG("Not find remote fast device networkId in allRFSinks map.");
+        return;
     }
+
+    if (it->second != nullptr) {
+        delete it->second;
+        it->second = nullptr;
+    }
+    allRFSinks.erase(it);
+    AUDIO_INFO_LOG("DeInit end, allRFSinks size %{public}zu.", allRFSinks.size());
 }
 
 int32_t RemoteFastAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)

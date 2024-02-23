@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,12 +36,14 @@ public:
 
     int64_t GetTimeOfPos(uint64_t posInFrame);
 
+    void ResetModel();
+
     virtual ~LinearPosTimeModel() = default;
 private:
     bool IsReasonable(uint64_t frame, int64_t nanoTime);
 
 private:
-    bool isConfiged = false;
+    bool isConfiged_ = false;
     int32_t sampleRate_ = 0;
     int64_t nanoTimePerFrame_ = 0;
     uint64_t spanCountInFrame_ = 0;

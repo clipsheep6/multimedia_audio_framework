@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -46,6 +46,7 @@ static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volum
 }
 
 class ProcessCbImpl;
+
 class AudioProcessInClientInner : public AudioProcessInClient,
     public std::enable_shared_from_this<AudioProcessInClientInner> {
 public:
@@ -71,6 +72,10 @@ public:
     int32_t Stop() override;
 
     int32_t Release() override;
+
+    int32_t PickOutputDevice(bool isRemote) override;
+
+    int32_t PickInputDevice(bool isRemote) override;
 
     // methods for support IAudioStream
     int32_t GetSessionID(uint32_t &sessionID) override;
@@ -180,7 +185,7 @@ private:
     LinearPosTimeModel handleTimeModel_;
 
     std::thread callbackLoop_; // thread for callback to client and write.
-    bool isCallbackLoopEnd_ = false;
+    bool isCallbackLoopEnd_ = true;
     std::atomic<ThreadStatus> threadStatus_ = INVALID;
     std::mutex loopThreadLock_;
     std::condition_variable threadStatusCV_;
@@ -519,6 +524,7 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
 
     streamStatus_->store(StreamStatus::STREAM_IDEL);
 
+    isCallbackLoopEnd_ = false;
     AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
     bool isIndependent = bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT;
     if (config.audioMode == AUDIO_MODE_RECORD) {
@@ -922,6 +928,9 @@ int32_t AudioProcessInClientInner::Stop()
     }
     isCallbackLoopEnd_ = true;
     threadStatusCV_.notify_all();
+    if (callbackLoop_.joinable()) {
+        callbackLoop_.join();
+    }
 
     streamStatus_->store(StreamStatus::STREAM_STOPPED);
     AUDIO_INFO_LOG("Success stop proc client mode %{public}d form %{public}s.",
@@ -952,9 +961,116 @@ int32_t AudioProcessInClientInner::Release()
         return ERR_OPERATION_FAILED;
     }
 
+    handleTimeModel_.ResetModel();
     streamStatus_->store(StreamStatus::STREAM_RELEASED);
     AUDIO_INFO_LOG("Success release proc client mode %{public}d.", processConfig_.audioMode);
+
+    processProxy_ = nullptr;
+    audioBuffer_ = nullptr;
+    callbackBuffer_ = nullptr;
+    processCbImpl_ = nullptr;
+    totalSizeInFrame_ = 0;
+    spanSizeInFrame_ = 0;
+    byteSizePerFrame_ = 0;
+    spanSizeInByte_ = 0;
+    threadStatus_.store(INVALID);
+    underflowCount_.store(0);
+    needConvert_ = false;
+    needReSyncPosition_ = true;
     isInited_ = false;
+    return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::PickOutputDevice(bool isRemote)
+{
+    AUDIO_INFO_LOG("Audio process client pick output device enter, isRemote %d.", isRemote);
+    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    StreamStatus oldStreamStatus;
+    {
+        std::lock_guard<std::mutex> lock(statusSwitchLock_);
+        oldStreamStatus = streamStatus_->load();
+    }
+    AUDIO_INFO_LOG("Pick output device in old stream status %{public}s.", GetStatusInfo(oldStreamStatus).c_str());
+    int32_t ret = SUCCESS;
+    if (oldStreamStatus != StreamStatus::STREAM_RELEASED) {
+        ret = Release();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+            "Pick output device release old stream fail, ret %{public}d.", ret);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(statusSwitchLock_);
+        AUDIO_INFO_LOG("Pick output device will create new stream after release old stream.");
+        CHECK_AND_RETURN_RET_LOG(processConfig_.audioMode != AUDIO_MODE_PLAYBACK || CheckIfSupport(processConfig_),
+            ERR_INVALID_PARAM, "CheckIfSupport failed!");
+        sptr<IStandardAudioService> gasp = GetAudioServerProxy();
+        CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_DEVICE_INIT, "Create failed, can not get service.");
+        AudioProcessConfig resetConfig = processConfig_;
+        resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
+        sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig);
+        CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_DEVICE_INIT, "Create failed with null ipcProxy.");
+        sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
+        CHECK_AND_RETURN_RET_LOG(iProcessProxy != nullptr, ERR_DEVICE_INIT, "Create failed when iface_cast.");
+
+        processProxy_ = iProcessProxy;
+        if (!Init(processConfig_)) {
+            AUDIO_ERR_LOG("Pick output device Init failed!");
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
+    AUDIO_INFO_LOG("Pick output device make new stream hold in StreamStatus %{public}s.",
+        GetStatusInfo(oldStreamStatus).c_str());
+    if (oldStreamStatus == STREAM_IDEL) {
+        return SUCCESS;
+    } else if (oldStreamStatus == STREAM_RUNNING || oldStreamStatus == STREAM_PAUSED) {
+        ret = Start();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+            "Pick output device start new stream fail, ret %{public}d.", ret);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::PickInputDevice(bool isRemote)
+{
+    AUDIO_INFO_LOG("Audio process client pick input device enter, isRemote %d.", isRemote);
+    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    StreamStatus oldStreamStatus;
+    {
+        std::lock_guard<std::mutex> lock(statusSwitchLock_);
+        oldStreamStatus = streamStatus_->load();
+    }
+    AUDIO_INFO_LOG("Pick output device in old stream status %{public}s.", GetStatusInfo(oldStreamStatus).c_str());
+    int32_t ret = SUCCESS;
+    if (oldStreamStatus != StreamStatus::STREAM_RELEASED) {
+        ret = Release();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+            "Pick output device release old stream fail, ret %{public}d.", ret);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(statusSwitchLock_);
+        AUDIO_INFO_LOG("Pick input device will create new stream after release old stream.");
+        CHECK_AND_RETURN_RET_LOG(processConfig_.audioMode != AUDIO_MODE_PLAYBACK || CheckIfSupport(processConfig_),
+            ERR_INVALID_PARAM, "CheckIfSupport failed!");
+        sptr<IStandardAudioService> gasp = GetAudioServerProxy();
+        CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_DEVICE_INIT, "Create failed, can not get service.");
+        AudioProcessConfig resetConfig = processConfig_;
+        resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
+        sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig);
+        CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_DEVICE_INIT, "Create failed with null ipcProxy.");
+        sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
+        CHECK_AND_RETURN_RET_LOG(iProcessProxy != nullptr, ERR_DEVICE_INIT, "Create failed when iface_cast.");
+
+        processProxy_ = iProcessProxy;
+        if (!Init(processConfig_)) {
+            AUDIO_ERR_LOG("Pick output device Init failed!");
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
+    AUDIO_INFO_LOG("Pick output device make new stream hold in StreamStatus %{public}s.",
+        GetStatusInfo(STREAM_IDEL).c_str());
     return SUCCESS;
 }
 

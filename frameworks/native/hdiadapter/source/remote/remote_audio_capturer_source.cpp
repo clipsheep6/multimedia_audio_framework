@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -100,7 +100,8 @@ RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(const std::str
     bool isEmpty = deviceNetworkId.empty();
     CHECK_AND_RETURN_RET_LOG(!isEmpty, nullptr, "Remote capture device networkId is null.");
 
-    if (allRemoteSources.count(deviceNetworkId)) {
+    if (allRemoteSources.count(deviceNetworkId) && allRemoteSources[deviceNetworkId] != nullptr) {
+        AUDIO_INFO_LOG("Remote device networkId already exists in allRemoteSources map.");
         return allRemoteSources[deviceNetworkId];
     }
     RemoteAudioCapturerSourceInner *audioCapturer = new(std::nothrow) RemoteAudioCapturerSourceInner(deviceNetworkId);
@@ -159,12 +160,18 @@ void RemoteAudioCapturerSourceInner::DeInit()
     ClearCapture();
 
     // remove map recorder.
-    RemoteAudioCapturerSource *temp = allRemoteSources[this->deviceNetworkId_];
-    if (temp != nullptr) {
-        delete temp;
-        temp = nullptr;
-        allRemoteSources.erase(this->deviceNetworkId_);
+    auto it = allRemoteSources.find(this->deviceNetworkId_);
+    if (it == allRemoteSources.end()) {
+        AUDIO_INFO_LOG("Not find remote fast device networkId in allRemoteSources map.");
+        return;
     }
+
+    if (it->second != nullptr) {
+        delete it->second;
+        it->second = nullptr;
+    }
+    allRemoteSources.erase(it);
+    AUDIO_INFO_LOG("DeInit end, allRemoteSources size %{public}zu.", allRemoteSources.size());
 }
 
 int32_t RemoteAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)

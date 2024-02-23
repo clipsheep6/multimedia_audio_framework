@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -128,18 +128,19 @@ RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink destruction.");
 }
 
-std::map<std::string, RemoteAudioRendererSinkInner *> allsinks;
+std::map<std::string, RemoteAudioRendererSinkInner *> allRemoteSinks;
 RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const std::string &deviceNetworkId)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink::GetInstance");
     CHECK_AND_RETURN_RET_LOG(!deviceNetworkId.empty(), nullptr, "Remote render device networkId is null.");
 
-    if (allsinks.count(deviceNetworkId)) {
-        return allsinks[deviceNetworkId];
+    if (allRemoteSinks.count(deviceNetworkId) && allRemoteSinks[deviceNetworkId] != nullptr) {
+        AUDIO_INFO_LOG("Remote device networkId already exists in allRemoteSinks map.");
+        return allRemoteSinks[deviceNetworkId];
     }
     RemoteAudioRendererSinkInner *audioRenderer = new(std::nothrow) RemoteAudioRendererSinkInner(deviceNetworkId);
     AUDIO_DEBUG_LOG("New daudio remote render device networkId: [%{public}s].", deviceNetworkId.c_str());
-    allsinks[deviceNetworkId] = audioRenderer;
+    allRemoteSinks[deviceNetworkId] = audioRenderer;
     return audioRenderer;
 }
 
@@ -174,13 +175,18 @@ void RemoteAudioRendererSinkInner::DeInit()
     ClearRender();
 
     // remove map recorder.
-    RemoteAudioRendererSinkInner *temp = allsinks[this->deviceNetworkId_];
-    if (temp != nullptr) {
-        delete temp;
-        temp = nullptr;
-        allsinks.erase(this->deviceNetworkId_);
+    auto it = allRemoteSinks.find(this->deviceNetworkId_);
+    if (it == allRemoteSinks.end()) {
+        AUDIO_INFO_LOG("Not find remote device networkId in allRemoteSinks map.");
+        return;
     }
-    AUDIO_DEBUG_LOG("DeInit end.");
+
+    if (it->second != nullptr) {
+        delete it->second;
+        it->second = nullptr;
+    }
+    allRemoteSinks.erase(it);
+    AUDIO_INFO_LOG("DeInit end, allRemoteSinks size %{public}zu.", allRemoteSinks.size());
 }
 
 inline std::string PrintRemoteAttr(const IAudioSinkAttr &attr)
