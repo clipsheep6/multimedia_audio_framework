@@ -2204,7 +2204,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_001, TestSize.Level1)
 /**
 * @tc.name  : Test Release API via illegal state, CAPTURER_NEW: Call Release without initializing the capturer.
 * @tc.number: Audio_Capturer_Release_002
-* @tc.desc  : Test Release interface, Returns false, if the state is CAPTURER_NEW.
+* @tc.desc  : Test Release interface, Returns true, if the state is CAPTURER_NEW.
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_002, TestSize.Level1)
 {
@@ -2218,7 +2218,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_002, TestSize.Level1)
 /**
 * @tc.name  : Test Release API via illegal state, CAPTURER_RELEASED: call Release repeatedly.
 * @tc.number: Audio_Capturer_Release_003
-* @tc.desc  : Test Release interface. Returns false, if the state is already CAPTURER_RELEASED.
+* @tc.desc  : Test Release interface. Returns true, if the state is already CAPTURER_RELEASED.
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_003, TestSize.Level1)
 {
@@ -2443,7 +2443,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_004, TestSize.Level1)
 /**
 * @tc.name  : Test GetStatus API, call Release without initializing
 * @tc.number: Audio_Capturer_GetStatus_005
-* @tc.desc  : Test GetStatus interface. Not changes to CAPTURER_RELEASED, if the current state is CAPTURER_NEW.
+* @tc.desc  : Test GetStatus interface. Changes to CAPTURER_RELEASED, if the current state is CAPTURER_NEW.
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_005, TestSize.Level1)
 {
