@@ -37,8 +37,10 @@
 #endif
 #include "uri.h"
 #include "audio_spatialization_service.h"
+#include "audio_converter_parser.h"
 #undef LOG_TAG
 #define LOG_TAG "AudioPolicyService"
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
