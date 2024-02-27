@@ -49,6 +49,8 @@
 #include "audio_effect_chain_adapter.h"
 #include "playback_capturer_adapter.h"
 
+#undef LOG_TAG
+#define LOG_TAG "HdiSink"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"

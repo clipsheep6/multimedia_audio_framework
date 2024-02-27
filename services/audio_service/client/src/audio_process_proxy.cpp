@@ -17,7 +17,8 @@
 #include "audio_process_proxy.h"
 #include "audio_log.h"
 #include "audio_errors.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioProcessProxy"
 namespace OHOS {
 namespace AudioStandard {
 bool ProcessCbStub::CheckInterfaceToken(MessageParcel &data)

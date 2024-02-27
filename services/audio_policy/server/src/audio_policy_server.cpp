@@ -47,6 +47,8 @@
 #include "microphone_descriptor.h"
 #include "parameter.h"
 #include "parameters.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyServer"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;

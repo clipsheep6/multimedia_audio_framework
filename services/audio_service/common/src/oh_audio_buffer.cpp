@@ -23,7 +23,8 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
-
+#undef LOG_TAG
+#define LOG_TAG "OHAudioBuffer"
 namespace OHOS {
 namespace AudioStandard {
 namespace {

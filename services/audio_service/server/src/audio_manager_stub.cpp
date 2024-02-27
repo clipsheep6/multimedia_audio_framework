@@ -18,7 +18,8 @@
 #include "audio_log.h"
 #include "i_audio_process.h"
 #include "audio_effect_server.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioManagerStub"
 using namespace std;
 
 namespace OHOS {

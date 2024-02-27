@@ -15,7 +15,8 @@
 
 #include "audio_stream_tracker.h"
 #include "audio_policy_manager.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioStreamTracker"
 namespace OHOS {
 namespace AudioStandard {
 AudioStreamTracker::AudioStreamTracker(AudioMode mode, int32_t clientUid)

@@ -35,6 +35,8 @@
 #include "policy_handler.h"
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioEndpointSeparate"
 namespace OHOS {
 namespace AudioStandard {
 namespace {

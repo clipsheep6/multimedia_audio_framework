@@ -18,7 +18,8 @@
 #include "xml_parser.h"
 
 #include <regex>
-
+#undef LOG_TAG
+#define LOG_TAG "xmlParser"
 namespace OHOS {
 namespace AudioStandard {
 bool XMLParser::LoadConfiguration()

@@ -15,7 +15,8 @@
 
 #include "cockpit_phone_router.h"
 #include "audio_device_manager.h"
-
+#undef LOG_TAG
+#define LOG_TAG "CockpitPhoneRouter"
 using namespace std;
 
 namespace OHOS {

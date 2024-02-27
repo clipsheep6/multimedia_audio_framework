@@ -14,7 +14,8 @@
  */
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyServerHandler"
 namespace OHOS {
 namespace AudioStandard {
 AudioPolicyServerHandler::AudioPolicyServerHandler() : AppExecFwk::EventHandler(

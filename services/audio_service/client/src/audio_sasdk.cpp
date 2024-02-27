@@ -16,7 +16,8 @@
 #include "audio_sasdk.h"
 #include "audio_policy_manager.h"
 #include "audio_log.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioSaSdk"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

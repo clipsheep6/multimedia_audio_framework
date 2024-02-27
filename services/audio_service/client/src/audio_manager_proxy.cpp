@@ -20,7 +20,8 @@
 #include "audio_system_manager.h"
 #include "audio_log.h"
 #include "i_audio_process.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioManagerProxy"
 using namespace std;
 
 namespace OHOS {

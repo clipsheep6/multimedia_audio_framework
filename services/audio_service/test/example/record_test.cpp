@@ -17,6 +17,8 @@
 
 #include "audio_stream.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "RecordTest"
 
 using namespace OHOS::AudioStandard;
 

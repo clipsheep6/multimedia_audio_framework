@@ -29,6 +29,8 @@
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioStream"
 
 using namespace std;
 using namespace OHOS::HiviewDFX;

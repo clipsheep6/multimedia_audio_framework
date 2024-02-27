@@ -24,6 +24,8 @@
 #include "audio_utils.h"
 #include "fast/fast_audio_renderer_sink.h"
 #include "pcm2wav.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioHdiDeviceTest"
 
 using namespace std;
 using namespace OHOS;

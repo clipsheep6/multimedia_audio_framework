@@ -22,6 +22,9 @@
 #include "audio_log.h"
 #include "i_audio_capturer_source_intf.h"
 
+#undef LOG_TAG
+#define LOG_TAG "CapturerSourceAdapter"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

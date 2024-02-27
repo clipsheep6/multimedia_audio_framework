@@ -34,6 +34,8 @@
 #include "audio_system_manager.h"
 #include "parameter.h"
 #include "pcm2wav.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioProcessClientTest"
 
 using namespace std;
 namespace OHOS {

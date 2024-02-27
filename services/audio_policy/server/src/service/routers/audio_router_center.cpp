@@ -16,6 +16,8 @@
 #include "audio_router_center.h"
 #include "audio_policy_service.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioRouterCenter"
 
 using namespace std;
 

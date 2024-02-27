@@ -22,7 +22,8 @@
 #include "audio_utils.h"
 
 #include "audio_group_manager.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioGroupManager"
 namespace OHOS {
 namespace AudioStandard {
 static sptr<IStandardAudioService> g_sProxy = nullptr;

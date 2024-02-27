@@ -16,7 +16,8 @@
 #ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"
 #endif
-
+#undef LOG_TAG
+#define LOG_TAG "AudioVolumeParser"
 namespace OHOS {
 namespace AudioStandard {
 AudioVolumeParser::AudioVolumeParser()

@@ -16,7 +16,8 @@
 #include "accessibility_config_listener.h"
 
 #include "audio_log.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AccessibilityConfigListener"
 using namespace OHOS::AccessibilityConfig;
 
 namespace OHOS {

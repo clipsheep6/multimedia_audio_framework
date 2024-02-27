@@ -16,6 +16,8 @@
 #ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"
 #endif
+#undef LOG_TAG
+#define LOG_TAG "AudioFocusParser"
 
 namespace OHOS {
 namespace AudioStandard {

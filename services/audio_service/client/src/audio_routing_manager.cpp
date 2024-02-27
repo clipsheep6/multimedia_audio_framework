@@ -22,7 +22,8 @@
 #include "system_ability_definition.h"
 
 #include "audio_routing_manager.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioRoutingManager"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

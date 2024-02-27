@@ -18,7 +18,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "policy_handler.h"
-
+#undef LOG_TAG
+#define LOG_TAG "PaCapturerStreamImpl"
 namespace OHOS {
 namespace AudioStandard {
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)

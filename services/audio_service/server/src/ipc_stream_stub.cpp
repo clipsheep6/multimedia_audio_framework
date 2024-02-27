@@ -16,7 +16,8 @@
 #include "ipc_stream_stub.h"
 #include "audio_log.h"
 #include "audio_errors.h"
-
+#undef LOG_TAG
+#define LOG_TAG "IpcStreamStub"
 namespace OHOS {
 namespace AudioStandard {
 bool IpcStreamStub::CheckInterfaceToken(MessageParcel &data)

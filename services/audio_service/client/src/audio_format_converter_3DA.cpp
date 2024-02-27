@@ -16,7 +16,8 @@
 #include <cstdint>
 #include <string>
 #include <iostream>
-
+#undef LOG_TAG
+#define LOG_TAG "AudioFormatConverter3DA"
 namespace OHOS {
 namespace AudioStandard {
 static constexpr int32_t AUDIO_VIVID_SAMPLES = 1024;

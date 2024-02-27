@@ -22,6 +22,8 @@
 #include "audio_utils.h"
 
 #include "fast_audio_stream.h"
+#undef LOG_TAG
+#define LOG_TAG "FastAudioStream"
 
 using namespace std;
 

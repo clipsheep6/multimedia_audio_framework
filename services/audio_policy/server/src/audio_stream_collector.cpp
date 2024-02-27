@@ -19,7 +19,8 @@
 #include "ipc_skeleton.h"
 #include "i_standard_client_tracker.h"
 #include "hisysevent.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioStreamCollector"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

@@ -24,7 +24,8 @@
 
 #include "capturer_in_client.h"
 #include "renderer_in_client.h"
-
+#undef LOG_TAG
+#define LOG_TAG "IAudioStream"
 namespace OHOS {
 namespace AudioStandard {
 namespace {

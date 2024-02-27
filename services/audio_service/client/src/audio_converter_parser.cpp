@@ -17,7 +17,8 @@
 #include <string>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-
+#undef LOG_TAG
+#define LOG_TAG "AudioConverterParser"
 namespace OHOS {
 namespace AudioStandard {
 

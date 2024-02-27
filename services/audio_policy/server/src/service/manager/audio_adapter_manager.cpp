@@ -24,7 +24,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_volume_parser.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioAdapterManager"
 using namespace std;
 
 namespace OHOS {

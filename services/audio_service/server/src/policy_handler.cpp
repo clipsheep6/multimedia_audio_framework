@@ -20,7 +20,8 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
-
+#undef LOG_TAG
+#define LOG_TAG "PolicyHandler"
 namespace OHOS {
 namespace AudioStandard {
 PolicyHandler& PolicyHandler::GetInstance()

@@ -26,7 +26,8 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "i_audio_renderer_sink.h"
-
+#undef LOG_TAG
+#define LOG_TAG "PaRendererStreamImpl"
 namespace OHOS {
 namespace AudioStandard {
 const uint32_t DOUBLE_VALUE = 2;

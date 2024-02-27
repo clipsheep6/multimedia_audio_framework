@@ -17,7 +17,8 @@
 #include "audio_log.h"
 
 #include "securec.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioRingCache"
 namespace OHOS {
 namespace AudioStandard {
 namespace {
