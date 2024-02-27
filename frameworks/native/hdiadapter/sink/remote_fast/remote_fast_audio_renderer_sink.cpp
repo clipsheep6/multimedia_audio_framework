@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,15 +21,17 @@
 #include <sstream>
 #include "securec.h"
 
+#include <v1_0/audio_types.h>
+#include <v1_0/iaudio_manager.h>
+#include <v1_0/iaudio_callback.h>
+
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_info.h"
-#include "audio_manager.h"
 #include "ashmem.h"
 #include "i_audio_renderer_sink.h"
 #include "i_audio_device_adapter.h"
-#include "i_audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,6 +49,28 @@ const uint32_t REMOTE_FAST_OUTPUT_STREAM_ID = 37; // 13 + 3 * 8
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int32_t INVALID_FD = -1;
 }
+
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioAdapter;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioAdapterDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioFormat;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPort;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortDirection;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioManager;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioRender;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioCategory;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioRouteNode;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioExtParamKey;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioRoute;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSceneDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCallback;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortPin;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortType;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortRole;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioMmapBufferDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioTimeStamp;
+
 class RemoteFastAudioRendererSinkInner : public RemoteFastAudioRendererSink, public IAudioDeviceAdapterCallback {
 public:
     explicit RemoteFastAudioRendererSinkInner(const std::string &deviceNetworkId);
@@ -96,6 +120,8 @@ private:
     int32_t PrepareMmapBuffer();
     uint32_t PcmFormatToBits(HdiAdapterFormat format);
     void ClearRender();
+    int32_t InitAudioManager();
+    int32_t InitAdapter();
 
 private:
     std::atomic<bool> rendererInited_ = false;
@@ -104,10 +130,10 @@ private:
     std::atomic<bool> paused_ = false;
     float leftVolume_ = 0;
     float rightVolume_ = 0;
-    std::shared_ptr<IAudioDeviceManager> audioManager_ = nullptr;
-    std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
+    sptr<IAudioManager> audioManager_ = nullptr;
+    sptr<IAudioAdapter> audioAdapter_ = nullptr;
     IAudioSinkCallback *callback_ = nullptr;
-    struct AudioRender *audioRender_ = nullptr;
+    sptr<IAudioRender> audioRender_ = nullptr;
     struct AudioPort audioPort_;
     IAudioSinkAttr attr_ = {};
     std::string deviceNetworkId_;
@@ -116,6 +142,10 @@ private:
     int32_t bufferFd_ = INVALID_FD;
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
+    int32_t routeHandle_ = -1;
+    uint32_t renderId_ = 0;
+    std::vector<AudioAdapterDescriptor> descriptors_;
+    struct AudioAdapterDescriptor adapterDesc_;
 
 #ifdef DEBUG_DIRECT_USE_HDI
     sptr<Ashmem> ashmemSink_ = nullptr;
@@ -158,6 +188,64 @@ bool RemoteFastAudioRendererSinkInner::IsInited()
     return rendererInited_.load();
 }
 
+int32_t RemoteFastAudioRendererSinkInner::InitAudioManager()
+{
+    AUDIO_INFO_LOG("Initialize audio proxy manager in.");
+    audioManager_ = IAudioManager::Get("daudio_primary_service", false);
+    CHECK_AND_RETURN_RET(audioManager_ != nullptr, ERR_INVALID_HANDLE);
+    AUDIO_INFO_LOG("Initialize audio proxy manager end.");
+    return 0;
+}
+
+int32_t RemoteFastAudioRendererSinkInner::InitAdapter()
+{
+    AUDIO_INFO_LOG("Init adapter start.");
+    int32_t err = InitAudioManager();
+    CHECK_AND_RETURN_RET_LOG(err == 0, ERR_NOT_STARTED, "Init audio manager fail.");
+
+    int32_t ret = audioManager_->GetAllAdapters(descriptors_);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Get adapters failed");
+    CHECK_AND_RETURN_RET_LOG(descriptors_.data() != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail");
+    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}u", descriptors_.size());
+
+    int32_t targetIdx = -1;
+    for (uint32_t index = 0; index < descriptors_.size(); index++) {
+        struct AudioAdapterDescriptor *desc = &descriptors_[index];
+        if (desc == nullptr || desc->adapterName.c_str() == nullptr) {
+            continue;
+        }
+        if (deviceNetworkId_.compare(desc->adapterName)) {
+            AUDIO_INFO_LOG("[%{public}d] is not target adapter", index);
+            continue;
+        }
+        targetIdx = index;
+        if (desc->ports.size() <= 0) {
+            AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %u.", index, desc->ports.size());
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG((targetIdx >= 0), ERR_NOT_STARTED, "can not find target adapter.");
+    adapterDesc_ = descriptors_[targetIdx];
+
+    for (uint32_t port = 0; port < adapterDesc_.ports.size(); port++) {
+        if (adapterDesc_.ports[port].portId == AudioPortPin::PIN_OUT_SPEAKER) {
+            audioPort_ = adapterDesc_.ports[port];
+            break;
+        }
+        CHECK_AND_RETURN_RET_LOG(port != (adapterDesc_.ports.size() - 1), ERR_INVALID_INDEX,
+            "Not found the audio spk port");
+    }
+
+    AudioAdapterDescriptor descriptor = {
+        .adapterName = adapterDesc_.adapterName,
+    };
+    CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(descriptor, audioAdapter_) == SUCCESS),
+        ERR_NOT_STARTED, "Load Adapter Fail.");
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "audio adapter is null.");
+    // Initialization port information, can fill through mode and other parameters
+    CHECK_AND_RETURN_RET_LOG((audioAdapter_->InitAllPorts() == SUCCESS), ERR_NOT_STARTED, "Init all ports failed.");
+    return SUCCESS;
+}
+
 void RemoteFastAudioRendererSinkInner::ClearRender()
 {
     AUDIO_INFO_LOG("Clear remote fast audio render enter.");
@@ -180,8 +268,8 @@ void RemoteFastAudioRendererSinkInner::ClearRender()
     }
 
     if (audioAdapter_ != nullptr) {
-        audioAdapter_->DestroyRender(audioRender_);
-        audioAdapter_->Release();
+        audioAdapter_->DestroyRender(renderId_);
+        audioAdapter_->ReleaseAudioRoute(routeHandle_);
     }
     audioRender_ = nullptr;
     audioAdapter_ = nullptr;
@@ -190,8 +278,6 @@ void RemoteFastAudioRendererSinkInner::ClearRender()
         audioManager_->UnloadAdapter(deviceNetworkId_);
     }
     audioManager_ = nullptr;
-
-    AudioDeviceManagerFactory::GetInstance().DestoryDeviceManager(REMOTE_DEV_MGR);
     AUDIO_INFO_LOG("Clear remote audio render end.");
 }
 
@@ -212,37 +298,18 @@ int32_t RemoteFastAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("RemoteFastAudioRendererSinkInner::Init");
     attr_ = attr;
-    audioManager_ = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
-    CHECK_AND_RETURN_RET_LOG(audioManager_ != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
-
-    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(deviceNetworkId_, true);
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
-    for (uint32_t port = 0; port < desc->portNum; port++) {
-        if (desc->ports[port].portId == PIN_OUT_SPEAKER) {
-            audioPort_ = desc->ports[port];
-            break;
-        }
-        CHECK_AND_RETURN_RET_LOG(port != (desc->portNum - 1), ERR_INVALID_INDEX,
-            "Not found the audio spk port.");
-    }
-
-    audioAdapter_ = audioManager_->LoadAdapters(deviceNetworkId_, true);
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device adapter failed.");
-
-    int32_t ret = audioAdapter_->Init();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio adapter init fail, ret %{public}d.", ret);
-
-    ret = CreateRender(audioPort_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Create render fail, audio port %{public}d, ret %{public}d.",
-        audioPort_.portId, ret);
-
+    int32_t ret = InitAdapter();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init adapter failed");
     rendererInited_.store(true);
+    CHECK_AND_RETURN_RET_LOG(CreateRender(audioPort_) == SUCCESS, ERR_NOT_STARTED,
+        "Create render failed, Audio Port: %{public}d", audioPort_.portId);
     AUDIO_DEBUG_LOG("RemoteFastAudioRendererSink: Init end.");
     return SUCCESS;
 }
 
 int32_t RemoteFastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
+    AUDIO_INFO_LOG("RemoteFastAudioRendererSinkInner CreateRender in.");
     int64_t start = ClockTime::GetCurNano();
 
     struct AudioSampleAttributes param;
@@ -256,15 +323,15 @@ int32_t RemoteFastAudioRendererSinkInner::CreateRender(const struct AudioPort &r
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.pins = PIN_OUT_SPEAKER;
-    deviceDesc.desc = nullptr;
+    deviceDesc.pins = AudioPortPin::PIN_OUT_SPEAKER;
+    deviceDesc.desc = "";
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateRender: Audio adapter is null.");
-    int32_t ret = audioAdapter_->CreateRender(&deviceDesc, &param, &audioRender_, this);
+    int32_t ret = audioAdapter_->CreateRender(deviceDesc, param, audioRender_, renderId_);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioRender_ != nullptr, ret,
         "AudioDeviceCreateRender failed");
-    if (param.type == AUDIO_MMAP_NOIRQ) {
+    if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ) {
         PrepareMmapBuffer();
     }
     isRenderCreated_.store(true);
@@ -281,13 +348,13 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
     frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
     int32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
 
-    struct AudioMmapBufferDescriptor desc = {0};
-    int32_t ret = audioRender_->attr.ReqMmapBuffer((AudioHandle)audioRender_, reqBufferFrameSize, &desc);
+    struct AudioMmapBufferDescriptor desc;
+    int32_t ret = audioRender_->ReqMmapBuffer(reqBufferFrameSize, desc);
     CHECK_AND_RETURN_RET_LOG((ret == SUCCESS), ERR_OPERATION_FAILED,
         "PrepareMmapBuffer require mmap buffer failed, ret:%{public}d.", ret);
 
-    AUDIO_INFO_LOG("AudioMmapBufferDescriptor memoryAddress[%{private}p] memoryFd[%{public}d] totalBufferFrames"
-        "[%{public}d] transferFrameSize[%{public}d] isShareable[%{public}d] offset[%{public}d]", desc.memoryAddress,
+    AUDIO_INFO_LOG("AudioMmapBufferDescriptor  memoryFd[%{public}d] totalBufferFrames"
+        "[%{public}d] transferFrameSize[%{public}d] isShareable[%{public}d] offset[%{public}d]",
         desc.memoryFd, desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable, desc.offset);
 
     bufferFd_ = desc.memoryFd; // fcntl(fd, 1030,3) after dup?
@@ -331,9 +398,9 @@ int32_t RemoteFastAudioRendererSinkInner::GetMmapHandlePosition(uint64_t &frames
         "GetMmapHandlePosition: Audio render is null.");
 
     struct AudioTimeStamp timestamp = {};
-    int32_t ret = audioRender_->attr.GetMmapPosition((AudioHandle)audioRender_, &frames, &timestamp);
+    int32_t ret = audioRender_->GetMmapPosition(frames, timestamp);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
-        "Hdi GetMmapPosition filed, ret:%{public}d!", ret);
+        "Hdi GetMmapPosition failed, ret:%{public}d!", ret);
 
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it.
     CHECK_AND_RETURN_RET_LOG(timestamp.tvSec >= 0 && timestamp.tvSec <= maxSec && timestamp.tvNSec >= 0 &&
@@ -369,19 +436,19 @@ AudioFormat RemoteFastAudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterForma
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
         case SAMPLE_S16:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
         case SAMPLE_S24:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
         case SAMPLE_S32:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
     }
 
@@ -395,7 +462,7 @@ void RemoteFastAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &a
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
     attrs.streamId = REMOTE_FAST_OUTPUT_STREAM_ID;
-    attrs.type = AUDIO_MMAP_NOIRQ;
+    attrs.type = AudioCategory::AUDIO_MMAP_NOIRQ;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
     attrs.isSignedData = true;
@@ -459,7 +526,7 @@ int32_t RemoteFastAudioRendererSinkInner::Start(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Start: Audio render is null.");
-    int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "Start fail, ret %{public}d.", ret);
     ret = CheckPositionTime();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "CheckPositionTime failed, ret %{public}d.", ret);
@@ -477,7 +544,7 @@ int32_t RemoteFastAudioRendererSinkInner::Stop(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Stop: Audio render is null.");
-    int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Stop fail, ret %{public}d.", ret);
     started_.store(false);
     AUDIO_DEBUG_LOG("Stop ok.");
@@ -495,7 +562,7 @@ int32_t RemoteFastAudioRendererSinkInner::Pause(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Pause: Audio render is null.");
-    int32_t ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Pause fail, ret %{public}d.", ret);
     paused_.store(true);
     return SUCCESS;
@@ -512,7 +579,7 @@ int32_t RemoteFastAudioRendererSinkInner::Resume(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Resume: Audio render is null.");
-    int32_t ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Resume();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Resume fail, ret %{public}d.", ret);
     paused_.store(false);
     return SUCCESS;
@@ -524,7 +591,7 @@ int32_t RemoteFastAudioRendererSinkInner::Reset(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Reset invalid state!");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Reset: Audio render is null.");
-    int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Reset fail, ret %{public}d.", ret);
     return SUCCESS;
 }
@@ -535,7 +602,7 @@ int32_t RemoteFastAudioRendererSinkInner::Flush(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Flush invalid state!");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Flush: Audio render is null.");
-    int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Flush fail, ret %{public}d.", ret);
     return SUCCESS;
 }
@@ -555,7 +622,7 @@ int32_t RemoteFastAudioRendererSinkInner::SetVolume(float left, float right)
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
 
-    int32_t ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
+    int32_t ret = audioRender_->SetVolume(volume);
     if (ret) {
         AUDIO_ERR_LOG("Set volume failed!");
     }
@@ -578,7 +645,7 @@ int32_t RemoteFastAudioRendererSinkInner::GetLatency(uint32_t *latency)
         "GetLatency failed latency null");
 
     uint32_t hdiLatency = 0;
-    int32_t ret = audioRender_->GetLatency(audioRender_, &hdiLatency);
+    int32_t ret = audioRender_->GetLatency(hdiLatency);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
         "GetLatency failed.");
 
@@ -592,9 +659,7 @@ void RemoteFastAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallb
     callback_ = callback;
 
 #ifdef FEATURE_DISTRIBUTE_AUDIO
-    CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "RegisterParameterCallback: Audio adapter is null.");
-    int32_t ret = audioAdapter_->RegExtraParamObserver();
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterParameterCallback failed, ret %{public}d.", ret);
+    AUDIO_WARNING_LOG("RegisterParameterCallback not supported.");
 #endif
 }
 

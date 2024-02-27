@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,17 +19,41 @@
 #include <dlfcn.h>
 #include <string>
 #include <mutex>
+#include "securec.h"
+#include <vector>
+
+#include <v1_0/audio_types.h>
+#include <v1_0/iaudio_manager.h>
+#include <v1_0/iaudio_callback.h>
 
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "i_audio_device_adapter.h"
-#include "i_audio_device_manager.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioAdapter;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioAdapterDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioFormat;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPort;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortDirection;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioManager;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCapture;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioCategory;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioRouteNode;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioExtParamKey;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioRoute;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSceneDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCallback;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortPin;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortType;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortRole;
 
 class RemoteAudioCapturerSourceInner : public RemoteAudioCapturerSource, public IAudioDeviceAdapterCallback {
 public:
@@ -68,6 +92,8 @@ private:
     AudioCategory GetAudioCategory(AudioScene audioScene);
     void ClearCapture();
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
+    int32_t InitAudioManager();
+    int32_t InitAdapter();
 
 private:
     static constexpr uint32_t REMOTE_INPUT_STREAM_ID = 30; // 14 + 2 * 8
@@ -83,14 +109,17 @@ private:
     std::atomic<bool> paused_ = false;
 
     int32_t routeHandle_ = -1;
-    std::shared_ptr<IAudioDeviceManager> audioManager_ = nullptr;
-    std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
+    sptr<IAudioManager> audioManager_ = nullptr;
+    sptr<IAudioAdapter> audioAdapter_ = nullptr;
     IAudioSourceCallback *paramCb_ = nullptr;
-    struct AudioCapture *audioCapture_ = nullptr;
+    sptr<IAudioCapture> audioCapture_ = nullptr;
     struct AudioPort audioPort_;
     FILE *dumpFile_ = nullptr;
     bool muteState_ = false;
     std::mutex createCaptureMutex_;
+    uint32_t captureId_ = 0;
+    std::vector<AudioAdapterDescriptor> descriptors_;
+    struct AudioAdapterDescriptor adapterDesc_;
 };
 
 std::map<std::string, RemoteAudioCapturerSourceInner *> allRemoteSources;
@@ -137,8 +166,8 @@ void RemoteAudioCapturerSourceInner::ClearCapture()
     paused_.store(false);
 
     if (audioAdapter_ != nullptr) {
-        audioAdapter_->DestroyCapture(audioCapture_);
-        audioAdapter_->Release();
+        audioAdapter_->DestroyCapture(captureId_);
+        audioAdapter_->ReleaseAudioRoute(routeHandle_);
     }
     audioCapture_ = nullptr;
     audioAdapter_ = nullptr;
@@ -148,7 +177,6 @@ void RemoteAudioCapturerSourceInner::ClearCapture()
     }
     audioManager_ = nullptr;
 
-    AudioDeviceManagerFactory::GetInstance().DestoryDeviceManager(REMOTE_DEV_MGR);
     DumpFileUtil::CloseDumpFile(&dumpFile_);
     AUDIO_DEBUG_LOG("Clear capture end.");
 }
@@ -167,36 +195,72 @@ void RemoteAudioCapturerSourceInner::DeInit()
     }
 }
 
+int32_t RemoteAudioCapturerSourceInner::InitAudioManager()
+{
+    AUDIO_INFO_LOG("Initialize audio proxy manager in.");
+    audioManager_ = IAudioManager::Get("daudio_primary_service", false);
+    CHECK_AND_RETURN_RET(audioManager_ != nullptr, ERR_INVALID_HANDLE);
+    AUDIO_INFO_LOG("Initialize audio proxy manager end.");
+    return 0;
+}
+
+int32_t RemoteAudioCapturerSourceInner::InitAdapter()
+{
+    AUDIO_INFO_LOG("Init adapter start.");
+    int32_t err = InitAudioManager();
+    CHECK_AND_RETURN_RET_LOG(err == 0, ERR_NOT_STARTED, "Init audio manager fail.");
+
+    int32_t ret = audioManager_->GetAllAdapters(descriptors_);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Get adapters failed");
+    CHECK_AND_RETURN_RET_LOG(descriptors_.data() != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail");
+    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}u", descriptors_.size());
+
+    int32_t targetIdx = -1;
+    for (uint32_t index = 0; index < descriptors_.size(); index++) {
+        struct AudioAdapterDescriptor *desc = &descriptors_[index];
+        if (desc == nullptr || desc->adapterName.c_str() == nullptr) {
+            continue;
+        }
+        if (deviceNetworkId_.compare(desc->adapterName)) {
+            AUDIO_INFO_LOG("[%{public}d] is not target adapter", index);
+            continue;
+        }
+        targetIdx = index;
+        if (desc->ports.size() <= 0) {
+            AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %u.", index, desc->ports.size());
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG((targetIdx >= 0), ERR_NOT_STARTED, "can not find target adapter.");
+    adapterDesc_ = descriptors_[targetIdx];
+
+    for (uint32_t port = 0; port < adapterDesc_.ports.size(); port++) {
+        if (adapterDesc_.ports[port].portId == AudioPortPin::PIN_IN_MIC) {
+            audioPort_ = adapterDesc_.ports[port];
+            break;
+        }
+        CHECK_AND_RETURN_RET_LOG(port != (adapterDesc_.ports.size() - 1), ERR_INVALID_INDEX,
+            "Not found the audio mic port");
+    }
+
+    AudioAdapterDescriptor descriptor = {
+        .adapterName = adapterDesc_.adapterName,
+    };
+    CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(descriptor, audioAdapter_) == SUCCESS),
+        ERR_NOT_STARTED, "Load Adapter Fail.");
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "audio adapter is null.");
+    // Initialization port information, can fill through mode and other parameters
+    CHECK_AND_RETURN_RET_LOG((audioAdapter_->InitAllPorts() == SUCCESS), ERR_NOT_STARTED, "Init all ports failed.");
+    return SUCCESS;
+}
+
 int32_t RemoteAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::Init");
     attr_ = attr;
-    audioManager_ = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
-    CHECK_AND_RETURN_RET_LOG(audioManager_ != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
-
-    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(deviceNetworkId_, false);
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
-    for (uint32_t port = 0; port < desc->portNum; port++) {
-        if (desc->ports[port].portId == PIN_IN_MIC) {
-            audioPort_ = desc->ports[port];
-            break;
-        }
-        if (port == (desc->portNum - 1)) {
-            AUDIO_ERR_LOG("Not found the audio mic port.");
-            return ERR_INVALID_INDEX;
-        }
-    }
-
-    audioAdapter_ = audioManager_->LoadAdapters(deviceNetworkId_, false);
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device adapter failed.");
-
-    int32_t ret = audioAdapter_->Init();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio adapter init fail, ret %{public}d.", ret);
-
+    int32_t ret = InitAdapter();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init adapter failed");
     capturerInited_.store(true);
-
     SetMute(muteState_);
-
     AUDIO_DEBUG_LOG("RemoteAudioCapturerSource: Init end.");
     return SUCCESS;
 }
@@ -211,19 +275,19 @@ AudioFormat RemoteAudioCapturerSourceInner::ConvertToHdiFormat(HdiAdapterFormat 
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
         case SAMPLE_S16:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
         case SAMPLE_S24:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
         case SAMPLE_S32:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
     }
 
@@ -233,7 +297,7 @@ AudioFormat RemoteAudioCapturerSourceInner::ConvertToHdiFormat(HdiAdapterFormat 
 int32_t RemoteAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capturePort)
 {
     struct AudioSampleAttributes param;
-    param.type = AUDIO_IN_MEDIA;
+    param.type = AudioCategory::AUDIO_IN_MEDIA;
     param.period = deepBufferCapturePeriodSize;
     param.streamId = REMOTE_INPUT_STREAM_ID;
     param.isSignedData = true;
@@ -251,14 +315,14 @@ int32_t RemoteAudioCapturerSourceInner::CreateCapture(const struct AudioPort &ca
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
-    deviceDesc.pins = PIN_IN_MIC;
-    deviceDesc.desc = nullptr;
+    deviceDesc.pins = AudioPortPin::PIN_IN_MIC;
+    deviceDesc.desc = "";
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateCapture: Audio adapter is null.");
-    int32_t ret = audioAdapter_->CreateCapture(&deviceDesc, &param, &audioCapture_, this);
+    int32_t ret = audioAdapter_->CreateCapture(deviceDesc, param, audioCapture_, captureId_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioCapture_ != nullptr, ret,
         "Create capture failed, ret %{public}d.", ret);
-
+    AUDIO_DEBUG_LOG("The capture ID is: %{public}u.", captureId_);
     isCapturerCreated_.store(true);
     return SUCCESS;
 }
@@ -266,9 +330,19 @@ int32_t RemoteAudioCapturerSourceInner::CreateCapture(const struct AudioPort &ca
 int32_t RemoteAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr), ERR_INVALID_HANDLE, "CaptureFrame: Audio capture is null.");
-    int32_t ret = audioCapture_->CaptureFrame(audioCapture_, frame, requestBytes, &replyBytes);
+    if (!started_.load()) {
+        AUDIO_DEBUG_LOG("RemoteAudioCapturerSourceInner::CaptureFrame invalid state not started.");
+    }
+    std::vector<int8_t> frameHal(requestBytes);
+    int32_t ret = audioCapture_->CaptureFrame(frameHal, replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_READ_FAILED, "Capture frame fail, ret %{public}x.", ret);
 
+    ret = memcpy_s(frame, requestBytes, frameHal.data(), requestBytes);
+    if (ret != EOK) {
+        AUDIO_ERR_LOG("Copy capture frame failed, errorcode %d.", ret);
+        return ERR_MEMORY_ALLOC_FAILED;
+    }
+    replyBytes = requestBytes;
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, requestBytes);
 
     return SUCCESS;
@@ -290,7 +364,7 @@ int32_t RemoteAudioCapturerSourceInner::Start(void)
     }
 
     CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr), ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
-    int32_t ret = audioCapture_->control.Start((AudioHandle)audioCapture_);
+    int32_t ret = audioCapture_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Start fail, ret %{public}d.", ret);
     started_.store(true);
     return SUCCESS;
@@ -305,7 +379,7 @@ int32_t RemoteAudioCapturerSourceInner::Stop(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Stop: Audio capture is null.");
-    int32_t ret = audioCapture_->control.Stop(reinterpret_cast<AudioHandle>(audioCapture_));
+    int32_t ret = audioCapture_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Stop fail, ret %{public}d.", ret);
     started_.store(false);
     return SUCCESS;
@@ -322,7 +396,7 @@ int32_t RemoteAudioCapturerSourceInner::Pause(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Pause: Audio capture is null.");
-    int32_t ret = audioCapture_->control.Pause(reinterpret_cast<AudioHandle>(audioCapture_));
+    int32_t ret = audioCapture_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Pause fail, ret %{public}d.", ret);
     paused_.store(true);
     return SUCCESS;
@@ -339,7 +413,7 @@ int32_t RemoteAudioCapturerSourceInner::Resume(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Resume: Audio capture is null.");
-    int32_t ret = audioCapture_->control.Resume(reinterpret_cast<AudioHandle>(audioCapture_));
+    int32_t ret = audioCapture_->Resume();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Resume fail, ret %{public}d.", ret);
     paused_.store(false);
     return SUCCESS;
@@ -351,7 +425,7 @@ int32_t RemoteAudioCapturerSourceInner::Reset(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Reset invalid state!");
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Reset: Audio capture is null.");
-    int32_t ret = audioCapture_->control.Flush(reinterpret_cast<AudioHandle>(audioCapture_));
+    int32_t ret = audioCapture_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Reset fail, ret %{public}d.", ret);
     return SUCCESS;
 }
@@ -362,7 +436,7 @@ int32_t RemoteAudioCapturerSourceInner::Flush(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Flush invalid state!");
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Flush: Audio capture is null.");
-    int32_t ret = audioCapture_->control.Flush(reinterpret_cast<AudioHandle>(audioCapture_));
+    int32_t ret = audioCapture_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Flush fail, ret %{public}d.", ret);
     return SUCCESS;
 }
@@ -384,7 +458,7 @@ int32_t RemoteAudioCapturerSourceInner::SetVolume(float left, float right)
         volume = (leftVolume + rightVolume) * half;
     }
 
-    int32_t ret = audioCapture_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioCapture_), volume);
+    int32_t ret = audioCapture_->SetVolume(volume);
     AUDIO_INFO_LOG("remote setVolume(%{public}f, %{public}f):%{public}d", left, right, ret);
     return ret;
 }
@@ -393,7 +467,7 @@ int32_t RemoteAudioCapturerSourceInner::GetVolume(float &left, float &right)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "GetVolume: Audio capture is null.");
     float val = 0.0;
-    audioCapture_->volume.GetVolume((AudioHandle)audioCapture_, &val);
+    audioCapture_->GetVolume(val);
     left = val;
     right = val;
 
@@ -411,7 +485,7 @@ int32_t RemoteAudioCapturerSourceInner::SetMute(bool isMute)
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "SetMute: Audio capture is null.");
 
-    int32_t ret = audioCapture_->volume.SetMute((AudioHandle)audioCapture_, isMute);
+    int32_t ret = audioCapture_->SetMute(isMute);
     if (ret != 0) {
         AUDIO_ERR_LOG("SetMute failed from hdi");
     }
@@ -426,7 +500,7 @@ int32_t RemoteAudioCapturerSourceInner::GetMute(bool &isMute)
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "GetMute: Audio capture is null.");
 
     bool isHdiMute = false;
-    int32_t ret = audioCapture_->volume.GetMute((AudioHandle)audioCapture_, &isHdiMute);
+    int32_t ret = audioCapture_->GetMute(isHdiMute);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioCapturerSource::GetMute failed from hdi");
     }
@@ -440,15 +514,15 @@ int32_t RemoteAudioCapturerSourceInner::SetInputPortPin(DeviceType inputDevice, 
 
     switch (inputDevice) {
         case DEVICE_TYPE_MIC:
-            source.ext.device.type = PIN_IN_MIC;
+            source.ext.device.type = AudioPortPin::PIN_IN_MIC;
             source.ext.device.desc = "pin_in_mic";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
-            source.ext.device.type = PIN_IN_HS_MIC;
+            source.ext.device.type = AudioPortPin::PIN_IN_HS_MIC;
             source.ext.device.desc = "pin_in_hs_mic";
             break;
         case DEVICE_TYPE_USB_HEADSET:
-            source.ext.device.type = PIN_IN_USB_EXT;
+            source.ext.device.type = AudioPortPin::PIN_IN_USB_EXT;
             source.ext.device.desc = "pin_in_usb_ext";
             break;
         default:
@@ -468,25 +542,22 @@ int32_t RemoteAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set input port pin fail, ret %{public}d", ret);
 
     source.portId = audioPort_.portId;
-    source.role = AUDIO_PORT_SOURCE_ROLE;
-    source.type = AUDIO_PORT_DEVICE_TYPE;
+    source.role = AudioPortRole::AUDIO_PORT_SOURCE_ROLE;
+    source.type = AudioPortType::AUDIO_PORT_DEVICE_TYPE;
     source.ext.device.moduleId = 0;
 
     sink.portId = 0;
-    sink.role = AUDIO_PORT_SINK_ROLE;
-    sink.type = AUDIO_PORT_MIX_TYPE;
+    sink.role = AudioPortRole::AUDIO_PORT_SINK_ROLE;
+    sink.type = AudioPortType::AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
     sink.ext.mix.streamId = REMOTE_INPUT_STREAM_ID;
 
-    AudioRoute route = {
-        .sourcesNum = 1,
-        .sources = &source,
-        .sinksNum = 1,
-        .sinks = &sink,
-    };
+    AudioRoute route;
+    route.sources.push_back(source);
+    route.sinks.push_back(sink);
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetInputRoute: Audio adapter is null.");
-    ret = audioAdapter_->UpdateAudioRoute(&route, &routeHandle_);
+    ret = audioAdapter_->UpdateAudioRoute(route, routeHandle_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Update audio route fail, ret %{public}d", ret);
     return SUCCESS;
 }
@@ -496,19 +567,19 @@ AudioCategory RemoteAudioCapturerSourceInner::GetAudioCategory(AudioScene audioS
     AudioCategory audioCategory;
     switch (audioScene) {
         case AUDIO_SCENE_DEFAULT:
-            audioCategory = AUDIO_IN_MEDIA;
+            audioCategory = AudioCategory::AUDIO_IN_MEDIA;
             break;
         case AUDIO_SCENE_RINGING:
-            audioCategory = AUDIO_IN_RINGTONE;
+            audioCategory = AudioCategory::AUDIO_IN_RINGTONE;
             break;
         case AUDIO_SCENE_PHONE_CALL:
-            audioCategory = AUDIO_IN_CALL;
+            audioCategory = AudioCategory::AUDIO_IN_CALL;
             break;
         case AUDIO_SCENE_PHONE_CHAT:
-            audioCategory = AUDIO_IN_COMMUNICATION;
+            audioCategory = AudioCategory::AUDIO_IN_COMMUNICATION;
             break;
         default:
-            audioCategory = AUDIO_IN_MEDIA;
+            audioCategory = AudioCategory::AUDIO_IN_MEDIA;
             break;
     }
     AUDIO_DEBUG_LOG("RemoteAudioCapturerSource: Audio category returned is: %{public}d", audioCategory);
@@ -521,12 +592,12 @@ int32_t RemoteAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, Dev
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "SetAudioScene: Audio capture is null.");
     struct AudioSceneDescriptor scene;
     scene.scene.id = GetAudioCategory(audioScene);
-    scene.desc.pins = PIN_IN_MIC;
-    CHECK_AND_RETURN_RET_LOG(audioCapture_->scene.SelectScene != nullptr, ERR_OPERATION_FAILED,
-        "AudioCapturerSource: Select scene nullptr");
+    scene.desc.pins = AudioPortPin::PIN_IN_MIC;
+    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
+        ERR_INVALID_PARAM, "invalid audioScene");
 
     AUDIO_INFO_LOG("AudioCapturerSource::SelectScene start");
-    int32_t ret = audioCapture_->scene.SelectScene((AudioHandle)audioCapture_, &scene);
+    int32_t ret = audioCapture_->SelectScene(scene);
     AUDIO_INFO_LOG("AudioCapturerSource::SelectScene over");
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED,
         "AudioCapturerSource: Select scene FAILED: %{public}d", ret);
@@ -537,7 +608,8 @@ int32_t RemoteAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, Dev
 uint64_t RemoteAudioCapturerSourceInner::GetTransactionId()
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::GetTransactionId in");
-    return reinterpret_cast<uint64_t>(audioCapture_);
+    AUDIO_ERR_LOG("RemoteAudioCapturerSourceInner::GetTransactionId not support");
+    return SUCCESS;
 }
 
 int32_t RemoteAudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec,
@@ -562,9 +634,7 @@ void RemoteAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallb
     paramCb_ = callback;
 
 #ifdef FEATURE_DISTRIBUTE_AUDIO
-    CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "RegisterParameterCallback: Audio adapter is null.");
-    int32_t ret = audioAdapter_->RegExtraParamObserver();
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterParameterCallback failed, ret %{public}d.", ret);
+    AUDIO_WARNING_LOG("RegisterParameterCallback not supported.");
 #endif
 }
 

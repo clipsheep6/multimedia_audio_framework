@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,14 +27,16 @@
 #include <map>
 #include <mutex>
 #include "securec.h"
+#include <vector>
 
-#include "audio_manager.h"
+#include <v1_0/audio_types.h>
+#include <v1_0/iaudio_manager.h>
+#include <v1_0/iaudio_callback.h>
 
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "i_audio_device_adapter.h"
-#include "i_audio_device_manager.h"
 
 using namespace std;
 
@@ -51,6 +53,26 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t REMOTE_OUTPUT_STREAM_ID = 29; // 13 + 2 * 8
 }
+
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioAdapter;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioAdapterDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioFormat;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPort;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortDirection;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioManager;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioRender;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioCategory;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioRouteNode;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioExtParamKey;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioRoute;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSceneDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCallback;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortPin;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortType;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortRole;
+
 class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink, public IAudioDeviceAdapterCallback {
 public:
     explicit RemoteAudioRendererSinkInner(const std::string &deviceNetworkId);
@@ -94,6 +116,8 @@ private:
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int32_t OpenOutput(DeviceType outputDevice);
     void ClearRender();
+    int32_t InitAudioManager();
+    int32_t InitAdapter();
 
 private:
     std::string deviceNetworkId_;
@@ -104,14 +128,17 @@ private:
     int32_t routeHandle_ = -1;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
-    std::shared_ptr<IAudioDeviceManager> audioManager_ = nullptr;
-    std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
+    sptr<IAudioManager> audioManager_ = nullptr;
+    sptr<IAudioAdapter> audioAdapter_ = nullptr;
     IAudioSinkCallback *callback_ = nullptr;
-    struct AudioRender *audioRender_ = nullptr;
+    sptr<IAudioRender> audioRender_ = nullptr;
     struct AudioPort audioPort_;
     IAudioSinkAttr attr_;
     FILE *dumpFile_ = nullptr;
     std::mutex createRenderMutex_;
+    uint32_t renderId_ = 0;
+    std::vector<AudioAdapterDescriptor> descriptors_;
+    struct AudioAdapterDescriptor adapterDesc_;
 };
 
 RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string &deviceNetworkId)
@@ -126,6 +153,64 @@ RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
         RemoteAudioRendererSinkInner::DeInit();
     }
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink destruction.");
+}
+
+int32_t RemoteAudioRendererSinkInner::InitAudioManager()
+{
+    AUDIO_INFO_LOG("Initialize audio proxy manager in.");
+    audioManager_ = IAudioManager::Get("daudio_primary_service", false);
+    CHECK_AND_RETURN_RET(audioManager_ != nullptr, ERR_INVALID_HANDLE);
+    AUDIO_INFO_LOG("Initialize audio proxy manager end.");
+    return 0;
+}
+
+int32_t RemoteAudioRendererSinkInner::InitAdapter()
+{
+    AUDIO_INFO_LOG("Init adapter start.");
+    int32_t err = InitAudioManager();
+    CHECK_AND_RETURN_RET_LOG(err == 0, ERR_NOT_STARTED, "Init audio manager fail.");
+
+    int32_t ret = audioManager_->GetAllAdapters(descriptors_);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Get adapters failed");
+    CHECK_AND_RETURN_RET_LOG(descriptors_.data() != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail");
+    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}u", descriptors_.size());
+
+    int32_t targetIdx = -1;
+    for (uint32_t index = 0; index < descriptors_.size(); index++) {
+        struct AudioAdapterDescriptor *desc = &descriptors_[index];
+        if (desc == nullptr || desc->adapterName.c_str() == nullptr) {
+            continue;
+        }
+        if (deviceNetworkId_.compare(desc->adapterName)) {
+            AUDIO_INFO_LOG("[%{public}d] is not target adapter", index);
+            continue;
+        }
+        targetIdx = index;
+        if (desc->ports.size() <= 0) {
+            AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %u.", index, desc->ports.size());
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG((targetIdx >= 0), ERR_NOT_STARTED, "can not find target adapter.");
+    adapterDesc_ = descriptors_[targetIdx];
+
+    for (uint32_t port = 0; port < adapterDesc_.ports.size(); port++) {
+        if (adapterDesc_.ports[port].portId == AudioPortPin::PIN_OUT_SPEAKER) {
+            audioPort_ = adapterDesc_.ports[port];
+            break;
+        }
+        CHECK_AND_RETURN_RET_LOG(port != (adapterDesc_.ports.size() - 1), ERR_INVALID_INDEX,
+            "Not found the audio spk port");
+    }
+
+    AudioAdapterDescriptor descriptor = {
+        .adapterName = adapterDesc_.adapterName,
+    };
+    CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(descriptor, audioAdapter_) == SUCCESS),
+        ERR_NOT_STARTED, "Load Adapter Fail.");
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "audio adapter is null.");
+    // Initialization port information, can fill through mode and other parameters
+    CHECK_AND_RETURN_RET_LOG((audioAdapter_->InitAllPorts() == SUCCESS), ERR_NOT_STARTED, "Init all ports failed.");
+    return SUCCESS;
 }
 
 std::map<std::string, RemoteAudioRendererSinkInner *> allsinks;
@@ -152,8 +237,8 @@ void RemoteAudioRendererSinkInner::ClearRender()
     paused_.store(false);
 
     if (audioAdapter_ != nullptr) {
-        audioAdapter_->DestroyRender(audioRender_);
-        audioAdapter_->Release();
+        audioAdapter_->DestroyRender(renderId_);
+        audioAdapter_->ReleaseAudioRoute(routeHandle_);
     }
     audioRender_ = nullptr;
     audioAdapter_ = nullptr;
@@ -163,7 +248,6 @@ void RemoteAudioRendererSinkInner::ClearRender()
     }
     audioManager_ = nullptr;
 
-    AudioDeviceManagerFactory::GetInstance().DestoryDeviceManager(REMOTE_DEV_MGR);
     DumpFileUtil::CloseDumpFile(&dumpFile_);
     AUDIO_INFO_LOG("Clear remote audio render end.");
 }
@@ -203,34 +287,16 @@ int32_t RemoteAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Init");
     attr_ = attr;
-    audioManager_ = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
-    CHECK_AND_RETURN_RET_LOG(audioManager_ != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
-
-    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(deviceNetworkId_, false);
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
-    for (uint32_t port = 0; port < desc->portNum; port++) {
-        if (desc->ports[port].portId == PIN_OUT_SPEAKER) {
-            audioPort_ = desc->ports[port];
-            break;
-        }
-        CHECK_AND_RETURN_RET_LOG(port != (desc->portNum - 1), ERR_INVALID_INDEX,
-            "Not found the audio spk port.");
-    }
-
-    audioAdapter_ = audioManager_->LoadAdapters(deviceNetworkId_, false);
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device adapter failed.");
-
-    int32_t ret = audioAdapter_->Init();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio adapter init fail, ret %{public}d.", ret);
-
+    int32_t ret = InitAdapter();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init adapter failed");
     rendererInited_.store(true);
-
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink: Init end.");
     return SUCCESS;
 }
 
 int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
+    AUDIO_INFO_LOG("RemoteAudioRendererSinkInner CreateRender in.");
     int64_t start = ClockTime::GetCurNano();
     struct AudioSampleAttributes param;
     InitAttrs(param);
@@ -243,13 +309,14 @@ int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &rende
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.pins = PIN_OUT_SPEAKER;
-    deviceDesc.desc = nullptr;
+    deviceDesc.pins = AudioPortPin::PIN_OUT_SPEAKER;
+    deviceDesc.desc = "";
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateRender: Audio adapter is null.");
-    int32_t ret = audioAdapter_->CreateRender(&deviceDesc, &param, &audioRender_, this);
+    int32_t ret = audioAdapter_->CreateRender(deviceDesc, param, audioRender_, renderId_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioRender_ != nullptr, ret,
         "AudioDeviceCreateRender fail, ret %{public}d.", ret);
+    AUDIO_DEBUG_LOG("The render ID is: %{public}u.", renderId_);
 
     isRenderCreated_.store(true);
     int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
@@ -264,7 +331,7 @@ void RemoteAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &attrs
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
     attrs.streamId = REMOTE_OUTPUT_STREAM_ID;
-    attrs.type = AUDIO_IN_MEDIA;
+    attrs.type = AudioCategory::AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
     attrs.isSignedData = true;
@@ -277,19 +344,19 @@ AudioFormat RemoteAudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat fo
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
         case SAMPLE_S16:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
         case SAMPLE_S24:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
         case SAMPLE_S32:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
     }
 
@@ -298,17 +365,25 @@ AudioFormat RemoteAudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat fo
 
 int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    int64_t start = ClockTime::GetCurNano();
+    int64_t stamp = ClockTime::GetCurNano();
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "RenderFrame: Audio render is null.");
-
-    int32_t ret = audioRender_->RenderFrame(audioRender_, static_cast<void*>(&data), len, &writeLen);
+    if (!started_.load()) {
+        AUDIO_DEBUG_LOG("AudioRendererSinkInner::RenderFrame invalid state not started.");
+    }
+    std::vector<int8_t> frameHal(len);
+    int32_t ret = memcpy_s(frameHal.data(), len, &data, len);
+    if (ret != EOK) {
+        AUDIO_ERR_LOG("Copy render frame failed, errorcode %d.", ret);
+        return ERR_OPERATION_FAILED;
+    }
+    ret = audioRender_->RenderFrame(frameHal, writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "Render frame fail, ret %{public}x.", ret);
     writeLen = len;
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
 
-    int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
-    AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, cost);
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+    AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     return SUCCESS;
 }
 
@@ -328,7 +403,7 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Start: Audio render is null.");
-    int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Start fail, ret %{public}d.", ret);
     started_.store(true);
     return SUCCESS;
@@ -343,7 +418,7 @@ int32_t RemoteAudioRendererSinkInner::Stop(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Stop: Audio render is null.");
-    int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Stop fail, ret %{public}d.", ret);
     started_.store(false);
     return SUCCESS;
@@ -360,7 +435,7 @@ int32_t RemoteAudioRendererSinkInner::Pause(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Pause: Audio render is null.");
-    int32_t ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Pause fail, ret %{public}d.", ret);
     paused_.store(true);
     return SUCCESS;
@@ -377,7 +452,7 @@ int32_t RemoteAudioRendererSinkInner::Resume(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Resume: Audio render is null.");
-    int32_t ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Resume();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Resume fail, ret %{public}d.", ret);
     paused_.store(false);
     return SUCCESS;
@@ -389,7 +464,7 @@ int32_t RemoteAudioRendererSinkInner::Reset(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Reset invalid state!");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Reset: Audio render is null.");
-    int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Reset fail, ret %{public}d.", ret);
     return SUCCESS;
 }
@@ -400,7 +475,7 @@ int32_t RemoteAudioRendererSinkInner::Flush(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Flush invalid state!");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Flush: Audio render is null.");
-    int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Flush fail, ret %{public}d.", ret);
     return SUCCESS;
 }
@@ -420,7 +495,7 @@ int32_t RemoteAudioRendererSinkInner::SetVolume(float left, float right)
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
 
-    int32_t ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
+    int32_t ret = audioRender_->SetVolume(volume);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Set volume fail, ret %{public}d.", ret);
     return SUCCESS;
 }
@@ -439,7 +514,7 @@ int32_t RemoteAudioRendererSinkInner::GetLatency(uint32_t *latency)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "GetLatency: Audio render is null.");
     uint32_t hdiLatency = 0;
-    int32_t ret = audioRender_->GetLatency(audioRender_, &hdiLatency);
+    int32_t ret = audioRender_->GetLatency(hdiLatency);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Get latency fail, ret %{public}d.", ret);
 
     *latency = hdiLatency;
@@ -451,19 +526,19 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
     AudioCategory audioCategory;
     switch (audioScene) {
         case AUDIO_SCENE_DEFAULT:
-            audioCategory = AUDIO_IN_MEDIA;
+            audioCategory = AudioCategory::AUDIO_IN_MEDIA;
             break;
         case AUDIO_SCENE_RINGING:
-            audioCategory = AUDIO_IN_RINGTONE;
+            audioCategory = AudioCategory::AUDIO_IN_RINGTONE;
             break;
         case AUDIO_SCENE_PHONE_CALL:
-            audioCategory = AUDIO_IN_CALL;
+            audioCategory = AudioCategory::AUDIO_IN_CALL;
             break;
         case AUDIO_SCENE_PHONE_CHAT:
-            audioCategory = AUDIO_IN_COMMUNICATION;
+            audioCategory = AudioCategory::AUDIO_IN_COMMUNICATION;
             break;
         default:
-            audioCategory = AUDIO_IN_MEDIA;
+            audioCategory = AudioCategory::AUDIO_IN_MEDIA;
             break;
     }
     AUDIO_DEBUG_LOG("Audio category returned is: %{public}d", audioCategory);
@@ -477,15 +552,15 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 
     switch (outputDevice) {
         case DEVICE_TYPE_SPEAKER:
-            sink.ext.device.type = PIN_OUT_SPEAKER;
+            sink.ext.device.type = AudioPortPin::PIN_OUT_SPEAKER;
             sink.ext.device.desc = "pin_out_speaker";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
-            sink.ext.device.type = PIN_OUT_HEADSET;
+            sink.ext.device.type = AudioPortPin::PIN_OUT_HEADSET;
             sink.ext.device.desc = "pin_out_headset";
             break;
         case DEVICE_TYPE_USB_HEADSET:
-            sink.ext.device.type = PIN_OUT_USB_EXT;
+            sink.ext.device.type = AudioPortPin::PIN_OUT_USB_EXT;
             sink.ext.device.desc = "pin_out_usb_ext";
             break;
         default:
@@ -505,25 +580,22 @@ int32_t RemoteAudioRendererSinkInner::OpenOutput(DeviceType outputDevice)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set output port pin fail, ret %{public}d", ret);
 
     source.portId = 0;
-    source.role = AUDIO_PORT_SOURCE_ROLE;
-    source.type = AUDIO_PORT_MIX_TYPE;
+    source.role = AudioPortRole::AUDIO_PORT_SOURCE_ROLE;
+    source.type = AudioPortType::AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = 0;
     source.ext.mix.streamId = REMOTE_OUTPUT_STREAM_ID;
 
     sink.portId = audioPort_.portId;
-    sink.role = AUDIO_PORT_SINK_ROLE;
-    sink.type = AUDIO_PORT_DEVICE_TYPE;
+    sink.role = AudioPortRole::AUDIO_PORT_SINK_ROLE;
+    sink.type = AudioPortType::AUDIO_PORT_DEVICE_TYPE;
     sink.ext.device.moduleId = 0;
 
-    AudioRoute route = {
-        .sourcesNum = 1,
-        .sources = &source,
-        .sinksNum = 1,
-        .sinks = &sink,
-    };
+    AudioRoute route;
+    route.sources.push_back(source);
+    route.sinks.push_back(sink);
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "OpenOutput: Audio adapter is null.");
-    ret = audioAdapter_->UpdateAudioRoute(&route, &routeHandle_);
+    ret = audioAdapter_->UpdateAudioRoute(route, routeHandle_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Update audio route fail, ret %{public}d", ret);
     return SUCCESS;
 }
@@ -543,11 +615,10 @@ int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, Devic
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "SetAudioScene: Audio render is null.");
     struct AudioSceneDescriptor scene;
     scene.scene.id = GetAudioCategory(audioScene);
-    scene.desc.pins = PIN_OUT_SPEAKER;
-    CHECK_AND_RETURN_RET_LOG(audioRender_->scene.SelectScene != nullptr, ERR_OPERATION_FAILED, "Select scene nullptr");
+    scene.desc.pins = AudioPortPin::PIN_OUT_SPEAKER;
 
     AUDIO_DEBUG_LOG("SelectScene start");
-    ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
+    ret = audioRender_->SelectScene(scene);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Audio render Select scene fail, ret %{public}d.", ret);
     AUDIO_DEBUG_LOG("Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
@@ -559,9 +630,12 @@ void RemoteAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, co
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     AUDIO_INFO_LOG("SetParameter: key %{public}d, condition: %{public}s, value: %{public}s",
         key, condition.c_str(), value.c_str());
-
+    enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
     CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "SetAudioParameter: Audio adapter is null.");
-    audioAdapter_->SetAudioParameter(key, condition.c_str(), value.c_str());
+    int32_t ret = audioAdapter_->SetExtraParams(hdiKey, condition, value);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("SetAudioParameter failed, errocode: %d", ret);
+    }
 #endif
 }
 
@@ -569,9 +643,12 @@ std::string RemoteAudioRendererSinkInner::GetAudioParameter(const AudioParamKey 
 {
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     AUDIO_INFO_LOG("key %{public}d, condition: %{public}s", key, condition.c_str());
-
+    enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    std::string value;
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, "", "Audio adapter is null.");
-    return audioAdapter_->GetAudioParameter(key, condition);
+    int32_t ret = audioAdapter_->GetExtraParams(hdiKey, condition.c_str(), value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "GetAudioParameter failed, errorcode: %d", ret);
+    return value;
 #else
     return "";
 #endif
@@ -582,10 +659,7 @@ void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback*
     AUDIO_INFO_LOG("register sink audio param callback.");
     callback_ = callback;
 #ifdef FEATURE_DISTRIBUTE_AUDIO
-    // register to remote audio adapter
-    CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "RegisterParameterCallback: Audio adapter is null.");
-    int32_t ret = audioAdapter_->RegExtraParamObserver();
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterParameterCallback failed, ret %{public}d.", ret);
+    AUDIO_WARNING_LOG("RegisterParameterCallback not supported.");
 #endif
 }
 
