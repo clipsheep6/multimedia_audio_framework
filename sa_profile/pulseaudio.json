@@ -1,5 +1,5 @@
 {
-    "process": "audio_server",
+    "process": "pulseaudio",
     "systemability": [
         {
             "name": 3001,
