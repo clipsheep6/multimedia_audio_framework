@@ -45,7 +45,7 @@
 #include "volume_tools.h"
 #include "callback_handler.h"
 #include "audio_speed.h"
-#include "audio_spatial_channel_converter.h"
+
 #undef LOG_TAG
 #define LOG_TAG "RendererInClient"
 
