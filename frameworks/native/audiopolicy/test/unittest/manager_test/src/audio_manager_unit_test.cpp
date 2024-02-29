@@ -2839,7 +2839,7 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_001, TestSize.Leve
 * @tc.number: ConfigDistributedRoutingRoleTest_002
 * @tc.desc  : Test ConfigDistributedRoutingRole inner api, when audioDeviceDescriptors is OUTPUT_DEVICES
 */
-HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_001, TestSize.Level1)
+HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_002, TestSize.Level1)
 {
     int32_t ret;
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
