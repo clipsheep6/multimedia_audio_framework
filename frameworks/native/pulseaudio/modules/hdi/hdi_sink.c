@@ -2360,7 +2360,7 @@ static int32_t WaitMsg(const char *prefix, const char *suffix, struct Userdata *
 
 static void ThreadFuncRendererTimerOffload(void *userdata)
 {
-    ScheduleReportData(getpid(), gettid(), "audio_server"); // set audio thread priority
+    ScheduleReportData(getpid(), gettid(), "pulseaudio"); // set audio thread priority
 
     struct Userdata *u = userdata;
 
@@ -2525,7 +2525,7 @@ static bool ThreadFuncRendererTimerMultiChannelFlagJudge(struct Userdata *u)
 
 static void ThreadFuncRendererTimerMultiChannel(void *userdata)
 {
-    ScheduleReportData(getpid(), gettid(), "audio_server"); // set audio thread priority
+    ScheduleReportData(getpid(), gettid(), "pulseaudio"); // set audio thread priority
 
     struct Userdata *u = userdata;
 
@@ -2670,7 +2670,7 @@ static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUse
 
 static void ThreadFuncRendererTimer(void *userdata)
 {
-    ScheduleReportData(getpid(), gettid(), "audio_server"); // set audio thread priority
+    ScheduleReportData(getpid(), gettid(), "pulseaudio"); // set audio thread priority
 
     struct Userdata *u = userdata;
 
@@ -2737,7 +2737,7 @@ static void ThreadFuncRendererTimerBusSendMsgq(struct Userdata *u)
 static void ThreadFuncRendererTimerBus(void *userdata)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
     struct Userdata *u = userdata;
 
@@ -2790,7 +2790,7 @@ static void ThreadFuncWriteHDIMultiChannel(void *userdata)
 {
     AUDIO_DEBUG_LOG("ThreadFuncWriteHDIMultiChannel start");
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -2829,7 +2829,7 @@ static void ThreadFuncWriteHDIMultiChannel(void *userdata)
 static void ThreadFuncWriteHDI(void *userdata)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -2875,7 +2875,7 @@ static void ThreadFuncWriteHDI(void *userdata)
 static void TestModeThreadFuncWriteHDI(void *userdata)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -3363,7 +3363,7 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
 static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
     pa_sink_new_data data;
     pa_module *m;
