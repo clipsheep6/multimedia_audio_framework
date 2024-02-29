@@ -163,8 +163,8 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             HandleOperationFlushed();
             break;
         case OPERATION_DRAINED:
-            stateListener->OnOperationHandled(DRAIN_STREAM, 0);
             status_ = I_STATUS_STARTED;
+            stateListener->OnOperationHandled(DRAIN_STREAM, 0);
             afterDrain = true;
             break;
         case OPERATION_RELEASED:
