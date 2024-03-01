@@ -1,0 +1,13 @@
+diff a/services/audio_policy/server/src/service/manager/pnp_server/audio_pnp_server.cpp b/services/audio_policy/server/src/service/manager/pnp_server/audio_pnp_server.cpp	(rejected hunks)
+@@ -160,11 +165,7 @@ void AudioPnpServer::OpenAndReadWithSocket()
+             eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
+             CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid socket info");
+             OnPnpDeviceStatusChanged(eventInfo_);
+-        } else if (((uint32_t)fd.revents & POLLERR) == POLLERR) {
+-            AUDIO_ERR_LOG("audio event poll error");
+-            break;
+         }
+-    }
+     close(socketFd);
+     return;
+ }
