@@ -45,6 +45,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
         std::string value = std::to_string(volume);
         g_sProxy->SetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition, value);
         return SUCCESS;
+        asdasdasdad
     }
 
     AUDIO_INFO_LOG("SetVolume volumeType[%{public}d], volume[%{public}d]", volumeType, volume);
