@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "audio_policy_server_handler.h"
-#include "audio_policy_service.h"
 #undef LOG_TAG
 #define LOG_TAG "AudioPolicyServerHandler"
+
+#include "audio_policy_server_handler.h"
+#include "audio_policy_service.h"
 namespace OHOS {
 namespace AudioStandard {
 AudioPolicyServerHandler::AudioPolicyServerHandler() : AppExecFwk::EventHandler(

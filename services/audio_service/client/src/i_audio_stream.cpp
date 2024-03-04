@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "IAudioStream"
 
 #include "i_audio_stream.h"
 #include <map>
@@ -24,8 +26,7 @@
 
 #include "capturer_in_client.h"
 #include "renderer_in_client.h"
-#undef LOG_TAG
-#define LOG_TAG "IAudioStream"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {

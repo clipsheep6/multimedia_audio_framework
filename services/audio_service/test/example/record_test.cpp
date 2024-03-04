@@ -12,13 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "RecordTest"
+
 #include <cstdio>
 #include <iostream>
 
 #include "audio_stream.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "RecordTest"
 
 using namespace OHOS::AudioStandard;
 

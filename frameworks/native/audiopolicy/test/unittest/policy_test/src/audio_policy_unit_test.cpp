@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyUnitTest"
 
 #include <thread>
 #include "audio_errors.h"
@@ -24,8 +26,6 @@
 #include "system_ability_definition.h"
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_policy_client_stub_impl.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioPolicyUnitTest"
 
 using namespace std;
 using namespace testing::ext;

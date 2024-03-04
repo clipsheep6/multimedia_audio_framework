@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "napi_audio_renderer_device_change_callback.h"
 #undef LOG_TAG
 #define LOG_TAG "NapiAudioRendererDeviceChangeCallback"
+
+#include "napi_audio_renderer_device_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {

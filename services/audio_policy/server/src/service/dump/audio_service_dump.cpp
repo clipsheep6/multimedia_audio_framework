@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include "audio_service_dump.h"
 #undef LOG_TAG
 #define LOG_TAG "AudioServiceDump"
+
+#include "audio_service_dump.h"
 
 using namespace std;
 

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioStream"
 
 #include <chrono>
 #include <thread>
@@ -29,8 +31,6 @@
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioStream"
 
 using namespace std;
 using namespace OHOS::HiviewDFX;

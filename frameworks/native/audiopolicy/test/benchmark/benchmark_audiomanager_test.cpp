@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "BenchmarkAudiomanagerTest"
 
 #include <benchmark/benchmark.h>
 #include <string>
@@ -19,8 +21,7 @@
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_system_manager.h"
-#undef LOG_TAG
-#define LOG_TAG "BenchmarkAudiomanagerTest"
+
 using namespace std;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;

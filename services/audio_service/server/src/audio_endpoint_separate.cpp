@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioEndpointSeparate"
 
 #include "audio_endpoint.h"
 
@@ -35,8 +37,7 @@
 #include "policy_handler.h"
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioEndpointSeparate"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {

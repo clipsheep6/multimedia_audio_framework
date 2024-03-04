@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "PaStreamTest"
 
 #include <chrono>
 #include <cstdio>
@@ -27,8 +29,6 @@
 #include "audio_renderer.h"
 #include "audio_capturer.h"
 #include "pcm2wav.h"
-#undef LOG_TAG
-#define LOG_TAG "PaStreamTest"
 
 using namespace std;
 namespace OHOS {

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyServer"
 
 #include "audio_policy_server.h"
 
@@ -47,8 +49,6 @@
 #include "microphone_descriptor.h"
 #include "parameter.h"
 #include "parameters.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioPolicyServer"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;

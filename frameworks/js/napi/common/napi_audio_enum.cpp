@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioEnum"
 
 #include "napi_audio_enum.h"
 #include "audio_renderer.h"
@@ -20,8 +22,6 @@
 #include "audio_interrupt_info.h"
 #include "audio_device_info.h"
 #include "napi_param_utils.h"
-#undef LOG_TAG
-#define LOG_TAG "NapiAudioEnum"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;

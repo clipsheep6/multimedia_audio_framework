@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioProcessStub"
 
 #include "audio_process_stub.h"
 #include "audio_log.h"
 #include "audio_errors.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioProcessStub"
+
 namespace OHOS {
 namespace AudioStandard {
 ProcessCbProxy::ProcessCbProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<IProcessCb>(impl)

@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "audio_tone_parser.h"
 #undef LOG_TAG
 #define LOG_TAG "AudioToneParser"
+
+#include "audio_tone_parser.h"
 namespace OHOS {
 namespace AudioStandard {
 AudioToneParser::AudioToneParser()

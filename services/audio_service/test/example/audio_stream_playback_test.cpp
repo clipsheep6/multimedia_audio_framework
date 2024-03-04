@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioStreamPlaybackTest"
+
 #include <cstdio>
 #include <iostream>
 
@@ -24,8 +27,6 @@
 #include "audio_utils.h"
 #include "parameter.h"
 #include "pcm2wav.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioStreamPlaybackTest"
 
 using namespace std;
 namespace OHOS {

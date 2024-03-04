@@ -17,6 +17,9 @@
 #include <config.h>
 #endif
 
+#undef LOG_TAG
+#define LOG_TAG "ModuleInnerCapturerSink"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -40,8 +43,6 @@
 
 #include "audio_log.h"
 
-#undef LOG_TAG
-#define LOG_TAG "ModuleInnerCapturerSink"
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Inner Capturer Sink"));

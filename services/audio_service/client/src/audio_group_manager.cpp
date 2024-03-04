@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioGroupManager"
 
 #include "audio_errors.h"
 #include "audio_manager_proxy.h"
@@ -22,8 +24,7 @@
 #include "audio_utils.h"
 
 #include "audio_group_manager.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioGroupManager"
+
 namespace OHOS {
 namespace AudioStandard {
 static sptr<IStandardAudioService> g_sProxy = nullptr;

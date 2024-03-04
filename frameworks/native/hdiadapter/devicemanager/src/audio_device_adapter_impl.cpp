@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioDeviceAdapterImpl"
 
 #include "audio_device_adapter_impl.h"
 
@@ -19,8 +21,6 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioDeviceAdapterImpl"
 
 namespace OHOS {
 namespace AudioStandard {

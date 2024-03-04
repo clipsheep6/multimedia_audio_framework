@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "RemoteAudioCapturerSourceInner"
 
 #include "remote_audio_capturer_source.h"
 
@@ -25,8 +27,6 @@
 #include "audio_utils.h"
 #include "i_audio_device_adapter.h"
 #include "i_audio_device_manager.h"
-#undef LOG_TAG
-#define LOG_TAG "RemoteAudioCapturerSourceInner"
 
 using namespace std;
 

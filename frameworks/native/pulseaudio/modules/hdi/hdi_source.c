@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#undef LOG_TAG
+#define LOG_TAG "HdiSource"
 
 #include <config.h>
 #include <pulse/rtclock.h>
@@ -41,8 +42,6 @@
 #include "audio_hdiadapter_info.h"
 #include "capturer_source_adapter.h"
 
-#undef LOG_TAG
-#define LOG_TAG "HdiSource"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"

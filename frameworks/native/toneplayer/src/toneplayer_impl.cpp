@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "TonePlayerImpl"
 
 #include <sys/time.h>
 #include <utility>
@@ -25,8 +27,6 @@
 #include "tone_player_impl.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
-#undef LOG_TAG
-#define LOG_TAG "TonePlayerImpl"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioCapturerGateway"
 
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
@@ -19,8 +21,6 @@
 #include "audio_container_stream_base.h"
 #include "audio_log.h"
 #include "audio_capturer.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioCapturerGateway"
 
 namespace OHOS {
 namespace AudioStandard {

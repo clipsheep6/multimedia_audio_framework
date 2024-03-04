@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPnpServer"
 
 #include "audio_pnp_server.h"
 
@@ -35,8 +37,7 @@
 #include "audio_input_thread.h"
 #include "audio_log.h"
 #include "audio_socket_thread.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioPnpServer"
+
 using namespace std;
 namespace OHOS {
 namespace AudioStandard {

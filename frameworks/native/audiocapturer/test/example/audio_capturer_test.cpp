@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioCapturerTest"
 
 #include <chrono>
 #include <cstdint>
@@ -24,8 +26,6 @@
 #include "audio_capturer.h"
 #include "audio_info.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioCapturerTest"
 
 using namespace std;
 using namespace std::chrono;

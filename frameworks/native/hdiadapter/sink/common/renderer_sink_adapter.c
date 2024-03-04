@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "RendererSinkAdapter"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -20,8 +22,6 @@
 #include "renderer_sink_adapter.h"
 #include "audio_log.h"
 
-#undef LOG_TAG
-#define LOG_TAG "RendererSinkAdapter"
 
 #ifdef __cplusplus
 extern "C" {

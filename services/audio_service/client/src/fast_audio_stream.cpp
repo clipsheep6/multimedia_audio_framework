@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "FastAudioStream"
 
 #include <chrono>
 #include <thread>
@@ -22,8 +24,6 @@
 #include "audio_utils.h"
 
 #include "fast_audio_stream.h"
-#undef LOG_TAG
-#define LOG_TAG "FastAudioStream"
 
 using namespace std;
 

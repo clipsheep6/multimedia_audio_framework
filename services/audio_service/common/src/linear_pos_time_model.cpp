@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "LinearPosTimeModel"
 
 #include "linear_pos_time_model.h"
 
@@ -19,8 +21,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "LinearPosTimeModel"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {

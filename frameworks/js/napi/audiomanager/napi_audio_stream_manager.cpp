@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioStreamMgr"
+
 #include "napi_audio_stream_manager.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
@@ -20,8 +23,6 @@
 #include "audio_log.h"
 #include "napi_audio_renderer_state_callback.h"
 #include "napi_audio_capturer_state_callback.h"
-#undef LOG_TAG
-#define LOG_TAG "NapiAudioStreamMgr"
 
 namespace OHOS {
 namespace AudioStandard {

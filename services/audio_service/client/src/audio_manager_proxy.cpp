@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioManagerProxy"
 
 #include "audio_manager_proxy.h"
 
@@ -20,8 +22,7 @@
 #include "audio_system_manager.h"
 #include "audio_log.h"
 #include "i_audio_process.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioManagerProxy"
+
 using namespace std;
 
 namespace OHOS {

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "OHAudioBuffer"
 
 #include "oh_audio_buffer.h"
 
@@ -23,8 +25,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "OHAudioBuffer"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {

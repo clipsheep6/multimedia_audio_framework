@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "CapturerInServer"
 
 #include "capturer_in_server.h"
 #include <cinttypes>
@@ -20,8 +22,7 @@
 #include "audio_utils.h"
 #include "audio_log.h"
 #include "i_stream_manager.h"
-#undef LOG_TAG
-#define LOG_TAG "CapturerInServer"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {

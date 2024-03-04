@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "OHAudioCapturer"
 
 #include "OHAudioCapturer.h"
 #include "audio_errors.h"
-#undef LOG_TAG
-#define LOG_TAG "OHAudioCapturer"
 
 using OHOS::AudioStandard::Timestamp;
 

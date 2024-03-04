@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioStreamUnitTest"
 
 #include <thread>
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_stream_unit_test.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioStreamUnitTest"
 
 using namespace std;
 using namespace testing::ext;

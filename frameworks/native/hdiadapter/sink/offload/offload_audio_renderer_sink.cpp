@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "OffloadAudioRendererSinkInner"
 
 #include "offload_audio_renderer_sink.h"
 
@@ -31,8 +33,6 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-#undef LOG_TAG
-#define LOG_TAG "OffloadAudioRendererSinkInner"
 
 using namespace std;
 

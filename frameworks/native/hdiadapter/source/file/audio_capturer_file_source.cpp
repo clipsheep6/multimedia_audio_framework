@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioCapturerFileSource"
 
 #include "audio_capturer_file_source.h"
 
@@ -22,8 +24,6 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioCapturerFileSource"
 
 using namespace std;
 

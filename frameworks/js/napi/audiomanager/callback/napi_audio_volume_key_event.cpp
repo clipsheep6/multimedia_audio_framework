@@ -12,13 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioVolumeKeyEvent"
+
 #include "napi_audio_volume_key_event.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "NapiAudioVolumeKeyEvent"
 
 using namespace std;
 namespace OHOS {

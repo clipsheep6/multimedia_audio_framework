@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "VolumeRamp"
 
 #include "volume_ramp.h"
 #include <cinttypes>
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "VolumeRamp"
 
 namespace OHOS {
 namespace AudioStandard {

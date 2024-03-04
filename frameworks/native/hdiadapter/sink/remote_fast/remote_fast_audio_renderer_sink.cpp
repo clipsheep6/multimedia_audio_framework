@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "RemoteFastAudioRendererSinkInner"
 
 #include "remote_fast_audio_renderer_sink.h"
 
@@ -30,8 +32,6 @@
 #include "i_audio_renderer_sink.h"
 #include "i_audio_device_adapter.h"
 #include "i_audio_device_manager.h"
-#undef LOG_TAG
-#define LOG_TAG "RemoteFastAudioRendererSinkInner"
 
 namespace OHOS {
 namespace AudioStandard {

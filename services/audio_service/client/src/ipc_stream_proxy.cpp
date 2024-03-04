@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "IpcStreamProxy"
 
 #include "ipc_stream_proxy.h"
 #include "audio_log.h"
 #include "audio_errors.h"
-#undef LOG_TAG
-#define LOG_TAG "IpcStreamProxy"
+
 namespace OHOS {
 namespace AudioStandard {
 IpcStreamProxy::IpcStreamProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<IpcStream>(impl)

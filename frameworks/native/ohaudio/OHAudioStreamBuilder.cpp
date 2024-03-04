@@ -12,14 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "OHAudioStreamBuilder"
 
 #include <memory>
 #include "native_audiostreambuilder.h"
 #include "OHAudioStreamBuilder.h"
 #include "OHAudioRenderer.h"
 #include "OHAudioCapturer.h"
-#undef LOG_TAG
-#define LOG_TAG "OHAudioStreamBuilder"
 
 using OHOS::AudioStandard::OHAudioStreamBuilder;
 using OHOS::AudioStandard::AudioSampleFormat;

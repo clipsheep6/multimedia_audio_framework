@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "FastAudioCapturerSourceInner"
 
 #include <string>
 #include <cinttypes>
@@ -26,8 +28,6 @@
 
 #include "v2_0/iaudio_manager.h"
 #include "fast_audio_capturer_source.h"
-#undef LOG_TAG
-#define LOG_TAG "FastAudioCapturerSourceInner"
 
 using namespace std;
 

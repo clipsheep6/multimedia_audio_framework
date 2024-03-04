@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioSocketThread"
+
 #include "audio_socket_thread.h"
 
 #include <cctype>
@@ -30,8 +33,7 @@
 #include "securec.h"
 #include "audio_errors.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioSocketThread"
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

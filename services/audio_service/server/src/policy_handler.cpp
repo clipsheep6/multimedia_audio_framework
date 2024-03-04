@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "PolicyHandler"
 
 #include "policy_handler.h"
 
@@ -20,8 +22,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "PolicyHandler"
+
 namespace OHOS {
 namespace AudioStandard {
 PolicyHandler& PolicyHandler::GetInstance()

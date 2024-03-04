@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyProxy"
 
 #include "audio_policy_manager.h"
 #include "audio_log.h"
 #include "audio_policy_proxy.h"
 #include "microphone_descriptor.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioPolicyProxy"
 
 namespace {
 constexpr int MAX_PID_COUNT = 1000;

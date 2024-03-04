@@ -12,14 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioOpenslesRecorderUnitTest"
 
 #include "audio_opensles_recorder_unit_test.h"
 
 #include "common.h"
 #include "audio_errors.h"
 #include "audio_info.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioOpenslesRecorderUnitTest"
 
 using namespace std;
 using namespace testing::ext;

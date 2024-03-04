@@ -12,14 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyManagerStub"
 
 #include "audio_policy_manager_stub.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_policy_ipc_interface_code.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioPolicyManagerStub"
 namespace {
 constexpr int MAX_PID_COUNT = 1000;
 }

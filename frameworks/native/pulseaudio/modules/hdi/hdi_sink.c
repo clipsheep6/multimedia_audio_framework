@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "HdiSink"
 
 #include <config.h>
 #include <pulse/rtclock.h>
@@ -49,8 +51,6 @@
 #include "audio_effect_chain_adapter.h"
 #include "playback_capturer_adapter.h"
 
-#undef LOG_TAG
-#define LOG_TAG "HdiSink"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"

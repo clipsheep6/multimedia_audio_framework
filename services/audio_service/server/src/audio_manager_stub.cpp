@@ -12,14 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioManagerStub"
 
 #include "audio_manager_base.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
 #include "i_audio_process.h"
 #include "audio_effect_server.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioManagerStub"
+
 using namespace std;
 
 namespace OHOS {

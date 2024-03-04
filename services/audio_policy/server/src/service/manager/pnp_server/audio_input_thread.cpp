@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioInputThread"
+
 #include "audio_input_thread.h"
 
 #include <fcntl.h>
@@ -24,8 +27,7 @@
 #include "securec.h"
 #include "audio_errors.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioInputThread"
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

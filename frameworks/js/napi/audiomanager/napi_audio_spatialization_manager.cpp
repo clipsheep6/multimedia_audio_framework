@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioSpatializationManager"
+
 #include "napi_audio_spatialization_manager.h"
 
 #include <vector>
@@ -23,8 +26,6 @@
 #include "audio_utils.h"
 #include "xpower_event_js.h"
 #include "napi_audio_spatialization_manager_callback.h"
-#undef LOG_TAG
-#define LOG_TAG "NapiAudioSpatializationManager"
 
 namespace OHOS {
 namespace AudioStandard {

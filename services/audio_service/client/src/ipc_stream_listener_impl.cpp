@@ -12,13 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "IpcStreamListenerImpl"
 
 #include "cinttypes"
 #include "ipc_stream_listener_impl.h"
 #include "audio_log.h"
 #include "audio_errors.h"
-#undef LOG_TAG
-#define LOG_TAG "IpcStreamListenerImpl"
+
 namespace OHOS {
 namespace AudioStandard {
 IpcStreamListenerImpl::IpcStreamListenerImpl(std::shared_ptr<IStreamListener> innerListener)

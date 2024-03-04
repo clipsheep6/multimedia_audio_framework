@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioTonePlayerTest"
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -22,8 +25,6 @@
 
 #include "tone_player_private.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioTonePlayerTest"
 
 using namespace std;
 using namespace OHOS;

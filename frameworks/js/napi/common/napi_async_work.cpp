@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "napi_async_work.h"
 #undef LOG_TAG
 #define LOG_TAG "ContextBase"
+
+#include "napi_async_work.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "MultiChannelRendererSinkInner"
 
 #include "multichannel_audio_renderer_sink.h"
 
@@ -35,8 +37,6 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
-#undef LOG_TAG
-#define LOG_TAG "MultiChannelRendererSinkInner"
 
 using namespace std;
 

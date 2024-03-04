@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioContainerStreamBase"
 
 #include <chrono>
 #include <thread>
@@ -23,8 +25,6 @@
 #include "audio_container_stream_base.h"
 #include "audio_policy_manager.h"
 #include "audio_container_client_base.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioContainerStreamBase"
 
 using namespace std;
 

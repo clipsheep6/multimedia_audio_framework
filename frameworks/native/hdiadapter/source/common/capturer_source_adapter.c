@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "CapturerSourceAdapter"
 
 #include "capturer_source_adapter.h"
 
@@ -22,8 +24,6 @@
 #include "audio_log.h"
 #include "i_audio_capturer_source_intf.h"
 
-#undef LOG_TAG
-#define LOG_TAG "CapturerSourceAdapter"
 
 #ifdef __cplusplus
 extern "C" {

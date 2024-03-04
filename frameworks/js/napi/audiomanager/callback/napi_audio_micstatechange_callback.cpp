@@ -12,11 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioManagerMicStateChangeCallback"
+
 #include "napi_audio_micstatechange_callback.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
-#undef LOG_TAG
-#define LOG_TAG "NapiAudioManagerMicStateChangeCallback"
 
 namespace OHOS {
 namespace AudioStandard {

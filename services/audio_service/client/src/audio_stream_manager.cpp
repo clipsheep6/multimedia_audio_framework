@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioStreamManager"
 
 #include "audio_stream_manager.h"
 
@@ -20,8 +22,7 @@
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 #include "i_audio_stream.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioStreamManager"
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

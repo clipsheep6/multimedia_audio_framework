@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiCapturerReadDataCallback"
 
 #include "napi_audio_capturer_read_data_callback.h"
 #include "audio_log.h"
-#undef LOG_TAG
-#define LOG_TAG "NapiCapturerReadDataCallback"
 
 namespace OHOS {
 namespace AudioStandard {

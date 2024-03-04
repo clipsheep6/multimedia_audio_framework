@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+#undef LOG_TAG
+#define LOG_TAG "AudioDeviceParser"
+
 #include "audio_device_parser.h"
 #include <string>
 #include <iostream>
 #include <vector>
-#undef LOG_TAG
-#define LOG_TAG "AudioDeviceParser"
 namespace OHOS {
 namespace AudioStandard {
 bool AudioDeviceParser::LoadConfiguration()

@@ -12,13 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiTonePlayer"
+
 #include "napi_toneplayer.h"
 
 #include "audio_utils.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
-#undef LOG_TAG
-#define LOG_TAG "NapiTonePlayer"
 
 using namespace std;
 

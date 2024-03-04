@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <common.h>
 #undef LOG_TAG
 #define LOG_TAG "AudioPlayerAdapter"
+
+#include <common.h>
 
 using namespace std;
 using namespace OHOS;

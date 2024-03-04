@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioBlendmodeTest"
+
 #include <cstdio>
 #include <iostream>
 
@@ -20,8 +23,6 @@
 #include "audio_system_manager.h"
 #include "pcm2wav.h"
 #include "audio_renderer.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioBlendmodeTest"
 
 using namespace OHOS::AudioStandard;
 using namespace std;

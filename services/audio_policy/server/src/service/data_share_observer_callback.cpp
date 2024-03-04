@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-#include "data_share_observer_callback.h"
 #undef LOG_TAG
 #define LOG_TAG "DataShareObserverCallBack"
+
+#include "data_share_observer_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {

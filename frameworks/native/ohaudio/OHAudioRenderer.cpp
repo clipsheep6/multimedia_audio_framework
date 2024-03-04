@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "OHAudioRenderer.h"
-#include "audio_errors.h"
 #undef LOG_TAG
 #define LOG_TAG "OHAudioRenderer"
+
+#include "OHAudioRenderer.h"
+#include "audio_errors.h"
 
 using OHOS::AudioStandard::Timestamp;
 

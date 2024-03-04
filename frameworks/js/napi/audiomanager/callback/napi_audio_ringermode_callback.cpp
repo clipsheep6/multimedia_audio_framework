@@ -12,14 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRingerModeCallback"
+
 #include "napi_audio_ringermode_callback.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_enum.h"
-#undef LOG_TAG
-#define LOG_TAG "NapiAudioRingerModeCallback"
 
 namespace OHOS {
 namespace AudioStandard {

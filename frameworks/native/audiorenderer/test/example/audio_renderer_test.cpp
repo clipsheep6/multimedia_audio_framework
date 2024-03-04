@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioRendererTest"
 
 #include <chrono>
 #include <cstdio>
@@ -21,8 +23,6 @@
 #include "audio_log.h"
 #include "audio_renderer.h"
 #include "pcm2wav.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioRendererTest"
 
 using namespace std;
 using namespace OHOS;

@@ -15,6 +15,9 @@
 #ifndef FAST_AUDIO_STREAM_H
 #define FAST_AUDIO_STREAM_H
 
+#undef LOG_TAG
+#define LOG_TAG "CapturerInClient"
+
 #include "capturer_in_client.h"
 
 #include <atomic>
@@ -44,8 +47,7 @@
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
-#undef LOG_TAG
-#define LOG_TAG "CapturerInClient"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {

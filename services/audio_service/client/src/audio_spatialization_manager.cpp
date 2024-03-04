@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioSpatializationManager"
 
 #include "audio_spatialization_manager.h"
 
@@ -26,8 +28,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioSpatializationManager"
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

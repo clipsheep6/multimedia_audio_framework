@@ -12,12 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioFormatConverter3DA"
+
 #include "audio_format_converter_3DA.h"
 #include <cstdint>
 #include <string>
 #include <iostream>
-#undef LOG_TAG
-#define LOG_TAG "AudioFormatConverter3DA"
+
 namespace OHOS {
 namespace AudioStandard {
 static constexpr int32_t AUDIO_VIVID_SAMPLES = 1024;

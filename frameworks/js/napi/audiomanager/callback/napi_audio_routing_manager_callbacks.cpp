@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRoutingMgrCallbacks"
+
 #include "napi_audio_routing_manager_callbacks.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
@@ -19,8 +22,6 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "napi_audio_manager_callbacks.h"
-#undef LOG_TAG
-#define LOG_TAG "NapiAudioRoutingMgrCallbacks"
 
 namespace OHOS {
 namespace AudioStandard {

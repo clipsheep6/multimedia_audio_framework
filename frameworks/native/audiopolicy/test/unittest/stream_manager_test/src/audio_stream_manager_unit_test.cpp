@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioStreamManagerUnitTest"
 
 #include "audio_stream_manager_unit_test.h"
 
@@ -26,8 +28,6 @@
 #include "audio_stream_manager.h"
 #include "audio_system_manager.h"
 #include "refbase.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioStreamManagerUnitTest"
 
 using namespace std;
 using namespace std::chrono;

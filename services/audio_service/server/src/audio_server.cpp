@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioServer"
 
 #include "audio_server.h"
 
@@ -41,8 +43,6 @@
 #include "playback_capturer_manager.h"
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioServer"
 
 #define PA
 #ifdef PA

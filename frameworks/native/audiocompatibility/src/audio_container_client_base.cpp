@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioContainerClientBase"
 
 #include "audio_container_client_base.h"
 #include "audio_renderer_write_callback_stub.h"
@@ -20,8 +22,6 @@
 #include "securec.h"
 #include "unistd.h"
 #include "system_ability_definition.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioContainerClientBase"
 
 using namespace std;
 

@@ -23,6 +23,9 @@
 #include <config.h>
 #endif
 
+#undef LOG_TAG
+#define LOG_TAG "ModuleLoopback"
+
 #include <stdio.h>
 
 #include <pulse/xmalloc.h>
@@ -39,8 +42,6 @@
 
 #include "audio_log.h"
 
-#undef LOG_TAG
-#define LOG_TAG "ModuleLoopback"
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Loopback from source to sink"));

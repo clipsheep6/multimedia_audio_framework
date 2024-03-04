@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "MultipleAudioCapturerUnitTest"
 
 #include "multiple_audio_capturer_unit_test.h"
 #include "audio_capturer.h"
 #include "audio_errors.h"
 #include "audio_info.h"
-#undef LOG_TAG
-#define LOG_TAG "MultipleAudioCapturerUnitTest"
 
 using namespace std;
 using namespace testing::ext;

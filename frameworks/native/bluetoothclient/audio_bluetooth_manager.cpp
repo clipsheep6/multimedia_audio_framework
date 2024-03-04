@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioBluetoothManager"
 
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
@@ -19,8 +21,6 @@
 #include "audio_log.h"
 #include "bluetooth_device_manager.h"
 #include "bluetooth_device_utils.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioBluetoothManager"
 
 namespace OHOS {
 namespace Bluetooth {

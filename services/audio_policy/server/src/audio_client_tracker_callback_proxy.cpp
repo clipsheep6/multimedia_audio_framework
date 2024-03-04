@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "audio_log.h"
-#include "audio_client_tracker_callback_proxy.h"
 #undef LOG_TAG
 #define LOG_TAG "AudioClientTrackerCallbackProxy"
+
+#include "audio_log.h"
+#include "audio_client_tracker_callback_proxy.h"
 
 namespace OHOS {
 namespace AudioStandard {

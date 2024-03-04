@@ -15,6 +15,9 @@
 #ifndef FAST_AUDIO_STREAM_H
 #define FAST_AUDIO_STREAM_H
 
+#undef LOG_TAG
+#define LOG_TAG "RendererInClient"
+
 #include "renderer_in_client.h"
 
 #include <atomic>
@@ -46,8 +49,6 @@
 #include "callback_handler.h"
 #include "audio_speed.h"
 
-#undef LOG_TAG
-#define LOG_TAG "RendererInClient"
 
 namespace OHOS {
 namespace AudioStandard {

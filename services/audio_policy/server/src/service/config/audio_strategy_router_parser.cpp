@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+#undef LOG_TAG
+#define LOG_TAG "AudioStrategyRouterParser"
+
 #include "audio_strategy_router_parser.h"
 #include <vector>
 #include "router_base.h"
@@ -24,8 +26,6 @@
 #include "cockpit_phone_router.h"
 #include "pair_device_router.h"
 #include "default_router.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioStrategyRouterParser"
 namespace OHOS {
 namespace AudioStandard {
 bool AudioStrategyRouterParser::LoadConfiguration()

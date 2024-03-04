@@ -12,13 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioConverterParser"
+
 #include "audio_converter_parser.h"
 #include <map>
 #include <string>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-#undef LOG_TAG
-#define LOG_TAG "AudioConverterParser"
+
 namespace OHOS {
 namespace AudioStandard {
 

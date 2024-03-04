@@ -12,14 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "xmlParser"
 
 #include "audio_log.h"
 
 #include "xml_parser.h"
 
 #include <regex>
-#undef LOG_TAG
-#define LOG_TAG "xmlParser"
 namespace OHOS {
 namespace AudioStandard {
 bool XMLParser::LoadConfiguration()

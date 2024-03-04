@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioService"
 
 #include "audio_service.h"
 
@@ -22,8 +24,7 @@
 #include "remote_audio_renderer_sink.h"
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioService"
+
 namespace OHOS {
 namespace AudioStandard {
 

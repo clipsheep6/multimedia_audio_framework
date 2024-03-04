@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioServiceClient"
 
 #include "audio_service_client.h"
 
@@ -31,8 +33,6 @@
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #endif
-#undef LOG_TAG
-#define LOG_TAG "AudioServiceClient"
 
 using namespace std;
 

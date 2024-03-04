@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioProcessInClient"
 
 #include "audio_process_in_client.h"
 
@@ -37,8 +39,7 @@
 #include "audio_server_death_recipient.h"
 #include "i_audio_process.h"
 #include "linear_pos_time_model.h"
-#undef LOG_TAG
-#define LOG_TAG "AudioProcessInClient"
+
 namespace OHOS {
 namespace AudioStandard {
 

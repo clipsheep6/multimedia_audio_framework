@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRenderer"
+
 #include "napi_audio_renderer.h"
 #include "audio_utils.h"
 #include "xpower_event_js.h"
@@ -25,8 +28,6 @@
 #include "napi_audio_renderer_write_data_callback.h"
 #include "napi_audio_renderer_device_change_callback.h"
 #include "napi_audio_renderer_policy_service_died_callback.h"
-#undef LOG_TAG
-#define LOG_TAG "NapiAudioRenderer"
 
 namespace OHOS {
 namespace AudioStandard {
