@@ -17,6 +17,8 @@
 #include <utility>
 #include "audio_errors.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyClientStub"
 
 using namespace std;
 namespace OHOS {

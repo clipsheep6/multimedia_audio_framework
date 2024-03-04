@@ -20,7 +20,8 @@
 #include "audio_utils.h"
 #include "audio_log.h"
 #include "i_stream_manager.h"
-
+#undef LOG_TAG
+#define LOG_TAG "CapturerInServer"
 namespace OHOS {
 namespace AudioStandard {
 namespace {

@@ -26,6 +26,8 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "playback_capturer_adapter.h"
+#undef LOG_TAG
+#define LOG_TAG "PlaybackCapturerManager"
 
 using namespace OHOS::AudioStandard;
 

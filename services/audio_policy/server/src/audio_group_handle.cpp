@@ -15,6 +15,8 @@
 
 #include "audio_log.h"
 #include "audio_group_handle.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioGroupHandle"
 
 
 namespace OHOS {

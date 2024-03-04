@@ -33,6 +33,8 @@
 #include "audio_spatialization_manager.h"
 #include "audio_spatialization_state_change_listener_stub.h"
 #include "i_standard_spatialization_state_change_listener.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyManager"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -21,6 +21,8 @@
 #include "napi_audio_manager_callbacks.h"
 #include "napi_audio_rounting_available_devicechange_callback.h"
 #include "napi_audio_routing_manager_callbacks.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRoutingManager"
 
 namespace OHOS {
 namespace AudioStandard {

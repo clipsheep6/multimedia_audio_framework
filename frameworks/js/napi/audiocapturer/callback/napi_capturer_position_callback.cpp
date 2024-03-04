@@ -16,6 +16,8 @@
 #include "napi_capturer_position_callback.h"
 #include "napi_audio_capturer_callbacks.h"
 #include "napi_param_utils.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiCapturerPositionCallback"
 
 namespace OHOS {
 namespace AudioStandard {

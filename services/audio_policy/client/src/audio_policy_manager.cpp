@@ -21,6 +21,8 @@
 #include "audio_utils.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyManager"
 
 namespace OHOS {
 namespace AudioStandard {

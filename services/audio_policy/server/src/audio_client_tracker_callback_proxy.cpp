@@ -14,6 +14,8 @@
  */
 #include "audio_log.h"
 #include "audio_client_tracker_callback_proxy.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioClientTrackerCallbackProxy"
 
 namespace OHOS {
 namespace AudioStandard {

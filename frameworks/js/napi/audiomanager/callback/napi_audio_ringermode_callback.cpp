@@ -18,6 +18,8 @@
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_enum.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRingerModeCallback"
 
 namespace OHOS {
 namespace AudioStandard {

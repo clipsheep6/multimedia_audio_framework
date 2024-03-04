@@ -19,6 +19,8 @@
 #include "audio_container_stream_base.h"
 #include "audio_log.h"
 #include "audio_capturer.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioCapturerGateway"
 
 namespace OHOS {
 namespace AudioStandard {

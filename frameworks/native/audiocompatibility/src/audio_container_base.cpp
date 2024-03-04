@@ -19,6 +19,8 @@
 #include "unistd.h"
 #include "securec.h"
 #include "system_ability_definition.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioContainerBase"
 
 using namespace std;
 

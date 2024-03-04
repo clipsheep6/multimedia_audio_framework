@@ -14,6 +14,8 @@
  */
 
 #include <common.h>
+#undef LOG_TAG
+#define LOG_TAG "ObjectItf"
 
 using namespace OHOS::AudioStandard;
 

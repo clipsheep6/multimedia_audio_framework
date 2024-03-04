@@ -29,6 +29,8 @@
 #include "napi_audio_ringermode_callback.h"
 #include "napi_audio_manager_interrupt_callback.h"
 #include "napi_audio_volume_key_event.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioManager"
 
 namespace OHOS {
 namespace AudioStandard {

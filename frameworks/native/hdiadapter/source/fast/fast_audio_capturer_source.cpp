@@ -26,6 +26,8 @@
 
 #include "v2_0/iaudio_manager.h"
 #include "fast_audio_capturer_source.h"
+#undef LOG_TAG
+#define LOG_TAG "FastAudioCapturerSourceInner"
 
 using namespace std;
 

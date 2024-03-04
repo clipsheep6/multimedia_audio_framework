@@ -23,7 +23,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_policy_server.h"
-
+#undef LOG_TAG
+#define LOG_TAG "PowerStateListener"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std::chrono_literals;

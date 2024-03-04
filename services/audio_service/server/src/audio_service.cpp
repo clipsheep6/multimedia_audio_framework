@@ -22,7 +22,8 @@
 #include "remote_audio_renderer_sink.h"
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioService"
 namespace OHOS {
 namespace AudioStandard {
 

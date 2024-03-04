@@ -25,6 +25,8 @@
 #ifdef OHCORE
 #include "audio_renderer_gateway.h"
 #endif
+#undef LOG_TAG
+#define LOG_TAG "AudioRenderer"
 
 namespace OHOS {
 namespace AudioStandard {

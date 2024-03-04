@@ -24,6 +24,8 @@
 #include "audio_capturer.h"
 #include "audio_info.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioCapturerTest"
 
 using namespace std;
 using namespace std::chrono;

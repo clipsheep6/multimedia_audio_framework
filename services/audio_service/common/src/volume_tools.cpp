@@ -16,7 +16,8 @@
 #include "volume_tools.h"
 #include "audio_errors.h"
 #include "audio_log.h"
-
+#undef LOG_TAG
+#define LOG_TAG "VolumeTools"
 namespace {
 static const int32_t UINT8_SHIFT = 0x80;
 static const int32_t INT24_SHIFT = 8;

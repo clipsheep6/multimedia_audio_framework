@@ -15,7 +15,8 @@
 
 #include "audio_log.h"
 #include "config/audio_param_parser.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioParamParser"
 namespace OHOS {
 namespace AudioStandard {
 AudioParamParser::AudioParamParser()

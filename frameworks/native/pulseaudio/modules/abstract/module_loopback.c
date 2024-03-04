@@ -39,6 +39,9 @@
 
 #include "audio_log.h"
 
+#undef LOG_TAG
+#define LOG_TAG "ModuleLoopback"
+
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Loopback from source to sink"));
 PA_MODULE_VERSION(PACKAGE_VERSION);

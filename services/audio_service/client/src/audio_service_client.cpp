@@ -31,6 +31,8 @@
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #endif
+#undef LOG_TAG
+#define LOG_TAG "AudioServiceClient"
 
 using namespace std;
 

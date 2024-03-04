@@ -16,7 +16,8 @@
 #include "stream_filter_router.h"
 #include "audio_log.h"
 #include "audio_policy_service.h"
-
+#undef LOG_TAG
+#define LOG_TAG "StreamFilterRouter"
 using namespace std;
 
 namespace OHOS {

@@ -44,7 +44,8 @@
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
-
+#undef LOG_TAG
+#define LOG_TAG "CapturerInClient"
 namespace OHOS {
 namespace AudioStandard {
 namespace {

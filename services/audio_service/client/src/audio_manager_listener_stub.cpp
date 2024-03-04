@@ -15,7 +15,8 @@
 
 #include "audio_manager_listener_stub.h"
 #include "audio_log.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioManagerListenerStub"
 using namespace std;
 
 namespace OHOS {

@@ -15,6 +15,8 @@
 
 #include "audio_effect_manager.h"
 #include <unordered_set>
+#undef LOG_TAG
+#define LOG_TAG "AudioEffectManager"
 
 namespace OHOS {
 namespace AudioStandard {

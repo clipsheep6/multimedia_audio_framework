@@ -30,6 +30,8 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_effect.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioEffectChainManager"
 
 #define DEVICE_FLAG
 

@@ -27,6 +27,8 @@
 #include "audio_info.h"
 #include "hisysevent.h"
 #include <set>
+#undef LOG_TAG
+#define LOG_TAG "PulseAudioServiceAdapterImpl"
 
 using namespace std;
 

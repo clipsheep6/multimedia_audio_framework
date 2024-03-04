@@ -20,6 +20,9 @@
 #include "renderer_sink_adapter.h"
 #include "audio_log.h"
 
+#undef LOG_TAG
+#define LOG_TAG "RendererSinkAdapter"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

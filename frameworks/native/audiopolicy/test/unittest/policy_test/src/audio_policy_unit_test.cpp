@@ -24,6 +24,8 @@
 #include "system_ability_definition.h"
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_policy_client_stub_impl.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyUnitTest"
 
 using namespace std;
 using namespace testing::ext;

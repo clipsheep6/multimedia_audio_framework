@@ -15,6 +15,8 @@
 
 #include "napi_audio_capturer_read_data_callback.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiCapturerReadDataCallback"
 
 namespace OHOS {
 namespace AudioStandard {

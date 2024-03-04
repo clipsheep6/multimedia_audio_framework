@@ -27,7 +27,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_info.h"
-
+#undef LOG_TAG
+#define LOG_TAG "DeviceStatusListener"
 namespace OHOS {
 namespace AudioStandard {
 const std::string AUDIO_HDI_SERVICE_NAME = "audio_manager_service";

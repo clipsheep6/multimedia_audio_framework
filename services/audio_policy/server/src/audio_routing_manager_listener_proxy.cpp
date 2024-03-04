@@ -17,6 +17,8 @@
 #include "audio_routing_manager.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioRoutingManagerListenerProxy"
 
 namespace OHOS {
 namespace AudioStandard {

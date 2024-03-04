@@ -24,7 +24,8 @@
 #include "cockpit_phone_router.h"
 #include "pair_device_router.h"
 #include "default_router.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioStrategyRouterParser"
 namespace OHOS {
 namespace AudioStandard {
 bool AudioStrategyRouterParser::LoadConfiguration()

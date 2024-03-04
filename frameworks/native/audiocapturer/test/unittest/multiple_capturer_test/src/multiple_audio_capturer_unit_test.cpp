@@ -17,6 +17,8 @@
 #include "audio_capturer.h"
 #include "audio_errors.h"
 #include "audio_info.h"
+#undef LOG_TAG
+#define LOG_TAG "MultipleAudioCapturerUnitTest"
 
 using namespace std;
 using namespace testing::ext;

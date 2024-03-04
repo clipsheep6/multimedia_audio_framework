@@ -18,6 +18,8 @@
 #include "audio_errors.h"
 #include "audio_spatialization_manager.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioSpatializationStateChangeListenerStub"
 
 using namespace std;
 

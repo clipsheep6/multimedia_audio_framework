@@ -17,7 +17,8 @@
 #include <string>
 #include <iostream>
 #include <vector>
-
+#undef LOG_TAG
+#define LOG_TAG "AudioDeviceParser"
 namespace OHOS {
 namespace AudioStandard {
 bool AudioDeviceParser::LoadConfiguration()

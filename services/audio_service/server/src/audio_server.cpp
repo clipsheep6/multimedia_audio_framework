@@ -41,6 +41,8 @@
 #include "playback_capturer_manager.h"
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioServer"
 
 #define PA
 #ifdef PA

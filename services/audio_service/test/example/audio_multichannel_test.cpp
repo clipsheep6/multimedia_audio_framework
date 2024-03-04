@@ -19,7 +19,8 @@
 #include "audio_log.h"
 #include "audio_system_manager.h"
 #include "pcm2wav.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioMultichannelTest"
 
 using namespace OHOS::AudioStandard;
 using namespace std;

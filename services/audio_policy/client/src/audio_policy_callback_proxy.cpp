@@ -17,6 +17,8 @@
 #include "audio_log.h"
 #include "audio_policy_proxy.h"
 #include "microphone_descriptor.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyCallbackProxy"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -20,6 +20,8 @@
 #include "securec.h"
 #include "unistd.h"
 #include "system_ability_definition.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioContainerClientBase"
 
 using namespace std;
 

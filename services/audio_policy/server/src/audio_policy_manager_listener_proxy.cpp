@@ -16,7 +16,8 @@
 #include "audio_policy_manager_listener_proxy.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyManagerListenerProxy"
 namespace OHOS {
 namespace AudioStandard {
 AudioPolicyManagerListenerProxy::AudioPolicyManagerListenerProxy(const sptr<IRemoteObject> &impl)

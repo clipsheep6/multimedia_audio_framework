@@ -20,7 +20,8 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_device_parser.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioDeviceManager"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

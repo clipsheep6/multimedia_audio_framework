@@ -27,7 +27,8 @@
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
-
+#undef LOG_TAG
+#define LOG_TAG "AudioSystemManager"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

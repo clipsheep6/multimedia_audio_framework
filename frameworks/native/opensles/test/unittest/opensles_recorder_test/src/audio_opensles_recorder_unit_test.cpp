@@ -18,6 +18,8 @@
 #include "common.h"
 #include "audio_errors.h"
 #include "audio_info.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioOpenslesRecorderUnitTest"
 
 using namespace std;
 using namespace testing::ext;

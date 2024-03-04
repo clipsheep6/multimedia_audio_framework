@@ -24,6 +24,8 @@
 #include "napi_capturer_position_callback.h"
 #include "napi_capturer_period_position_callback.h"
 #include "napi_audio_capturer_read_data_callback.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioCapturer"
 
 namespace OHOS {
 namespace AudioStandard {

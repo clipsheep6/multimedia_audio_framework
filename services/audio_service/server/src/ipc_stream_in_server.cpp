@@ -19,7 +19,8 @@
 #include "ipc_stream_in_server.h"
 #include "audio_log.h"
 #include "audio_errors.h"
-
+#undef LOG_TAG
+#define LOG_TAG "IpcStreamInServer"
 namespace OHOS {
 namespace AudioStandard {
 StreamListenerHolder::StreamListenerHolder()

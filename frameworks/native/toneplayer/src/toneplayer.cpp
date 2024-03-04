@@ -26,6 +26,8 @@
 #include "tone_player_impl.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
+#undef LOG_TAG
+#define LOG_TAG "TonePlayer"
 
 namespace OHOS {
 namespace AudioStandard {

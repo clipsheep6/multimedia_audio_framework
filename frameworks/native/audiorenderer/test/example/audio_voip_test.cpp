@@ -21,6 +21,8 @@
 #include "audio_log.h"
 #include "audio_renderer.h"
 #include "pcm2wav.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioVoipTest"
 
 using namespace std;
 using namespace OHOS;

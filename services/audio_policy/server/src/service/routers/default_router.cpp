@@ -15,7 +15,8 @@
 
 #include "default_router.h"
 #include "audio_log.h"
-
+#undef LOG_TAG
+#define LOG_TAG "DefaultRouter"
 using namespace std;
 
 namespace OHOS {

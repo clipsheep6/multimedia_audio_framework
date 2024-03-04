@@ -34,6 +34,9 @@
 #include "securec.h"
 #include "audio_log.h"
 
+#undef LOG_TAG
+#define LOG_TAG "ModuleReceiverSink"
+
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION("Virtual channel sink");
 PA_MODULE_VERSION(PACKAGE_VERSION);

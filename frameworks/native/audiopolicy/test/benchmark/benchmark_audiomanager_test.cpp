@@ -19,6 +19,8 @@
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_system_manager.h"
+#undef LOG_TAG
+#define LOG_TAG "BenchmarkAudiomanagerTest"
 using namespace std;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;

@@ -15,6 +15,8 @@
 
 #include "napi_audio_renderer_write_data_callback.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiRendererWriteDataCallback"
 
 namespace OHOS {
 namespace AudioStandard {

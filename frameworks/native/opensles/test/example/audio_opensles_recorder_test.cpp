@@ -26,6 +26,8 @@
 
 #include "audio_info.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioOpenslesRecorderTest"
 
 using namespace std;
 

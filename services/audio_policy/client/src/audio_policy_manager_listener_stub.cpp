@@ -16,6 +16,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_policy_manager_listener_stub.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyManagerListenerStub"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include "napi_audio_renderer_policy_service_died_callback.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRendererPolicyServiceDiedCallback"
 
 namespace OHOS {
 namespace AudioStandard {

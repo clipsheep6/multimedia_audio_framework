@@ -16,6 +16,8 @@
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "xpower_event_js.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRendererCallback"
 
 namespace OHOS {
 namespace AudioStandard {

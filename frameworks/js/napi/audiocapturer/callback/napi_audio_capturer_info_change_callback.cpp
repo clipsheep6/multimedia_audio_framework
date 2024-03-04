@@ -16,6 +16,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "napi_param_utils.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioCapturerInfoChangeCallback"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -16,7 +16,8 @@
 #include "policy_provider_proxy.h"
 #include "audio_log.h"
 #include "audio_errors.h"
-
+#undef LOG_TAG
+#define LOG_TAG "PolicyProviderProxy"
 namespace OHOS {
 namespace AudioStandard {
 PolicyProviderProxy::PolicyProviderProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<IPolicyProviderIpc>(impl)

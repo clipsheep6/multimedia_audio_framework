@@ -17,6 +17,8 @@
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioVolumeKeyEvent"
 
 using namespace std;
 namespace OHOS {

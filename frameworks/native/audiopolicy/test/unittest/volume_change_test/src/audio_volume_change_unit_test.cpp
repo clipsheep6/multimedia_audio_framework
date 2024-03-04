@@ -21,6 +21,8 @@
 #include "hilog/log.h"
 
 #include "audio_volume_change_unit_test.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioVolumeChangeUnitTest"
 
 using OHOS::HiviewDFX::HiLog;
 using OHOS::HiviewDFX::HiLogLabel;

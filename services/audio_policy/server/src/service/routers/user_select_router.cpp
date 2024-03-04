@@ -15,9 +15,10 @@
 
 #include "user_select_router.h"
 #include "audio_log.h"
+#undef LOG_TAG
+#define LOG_TAG "UserSelectRouter"
 
 using namespace std;
-
 namespace OHOS {
 namespace AudioStandard {
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)

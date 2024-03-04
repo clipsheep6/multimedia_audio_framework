@@ -16,6 +16,8 @@
 #include <cinttypes>
 #include "audio_log.h"
 #include "audio_channel_blend.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioBlend"
 
 namespace OHOS {
 namespace AudioStandard {

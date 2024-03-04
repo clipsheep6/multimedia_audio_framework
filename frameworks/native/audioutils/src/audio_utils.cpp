@@ -31,6 +31,8 @@
 #include "accesstoken_kit.h"
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
+#undef LOG_TAG
+#define LOG_TAG "AudioUtils"
 
 using OHOS::Security::AccessToken::AccessTokenKit;
 
