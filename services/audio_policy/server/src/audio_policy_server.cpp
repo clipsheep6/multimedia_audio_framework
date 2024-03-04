@@ -1260,18 +1260,23 @@ bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t 
 void AudioPolicyServer::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
 {
     if (state == AUDIO_PERMISSION_START) {
-        int res = PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        if (res != 0) {
-            AUDIO_WARNING_LOG("notice start using perm error");
+        if (!saveAppCapTokenIdBySourceType.count(targetTokenId)) {
+            int res = PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+            if (res != 0) {
+                AUDIO_WARNING_LOG("notice start using perm error");
+            }
         }
-        res = PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
+
+        int res = PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
         if (res != 0) {
             AUDIO_WARNING_LOG("add mic record error");
         }
     } else {
-        int res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        if (res != 0) {
-            AUDIO_WARNING_LOG("notice stop using perm error");
+        if (!saveAppCapTokenIdBySourceType.count(targetTokenId)) {
+            int res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+            if (res != 0) {
+                AUDIO_WARNING_LOG("notice stop using perm error");
+            }
         }
 
         saveAppCapTokenIdThroughMS.erase(targetTokenId);
@@ -1475,6 +1480,10 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
             saveAppCapTokenIdThroughMS.insert(streamChangeInfo.audioCapturerChangeInfo.appTokenId);
         }
     }
+
+    if (streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_VOICE_CALL) {
+        saveAppCapTokenIdBySourceType.insert(streamChangeInfo.audioCapturerChangeInfo.appTokenId);
+    }
     RegisterClientDeathRecipient(object, TRACKER_CLIENT);
     return audioPolicyService_.RegisterTracker(mode, streamChangeInfo, object);
 }
@@ -1609,6 +1618,9 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t uid)
     if (uid == MEDIA_SERVICE_UID) {
         for (auto iter = saveAppCapTokenIdThroughMS.begin(); iter != saveAppCapTokenIdThroughMS.end(); iter++) {
             AUDIO_DEBUG_LOG("RegisteredTrackerClient died, stop permis for appTokenId: %{public}u", *iter);
+            if (saveAppCapTokenIdBySourceType.count(*iter)) {
+                continue;
+            }
             int res = PrivacyKit::StopUsingPermission(*iter, MICROPHONE_PERMISSION);
             if (res != 0) {
                 AUDIO_WARNING_LOG("media server died, notice stop using perm error");
@@ -1616,6 +1628,8 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t uid)
         }
         saveAppCapTokenIdThroughMS.clear();
     }
+    saveAppCapTokenIdBySourceType.clear();
+
     auto filter = [&uid](int val) {
         return uid == val;
     };
