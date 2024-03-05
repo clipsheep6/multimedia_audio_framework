@@ -5438,6 +5438,9 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
                 audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
             }
         }
+    } else if (updateCommand == ENABLE_UPDATE) {
+        reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
+            AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
     FetchDevice(true, reason);
 }
