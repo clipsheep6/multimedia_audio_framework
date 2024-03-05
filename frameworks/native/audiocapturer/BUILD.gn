@@ -52,6 +52,7 @@ ohos_shared_library("audio_capturer") {
   sources = [
     "src/audio_capturer.cpp",
     "src/audio_capturer_proxy_obj.cpp",
+    "../audioutils:audio_utils",
   ]
 
   deps = [
