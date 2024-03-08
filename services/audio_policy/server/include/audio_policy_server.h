@@ -354,10 +354,6 @@ public:
 
     ConverterConfig GetConverterConfig() override;
 
-    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
-
-    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
-
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

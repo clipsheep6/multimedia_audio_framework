@@ -1071,19 +1071,5 @@ void AudioPolicyManagerStub::GetConverterConfigInternal(MessageParcel &data, Mes
     reply.WriteString(result.library.path);
     reply.WriteUint64(result.outChannelLayout);
 }
-
-void AudioPolicyManagerStub::FetchOutputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioStreamChangeInfo streamChangeInfo = {};
-    streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
-    FetchOutputDeviceForTrack(streamChangeInfo);
-}
-
-void AudioPolicyManagerStub::FetchInputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioStreamChangeInfo streamChangeInfo = {};
-    streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
-    FetchInputDeviceForTrack(streamChangeInfo);
-}
 } // namespace audio_policy
 } // namespace OHOS
