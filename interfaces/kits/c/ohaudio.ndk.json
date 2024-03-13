@@ -49,8 +49,6 @@
     { "name": "OH_AudioRenderer_SetSpeed"},
     { "name": "OH_AudioRenderer_GetEffectMode"},
     { "name": "OH_AudioRenderer_SetEffectMode"},
-    { "name": "OH_AudioRenderer_GetChannelLayout"},
-    { "name": "OH_AudioCapturer_GetChannelLayout"},
     { "name": "OH_AudioStreamBuilder_SetChannelLayout"},
     { "name": "OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback"}
 ]
