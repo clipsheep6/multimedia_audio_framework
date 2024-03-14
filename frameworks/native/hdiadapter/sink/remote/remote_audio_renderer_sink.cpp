@@ -128,9 +128,11 @@ RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink destruction.");
 }
 
+std::mutex rendererSinksMutex_;
 std::map<std::string, RemoteAudioRendererSinkInner *> allsinks;
 RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const std::string &deviceNetworkId)
 {
+    std::lock_guard<std::mutex> lock(rendererSinksMutex_);
     AUDIO_INFO_LOG("RemoteAudioRendererSink::GetInstance");
     CHECK_AND_RETURN_RET_LOG(!deviceNetworkId.empty(), nullptr, "Remote render device networkId is null.");
 
@@ -138,7 +140,7 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const std::string 
         return allsinks[deviceNetworkId];
     }
     RemoteAudioRendererSinkInner *audioRenderer = new(std::nothrow) RemoteAudioRendererSinkInner(deviceNetworkId);
-    AUDIO_DEBUG_LOG("New daudio remote render device networkId: [%{public}s].", deviceNetworkId.c_str());
+    AUDIO_INFO_LOG("New daudio remote render device networkId: [%{public}s].", deviceNetworkId.c_str());
     allsinks[deviceNetworkId] = audioRenderer;
     return audioRenderer;
 }
@@ -170,6 +172,7 @@ void RemoteAudioRendererSinkInner::ClearRender()
 
 void RemoteAudioRendererSinkInner::DeInit()
 {
+    std::lock_guard<std::mutex> lock(rendererSinksMutex_);
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::DeInit");
     ClearRender();
 
@@ -180,7 +183,7 @@ void RemoteAudioRendererSinkInner::DeInit()
         temp = nullptr;
         allsinks.erase(this->deviceNetworkId_);
     }
-    AUDIO_DEBUG_LOG("DeInit end.");
+    AUDIO_INFO_LOG("end.");
 }
 
 inline std::string PrintRemoteAttr(const IAudioSinkAttr &attr)
