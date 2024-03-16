@@ -339,6 +339,12 @@ int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *c
     return audioEffectChainManager->ReturnMultiChannelInfo(channels, channelLayout);
 }
 
+int32_t EffectChainManagerGetSceneTypeSet(char sceneTypeSet[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH])
+{
+    return AudioEffectChainManager::GetInstance()->GetSceneTypeSet(sceneTypeSet);
+}
+
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -879,7 +885,8 @@ bool AudioEffectChainManager::GetOffloadEnabled()
 // Boot initialize
 void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
     std::unordered_map<std::string, std::string> &map,
-    std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList)
+    std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
+    const std::vector<std::string> &sceneTypesInUse)
 {
     std::set<std::string> effectSet;
     for (EffectChain efc: effectChains) {
@@ -914,10 +921,16 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
         SceneTypeAndModeToEffectChainNameMap_[item->first] = item->second;
     }
 
+    for (std::string sceneType : sceneTypesInUse) {
+        sceneTypeSet_.push_back(sceneType);
+    }
+    sceneTypeSet_.push_back("EFFECT_NONE");
+
     AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", EffectToLibraryEntryMap_.size());
     AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap_.size());
     AUDIO_DEBUG_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         SceneTypeAndModeToEffectChainNameMap_.size());
+    AUDIO_DEBUG_LOG("SceneTypesInUse size %{public}zu", sceneTypeSet_.size());
     audioEffectHdiParam_->InitHdi();
     effectHdiInput[0] = HDI_BLUETOOTH_MODE;
     effectHdiInput[1] = 1;
@@ -1534,6 +1547,20 @@ void AudioEffectChainManager::UpdateSensorState()
         audioEffectChain->SetHeadTrackingDisabled();
     }
 #endif
+}
+
+int32_t AudioEffectChainManager::GetSceneTypeSet(char sceneTypeSet[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH])
+{
+    static bool flag = false;
+    int32_t setSize = sceneTypeSet_.size();
+
+    if (flag) {return setSize;}
+
+    for (int32_t i = 0; i < setSize; ++i) {
+        memcpy_s(sceneTypeSet[i], MAX_SCENE_NAME_LENGTH, sceneTypeSet_[i].c_str(), sceneTypeSet_[i].size());
+    }
+    flag = true;
+    return setSize;
 }
 
 void AudioEffectChainManager::DeleteAllChains()

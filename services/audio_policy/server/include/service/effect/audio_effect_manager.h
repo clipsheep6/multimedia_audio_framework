@@ -42,6 +42,7 @@ public:
     bool CanLoadEffectSinks();
     void ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map);
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
+    void ConstructSceneTypesInUse(std::vector<std::string> &sceneTypesInUse);
 private:
     OriginalEffectConfig oriEffectConfig_;
     std::vector<Effect> availableEffects_;

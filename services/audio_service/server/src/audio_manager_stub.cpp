@@ -285,7 +285,12 @@ int AudioManagerStub::HandleCreateAudioEffectChainManager(MessageParcel &data, M
         sceneTypeToEffectChainNameMap[key] = value;
     }
 
-    bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap);
+    std::vector<std::string> sceneTypesInUse;
+    int32_t size = data.ReadInt32();
+    for (i = 0; i < size; i++) {
+        sceneTypesInUse.push_back(data.ReadString());
+    }
+    bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap, sceneTypesInUse);
     CHECK_AND_RETURN_RET_LOG(createSuccess, AUDIO_ERR,
         "Create audio effect chain manager failed, please check log");
     return AUDIO_OK;

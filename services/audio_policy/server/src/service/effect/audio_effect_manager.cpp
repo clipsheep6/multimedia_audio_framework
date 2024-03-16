@@ -511,5 +511,20 @@ void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_m
     AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEffectChainNameMap at policy, size is %{public}d",
         (int32_t)map.size());
 }
+
+void AudioEffectManager::ConstructSceneTypesInUse(std::vector<std::string> &sceneTypesInUse)
+{
+    for (SceneMappingItem &item : supportedEffectConfig_.postProcessSceneMap) {
+        if (std::find(sceneTypesInUse.begin(), sceneTypesInUse.end(), item.sceneType) == sceneTypesInUse.end()) {
+            sceneTypesInUse.push_back(item.sceneType);
+        }
+    }
+
+    if (postSceneTypeSet_.empty()) {return;}
+
+    if (std::find(sceneTypesInUse.begin(), sceneTypesInUse.end(), postSceneTypeSet_.back()) == sceneTypesInUse.end()) {
+        sceneTypesInUse.push_back(postSceneTypeSet_.back());
+    }
+}
 } // namespce AudioStandard
 } // namespace OHOS
