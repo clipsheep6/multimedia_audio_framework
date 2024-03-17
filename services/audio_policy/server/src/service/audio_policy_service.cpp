@@ -303,7 +303,8 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, set
     // its absolute volume value.
 
-    if (IsStreamActive(streamType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (IsStreamActive(streamType) && streamType != STREAM_VOICE_CALL &&
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel);
 #ifdef BLUETOOTH_ENABLE
         if (result == SUCCESS) {
