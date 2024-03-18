@@ -225,6 +225,7 @@ OHAudioRenderer::~OHAudioRenderer()
 
 bool OHAudioRenderer::Initialize(const AudioRendererOptions &rendererOptions)
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     std::string cacheDir = "/data/storage/el2/base/temp";
     audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
     return audioRenderer_ != nullptr;
@@ -232,6 +233,7 @@ bool OHAudioRenderer::Initialize(const AudioRendererOptions &rendererOptions)
 
 bool OHAudioRenderer::Start()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -241,6 +243,7 @@ bool OHAudioRenderer::Start()
 
 bool OHAudioRenderer::Pause()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -250,6 +253,7 @@ bool OHAudioRenderer::Pause()
 
 bool OHAudioRenderer::Stop()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -259,6 +263,7 @@ bool OHAudioRenderer::Stop()
 
 bool OHAudioRenderer::Flush()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -268,6 +273,7 @@ bool OHAudioRenderer::Flush()
 
 bool OHAudioRenderer::Release()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -283,18 +289,21 @@ bool OHAudioRenderer::Release()
 
 RendererState OHAudioRenderer::GetCurrentState()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, RENDERER_INVALID, "renderer client is nullptr");
     return audioRenderer_->GetStatus();
 }
 
 void OHAudioRenderer::GetStreamId(uint32_t &streamId)
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->GetAudioStreamId(streamId);
 }
 
 AudioChannel OHAudioRenderer::GetChannelCount()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, MONO, "renderer client is nullptr");
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
@@ -303,6 +312,7 @@ AudioChannel OHAudioRenderer::GetChannelCount()
 
 int32_t OHAudioRenderer::GetSamplingRate()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, MONO, "renderer client is nullptr");
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
@@ -311,6 +321,7 @@ int32_t OHAudioRenderer::GetSamplingRate()
 
 AudioSampleFormat OHAudioRenderer::GetSampleFormat()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, INVALID_WIDTH, "renderer client is nullptr");
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
@@ -319,12 +330,14 @@ AudioSampleFormat OHAudioRenderer::GetSampleFormat()
 
 void OHAudioRenderer::GetRendererInfo(AudioRendererInfo& rendererInfo)
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->GetRendererInfo(rendererInfo);
 }
 
 AudioEncodingType OHAudioRenderer::GetEncodingType()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ENCODING_INVALID, "renderer client is nullptr");
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
@@ -333,18 +346,21 @@ AudioEncodingType OHAudioRenderer::GetEncodingType()
 
 int64_t OHAudioRenderer::GetFramesWritten()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->GetFramesWritten();
 }
 
 bool OHAudioRenderer::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
     return audioRenderer_->GetAudioPosition(timestamp, base);
 }
 
 int32_t OHAudioRenderer::GetFrameSizeInCallback()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     uint32_t frameSize;
     audioRenderer_->GetFrameCount(frameSize);
@@ -353,30 +369,35 @@ int32_t OHAudioRenderer::GetFrameSizeInCallback()
 
 int32_t OHAudioRenderer::GetBufferDesc(BufferDesc &bufDesc) const
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->GetBufferDesc(bufDesc);
 }
 
 int32_t OHAudioRenderer::Enqueue(const BufferDesc &bufDesc) const
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->Enqueue(bufDesc);
 }
 
 int32_t OHAudioRenderer::SetSpeed(float speed)
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->SetSpeed(speed);
 }
 
 float OHAudioRenderer::GetSpeed()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->GetSpeed();
 }
 
 void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData)
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
 
@@ -422,6 +443,7 @@ void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, 
 void OHAudioRenderer::SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
     void *userData)
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
     audioRendererDeviceChangeCallbackWithInfo_ =
@@ -432,11 +454,13 @@ void OHAudioRenderer::SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_Out
 
 void OHAudioRenderer::SetPreferredFrameSize(int32_t frameSize)
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     audioRenderer_->SetPreferredFrameSize(frameSize);
 }
 
 bool OHAudioRenderer::IsFastRenderer()
 {
+    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     return audioRenderer_->IsFastRenderer();
 }
 
