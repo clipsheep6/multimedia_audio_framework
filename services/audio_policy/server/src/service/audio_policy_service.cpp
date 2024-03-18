@@ -2025,7 +2025,8 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<Au
     return SUCCESS;
 }
 
-void AudioPolicyService::UpdatePreferredDevice(DeviceRole deviceRole, const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioPolicyService::UpdatePreferredDevice(DeviceRole deviceRole, 
+    const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
         if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(deviceDescriptor->deviceType_)) {
