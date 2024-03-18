@@ -1539,6 +1539,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
     if (captureInfo.sourceType <= SOURCE_TYPE_INVALID ||
         captureInfo.sourceType > SOURCE_TYPE_MAX) {
+        std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
         sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(currentActiveInputDevice_);
         deviceList.push_back(devDesc);
         return deviceList;
@@ -1674,6 +1675,7 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 {
     AUDIO_INFO_LOG("In");
     unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
+    std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
     if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, currentActiveInputDevice_)) {
         AUDIO_DEBUG_LOG("input device is not change");
         return;
@@ -1895,6 +1897,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
                 GetEncryptAddr(desc->macAddress_).c_str());
         }
         if (needUpdateActiveDevice) {
+            std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
             if (!IsSameDevice(desc, currentActiveInputDevice_)) {
                 currentActiveInputDevice_ = AudioDeviceDescriptor(*desc);
                 AUDIO_DEBUG_LOG("currentActiveInputDevice update %{public}d", currentActiveInputDevice_.deviceType_);
@@ -1907,6 +1910,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         AddAudioCapturerMicrophoneDescriptor(capturerChangeInfo->sessionId, desc->deviceType_);
     }
     if (isUpdateActiveDevice) {
+        std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
         OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
     }
     if (runningStreamCount == 0) {
@@ -2026,6 +2030,7 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<Au
         currentActiveDevice_.macAddress_ = deviceDescriptor->macAddress_;
         OnPreferredOutputDeviceUpdated(currentActiveDevice_);
     } else {
+        std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
         currentActiveInputDevice_.deviceType_ = deviceDescriptor->deviceType_;
         OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, LOCAL_NETWORK_ID);
     }
@@ -3414,6 +3419,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         currentActiveDevice_ = AudioDeviceDescriptor(*outDevice);
         ResetOffloadMode();
         unique_ptr<AudioDeviceDescriptor> inDevice = audioDeviceManager_.GetCaptureDefaultDevice();
+        std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
         currentActiveInputDevice_ = AudioDeviceDescriptor(*inDevice);
         SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
         OnPreferredDeviceUpdated(currentActiveDevice_, currentActiveInputDevice_.deviceType_);
@@ -3874,6 +3880,7 @@ void AudioPolicyService::UpdateStreamChangeDeviceInfoForPlayback(AudioStreamChan
 
 void AudioPolicyService::UpdateStreamChangeDeviceInfoForRecord(AudioStreamChangeInfo &streamChangeInfo)
 {
+    std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
     std::vector<sptr<AudioDeviceDescriptor>> inputDevices = GetDevices(INPUT_DEVICES_FLAG);
     DeviceType activeDeviceType = currentActiveInputDevice_.deviceType_;
     DeviceRole activeDeviceRole = INPUT_DEVICE;
@@ -3962,6 +3969,7 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<unique_ptr<Audi
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, status,
         "AudioPolicyServer:: Get capturer change info failed");
 
+    std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
     std::vector<sptr<AudioDeviceDescriptor>> inputDevices = GetDevices(INPUT_DEVICES_FLAG);
     DeviceType activeDeviceType = currentActiveInputDevice_.deviceType_;
     DeviceRole activeDeviceRole = INPUT_DEVICE;
@@ -4189,6 +4197,7 @@ void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDevice
         }
 
         if (deviceDesc->deviceRole_ == INPUT_DEVICE) {
+            std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
             activeDevice = currentActiveInputDevice_.deviceType_;
             auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isInputDevicePresent);
             if (itr != connectedDevices_.end()) {
@@ -4574,6 +4583,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     // put the currentActiveDevice_ in deviceinfo, so it can create with current using device.
     // genarate the unique deviceid?
 
+    std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
     if (config.audioMode == AUDIO_MODE_RECORD) {
         deviceInfo.deviceId = 1;
         deviceInfo.networkId = LOCAL_NETWORK_ID;
@@ -5110,6 +5120,7 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
             CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERROR,
                 "CapturerSessionAdded: OpenAudioPort failed %{public}d", ioHandle);
 
+            std::lock_guard<std::mutex> lock(curActiveInputDeviceMuts_);
             IOHandles_[PRIMARY_MIC] = ioHandle;
             audioPolicyManager_.SetDeviceActive(ioHandle, currentActiveInputDevice_.deviceType_,
                 moduleInfo.name, true);
