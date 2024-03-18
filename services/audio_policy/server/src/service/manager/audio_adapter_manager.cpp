@@ -245,6 +245,7 @@ void AudioAdapterManager::UpdateMuteStatusForVolume(AudioStreamType streamType, 
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
+    std::lock_guard<std::mutex> lock(systemSoundMutex_);
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     int32_t volumeLevel = volumeLevelMap_[streamForVolumeMap] * (muteStatusMap_[streamForVolumeMap] ? 0 : 1);
 
@@ -316,6 +317,7 @@ int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute
         return SUCCESS;
     }
 
+    std::lock_guard<std::mutex> lock(systemSoundMutex_);
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     muteStatusMap_[streamForVolumeMap] = mute;
     WriteMuteStatusToKvStore(currentActiveDevice_, streamType, mute);
@@ -339,6 +341,7 @@ int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute
 
 bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 {
+    std::lock_guard<std::mutex> lock(systemSoundMutex_);
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     return muteStatusMap_[streamForVolumeMap];
 }
@@ -1077,6 +1080,7 @@ bool AudioAdapterManager::LoadMuteStatusFromKvStore(DeviceType deviceType, Audio
     Value value;
 
     Status status = audioPolicyKvStore_->Get(key, value);
+    std::lock_guard<std::mutex> lock(systemSoundMutex_);
     if (status == Status::SUCCESS) {
         bool muteStatus = TransferByteArrayToType<int>(value.Data());
         muteStatusMap_[streamType] = muteStatus;
