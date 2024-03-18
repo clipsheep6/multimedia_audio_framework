@@ -35,6 +35,16 @@ static const std::string ADAPTER_REMOTE_TYPE = "remote";
 static const std::string ADAPTER_FILE_TYPE = "file";
 static const std::string ADAPTER_USB_TYPE = "usb";
 
+static const std::string ADAPTER_DEVICE_PRIMARY_OUT = "primary out";
+static const std::string ADAPTER_DEVICE_PRIMARY_IN = "primary in";
+static const std::string ADAPTER_DEVICE_REMOTE_OUT = "remote out";
+static const std::string ADAPTER_DEVICE_REMOTE_IN = "remote in";
+static const std::string ADAPTER_DEVICE_FILE_OUT = "file out";
+static const std::string ADAPTER_DEVICE_FILE_IN = "file in";
+static const std::string ADAPTER_DEVICE_ARM_USB_OUT = "usb out";
+static const std::string ADAPTER_DEVICE_ARM_USB_IN = "usb in";
+static const std::string ADAPTER_DEVICE_A2DP_OUT = "a2dp out";
+
 static const std::string ADAPTER_DEVICE_PRIMARY_SPEAKER = "Speaker";
 static const std::string ADAPTER_DEVICE_PRIMARY_EARPIECE = "Earpicece";
 static const std::string ADAPTER_DEVICE_PRIMARY_MIC = "Built-In Mic";

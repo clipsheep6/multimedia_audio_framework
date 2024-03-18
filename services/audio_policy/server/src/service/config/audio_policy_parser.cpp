@@ -117,24 +117,26 @@ void AudioPolicyParser::GetCommontAudioModuleInfo(ModuleInfo &moduleInfo, AudioM
         audioModuleInfo.supportedChannels_.insert(atoi(profileInfo.channels_.c_str()));
     }
     audioModuleInfo.role = moduleInfo.moduleType_;
-    audioModuleInfo.name = moduleInfo.devices_.front();
+    audioModuleInfo.name = moduleInfo.name_;
 
-    if (audioModuleInfo.name == ADAPTER_DEVICE_PRIMARY_MIC) {
+    if (audioModuleInfo.name == ADAPTER_DEVICE_PRIMARY_IN) {
         audioModuleInfo.name = PRIMARY_MIC;
-    } else if (audioModuleInfo.name == ADAPTER_DEVICE_A2DP_BT_A2DP) {
+    } else if (audioModuleInfo.name == ADAPTER_DEVICE_PRIMARY_OUT) {
+        audioModuleInfo.name = PRIMARY_SPEAKER;
+    } else if (audioModuleInfo.name == ADAPTER_DEVICE_A2DP_OUT) {
         audioModuleInfo.name = BLUETOOTH_SPEAKER;
-    } else if (audioModuleInfo.name == ADAPTER_DEVICE_USB_SPEAKER) {
+    } else if (audioModuleInfo.name == ADAPTER_DEVICE_ARM_USB_OUT) {
         audioModuleInfo.name = USB_SPEAKER;
-    } else if (audioModuleInfo.name == ADAPTER_DEVICE_USB_MIC) {
+    } else if (audioModuleInfo.name == ADAPTER_DEVICE_ARM_USB_IN) {
         audioModuleInfo.name = USB_MIC;
-    } else if (audioModuleInfo.name == ADAPTER_DEVICE_FILE_SINK) {
+    } else if (audioModuleInfo.name == ADAPTER_DEVICE_FILE_OUT) {
         audioModuleInfo.name = FILE_SINK;
-    } else if (audioModuleInfo.name == ADAPTER_DEVICE_FILE_SOURCE) {
+    } else if (audioModuleInfo.name == ADAPTER_DEVICE_FILE_IN) {
         audioModuleInfo.name = FILE_SOURCE;
-    } else if (audioModuleInfo.name == ADAPTER_DEVICE_PIPE_SINK) {
-        audioModuleInfo.name = PIPE_SINK;
-    } else if (audioModuleInfo.name == ADAPTER_DEVICE_PIPE_SOURCE) {
-        audioModuleInfo.name = PIPE_SOURCE;
+    } else if (audioModuleInfo.name == ADAPTER_DEVICE_REMOTE_OUT) {
+        audioModuleInfo.name = "";
+    } else if (audioModuleInfo.name == ADAPTER_DEVICE_REMOTE_IN) {
+        audioModuleInfo.name = "";
     }
 
     audioModuleInfo.lib = moduleInfo.lib_;
@@ -529,6 +531,8 @@ AdaptersType AudioPolicyParser::GetAdaptersType(const std::string &adapterName)
         return AdaptersType::TYPE_REMOTE;
     else if (adapterName == ADAPTER_FILE_TYPE)
         return AdaptersType::TYPE_FILE;
+    else if (adapterName == ADAPTER_USB_TYPE)
+        return AdaptersType::TYPE_USB;
     else
         return AdaptersType::TYPE_INVALID;
 }
