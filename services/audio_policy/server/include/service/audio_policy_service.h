@@ -696,6 +696,8 @@ private:
 
     void RectifyModuleInfo(AudioModuleInfo moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
 
+    void UpdatePreferredDevice(DeviceRole deviceRole, const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;

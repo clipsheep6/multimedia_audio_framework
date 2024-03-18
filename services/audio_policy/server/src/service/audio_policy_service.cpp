@@ -1675,7 +1675,6 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 {
     AUDIO_INFO_LOG("In");
     unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
-    std::lock_guard<std::mutex> lock(curActiveInputDeviceMutex_);
     if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, currentActiveInputDevice_)) {
         AUDIO_DEBUG_LOG("input device is not change");
         return;
@@ -1871,6 +1870,7 @@ int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDe
 
 void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
 {
+    std::lock_guard<std::mutex> lock(curActiveInputDeviceMutex_);
     AUDIO_INFO_LOG("size %{public}zu", capturerChangeInfos.size());
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
@@ -1897,7 +1897,6 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
                 GetEncryptAddr(desc->macAddress_).c_str());
         }
         if (needUpdateActiveDevice) {
-            std::lock_guard<std::mutex> lock(curActiveInputDeviceMutex_);
             if (!IsSameDevice(desc, currentActiveInputDevice_)) {
                 currentActiveInputDevice_ = AudioDeviceDescriptor(*desc);
                 AUDIO_DEBUG_LOG("currentActiveInputDevice update %{public}d", currentActiveInputDevice_.deviceType_);
@@ -1910,7 +1909,6 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         AddAudioCapturerMicrophoneDescriptor(capturerChangeInfo->sessionId, desc->deviceType_);
     }
     if (isUpdateActiveDevice) {
-        std::lock_guard<std::mutex> lock(curActiveInputDeviceMutex_);
         OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
     }
     if (runningStreamCount == 0) {
@@ -2022,6 +2020,13 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<Au
         IPCSkeleton::SetCallingIdentity(identity);
     }
 
+    std::lock_guard<std::mutex> lock(curActiveInputDeviceMutex_);
+    UpdatePreferredDevice(deviceRole, deviceDescriptor)
+    return SUCCESS;
+}
+
+void AudioPolicyService::UpdatePreferredDevice(DeviceRole deviceRole, const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
         if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(deviceDescriptor->deviceType_)) {
             SetVolumeForSwitchDevice(deviceDescriptor->deviceType_);
@@ -2030,11 +2035,9 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<Au
         currentActiveDevice_.macAddress_ = deviceDescriptor->macAddress_;
         OnPreferredOutputDeviceUpdated(currentActiveDevice_);
     } else {
-        std::lock_guard<std::mutex> lock(curActiveInputDeviceMutex_);
         currentActiveInputDevice_.deviceType_ = deviceDescriptor->deviceType_;
         OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, LOCAL_NETWORK_ID);
     }
-    return SUCCESS;
 }
 
 int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
