@@ -1058,6 +1058,7 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
     CHECK_AND_RETURN_RET_LOG(audioPolicyKvStore_ != nullptr, false,
         "LoadMuteStatusMap: audioPolicyKvStore_ is null");
 
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     for (auto &streamType: VOLUME_TYPE_LIST) {
         bool result = LoadMuteStatusFromKvStore(currentActiveDevice_, streamType);
         if (!result) {
@@ -1080,7 +1081,6 @@ bool AudioAdapterManager::LoadMuteStatusFromKvStore(DeviceType deviceType, Audio
     Value value;
 
     Status status = audioPolicyKvStore_->Get(key, value);
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     if (status == Status::SUCCESS) {
         bool muteStatus = TransferByteArrayToType<int>(value.Data());
         muteStatusMap_[streamType] = muteStatus;
