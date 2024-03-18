@@ -369,14 +369,12 @@ int32_t OHAudioRenderer::GetFrameSizeInCallback()
 
 int32_t OHAudioRenderer::GetBufferDesc(BufferDesc &bufDesc) const
 {
-    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->GetBufferDesc(bufDesc);
 }
 
 int32_t OHAudioRenderer::Enqueue(const BufferDesc &bufDesc) const
 {
-    std::lock_guard<std::mutex> lock(audioRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->Enqueue(bufDesc);
 }
