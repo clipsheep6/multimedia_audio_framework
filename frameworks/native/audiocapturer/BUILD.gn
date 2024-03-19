@@ -58,6 +58,8 @@ ohos_shared_library("audio_capturer") {
 
   public_configs = [ ":audio_external_library_config" ]
 
+  public_external_deps = [ "eventhandler:libeventhandler" ]
+
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
