@@ -23,6 +23,7 @@
 #include <sstream>
 #include <thread>
 #include <unordered_map>
+#include <malloc.h>
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
@@ -108,6 +109,12 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 
 void AudioServer::OnStart()
 {
+    // enable cache
+    mallopt(M_OHOS_CONFIG, M_TCACHE_NORMAL_MODE);
+    mallopt(M_OHOS_CONFIG, M_ENABLE_OPT_TCACHE);
+    mallopt(M_SET_THREAD_CACHE, M_THREAD_CACHE_ENABLE);
+    mallopt(M_DELAYED_FREE, M_DELAYED_FREE_ENABLE);
+
     audioUid_ = getuid();
     AUDIO_INFO_LOG("OnStart uid:%{public}d", audioUid_);
     bool res = Publish(this);
