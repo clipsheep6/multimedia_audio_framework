@@ -148,7 +148,7 @@ class OHAudioRenderer {
             void *userData);
         bool IsFastRenderer();
     private:
-        std::mutex audioRendererMutex_;
+        std::mutex rendererMutex_;
         std::unique_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
         std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
