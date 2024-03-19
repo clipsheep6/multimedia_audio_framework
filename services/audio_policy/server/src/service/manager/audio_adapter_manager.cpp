@@ -136,6 +136,8 @@ void AudioAdapterManager::InitKVStore()
     InitAudioPolicyKvStore(isFirstBoot);
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
+
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     InitMuteStatusMap(isFirstBoot);
 }
 
@@ -211,6 +213,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 
     UpdateMuteStatusForVolume(streamType, volumeLevel);
 
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     return SetVolumeDb(streamType);
 }
 
@@ -245,7 +248,6 @@ void AudioAdapterManager::UpdateMuteStatusForVolume(AudioStreamType streamType, 
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     int32_t volumeLevel = volumeLevelMap_[streamForVolumeMap] * (muteStatusMap_[streamForVolumeMap] ? 0 : 1);
 
@@ -278,6 +280,7 @@ int32_t AudioAdapterManager::SetVolumeDbForVolumeTypeGroup(const std::vector<Aud
     float volumeDb)
 {
     int32_t result = SUCCESS;
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     for (auto &streamType: volumeTypeGroup) {
         result = audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
         if (result != SUCCESS) {
@@ -459,6 +462,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     LoadMuteStatusMap();
 
     auto iter = VOLUME_TYPE_LIST.begin();
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     while (iter != VOLUME_TYPE_LIST.end()) {
         // update volume level and mute status for each stream type
         SetVolumeDb(*iter);
@@ -1058,7 +1062,6 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
     CHECK_AND_RETURN_RET_LOG(audioPolicyKvStore_ != nullptr, false,
         "LoadMuteStatusMap: audioPolicyKvStore_ is null");
 
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     for (auto &streamType: VOLUME_TYPE_LIST) {
         bool result = LoadMuteStatusFromKvStore(currentActiveDevice_, streamType);
         if (!result) {
