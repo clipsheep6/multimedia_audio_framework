@@ -40,6 +40,7 @@
 
 #include <time.h>
 #include "native_audiostream_base.h"
+#include "multimedia/native_audio_channel_layout.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -229,6 +230,18 @@ OH_AudioStream_Result OH_AudioCapturer_GetTimestamp(OH_AudioCapturer* capturer,
  */
 OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer, int64_t* frames);
 #ifdef __cplusplus
+
+/*
+ * Query the channel layout of the capturer client.
+ *
+ * @since 12
+ *
+ * @param capturer Reference created by OH_AudioStreamBuilder_GenerateCapturer()
+ * @param channelLayout Pointer to a variable to receive the channel layout
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioCapturer_GetChannelLayout(OH_AudioCapturer* capturer,
+    OH_AudioChannelLayout* channelLayout);
 }
 #endif
 #endif // NATIVE_AUDIOCAPTURER_H

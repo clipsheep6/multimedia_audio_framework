@@ -27,6 +27,7 @@ using OHOS::AudioStandard::StreamUsage;
 using OHOS::AudioStandard::AudioEncodingType;
 using OHOS::AudioStandard::ContentType;
 using OHOS::AudioStandard::SourceType;
+using OHOS::AudioStandard::AudioChannelLayout;
 
 static const int32_t RENDERER_TYPE = 1;
 static const int32_t CAPTURER_TYPE = 2;
@@ -87,6 +88,15 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder
     return audioStreamBuilder->SetLatencyMode(innerLatencyMode);
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetChannelLayout(OH_AudioStreamBuilder* builder,
+    OH_AudioChannelLayout channelLayout)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    AudioChannelLayout layout = (AudioChannelLayout)channelLayout;
+    return audioStreamBuilder->SetChannelLayout(layout);
+}
+
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder,
     OH_AudioStream_Usage usage)
 {
@@ -141,6 +151,14 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallbac
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
 
     return audioStreamBuilder->SetRendererOutputDeviceChangeCallback(callback, userData);
+}
+
+OH_AudioStream_Result OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioRenderer_WriteDataWithMetadataCallback callback, void* userData)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    return audioStreamBuilder->SetWriteDataWithMetadataCallback(callback, userData);
 }
 
 OH_AudioStream_Result OH_AudioStreamBuilder_GenerateRenderer(OH_AudioStreamBuilder* builder,
@@ -277,6 +295,12 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetLatencyMode(int32_t latencyMode)
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OHAudioStreamBuilder::SetChannelLayout(AudioChannelLayout channelLayout)
+{
+    channelLayout_ = channelLayout;
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer)
 {
     AUDIO_INFO_LOG("Generate OHAudioRenderer");
@@ -287,7 +311,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
         (AudioSamplingRate)samplingRate_,
         encodingType_,
         sampleFormat_,
-        (AudioChannel)channelCount_
+        (AudioChannel)channelCount_,
+        channelLayout_
     };
 
     AudioRendererInfo rendererInfo = {
@@ -303,7 +328,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
 
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
     if (audioRenderer->Initialize(options)) {
-        audioRenderer->SetRendererCallback(rendererCallbacks_, userData_);
+        audioRenderer->SetRendererCallback(rendererCallbacks_, userData_, metadataCallback_, metadataUserData_);
         audioRenderer->SetRendererOutputDeviceChangeCallback(outputDeviceChangecallback_, outputDeviceChangeuserData_);
         *renderer = (OH_AudioRenderer*)audioRenderer;
         if (preferredFrameSize_ != UNDEFINED_SIZE) {
@@ -326,7 +351,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer** capturer
         (AudioSamplingRate)samplingRate_,
         encodingType_,
         sampleFormat_,
-        (AudioChannel)channelCount_
+        (AudioChannel)channelCount_,
+        channelLayout_
     };
 
     AudioCapturerInfo capturerInfo = {
@@ -376,6 +402,16 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererOutputDeviceChangeCallbac
         "SetRendererCallback Error, invalid type input");
     outputDeviceChangecallback_ = callback;
     outputDeviceChangeuserData_ = userData;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetWriteDataWithMetadataCallback(
+    OH_AudioRenderer_WriteDataWithMetadataCallback callback, void* userData)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetRendererCallback Error, invalid type input");
+    metadataCallback_ = callback;
+    metadataUserData_ = userData;
     return AUDIOSTREAM_SUCCESS;
 }
 }  // namespace AudioStandard
