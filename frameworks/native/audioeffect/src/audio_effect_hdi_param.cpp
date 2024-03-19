@@ -24,7 +24,7 @@ namespace AudioStandard {
 AudioEffectHdiParam::AudioEffectHdiParam()
 {
     AUDIO_DEBUG_LOG("constructor.");
-    libHdiControls_.clear();
+    DeviceTypeToHdiControlMap_.clear();
     int32_t ret = memset_s(static_cast<void *>(input_), sizeof(input_), 0, sizeof(input_));
     if (ret == 0) {
         AUDIO_ERR_LOG("hdi constructor memset input failed");
@@ -44,23 +44,23 @@ AudioEffectHdiParam::~AudioEffectHdiParam()
 
 void AudioEffectHdiParam::CreateHdiControl()
 {
-    // todo read from vendor/...
-    libName_ = strdup("libspatialization_processing_dsp");
-    effectId_ = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966gg");
-    EffectInfo info = {
-        .libName = &libName_[0],
-        .effectId = &effectId_[0],
-        .ioDirection = 1,
-    };
-    ControllerId controllerId;
-    IEffectControl *hdiControl = nullptr;
-    int32_t ret = hdiModel_->CreateEffectController(hdiModel_, &info, &hdiControl, &controllerId);
-    if ((ret != 0) || (hdiControl == nullptr)) {
-        AUDIO_WARNING_LOG("hdi init failed");
-    } else {
-        libHdiControls_.emplace_back(hdiControl);
+    for (const auto &item : HDI_EFFECT_LIB_MAP){
+        libName_ = strdup(item.second[0].c_str());
+        effectId_ = strdup(item.second[1].c_str());
+        EffectInfo info = {
+            .libName = &libName_[0],
+            .effectId = &effectId_[0],
+            .ioDirection = 1,
+        };
+        ControllerId controllerId;
+        IEffectControl *hdiControl = nullptr;
+        int32_t ret = hdiModel_->CreateEffectController(hdiModel_, &info, &hdiControl, &controllerId);
+        if ((ret != 0) || (hdiControl == nullptr)) {
+            AUDIO_WARNING_LOG("hdi init failed");
+        } else {
+            DeviceTypeToHdiControlMap_.emplace(item.first, hdiControl);
+        }
     }
-    
     return;
 }
 
@@ -78,7 +78,8 @@ void AudioEffectHdiParam::InitHdi()
 int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
 {
     int32_t ret;
-    for (IEffectControl *hdiControl : libHdiControls_) {
+    for (const auto &item : DeviceTypeToHdiControlMap_) {
+        IEffectControl *hdiControl = item.second;
         if (hdiControl == nullptr) {
             AUDIO_WARNING_LOG("hdiControl is nullptr.");
             continue;
@@ -91,6 +92,24 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
             output_, &replyLen);
         CHECK_AND_CONTINUE_LOG(ret == 0, "hdi send command failed");
     }
+    return ret;
+}
+
+int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput, DeviceType deviceType)
+{
+    int32_t ret;
+    IEffectControl *hdiControl = DeviceTypeToHdiControlMap_[deviceType];
+    if (hdiControl == nullptr) {
+        AUDIO_WARNING_LOG("hdiControl is nullptr.");
+        return ERROR;
+    }
+    ret = memcpy_s(static_cast<void *>(input_), sizeof(input_),
+        static_cast<void *>(effectHdiInput), sizeof(input_));
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "hdi memcpy failed");
+    uint32_t replyLen = GET_HDI_BUFFER_LEN;
+    ret = hdiControl->SendCommand(hdiControl, HDI_SET_PATAM, input_, SEND_HDI_COMMAND_LEN,
+        output_, &replyLen);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "hdi send command failed");
     return ret;
 }
 }  // namespace AudioStandard

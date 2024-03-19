@@ -80,7 +80,7 @@ const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
 
 struct AudioEffectProcInfo {
     bool headTrackingEnabled;
-    bool offloadEnabled;
+    bool btOffloadEnabled;
 };
 
 class AudioEffectChain {
@@ -189,7 +189,8 @@ private:
     std::recursive_mutex dynamicMutex_;
     bool spatializationEnabled_ = false;
     bool headTrackingEnabled_ = false;
-    bool offloadEnabled_ = false;
+    bool btOffloadEnabled_ = false;
+    bool spkOffloadEnabled_ = false;
     bool initializedLogFlag_ = true;
 
 #ifdef SENSOR_ENABLE
