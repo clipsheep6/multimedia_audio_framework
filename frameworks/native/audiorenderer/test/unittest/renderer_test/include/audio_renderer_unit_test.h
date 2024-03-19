@@ -53,6 +53,21 @@ public:
     void OnWriteData(size_t length) override;
 };
 
+class AudioRendererFirstFrameWritingCallbackTest : public AudioRendererFirstFrameWritingCallback {
+public:
+    void OnFirstFrameWriting(uint64_t latency) override {}
+};
+
+class AudioRendererErrorCallbackTest : public AudioRendererErrorCallback {
+public:
+    void OnError(AudioErrors errorCode) override {}
+};
+
+class AudioRendererOutputDeviceChangeCallbackTest : public AudioRendererOutputDeviceChangeCallback {
+public:
+    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override {}
+};
+
 class AudioRendererUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
