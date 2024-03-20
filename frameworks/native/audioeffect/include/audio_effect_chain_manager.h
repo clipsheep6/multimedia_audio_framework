@@ -83,6 +83,15 @@ struct AudioEffectProcInfo {
     bool btOffloadEnabled;
 };
 
+#ifdef WINDOW_MANAGER_ENABLE
+class AudioRotationListener : public OHOS::Rosen::DisplayManager::IDisplayListener {
+public:
+    void OnCreate(Rosen::DisplayId displayId) override;
+    void OnDestroy(Rosen::DisplayId displayId) override;
+    void OnChange(Rosen::DisplayId displayId) override;
+};
+#endif
+
 class AudioEffectChain {
 public:
 #ifdef SENSOR_ENABLE
@@ -198,6 +207,9 @@ private:
 #endif
 
     std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam_;
+#ifdef WINDOW_MANAGER_ENABLE
+    sptr<AudioRotationListener> audioRotationListener_;
+#endif
     int8_t effectHdiInput[SEND_HDI_COMMAND_LEN];
 };
 }  // namespace AudioStandard

@@ -343,6 +343,34 @@ int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *c
 namespace OHOS {
 namespace AudioStandard {
 
+#ifdef WINDOW_MANAGER_ENABLE
+void AudioRotationListener::OnCreate(Rosen::DisplayId displayId)
+{
+    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d.", static_cast<int32_t>(displayId));
+}
+
+void AudioRotationListener::OnDestroy(Rosen::DisplayId displayId)
+{
+    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d.", static_cast<int32_t>(displayId));
+}
+
+void AudioRotationListener::OnChange(Rosen::DisplayId displayId)
+{
+    // get display
+    auto display = Rosen::DisplayManager::GetInstance().GetDisplayById(displayId);
+    if (!display) {
+        AUDIO_WARNING_LOG("Get display by displayId: %{public}d failed.",
+            static_cast<int32_t>(displayId));
+        return;
+    }
+    // get rotation
+    Rosen::Rotation newRotationState = display->GetRotation();
+    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d rotationState: %{public}u.",
+        static_cast<int32_t>(displayId), static_cast<uint32_t>(newRotationState));
+    EffectChainManagerRotationUpdate(static_cast<uint32_t>(newRotationState));
+}
+#endif
+
 #ifdef SENSOR_ENABLE
 AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker)
 {
@@ -931,14 +959,6 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
     }
-#ifdef WINDOW_MANAGER_ENABLE
-    std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
-    if (audioEffectRotation == nullptr) {
-        AUDIO_DEBUG_LOG("null audioEffectRotation");
-    } else {
-        audioEffectRotation->Init();
-    }
-#endif
     effectHdiInput[0] = HDI_INIT;
     ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_SPEAKER);
     if (ret != 0) {
@@ -948,6 +968,11 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
         AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
         spkOffloadEnabled_ = true;
     }
+#ifdef WINDOW_MANAGER_ENABLE
+    AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
+    audioRotationListener_ = new AudioRotationListener();
+    Rosen::DisplayManager::GetInstance().RegisterDisplayListener(audioRotationListener_);
+#endif
     isInitialized_ = true;
 }
 
@@ -1108,13 +1133,15 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
         return false;
     }
 #endif
-    if ((deviceType_ == DEVICE_TYPE_SPEAKER) && spkOffloadEnabled_) {
+    if ((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) {
         return false;
     }
 
-    if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_ || spatializationEnabled == "0")) {
+    if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_ || (spatializationEnabled == "0"))) {
         return false;
     }
+
+    effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
 
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
     if (!SceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
