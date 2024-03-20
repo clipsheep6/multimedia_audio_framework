@@ -592,7 +592,7 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
 }
 
 bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-    std::unordered_map<std::string, std::string> &map)
+    std::unordered_map<std::string, std::string> &map, const std::vector<std::string> &sceneTypesInUse)
 {
     int32_t error;
 
@@ -628,12 +628,10 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
         dataParcel.WriteString(item->second);
     }
 
-    error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIO_EFFECT_CHAIN_MANAGER),
-        dataParcel, replyParcel, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
-        "CreateAudioEffectChainManager failed, error: %{public}d", error);
-    return true;
+    dataParcel.WriteInt32(static_cast<int32_t>(sceneTypesInUse.size()));
+    for (const std::string &sceneType : sceneTypesInUse) {
+        dataParcel.WriteString(sceneType);
+    }
 }
 
 bool AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)

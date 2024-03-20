@@ -132,7 +132,8 @@ public:
     static AudioEffectChainManager *GetInstance();
     void InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
         std::unordered_map<std::string, std::string> &map,
-        std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList);
+        std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
+        const std::vector<std::string> &sceneTypesInUse);
     bool CheckAndAddSessionID(std::string sessionID);
     int32_t CreateAudioEffectChainDynamic(std::string sceneType);
     int32_t SetAudioEffectChainDynamic(std::string sceneType, std::string effectMode);
@@ -159,6 +160,7 @@ public:
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t EffectVolumeUpdate(const std::string sessionIDString, const uint32_t volume);
     uint32_t GetLatency(std::string sessionId);
+    int32_t GetSceneTypeSet(char sceneTypeSet[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH]);
 
 private:
     void UpdateSensorState();
@@ -172,6 +174,7 @@ private:
     int32_t EffectApRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
 #endif
+    std::vector<std::string> sceneTypeSet_;
     std::map<std::string, AudioEffectLibEntry *> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;

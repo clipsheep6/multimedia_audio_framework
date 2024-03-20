@@ -3618,8 +3618,11 @@ void AudioPolicyService::LoadEffectLibrary()
     audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
     std::unordered_map<std::string, std::string> sceneTypeToEffectChainNameMap;
     audioEffectManager_.ConstructSceneTypeToEffectChainNameMap(sceneTypeToEffectChainNameMap);
+    std::vector<std::string> sceneTypesInUse;
+    audioEffectManager_.ConstructSceneTypesInUse(sceneTypesInUse);
     identity = IPCSkeleton::ResetCallingIdentity();
-    bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, sceneTypeToEffectChainNameMap);
+    bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, sceneTypeToEffectChainNameMap,
+        sceneTypesInUse);
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
 
