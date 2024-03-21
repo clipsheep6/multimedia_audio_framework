@@ -26,6 +26,7 @@ static OHOS::AudioStandard::OHAudioRenderer *convertRenderer(OH_AudioRenderer* r
 
 OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer* renderer)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     if (audioRenderer->Start()) {
@@ -37,6 +38,7 @@ OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer* renderer)
 
 OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer* renderer)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
@@ -49,6 +51,7 @@ OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer* renderer)
 
 OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer* renderer)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
@@ -61,6 +64,7 @@ OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer* renderer)
 
 OH_AudioStream_Result OH_AudioRenderer_Flush(OH_AudioRenderer* renderer)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
@@ -73,6 +77,7 @@ OH_AudioStream_Result OH_AudioRenderer_Flush(OH_AudioRenderer* renderer)
 
 OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer* renderer)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
@@ -87,6 +92,7 @@ OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer* renderer)
 
 OH_AudioStream_Result OH_AudioRenderer_GetCurrentState(OH_AudioRenderer* renderer, OH_AudioStream_State* state)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
@@ -97,6 +103,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetCurrentState(OH_AudioRenderer* rendere
 
 OH_AudioStream_Result OH_AudioRenderer_GetSamplingRate(OH_AudioRenderer* renderer, int32_t* rate)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
@@ -106,6 +113,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetSamplingRate(OH_AudioRenderer* rendere
 
 OH_AudioStream_Result OH_AudioRenderer_GetStreamId(OH_AudioRenderer* renderer, uint32_t* streamId)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     audioRenderer->GetStreamId(*streamId);
@@ -114,6 +122,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetStreamId(OH_AudioRenderer* renderer, u
 
 OH_AudioStream_Result OH_AudioRenderer_GetChannelCount(OH_AudioRenderer* renderer, int32_t* channelCount)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     *channelCount = audioRenderer->GetChannelCount();
@@ -123,6 +132,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetChannelCount(OH_AudioRenderer* rendere
 OH_AudioStream_Result OH_AudioRenderer_GetSampleFormat(OH_AudioRenderer* renderer,
     OH_AudioStream_SampleFormat* sampleFormat)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     *sampleFormat = (OH_AudioStream_SampleFormat)audioRenderer->GetSampleFormat();
@@ -132,6 +142,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetSampleFormat(OH_AudioRenderer* rendere
 OH_AudioStream_Result OH_AudioRenderer_GetLatencyMode(OH_AudioRenderer* renderer,
     OH_AudioStream_LatencyMode* latencyMode)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     OHOS::AudioStandard::AudioRendererInfo rendererInfo;
@@ -144,6 +155,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetLatencyMode(OH_AudioRenderer* renderer
 OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* renderer,
     OH_AudioStream_Usage* usage)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
@@ -156,6 +168,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* rendere
 OH_AudioStream_Result OH_AudioRenderer_GetEncodingType(OH_AudioRenderer* renderer,
     OH_AudioStream_EncodingType* encodingType)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     *encodingType = (OH_AudioStream_EncodingType)audioRenderer->GetEncodingType();
@@ -164,6 +177,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetEncodingType(OH_AudioRenderer* rendere
 
 OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer* renderer, int64_t* frames)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     *frames = audioRenderer->GetFramesWritten();
@@ -178,6 +192,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer,
     CHECK_AND_RETURN_RET_LOG(clockId == CLOCK_MONOTONIC, AUDIOSTREAM_ERROR_INVALID_PARAM, "error clockId value");
     Timestamp stamp;
     Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     bool ret = audioRenderer->GetAudioTime(stamp, base);
     if (!ret) {
         AUDIO_ERR_LOG("GetAudioTime error!");
@@ -190,6 +205,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer,
 
 OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* renderer, int32_t* frameSize)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     *frameSize = audioRenderer->GetFrameSizeInCallback();
@@ -198,6 +214,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* 
 
 OH_AudioStream_Result OH_AudioRenderer_GetSpeed(OH_AudioRenderer* renderer, float* speed)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     *speed = audioRenderer->GetSpeed();
@@ -206,6 +223,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetSpeed(OH_AudioRenderer* renderer, floa
 
 OH_AudioStream_Result OH_AudioRenderer_SetSpeed(OH_AudioRenderer* renderer, float speed)
 {
+    std::lock_guard<std::mutex> lock(rendererMutex_);
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     audioRenderer->SetSpeed(speed);
@@ -233,7 +251,6 @@ bool OHAudioRenderer::Initialize(const AudioRendererOptions &rendererOptions)
 
 bool OHAudioRenderer::Start()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -243,7 +260,6 @@ bool OHAudioRenderer::Start()
 
 bool OHAudioRenderer::Pause()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -253,7 +269,6 @@ bool OHAudioRenderer::Pause()
 
 bool OHAudioRenderer::Stop()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -263,7 +278,6 @@ bool OHAudioRenderer::Stop()
 
 bool OHAudioRenderer::Flush()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -273,7 +287,6 @@ bool OHAudioRenderer::Flush()
 
 bool OHAudioRenderer::Release()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -289,21 +302,18 @@ bool OHAudioRenderer::Release()
 
 RendererState OHAudioRenderer::GetCurrentState()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, RENDERER_INVALID, "renderer client is nullptr");
     return audioRenderer_->GetStatus();
 }
 
 void OHAudioRenderer::GetStreamId(uint32_t &streamId)
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->GetAudioStreamId(streamId);
 }
 
 AudioChannel OHAudioRenderer::GetChannelCount()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, MONO, "renderer client is nullptr");
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
@@ -312,7 +322,6 @@ AudioChannel OHAudioRenderer::GetChannelCount()
 
 int32_t OHAudioRenderer::GetSamplingRate()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, MONO, "renderer client is nullptr");
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
@@ -321,7 +330,6 @@ int32_t OHAudioRenderer::GetSamplingRate()
 
 AudioSampleFormat OHAudioRenderer::GetSampleFormat()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, INVALID_WIDTH, "renderer client is nullptr");
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
@@ -330,14 +338,12 @@ AudioSampleFormat OHAudioRenderer::GetSampleFormat()
 
 void OHAudioRenderer::GetRendererInfo(AudioRendererInfo& rendererInfo)
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->GetRendererInfo(rendererInfo);
 }
 
 AudioEncodingType OHAudioRenderer::GetEncodingType()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ENCODING_INVALID, "renderer client is nullptr");
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
@@ -346,21 +352,18 @@ AudioEncodingType OHAudioRenderer::GetEncodingType()
 
 int64_t OHAudioRenderer::GetFramesWritten()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->GetFramesWritten();
 }
 
 bool OHAudioRenderer::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
     return audioRenderer_->GetAudioPosition(timestamp, base);
 }
 
 int32_t OHAudioRenderer::GetFrameSizeInCallback()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     uint32_t frameSize;
     audioRenderer_->GetFrameCount(frameSize);
@@ -381,14 +384,12 @@ int32_t OHAudioRenderer::Enqueue(const BufferDesc &bufDesc) const
 
 int32_t OHAudioRenderer::SetSpeed(float speed)
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->SetSpeed(speed);
 }
 
 float OHAudioRenderer::GetSpeed()
 {
-    std::lock_guard<std::mutex> lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->GetSpeed();
 }
