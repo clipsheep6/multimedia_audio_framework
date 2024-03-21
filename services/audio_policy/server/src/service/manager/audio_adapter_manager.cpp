@@ -263,7 +263,6 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         "SetSystemVolumeLevel audio adapter null");
 
     AUDIO_INFO_LOG("SetVolumeDb: streamType %{public}d, volumeDb %{public}f", streamType, volumeDb);
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     if (streamType == STREAM_VOICE_CALL) {
         return SetVolumeDbForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST, volumeDb);
     } else if (streamType == STREAM_MUSIC) {
