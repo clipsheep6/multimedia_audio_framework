@@ -136,8 +136,6 @@ void AudioAdapterManager::InitKVStore()
     InitAudioPolicyKvStore(isFirstBoot);
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
-
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     InitMuteStatusMap(isFirstBoot);
 }
 
@@ -200,6 +198,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope.");
 
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     // In case if KvStore didnot connect during bootup
     if (audioPolicyKvStore_ == nullptr) {
         InitKVStore();
@@ -213,7 +212,6 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 
     UpdateMuteStatusForVolume(streamType, volumeLevel);
 
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     return SetVolumeDb(streamType);
 }
 
@@ -293,6 +291,7 @@ int32_t AudioAdapterManager::SetVolumeDbForVolumeTypeGroup(const std::vector<Aud
 
 int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey)
 {
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     if (!isFromVolumeKey && GetStreamMute(streamType)) {
         return MIN_VOLUME_LEVEL;
     }
@@ -320,7 +319,6 @@ int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute
         return SUCCESS;
     }
 
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     muteStatusMap_[streamForVolumeMap] = mute;
     WriteMuteStatusToKvStore(currentActiveDevice_, streamType, mute);
@@ -457,12 +455,12 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceType;
 
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "SetVolumeForSwitchDevice audioPolicyKvStore_ is null!");
     LoadVolumeMap();
     LoadMuteStatusMap();
 
     auto iter = VOLUME_TYPE_LIST.begin();
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     while (iter != VOLUME_TYPE_LIST.end()) {
         // update volume level and mute status for each stream type
         SetVolumeDb(*iter);
