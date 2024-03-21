@@ -3921,7 +3921,6 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
         }
     }
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
-    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
     return ret;
 }
