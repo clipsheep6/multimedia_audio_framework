@@ -2024,7 +2024,6 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<Au
         IPCSkeleton::SetCallingIdentity(identity);
     }
 
-    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     UpdatePreferredDevice(deviceRole, deviceDescriptor);
     return SUCCESS;
 }
@@ -2334,7 +2333,6 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
     int32_t result = SUCCESS;
     ResetOffloadMode();
 
-    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     if (currentActiveDevice_.deviceType_ == deviceType) {
         if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {
             return result;
@@ -2948,7 +2946,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDes
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
     // fetch input&output device
-    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     FetchDevice(true, reason);
     FetchDevice(false);
 }
@@ -3060,10 +3057,10 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
     AUDIO_INFO_LOG("Start");
-    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     // only for the active a2dp device.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(activeBTDevice_)
         && IsDeviceActive(deviceType)) {
+        std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
         UpdateA2dpOffloadFlagForAllStream();
         if (!IsConfigurationUpdated(deviceType, streamInfo)) {
             AUDIO_DEBUG_LOG("Audio configuration same");
@@ -3083,7 +3080,6 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
             return;
         }
         if (a2dpOffloadFlag_ != A2DP_OFFLOAD) {
-            std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
             ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
         }
     }
@@ -3361,7 +3357,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
     TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
 
-    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     FetchDevice(true, reason);
     FetchDevice(false);
 
@@ -3895,7 +3890,6 @@ void AudioPolicyService::UpdateStreamChangeDeviceInfoForPlayback(AudioStreamChan
 
 void AudioPolicyService::UpdateStreamChangeDeviceInfoForRecord(AudioStreamChangeInfo &streamChangeInfo)
 {
-    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     std::vector<sptr<AudioDeviceDescriptor>> inputDevices = GetDevices(INPUT_DEVICES_FLAG);
     DeviceType activeDeviceType = currentActiveInputDevice_.deviceType_;
     DeviceRole activeDeviceRole = INPUT_DEVICE;
@@ -3927,6 +3921,7 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
         }
     }
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
     return ret;
 }
@@ -5378,7 +5373,6 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload()
 
     preA2dpOffloadFlag_ = a2dpOffloadFlag_;
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
         return HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
     } else {
         return SUCCESS;
