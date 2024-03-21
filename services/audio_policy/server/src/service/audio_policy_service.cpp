@@ -248,6 +248,7 @@ bool AudioPolicyService::ConnectServiceAdapter()
     bool ret = audioPolicyManager_.ConnectServiceAdapter();
     CHECK_AND_RETURN_RET_LOG(ret, false, "Error in connecting to audio service adapter");
 
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     OnServiceConnected(AudioServiceIndex::AUDIO_SERVICE_INDEX);
 
     return true;
@@ -788,6 +789,7 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
 
     std::vector<sptr<AudioDeviceDescriptor>> desc = {};
     desc.push_back(localDevice);
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     UpdateTrackerDeviceChange(desc);
     OnPreferredOutputDeviceUpdated(currentActiveDevice_);
     AUDIO_DEBUG_LOG("Success");
@@ -867,6 +869,7 @@ void AudioPolicyService::NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     Trace trace("AudioPolicyService::SelectOutputDevice");
     AUDIO_INFO_LOG("Start for uid[%{public}d]", audioRendererFilter->uid);
     // check size == 1 && output device
@@ -1130,6 +1133,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     } else {
         audioStateManager_.SetPerferredRecordCaptureDevice(audioDeviceDescriptors[0]);
     }
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     FetchDevice(false);
     return SUCCESS;
 }
@@ -1210,6 +1214,7 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
 
 void AudioPolicyService::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     StoreDistributedRoutingRoleInfo(descriptor, type);
     FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     FetchDevice(false);
@@ -1537,9 +1542,9 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
     AudioCapturerInfo &captureInfo, std::string networkId)
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     if (captureInfo.sourceType <= SOURCE_TYPE_INVALID ||
         captureInfo.sourceType > SOURCE_TYPE_MAX) {
-        std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
         sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(currentActiveInputDevice_);
         deviceList.push_back(devDesc);
         return deviceList;
@@ -2330,6 +2335,7 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
     int32_t result = SUCCESS;
     ResetOffloadMode();
 
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     if (currentActiveDevice_.deviceType_ == deviceType) {
         if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {
             return result;
@@ -2496,6 +2502,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     }
 
     // fetch input&output device
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     FetchDevice(true);
     FetchDevice(false);
 
@@ -2942,6 +2949,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDes
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
     // fetch input&output device
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     FetchDevice(true, reason);
     FetchDevice(false);
 }
@@ -2977,6 +2985,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(
         AUDIO_DEBUG_LOG("we can't find the spatialDevice of hvs");
         spatialDevice = DEVICE_TYPE_NONE;
     }
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     UpdateA2dpOffloadFlagForAllStream(sessionIDToSpatializationEnableMap, spatialDevice);
 }
 
@@ -3052,6 +3061,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
     AUDIO_INFO_LOG("Start");
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     // only for the active a2dp device.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(activeBTDevice_)
         && IsDeviceActive(deviceType)) {
@@ -3074,6 +3084,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
             return;
         }
         if (a2dpOffloadFlag_ != A2DP_OFFLOAD) {
+            std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
             ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
         }
     }
@@ -3351,6 +3362,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
     TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
 
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     FetchDevice(true, reason);
     FetchDevice(false);
 
@@ -3423,7 +3435,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         currentActiveDevice_ = AudioDeviceDescriptor(*outDevice);
         ResetOffloadMode();
         unique_ptr<AudioDeviceDescriptor> inDevice = audioDeviceManager_.GetCaptureDefaultDevice();
-        std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
         currentActiveInputDevice_ = AudioDeviceDescriptor(*inDevice);
         SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
         OnPreferredDeviceUpdated(currentActiveDevice_, currentActiveInputDevice_.deviceType_);
@@ -3468,6 +3479,7 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
     } else {
         audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
     }
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
 }
 
@@ -3931,6 +3943,7 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
 void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
 {
     vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     capturerChangeInfo.push_back(
         make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
     FetchInputDevice(capturerChangeInfo);
@@ -3973,7 +3986,6 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<unique_ptr<Audi
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, status,
         "AudioPolicyServer:: Get capturer change info failed");
 
-    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     std::vector<sptr<AudioDeviceDescriptor>> inputDevices = GetDevices(INPUT_DEVICES_FLAG);
     DeviceType activeDeviceType = currentActiveInputDevice_.deviceType_;
     DeviceRole activeDeviceRole = INPUT_DEVICE;
@@ -3994,6 +4006,7 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<unique_ptr<Audi
 
 void AudioPolicyService::RegisteredTrackerClientDied(pid_t uid)
 {
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
 }
@@ -4026,6 +4039,7 @@ int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount
     auto fileClass = deviceClassInfo_.find(ClassType::TYPE_FILE_IO);
     if (fileClass != deviceClassInfo_.end()) {
         auto moduleInfoList = fileClass->second;
+        std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
         for (auto &moduleInfo : moduleInfoList) {
             if (module == moduleInfo.name) {
                 moduleInfo.channels = to_string(channelCount);
@@ -4201,7 +4215,6 @@ void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDevice
         }
 
         if (deviceDesc->deviceRole_ == INPUT_DEVICE) {
-            std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
             activeDevice = currentActiveInputDevice_.deviceType_;
             auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isInputDevicePresent);
             if (itr != connectedDevices_.end()) {
@@ -5366,6 +5379,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload()
 
     preA2dpOffloadFlag_ = a2dpOffloadFlag_;
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
         return HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
     } else {
         return SUCCESS;
@@ -5433,6 +5447,7 @@ void AudioPolicyService::OnScoStateChanged(const std::string &macAddress, bool i
     AUDIO_INFO_LOG("macAddress: %{public}s, isConnnected: %{public}d", macAddress.c_str(),
         isConnnected);
     audioDeviceManager_.UpdateScoState(macAddress, isConnnected);
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     FetchDevice(true);
     FetchDevice(false);
 }
@@ -5507,6 +5522,7 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(desc);
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, updateCommand);
 
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     OnPreferredStateUpdated(desc, updateCommand);
     FetchDevice(false);
     UpdateA2dpOffloadFlagForAllStream();
@@ -5564,6 +5580,7 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
         }
 #endif
     }
+    std::lock_guard<std::mutex> inputDeviceLock(curActiveInputDeviceMutex_);
     FetchDevice(true);
     return SUCCESS;
 }
