@@ -342,7 +342,6 @@ int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute
 
 bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     return muteStatusMap_[streamForVolumeMap];
 }
