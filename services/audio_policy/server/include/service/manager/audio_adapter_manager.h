@@ -192,6 +192,10 @@ private:
     void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
+    bool GetStreamMuteInternal(AudioStreamType streamType);
+    int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode);
+    int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute);
+    void AudioAdapterManager::InitKVStoreInternal();
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
