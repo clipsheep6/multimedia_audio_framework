@@ -4678,7 +4678,7 @@ void AudioPolicyService::MaxRenderInstanceInit()
 {
     // init max renderer instances before kvstore start by local prop for bootanimation
     char currentMaxRendererInstances[100] = {0}; // 100 for system parameter usage
-    auto ret = GetParameter("persist.multimedia.audio.maxrendererinstances", MAX_RENDERER_INSTANCE,
+    auto ret = GetParameter("persist.multimedia.audio.maxrenderer.instances", MAX_RENDERER_INSTANCE,
         currentMaxRendererInstances, sizeof(currentMaxRendererInstances));
     if (ret > 0) {
         maxRendererInstances_ = atoi(currentMaxRendererInstances);
