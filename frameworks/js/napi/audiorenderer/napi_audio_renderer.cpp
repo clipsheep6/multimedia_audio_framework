@@ -906,6 +906,20 @@ napi_value NapiAudioRenderer::SetVolume(napi_env env, napi_callback_info info)
     return NapiAsyncWork::Enqueue(env, context, "SetVolume", executor, complete);
 }
 
+napi_value NapiAudioRenderer::GetVolume(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer!= nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+
+    double volLevel = napiAudioRenderer->audioRenderer_->GetVolume();
+    NapiParamUtils::SetValueDouble(env, volLevel, result);
+    return result;
+}
+
 napi_value NapiAudioRenderer::GetRendererInfo(napi_env env, napi_callback_info info)
 {
     auto context = std::make_shared<AudioRendererAsyncContext>();
