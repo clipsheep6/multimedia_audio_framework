@@ -71,6 +71,8 @@ if (!audio_framework_feature_dtmf_tone) {
 
     public_configs = [ ":audio_external_library_config" ]
 
+    public_external_deps = [ "eventhandler:libeventhandler" ]
+
     external_deps = [
       "c_utils:utils",
       "hilog:libhilog",
