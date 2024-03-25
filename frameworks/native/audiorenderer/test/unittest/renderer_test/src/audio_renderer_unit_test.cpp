@@ -49,6 +49,7 @@ namespace {
     constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
     constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
 
+    constexpr uint32_t STREAM_FAST = 1;
     constexpr uint64_t BUFFER_DURATION_FIVE = 5;
     constexpr uint64_t BUFFER_DURATION_TEN = 10;
     constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
@@ -6422,6 +6423,209 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_Write_001, TestSize.Level1
 
     free(buffer);
     fclose(wavFile);
+}
+
+/**
+ * @tc.name  : Test GetAudioPosition
+ * @tc.number: Audio_Renderer_GetAudioPosition_001
+ * @tc.desc  : Test GetAudioPosition interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioPosition_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    Timestamp timeStamp;
+    bool ret= audioRenderer->GetAudioPosition(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(true, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test IsFastRenderer
+ * @tc.number: Audio_Renderer_IsFastRenderer_001
+ * @tc.desc  : Test IsFastRenderer interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_IsFastRenderer_001, TestSize.Level1)
+{
+    bool ret = false;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererErrorCallbackTest> callback = make_shared<AudioRendererErrorCallbackTest>();
+    audioRenderer->SetAudioRendererErrorCallback(callback);
+
+    ret = audioRenderer->IsFastRenderer();
+    EXPECT_EQ(false, ret);
+
+    rendererOptions.rendererInfo.rendererFlags = STREAM_FAST;
+    audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    bool isFast = audioRenderer->IsFastRenderer();
+    if (audioRenderer != nullptr && isFast) {
+        ret = audioRenderer->IsFastRenderer();
+        EXPECT_EQ(true, ret);
+    }
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test RegisterOutputDeviceChangeWithInfoCallback
+ * @tc.number: Audio_Renderer_Callback_001
+ * @tc.desc  : Test RegisterOutputDeviceChangeWithInfoCallback interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Callback_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererOutputDeviceChangeCallbackTest> callback =
+        make_shared<AudioRendererOutputDeviceChangeCallbackTest>();
+    ret = audioRenderer->RegisterOutputDeviceChangeWithInfoCallback(nullptr);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    ret = audioRenderer->RegisterOutputDeviceChangeWithInfoCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->UnregisterOutputDeviceChangeWithInfoCallback();
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test set renderer instance.
+ * @tc.number: Audio_Renderer_Set_Renderer_Instance_006
+ * @tc.desc  : Test set renderer instance.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_006, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    unique_ptr<RendererPolicyServiceDiedCallback> rendererPolicyServiceDiedCallback =
+        std::make_unique<RendererPolicyServiceDiedCallback>();
+
+    AppInfo appInfo = {};
+    std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+
+    rendererPolicyServiceDiedCallback->SetAudioRendererObj(audioRendererPrivate.get());
+
+    rendererPolicyServiceDiedCallback->OnAudioPolicyServiceDied();
+    ret = audioRendererPrivate->RegisterRendererPolicyServiceDiedCallback();
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRendererPrivate->RemoveRendererPolicyServiceDiedCallback();
+    EXPECT_EQ(SUCCESS, ret);
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test SetVolumeWithRamp.
+ * @tc.number: Audio_Renderer_Set_Volume_With_Ramp_001
+ * @tc.desc  : Test SetVolumeWithRamp
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Volume_With_Ramp_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    float volume = 1;
+    int32_t duration = 1;
+    ret = audioRenderer->SetVolumeWithRamp(volume, duration);
+    EXPECT_EQ(SUCCESS, ret);
+
+    int32_t frameSize = 0;
+    audioRenderer->SetPreferredFrameSize(frameSize);
+
+    audioRenderer->Release();
+    ret = audioRenderer->SetVolumeWithRamp(volume, duration);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test SetApplicationCachePath API stability.
+ * @tc.number: Audio_Renderer_SetApplicationCachePath_001
+ * @tc.desc  : Test SetApplicationCachePath interface stability.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetApplicationCachePath_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    string cachePath = "/data/storage/el2/base/temp";
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+
+    audioRenderer->SetApplicationCachePath(cachePath.c_str());
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRendererFirstFrameWritingCallback(nullptr);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    shared_ptr<AudioRendererFirstFrameWritingCallbackTest> callback =
+        make_shared<AudioRendererFirstFrameWritingCallbackTest>();
+    ret = audioRenderer->SetRendererFirstFrameWritingCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->SetParallelPlayFlag(false);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioRenderer->SetParallelPlayFlag(true);
+    EXPECT_EQ(ret, SUCCESS);
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode API stability.
+ * @tc.number: Audio_Renderer_SetOffloadMode_001
+ * @tc.desc  : Test SetOffloadMode interface stability.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetOffloadMode_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    float volume = audioRenderer->GetSingleStreamVolume();
+    EXPECT_GE(volume, 0);
+
+    ret = audioRenderer->SetOffloadMode(0, true);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioRenderer->UnsetOffloadMode();
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioRenderer->Release();
 }
 } // namespace AudioStandard
 } // namespace OHOS
