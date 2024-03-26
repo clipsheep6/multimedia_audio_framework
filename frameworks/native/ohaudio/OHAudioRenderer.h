@@ -171,6 +171,7 @@ class OHAudioRenderer {
             uint32_t markPosition, void* userData);
         void UnsetRendererPositionCallback();
     private:
+        std::mutex rendererMutex_;
         std::unique_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
         std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
