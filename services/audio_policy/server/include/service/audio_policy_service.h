@@ -698,6 +698,8 @@ private:
 
     void RectifyModuleInfo(AudioModuleInfo moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
 
+    void UpdatePreferredDevice(DeviceRole deviceRole, const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
@@ -722,6 +724,7 @@ private:
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
+    std::mutex curActiveInputDeviceMutex_;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
