@@ -31,6 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const string AUDIO_FLUSH_STABILITY_TEST_FILE = "/data/audiocapture_flush_stability_test.pcm";
+    const string AUDIO_CAPTURE_FILE1 = "/data/audiocapturetest_blocking.pcm";
     const int32_t READ_BUFFERS_COUNT = 128;
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
