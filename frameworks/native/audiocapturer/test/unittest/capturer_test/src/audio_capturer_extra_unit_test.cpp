@@ -73,7 +73,7 @@ static void StartCaptureThread(AudioCapturer *audioCapturer, const string filePa
 
     audioCapturer->Flush();
 
-    fclose(capFile);
+    (void)fclose(capFile);
 }
 
 /**
