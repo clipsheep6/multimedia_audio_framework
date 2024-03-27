@@ -225,7 +225,8 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetFrameSizeInCallback(OH_AudioStrea
  * @param The audio interrupt mode
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptMode(OH_AudioStreamBuilder* builder, OH_AudioInterrupt_Mode mode);
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptMode(OH_AudioStreamBuilder* builder,
+    OH_AudioInterrupt_Mode mode);
 #ifdef __cplusplus
 }
 #endif

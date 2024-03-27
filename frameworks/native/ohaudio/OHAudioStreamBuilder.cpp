@@ -172,11 +172,13 @@ OH_AudioStream_Result OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder* build
     return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
 }
 
-OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptMode(OH_AudioStreamBuilder* builder, OH_AudioInterrupt_Mode mode)
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptMode(OH_AudioStreamBuilder* builder,
+    OH_AudioInterrupt_Mode mode)
 {
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
-    CHECK_AND_RETURN_RET_LOG((mode != AUDIOSTREAM_INTERRUPT_MODE_SHARE || mode != AUDIOSTREAM_INTERRUPT_MODE_INDEPENDENT),
+    CHECK_AND_RETURN_RET_LOG((mode != AUDIOSTREAM_INTERRUPT_MODE_SHARE ||
+                              mode != AUDIOSTREAM_INTERRUPT_MODE_INDEPENDENT),
         AUDIOSTREAM_ERROR_INVALID_PARAM, "mode is invalid");
     InterruptMode interruptMode = static_cast<InterruptMode>(mode);
     return audioStreamBuilder->SetInterruptMode(interruptMode);
