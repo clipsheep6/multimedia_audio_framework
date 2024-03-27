@@ -222,7 +222,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetFrameSizeInCallback(OH_AudioStrea
  * @since 12
  *
  * @param builder Reference provided by OH_AudioStreamBuilder_Create()
- * @param The audio interrupt mode
+ * @param mode The audio interrupt mode
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptMode(OH_AudioStreamBuilder* builder,
