@@ -80,6 +80,7 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("getAudioStreamId", GetAudioStreamId),
         DECLARE_NAPI_FUNCTION("getAudioStreamIdSync", GetAudioStreamIdSync),
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
+        DECLARE_NAPI_FUNCTION("getVolume", GetVolume),
         DECLARE_NAPI_FUNCTION("getRendererInfo", GetRendererInfo),
         DECLARE_NAPI_FUNCTION("getRendererInfoSync", GetRendererInfoSync),
         DECLARE_NAPI_FUNCTION("getStreamInfo", GetStreamInfo),
@@ -911,8 +912,7 @@ napi_value NapiAudioRenderer::GetVolume(napi_env env, napi_callback_info info)
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
-    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer!= nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
 
     double volLevel = napiAudioRenderer->audioRenderer_->GetVolume();
