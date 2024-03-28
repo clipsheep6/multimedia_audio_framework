@@ -4687,7 +4687,7 @@ int32_t AudioPolicyService::ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo modul
     if (moduleInfo.name_ == "primary out") {
         for (auto &configInfo : moduleInfo.configInfos_) {
             if (configInfo.name_ == "maxinstances") {
-                maxRendererInstances_ = atoi(configINfo.valu_.c_str());
+                maxRendererInstances_ = atoi(configInfo.valu_.c_str());
                 AUDIO_DEBUG_LOG("Get max renderer instances success %{public}d", maxRendererInstances_);
                 break;
             }
