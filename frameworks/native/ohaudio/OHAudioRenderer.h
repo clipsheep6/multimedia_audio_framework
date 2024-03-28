@@ -170,7 +170,6 @@ class OHAudioRenderer {
         int32_t SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
             uint32_t markPosition, void* userData);
         void UnsetRendererPositionCallback();
-        uint32_t GetUnderflowCount();
         void SetInterruptMode(InterruptMode mode);
     private:
         std::unique_ptr<AudioRenderer> audioRenderer_;

@@ -52,7 +52,5 @@
     { "name": "OH_AudioRenderer_SetVolume"},
     { "name": "OH_AudioRenderer_SetVolumeWithRamp"},
     { "name": "OH_AudioRenderer_GetVolume"},
-    { "name": "OH_AudioRenderer_GetUnderflowCount"},
-    { "name": "OH_AudioCapturer_GetOverflowCount"},
     { "name": "OH_AudioStreamBuilder_SetRendererInterruptMode"}
 ]
