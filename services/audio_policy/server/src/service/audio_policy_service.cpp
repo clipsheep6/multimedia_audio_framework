@@ -4704,6 +4704,7 @@ void AudioPolicyService::MaxRenderInstanceInit()
             for (auto &moduleInfo : (adapterInfo.second).moduleInfos_) {
                 CHECK_AND_RETURN_LOG(ParsePolicyConfigXmlNodeModuleInfos(moduleInfo) != ERROR,
                     "Get max renderer instances failed");
+                break;
             }
         }
     }
