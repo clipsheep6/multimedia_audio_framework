@@ -4702,7 +4702,7 @@ void AudioPolicyService::MaxRenderInstanceInit()
     for (auto &adapterInfo : adapterInfoMap_) {
         if ((adapterInfo.second).adapterName_ == "primary") {
             for (auto &moduleInfo : (adapterInfo.second).moduleInfos_) {
-                CHECK_AND_RETURN_LOG(ParsePolicyConfigXmlNodeModuleInfos(moduleInfo) != ERROR, 
+                CHECK_AND_RETURN_LOG(ParsePolicyConfigXmlNodeModuleInfos(moduleInfo) != ERROR,  
                     "Get max renderer instances failed");
             }
         }
