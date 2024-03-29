@@ -119,6 +119,9 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    bool signalDetected_ = false;
+    bool latencyMeasEnabled_ = false;
+    std::unique_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 #endif
@@ -129,6 +132,9 @@ private:
     void AdjustAudioBalance(char *data, uint64_t len);
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int64_t BytesToNanoTime(size_t lens);
+    void InitLatencyMeasurement();
+    void DeInitLatencyMeasurement();
+    void CheckLatencySignal(uint8_t *data, size_t len);
     FILE *dumpFile_ = nullptr;
 };
 
@@ -416,6 +422,8 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         AdjustAudioBalance(&data, len);
     }
 
+    CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
+
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
 
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
@@ -463,6 +471,8 @@ int32_t BluetoothRendererSinkInner::Start(void)
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_BLUETOOTH_RENDER_SINK_FILENAME, &dumpFile_);
 
     int32_t ret;
+
+    InitLatencyMeasurement();
 
     if (!started_) {
         ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
@@ -545,6 +555,7 @@ int32_t BluetoothRendererSinkInner::Stop(void)
 {
     Trace trace("BluetoothRendererSinkInner::Stop");
     AUDIO_INFO_LOG("Stop in");
+    DeInitLatencyMeasurement();
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
@@ -770,6 +781,40 @@ int64_t BluetoothRendererSinkInner::BytesToNanoTime(size_t lens)
 {
     int64_t res = AUDIO_NS_PER_SECOND * lens / (attr_.sampleRate * attr_.channel * HdiFormatToByte(attr_.format));
     return res;
+}
+
+void BluetoothRendererSinkInner::InitLatencyMeasurement()
+{
+    signalDetectAgent_ = nullptr;
+    latencyMeasEnabled_ = false;
+    if (!AudioLatencyMeasurement::CheckIfEnabled()) {
+        return;
+    }
+    AUDIO_INFO_LOG("BlueTooth RendererSinkInit");
+    signalDetectAgent_ = std::make_unique<SignalDetectAgent>(attr_.format);
+    latencyMeasEnabled_ = true;
+    signalDetected_ = false;
+}
+
+void BluetoothRendererSinkInner::DeInitLatencyMeasurement()
+{
+    signalDetectAgent_ = nullptr;
+    latencyMeasEnabled_ = false;
+}
+
+void BluetoothRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    signalDetected_ = AudioLatencyMeasurement::CheckAudioData(data, len,
+        signalDetectAgent_);
+    if (signalDetected_) {
+        AUDIO_INFO_LOG("LatencyMeas BTSink signal detected");
+        LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true,
+            SignalDetectAgent->lastPeakBufferTime_);
+        LatencyMonitor::GetInstance().ShowBluetoothTimestamp();
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

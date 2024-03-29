@@ -1141,6 +1141,8 @@ public:
     uint32_t GetEffectLatency(const std::string &sessionId);
 
     static void AudioServerDied(pid_t pid);
+
+    std::string GetSelfBundleName(int32_t uid);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

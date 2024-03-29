@@ -133,6 +133,10 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    bool signalDetected_ = false;
+    size_t detectedTime_ = 0;
+    bool latencyMeasEnabled_ = false;
+    std::unique_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::mutex renderMutex_;
 
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -140,6 +144,9 @@ private:
     AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
+    void InitLatencyMeasurement();
+    void DeInitLatencyMeasurement();
+    void CheckLatencySignal(uint8_t *data, size_t len);
 
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> OffloadKeepRunningLock;
@@ -567,6 +574,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     }
 
     Trace trace("RenderFrameOffload");
+    CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     if (ret == 0 && writeLen != 0) {
@@ -580,6 +588,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 int32_t OffloadAudioRendererSinkInner::Start(void)
 {
     Trace trace("Sink::Start");
+    InitLatencyMeasurement();
     if (started_) {
         if (isFlushing_) {
             AUDIO_ERR_LOG("start failed! during flushing");
@@ -709,7 +718,7 @@ int32_t OffloadAudioRendererSinkInner::Stop(void)
 {
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "failed audio render null");
-
+    DeInitLatencyMeasurement();
     if (started_) {
         CHECK_AND_RETURN_RET_LOG(!Flush(), ERR_OPERATION_FAILED, "Flush failed!");
         int32_t ret = audioRender_->Stop(audioRender_);
@@ -850,5 +859,55 @@ void OffloadAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType dev
     AUDIO_WARNING_LOG("not supported.");
 }
 
+void OffloadAudioRendererSinkInner::InitLatencyMeasurement()
+{
+    signalDetectAgent_ = nullptr;
+    latencyMeasEnabled_ = false;
+    if (!AudioLatencyMeasurement::CheckIfEnabled()) {
+        return;
+    }
+    AUDIO_INFO_LOG("LatencyMeas OffloadRendererSinkInit");
+    signalDetectAgent_ = std::make_unique<SignalDetectAgent>(attr_.format);
+    latencyMeasEnabled_ = true;
+    signalDetected_ = false;
+}
+
+void OffloadAudioRendererSinkInner::DeInitLatencyMeasurement()
+{
+    signalDetectAgent_ = nullptr;
+    latencyMeasEnabled_ = false;
+}
+
+void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    int32_t byteSize = GetFormatByteSize(attr_.format);
+    size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
+        (byteSize * sizeof(uint8_t) * attr_.channel);
+    detectedTime_ += newlyCheckedTime;
+    if (detectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_ &&
+        !signalDetectAgent_->dspTimestampGot_) {
+            char value[GET_EXTRA_PARAM_LEN];
+            AudioParamKey key = NONE;
+            AudioExtParamKey hdiKey = AudioExtParamKey(key);
+            std::string condition = "debug_audio_latency_measurement";
+            int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey,
+                condition.c_str(), value, GET_EXTRA_PARAM_LEN);
+            AUDIO_DEBUG_LOG("GetExtraParameter ret:%{public}d", ret);
+            LatencyMonitor::GetInstance().UpdateDspTime(value);
+            LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true,
+                signalDetectAgent_->lastPeakBufferTime_);
+            LatencyMonitor::GetInstance().ShowTimestamp(true);
+            signalDetectAgent_->dspTimestampGot_ = true;
+            signalDetectAgent_->signalDetected_ = false;
+    }
+    signalDetected_ = AudioLatencyMeasurement::CheckAudioData(data, len,
+        signalDetectAgent_);
+    if (signalDetected_) {
+        detectedTime_ = 0;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -19,6 +19,11 @@
 #include <string>
 #include <map>
 #include <mutex>
+#include <ctime>
+
+#include<sys/time.h>
+
+#include "audio_info.h"
 
 #define AUDIO_MS_PER_SECOND 1000
 #define AUDIO_US_PER_SECOND 1000000
@@ -35,6 +40,18 @@ namespace OHOS {
 namespace AudioStandard {
 const int64_t PCM_MAYBE_SILENT = 1;
 const int64_t PCM_MAYBE_NOT_SILENT = 5;
+constexpr int32_t SIGNAL_DATA_SIZE = 96;
+constexpr int32_t SIGNAL_THRESHOLD = 10;
+constexpr int32_t BLANK_THRESHOLD_MS = 100;
+constexpr int32_t DETECTED_ZERO_THRESHOLD = 1;
+constexpr size_t MILLISECOND_PER_SECOND = 1000;
+constexpr size_t MOCK_INTERVAL = 2000;
+constexpr int32_t GET_EXTRA_PARAM_LEN = 200;
+constexpr int32_t YEAR_BASE = 1900;
+constexpr int32_t DECIMAL_EXPONENT = 10;
+constexpr size_t DATE_LENGTH = 17;
+static uint32_t g_sessionToMock = 0;
+
 class Trace {
 public:
     static void Count(const std::string &value, int64_t count, bool isEnable = true);
@@ -120,7 +137,7 @@ const std::string DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink.pcm"
 const std::string DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
 const std::string DUMP_ENDPOINT_DCP_FILENAME = "dump_endpoint_dcp_audio.pcm";
 const std::string DUMP_ENDPOINT_HDI_FILENAME = "dump_endpoint_hdi_audio.pcm";
-constexpr uint32_t PARAM_VALUE_LENTH = 128;
+constexpr uint32_t PARAM_VALUE_LENTH = 150;
 
 class DumpFileUtil {
 public:
@@ -218,6 +235,100 @@ T *ObjectRefMap<T>::GetPtr()
 {
     return obj_;
 }
+
+std::string GetTime();
+
+static int32_t GetFormatByteSize(int32_t format)
+{
+    int32_t formatByteSize;
+    switch (format) {
+        case SAMPLE_S16LE:
+            formatByteSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            formatByteSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            formatByteSize = 4; // size is 4
+            break;
+        default:
+            formatByteSize = 2; // size is 2
+            break;
+    }
+    return formatByteSize;
+}
+
+struct SignalDetectAgent {
+    SignalDetectAgent(int32_t format)
+    {
+        sampleFormat_ = format;
+        formatByteSize_ = GetFormatByteSize(format);
+    }
+    std::vector<int32_t> cacheAudioData_;
+    int32_t channels_ = 2;
+    int32_t sampleRate_ = 48000;
+    int32_t sampleFormat_ = 1;
+    int32_t formatByteSize_;
+    int32_t lastPeakSignal_ = SHRT_MIN;
+    int32_t lastPeakSignalPos_ = 0;
+    int32_t blankPeriod_ = 0;
+    size_t frameCountIgnoreChannel_;
+    bool hasFirstNoneZero_ = false;
+    bool blankHaveOutput_ = true;
+    bool dspTimestampGot_ = false;
+    bool signalDetected_ = false;
+    std::string lastPeakBufferTime_ = "";
+};
+
+class AudioLatencyMeasurement {
+public:
+    AudioLatencyMeasurement(const int32_t &sampleRate, const int32_t &channelCount,
+        const int32_t &sampleFormat, const std::string &appName, const uint32_t &sessionId);
+    ~AudioLatencyMeasurement();
+    void InitSignalData();
+    bool MockPcmData(uint8_t *buffer, size_t bufferLen, int32_t format);
+    static bool CheckIfEnabled();
+    static bool CheckAudioData(uint8_t *buffer, size_t bufferLen,
+        const std::unique_ptr<SignalDetectAgent> &agent);
+    static void UpdateDetectResult(const std::unique_ptr<SignalDetectAgent> &agent);
+    static bool DetectSignalData(const std::unique_ptr<SignalDetectAgent> &agent, int32_t *buffer,
+        size_t bufferLens);
+    static bool NearZero(int16_t number);
+    int32_t format_ = 1;
+private:
+    std::unique_ptr<int16_t[]> signalData_ = nullptr;
+    int32_t formatByteSize_;
+    int32_t sampleRate_;
+    int32_t channelCount_;
+    uint32_t sessionId_;
+    size_t mockedTime_ = 0;
+    bool mockThisStream_ = false;
+    std::string appName_;
+};
+
+class LatencyMonitor {
+public:
+    static LatencyMonitor& GetInstance()
+    {
+        static LatencyMonitor latencyMonitor_;
+        return latencyMonitor_;
+    }
+    void ShowTimestamp(bool isRenderer);
+    void ShowBluetoothTimestamp();
+    void UpdateClientTime(bool isRenderer, std::string timestamp);
+    void UpdateSinkOrSourceTime(bool isRenderer, std::string timestamp);
+    void UpdateDspTime(std::string dspTime);
+private:
+    std::string rendererMockTime_ = "";
+    std::string sinkDetectedTime_ = "";
+    std::string dspDetectedTime_ = "";
+    std::string capturerDetectedTime_ = "";
+    std::string sourceDetectedTime_ = "";
+    std::string dspBeforeSmartPa_ = "";
+    std::string dspAfterSmartPa_ = "";
+    std::string dspMockTime_ = "";
+    size_t extraStrLen_ = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

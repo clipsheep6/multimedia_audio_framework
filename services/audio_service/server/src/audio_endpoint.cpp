@@ -161,6 +161,10 @@ private:
 
     // Call GetMmapHandlePosition in ipc may block more than a cycle, call it in another thread.
     void AsyncGetPosTime();
+    void InitLatencyMeasurement();
+    void DeinitLatencyMeasurement();
+    void CheckPlaySignal(uint8_t *buffer, size_t bufferSize);
+    void CheckRecordSignal(uint8_t *buffer, size_t bufferSize);
 
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -217,6 +221,11 @@ private:
     bool needReSyncPosition_ = true;
     FILE *dumpDcp_ = nullptr;
     FILE *dumpHdi_ = nullptr;
+
+    bool signalDetected_ = false;
+    bool latencyMeasEnabled_ = false;
+    size_t detectedTime_ = 0;
+    std::unique_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 };
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
@@ -651,6 +660,7 @@ bool AudioEndpointInner::StartDevice()
 
 bool AudioEndpointInner::StopDevice()
 {
+    DeinitLatencyMeasurement();
     AUDIO_INFO_LOG("StopDevice with status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     // todo
     endpointStatus_ = STOPPING;
@@ -673,6 +683,7 @@ bool AudioEndpointInner::StopDevice()
 
 int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 {
+    InitLatencyMeasurement();
     AUDIO_INFO_LOG("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
         AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
@@ -946,6 +957,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         SpanStatus targetStatus = SpanStatus::SPAN_WRITE_DONE;
         if (curReadSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READING)) {
             processBufferList_[i]->GetReadbuffer(curRead, streamData.bufferDesc); // check return?
+            CheckPlaySignal(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength);
             audioDataList.push_back(streamData);
             curReadSpan->readStartTime = ClockTime::GetCurNano();
             DumpFileUtil::WriteDumpFile(dumpDcp_, static_cast<void *>(streamData.bufferDesc.buffer),
@@ -1222,6 +1234,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
 
 void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
 {
+    CheckRecordSignal(readBuf.buffer, readBuf.bufLength);
     std::lock_guard<std::mutex> lock(listLock_);
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr,
@@ -1356,6 +1369,72 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
     AUDIO_DEBUG_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
+}
+
+void AudioEndpointInner::InitLatencyMeasurement()
+{
+    signalDetectAgent_ = nullptr;
+    latencyMeasEnabled_ = false;
+    if (!AudioLatencyMeasurement::CheckIfEnabled()) {
+        return;
+    }
+    signalDetectAgent_ = std::make_unique<SignalDetectAgent>(SAMPLE_S16LE);
+    latencyMeasEnabled_ = true;
+    signalDetected_ = false;
+}
+
+void AudioEndpointInner::DeinitLatencyMeasurement()
+{
+    signalDetectAgent_ = nullptr;
+    latencyMeasEnabled_ = false;
+}
+
+void AudioEndpointInner::CheckPlaySignal(uint8_t *buffer, size_t bufferSize)
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    int32_t byteSize = GetFormatByteSize(dstStreamInfo_.format);
+    size_t newlyCheckedTime = bufferSize / (dstStreamInfo_.samplingRate /
+        MILLISECOND_PER_SECOND) / (byteSize * sizeof(uint8_t) * dstStreamInfo_.channels);
+    detectedTime_ += newlyCheckedTime;
+    if (detectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_ &&
+        !signalDetectAgent_->dspTimestampGot_) {
+            AudioParamKey key = NONE;
+            std::string condition = "debug_audio_latency_measurement";
+            std::string dspTime = fastSink_->GetAudioParameter(key, condition);
+            LatencyMonitor::GetInstance().UpdateDspTime(dspTime);
+            LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true,
+                signalDetectAgent_->lastPeakBufferTime_);
+            LatencyMonitor::GetInstance().ShowTimestamp(true);
+            signalDetectAgent_->dspTimestampGot_ = true;
+            signalDetectAgent_->signalDetected_ = false;
+    }
+    signalDetected_ = AudioLatencyMeasurement::CheckAudioData(buffer, bufferSize,
+        signalDetectAgent_);
+    if (signalDetected_) {
+        AUDIO_INFO_LOG("LatencyMeas fastSink signal detected");
+        detectedTime_ = 0;
+    }
+}
+
+void AudioEndpointInner::CheckRecordSignal(uint8_t *buffer, size_t bufferSize)
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    signalDetected_ = AudioLatencyMeasurement::CheckAudioData(buffer, bufferSize,
+        signalDetectAgent_);
+    if (signalDetected_) {
+        AudioParamKey key = NONE;
+        std::string condition = "debug_audio_latency_measurement";
+        std::string dspTime = fastSource_->GetAudioParameter(key, condition);
+        LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(false,
+            signalDetectAgent_->lastPeakBufferTime_);
+        LatencyMonitor::GetInstance().UpdateDspTime(dspTime);
+        AUDIO_INFO_LOG("LatencyMeas fastSource signal detected");
+        signalDetected_ = false;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
