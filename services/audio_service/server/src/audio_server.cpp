@@ -1132,5 +1132,15 @@ uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
     return audioEffectChainManager->GetLatency(sessionId);
 }
+
+void AudioServer::UpdateLatencyTimestamp(std::string timestamp, bool isRenderer)
+{
+    if (isRenderer) {
+        LatencyMonitor::GetInstance().rendererMockTime_ = timestamp;
+    } else {
+        LatencyMonitor::GetInstance().capturerDetectedTime_ = timestamp;
+        LatencyMonitor::GetInstance().ShowTimestamp(false);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

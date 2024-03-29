@@ -126,6 +126,10 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    bool signalDetected_ = false;
+    size_t detectedTime_ = 0;
+    bool latencyMeasEnabled_ = false;
+    std::unique_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 #endif
@@ -141,6 +145,9 @@ private:
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
+    void InitLatencyMeasurement();
+    void DeInitLatencyMeasurement();
+    void CheckLatencySignal(uint8_t *data, size_t len);
 
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
@@ -546,6 +553,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     } else {
         Trace::Count("AudioRendererSinkInner::RenderFrame", PCM_MAYBE_NOT_SILENT);
     }
+    CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED,
@@ -580,6 +588,7 @@ int32_t AudioRendererSinkInner::Start(void)
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDER_SINK_FILENAME, &dumpFile_);
 
     int32_t ret;
+    InitLatencyMeasurement();
     if (!started_) {
         ret = audioRender_->Start(audioRender_);
         if (!ret) {
@@ -856,6 +865,8 @@ int32_t AudioRendererSinkInner::Stop(void)
     Trace trace("AudioRendererSinkInner::Stop");
     AUDIO_INFO_LOG("Stop.");
 
+    DeInitLatencyMeasurement();
+
     int32_t ret;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -1084,6 +1095,56 @@ void AudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
 {
     if (currentActiveDevice_ == device) {
         currentActiveDevice_ = DEVICE_TYPE_NONE;
+    }
+}
+
+void AudioRendererSinkInner::InitLatencyMeasurement()
+{
+    signalDetectAgent_ = nullptr;
+    latencyMeasEnabled_ = false;
+    if (!AudioLatencyMeasurement::CheckIfEnabled()) {
+        return;
+    }
+    AUDIO_INFO_LOG("LatencyMeas PrimaryRendererSinkInit");
+    signalDetectAgent_ = std::make_unique<SignalDetectAgent>(attr_.format);
+    latencyMeasEnabled_ = true;
+    signalDetected_ = false;
+}
+
+void AudioRendererSinkInner::DeInitLatencyMeasurement()
+{
+    signalDetectAgent_ = nullptr;
+    latencyMeasEnabled_ = false;
+}
+
+void AudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    int32_t byteSize = GetFormatByteSize(attr_.format);
+    size_t newlyCheckedTime = byteSize / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
+        (byteSize * sizeof(uint8_t) * attr_.channel);
+    detectedTime_ += newlyCheckedTime;
+    if (detectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_ &&
+        !signalDetectAgent_->dspTimestampGot_) {
+            char value[GET_EXTRA_PARAM_LEN];
+            AudioParamKey key = NONE;
+            AudioExtParamKey hdiKey = AudioExtParamKey(key);
+            std::string condition = "debug_audio_latency_measurement";
+            int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey,
+                condition.c_str(), value, GET_EXTRA_PARAM_LEN);
+            AUDIO_DEBUG_LOG("GetExtraParameter ret:%{public}d", ret);
+            LatencyMonitor::GetInstance().dspDetectedTime_ = value;
+            LatencyMonitor::GetInstance().sinkDetectedTime_ = signalDetectAgent_->lastPeakBufferTime_;
+            LatencyMonitor::GetInstance().ShowTimestamp(true);
+            signalDetectAgent_->dspTimestampGot_ = true;
+            signalDetectAgent_->signalDetected_ = false;
+    }
+    signalDetected_ = AudioLatencyMeasurement::CheckAudioData(data, len,
+        signalDetectAgent_);
+    if (signalDetected_) {
+        detectedTime_ = 0;
     }
 }
 } // namespace AudioStandard

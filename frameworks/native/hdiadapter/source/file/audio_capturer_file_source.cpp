@@ -180,5 +180,11 @@ int32_t AudioCapturerFileSource::Stop(void)
     }
     return SUCCESS;
 }
+
+std::string AudioCapturerFileSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
+{
+    AUDIO_WARNING_LOG("not supported yet");
+    return "";
+}
 } // namespace AudioStandard
 } // namespace OHOS

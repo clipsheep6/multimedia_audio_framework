@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioRenderer"
 
 #include <sstream>
+#include "securec.h"
 
 #include "audio_renderer.h"
 #include "audio_renderer_private.h"
@@ -1503,6 +1504,29 @@ float AudioRendererPrivate::GetSpeed()
 bool AudioRendererPrivate::IsFastRenderer()
 {
     return isFastRenderer_;
+}
+
+void AudioRendererPrivate::InitLatencyMeasurement(const AudioStreamParams &audioStreamParams)
+{
+    latencyMeasEnabled_ = AudioLatencyMeasurement::CheckIfEnabled();
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
+    uint32_t sessionId = 0;
+    audioStream_->GetAudioSessionID(sessionId);
+    latencyMeasurement_ = std::make_unique<AudioLatencyMeasurement>(audioStreamParams.samplingRate,
+        audioStreamParams.channels, audioStreamParams.format, bundleName, sessionId);
+}
+
+void AudioRendererPrivate::MockPcmData(uint8_t *buffer, size_t bufferSize) const
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    if (latencyMeasurement_->MockPcmData(buffer, bufferSize, latencyMeasurement_->format_)) {
+        audioStream_->UpdateLatencyTimestamp(GetTime(), true);
+    }
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
