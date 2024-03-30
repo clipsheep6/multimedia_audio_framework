@@ -21,6 +21,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+const int32_t MAX_SIZE = 1000;
+
 AudioPolicyManagerListenerStub::AudioPolicyManagerListenerStub()
 {
 }
@@ -46,6 +49,9 @@ void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &da
     int32_t flag = data.ReadInt32();
     int32_t size = data.ReadInt32();
 
+    if (size > MAX_SIZE) {
+        size = MAX_SIZE;
+    }
     for (int32_t i = 0; i < size; i++) {
         deviceChangeDesc.push_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
