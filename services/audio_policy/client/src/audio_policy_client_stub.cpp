@@ -23,6 +23,9 @@
 using namespace std;
 namespace OHOS {
 namespace AudioStandard {
+
+const int32_t MAX_SIZE = 1000;
+
 AudioPolicyClientStub::AudioPolicyClientStub()
 {}
 
@@ -69,6 +72,8 @@ void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, Mess
     std::list<std::pair<AudioInterrupt, AudioFocuState>> infoList;
     std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < MAX_SIZE, "error, size is over limit");
+
     for (int32_t i = 0; i < size; i++) {
         focusInfo.first.Unmarshalling(data);
         focusInfo.second = static_cast<AudioFocuState>(data.ReadInt32());
@@ -97,6 +102,8 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
     deviceChange.type = static_cast<DeviceChangeType>(data.ReadUint32());
     deviceChange.flag = static_cast<DeviceFlag>(data.ReadUint32());
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < MAX_SIZE, "error, size is over limit");
+    
     for (int32_t i = 0; i < size; i++) {
         deviceChange.deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
@@ -120,6 +127,8 @@ void AudioPolicyClientStub::HandlePreferredOutputDeviceUpdated(MessageParcel &da
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptor;
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < MAX_SIZE, "error, size is over limit");
+
     for (int32_t i = 0; i < size; i++) {
         deviceDescriptor.push_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
@@ -130,6 +139,8 @@ void AudioPolicyClientStub::HandlePreferredInputDeviceUpdated(MessageParcel &dat
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptor;
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < MAX_SIZE, "error, size is over limit");
+
     for (int32_t i = 0; i < size; i++) {
         deviceDescriptor.push_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
