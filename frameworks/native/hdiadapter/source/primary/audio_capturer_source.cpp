@@ -66,6 +66,7 @@ public:
 
     int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
@@ -93,6 +94,9 @@ private:
 
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapterAndCapture();
+    void InitLatencyMeasurement();
+    void DeInitLatencyMeasurement();
+    void CheckLatencySignal(uint8_t *frames, size_t replyBytes);
 
     IAudioSourceAttr attr_;
     bool sourceInited_;
@@ -126,6 +130,9 @@ private:
     bool muteState_ = false;
     DeviceType currentActiveDevice_;
     AudioScene currentAudioScene_;
+    bool latencyMeasEnabled_ = false;
+    bool signalDetected_ = false;
+    std::unique_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
@@ -151,6 +158,7 @@ public:
     int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
@@ -553,6 +561,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     uint32_t frameLen = static_cast<uint32_t>(requestBytes);
     ret = audioCapture_->CaptureFrame(audioCapture_, reinterpret_cast<int8_t*>(frame), &frameLen, &replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
+    CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
 
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
 
@@ -566,6 +575,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
 int32_t AudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("Enter");
+    InitLatencyMeasurement();
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
         switch (attr_.sourceType) {
@@ -865,6 +875,7 @@ int32_t AudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int6
 int32_t AudioCapturerSourceInner::Stop(void)
 {
     AUDIO_INFO_LOG("Enter");
+    DeInitLatencyMeasurement();
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unlock");
@@ -1056,6 +1067,51 @@ int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
     return SUCCESS;
 }
 
+std::string AudioCapturerSourceInner::GetAudioParameter(const AudioParamKey key,
+                                                        const std::string &condition)
+{
+    AUDIO_WARNING_LOG("not supported yet");
+    return "";
+}
+
+void AudioCapturerSourceInner::InitLatencyMeasurement()
+{
+    signalDetected_ = false;
+    signalDetectAgent_ = nullptr;
+    if (!AudioLatencyMeasurement::CheckIfEnabled()) {
+        return;
+    }
+    signalDetectAgent_ = std::make_unique<SignalDetectAgent>(attr_.format);
+    latencyMeasEnabled_ = true;
+}
+
+void AudioCapturerSourceInner::DeInitLatencyMeasurement()
+{
+    signalDetected_ = false;
+    signalDetectAgent_ = nullptr;
+}
+
+void AudioCapturerSourceInner::CheckLatencySignal(uint8_t *frame, size_t replyBytes)
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    signalDetected_ = AudioLatencyMeasurement::CheckAudioData(frame,
+        replyBytes, signalDetectAgent_);
+    if (signalDetected_) {
+        char value[GET_EXTRA_PARAM_LEN];
+        AudioParamKey key = NONE;
+        AudioExtParamKey hdiKey = AudioExtParamKey(key);
+        std::string condition = "debug_audio_latency_measurement";
+        int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(),
+            value, PARAM_VALUE_LENTH);
+        AUDIO_INFO_LOG("GetExtraParam ret:%{public}d", ret);
+        LatencyMonitor::GetInstance().dspDetectedTime_ = value;
+        LatencyMonitor::GetInstance().sourceDetectedTime_ = signalDetectAgent_->lastPeakBufferTime_;
+        signalDetected_ = false;
+    }
+}
+
 int32_t AudioCapturerSourceWakeup::Init(const IAudioSourceAttr &attr)
 {
     std::lock_guard<std::mutex> lock(wakeupMutex_);
@@ -1197,6 +1253,13 @@ uint64_t AudioCapturerSourceWakeup::GetTransactionId()
 int32_t AudioCapturerSourceWakeup::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
     return audioCapturerSource_.GetPresentationPosition(frames, timeSec, timeNanoSec);
+}
+
+std::string AudioCapturerSourceWakeup::GetAudioParameter(const AudioParamKey key,
+                                                         const std::string &condition)
+{
+    AUDIO_WARNING_LOG("not supported yet");
+    return "";
 }
 
 void AudioCapturerSourceWakeup::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)

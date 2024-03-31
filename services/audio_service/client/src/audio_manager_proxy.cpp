@@ -811,5 +811,23 @@ uint32_t AudioManagerProxy::GetEffectLatency(const std::string &sessionId)
 
     return reply.ReadUint32();
 }
+
+void AudioManagerProxy::UpdateLatencyTimestamp(std::string timestamp, bool isRenderer)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    data.WriteString(timestamp);
+    data.WriteBool(isRenderer);
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_LATENCY_TIMESTAMP), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE,
+        "LatencyMeas UpdateLatencyTimestamp failed, error:%{public}d", error);
+}
 } // namespace AudioStandard
 } // namespace OHOS
