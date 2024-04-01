@@ -1792,7 +1792,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
-
+    CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
     std::lock_guard<std::mutex> lock(writeMutex_);
 
     // if first call, call set thread priority. if thread tid change recall set thread priority
@@ -1842,9 +1842,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         size_t readableSize = result.size;
         Trace::Count("RendererInClient::CacheBuffer->readableSize", readableSize);
 
-        if (readableSize < clientSpanSizeInByte_) {
-            continue;
-        }
+        if (readableSize < clientSpanSizeInByte_) { continue; }
         // if readable size is enough, we will call write data to server
         int32_t ret = WriteCacheData();
         if (ret == ERR_ILLEGAL_STATE) {
