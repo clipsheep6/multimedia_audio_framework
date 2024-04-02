@@ -32,6 +32,7 @@
 #include "audio_router_center.h"
 #include "ipc_skeleton.h"
 #include "power_mgr_client.h"
+#include "safe_map.h"
 #ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
 #endif
@@ -761,8 +762,7 @@ private:
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap_ {};
 
-    std::mutex ioHandlesMutex_;
-    std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
+    SafeMap<std::string, AudioIOHandle> IOHandles_ = {};
 
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;

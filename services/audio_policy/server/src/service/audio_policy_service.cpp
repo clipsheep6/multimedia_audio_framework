@@ -277,11 +277,11 @@ bool AudioPolicyService::ConnectServiceAdapter()
 void AudioPolicyService::Deinit(void)
 {
     AUDIO_WARNING_LOG("Policy service died. closing active ports");
-    std::for_each(IOHandles_.begin(), IOHandles_.end(), [&](std::pair<std::string, AudioIOHandle> handle) {
-        audioPolicyManager_.CloseAudioPort(handle.second);
+    IOHandles_.Iterate([&](std::string, AudioIOHandle audioIOHandle) {
+        audioPolicyManager_.CloseAudioPort(audioIOHandle);
     });
 
-    IOHandles_.clear();
+    IOHandles_.Clear();
 #ifdef ACCESSIBILITY_ENABLE
     accessibilityConfigListener_->UnsubscribeObserver();
 #endif
@@ -1005,8 +1005,9 @@ int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioR
     DeviceRole deviceRole = deviceDescriptor->deviceRole_;
 
     std::string moduleName = GetRemoteModuleName(networkId, deviceRole);
-    CHECK_AND_RETURN_RET_LOG(IOHandles_.count(moduleName), ERR_INVALID_PARAM,
-        "Device error: no such device:%{public}s", networkId.c_str());
+    AudioIOHandle audioIOHandle;
+    CHECK_AND_RETURN_RET_LOG(IOHandles_.Find(moduleName, audioIOHandle),
+        ERR_INVALID_PARAM, "Device error: no such device:%{public}s", networkId.c_str());
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -1052,7 +1053,9 @@ int32_t AudioPolicyService::OpenRemoteAudioDevice(std::string networkId, DeviceR
     AUDIO_DEBUG_LOG("OpenAudioPort remoteIOIdx %{public}d", remoteIOIdx);
     CHECK_AND_RETURN_RET_LOG(remoteIOIdx != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE, "OpenAudioPort failed %{public}d",
         remoteIOIdx);
-    IOHandles_[moduleName] = remoteIOIdx;
+    IOHandles_.ChangeValueByLambda(moduleName, [&](AudioIOHandle audioIOHandle) {
+        audioIOHandle = remoteIOIdx;
+    });
 
     // If device already in list, remove it else do not modify the list.
     auto isPresent = [&deviceType, &networkId] (const sptr<AudioDeviceDescriptor> &descriptor) {
@@ -1083,8 +1086,9 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sink
 
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
     std::string moduleName = GetRemoteModuleName(networkId, deviceRole);
-    if (IOHandles_.count(moduleName)) {
-        IOHandles_[moduleName]; // mIOHandle is module id, not equal to sink id.
+    AudioIOHandle audioIOHandle;
+    if (IOHandles_.Find(moduleName, audioIOHandle)) {
+        IOHandles_.ReadVal(moduleName); // mIOHandle is module id, not equal to sink id.
     } else {
         AUDIO_ERR_LOG("no such device.");
         if (!isOpenRemoteDevice) {
@@ -1189,8 +1193,9 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<SourceOutput> so
 
     uint32_t sourceId = -1; // invalid sink id, use sink name instead.
     std::string moduleName = GetRemoteModuleName(networkId, deviceRole);
-    if (IOHandles_.count(moduleName)) {
-        IOHandles_[moduleName]; // mIOHandle is module id, not equal to sink id.
+    AudioIOHandle audioIOHandle;
+    if (IOHandles_.Find(moduleName, audioIOHandle)) {
+        IOHandles_.ReadVal(moduleName); // mIOHandle is module id, not equal to sink id.
     } else {
         AUDIO_ERR_LOG("no such device.");
         if (!isOpenRemoteDevice) {
@@ -1424,10 +1429,9 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions 
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
 
-    {
-        std::lock_guard<std::mutex> lck(ioHandlesMutex_);
-        IOHandles_[moduleInfo.name] = ioHandle;
-    }
+    IOHandles_.ChangeValueByLambda(moduleInfo.name, [&](AudioIOHandle audioIOHandle) {
+        audioIOHandle = ioHandle;
+    });
 
     AUDIO_DEBUG_LOG("Active Success!");
     return wakeupNo;
@@ -1467,14 +1471,11 @@ int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
         for (auto key : WAKEUP_NAMES) {
             AudioIOHandle ioHandle;
             {
-                std::lock_guard<std::mutex> lck(ioHandlesMutex_);
-                auto ioHandleIter = IOHandles_.find(std::string(key));
-                if (ioHandleIter == IOHandles_.end()) {
-                    AUDIO_ERR_LOG("failed");
-                    continue;
+                if (IOHandles_.Find(std::string(key)), ioHandle) {
+                    IOHandles_.Erase(std::string(key));
                 } else {
-                    ioHandle = ioHandleIter->second;
-                    IOHandles_.erase(ioHandleIter);
+                    AUDIO_ERR_LOG(failed);
+                    continue;
                 }
             }
             audioPolicyManager_.CloseAudioPort(ioHandle);
@@ -1762,8 +1763,9 @@ bool AudioPolicyService::IsRendererStreamRunning(unique_ptr<AudioRendererChangeI
 
 bool AudioPolicyService::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor> &desc)
 {
-    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && IOHandles_.find(BLUETOOTH_SPEAKER) == IOHandles_.end()) {
+    AudioIOHandle audioIOHandle;
+    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+        !(IOHandles_.Find(BLUETOOTH_SPEAKER, audioIOHandle))) {
         AUDIO_INFO_LOG("A2DP module is not loaded, need rehandle");
         return true;
     }
@@ -2067,15 +2069,14 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
         "the target A2DP device doesn't exist.");
     int32_t result = ERROR;
 #ifdef BLUETOOTH_ENABLE
-    {
-        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-        if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
-            IOHandles_.find(BLUETOOTH_SPEAKER) != IOHandles_.end()) {
-            AUDIO_INFO_LOG("a2dp device [%{public}s] is already active",
-                GetEncryptAddr(deviceDescriptor->macAddress_).c_str());
-            return SUCCESS;
-        }
+    AudioIOHandle audioIOHandle;
+    if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
+        IOHandles_.Find(BLUETOOTH_SPEAKER, audioIOHandle)) {
+        AUDIO_INFO_LOG("a2dp device [%{public}s] is already active",
+            GetEncryptAddr(deviceDescriptor->macAddress_).c_str());
+        return SUCCESS;
     }
+    
     AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
     std::string lastActiveA2dpDevice = activeBTDevice_;
     activeBTDevice_ = deviceDescriptor->macAddress_;
@@ -2099,10 +2100,10 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
 
 void AudioPolicyService::UnloadA2dpModule()
 {
-    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-    if (IOHandles_.find(BLUETOOTH_SPEAKER) != IOHandles_.end()) {
-        audioPolicyManager_.CloseAudioPort(IOHandles_[BLUETOOTH_SPEAKER]);
-        IOHandles_.erase(BLUETOOTH_SPEAKER);
+    AudioIOHandle audioIOHandle;
+    if (IOHandles_.Find(BLUETOOTH_SPEAKER, audioIOHandle)) {
+        audioPolicyManager_.CloseAudioPort(IOHandles_.ReadVal(BLUETOOTH_SPEAKER));
+        IOHandles_.Erase(BLUETOOTH_SPEAKER);
     }
 }
 
@@ -2117,8 +2118,8 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
         moduleInfoList = primaryModulesPos->second;
     }
     for (auto &moduleInfo : moduleInfoList) {
-        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-        if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
+        AudioIOHandle audioIOHandle;
+        if (!(IOHandles_.Find(moduleInfo.name, audioIOHandle))) {
             // a2dp device connects for the first time
             AUDIO_DEBUG_LOG("Load a2dp module [%{public}s]", moduleInfo.name.c_str());
             AudioStreamInfo audioStreamInfo = {};
@@ -2136,7 +2137,9 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
             CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
                 "OpenAudioPort failed %{public}d", ioHandle);
-            IOHandles_[moduleInfo.name] = ioHandle;
+            IOHandles_.ChangeValueByLambda(moduleInfo.name, [&](AudioIOHandle audioIOHandle) {
+                audioIOHandle = ioHandle;
+            });
         } else {
             // At least one a2dp device is already connected. A new a2dp device is connecting.
             // Need to reload a2dp module when switching to a2dp device.
@@ -2153,7 +2156,7 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo)
     AUDIO_INFO_LOG("switch device from a2dp to another a2dp, reload a2dp module");
 
     // Firstly, unload the existing a2dp sink.
-    AudioIOHandle activateDeviceIOHandle = IOHandles_[BLUETOOTH_SPEAKER];
+    AudioIOHandle activateDeviceIOHandle = IOHandles_.ReadVal(BLUETOOTH_SPEAKER);
     int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
         "CloseAudioPort failed %{public}d", result);
@@ -2173,7 +2176,9 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo)
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
-    IOHandles_[moduleInfo.name] = ioHandle;
+    IOHandles_.ChangeValueByLambda(moduleInfo.name, [&](AudioIOHandle audioIOHandle) {
+        audioIOHandle = ioHandle;
+    });
 
     return SUCCESS;
 }
@@ -2191,12 +2196,15 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo)
     }
     for (auto &moduleInfo : moduleInfoList) {
         AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
-        if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
+        AudioIOHandle audioIOHandle;
+        if (!(IOHandles_.Find(moduleInfo.name, audioIOHandle))) {
             GetUsbModuleInfo(moduleInfo, deviceInfo);
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
             CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
                 "OpenAudioPort failed %{public}d", ioHandle);
-            IOHandles_[moduleInfo.name] = ioHandle;
+            IOHandles_.ChangeValueByLambda(moduleInfo.name, [&](AudioIOHandle audioIOHandle) {
+                audioIOHandle = ioHandle;
+            });
         }
     }
 
@@ -2216,11 +2224,14 @@ int32_t AudioPolicyService::LoadDefaultUsbModule()
     }
     for (auto &moduleInfo : moduleInfoList) {
         AUDIO_INFO_LOG("[module_load]::load default module[%{public}s]", moduleInfo.name.c_str());
-        if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
+        AudioIOHandle audioIOHandle;
+        if (!(IOHandles_.Find(moduleInfo.name, audioIOHandle))) {
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
             CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
                 "OpenAudioPort failed %{public}d", ioHandle);
-            IOHandles_[moduleInfo.name] = ioHandle;
+            IOHandles_.ChangeValueByLambda(moduleInfo.name, [&](AudioIOHandle audioIOHandle) {
+                audioIOHandle = ioHandle;
+            });
         }
     }
 
@@ -2413,7 +2424,9 @@ int32_t AudioPolicyService::ActivateNewDevice(std::string networkId, DeviceType 
         CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
             "OpenAudioPort failed %{public}d", ioHandle);
         std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceType));
-        IOHandles_[moduleName] = ioHandle;
+        IOHandles_.ChangeValueByLambda(moduleName, [&](AudioIOHandle audioIOHandle) {
+            audioIOHandle = ioHandle;
+        });
     }
     return SUCCESS;
 }
@@ -2795,13 +2808,13 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(const AudioDeviceDescr
     }
 
     if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
-        if (IOHandles_.find(USB_SPEAKER) != IOHandles_.end()) {
-            audioPolicyManager_.CloseAudioPort(IOHandles_[USB_SPEAKER]);
-            IOHandles_.erase(USB_SPEAKER);
+        if (IOHandles_.Find(USB_SPEAKER, audioIOHandle)) {
+            audioPolicyManager_.CloseAudioPort(IOHandles_.ReadVal(USB_SPEAKER));
+            IOHandles_.Erase(USB_SPEAKER);
         }
-        if (IOHandles_.find(USB_MIC) != IOHandles_.end()) {
-            audioPolicyManager_.CloseAudioPort(IOHandles_[USB_MIC]);
-            IOHandles_.erase(USB_MIC);
+        if (IOHandles_.Find(USB_MIC, audioIOHandle)) {
+            audioPolicyManager_.CloseAudioPort(IOHandles_.ReadVal(USB_MIC));
+            IOHandles_.Erase(USB_MIC);
         }
     }
 
@@ -2818,9 +2831,9 @@ void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::stri
 
     if (connectedA2dpDeviceMap_.size() == 0) {
         activeBTDevice_ = "";
-        if (IOHandles_.find(BLUETOOTH_SPEAKER) != IOHandles_.end()) {
-            audioPolicyManager_.CloseAudioPort(IOHandles_[BLUETOOTH_SPEAKER]);
-            IOHandles_.erase(BLUETOOTH_SPEAKER);
+        if (IOHandles_.Find(BLUETOOTH_SPEAKER, audioIOHandle)) {
+            audioPolicyManager_.CloseAudioPort(IOHandles_.ReadVal(BLUETOOTH_SPEAKER));
+            IOHandles_.Erase(BLUETOOTH_SPEAKER);
         }
         audioPolicyManager_.SetAbsVolumeScene(false);
 #ifdef BLUETOOTH_ENABLE
@@ -3129,7 +3142,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
     if (a2dpModulesPos != deviceClassInfo_.end()) {
         auto moduleInfoList = a2dpModulesPos->second;
         for (auto &moduleInfo : moduleInfoList) {
-            if (IOHandles_.find(moduleInfo.name) != IOHandles_.end()) {
+            if (IOHandles_.Find(moduleInfo.name, audioIOHandle)) {
                 moduleInfo.channels = to_string(streamInfo.channels);
                 moduleInfo.rate = to_string(streamInfo.samplingRate);
                 moduleInfo.format = ConvertToHDIAudioFormat(streamInfo.format);
@@ -3138,7 +3151,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 // First unload the existing bt sink
                 AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
                 std::string currentActivePort = GetSinkPortName(currentActiveDevice_.deviceType_);
-                AudioIOHandle activateDeviceIOHandle = IOHandles_[BLUETOOTH_SPEAKER];
+                AudioIOHandle activateDeviceIOHandle = IOHandles_.ReadVal(BLUETOOTH_SPEAKER);
                 audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
                 audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
 
@@ -3146,7 +3159,9 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
                 AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
                 CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
-                IOHandles_[moduleInfo.name] = ioHandle;
+                IOHandles_.ChangeValueByLambda(moduleInfo.name, [&](AudioIOHandle audioIOHandle) {
+                    audioIOHandle = ioHandle;
+                });
                 std::string portName = GetSinkPortName(deviceType);
                 audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, portName, true);
                 audioPolicyManager_.SuspendAudioDevice(portName, false);
@@ -3304,9 +3319,9 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
             const std::string networkId = deviceDesc->networkId_;
             UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
             std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceDesc->deviceType_));
-            if (IOHandles_.find(moduleName) != IOHandles_.end()) {
-                audioPolicyManager_.CloseAudioPort(IOHandles_[moduleName]);
-                IOHandles_.erase(moduleName);
+            if (IOHandles_.Find(moduleName, audioIOHandle)) {
+                audioPolicyManager_.CloseAudioPort(IOHandles_.ReadVal(moduleName));
+                IOHandles_.Erase(moduleName);
             }
             RemoveDeviceInRouterMap(moduleName);
             RemoveDeviceInFastRouterMap(networkId);
@@ -3357,9 +3372,9 @@ int32_t AudioPolicyService::HandleDistributedDeviceUpdate(DStatusInfo &statusInf
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
         std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(devType));
-        if (IOHandles_.find(moduleName) != IOHandles_.end()) {
-            audioPolicyManager_.CloseAudioPort(IOHandles_[moduleName]);
-            IOHandles_.erase(moduleName);
+        if (IOHandles_.Find(moduleName, audioIOHandle)) {
+            audioPolicyManager_.CloseAudioPort(IOHandles_.ReadVal(moduleName));
+            IOHandles_.Erase(moduleName);
         }
         RemoveDeviceInRouterMap(moduleName);
         RemoveDeviceInFastRouterMap(networkId);
@@ -3408,7 +3423,9 @@ bool AudioPolicyService::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo 
             AUDIO_INFO_LOG("[module_load]::Open port failed");
             return false;
         }
-        IOHandles_[moduleInfo.name] = ioHandle;
+        IOHandles_.ChangeValueByLambda(moduleInfo.name, [&](AudioIOHandle audioIOHandle) {
+            audioIOHandle = ioHandle;
+        });
         if (devType == DEVICE_TYPE_SPEAKER) {
             auto result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
             CHECK_AND_RETURN_RET_LOG(result == SUCCESS, false,
@@ -3583,7 +3600,9 @@ void AudioPolicyService::LoadInnerCapturerSink()
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
         "OpenAudioPort failed %{public}d for InnerCapturer sink", ioHandle);
-    IOHandles_[moduleInfo.name] = ioHandle;
+    IOHandles_.ChangeValueByLambda(moduleInfo.name, [&](AudioIOHandle audioIOHandle) {
+        audioIOHandle = ioHandle;
+    });
 }
 
 void AudioPolicyService::LoadReceiverSink()
@@ -3594,7 +3613,9 @@ void AudioPolicyService::LoadReceiverSink()
     moduleInfo.lib = "libmodule-receiver-sink.z.so";
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d for Receiver sink", ioHandle);
-    IOHandles_[moduleInfo.name] = ioHandle;
+    IOHandles_.ChangeValueByLambda(moduleInfo.name, [&](AudioIOHandle audioIOHandle) {
+        audioIOHandle = ioHandle;
+    });
 }
 
 void AudioPolicyService::LoadLoopback()
@@ -3603,7 +3624,7 @@ void AudioPolicyService::LoadLoopback()
     std::string moduleName;
     AUDIO_INFO_LOG("Start");
 
-    CHECK_AND_RETURN_LOG(IOHandles_.count(INNER_CAPTURER_SINK_NAME) == 1u,
+    CHECK_AND_RETURN_LOG(IOHandles_.Find(INNER_CAPTURER_SINK_NAME, ioHandle),
         "failed for InnerCapturer not loaded");
 
     LoopbackModuleInfo moduleInfo = {};
@@ -3616,17 +3637,21 @@ void AudioPolicyService::LoadLoopback()
         ioHandle = audioPolicyManager_.LoadLoopback(moduleInfo);
         CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "failed %{public}d", ioHandle);
         moduleName = moduleInfo.source + moduleInfo.sink;
-        IOHandles_[moduleName] = ioHandle;
+        IOHandles_.ChangeValueByLambda(moduleName, [&](AudioIOHandle audioIOHandle) {
+            audioIOHandle = ioHandle;
+        });
     }
 
-    if (IOHandles_.count(RECEIVER_SINK_NAME) != 1u) {
+    if (!(IOHandles_.Find(RECEIVER_SINK_NAME, ioHandle))) {
         AUDIO_WARNING_LOG("receiver sink not exist");
     } else {
         moduleInfo.source = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX;
         ioHandle = audioPolicyManager_.LoadLoopback(moduleInfo);
         CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "failed %{public}d", ioHandle);
         moduleName = moduleInfo.source + moduleInfo.sink;
-        IOHandles_[moduleName] = ioHandle;
+        IOHandles_.ChangeValueByLambda(moduleName, [&](AudioIOHandle audioIOHandle) {
+            audioIOHandle = ioHandle;
+        });
     }
 }
 
@@ -3634,20 +3659,20 @@ void AudioPolicyService::UnloadLoopback()
 {
     std::string module;
     AUDIO_INFO_LOG("UnloadLoopback start");
-
+    AudioIOHandle audioIOHandle;
     for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
         ++sceneType) {
         module = sceneType->second + SINK_NAME_FOR_CAPTURE_SUFFIX + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_NAME;
-        if (IOHandles_.find(module) != IOHandles_.end()) {
-            audioPolicyManager_.CloseAudioPort(IOHandles_[module]);
-            IOHandles_.erase(module);
+        if (IOHandles_.Find(module, audioIOHandle)) {
+            audioPolicyManager_.CloseAudioPort(IOHandles_.ReadVal(module));
+            IOHandles_.Erase(module);
         }
     }
 
     module = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_NAME;
-    if (IOHandles_.find(module) != IOHandles_.end()) {
-        audioPolicyManager_.CloseAudioPort(IOHandles_[module]);
-        IOHandles_.erase(module);
+    if (IOHandles_.Find(module, audioIOHandle)) {
+        audioPolicyManager_.CloseAudioPort(IOHandles_.ReadVal(module));
+        IOHandles_.Erase(module);
     }
 }
 
@@ -4060,11 +4085,14 @@ int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount
         return ERROR;
     }
 
-    if (IOHandles_.find(module) != IOHandles_.end()) {
-        audioPolicyManager_.CloseAudioPort(IOHandles_[module]);
-        IOHandles_.erase(module);
+    AudioIOHandle audioIOHandle;
+    if (IOHandles_.Find(module, audioIOHandle)) {
+        audioPolicyManager_.CloseAudioPort(IOHandles_.ReadVal(module));
+        IOHandles_.Erase(module);
     }
-
+    auto IOHandlesChangeValueCallback = [&](AudioIOHandle audioIOHandle) {
+        audioIOHandle = ioHandle;
+    };
     auto fileClass = deviceClassInfo_.find(ClassType::TYPE_FILE_IO);
     if (fileClass != deviceClassInfo_.end()) {
         auto moduleInfoList = fileClass->second;
@@ -4072,7 +4100,7 @@ int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount
             if (module == moduleInfo.name) {
                 moduleInfo.channels = to_string(channelCount);
                 AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-                IOHandles_[moduleInfo.name] = ioHandle;
+                IOHandles_.ChangeValueByLambda(moduleInfo.name, IOHandlesChangeValueCallback);
                 audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, module, true);
             }
         }
@@ -4092,19 +4120,19 @@ AudioIOHandle AudioPolicyService::GetSinkIOHandle(InternalDeviceType deviceType)
         case InternalDeviceType::DEVICE_TYPE_EARPIECE:
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-            ioHandle = IOHandles_[PRIMARY_SPEAKER];
+            ioHandle = IOHandles_.ReadVal(PRIMARY_SPEAKER);
             break;
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
-            ioHandle = IOHandles_[USB_SPEAKER];
+            ioHandle = IOHandles_.ReadVal(USB_SPEAKER);
             break;
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-            ioHandle = IOHandles_[BLUETOOTH_SPEAKER];
+            ioHandle = IOHandles_.ReadVal(BLUETOOTH_SPEAKER);
             break;
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
-            ioHandle = IOHandles_[FILE_SINK];
+            ioHandle = IOHandles_.ReadVal(FILE_SINK);
             break;
         default:
-            ioHandle = IOHandles_[PRIMARY_SPEAKER];
+            ioHandle = IOHandles_.ReadVal(PRIMARY_SPEAKER);
             break;
     }
     return ioHandle;
@@ -4115,16 +4143,16 @@ AudioIOHandle AudioPolicyService::GetSourceIOHandle(InternalDeviceType deviceTyp
     AudioIOHandle ioHandle;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
-            ioHandle = IOHandles_[USB_MIC];
+            ioHandle = IOHandles_.ReadVal(USB_MIC);
             break;
         case InternalDeviceType::DEVICE_TYPE_MIC:
-            ioHandle = IOHandles_[PRIMARY_MIC];
+            ioHandle = IOHandles_.ReadVal(PRIMARY_MIC);
             break;
         case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
-            ioHandle = IOHandles_[FILE_SOURCE];
+            ioHandle = IOHandles_.ReadVal(FILE_SOURCE);
             break;
         default:
-            ioHandle = IOHandles_[PRIMARY_MIC];
+            ioHandle = IOHandles_.ReadVal(PRIMARY_MIC);
             break;
     }
     return ioHandle;
@@ -5133,14 +5161,13 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
         }
         {
             AudioIOHandle activateDeviceIOHandle;
-            std::lock_guard<std::mutex> lck(ioHandlesMutex_);
-            activateDeviceIOHandle = IOHandles_[PRIMARY_MIC];
+            activateDeviceIOHandle = IOHandles_.ReadVal(PRIMARY_MIC);
 
             int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
             CHECK_AND_RETURN_LOG(result == SUCCESS,
                 "CloseAudioPort failed %{public}d", result);
 
-            IOHandles_.erase(PRIMARY_MIC);
+            IOHandles_.Erase(PRIMARY_MIC);
         }
         return;
     }
@@ -5156,13 +5183,16 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
         AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
         return SUCCESS;
     }
+
+    auto IOHandlesChangeValueCallback = [&](AudioIOHandle audioIOHandle) {
+        audioIOHandle = ioHandle;
+    };
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
         SourceInfo targetInfo;
         int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo);
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
             "FetchTargetInfoForSessionAdd error, maybe device not support recorder");
         bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
-        std::lock_guard<std::mutex> lck(ioHandlesMutex_);
         if (!isSourceLoaded) {
             auto moduleInfo = primaryMicModuleInfo_;
             for (const auto&[adapterType, audioAdapterInfo] : adapterInfoMap_) {
@@ -5178,7 +5208,7 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
             CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERROR,
                 "CapturerSessionAdded: OpenAudioPort failed %{public}d", ioHandle);
 
-            IOHandles_[PRIMARY_MIC] = ioHandle;
+            IOHandles_.ChangeValueByLambda(PRIMARY_MIC, IOHandlesChangeValueCallback);
             audioPolicyManager_.SetDeviceActive(ioHandle, currentActiveInputDevice_.deviceType_,
                 moduleInfo.name, true);
         }
