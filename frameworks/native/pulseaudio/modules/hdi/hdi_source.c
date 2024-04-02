@@ -29,7 +29,6 @@
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
 #include <pulsecore/protocol-native.c>
-#include <memblockq.c>
 
 #include <inttypes.h>
 #include <stddef.h>

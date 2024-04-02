@@ -28,8 +28,6 @@
 #include <mutex>
 #include <set>
 
-#include "audio_log.h"
-#include "audio_error.h"
 #include "audio_effect.h"
 #include "audio_enhance_chain_adapter.h"
 #include "audio_effect_chain_manager.h"

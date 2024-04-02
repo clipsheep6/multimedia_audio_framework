@@ -16,6 +16,9 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioEnhanceChainManager"
 
+#include "audio_log.h"
+#include "audio_errors.h"
+
 #include "audio_enhance_chain_manager.h"
 #include "audio_enhance_chain_adapter.h"
 
@@ -36,7 +39,7 @@ int32_t EnhanceChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
     return SUCCESS;
 }
 
-int32_t EnhanceChainManagerCreateCb(char *sceneType, const char *enhanceMode, const char *upDevice, const char *downDevice)
+int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMode, const char *upDevice, const char *downDevice)
 {
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr, ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
@@ -65,7 +68,7 @@ int32_t EnhanceChainManagerCreateCb(char *sceneType, const char *enhanceMode, co
     return SUCCESS;
 }
 
-int32_t EnhanceChainManagerReleaseCb(char *sceneType, const char *enhanceMode, const char *upDevice, const char *downDevice)
+int32_t EnhanceChainManagerReleaseCb(const char *sceneType, const char *enhanceMode, const char *upDevice, const char *downDevice)
 {
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr, ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
