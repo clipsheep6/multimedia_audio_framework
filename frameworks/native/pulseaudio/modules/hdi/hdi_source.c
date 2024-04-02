@@ -408,7 +408,7 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
     // save the data after processing
     FILE *primaryOut;
     const char *primaryOutFilePath = "/data/data/.pulse_dir/primarySourceOut.pcm";
-    primaryOut = fopen(primaryInFileprimaryOutFilePathPath, "ab+");
+    primaryOut = fopen(primaryOutFilePath, "ab+");
     fwrite((void*) u->bufferAttr->bufOut, sizeof(float), frameLen, primaryOut);
     fclose(primaryOut);
     primaryOut = NULL;

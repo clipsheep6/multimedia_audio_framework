@@ -181,7 +181,7 @@ bool AudioEnhanceChain::IsEmptyEnhanceHandles()
 AudioEnhanceChainManager::AudioEnhanceChainManager()
 {
     SceneTypeToEnhanceChainMap_.clear();
-    SceneTypeAndModeToEnhanceChainNameMap_.clear()
+    SceneTypeAndModeToEnhanceChainNameMap_.clear();
     EnhanceChainToEnhancesMap_.clear();
     EnhanceToLibraryEntryMap_.clear();
     EnhanceToLibraryNameMap_.clear();
