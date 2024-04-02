@@ -678,6 +678,24 @@ static void InputsDropFromInputs(pa_mix_info *infoInputs, unsigned nInputs, pa_m
 
 static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink *s, pa_mix_info *info, unsigned maxinfo);
 
+static void SwitchToTrivialResampler(pa_sink_input *sinkIn)
+{
+    AUTO_CTRACE("SwitchToTrivialResampler");
+    pa_resampler *r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
+                             &sinkIn->thread_info.resampler->i_ss,
+                             &sinkIn->thread_info.resampler->i_cm,
+                             &sinkIn->thread_info.resampler->o_ss,
+                             &sinkIn->thread_info.resampler->o_cm,
+                             sinkIn->core->lfe_crossover_freq,
+                             PA_RESAMPLER_TRIVIAL,
+                             sinkIn->thread_info.resampler->flags);
+    pa_resampler_free(sinkIn->thread_info.resampler);
+    sinkIn->thread_info.resampler = r;
+
+    pa_memblockq_flush_write(sinkIn->thread_info.render_memblockq, true);
+    return;
+}
+
 static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_info *infoIn, unsigned maxInfo)
 {
     pa_sink_input *sinkIn;
@@ -692,6 +710,10 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         if (IsInnerCapturer(sinkIn) && InputIsPrimary(sinkIn)) {
             pa_sink_input_assert_ref(sinkIn);
+            if (sinkIn->thread_info.resampler && sinkIn->thread_info.resampler->method != PA_RESAMPLER_TRIVIAL) {
+                AUDIO_INFO_LOG("");
+                SwitchToTrivialResampler(sinkIn);
+            }
             AUTO_CTRACE("hdi_sink::ClusterCap::pa_sink_input_peek:%d len:%zu", sinkIn->index, *length);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
 
