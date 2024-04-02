@@ -297,6 +297,16 @@ public:
     */
     virtual uint32_t GetEffectLatency(const std::string &sessionId) = 0;
 
+    /**
+     * Get max amplitude for device.
+     *
+     * @param isOutputDevice specified if the device is output device
+     * @param deviceType specified deviceType to get max amplitude
+     *
+     * @return result of max amplitude.
+    */
+    virtual float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -342,6 +352,7 @@ private:
     int HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
     int HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply);
+    int HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply);
     int HandleResetRouteForDisconnect(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectLatency(MessageParcel &data, MessageParcel &reply);
 
@@ -382,6 +393,7 @@ private:
         &AudioManagerStub::HandleGetCapturePresentationPosition,
         &AudioManagerStub::HandleGetRenderPresentationPosition,
         &AudioManagerStub::HandleSetSpatializationSceneType,
+        &AudioManagerStub::HandleGetMaxAmplitude,
         &AudioManagerStub::HandleResetRouteForDisconnect,
         &AudioManagerStub::HandleGetEffectLatency,
     };
