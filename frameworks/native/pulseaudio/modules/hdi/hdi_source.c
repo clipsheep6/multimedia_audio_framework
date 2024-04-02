@@ -225,7 +225,7 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
         pa_memblock_unref(chunk->memblock);
         return 0;
     }
-
+    
     chunk->index = 0;
     chunk->length = replyBytes;
     pa_source_post(u->source, chunk);
@@ -454,6 +454,7 @@ static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sampl
         AUDIO_ERR_LOG("Failed to parse buffer_size argument.");
         u->buffer_size = DEFAULT_BUFFER_SIZE;
     }
+
     u->attrs.bufferSize = u->buffer_size;
 
     u->attrs.sampleRate = ss->rate;
