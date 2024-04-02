@@ -28,11 +28,17 @@
 #include <pulsecore/rtpoll.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
+#include <pulsecore/protocol-native.c>
+#include <memblockq.c>
 
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <semaphore.h>
+
+#include "securec.h"
 
 #include "audio_types.h"
 #include "audio_manager.h"
@@ -41,7 +47,11 @@
 #include "audio_source_type.h"
 #include "audio_hdiadapter_info.h"
 #include "capturer_source_adapter.h"
+#include "audio_enhance_chain_adapter.h"
 
+#define IN_CHANNEL_NUM_MAX 16
+#define OUT_CHANNEL_NUM_MAX 2
+#define DEFAULT_FRAMELEN 2048
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"
 #define DEFAULT_AUDIO_DEVICE_NAME "Internal Mic"
@@ -56,8 +66,147 @@
 #define AUDIO_POINT_NUM  1024
 #define AUDIO_FRAME_NUM_IN_BUF 30
 #define HDI_WAKEUP_BUFFER_TIME (PA_USEC_PER_SEC * 2)
+#define ENHANCE_SCENE_TYPE_NUM 3
 
 const char *DEVICE_CLASS_REMOTE = "remote";
+char *const ENHANCE_SCENETYPE_SET[ENHANCE_SCENE_TYPE_NUM] = {"SCENE_VOIP_3A", "SCENE_RECORD", "SCENE_MEETING"};
+
+#define FLOAT_EPS 1e-9f
+#define MEMBLOCKQ_MAXLENGTH (16*1024*16)
+#define OFFSET_BIT_24 3
+#define BIT_DEPTH_TWO 2
+#define BIT_8 8
+#define BIT_16 16
+#define BIT_24 24
+#define BIT_32 32
+static uint32_t Read24Bit(const uint8_t *p)
+{
+    return ((uint32_t) p[BIT_DEPTH_TWO] << BIT_16) | ((uint32_t) p[1] << BIT_8) | ((uint32_t) p[0]);
+}
+
+static void Write24Bit(uint8_t *p, uint32_t u)
+{
+    p[BIT_DEPTH_TWO] = (uint8_t) (u >> BIT_16);
+    p[1] = (uint8_t) (u >> BIT_8);
+    p[0] = (uint8_t) u;
+}
+
+static void ConvertFrom16BitToFloat(unsigned n, const int16_t *a, float *b)
+{
+    for (; n > 0; n--) {
+        *(b++) = *(a++) * (1.0f / (1 << (BIT_16 - 1)));
+    }
+}
+
+static void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b)
+{
+    for (; n > 0; n--) {
+        int32_t s = Read24Bit(a) << BIT_8;
+        *b = s * (1.0f / (1U << (BIT_32 - 1)));
+        a += OFFSET_BIT_24;
+        b++;
+    }
+}
+
+static void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
+{
+    for (; n > 0; n--) {
+        *(b++) = *(a++) * (1.0f / (1U << (BIT_32 - 1)));
+    }
+}
+
+static float CapMax(float v)
+{
+    float value = v;
+    if (v > 1.0f) {
+        value = 1.0f - FLOAT_EPS;
+    } else if (v < -1.0f) {
+        value = -1.0f + FLOAT_EPS;
+    }
+    return value;
+}
+
+static void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b)
+{
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1 << (BIT_16 - 1));
+        *(b++) = (int16_t) v;
+    }
+}
+
+static void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
+{
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1U << (BIT_32 - 1));
+        Write24Bit(b, ((int32_t) v) >> BIT_8);
+        b += OFFSET_BIT_24;
+    }
+}
+
+static void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
+{
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1U << (BIT_32 - 1));
+        *(b++) = (int32_t) v;
+    }
+}
+
+static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, float *dst)
+{
+    pa_assert(src);
+    pa_assert(dst);
+    int32_t ret;
+    switch (format) {
+        case PA_SAMPLE_S16LE:
+            ConvertFrom16BitToFloat(n, src, dst);
+            break;
+        case PA_SAMPLE_S24LE:
+            ConvertFrom24BitToFloat(n, src, dst);
+            break;
+        case PA_SAMPLE_S32LE:
+            ConvertFrom32BitToFloat(n, src, dst);
+            break;
+        default:
+            ret = memcpy_s(dst, n, src, n);
+            if (ret != 0) {
+                float *srcFloat = (float *)src;
+                for (uint32_t i = 0; i < n; i++) {
+                    dst[i] = srcFloat[i];
+                }
+            }
+            break;
+    }
+}
+
+static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, void *dst)
+{
+    pa_assert(src);
+    pa_assert(dst);
+    int32_t ret;
+    switch (format) {
+        case PA_SAMPLE_S16LE:
+            ConvertFromFloatTo16Bit(n, src, dst);
+            break;
+        case PA_SAMPLE_S24LE:
+            ConvertFromFloatTo24Bit(n, src, dst);
+            break;
+        case PA_SAMPLE_S32LE:
+            ConvertFromFloatTo32Bit(n, src, dst);
+            break;
+        default:
+            ret = memcpy_s(dst, n, src, n);
+            if (ret != 0) {
+                float *dstFloat = (float *)dst;
+                for (uint32_t i = 0; i < n; i++) {
+                    dstFloat[i] = src[i];
+                }
+            }
+            break;
+    }
+}
 
 struct Userdata {
     pa_core *core;
@@ -73,6 +222,10 @@ struct Userdata {
     SourceAttr attrs;
     bool IsCapturerStarted;
     struct CapturerSourceAdapter *sourceAdapter;
+    pa_sample_format_t format;
+    BufferAttr *bufferAttr;
+    int32_t processLen;
+    int32_t processSize;
 };
 
 static int PaHdiCapturerInit(struct Userdata *u);
@@ -209,7 +362,7 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
     requestBytes = pa_memblock_get_length(chunk->memblock);
     u->sourceAdapter->CapturerSourceFrame(u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
 
-    pa_memblock_release(chunk->memblock);
+    
     AUDIO_DEBUG_LOG("HDI Source: request bytes: %{public}" PRIu64 ", replyBytes: %{public}" PRIu64,
             requestBytes, replyBytes);
     if (replyBytes > requestBytes) {
@@ -226,6 +379,53 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
         return 0;
     }
 
+    size_t length = replyBytes;
+    size_t blockSizeMax = pa_mempool_block_size_max(u->source->core->mempool);
+    if (length > blockSizeMax)
+        length = pa_frame_align(blockSizeMax, &u->source->sample_spec);
+    pa_assert(length > 0);
+
+    size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
+    size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
+    memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen);
+    memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
+
+    void *src = pa_memblock_acquire_chunk(chunk);
+    int32_t bitSize = pa_sample_size_of_format(u->format);
+    int32_t frameLen = bitSize > 0 ? (int32_t) (length / bitSize) : 0;
+    ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
+    memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
+
+    // save the data before processing
+    FILE *primaryIn;
+    const char *primaryInFilePath = "/data/data/.pulse_dir/primarySourceIn.pcm";
+    primaryIn = fopen(primaryInFilePath, "ab+");
+    fwrite((void*) u->bufferAttr->bufIn, sizeof(float), frameLen, primaryIn);
+    fclose(primaryIn);
+    primaryIn = NULL;
+
+    EnhanceChainManagerProcess(ENHANCE_SCENETYPE_SET[1], u->bufferAttr);
+
+    // save the data after processing
+    FILE *primaryOut;
+    const char *primaryOutFilePath = "/data/data/.pulse_dir/primarySourceOut.pcm";
+    primaryOut = fopen(primaryInFileprimaryOutFilePathPath, "ab+");
+    fwrite((void*) u->bufferAttr->bufOut, sizeof(float), frameLen, primaryOut);
+    fclose(primaryOut);
+    primaryOut = NULL;
+
+    for (int32_t k = 0; k < u->bufferAttr->frameLen * u->bufferAttr->numChanOut; k++) {
+        u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
+    }
+    void *dst = pa_memblock_acquire_chunk(chunk);
+    for (int32_t i = 0; i < frameLen; i++) {
+        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
+        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
+    }
+
+    ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
+
+    pa_memblock_release(chunk->memblock);
     chunk->index = 0;
     chunk->length = replyBytes;
     pa_source_post(u->source, chunk);
@@ -454,6 +654,19 @@ static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sampl
         AUDIO_ERR_LOG("Failed to parse buffer_size argument.");
         u->buffer_size = DEFAULT_BUFFER_SIZE;
     }
+    u->format = ss->format;
+    u->processLen = IN_CHANNEL_NUM_MAX * DEFAULT_FRAMELEN;
+    u->processSize = u->processLen * sizeof(float);
+    u->bufferAttr = pa_xnew0(BufferAttr, 1);
+    pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
+    pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
+    pa_assert_se(u->bufferAttr->tempBufIn = (float *)malloc(u->processSize));
+    pa_assert_se(u->bufferAttr->tempBufOut = (float *)malloc(u->processSize));
+    u->bufferAttr->samplingRate = ss->rate;
+    u->bufferAttr->frameLen = DEFAULT_FRAMELEN;
+    u->bufferAttr->numChanIn = ss->channels;
+    u->bufferAttr->numChanOut = ss->channels;
+
     u->attrs.bufferSize = u->buffer_size;
 
     u->attrs.sampleRate = ss->rate;

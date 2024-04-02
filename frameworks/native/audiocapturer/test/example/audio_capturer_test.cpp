@@ -15,6 +15,7 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioCapturerTest"
 
+#include <iostream>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -26,6 +27,7 @@
 #include "audio_capturer.h"
 #include "audio_info.h"
 #include "audio_log.h"
+#include "audio_source_type.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -38,8 +40,6 @@ namespace AudioTestConstants {
     constexpr int32_t THIRD_ARG_IDX = 3;
     constexpr int32_t FOURTH_ARG_IDX = 4;
     constexpr int32_t NUM_BASE = 10;
-    constexpr int32_t PAUSE_BUFFER_POSITION = 128;
-    constexpr int32_t PAUSE_READ_TIME_SECONDS = 2;
     constexpr int32_t SUCCESS = 0;
 }
 
@@ -169,18 +169,6 @@ public:
                 AUDIO_ERR_LOG("error occurred in fwrite");
             }
             numBuffersToCapture--;
-            if ((numBuffersToCapture == AudioTestConstants::PAUSE_BUFFER_POSITION)
-                && (audioCapturer->Stop())) {
-                AUDIO_INFO_LOG("Audio capture stopped for %{public}d seconds",
-                               AudioTestConstants::PAUSE_READ_TIME_SECONDS);
-                sleep(AudioTestConstants::PAUSE_READ_TIME_SECONDS);
-                if (!audioCapturer->Start()) {
-                    AUDIO_ERR_LOG("resume stream failed");
-                    audioCapturer->Release();
-                    break;
-                }
-                AUDIO_INFO_LOG("AudioPerf Capturer Read after stop and start");
-            }
         }
 
         return true;
@@ -198,6 +186,7 @@ public:
         capturerOptions.capturerInfo.capturerFlags = 0;
 
         unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+        cout << "AudioCapturer Create by sourceType: " << SourceType::SOURCE_TYPE_MIC << " success" << endl;;
 
         int32_t ret = 0;
         shared_ptr<AudioCapturerCallback> cb1 = make_shared<AudioCapturerCallbackTestImpl>();
@@ -231,6 +220,7 @@ public:
             fclose(pFile);
             return false;
         }
+        cout << "start capturer success" << endl;
 
         fflush(pFile);
         if (!audioCapturer->Flush()) {
@@ -251,6 +241,22 @@ public:
     }
 };
 
+static std::string getCurrentTime() 
+{
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+    auto sectime = std::chrono::duration_cast<std::chrono::seconds>(now_ms);
+
+    std::time_t timet = sectime.count();
+    struct tm curtime;
+    localtime_r(&timet, &curtime);
+    
+    char buffer[64];
+    sprintf(buffer, "_%4d%02d%02d_%02d%02d%02d", curtime.tm_year + 1900, curtime.tm_mon + 1, 
+        curtime.tm_mday, curtime.tm_hour, curtime.tm_min, curtime.tm_sec);
+    return std::string(buffer);
+}
+
 int main(int argc, char *argv[])
 {
     AUDIO_INFO_LOG("capture test in");
@@ -268,6 +274,9 @@ int main(int argc, char *argv[])
     int32_t samplingRate = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
     bool isBlocking = (atoi(argv[AudioTestConstants::THIRD_ARG_IDX]) == 1);
     string filePath = argv[AudioTestConstants::FIRST_ARG_IDX];
+    cout << getCurrentTime() << endl;
+    string currentTime = getCurrentTime() + ".pcm";
+    filePath += currentTime;
     if (argc > AudioTestConstants::FOURTH_ARG_IDX) {
         bufferMsec = strtol(argv[AudioTestConstants::FOURTH_ARG_IDX], nullptr, AudioTestConstants::NUM_BASE);
     }
