@@ -520,7 +520,7 @@ void AudioEffectManager::ConstructSceneTypeToEnhanceChainNameMap(std::unordered_
     std::string sceneType;
     std::string sceneMode;
     std::string key;
-    for (auto &scene: supportedEffectConfig_.postProcessNew.stream) {
+    for (auto &scene: supportedEffectConfig_.preProcessNew.stream) {
         sceneType = scene.scene;
         for (auto &mode: scene.streamEffectMode) {
             sceneMode = mode.mode;
