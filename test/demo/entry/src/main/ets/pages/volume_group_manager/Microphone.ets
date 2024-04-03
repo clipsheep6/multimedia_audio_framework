@@ -15,14 +15,13 @@
 
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
-import { BusinessError } from '@kit.BasicServicesKit';
 
 @Entry
 @Component
 struct Microphone {
   @State returnMsg: string = 'Hello World'
   @State mute: boolean = false;
-  private audioVolumeGroupManager: audio.AudioVolumeGroupManager | null = null;
+  private audioVolumeGroupManager = null;
   @State onMute: boolean = false;
   @State isOnClickedState: string = "unclicked";
 
@@ -85,10 +84,6 @@ struct Microphone {
           .onClick(() => {
             this.isOnClickedState = "clicked";
             let _this = this;
-            if (!this.audioVolumeGroupManager) {
-              this.returnMsg = "AudioVolumeGroupManager instance had not created";
-              return;
-            }
             this.audioVolumeGroupManager.on('micStateChange', (micStateChange) => {
               _this.onMute = micStateChange.mute;
               _this.isOnClickedState = "clicked_callback"
@@ -113,10 +108,6 @@ struct Microphone {
           .margin({ top: 10 })
           .onClick(() => {
             let _this = this;
-            if (!this.audioVolumeGroupManager) {
-              this.returnMsg = "AudioVolumeGroupManager instance had not created";
-              return;
-            }
             this.audioVolumeGroupManager.setMicrophoneMute(this.mute, (err) => {
               if (err) {
                 _this.returnMsg = "setMicrophoneMute-callback err:" + JSON.stringify(err)
@@ -133,14 +124,10 @@ struct Microphone {
           .margin({ top: 10 })
           .onClick(() => {
             let _this = this;
-            if (!this.audioVolumeGroupManager) {
-              this.returnMsg = "AudioVolumeGroupManager instance had not created";
-              return;
-            }
             this.audioVolumeGroupManager.setMicrophoneMute(this.mute)
               .then(() => {
                 _this.returnMsg = "setMicrophoneMute-promise SUCCESS"
-              }).catch((err: BusinessError) => {
+              }).catch(err => {
               _this.returnMsg = "setMicrophoneMute-promise err:" + JSON.stringify(err)
             });
           })
@@ -152,14 +139,10 @@ struct Microphone {
           .margin({ top: 10 })
           .onClick(() => {
             let _this = this;
-            if (!this.audioVolumeGroupManager) {
-              this.returnMsg = "AudioVolumeGroupManager instance had not created";
-              return;
-            }
             this.audioVolumeGroupManager.setMicMute(this.mute)
               .then(() => {
                 _this.returnMsg = "setMicMute-promise SUCCESS"
-              }).catch((err: BusinessError) => {
+              }).catch(err => {
                 _this.returnMsg = "setMicMute-promise err:" + JSON.stringify(err)
               });
           })
@@ -171,10 +154,6 @@ struct Microphone {
           .margin({ top: 10 })
           .onClick(() => {
             let _this = this;
-            if (!this.audioVolumeGroupManager) {
-              this.returnMsg = "AudioVolumeGroupManager instance had not created";
-              return;
-            }
             this.audioVolumeGroupManager.isMicrophoneMute((err, value) => {
               if (err) {
                 _this.returnMsg = "setMicrophoneMute-callback err:" + JSON.stringify(err)
@@ -191,14 +170,10 @@ struct Microphone {
           .margin({ top: 10 })
           .onClick(() => {
             let _this = this;
-            if (!this.audioVolumeGroupManager) {
-              this.returnMsg = "AudioVolumeGroupManager instance had not created";
-              return;
-            }
             this.audioVolumeGroupManager.isMicrophoneMute()
               .then((value) => {
                 _this.returnMsg = "isMicrophoneMute-promise SUCCESS,返回值：" + value
-              }).catch((err: BusinessError) => {
+              }).catch(err => {
               _this.returnMsg = "isMicrophoneMute-promise err:" + JSON.stringify(err)
             })
           })

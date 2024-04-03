@@ -18,7 +18,7 @@ import audio from '@ohos.multimedia.audio'
 @Entry
 @Component
 struct AudioManager {
-  private audioManager: audio.AudioManager | null = null;
+  private audioManager = null;
 
   aboutToAppear() {
     this.audioManager = audio.getAudioManager()

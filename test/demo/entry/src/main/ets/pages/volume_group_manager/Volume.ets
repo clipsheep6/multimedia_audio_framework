@@ -13,33 +13,14 @@
 * limitations under the License.
 */
 
-import { audio } from '@kit.AudioKit';
+import router from '@ohos.router';
+import audio from '@ohos.multimedia.audio'
 import fs from '@ohos.file.fs';
-import { BusinessError } from '@kit.BasicServicesKit';
-
-class Option {
-  offset: number = 0
-  length: number = 0
-}
-
-class EnumValue {
-  value: string = '';
-}
-
-class KeyInfo {
-  selectedContentTypeKey: string = '';
-  selectedStreamUsageKey: string = ''
-}
-
-interface AudioRenderInfo {
-  main: audio.AudioRendererInfo,
-  info: KeyInfo
-}
 
 @Entry
 @Component
 struct Volume {
-  private audioRendererOptions: audio.AudioRendererOptions = {
+  private audioRendererOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -47,120 +28,124 @@ struct Volume {
       encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
     },
     rendererInfo: {
+      content: audio.ContentType.CONTENT_TYPE_SPEECH,
       usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
       rendererFlags: 0
     }
   }
-  private audioRenderer: audio.AudioRenderer | null = null;
-  @State returnMsg: string = '';
-  private audioVolumeGroupManager: audio.AudioVolumeGroupManager | null = null;
-  @State selectedVolumeTypeKey: string = "请选择";
+  private audioRenderer = null
+  @State returnMsg: string = ''
+  private audioVolumeGroupManager = null;
+  @State selectedVolumeTypeKey: string = "请选择"
   @State selectedVolumeType: number = -1; //音量类型
-  private volumeTypeSelectList: EnumValue[] = [];
+  private volumeTypeSelectList = []
   @State selectedVolume: number = 0; //音量大小
   @State minVolume: number = 0;
   @State maxVolume: number = 15;
-  private volumeSizeList: EnumValue[] = [{ value: '-1' }];
+  private volumeSizeList = [{ value: '-1' }];
   @State mute: boolean = false;
-  private audioVolumeManager: audio.AudioVolumeManager | null = null;
+  private audioVolumeManager = null;
   @State isOnClickedState: string = "unclicked";
-  @State onReturnMsg: string = "";
+  @State onReturnMsg: string = ""
   @State path: string = globalThis.pathDir + '/test_44100_2.wav';
-  @State selectedContentTypeKey: string = "CONTENT_TYPE_MUSIC";
-  @State selectedStreamUsageKey: string = "STREAM_USAGE_MEDIA";
-
-  private ringToneRenderInfo: AudioRenderInfo = {
-    main: {
-      usage: audio.StreamUsage.STREAM_USAGE_RINGTONE,
-      rendererFlags: 0
+  @State selectedContentTypeKey: string = "CONTENT_TYPE_MUSIC"
+  @State selectedStreamUsageKey: string = "STREAM_USAGE_MEDIA"
+  private renderInfo = {
+    'RINGTONE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_RINGTONE,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_RINGTONE',
+        selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
+      }
     },
-    info: {
-      selectedContentTypeKey: 'CONTENT_TYPE_RINGTONE',
-      selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
-    }
-  }
-
-  private mediaRenderInfo: AudioRenderInfo = {
-    main: {
-      usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
-      rendererFlags: 0
+    'MEDIA': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_MUSIC,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_MUSIC',
+        selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
+      }
     },
-    info: {
-      selectedContentTypeKey: 'CONTENT_TYPE_MUSIC',
-      selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
-    }
-  }
-
-  private voiceCallRenderInfo: AudioRenderInfo = {
-    main: {
-      usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
-      rendererFlags: 0
+    'VOICE_CALL': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
+        selectedStreamUsageKey: 'STREAM_USAGE_VOICE_COMMUNICATION'
+      }
     },
-    info: {
-      selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
-      selectedStreamUsageKey: 'STREAM_USAGE_VOICE_COMMUNICATION'
-    }
-  }
-
-  private voiceAssistantRenderInfo: AudioRenderInfo = {
-    main: {
-      usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
-      rendererFlags: 0
+    'VOICE_ASSISTANT': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
+        selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
+      }
     },
-    info: {
-      selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
-      selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
-    }
-  }
-
-  private allRenderInfo: AudioRenderInfo = {
-    main: {
-      usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
-      rendererFlags: 0
+    'ALL': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
+        selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
+      }
     },
-    info: {
-      selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
-      selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
-    }
-  }
-
-  private accessibilityRenderInfo: AudioRenderInfo = {
-    main: {
-      usage: audio.StreamUsage.STREAM_USAGE_ACCESSIBILITY,
-      rendererFlags: 0
+    'ALARM': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_MUSIC,
+        usage: audio.StreamUsage.STREAM_USAGE_ALARM,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_MUSIC',
+        selectedStreamUsageKey: 'STREAM_USAGE_ALARM'
+      }
     },
-    info: {
-      selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
-      selectedStreamUsageKey: 'STREAM_USAGE_ACCESSIBILITY'
-    }
-  }
-
-  private alarmRenderInfo: AudioRenderInfo = {
-    main: {
-      usage: audio.StreamUsage.STREAM_USAGE_ALARM,
-      rendererFlags: 0
+    'ACCESSIBILITY': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        usage: audio.StreamUsage.STREAM_USAGE_ACCESSIBILITY,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
+        selectedStreamUsageKey: 'STREAM_USAGE_ACCESSIBILITY'
+      }
     },
-    info: {
-      selectedContentTypeKey: 'CONTENT_TYPE_MUSIC',
-      selectedStreamUsageKey: 'STREAM_USAGE_ALARM'
-    }
-  }
-
-  private ultrasonicRenderInfo: AudioRenderInfo = {
-    main: {
-      usage: audio.StreamUsage.STREAM_USAGE_SYSTEM,
-      rendererFlags: 0
-    },
-    info: {
-      selectedContentTypeKey: 'CONTENT_TYPE_ULTRASONIC',
-      selectedStreamUsageKey: 'STREAM_USAGE_SYSTEM'
+    'ULTRASONIC': {
+      main: {
+        // @ts-ignore
+        content: audio.ContentType.CONTENT_TYPE_ULTRASONIC,
+        usage: audio.StreamUsage.STREAM_USAGE_SYSTEM,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_ULTRASONIC',
+        selectedStreamUsageKey: 'STREAM_USAGE_SYSTEM'
+      }
     }
   }
 
   async aboutToAppear() {
-    Object.keys(audio.AudioVolumeType).forEach((key) => {
-      this.volumeTypeSelectList.push({ value: key });
-    })
+    for (let key in audio.AudioVolumeType) {
+      this.volumeTypeSelectList.push({ value: key })
+    }
 
     let audioManager = audio.getAudioManager();
     this.audioVolumeManager = audioManager.getVolumeManager();
@@ -177,47 +162,44 @@ struct Volume {
     });
   }
 
-  onBackPress() {
+  async onBackPress() {
     if (this.audioRenderer !== null) {
-      this.audioRenderer.release().then(() => {
-        console.info('Renderer released successfully');
-        this.audioRenderer = null;
-      }).catch((err: BusinessError) => {
-        console.error(`ERROR: ${err}`);
-      });
+      await this.audioRenderer.release()
+      this.audioRenderer = null
     }
   }
 
   async renderPlay() {
+
     if (this.audioRenderer !== null) {
-      await this.audioRenderer.release();
-      this.audioRenderer = null;
+      await this.audioRenderer.release()
+      this.audioRenderer = null
     }
-    this.returnMsg = `audioRendererOptions ${JSON.stringify(this.audioRendererOptions)} \n`;
-    console.log(`audioRendererOptions ${JSON.stringify(this.audioRendererOptions)} \n`);
+    this.returnMsg = `audioRendererOptions ${JSON.stringify(this.audioRendererOptions)} \n`
+    console.log(`audioRendererOptions ${JSON.stringify(this.audioRendererOptions)} \n`)
 
     try {
-      this.audioRenderer = await audio.createAudioRenderer(this.audioRendererOptions);
-      this.returnMsg = `audioRenderer create success \n`;
+      this.audioRenderer = await audio.createAudioRenderer(this.audioRendererOptions)
+      this.returnMsg = `audioRenderer create success \n`
     } catch (err) {
-      this.returnMsg = `audioRenderer create : Error: ${JSON.stringify(err)}\n`;
-      return;
+      this.returnMsg = `audioRenderer create : Error: ${JSON.stringify(err)}\n`
+      return
     }
-    let bufferSize: number;
+    let bufferSize
     try {
-      bufferSize = await this.audioRenderer.getBufferSize();
-      this.returnMsg = `audioRenderer getBufferSize success,bufferSize:${bufferSize} \n`;
-      await this.audioRenderer.start();
-      this.returnMsg = `audioRenderer start success \n`;
+      bufferSize = await this.audioRenderer.getBufferSize()
+      this.returnMsg = `audioRenderer getBufferSize success,bufferSize:${bufferSize} \n`
+      await this.audioRenderer.start()
+      this.returnMsg = `audioRenderer start success \n`
     } catch (err) {
-      this.returnMsg = `audioRenderer start : Error: ${JSON.stringify(err)}\n`;
-      return;
+      this.returnMsg = `audioRenderer start : Error: ${JSON.stringify(err)}\n`
+      return
     }
 
 
-    let path = this.path;
+    let path = this.path
     try {
-      this.returnMsg = `path:${path}\n`;
+      this.returnMsg = `path:${path}\n`
       let stat = await fs.stat(path);
       this.returnMsg = `stat:${JSON.stringify(stat)}\n`;
       this.returnMsg = `size:${stat.size}\n`;
@@ -232,7 +214,7 @@ struct Volume {
         if (this.audioRenderer.state > 2) {
           return;
         }
-        let options: Option = {
+        let options = {
           offset: i * bufferSize,
           length: bufferSize
         }
@@ -241,19 +223,15 @@ struct Volume {
       }
       this.returnMsg = `audioRenderer write end. \n`;
     } catch (err) {
-      this.returnMsg = `audioRenderer write : Error: ${JSON.stringify(err)}\n`;
+      this.returnMsg = `audioRenderer write : Error: ${JSON.stringify(err)}\n`
     }
 
-    await this.audioRenderer.release();
-    this.audioRenderer = null;
+    await this.audioRenderer.release()
+    this.audioRenderer = null
 
   }
 
   async getVolumeRange() {
-    if (!this.audioVolumeGroupManager) {
-      this.returnMsg = "AudioVolumeGroupManager instance had not created";
-      return;
-    }
     this.minVolume = await this.audioVolumeGroupManager.getMinVolume(this.selectedVolumeType);
     this.maxVolume = await this.audioVolumeGroupManager.getMaxVolume(this.selectedVolumeType);
     this.returnMsg = "minVolume:" + this.minVolume + "; maxVolume:" + this.maxVolume;
@@ -283,48 +261,10 @@ struct Volume {
                 .onSelect(async(index, value) => {
                   this.selectedVolumeType = audio.AudioVolumeType[value];
                   this.selectedVolumeTypeKey = value;
-                  switch (this.selectedVolumeTypeKey) {
-                    case 'RINGTONE':
-                      this.audioRendererOptions.rendererInfo = this.ringToneRenderInfo.main;
-                      this.selectedStreamUsageKey = this.ringToneRenderInfo.info.selectedStreamUsageKey;
-                      this.selectedContentTypeKey = this.ringToneRenderInfo.info.selectedContentTypeKey;
-                      break;
-                    case 'MEDIA':
-                      this.audioRendererOptions.rendererInfo = this.mediaRenderInfo.main;
-                      this.selectedStreamUsageKey = this.mediaRenderInfo.info.selectedStreamUsageKey;
-                      this.selectedContentTypeKey = this.mediaRenderInfo.info.selectedContentTypeKey;
-                      break;
-                    case 'VOICE_CALL':
-                      this.audioRendererOptions.rendererInfo = this.voiceCallRenderInfo.main;
-                      this.selectedStreamUsageKey = this.voiceCallRenderInfo.info.selectedStreamUsageKey;
-                      this.selectedContentTypeKey = this.voiceCallRenderInfo.info.selectedContentTypeKey;
-                      break;
-                    case 'VOICE_ASSISTANT':
-                      this.audioRendererOptions.rendererInfo = this.voiceAssistantRenderInfo.main;
-                      this.selectedStreamUsageKey = this.voiceAssistantRenderInfo.info.selectedStreamUsageKey;
-                      this.selectedContentTypeKey = this.voiceAssistantRenderInfo.info.selectedContentTypeKey;
-                      break;
-                    case 'ALL':
-                      this.audioRendererOptions.rendererInfo = this.allRenderInfo.main;
-                      this.selectedStreamUsageKey = this.allRenderInfo.info.selectedStreamUsageKey;
-                      this.selectedContentTypeKey = this.allRenderInfo.info.selectedContentTypeKey;
-                      break;
-                    case 'ALARM':
-                      this.audioRendererOptions.rendererInfo = this.alarmRenderInfo.main;
-                      this.selectedStreamUsageKey = this.alarmRenderInfo.info.selectedStreamUsageKey;
-                      this.selectedContentTypeKey = this.alarmRenderInfo.info.selectedContentTypeKey;
-                      break;
-                    case 'ACCESSIBILITY':
-                      this.audioRendererOptions.rendererInfo = this.accessibilityRenderInfo.main;
-                      this.selectedStreamUsageKey = this.accessibilityRenderInfo.info.selectedStreamUsageKey;
-                      this.selectedContentTypeKey = this.accessibilityRenderInfo.info.selectedContentTypeKey;
-                      break;
-                    case 'ULTRASONIC':
-                      this.audioRendererOptions.rendererInfo = this.ultrasonicRenderInfo.main;
-                      this.selectedStreamUsageKey = this.ultrasonicRenderInfo.info.selectedStreamUsageKey;
-                      this.selectedContentTypeKey = this.ultrasonicRenderInfo.info.selectedContentTypeKey;
-                  }
 
+                  this.audioRendererOptions.rendererInfo = this.renderInfo[this.selectedVolumeTypeKey].main
+                  this.selectedStreamUsageKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedStreamUsageKey
+                  this.selectedContentTypeKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedContentTypeKey
 
                   this.getVolumeRange();
                   if(this.audioRenderer!==null){
@@ -332,6 +272,7 @@ struct Volume {
                     this.audioRenderer = null
                   }
                   this.renderPlay()
+
                 })
             }
 
@@ -373,10 +314,6 @@ struct Volume {
                 .onClick(() => {
                   this.isOnClickedState = "clicked";
                   let _this = this;
-                  if (!this.audioVolumeManager) {
-                    this.returnMsg = "AudioVolumeManager instance had not created";
-                    return;
-                  }
                   this.audioVolumeManager.on('volumeChange', (volumeEvent) => {
                     _this.isOnClickedState = "clicked_callback";
                     _this.onReturnMsg = JSON.stringify(volumeEvent);
@@ -403,10 +340,6 @@ struct Volume {
                 }
                 let _this = this;
                 _this.returnMsg = this.selectedVolumeType.toString() + ',' + this.selectedVolume.toString()
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.setVolume(this.selectedVolumeType, this.selectedVolume, (err) => {
                   if (err) {
                     _this.returnMsg = 'setVolumeCallback:' + JSON.stringify(err);
@@ -425,13 +358,9 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.setVolume(this.selectedVolumeType, this.selectedVolume).then(() => {
                   _this.returnMsg = "setVolumePromise:SUCCESS"
-                }).catch((err: BusinessError) => {
+                }).catch(err => {
                   _this.returnMsg = 'setVolumePromise err:' + JSON.stringify(err);
                 })
               })
@@ -448,10 +377,6 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.getVolume(this.selectedVolumeType, (err, value) => {
                   if (err) {
                     _this.returnMsg = 'getVolumeCallback:' + JSON.stringify(err);
@@ -469,13 +394,9 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.getVolume(this.selectedVolumeType).then((value) => {
                   _this.returnMsg = "getVolumePromise:SUCCESS,返回值:" + value
-                }).catch((err: BusinessError) => {
+                }).catch(err => {
                   _this.returnMsg = 'getVolumePromise:' + JSON.stringify(err);
                 })
               })
@@ -491,10 +412,6 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.getMinVolume(this.selectedVolumeType, (err, value) => {
                   if (err) {
                     _this.returnMsg = 'getMinVolumeCallback:' + JSON.stringify(err);
@@ -512,13 +429,9 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.getMinVolume(this.selectedVolumeType).then((value) => {
                   _this.returnMsg = "getMinVolumePromise:SUCCESS,返回值:" + value
-                }).catch((err: BusinessError) => {
+                }).catch(err => {
                   _this.returnMsg = 'getMinVolumePromise:' + JSON.stringify(err);
                 })
               })
@@ -534,10 +447,6 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.getMaxVolume(this.selectedVolumeType, (err, value) => {
                   if (err) {
                     _this.returnMsg = 'getMaxVolumeCallback:' + JSON.stringify(err);
@@ -555,13 +464,9 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.getMaxVolume(this.selectedVolumeType).then((value) => {
                   _this.returnMsg = "getMaxVolumePromise:SUCCESS,返回值:" + value
-                }).catch((err: BusinessError) => {
+                }).catch(err => {
                   _this.returnMsg = 'getMaxVolumePromise:' + JSON.stringify(err);
                 })
               })
@@ -602,10 +507,6 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.mute(this.selectedVolumeType, this.mute, (err) => {
                   if (err) {
                     _this.returnMsg = 'muteCallback err:' + JSON.stringify(err);
@@ -624,13 +525,9 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.mute(this.selectedVolumeType, this.mute).then(() => {
                   _this.returnMsg = "mutePromise:SUCCESS"
-                }).catch((err: BusinessError) => {
+                }).catch(err => {
                   _this.returnMsg = 'mutePromise err:' + JSON.stringify(err);
                 })
               })
@@ -646,10 +543,6 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.isMute(this.selectedVolumeType, (err, value) => {
                   if (err) {
                     _this.returnMsg = 'isMuteCallback:' + JSON.stringify(err);
@@ -667,13 +560,9 @@ struct Volume {
                   return
                 }
                 let _this = this;
-                if (!this.audioVolumeGroupManager) {
-                  this.returnMsg = "AudioVolumeGroupManager instance had not created";
-                  return;
-                }
                 this.audioVolumeGroupManager.isMute(this.selectedVolumeType).then((value) => {
                   _this.returnMsg = "isMutePromise:SUCCESS,返回值：" + value
-                }).catch((err: BusinessError) => {
+                }).catch(err => {
                   _this.returnMsg = 'isMutePromise:' + JSON.stringify(err);
                 })
               })

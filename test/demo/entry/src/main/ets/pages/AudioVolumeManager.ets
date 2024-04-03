@@ -15,13 +15,12 @@
 
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
-import { BusinessError } from '@kit.BasicServicesKit';
 
 @Entry
 @Component
 struct AudioVolumeManager {
   @State returnMsg: string = 'Hello World'
-  private audioVolumeManager: audio.AudioVolumeManager | null = null;
+  private audioVolumeManager = null;
   @State isOnClickedState: string = "unclicked";
 
   aboutToAppear() {
@@ -44,17 +43,13 @@ struct AudioVolumeManager {
           .fontSize(18)
           .height(60)
           .onClick(() => {
-            // let _this = this;
-            if (!this.audioVolumeManager) {
-              this.returnMsg = "AudioVolumeManager instance had not created";
-              return;
-            }
+            let _this = this;
             this.audioVolumeManager.getVolumeGroupInfos(audio.LOCAL_NETWORK_ID, (err, value) => {
               if (err) {
-                this.returnMsg = "getVolumeGroupInfos callback err:" + JSON.stringify(err)
+                _this.returnMsg = "getVolumeGroupInfos callback err:" + JSON.stringify(err)
                 return;
               }
-              this.returnMsg = "getVolumeGroupInfos callback SUCCESS:" + JSON.stringify(value)
+              _this.returnMsg = "getVolumeGroupInfos callback SUCCESS:" + JSON.stringify(value)
             });
           })
           .margin({ bottom: 10 })
@@ -64,16 +59,12 @@ struct AudioVolumeManager {
           .fontSize(18)
           .height(60)
           .onClick(() => {
-            // let _this = this;
-            if (!this.audioVolumeManager) {
-              this.returnMsg = "AudioVolumeManager instance had not created";
-              return;
-            }
+            let _this = this;
             this.audioVolumeManager.getVolumeGroupInfos(audio.LOCAL_NETWORK_ID)
               .then(value => {
-                this.returnMsg = "getVolumeGroupInfos promise SUCCESS:" + JSON.stringify(value)
-              }).catch((err: BusinessError) => {
-              this.returnMsg = "getVolumeGroupInfos promise err:" + JSON.stringify(err)
+                _this.returnMsg = "getVolumeGroupInfos promise SUCCESS:" + JSON.stringify(value)
+              }).catch(err => {
+              _this.returnMsg = "getVolumeGroupInfos promise err:" + JSON.stringify(err)
             })
           })
           .margin({ bottom: 10 })
@@ -83,17 +74,13 @@ struct AudioVolumeManager {
           .fontSize(18)
           .height(60)
           .onClick(() => {
-            // let _this = this;
-            if (!this.audioVolumeManager) {
-              this.returnMsg = "AudioVolumeManager instance had not created";
-              return;
-            }
+            let _this = this;
             this.audioVolumeManager.getVolumeGroupManager(audio.DEFAULT_VOLUME_GROUP_ID, (err, value) => {
               if (err) {
-                this.returnMsg = "getVolumeGroupManager callback err:" + JSON.stringify(err)
+                _this.returnMsg = "getVolumeGroupManager callback err:" + JSON.stringify(err)
                 return;
               }
-              this.returnMsg = "getVolumeGroupManager callback SUCCESS:" + JSON.stringify(value)
+              _this.returnMsg = "getVolumeGroupManager callback SUCCESS:" + JSON.stringify(value)
             });
           })
           .margin({ bottom: 10 })
@@ -103,16 +90,12 @@ struct AudioVolumeManager {
           .fontSize(18)
           .height(60)
           .onClick(() => {
-            // let _this = this;
-            if (!this.audioVolumeManager) {
-              this.returnMsg = "AudioVolumeManager instance had not created";
-              return;
-            }
+            let _this = this;
             this.audioVolumeManager.getVolumeGroupManager(audio.DEFAULT_VOLUME_GROUP_ID)
               .then(value => {
-                this.returnMsg = "getVolumeGroupManager promise SUCCESS:" + JSON.stringify(value)
-              }).catch((err: BusinessError) => {
-              this.returnMsg = "getVolumeGroupManager promise err:" + JSON.stringify(err)
+                _this.returnMsg = "getVolumeGroupManager promise SUCCESS:" + JSON.stringify(value)
+              }).catch(err => {
+              _this.returnMsg = "getVolumeGroupManager promise err:" + JSON.stringify(err)
             })
           })
           .margin({ bottom: 10 })

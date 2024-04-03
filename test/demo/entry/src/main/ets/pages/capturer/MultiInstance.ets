@@ -13,17 +13,14 @@
 * limitations under the License.
 */
 
-import { audio } from '@kit.AudioKit';
+import router from '@ohos.router';
+import audio from '@ohos.multimedia.audio'
 import fs from '@ohos.file.fs';
 
-class Option {
-  offset: number = 0
-  length: number = 0
-}
 @Entry
 @Component
 struct MultiInstance {
-  private audioCapturerOptions: audio.AudioCapturerOptions = {
+  private audioCapturerOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -35,8 +32,8 @@ struct MultiInstance {
       capturerFlags: 0
     }
   }
-  private audioCapturers: audio.AudioCapturer[] = []
-  private audioRenderers: audio.AudioRenderer[] = []
+  private audioCapturers = [null,null]
+  private audioRenderers=[null,null]
   private paths=["",""]
   @State returnMsg: string = `hello`
 
@@ -49,9 +46,8 @@ struct MultiInstance {
   aboutToAppear() {
 
   }
-  createAudioCapturer(index: number) {
-
-    if (this.audioCapturers[index]) {
+  createAudioCapturer(index) {
+    if (this.audioCapturers[index] !== null) {
       this.returnMsg = `AudioCapturer ${index} Created already,don't create anymore`
       return
     }
@@ -66,8 +62,8 @@ struct MultiInstance {
     })
   }
 
-  capturerStart(index: number) {
-    if (!this.audioCapturers[index]) {
+  capturerStart(index) {
+    if (this.audioCapturers[index] == null) {
       this.returnMsg = `AudioCapturer ${index} instance had not created,dont‘t allow to start\n`
       return
     }
@@ -81,8 +77,8 @@ struct MultiInstance {
     });
   }
 
-  async readCapturer(indexc: number) {
-    if (!this.audioCapturers[indexc]) {
+  async readCapturer(indexc) {
+    if (this.audioCapturers[indexc] == null) {
       this.returnMsg = `AudioCapturer ${indexc} instance had not created,dont‘t allow to read\n`
       return
     }
@@ -94,7 +90,7 @@ struct MultiInstance {
     //READ 5S
     let start = new Date().getTime()
     let end = new Date().getTime()
-    let buffer: ArrayBuffer;
+    let buffer = null
 
     _this.returnMsg += `AudioCapturer${indexc}  read start.....\n `
 
@@ -108,7 +104,7 @@ struct MultiInstance {
       return
     }
 
-    let file: fs.File;
+    let file
     try {
       file = await fs.open(path, 0o2);
       this.returnMsg += "文件以读写模式打开成功"
@@ -130,7 +126,7 @@ struct MultiInstance {
             }
           })
         })
-        let options: Option = {
+        let options = {
           offset: index * _this.bufferSize,
           length: _this.bufferSize
         }
@@ -145,8 +141,8 @@ struct MultiInstance {
     _this.returnMsg = `AudioCapturer ${index} read end, state:${_this.audioCapturers[indexc].state}\n`
   }
 
-  stopCapturer(index: number) {
-    if (!this.audioCapturers[index]) {
+  stopCapturer(index) {
+    if (this.audioCapturers[index] == null) {
       this.returnMsg = `AudioCapturer instance had not created,dont‘t allow to stop\n`
       return
     }
@@ -160,8 +156,7 @@ struct MultiInstance {
     })
   }
 
-  releaseCapturer(index: number) {
-    index = this.audioCapturers.length == 1? 0 : index;
+  releaseCapturer(index) {
     if (this.audioCapturers[index] == null) {
       this.returnMsg = `AudioCapturer ${index} instance had not created,dont‘t allow to release\n`
       return
@@ -172,20 +167,21 @@ struct MultiInstance {
         _this.returnMsg = `AudioCapturer ${index} release : Error: ${JSON.stringify(err)}\n`
       } else {
         _this.returnMsg = `AudioCapturer ${index} release SUCCESS,state:${_this.audioCapturers[index].state}\n`
-        _this.audioCapturers.splice(index, 1);
+        _this.audioCapturers[index] = null
       }
     })
   }
 
-  async renderPlay(index: number) {
+  async renderPlay(index) {
     if(this.paths[index]==""){
       this.returnMsg += `AudioCapturer ${index} 尚未录音\n`
       return
     }
-    let audioRendererOptions: audio.AudioRendererOptions = {
+    let audioRendererOptions = {
       streamInfo: this.audioCapturerOptions.streamInfo,
       rendererInfo: {
-        usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
+        content: audio.ContentType.CONTENT_TYPE_RINGTONE,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
         rendererFlags: 0
       }
     }
@@ -197,7 +193,7 @@ struct MultiInstance {
       this.returnMsg += `audioRenderer ${index} create : Error: ${JSON.stringify(err)}\n`
       return
     }
-    let bufferSize: number;
+    let bufferSize
     try {
       bufferSize = await this.audioRenderers[index].getBufferSize()
       this.returnMsg += `audioRenderer getBufferSize success,bufferSize:${bufferSize} \n`
@@ -223,7 +219,7 @@ struct MultiInstance {
       let buf = new ArrayBuffer(bufferSize);
       this.returnMsg += `audioRenderer ${index} write start.......... \n`;
       for (let i = 0;i < len; i++) {
-        let options: Option = {
+        let options = {
           offset: i * bufferSize,
           length: bufferSize
         }

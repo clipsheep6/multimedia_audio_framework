@@ -13,41 +13,28 @@
 * limitations under the License.
 */
 
-import { audio } from '@kit.AudioKit';
+import router from '@ohos.router';
+import audio from '@ohos.multimedia.audio'
+import prompt from '@ohos.prompt'
 import fs from '@ohos.file.fs';
-import { BusinessError } from '@kit.BasicServicesKit';
-
-class EnumValue {
-  value: string = '';
-}
-
-class Option {
-  uid: number = 0
-  rendererId: number = 0
-}
-
-class Options {
-  offset: number = 0
-  length: number = 0
-}
 
 @Entry
 @Component
 struct OutputDeviceByFilter {
-  @State returnMsg: string = 'Hello World';
-  @State onReturnMsg: string = 'Hello World';
-  private audioStreamManager = audio.getAudioManager().getStreamManager();
-  private audioRendererInfoArray: audio.AudioRendererChangeInfo[] = [];
-  private audioRoutingManager: audio.AudioRoutingManager | null = null;
-  @State selectedCommunicationDeviceKey: string = "请选择设备类型";
-  @State selectedCommunicationDeviceVal: number = 0;
-  @State active: boolean = false;
-  private audioDeviceDescriptors: audio.AudioDeviceDescriptor[] = [];
-  private outputDeviceList: EnumValue[] = [{ value: '无数据' }];
-  @State deviceTag: number = -1;
-  @State streamTag: number = -1;
-  @State selectedOutputDeviceIndex: number = 0;
-  private audioRendererOptions1: audio.AudioRendererOptions = {
+  @State returnMsg: string = 'Hello World'
+  @State onReturnMsg: string = 'Hello World'
+  private audioStreamManager = audio.getAudioManager().getStreamManager()
+  private audioRendererInfoArray = []
+  private audioRoutingManager = null
+  @State selectedCommunicationDeviceKey: string = "请选择设备类型"
+  @State selectedCommunicationDeviceVal: number = 0
+  @State active: boolean = false
+  private audioDeviceDescriptors = []
+  private outputDeviceList = [{ value: '无数据' }]
+  @State deviceTag: number = -1
+  @State streamTag: number = -1
+  @State selectedOutputDeviceIndex: number = 0
+  private audioRendererOptions1 = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -55,11 +42,12 @@ struct OutputDeviceByFilter {
       encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
     },
     rendererInfo: {
-      usage: audio.StreamUsage.STREAM_USAGE_RINGTONE,
+      content: audio.ContentType.CONTENT_TYPE_MUSIC,
+      usage: audio.StreamUsage.STREAM_USAGE_NOTIFICATION_RINGTONE,
       rendererFlags: 0
     }
   }
-  private audioRendererOptions2: audio.AudioRendererOptions = {
+  private audioRendererOptions2 = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -67,15 +55,16 @@ struct OutputDeviceByFilter {
       encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
     },
     rendererInfo: {
-      usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
+      content: audio.ContentType.CONTENT_TYPE_MUSIC,
+      usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
       rendererFlags: 0
     }
   }
-  private fileName1 = 'test_44100_2.wav';
-  private fileName2 = 'safe_and_sound_32.wav';
-  private streamIdList: EnumValue[] = [{ value: "无数据" }];
-  private audioRendererFilterList: Option[] = [];
-  @State selectedStreamIndex: number = 0;
+  private fileName1 = 'test_44100_2.wav'
+  private fileName2 = 'safe_and_sound_32.wav'
+  private streamIdList = [{ value: "无数据" }]
+  private audioRendererFilterList = []
+  @State selectedStreamIndex: number = 0
 
   aboutToAppear() {
     let audioManager = audio.getAudioManager();
@@ -85,9 +74,9 @@ struct OutputDeviceByFilter {
 
   }
 
-  async createaudioRenderStream(fileName: string, audioRendererOptions: audio.AudioRendererOptions) {
-    let audioRenderer: audio.AudioRenderer | null = null;
-    let bufferSize: number;
+  async createaudioRenderStream(fileName, audioRendererOptions) {
+    let audioRenderer = null
+    let bufferSize
     try {
       audioRenderer = await audio.createAudioRenderer(audioRendererOptions);
       this.audioRendererInfoArray = await this.audioStreamManager.getCurrentAudioRendererInfoArray()
@@ -97,7 +86,7 @@ struct OutputDeviceByFilter {
       for (let i = 0;i < this.audioRendererInfoArray.length; i++) {
         let audioRendererInfo = this.audioRendererInfoArray[i];
         this.streamIdList.push({ value: "音频流ID:" + audioRendererInfo.streamId })
-        let option: Option = {
+        let option = {
           uid: audioRendererInfo.clientUid,
           rendererId: audioRendererInfo.streamId
         }
@@ -133,7 +122,7 @@ struct OutputDeviceByFilter {
       let buf = new ArrayBuffer(bufferSize);
       this.returnMsg += `audioRenderer write start.......... \n`;
         for (let i = 0;i < len; i++) {
-          let options: Options = {
+          let options = {
             offset: i * bufferSize,
             length: bufferSize
           }
@@ -155,18 +144,16 @@ struct OutputDeviceByFilter {
     }
   }
 
-  getDeviceTypeNameByValue(value: audio.DeviceType) {
-    let keyValue: string = '';
-    Object.keys(audio.AudioVolumeType).forEach((key) => {
+  getDeviceTypeNameByValue(value) {
+    for (let key in audio.DeviceType) {
       if (audio.DeviceType[key] == value) {
-        keyValue = key;
+        return key;
       }
-    })
-    return keyValue;
+    }
   }
 
-  getDeviceList(deviceDescriptors: audio.AudioDeviceDescriptor[]) {
-    let deviceList: EnumValue[] = [];
+  getDeviceList(deviceDescriptors) {
+    let deviceList = [];
     for (let i = 0;i < deviceDescriptors.length; i++) {
       let deviceTypeName = this.getDeviceTypeNameByValue(deviceDescriptors[i].deviceType)
       deviceList.push({ value: deviceTypeName })
@@ -175,10 +162,6 @@ struct OutputDeviceByFilter {
   }
 
   async getOutputAudioDevices() {
-    if (!this.audioRoutingManager) {
-      this.returnMsg = "AudioRoutingManager instance had not created";
-      return;
-    }
     try {
       this.audioDeviceDescriptors = await this.audioRoutingManager.getDevices(audio.DeviceFlag.OUTPUT_DEVICES_FLAG);
       this.returnMsg = `getOutputAudioDevices Success1: ${JSON.stringify(this.audioDeviceDescriptors)}`
@@ -193,10 +176,6 @@ struct OutputDeviceByFilter {
   }
 
   selectOutputDeviceByFilterCallback() {
-    if (!this.audioRoutingManager) {
-      this.returnMsg = "AudioRoutingManager instance had not created";
-      return;
-    }
     if (this.audioDeviceDescriptors.length == 0) {
       this.returnMsg = `没有输出设备类`
       return
@@ -227,10 +206,6 @@ struct OutputDeviceByFilter {
   }
 
   selectOutputDeviceByFilterPromise() {
-    if (!this.audioRoutingManager) {
-      this.returnMsg = "AudioRoutingManager instance had not created";
-      return;
-    }
     if (this.audioDeviceDescriptors.length == 0) {
       this.returnMsg = `没有输出设备类`
       return
@@ -254,7 +229,7 @@ struct OutputDeviceByFilter {
     this.audioRoutingManager.selectOutputDeviceByFilter(outputAudioRendererFilter, outputAudioDeviceDescriptor)
       .then(() => {
         _this.returnMsg += `selectOutputDeviceByFilter promise Success`
-      }).catch((err: BusinessError) => {
+      }).catch(err => {
       _this.returnMsg += `selectOutputDeviceByFilter promise Error: ${JSON.stringify(err)}\n`
     })
   }

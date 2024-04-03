@@ -13,38 +13,30 @@
 * limitations under the License.
 */
 
-import { audio } from '@kit.AudioKit';
-import prompt from '@ohos.prompt';
-import { BusinessError } from '@kit.BasicServicesKit';
-
-class EnumValue {
-  value: string = '';
-}
+import router from '@ohos.router';
+import audio from '@ohos.multimedia.audio'
+import prompt from '@ohos.prompt'
 
 @Entry
 @Component
 struct CommunicationDevice {
-  @State returnMsg: string = 'Hello World';
-  @State onReturnMsg: string = 'Hello World';
-  private audioRoutingManager: audio.AudioRoutingManager | null = null;
-  private CommunicationDeviceTypeList: EnumValue[] = [];
-  @State selectedCommunicationDeviceKey: string = "请选择";
-  @State selectedCommunicationDeviceVal: number = 0;
-  @State active: boolean = false;
+  @State returnMsg: string = 'Hello World'
+  @State onReturnMsg: string = 'Hello World'
+  private audioRoutingManager = null
+  private CommunicationDeviceTypeList = []
+  @State selectedCommunicationDeviceKey: string = "请选择"
+  @State selectedCommunicationDeviceVal: number = 0
+  @State active: boolean = false
 
   aboutToAppear() {
     let audioManager = audio.getAudioManager();
     this.audioRoutingManager = audioManager.getRoutingManager();
-    Object.keys(audio.CommunicationDeviceType).forEach((key) => {
-      this.CommunicationDeviceTypeList.push({ value: key });
-    })
+    for (let key in audio.CommunicationDeviceType) {
+      this.CommunicationDeviceTypeList.push({ value: key })
+    }
   }
 
   setCommunicationDeviceCallback() {
-    if (!this.audioRoutingManager) {
-      this.returnMsg = "AudioRoutingManager instance had not created";
-      return;
-    }
     if (this.selectedCommunicationDeviceKey == "请选择") {
       prompt.showToast({
         message: '请选择通讯设备',
@@ -64,10 +56,6 @@ struct CommunicationDevice {
   }
 
   setCommunicationDevicePromise() {
-    if (!this.audioRoutingManager) {
-      this.returnMsg = "AudioRoutingManager instance had not created";
-      return;
-    }
     if (this.selectedCommunicationDeviceKey == "请选择") {
       prompt.showToast({
         message: '请选择通讯设备',
@@ -79,16 +67,12 @@ struct CommunicationDevice {
     this.audioRoutingManager.setCommunicationDevice(this.selectedCommunicationDeviceVal, this.active)
       .then(() => {
         _this.returnMsg = `setCommunicationDevice promise Success`
-      }).catch((err: BusinessError) => {
+      }).catch(err => {
       _this.returnMsg = `setCommunicationDevice promise Failed error ${JSON.stringify(err)}`
     })
   }
 
   isCommunicationDeviceActiveCallback() {
-    if (!this.audioRoutingManager) {
-      this.returnMsg = "AudioRoutingManager instance had not created";
-      return;
-    }
     let _this = this;
     this.audioRoutingManager.isCommunicationDeviceActive(this.selectedCommunicationDeviceVal, (err, value) => {
       if (err) {
@@ -100,15 +84,11 @@ struct CommunicationDevice {
   }
 
   isCommunicationDeviceActivePromise() {
-    if (!this.audioRoutingManager) {
-      this.returnMsg = "AudioRoutingManager instance had not created";
-      return;
-    }
     let _this = this;
     this.audioRoutingManager.isCommunicationDeviceActive(this.selectedCommunicationDeviceVal)
       .then(value => {
         _this.returnMsg = `isCommunicationDeviceActive promise SUccess,返回值: ${value}`
-      }).catch((err: BusinessError) => {
+      }).catch(err => {
       _this.returnMsg = `isCommunicationDeviceActive promise Failed error ${JSON.stringify(err)}`
     })
   }
