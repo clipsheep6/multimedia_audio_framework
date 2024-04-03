@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_policy_manager.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,6 +47,7 @@ AudioCapturerPrivate::~AudioCapturerPrivate()
     if (audioStateChangeCallback_ != nullptr) {
         audioStateChangeCallback_->HandleCapturerDestructor();
     }
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType)
@@ -221,6 +223,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioStreamInfo Failed");
 
     RegisterCapturerPolicyServiceDiedCallback();
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_CAPTURER_FILENAME, &dumpFile_);
 
     return InitAudioInterruptCallback();
 }
@@ -380,7 +383,12 @@ bool AudioCapturerPrivate::Start() const
 
 int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const
 {
-    return audioStream_->Read(buffer, userSize, isBlockingRead);
+    int size = audioStream_->Read(buffer, userSize, isBlockingRead);
+    if (size > 0) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&buffer), size);
+    }
+
+    return size;
 }
 
 CapturerState AudioCapturerPrivate::GetStatus() const
