@@ -253,26 +253,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     volumeLevelMap_[streamForVolumeMap] = volumeLevel;
     WriteVolumeToKvStore(currentActiveDevice_, streamType, volumeLevel);
 
-    UpdateRingerModeForVolume(streamType, volumeLevel);
-
-    UpdateMuteStatusForVolume(streamType, volumeLevel);
-
     return SetVolumeDb(streamType);
-}
-
-void AudioAdapterManager::UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel)
-{
-    //The ringer mode is automatically updated based on the ringtone volume
-    if (streamType != STREAM_RING) {
-        return;
-    }
-    if (volumeLevel > 0 && (ringerMode_ == RINGER_MODE_SILENT || ringerMode_ == RINGER_MODE_VIBRATE)) {
-        // ringtone volume > 0, change the ringer mode to RINGER_MODE_NORMAL
-        SetRingerModeInternal(RINGER_MODE_NORMAL);
-    } else if (volumeLevel == 0 && ringerMode_ == RINGER_MODE_NORMAL) {
-        // ringtone volume == 0, change the ringer mode to RINGER_MODE_VIBRATE
-        SetRingerModeInternal(RINGER_MODE_VIBRATE);
-    }
 }
 
 void AudioAdapterManager::UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel)
@@ -560,18 +541,6 @@ int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
 {
     AUDIO_INFO_LOG("SetRingerMode: %{public}d", ringerMode);
     ringerMode_ = ringerMode;
-
-    switch (ringerMode) {
-        case RINGER_MODE_SILENT:
-        case RINGER_MODE_VIBRATE:
-            SetStreamMuteInternal(STREAM_RING, true);
-            break;
-        case RINGER_MODE_NORMAL:
-            SetStreamMuteInternal(STREAM_RING, false);
-            break;
-        default:
-            break;
-    }
 
     // In case if KvStore didnot connect during bootup
     if (audioPolicyKvStore_ == nullptr) {
