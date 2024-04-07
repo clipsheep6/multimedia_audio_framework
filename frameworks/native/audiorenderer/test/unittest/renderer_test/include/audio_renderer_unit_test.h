@@ -94,6 +94,14 @@ public:
     static void InitializeRendererOptions(AudioRendererOptions &rendererOptions);
     // Init 3DRenderer Options
     static void InitializeRendererSpatialOptions(AudioRendererOptions &rendererOptions);
+    // Init Renderer Options for music
+    static AudioRendererOptions InitializeRendererOptionsForMusic();
+    // Init Renderer Options for ring
+    static AudioRendererOptions InitializeRendererOptionsForRing();
+    // Init Renderer Options for voip
+    static AudioRendererOptions InitializeRendererOptionsForVoip();
+    // Init Renderer Options for voice call
+    static AudioRendererOptions InitializeRendererOptionsForVoiceCall();
     // Allocate memory
     static void GetBuffersAndLen(std::unique_ptr<AudioRenderer> &audioRenderer,
         uint8_t *&buffer, uint8_t *&metaBuffer, size_t &bufferLen);

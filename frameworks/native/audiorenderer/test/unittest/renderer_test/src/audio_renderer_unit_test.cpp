@@ -114,6 +114,58 @@ void AudioRendererUnitTest::InitializeRendererSpatialOptions(AudioRendererOption
     return;
 }
 
+AudioRendererOptions AudioRendererUnitTest::InitializeRendererOptionsForMusic()
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+    return rendererOptions;
+}
+
+AudioRendererOptions AudioRendererUnitTest::InitializeRendererOptionsForRing()
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_RINGTONE;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+    return rendererOptions;
+}
+
+AudioRendererOptions AudioRendererUnitTest::InitializeRendererOptionsForVoip()
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+    return rendererOptions;
+}
+
+AudioRendererOptions AudioRendererUnitTest::InitializeRendererOptionsForVoiceCall()
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+    return rendererOptions;
+}
+
 void AudioRendererUnitTest::GetBuffersAndLen(unique_ptr<AudioRenderer> &audioRenderer,
     uint8_t *&buffer, uint8_t *&metaBuffer, size_t &bufferLen)
 {
@@ -6586,21 +6638,857 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_Write_002, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test voip can not interrupt voiceCall
- * @tc.number: SetVoipInterruptVoiceCall_001
- * @tc.desc  : When voip comes after voiceCall, voip will be deny by voiceCall
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_001
+ * @tc.desc  : When voip comes after voiceCall, voip will start fail(deny by voiceCall)
  */
-HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_001, TestSize.Level1)
 {
-    AudioRendererOptions rendererOptionsForVoip;
-    rendererOptionsForVoip.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    rendererOptionsForVoip.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    rendererOptionsForVoip.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    rendererOptionsForVoip.streamInfo.channels = AudioChannel::STEREO;
-    rendererOptionsForVoip.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
-    rendererOptionsForVoip.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
-    rendererOptionsForVoip.rendererInfo.rendererFlags = RENDERER_FLAG;
+    AudioRendererOptions rendererOptionsForVoiceCall = AudioRendererUnitTest::InitializeRendererOptionsForVoiceCall();
+    unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoiceCall);
+    ASSERT_NE(nullptr, audioRendererForVoiceCall);
+    audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
+    EXPECT_EQ(true, isStartedforVoiceCall);
 
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(false, isStartedforVoip);
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForVoiceCall->Stop();
+    audioRendererForVoiceCall->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_002
+ * @tc.desc  : When STREAM_VOICE_MESSAGE comes after STREAM_VOICE_CALL, STREAM_VOICE_MESSAGE will duck
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForVoiceCall = AudioRendererUnitTest::InitializeRendererOptionsForVoiceCall();
+    unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoiceCall);
+    ASSERT_NE(nullptr, audioRendererForVoiceCall);
+    audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
+    EXPECT_EQ(true, isStartedforVoiceCall);
+
+    AudioRendererOptions rendererOptionsForMessage;
+    rendererOptionsForMessage.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForMessage.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForMessage.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForMessage.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForMessage.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForMessage.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
+    rendererOptionsForMessage.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForMessage = AudioRenderer::Create(rendererOptionsForMessage);
+    ASSERT_NE(nullptr, audioRendererForMessage);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForMessage->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForMessage->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforMessage = audioRendererForMessage->Start();
+    EXPECT_EQ(true, isStartedforMessage);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_DUCK);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForMessage->Stop();
+    audioRendererForMessage->Release();
+    audioRendererForVoiceCall->Stop();
+    audioRendererForVoiceCall->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_003
+ * @tc.desc  : When STREAM_DTMF comes after STREAM_VOICE_CALL, STREAM_DTMF will play
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_003, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForVoiceCall = AudioRendererUnitTest::InitializeRendererOptionsForVoiceCall();
+    unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoiceCall);
+    ASSERT_NE(nullptr, audioRendererForVoiceCall);
+    audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
+    EXPECT_EQ(true, isStartedforVoiceCall);
+
+    AudioRendererOptions rendererOptionsForDtmf;
+    rendererOptionsForDtmf.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForDtmf.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForDtmf.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForDtmf.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForDtmf.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForDtmf.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererOptionsForDtmf.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForDtmf = AudioRenderer::Create(rendererOptionsForDtmf);
+    ASSERT_NE(nullptr, audioRendererForDtmf);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForDtmf->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForDtmf->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforDtmf = audioRendererForDtmf->Start();
+    EXPECT_EQ(true, isStartedforDtmf);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_NONE);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForDtmf->Stop();
+    audioRendererForDtmf->Release();
+    audioRendererForVoiceCall->Stop();
+    audioRendererForVoiceCall->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_004
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_VOICE_MESSAGE, STREAM_VOICE_MESSAGE will stop
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_004, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForMessage;
+    rendererOptionsForMessage.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForMessage.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForMessage.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForMessage.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForMessage.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForMessage.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
+    rendererOptionsForMessage.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForMessage = AudioRenderer::Create(rendererOptionsForMessage);
+    ASSERT_NE(nullptr, audioRendererForMessage);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForMessage->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForMessage->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforMessage = audioRendererForMessage->Start();
+    EXPECT_EQ(true, isStartedforMessage);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_STOP);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForMessage->Stop();
+    audioRendererForMessage->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_005
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_RING, STREAM_RING will stop
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_005, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForRing;
+    rendererOptionsForRing.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForRing.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForRing.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForRing.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForRing.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForRing.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_RINGTONE;
+    rendererOptionsForRing.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForRing = AudioRenderer::Create(rendererOptionsForRing);
+    ASSERT_NE(nullptr, audioRendererForRing);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForRing->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForRing->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforRing = audioRendererForRing->Start();
+    EXPECT_EQ(true, isStartedforRing);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_STOP);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForRing->Stop();
+    audioRendererForRing->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_006
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_MUSIC, STREAM_RING will pause
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_006, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForMusic = AudioRendererUnitTest::InitializeRendererOptionsForMusic();
+    unique_ptr<AudioRenderer> audioRendererForMusic = AudioRenderer::Create(rendererOptionsForMusic);
+    ASSERT_NE(nullptr, audioRendererForMusic);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForMusic->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForMusic->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforMusic = audioRendererForMusic->Start();
+    EXPECT_EQ(true, isStartedforMusic);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_PAUSE);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForMusic->Stop();
+    audioRendererForMusic->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_007
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_MOVIE, STREAM_MOVIE will pause
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_007, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForMovie;
+    rendererOptionsForMovie.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForMovie.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForMovie.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForMovie.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForMovie.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForMovie.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MOVIE;
+    rendererOptionsForMovie.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForMovie = AudioRenderer::Create(rendererOptionsForMovie);
+    ASSERT_NE(nullptr, audioRendererForMovie);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForMovie->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForMovie->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforMovie = audioRendererForMovie->Start();
+    EXPECT_EQ(true, isStartedforMovie);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_PAUSE);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForMovie->Stop();
+    audioRendererForMovie->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_008
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_GAME, STREAM_GAME will pause
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_008, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForGame;
+    rendererOptionsForGame.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForGame.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForGame.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForGame.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForGame.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForGame.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_GAME;
+    rendererOptionsForGame.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForGame = AudioRenderer::Create(rendererOptionsForGame);
+    ASSERT_NE(nullptr, audioRendererForGame);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForGame->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForGame->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforGame = audioRendererForGame->Start();
+    EXPECT_EQ(true, isStartedforGame);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_PAUSE);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForGame->Stop();
+    audioRendererForGame->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_009
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_SPEECH, STREAM_SPEECH will pause
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_009, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForSpeech;
+    rendererOptionsForSpeech.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForSpeech.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForSpeech.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForSpeech.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForSpeech.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForSpeech.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_AUDIOBOOK;
+    rendererOptionsForSpeech.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForSpeech = AudioRenderer::Create(rendererOptionsForSpeech);
+    ASSERT_NE(nullptr, audioRendererForSpeech);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForSpeech->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForSpeech->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforSpeech = audioRendererForSpeech->Start();
+    EXPECT_EQ(true, isStartedforSpeech);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_PAUSE);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForSpeech->Stop();
+    audioRendererForSpeech->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_010
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_NAVIGATION, STREAM_NAVIGATION will duck
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_010, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForNavigation;
+    rendererOptionsForNavigation.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForNavigation.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForNavigation.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForNavigation.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForNavigation.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForNavigation.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NAVIGATION;
+    rendererOptionsForNavigation.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForNavigation = AudioRenderer::Create(rendererOptionsForNavigation);
+    ASSERT_NE(nullptr, audioRendererForNavigation);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForNavigation->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForNavigation->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforNavigation = audioRendererForNavigation->Start();
+    EXPECT_EQ(true, isStartedforNavigation);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_DUCK);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForNavigation->Stop();
+    audioRendererForNavigation->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_011
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_ALARM, STREAM_ALARM will stop
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_011, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForAlarm;
+    rendererOptionsForAlarm.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForAlarm.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForAlarm.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForAlarm.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForAlarm.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForAlarm.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ALARM;
+    rendererOptionsForAlarm.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForAlarm = AudioRenderer::Create(rendererOptionsForAlarm);
+    ASSERT_NE(nullptr, audioRendererForAlarm);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForAlarm->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForAlarm->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforAlarm = audioRendererForAlarm->Start();
+    EXPECT_EQ(true, isStartedforAlarm);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_STOP);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForAlarm->Stop();
+    audioRendererForAlarm->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_012
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_NOTIFICATION, STREAM_NOTIFICATION will stop
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_012, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForNotification = AudioRendererUnitTest::InitializeRendererOptionsForRing();
+    unique_ptr<AudioRenderer> audioRendererForNotification = AudioRenderer::Create(rendererOptionsForNotification);
+    ASSERT_NE(nullptr, audioRendererForNotification);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForNotification->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForNotification->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforNotification = audioRendererForNotification->Start();
+    EXPECT_EQ(true, isStartedforNotification);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_STOP);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForNotification->Stop();
+    audioRendererForNotification->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_013
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_DTMF, STREAM_DTMF will stop
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_013, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForDtmf;
+    rendererOptionsForDtmf.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForDtmf.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForDtmf.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForDtmf.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForDtmf.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForDtmf.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererOptionsForDtmf.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForDtmf = AudioRenderer::Create(rendererOptionsForDtmf);
+    ASSERT_NE(nullptr, audioRendererForDtmf);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForDtmf->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForDtmf->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforDtmf = audioRendererForDtmf->Start();
+    EXPECT_EQ(true, isStartedforDtmf);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_STOP);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForDtmf->Stop();
+    audioRendererForDtmf->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_014
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT will stop
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_014, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForAssistant;
+    rendererOptionsForAssistant.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForAssistant.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForAssistant.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForAssistant.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForAssistant.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForAssistant.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    rendererOptionsForAssistant.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForAssistant = AudioRenderer::Create(rendererOptionsForAssistant);
+    ASSERT_NE(nullptr, audioRendererForAssistant);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForAssistant->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForAssistant->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforAssistant = audioRendererForAssistant->Start();
+    EXPECT_EQ(true, isStartedforAssistant);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_STOP);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForAssistant->Stop();
+    audioRendererForAssistant->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_015
+ * @tc.desc  : When STREAM_VOICE_COMMUNICATION comes after STREAM_ACCESSIBILITY, STREAM_VOICE_COMMUNICATION will duck
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_015, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForAccessibility;
+    rendererOptionsForAccessibility.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForAccessibility.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForAccessibility.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForAccessibility.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForAccessibility.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForAccessibility.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ACCESSIBILITY;
+    rendererOptionsForAccessibility.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForAccessibility = AudioRenderer::Create(rendererOptionsForAccessibility);
+    ASSERT_NE(nullptr, audioRendererForAccessibility);
+    audioRendererForAccessibility->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforAccessibility = audioRendererForAccessibility->Start();
+    EXPECT_EQ(true, isStartedforAccessibility);
+
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForVoip->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_DUCK);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+    audioRendererForAccessibility->Stop();
+    audioRendererForAccessibility->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_016
+ * @tc.desc  : When STREAM_RING comes after STREAM_VOICE_COMMUNICATION, STREAM_RING will be denied
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_016, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    AudioRendererOptions rendererOptionsForRing;
+    rendererOptionsForRing.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForRing.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForRing.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForRing.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForRing.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForRing.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
+    rendererOptionsForRing.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForRing = AudioRenderer::Create(rendererOptionsForRing);
+    ASSERT_NE(nullptr, audioRendererForRing);
+
+    audioRendererForRing->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforRing = audioRendererForRing->Start();
+    EXPECT_EQ(false, isStartedforRing);
+
+    audioRendererForRing->Stop();
+    audioRendererForRing->Release();
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_017
+ * @tc.desc  : When STREAM_VOICE_MESSAGE comes after STREAM_VOICE_COMMUNICATION, STREAM_VOICE_MESSAGE will duck
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_017, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    AudioRendererOptions rendererOptionsForMessage;
+    rendererOptionsForMessage.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForMessage.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForMessage.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForMessage.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForMessage.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForMessage.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
+    rendererOptionsForMessage.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForMessage = AudioRenderer::Create(rendererOptionsForMessage);
+    ASSERT_NE(nullptr, audioRendererForMessage);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForMessage->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForMessage->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforMessage = audioRendererForMessage->Start();
+    EXPECT_EQ(true, isStartedforMessage);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_DUCK);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForMessage->Stop();
+    audioRendererForMessage->Release();
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_018
+ * @tc.desc  : When STREAM_MUSIC comes after voip, STREAM_MUSIC will duck
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_018, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    AudioRendererOptions rendererOptionsForMusic = AudioRendererUnitTest::InitializeRendererOptionsForMusic();
+    unique_ptr<AudioRenderer> audioRendererForMusic = AudioRenderer::Create(rendererOptionsForMusic);
+    ASSERT_NE(nullptr, audioRendererForMusic);
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForMusic->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForMusic->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforMusic = audioRendererForMusic->Start();
+    EXPECT_EQ(true, isStartedforMusic);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_DUCK);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForMusic->Stop();
+    audioRendererForMusic->Release();
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_019
+ * @tc.desc  : When STREAM_MOVIE comes after voip, STREAM_MOVIE will duck
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_019, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    AudioRendererOptions rendererOptionsForMovie;
+    rendererOptionsForMovie.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForMovie.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForMovie.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForMovie.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForMovie.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForMovie.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptionsForMovie.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForMovie = AudioRenderer::Create(rendererOptionsForMovie);
+    ASSERT_NE(nullptr, audioRendererForMovie);
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForMovie->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForMovie->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforMovie = audioRendererForMovie->Start();
+    EXPECT_EQ(true, isStartedforMovie);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_DUCK);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForMovie->Stop();
+    audioRendererForMovie->Release();
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_020
+ * @tc.desc  : When STREAM_DTMF comes after voip, STREAM_DTMF will play
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_020, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    AudioRendererOptions rendererOptionsForDtmf;
+    rendererOptionsForDtmf.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForDtmf.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForDtmf.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForDtmf.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForDtmf.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForDtmf.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererOptionsForDtmf.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRendererForDtmf = AudioRenderer::Create(rendererOptionsForDtmf);
+    ASSERT_NE(nullptr, audioRendererForDtmf);
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForDtmf->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForDtmf->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforDtmf = audioRendererForDtmf->Start();
+    EXPECT_EQ(true, isStartedforDtmf);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_NONE);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForDtmf->Stop();
+    audioRendererForDtmf->Release();
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_021
+ * @tc.desc  : When STREAM_ACCESSIBILITY comes after voip, voip will duck
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_021, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
     ASSERT_NE(nullptr, audioRendererForVoip);
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
@@ -6611,16 +7499,51 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     bool isStartedforVoip = audioRendererForVoip->Start();
     EXPECT_EQ(true, isStartedforVoip);
 
-    AudioRendererOptions rendererOptionsForVoice;
-    rendererOptionsForVoice.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    rendererOptionsForVoice.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    rendererOptionsForVoice.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    rendererOptionsForVoice.streamInfo.channels = AudioChannel::STEREO;
-    rendererOptionsForVoice.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
-    rendererOptionsForVoice.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    rendererOptionsForVoice.rendererInfo.rendererFlags = RENDERER_FLAG;
+    AudioRendererOptions rendererOptionsForAccessibility;
+    rendererOptionsForAccessibility.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptionsForAccessibility.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptionsForAccessibility.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptionsForAccessibility.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptionsForAccessibility.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptionsForAccessibility.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ACCESSIBILITY;
+    rendererOptionsForAccessibility.rendererInfo.rendererFlags = RENDERER_FLAG;
 
-    unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
+    unique_ptr<AudioRenderer> audioRendererForAccessibility = AudioRenderer::Create(rendererOptionsForAccessibility);
+    ASSERT_NE(nullptr, audioRendererForAccessibility);
+    audioRendererForAccessibility->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforAccessibility = audioRendererForAccessibility->Start();
+    EXPECT_EQ(true, isStartedforAccessibility);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_DUCK);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
+
+    audioRendererForAccessibility->Stop();
+    audioRendererForAccessibility->Release();
+    audioRendererForVoip->Stop();
+    audioRendererForVoip->Release();
+}
+
+/**
+ * @tc.name  : Test Audio Interrupt rule
+ * @tc.number: SetAudioInterrupt_022
+ * @tc.desc  : When voiceCall comes after voip, voiceCall will stop voip
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_022, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptionsForVoip = AudioRendererUnitTest::InitializeRendererOptionsForVoip();
+    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
+    ASSERT_NE(nullptr, audioRendererForVoip);
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    int32_t ret = audioRendererForVoip->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
+    bool isStartedforVoip = audioRendererForVoip->Start();
+    EXPECT_EQ(true, isStartedforVoip);
+
+    AudioRendererOptions rendererOptionsForVoiceCall = AudioRendererUnitTest::InitializeRendererOptionsForVoiceCall();
+    unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoiceCall);
     ASSERT_NE(nullptr, audioRendererForVoiceCall);
     audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
@@ -6628,53 +7551,10 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
 
     std::this_thread::sleep_for(std::chrono::seconds(3));
     EXPECT_EQ(AudioRendererUnitTest::interruptEventTest_.hintType, INTERRUPT_HINT_STOP);
+    AudioRendererUnitTest::interruptEventTest_.hintType = INTERRUPT_HINT_NONE;
 
     audioRendererForVoiceCall->Stop();
     audioRendererForVoiceCall->Release();
-    audioRendererForVoip->Stop();
-    audioRendererForVoip->Release();
-}
-
-/**
- * @tc.name  : Test voiceCall can interrupt voip
- * @tc.number: SetVoiceCallInterruptVoip_001
- * @tc.desc  : When voiceCall comes after voip, voip will be stopped by voiceCall
- */
-HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptionsForVoice;
-    rendererOptionsForVoice.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    rendererOptionsForVoice.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    rendererOptionsForVoice.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    rendererOptionsForVoice.streamInfo.channels = AudioChannel::STEREO;
-    rendererOptionsForVoice.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
-    rendererOptionsForVoice.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    rendererOptionsForVoice.rendererInfo.rendererFlags = RENDERER_FLAG;
-
-    unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
-    ASSERT_NE(nullptr, audioRendererForVoiceCall);
-    audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
-    bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
-    EXPECT_EQ(true, isStartedforVoiceCall);
-
-    AudioRendererOptions rendererOptionsForVoip;
-    rendererOptionsForVoip.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    rendererOptionsForVoip.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    rendererOptionsForVoip.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    rendererOptionsForVoip.streamInfo.channels = AudioChannel::STEREO;
-    rendererOptionsForVoip.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
-    rendererOptionsForVoip.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
-    rendererOptionsForVoip.rendererInfo.rendererFlags = RENDERER_FLAG;
-
-    unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
-    ASSERT_NE(nullptr, audioRendererForVoip);
-    audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
-    bool isStartedforVoip = audioRendererForVoip->Start();
-    EXPECT_EQ(false, isStartedforVoip);
-
-    audioRendererForVoip->Stop();
-    audioRendererForVoip->Release();
-
     audioRendererForVoip->Stop();
     audioRendererForVoip->Release();
 }
