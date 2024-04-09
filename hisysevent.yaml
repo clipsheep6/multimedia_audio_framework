@@ -60,7 +60,6 @@ BACKGROUND_SILENT_PLAYBACK:
 LOAD_CONFIG_ERROR:
   __BASE: {type: FAULT, level: CRITICAL, desc: load configuration failed on audio policy service startup}
   CATEGORY: {type: UINT16, desc: category of audio policy configuration in uint16}
-  ERROR_CODE: {type: INT32, desc: error code}
 
 AUDIO_SERVICE_STARTUP_ERROR:
   __BASE: {type: FAULT, level: CRITICAL, desc: audio service start up failed}
@@ -86,17 +85,20 @@ AUDIO_STREAM_UTILIZATION_STATISTIC:
   STREAM_TYPE: {type: UINT8, desc: stream type, can be either StreamUsage in playback or SourceType in capture}
   PIPE_TYPE: {type: UINT8, desc: pipe type, e.g. normal, lowlatency, offload, multichannel, e.t.c.}
   APP_NAME: {type: STRING, desc: Application name which is using this stream}
+  SAMPLE_RATE: {type: UINT32, desc: sample rate of this stream}
   DURATION: {type: UINT32, desc: duration of this stream}
 
 AUDIO_DEVICE_UTILIZATION_STATISTIC:
   __BASE: {type: STATISTIC, level: MINOR, desc: audio device utilization statistic}
-  DEVICE_TYPE: {type: UINT16, desc: audio device type}
+  DEVICE_TYPE: {type: UINT8, desc: audio device type}
+  IS_PLAYBACK: {type: BOOL, desc: this stream is used for playback or capture}
   STREAM_TYPE: {type: UINT8, desc: stream type, can be either StreamUsage in playback or SourceType in capture}
   DURATION: {type: UINT32, desc: duration of using this devices}
 
 BT_UTILIZATION_STATISTIC:
   __BASE: {type: STATISTIC, level: MINOR, desc: blue tooth device utilization statistic}
-  BT_TYPE: {type: UINT16, desc: blue tooth type}
+  BT_TYPE: {type: UINT8, desc: blue tooth type}
+  IS_PLAYBACK: {type: BOOL, desc: this stream is used for playback or capture}
   STREAM_TYPE: {type: UINT8, desc: stream type, can be either StreamUsage in playback or SourceType in capture}
   DURATION: {type: UINT32, desc: duration of using this devices}
 
@@ -112,29 +114,21 @@ PLAYBACK_VOLUME_STATISTIC:
   __BASE: {type: STATISTIC, level: MINOR, desc: playback volume statistic}
   STREAM_TYPE: {type: UINT8, desc: StreamUsage of playback stream}
   LEVEL: {type: INT32, desc: volume level}
-  DEVICE_TYPE: {type: UINT16, desc: audio device type}
+  DEVICE_TYPE: {type: UINT8, desc: audio device type}
   DURATION: {type: UINT32, desc: duration of this volume level}
 
 MUTED_CAPTURE_STATISTIC:
   __BASE: {type: STATISTIC, level: MINOR, desc: muted audio capture statistic}
   STREAM_TYPE: {type: UINT8, desc: SourceType of audio capture stream}
-  DEVICE_TYPE: {type: UINT16, desc: audio device type}
+  DEVICE_TYPE: {type: UINT8, desc: audio device type}
   DURATION: {type: UINT32, desc: duration of muted capture}
-
-AUDIO_SAMPLE_RATE_STATISTIC:
-  __BASE: {type: STATISTIC, level: MINOR, desc: muted audio capture statistic}
-  APP_NAME: {type: STRING, desc: application name}
-  STREAM_TYPE: {type: UINT8, desc: stream type, can be either StreamUsage in playback or SourceType in capture}
-  PIPE_TYPE: {type: UINT8, desc: pipe type, e.g. normal, lowlatency, offload, multichannel, e.t.c.}
-  IS_PLAYBACK: {type: BOOL, desc: this stream is used for playback or capture}
-  SAMPLE_RATE: {type: UINT32, desc: sample rate of this stream}
 
 AUDIO_ROUTE_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: audio route change}
   TIMESTAMP: {type: UINT64, desc: when does this change happens}
   REASON: {type: UINT8, desc: route change reason}
-  DEVICE_TYPE_BEFORE_CHANGE: {type: UINT16, desc: audio device type before change}
-  DEVICE_TYPE_AFTER_CHANGE: {type: UINT16, desc: audio device type after change}
+  DEVICE_TYPE_BEFORE_CHANGE: {type: UINT8, desc: audio device type before change}
+  DEVICE_TYPE_AFTER_CHANGE: {type: UINT8, desc: audio device type after change}
 
 AUDIO_PIPE_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: audio pipe change}
@@ -151,14 +145,9 @@ AUDIO_FOCUS_MIGRATE:
   APP_NAME: {type: STRING, desc: application whose focus is migrated}
   MIGRATE_DIRECTION: {type: UINT8, desc: migrate direction}
 
-SET_FORCE_USE_PLAYBACK_DEVICE:
+SET_FORCE_USE_AUDIO_DEVICE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: Forcibly select an audio playback device}
   APP_NAME: {type: STRING, desc: application name who has forcibly select an audio playback device}
-  DEVICE_TYPE: {type: UINT16, desc: audio device type which is set force used}
-  STREAM_TYPE: {type: UINT8, desc: StreamUsage in playback}
-
-SET_FORCE_USE_CAPTURE_DEVICE:
-  __BASE: {type: BEHAVIOR, level: MINOR, desc: Forcibly select an audio capture device}
-  APP_NAME: {type: STRING, desc: application name who has forcibly select an audio capture device}
-  DEVICE_TYPE: {type: UINT16, desc: audio device type which is set force used}
-  STREAM_TYPE: {type: UINT8, desc: SourceType in capture}
+  DEVICE_TYPE: {type: UINT8, desc: audio device type which is set force used}
+  IS_PLAYBACK: {type: BOOL, desc: this stream is used for playback or capture}
+  STREAM_TYPE: {type: UINT8, desc: stream type, can be either StreamUsage in playback or SourceType in capture}
