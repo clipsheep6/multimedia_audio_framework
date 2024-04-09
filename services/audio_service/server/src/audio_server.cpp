@@ -706,12 +706,15 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     } else if (RECORD_CHECK_FORWARD_LIST.count(callerUid)) {
         AUDIO_INFO_LOG("Check forward calling for uid:%{public}d", callerUid);
         resetConfig.appInfo.appTokenId = IPCSkeleton::GetFirstTokenID();
+        resetConfig.appInfo.appFullTokenId = IPCSkeleton::GetFirstFullTokenID();
     } else if (resetConfig.appInfo.appPid != callerPid || resetConfig.appInfo.appUid != callerUid ||
-        resetConfig.appInfo.appTokenId != IPCSkeleton::GetCallingTokenID()) {
+        resetConfig.appInfo.appTokenId != IPCSkeleton::GetCallingTokenID() ||
+        resetConfig.appInfo.appFullTokenId != IPCSkeleton::GetCallingFullTokenID()) {
         AUDIO_INFO_LOG("Use true client appInfo instead.");
         resetConfig.appInfo.appPid = callerPid;
         resetConfig.appInfo.appUid = callerUid;
         resetConfig.appInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
+        resetConfig.appInfo.appFullTokenId = IPCSkeleton::GetCallingFullTokenID();
     }
 
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
@@ -903,7 +906,8 @@ bool AudioServer::PermissionChecker(const AudioProcessConfig &config)
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         return CheckPlaybackPermission(config.appInfo.appTokenId, config.rendererInfo.streamUsage);
     } else {
-        return CheckRecorderPermission(config.appInfo.appTokenId, config.capturerInfo.sourceType);
+        return CheckRecorderPermission(config.appInfo.appTokenId, config.appInfo.appFullTokenId,
+            config.capturerInfo.sourceType);
     }
 }
 
@@ -924,10 +928,11 @@ bool AudioServer::CheckPlaybackPermission(Security::AccessToken::AccessTokenID t
     return true;
 }
 
-bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType)
+bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId,
+    const uint64_t fullTokenId, const SourceType sourceType)
 {
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {
-        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission(tokenId, fullTokenId);
         CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false,
             "Create voicecall record stream failed: no system permission.");
 
@@ -940,7 +945,7 @@ bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID t
     CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
 
     if (sourceType == SOURCE_TYPE_WAKEUP) {
-        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission(tokenId, fullTokenId);
         bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION, tokenId);
         CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, false,
             "Create wakeup record stream failed: no permission.");
@@ -952,7 +957,7 @@ bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::Access
 {
     bool hasRecordVoiceCallPermission = VerifyClientPermission(RECORD_VOICE_CALL_PERMISSION, tokenId);
     CHECK_AND_RETURN_RET_LOG(hasRecordVoiceCallPermission, false, "No permission");
-    return SUCCESS;
+    return true;
 }
 
 int32_t AudioServer::OffloadDrain()

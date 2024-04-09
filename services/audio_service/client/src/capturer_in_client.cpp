@@ -72,7 +72,7 @@ public:
     // IStreamListener
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
 
-    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
+    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t appFullTokenId) override;
 
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
@@ -223,6 +223,7 @@ private:
     int32_t clientUid_ = -1;
     int32_t clientPid_ = -1;
     uint32_t appTokenId_ = 0;
+    uint64_t appFullTokenId_ = 0;
 
     uint32_t readLogTimes_ = 0;
 
@@ -373,12 +374,15 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     return SUCCESS;
 }
 
-void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId)
+void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId,
+    uint64_t appFullTokenId)
 {
     AUDIO_INFO_LOG("Capturer set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
+    appFullTokenId_ = appFullTokenId;
+
     return;
 }
 
@@ -656,6 +660,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
     config.appInfo.appTokenId = appTokenId_;
+    config.appInfo.appFullTokenId = appFullTokenId_;
 
     config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
     config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);

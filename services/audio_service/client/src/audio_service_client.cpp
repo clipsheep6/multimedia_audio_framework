@@ -1942,12 +1942,14 @@ void AudioServiceClient::OnTimeOut()
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
-void AudioServiceClient::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId)
+void AudioServiceClient::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId,
+    uint64_t appFullTokenId)
 {
     AUDIO_DEBUG_LOG("Set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
+    appFullTokenId_ = appFullTokenId;
 }
 
 IAudioStream::StreamClass AudioServiceClient::GetStreamClass()

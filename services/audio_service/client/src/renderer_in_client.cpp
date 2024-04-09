@@ -128,7 +128,7 @@ public:
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
 
     // IAudioStream
-    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
+    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t appFullTokenId) override;
 
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
@@ -292,6 +292,7 @@ private:
     int32_t clientPid_ = -1;
     int32_t clientUid_ = -1;
     uint32_t appTokenId_ = 0;
+    uint64_t appFullTokenId_ = 0;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 
@@ -510,12 +511,14 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     return SUCCESS;
 }
 
-void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId)
+void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId,
+    uint64_t appFullTokenId)
 {
     AUDIO_INFO_LOG("Set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
+    appFullTokenId_ = appFullTokenId;
 }
 
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
@@ -748,6 +751,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
     config.appInfo.appTokenId = appTokenId_;
+    config.appInfo.appFullTokenId = appFullTokenId_;
 
     config.streamInfo.channels = static_cast<AudioChannel>(curStreamParams_.channels);
     config.streamInfo.encoding = static_cast<AudioEncodingType>(curStreamParams_.encoding);

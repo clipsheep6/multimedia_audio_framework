@@ -195,6 +195,15 @@ bool PermissionUtil::VerifySystemPermission()
     return false;
 }
 
+bool PermissionUtil::VerifySystemPermission(uint32_t tokenId, const uint64_t fullTokenId)
+{
+    auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+
+    CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_NATIVE, true);
+
+    return Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
+}
+
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
 {
     // the number 2: stereo audio has 2 channels

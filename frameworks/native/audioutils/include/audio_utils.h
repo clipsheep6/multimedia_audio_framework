@@ -73,6 +73,9 @@ public:
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
+
+    // This action typically requires a combination of other permissions for validation. Please use it with caution.
+    static bool VerifySystemPermission(uint32_t tokenId, const uint64_t fullTokenId);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);

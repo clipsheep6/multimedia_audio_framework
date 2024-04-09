@@ -29,6 +29,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     // AppInfo
     parcel.WriteInt32(config.appInfo.appUid);
     parcel.WriteUint32(config.appInfo.appTokenId);
+    parcel.WriteUint64(config.appInfo.appFullTokenId);
     parcel.WriteInt32(config.appInfo.appPid);
 
     // AudioStreamInfo
@@ -71,6 +72,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     // AppInfo
     config.appInfo.appUid = parcel.ReadInt32();
     config.appInfo.appTokenId = parcel.ReadUint32();
+    config.appInfo.appFullTokenId = parcel.ReadUint64();
     config.appInfo.appPid = parcel.ReadInt32();
 
     // AudioStreamInfo
