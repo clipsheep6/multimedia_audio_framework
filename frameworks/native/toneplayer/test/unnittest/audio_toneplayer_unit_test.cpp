@@ -191,5 +191,55 @@ HWTEST(AudioToneplayerUnitTest, Toneplayer_004, TestSize.Level1)
     bool releaseRet = toneplayer->Release();
     EXPECT_EQ(true, releaseRet);
 }
+
+/**
+ * @tc.name  : Test toneplayer loading API
+ * @tc.type  : FUNC
+ * @tc.number: Toneplayer_005
+ * @tc.desc  : Test create->LoadTone->Release interface.
+ */
+HWTEST(AudioToneplayerUnitTest, Toneplayer_005, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+    std::shared_ptr<TonePlayer> toneplayer = TonePlayer::Create(rendererInfo);
+    ASSERT_NE(nullptr, toneplayer);
+
+    bool ret = toneplayer->LoadTone(NUM_TONES);
+    EXPECT_EQ(false, ret);
+
+    bool releaseRet = toneplayer->Release();
+    EXPECT_EQ(true, releaseRet);
+}
+
+/**
+ * @tc.name  : Test toneplayer loading API
+ * @tc.type  : FUNC
+ * @tc.number: Toneplayer_006
+ * @tc.desc  : Test PlayEventStateHandler interface.
+ */
+HWTEST(AudioToneplayerUnitTest, Toneplayer_006, TestSize.Level1)
+{
+    string cachePath = "";
+    AudioRendererInfo rendereInfo;
+    std::unique_ptr<TonePlayerPrivate> tonePlayerPrivate =
+        std::make_unique<TonePlayerPrivate>(cachePath.c_str(), rendereInfo)
+    ASSERT_NE(nullptr, tonePlayerPrivate);
+
+    bool ret = tonePlayerPrivate->PlayEventStateHandler();
+    EXPECT_EQ(true, ret);
+
+    ret = tonePlayerPrivate->TonePlayerStateHandler(TonePlayerPrivate::PLAYER_EVENT_PLAY);
+    EXPECT_EQ(true, ret);
+
+    ret = tonePlayerPrivate->TonePlayerStateHandler(TonePlayerPrivate::PLAYER_EVENT_STOP);
+    EXPECT_EQ(true, ret);
+
+    
+
+
+}
 } // namespace AudioStandard
 } // namespace OHOS
