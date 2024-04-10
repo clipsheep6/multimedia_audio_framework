@@ -60,7 +60,7 @@ public:
     void SetEnhanceMode(std::string &mode);
     void ReleaseEnhanceChain();
     void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle);
-    void ApplyEnhanceChain(float *bufIn, float *bufOut, uint32_t frameLen);
+    void ApplyEnhanceChain(EnhanceBufferAttr *enhanceBufferAtter);
     bool IsEmptyEnhanceHandles();
 
 private:
@@ -82,8 +82,8 @@ public:
     int32_t CreateAudioEnhanceChainDynamic(std::string &sceneType,
         std::string &enhanceMode, std::string &upAndDownDevice);
     int32_t ReleaseAudioEnhanceChainDynamic(std::string &sceneType, std::string &upAndDownDevice);
-    int32_t ApplyAudioEnhanceChain(std::string &sceneType,
-        std::string &upAndDownDevice, BufferAttr *bufferAttr);
+    int32_t ApplyAudioEnhanceChain(std::string &sceneType, std::string &upAndDownDevice,
+        EnhanceBufferAttr *enhanceBufferAttr);
     std::string GetUpAndDownDevice();
 
 private:

@@ -28,6 +28,7 @@
 #include <pulsecore/rtpoll.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
+#include <pulsecore/memblockq.c>
 
 #include <inttypes.h>
 #include <stddef.h>
@@ -37,10 +38,12 @@
 #include "audio_types.h"
 #include "audio_manager.h"
 
+#include "securec.h"
 #include "audio_log.h"
 #include "audio_source_type.h"
 #include "audio_hdiadapter_info.h"
 #include "capturer_source_adapter.h"
+#include "audio_enhance_chain_adapter.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"
@@ -56,8 +59,13 @@
 #define AUDIO_POINT_NUM  1024
 #define AUDIO_FRAME_NUM_IN_BUF 30
 #define HDI_WAKEUP_BUFFER_TIME (PA_USEC_PER_SEC * 2)
+#define SCENE_TYPE_NUM 3
+#define IN_CHANNEL_NUM 2
+#define REF_CHANNEL_NUM 2
+#define DEFAULT_FRAMELENGTH 20
 
 const char *DEVICE_CLASS_REMOTE = "remote";
+char *const ENHANCE_SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_VOIP_3A", "SCENE_RECORD", "SCENE_MEETING"};
 
 struct Userdata {
     pa_core *core;
@@ -72,6 +80,7 @@ struct Userdata {
     pa_usec_t timestamp;
     SourceAttr attrs;
     bool IsCapturerStarted;
+    EnhanceBufferAttr *enhanceBufferAtter;
     struct CapturerSourceAdapter *sourceAdapter;
 };
 
@@ -209,7 +218,6 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
     requestBytes = pa_memblock_get_length(chunk->memblock);
     u->sourceAdapter->CapturerSourceFrame(u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
 
-    pa_memblock_release(chunk->memblock);
     AUDIO_DEBUG_LOG("HDI Source: request bytes: %{public}" PRIu64 ", replyBytes: %{public}" PRIu64,
             requestBytes, replyBytes);
     if (replyBytes > requestBytes) {
@@ -225,6 +233,32 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
         pa_memblock_unref(chunk->memblock);
         return 0;
     }
+    void *srcData = pa_memblock_acquire_chunk(chunk);
+    int32_t frameLen = (int32_t)(replyBytes / u->enhanceBufferAtter->bitDepth);
+    AUDIO_INFO_LOG("u->bitDepth: %{public}d frameLen: %{public}d", u->enhanceBufferAtter->bitDepth, frameLen);
+    memcpy_s(u->enhanceBufferAtter->input, frameLen * sizeof(uint8_t), srcData, frameLen * sizeof(uint8_t));
+
+    // before process
+    FILE *sourceIn;
+    const char *sourceInFilePath = "/data/data/.pulse_dir/SourceIn.pcm";
+    sourceIn = fopen(sourceInFilePath, "ab+");
+    fwrite((void *)u->enhanceBufferAtter->input, sizeof(uint8_t), frameLen, sourceIn);
+    fclose(sourceIn);
+    sourceIn = NULL;
+
+    EnhanceChainManagerProcess(ENHANCE_SCENE_TYPE_SET[1], u->enhanceBufferAtter);
+
+    // after process
+    FILE *sourceOut;
+    const char *sourceOutFilePath = "/data/data/.pulse_dir/SourceOut.pcm";
+    sourceOut = fopen(sourceOutFilePath, "ab+");
+    fwrite((void *)u->enhanceBufferAtter->output, sizeof(uint8_t), frameLen, sourceOut);
+    fclose(sourceOut);
+    sourceOut = NULL;
+
+    void *dstData = pa_memblock_acquire_chunk(chunk);
+    memcpy_s(u->enhanceBufferAtter->output, frameLen * sizeof(uint8_t), dstData, frameLen * sizeof(uint8_t));
+    pa_memblock_release(chunk->memblock);
 
     chunk->index = 0;
     chunk->length = replyBytes;
@@ -444,6 +478,31 @@ static bool GetEndianInfo(pa_sample_format_t format)
     return isBigEndian;
 }
 
+static uint32_t GetDataFormat(enum HdiAdapterFormat format)
+{
+    uint32_t dataFormat;
+    switch (format) {
+        case SAMPLE_U8:
+            dataFormat = 8;
+            break;
+        case SAMPLE_S16:
+            dataFormat = 16;
+            break;
+        case SAMPLE_S24:
+            dataFormat = 24;
+            break;
+        case SAMPLE_S32:
+        case SAMPLE_F32:
+            dataFormat = 32;
+            break;
+        default:
+            dataFormat = 0;
+            AUDIO_ERR_LOG("format wrong");
+            break;
+    }
+    return dataFormat;
+}
+
 static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sample_spec *ss)
 {
     if (pa_modargs_get_value_s32(ma, "source_type", &u->attrs.sourceType) < 0) {
@@ -474,6 +533,20 @@ static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sampl
         "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
 
     u->attrs.openMicSpeaker = u->open_mic_speaker;
+    
+    u->enhanceBufferAtter = pa_xnew0(EnhanceBufferAttr, 1);
+    uint32_t dataFormat = GetDataFormat(u->attrs.format);
+    u->enhanceBufferAtter->bitDepth = dataFormat / 8;
+    u->enhanceBufferAtter->refNum = REF_CHANNEL_NUM;
+    u->enhanceBufferAtter->micNum = IN_CHANNEL_NUM;
+    u->enhanceBufferAtter->sampleRate = ss->rate;
+    u->enhanceBufferAtter->batchLen = REF_CHANNEL_NUM + IN_CHANNEL_NUM;
+    u->enhanceBufferAtter->byteLenPerFrame = DEFAULT_FRAMELENGTH * (ss->rate / 1000) * \
+        u->enhanceBufferAtter->bitDepth * IN_CHANNEL_NUM;
+    AUDIO_INFO_LOG("u->dataFormat: %{public}d byteLenPerFrame: %{public}d", dataFormat,
+        u->enhanceBufferAtter->byteLenPerFrame);
+    u->enhanceBufferAtter->input = (uint8_t *)malloc(u->enhanceBufferAtter->byteLenPerFrame);
+    u->enhanceBufferAtter->output = (uint8_t *)malloc(u->enhanceBufferAtter->byteLenPerFrame);
 }
 
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
