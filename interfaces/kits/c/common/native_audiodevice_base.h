@@ -211,7 +211,7 @@ typedef enum {
  *
  * @since 12
  */
-typedef struct OH_AudioDeviceDescriptorStruct OH_AudioDeviceDescriptor;
+typedef struct OH_AudioDeviceDescriptor OH_AudioDeviceDescriptor;
 
 /**
  * Declaring the audio device descriptor array.
@@ -227,7 +227,7 @@ typedef struct OH_AudioDeviceDescriptorArray {
     uint32_t size;
 
     /**
-     * Audio device descriptor array elements.
+     * Audio device descriptor array.
      *
      * @since 12
      */

@@ -50,23 +50,22 @@ extern "C" {
  *
  * @since 12
  */
-typedef struct OH_AudioRoutingManagerStruct OH_AudioRoutingManager;
+typedef struct OH_AudioRoutingManager OH_AudioRoutingManager;
 
 /**
  * This function pointer will point to the callback function that
- * is used to return the chaning audio device descriptors.
+ * is used to return the changing audio device descriptors.
  * There may be more than one audio device descriptor returned.
  *
  * @since 12
  */
-
 typedef int32_t (*OH_AudioRoutingManager_OnDeviceChangedCallback) (
     OH_AudioDevice_ChangeType type,
     OH_AudioDeviceDescriptorArray *AudioDeviceDescriptorArray
 );
 
 /**
- * Query the audio routing manager handle which need to be set as the firest parameter in the routing related functions.
+ * Query the audio routing manager handle which should be set as the first parameter in routing releated functions.
  *
  * @since 12
  */
@@ -94,7 +93,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(
  * @since 12
  *
  * @param audio routing manager handle returned by OH_AudioManager_GetAudioRoutingManager.
- * @param callbacks Callbacks to the functions that will process the device changed event.
+ * @param callbacks Callback function which will be called when devices changed.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
 OH_AudioCommon_Result OH_AudioRoutingManager_RegisterDeviceChangeCallback(
@@ -106,7 +105,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_RegisterDeviceChangeCallback(
  *
  * @since 12
  * @param audio routing manager handle returned by OH_AudioManager_GetAudioRoutingManager;
- * @param callbacks Callbacks to the functions that will process the device changed event.
+ * @param callbacks Callback function which will be called when devices changed.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
 OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(

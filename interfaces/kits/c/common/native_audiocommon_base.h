@@ -58,7 +58,7 @@ typedef enum {
     AUDIOCOMMON_RESULT_SUCCESS = 0,
 
     /**
-     * This means that the function was executed with an invalid input parameter.
+     * This means that the input parameter is invalid.
      *
      * @since 12
      */
