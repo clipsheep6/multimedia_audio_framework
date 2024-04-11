@@ -42,6 +42,7 @@ CapturerInServer::~CapturerInServer()
     if (status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE) {
         Release();
     }
+    DumpFileUtil::CloseDumpFile(&dumpWav_);
 }
 
 int32_t CapturerInServer::ConfigServerBuffer()
@@ -120,6 +121,12 @@ int32_t CapturerInServer::Init()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ConfigServerBuffer failed: %{public}d", ret);
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
+
+    // eg: /data/local/tmp/100001_48000_2_1_wav.pcm
+    AudioStreamInfo tempInfo = processConfig_.streamInfo;
+    std::string dumpName = std::to_string(streamIndex_) + "_" + std::to_string(tempInfo.samplingRate) + "_" +
+        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_wav.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpWav_);
     return SUCCESS;
 }
 
@@ -212,6 +219,7 @@ void CapturerInServer::ReadData(size_t length)
         if (ret < 0) {
             return;
         }
+        DumpFileUtil::WriteDumpFile(dumpWav_, static_cast<void *>(srcBuffer.buffer), srcBuffer.bufLength);
         memcpy_s(dstBuffer.buffer, spanSizeInBytes_, srcBuffer.buffer, spanSizeInBytes_);
 
         uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;

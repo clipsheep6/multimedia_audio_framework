@@ -80,6 +80,7 @@ private:
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
     bool overFlowLogFlag = false;
+    FILE *dumpWav_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
