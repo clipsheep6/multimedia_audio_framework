@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <audio_info.h>
 #include "tone_player_private.h"
 
 using namespace testing::ext;
@@ -236,10 +237,134 @@ HWTEST(AudioToneplayerUnitTest, Toneplayer_006, TestSize.Level1)
 
     ret = tonePlayerPrivate->TonePlayerStateHandler(TonePlayerPrivate::PLAYER_EVENT_STOP);
     EXPECT_EQ(true, ret);
-
-    
-
-
 }
+
+/**
+ * @tc.name  : Test toneplayer loading API
+ * @tc.type  : FUNC
+ * @tc.number: Toneplayer_007
+ * @tc.desc  : Test CheckToneStopped interface.
+ */
+HWTEST(AudioToneplayerUnitTest, Toneplayer_007, TestSize.Level1)
+{
+    string cachePath = "";
+    AudioRendererInfo rendereInfo;
+    std::unique_ptr<TonePlayerPrivate> tonePlayerPrivate =
+        std::make_unique<TonePlayerPrivate>(cachePath.c_str(), rendereInfo)
+    ASSERT_NE(nullptr, tonePlayerPrivate);
+
+    tonePlayerPrivate->tonePlayerState_ = tonePlayerPrivate::TONE_PLAYER_STOPPED;
+    bool ret = tonePlayerPrivate->CheckToneStopped();
+    EXPECT_EQ(true, ret);
+
+    ret = false;
+    tonePlayerPrivate->tonePlayerState_ = tonePlayerPrivate::TONE_PLAYER_STOPPING;
+    ret = tonePlayerPrivate->CheckToneStopped();
+    EXPECT_EQ(true, ret);
+
+    ret = false;
+    tonePlayerPrivate->toneInfo_->segments[tonePlayerPrivate->currSegment_].duration = 0;
+    tonePlayerPrivate->tonePlayerState_ = tonePlayerPrivate::TONE_PLAYER_PLAYING;
+    ret = tonePlayerPrivate->CheckToneStopped();
+    EXPECT_EQ(true, ret);
+}
+
+/**
+ * @tc.name  : Test toneplayer loading API
+ * @tc.type  : FUNC
+ * @tc.number: Toneplayer_008
+ * @tc.desc  : Test CheckToneStarted interface.
+ */
+HWTEST(AudioToneplayerUnitTest, Toneplayer_008, TestSize.Level1)
+{
+    string cachePath = "";
+    AudioRendererInfo rendereInfo;
+    std::unique_ptr<TonePlayerPrivate> tonePlayerPrivate =
+        std::make_unique<TonePlayerPrivate>(cachePath.c_str(), rendereInfo)
+    ASSERT_NE(nullptr, tonePlayerPrivate);
+
+    uint32_t reqSample = 100;
+    tonePlayerPrivate->currSegment_ = 0;
+    tonePlayerPrivate->toneInfo_ = std::make_shared<ToneInfo>();
+    tonePlayerPrivate->tonePlayerState_ = tonePlayerPrivate::TONE_PLAYER_STARTING;
+    tonePlayerPrivate->toneInfo_->segments[tonePlayerPrivate->currSegment_].duration = 100;
+    tonePlayerPrivate->toneInfo_->segments[tonePlayerPrivate->currSegment_].waveFreq = 400;
+    int8_t audioBuffer[100];
+
+    uint32_t reqSample = 100;
+    bool ret = tonePlayerPrivate->CheckToneStarted(reqSample, audioBuffer);
+    EXPECT_EQ(true, ret);
+
+    tonePlayerState_ = TONE_PLAYER_PLAYING;
+    ret = tonePlayerPrivate->CheckToneStarted(reqSample, audioBuffer);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+ * @tc.name  : Test toneplayer loading API
+ * @tc.type  : FUNC
+ * @tc.number: Toneplayer_009
+ * @tc.desc  : Test CheckToneContinuity interface.
+ */
+HWTEST(AudioToneplayerUnitTest, Toneplayer_009, TestSize.Level1)
+{
+    string cachePath = "";
+    AudioRendererInfo rendereInfo;
+    std::unique_ptr<TonePlayerPrivate> tonePlayerPrivate =
+        std::make_unique<TonePlayerPrivate>(cachePath.c_str(), rendereInfo)
+    ASSERT_NE(nullptr, tonePlayerPrivate);
+
+    tonePlayerPrivate->toneInfo_ = std::make_shared<ToneInfo>();
+    tonePlayerPrivate->toneInfo_->segments[currSegment_].duration = 100;
+    tonePlayerPrivate->currCount_ = 0;
+    tonePlayerPrivate->currSegment_ = 0;
+    tonePlayerPrivate->toneInfo_->repeatCnt = 2;
+    tonePlayerPrivate->toneInfo_->repeatSegment = 0;
+
+    bool ret = tonePlayerPrivate->CheckToneContinuity();
+    EXPECT_EQ(true, ret);
+
+    tonePlayerPrivate->toneInfo_->segments[currSegment_].duration = 0;
+    tonePlayerPrivate->currCount_ = 2;
+
+    ret -false;
+    ret = tonePlayerPrivate->CheckToneContinuity();
+    EXPECT_EQ(true, ret);
+}
+
+/**
+ * @tc.name  : Test toneplayer loading API
+ * @tc.type  : FUNC
+ * @tc.number: Toneplayer_010
+ * @tc.desc  : Test ContinueToneplay interface.
+ */
+HWTEST(AudioToneplayerUnitTest, Toneplayer_010, TestSize.Level1)
+{
+    string cachePath = "";
+    AudioRendererInfo rendereInfo;
+    std::unique_ptr<TonePlayerPrivate> tonePlayerPrivate =
+        std::make_unique<TonePlayerPrivate>(cachePath.c_str(), rendereInfo)
+    ASSERT_NE(nullptr, tonePlayerPrivate);
+
+    int8_t audioBuffer[100];
+    uint32_t reqSample = 100;
+    tonePlayerPrivate->tonePlayerState_ = tonePlayerPrivate::TONE_PLAYER_STOPPED;
+    bool ret = tonePlayerPrivate->ContinueToneplay(reqSample, audioBuffer);
+    EXPECT_EQ(false, ret);
+
+    tonePlayerPrivate->totalSample_ = 50;
+    tonePlayerPrivate->nextSegSample_ = 100;
+    tonePlayerPrivate->tonePlayerState_ = tonePlayerPrivate::TONE_PLAYER_PLAYING;
+
+    ret = tonePlayerPrivate->ContinueToneplay(reqSample, audioBuffer);
+    EXPECT_EQ(true, ret);
+
+    ret = fasle;
+    tonePlayerPrivate->totalSample_ = 150;
+    tonePlayerPrivate->toneInfo_->segments[currSegment_].duration = 50;
+    tonePlayerPrivate->toneInfo_->segments[tonePlayerPrivate->currSegment_].waveFreq = 440;
+    ret = tonePlayerPrivate->ContinueToneplay(reqSample, audioBuffer);
+    EXPECT_EQ(true, ret);
+
 } // namespace AudioStandard
 } // namespace OHOS
