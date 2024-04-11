@@ -64,6 +64,16 @@
     "pages/AudioEnhance/AudioCapturer/AudioCapturerMultiInstance",
     "pages/AudioEnhance/MicrophoneEnhance",
     "pages/AudioEnhance/Microphone/GetAvailableMicrophones",
-    "pages/AudioEnhance/Microphone/GetCurrentMicrophones"
+    "pages/AudioEnhance/Microphone/GetCurrentMicrophones",
+
+    "pages/AudioAndDFXEnhance",
+    "pages/AudioAndDFXEnhance/AudioManagerEnhance",
+    "pages/AudioAndDFXEnhance/audiomanager/GetAvailableDevices",
+    "pages/AudioAndDFXEnhance/audiomanager/OnOff_availableDeviceChange",
+    "pages/AudioAndDFXEnhance/DfxHisysevent",
+    "pages/AudioAndDFXEnhance/dfxhisysevent/SilentPlaybackTest",
+    "pages/AudioAndDFXEnhance/dfxhisysevent/Render_CapturerEventsTest",
+    "pages/AudioAndDFXEnhance/dfxhisysevent/STREAM_CHANGE_DFXTest",
+    "pages/AudioAndDFXEnhance/newstreamusage/VideoCommunication"
   ]
 }

@@ -87,6 +87,15 @@ struct Index {
         //   router.pushUrl({ url: 'pages/AudioEnhance' })
         // })
 
+        Button() {
+          Text("音频框架和DFX打点功能增强").fontSize(30).fontColor(Color.White)
+        }.width('100%')
+        .margin({ bottom: 10 })
+        .height(60)
+        .onClick(() => {
+          router.pushUrl({ url: 'pages/AudioAndDFXEnhance' })
+        })
+
       }.width('90%')
       .margin('5%')
 

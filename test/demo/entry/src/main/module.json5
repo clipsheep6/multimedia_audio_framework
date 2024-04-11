@@ -100,6 +100,16 @@
           ],
           "when": "always"
         }
+      },
+      {
+        "name": "ohos.permission.RECORD_VOICE_CALL",
+        "reason": "$string:EntryAbility_desc",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ],
+          "when": "always"
+        }
       }
     ]
   }
