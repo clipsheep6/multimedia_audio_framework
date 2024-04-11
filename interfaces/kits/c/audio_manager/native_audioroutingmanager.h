@@ -77,7 +77,7 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioRoutingManager(OH_AudioRoutingMana
  * @since 12
  *
  * @param audio routing manager handle returned by OH_AudioManager_GetAudioRoutingManager;
- * @param deviceFlag which is used as the filter parameter for selecting the target devices
+ * @param deviceFlag which is used as the filter parameter for selecting the target devices.
  * @param audio device descriptors array pointer variable which will be set the audio device descriptors value.
  * @param audio device descriptors size pointer variable which will be set the audio device descriptors size.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
@@ -122,7 +122,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(
  */
 OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
     OH_AudioRoutingManager *audioRoutingManager,
-    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray);
+    OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray);
 #ifdef __cplusplus
 }
 #endif

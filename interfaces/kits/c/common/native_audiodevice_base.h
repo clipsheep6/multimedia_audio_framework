@@ -207,7 +207,7 @@ typedef enum {
 
 /**
  * Declaring the audio device descriptor.
- * The instance is used to get more audio device detail attributes
+ * The instance is used to get more audio device detail attributes.
  *
  * @since 12
  */
@@ -239,114 +239,134 @@ typedef struct OH_AudioDeviceDescriptorArray {
  *
  * @since 12
  *
- * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or OH_AudioRouterManager_OnDeviceChangedCallback
+ * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or
+ * OH_AudioRouterManager_OnDeviceChangedCallback.
  * @param device role pointer variable that will be set the device role value.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceRole(OH_AudioDeviceDescriptor *audioDeviceDescriptor, OH_AudioDevice_DeviceRole *deviceRole);
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceRole(OH_AudioDeviceDescriptor*audioDeviceDescriptor,
+    OH_AudioDevice_DeviceRole *deviceRole);
 
 /**
  * Query the device type of the target audio device descriptor.
  *
  * @since 12
  *
- * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or OH_AudioRouterManager_OnDeviceChangedCallback
+ * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or
+ * OH_AudioRouterManager_OnDeviceChangedCallback.
  * @param device type pointer variable that will be set the device type value.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceType(OH_AudioDeviceDescriptor *audioDeviceDescriptor, OH_AudioDevice_DeviceType *deviceType);
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceType(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
+    OH_AudioDevice_DeviceType *deviceType);
 
 /**
  * Query the device id of the target audio device descriptor.
  *
  * @since 12
  *
- * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or OH_AudioRouterManager_OnDeviceChangedCallback
+ * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or
+ * OH_AudioRouterManager_OnDeviceChangedCallback.
  * @param device id pointer variable that will be set the device id value.
  * @return {@link #AUDIODEVICE_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceId(OH_AudioDeviceDescriptor *audioDeviceDescriptor, uint32_t *id);
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceId(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
+    uint32_t *id);
 
 /**
  * Query the device name of the target audio device descriptor.
  *
  * @since 12
  *
- * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or OH_AudioRouterManager_OnDeviceChangedCallback
+ * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or
+ * OH_AudioRouterManager_OnDeviceChangedCallback.
  * @param device name pointer variable that will be set the device name value.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceName(OH_AudioDeviceDescriptor *audioDeviceDescriptor, char **name);
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceName(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
+    char **name);
 
 /**
  * Query the device address of the target audio device descriptor.
  *
  * @since 12
  *
- * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or OH_AudioRouterManager_OnDeviceChangedCallback
+ * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or
+ * OH_AudioRouterManager_OnDeviceChangedCallback.
  * @param device address pointer variable that will be set the device address value.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceAddress(OH_AudioDeviceDescriptor *audioDeviceDescriptor, char **address);
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceAddress(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
+    char **address);
 
 /**
  * Query the sample rate array of the target audio device descriptor.
  *
  * @since 12
  *
- * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or OH_AudioRouterManager_OnDeviceChangedCallback
+ * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or
+ * OH_AudioRouterManager_OnDeviceChangedCallback.
  * @param sample rate array pointer variable that will be set the sample rate array value.
  * @param sample rate size pointer variable that will be set the sample rate size value.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceSampleRates(OH_AudioDeviceDescriptor *audioDeviceDescriptor, uint32_t **sampleRates, uint32_t *size);
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceSampleRates(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
+    uint32_t **sampleRates, uint32_t *size);
 
 /**
  * Query the device channel count array of the target audio device descriptor.
  *
  * @since 12
  *
- * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or OH_AudioRouterManager_OnDeviceChangedCallback
+ * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or
+ *     OH_AudioRouterManager_OnDeviceChangedCallback.
  * @param channel count array pointer variable that will be set the channel count array value.
  * @param channel count size pointer variable that will be set the channel count size value.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceChannelCounts(OH_AudioDeviceDescriptor *audioDeviceDescriptor, uint32_t **channelCounts, uint32_t *size);
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceChannelCounts(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
+    uint32_t **channelCounts, uint32_t *size);
 
 /**
  * Query the channel mask array of the target audio device descriptor.
  *
  * @since 12
  *
- * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or OH_AudioRouterManager_OnDeviceChangedCallback
+ * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or
+ * OH_AudioRouterManager_OnDeviceChangedCallback.
  * @param channel mask array pointer variable that will be set the channel mask array value.
  * @param channel mask size pointer variable that will be set the channel mask size value.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceChannelMasks(OH_AudioDeviceDescriptor *audioDeviceDescriptor, uint32_t **channelMasks, uint32_t *size);
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceChannelMasks(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
+    uint32_t **channelMasks, uint32_t *size);
 
 /**
  * Query the display name of the target audio device descriptor.
  *
  * @since 12
  *
- * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or OH_AudioRouterManager_OnDeviceChangedCallback
+ * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or
+ * OH_AudioRouterManager_OnDeviceChangedCallback.
  * @param display name pointer variable that will be set the display name value.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceDisplayName(OH_AudioDeviceDescriptor *audioDeviceDescriptor, char **displayName);
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceDisplayName(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
+    char **displayName);
 
 /**
  * Query the encoding type array of the target audio device descriptor.
  *
  * @since 12
  *
- * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or OH_AudioRouterManager_OnDeviceChangedCallback
+ * @param descriptor reference returned by OH_AudioRoutingManager_GetDevices or
+ * OH_AudioRouterManager_OnDeviceChangedCallback.
  * @param encoding type array pointer variable that will be set the encoding type array value.
  * @param encoding type size pointer variable that will be set the encoding type size value.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceEncodingTypes(OH_AudioDeviceDescriptor *audioDeviceDescriptor, OH_AudioStream_EncodingType **encodingTypes, uint32_t *size);
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceEncodingTypes(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
+    OH_AudioStream_EncodingType **encodingTypes, uint32_t *size);
 #ifdef __cplusplus
 }
 
