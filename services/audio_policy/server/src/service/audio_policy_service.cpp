@@ -3078,6 +3078,8 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
         if (a2dpOffloadFlag_ != A2DP_OFFLOAD) {
             ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
         }
+    } else if (connectedA2dpDeviceMap_.find(macAddress) != connectedA2dpDeviceMap_.end()) {
+        connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
     }
     lastBTDevice_ = macAddress;
 }
