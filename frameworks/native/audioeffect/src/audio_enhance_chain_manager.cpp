@@ -18,14 +18,18 @@
 
 #include "audio_enhance_chain_manager.h"
 
+#include "securec.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_enhance_chain_adapter.h"
 
+#define OUTPUT_CHANNEL_NUM 2
+
 using namespace OHOS::AudioStandard;
 
-int32_t EnhanceChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
+int32_t EnhanceChainManagerProcess(char *sceneType, EnhanceBufferAttr *enhanceBufferAttr)
 {
+    AUDIO_INFO_LOG("EnhanceChainManagerProcess start");
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
         ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
@@ -34,7 +38,7 @@ int32_t EnhanceChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
         sceneTypeString = sceneType;
     }
     std::string upAndDownDevice = audioEnhanceChainMananger->GetUpAndDownDevice();
-    if (audioEnhanceChainMananger->ApplyAudioEnhanceChain(sceneTypeString, upAndDownDevice, bufferAttr) != SUCCESS) {
+    if (audioEnhanceChainMananger->ApplyAudioEnhanceChain(sceneTypeString, upAndDownDevice, enhanceBufferAttr) != SUCCESS) {
         return ERROR;
     }
     return SUCCESS;
@@ -151,31 +155,55 @@ void AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLi
     enhanceLibHandles_.emplace_back(libHandle);
 }
 
-void CopyBufferEnhance(const float *bufIn, float *bufOut, uint32_t totalLen)
+static void CopyBufferEnhance(void *bufIn, void *bufOut, uint32_t totalLen)
 {
-    for (uint32_t i = 0; i < totalLen; i++) {
-        bufOut[i] = bufIn[i];
+    memcpy_s(bufOut, totalLen, bufIn, totalLen);
+}
+
+static void GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAtter, std::vector<uint8_t> &input)
+{
+    input.reserve(enhanceBufferAtter->batchLen * enhanceBufferAtter->byteLenPerFrame);
+    std::vector<std::vector<uint8_t>> cache;
+    cache.resize(enhanceBufferAtter->batchLen);
+    for (auto &it : cache) {
+        it.resize(enhanceBufferAtter->byteLenPerFrame);
+    }
+    for (uint32_t i = 0; i < enhanceBufferAtter->byteLenPerFrame / enhanceBufferAtter->bitDepth; ++i) {
+        for (uint32_t j = 0; j < enhanceBufferAtter->batchLen; ++j) {
+            memcpy_s(reinterpret_cast<char *>(&cache[j][i * enhanceBufferAtter->bitDepth]),
+            enhanceBufferAtter->bitDepth, enhanceBufferAtter->input, enhanceBufferAtter->bitDepth);
+        }
+    }
+    for (uint32_t i = 0; i < enhanceBufferAtter->batchLen; ++i) {
+        input.insert(input.end(), cache[i].begin(), cache[i].end());
     }
 }
 
-void AudioEnhanceChain::ApplyEnhanceChain(float *bufIn, float *bufOut, uint32_t frameLen)
+void AudioEnhanceChain::ApplyEnhanceChain(EnhanceBufferAttr *enhanceBufferAttr)
 {
+    std::lock_guard<std::mutex> lock(reloadMutex_);
     if (IsEmptyEnhanceHandles()) {
         AUDIO_ERR_LOG("audioEnhanceChain->standByEnhanceHandles is empty");
-        CopyBufferEnhance(bufIn, bufOut, frameLen * dataDesc.outChannelNum);
+        CopyBufferEnhance(enhanceBufferAttr->input, enhanceBufferAttr->output,
+            enhanceBufferAttr->byteLenPerFrame);
         return;
     }
-    std::lock_guard<std::mutex> lock(reloadMutex_);
+    std::vector<uint8_t> input;
+    GetOneFrameInputData(enhanceBufferAttr, input);
+    std::vector<uint8_t> output;
+    output.resize(enhanceBufferAttr->byteLenPerFrame);
+
     AudioBuffer audioBufIn_ = {};
     AudioBuffer audioBufOut_ = {};
-    audioBufIn_.raw = static_cast<void *>(bufIn);
-    audioBufOut_.raw = static_cast<void *>(bufOut);
+    audioBufIn_.raw = static_cast<void *>(input.data());
+    audioBufOut_.raw = static_cast<void *>(output.data());
 
     for (AudioEffectHandle handle : standByEnhanceHandles_) {
         int32_t ret = (*handle)->process(handle, &audioBufIn_, &audioBufOut_);
         CHECK_AND_CONTINUE_LOG(ret == 0, "[%{publc}s] with mode [%{public}s], either one of libs process fail",
             sceneType_.c_str(), enhanceMode_.c_str());
     }
+    memcpy_s(enhanceBufferAttr->output, enhanceBufferAttr->byteLenPerFrame, audioBufOut_.raw, output.size());
 }
 
 bool AudioEnhanceChain::IsEmptyEnhanceHandles()
@@ -373,16 +401,18 @@ int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(std::string &s
 }
 
 int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChain(std::string &sceneType,
-    std::string &upAndDownDevice, BufferAttr *bufferAttr)
+    std::string &upAndDownDevice, EnhanceBufferAttr *enhanceBufferAttr)
 {
     std::lock_guard<std::mutex> lock(chainMutex_);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + upAndDownDevice;
     if (!sceneTypeToEnhanceChainMap_.count(sceneTypeAndDeviceKey)) {
-        CopyBufferEnhance(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
+        CopyBufferEnhance(enhanceBufferAttr->input, enhanceBufferAttr->output,
+            enhanceBufferAttr->byteLenPerFrame);
+        AUDIO_ERR_LOG("can not find %{public}s in sceneTypeToEnhanceChainMap_", sceneTypeAndDeviceKey.c_str());
         return ERROR;
     }
     AudioEnhanceChain *audioEnhanceChain = sceneTypeToEnhanceChainMap_[sceneTypeAndDeviceKey];
-    audioEnhanceChain->ApplyEnhanceChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen);
+    audioEnhanceChain->ApplyEnhanceChain(enhanceBufferAttr);
     return SUCCESS;
 }
 

@@ -26,11 +26,24 @@
 extern "C" {
 #endif
 
-int32_t EnhanceChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
+typedef struct EnhanceBufferAttr {
+    void *input;
+    void *output;
+    uint32_t refNum;
+    uint32_t micNum;
+    uint32_t sampleRate;
+    uint32_t bitDepth;
+    uint32_t batchLen;
+    uint32_t byteLenPerFrame;
+} EnhanceBufferAttr;
+
+int32_t EnhanceChainManagerProcess(char *sceneType, EnhanceBufferAttr *enhanceBufferAttr);
 int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMode,
     const char *upDevice, const char *downDevice);
 int32_t EnhanceChainManagerReleaseCb(const char *sceneType, const char *enhanceMode,
     const char *upDevice, const char *downDevice);
+void GetOneFrameInputData(void *src, int32_t frameLen, uint8_t refChannelNum, uint8_t inChannelNum,
+    uint32_t sampleRate, uint32_t bitDepth, uint32_t batchLen, uint32_t byteLenPerFrame);
 
 #ifdef __cplusplus
 }
