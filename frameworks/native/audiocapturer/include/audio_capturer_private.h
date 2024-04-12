@@ -125,6 +125,7 @@ private:
     std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;
     std::shared_ptr<CapturerPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
+    FILE *dumpFile_ = nullptr;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
