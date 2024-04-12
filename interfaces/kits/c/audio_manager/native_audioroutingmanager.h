@@ -85,7 +85,7 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioRoutingManager(OH_AudioRoutingMana
 OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(
     OH_AudioRoutingManager *audioRoutingManager,
     OH_AudioDevice_DeviceFlag deviceFlag,
-    OH_AudioDeviceDescriptorArray *AudioDeviceDescriptorArray);
+    OH_AudioDeviceDescriptorArray **udioDeviceDescriptorArray);
 
 /**
  * Register the device change callback of the audio routing manager.
@@ -97,7 +97,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
 OH_AudioCommon_Result OH_AudioRoutingManager_RegisterDeviceChangeCallback(
-    OH_AudioRoutingManager *audioRoutingManager,
+    OH_AudioRoutingManager *audioRoutingManager, OH_AudioDevice_DeviceFlag deviceFlag,
     OH_AudioRoutingManager_OnDeviceChangedCallback callback);
 
 /**
@@ -122,7 +122,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(
  */
 OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
     OH_AudioRoutingManager *audioRoutingManager,
-    OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray);
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray);
 #ifdef __cplusplus
 }
 #endif
