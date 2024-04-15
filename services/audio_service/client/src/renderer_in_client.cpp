@@ -1885,7 +1885,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         if (writeSize > 0) {
             if (ringCache_ == nullptr) {
                 ADUIO_ERR_LOG("ringCache_ is null");
-                return;
+                break;
             }
             result = ringCache_->Enqueue(bufferWrap);
             if (result.ret != OPERATION_SUCCESS) {
