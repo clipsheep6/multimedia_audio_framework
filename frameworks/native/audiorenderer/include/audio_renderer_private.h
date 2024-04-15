@@ -154,8 +154,6 @@ private:
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass);
     void SetSelfRendererStateCallback();
-    void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
-    void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -171,8 +169,6 @@ private:
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
     bool isFastRenderer_ = false;
-    bool latencyMeasEnabled_ = false;
-    std::shared_ptr<AudioLatencyMeasurement> latencyMeasurement_ = nullptr;
     bool isSwitching_ = false;
     mutable std::mutex switchStreamMutex_;
 

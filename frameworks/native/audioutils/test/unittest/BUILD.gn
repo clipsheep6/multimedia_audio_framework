@@ -17,10 +17,7 @@ module_output_path = "multimedia_audio_framework/audio_utils"
 
 ohos_unittest("audio_utils_unit_test") {
   module_out_path = module_output_path
-  include_dirs = [
-    "../../include",
-    "../../../../../interfaces/inner_api/native/audiocommon/include/",
-  ]
+  include_dirs = [ "../../include" ]
 
   cflags = [
     "-Wall",

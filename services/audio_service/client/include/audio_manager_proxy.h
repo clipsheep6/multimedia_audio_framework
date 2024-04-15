@@ -20,6 +20,10 @@
 #include "audio_system_manager.h"
 #include "audio_manager_base.h"
 
+/** ssl **/
+#include "audio_info.h"
+/** ssl **/
+
 namespace OHOS {
 namespace AudioStandard {
 class AudioManagerProxy : public IRemoteProxy<IStandardAudioService> {
@@ -37,16 +41,30 @@ public:
     int32_t OffloadDrain() override;
     int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
-        DeviceType activeInputDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     const std::string GetAudioParameter(const std::string &key) override;
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     void SetAudioParameter(const std::string &key, const std::string &value) override;
-    void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
-        const std::string& value) override;
+
+    uint32_t GetEffectLatency(const std::string& sessionId) override;
+    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+
+    /** ssl **/
+
+    //void SetAudioParmeter(const std::string& key, const std::string& value) override;
+    int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
+    int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
+    int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
+    int32_t IsWhispering() override;
+
+    /** ssl **/
+
+
+    void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,const std::string& value) override;
     int32_t SetExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
@@ -62,8 +80,7 @@ public:
         std::vector<Effect> &successEffects) override;
     void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-        std::unordered_map<std::string, std::string> &effectMap,
-        std::unordered_map<std::string, std::string> &enhanceMap) override;
+        std::unordered_map<std::string, std::string> &map) override;
     bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     bool CreatePlaybackCapturerManager() override;
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
@@ -73,9 +90,8 @@ public:
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
     int32_t ResetRouteForDisconnect(DeviceType type) override;
-    uint32_t GetEffectLatency(const std::string &sessionId) override;
-    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
-    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+
+    
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

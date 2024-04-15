@@ -31,6 +31,7 @@
 #include "i_audio_renderer_sink.h"
 #include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
+#include "audio_asr.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,14 +58,26 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
-        DeviceType activeInputDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<std::pair<std::string, std::string>>& kvpairs) override;
+
+    
+
+    /*** ssl **/
+    int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
+    int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
+    int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
+    int32_t IsWhispering() override;
+    /*** ssl **/
+
     void SetAudioParameter(const std::string& key, const std::string& value) override;
     void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
+    bool CheckAndPrintStacktrace(const std::string &key);
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     const std::string GetAudioParameter(const std::string &key) override;
@@ -121,11 +134,11 @@ public:
 
     int32_t ResetRouteForDisconnect(DeviceType type) override;
 
-    uint32_t GetEffectLatency(const std::string &sessionId) override;
-
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
 
-    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+    void UpdateLatencyTimestamp(std::string& timestamp, bool isRenderer) override;
+
+    
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -134,17 +147,14 @@ private:
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);
     bool CheckPlaybackPermission(Security::AccessToken::AccessTokenID tokenId, const StreamUsage streamUsage);
-    bool CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType,
-        int32_t appUid);
-    bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
+    bool CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType);
+    
 
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
     int32_t SetIORoute(DeviceType type, DeviceFlag flag);
-    bool CheckAndPrintStacktrace(const std::string &key);
-    const std::string GetDPParameter(const std::string &condition);
-    const std::string GetUsbParameter();
+    
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

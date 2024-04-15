@@ -325,11 +325,6 @@ void FastAudioStream::SetPreferredFrameSize(int32_t frameSize)
     processClient_->SetPreferredFrameSize(frameSize);
 }
 
-void FastAudioStream::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
-{
-    processClient_->UpdateLatencyTimestamp(timestamp, isRenderer);
-}
-
 int32_t FastAudioStream::Clear()
 {
     AUDIO_INFO_LOG("Clear will do nothing.");
