@@ -19,8 +19,6 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 
-
-
 namespace OHOS {
 namespace AudioStandard {
 ProcessCbProxy::ProcessCbProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<IProcessCb>(impl)
