@@ -1365,10 +1365,7 @@ float RendererInClientInner::GetLowPowerVolume()
 
 int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    if (ipcStream_ == nullptr) {
-        AUDIO_ERR_LOG("ipcStream_ is null");
-        return;
-    }
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ == nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
     return ipcStream_->SetOffloadMode(state, isAppBack);
 }
 
