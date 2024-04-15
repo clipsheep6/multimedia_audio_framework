@@ -1365,6 +1365,10 @@ float RendererInClientInner::GetLowPowerVolume()
 
 int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 {
+    if (ipcStream_ == nullptr) {
+        ADUIO_ERR_LOG("ipcStream_ is null");
+        return;
+    }
     return ipcStream_->SetOffloadMode(state, isAppBack);
 }
 
@@ -1879,6 +1883,10 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         BufferWrap bufferWrap = {buffer + offset, writeSize};
 
         if (writeSize > 0) {
+            if (ringCache_ == nullptr) {
+                ADUIO_ERR_LOG("ringCache_ is null");
+                return;
+            }
             result = ringCache_->Enqueue(bufferWrap);
             if (result.ret != OPERATION_SUCCESS) {
                 // in plan: recall enqueue in some cases
