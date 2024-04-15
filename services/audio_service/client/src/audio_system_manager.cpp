@@ -17,7 +17,6 @@
 
 #include "audio_system_manager.h"
 
-#include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "bundle_mgr_interface.h"
@@ -186,23 +185,6 @@ int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
     return SUCCESS;
 }
 
-std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
-{
-    std::string bundleName = "";
-
-    sptr<ISystemAbilityManager> systemAbilityManager =
-        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<OHOS::IRemoteObject> remoteObject =
-        systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
-
-    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
-
-    iBundleMgr->GetNameForUid(uid, bundleName);
-    return bundleName;
-}
-
 AudioRingerMode AudioSystemManager::GetRingerMode()
 {
     return ringModeBackup_;
@@ -305,6 +287,39 @@ void AudioSystemManager::SetAudioParameter(const std::string &key, const std::st
     CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
     gasp->SetAudioParameter(key, value);
 }
+
+/** ssl **/
+int32_t AudioSystemManager::SetAsrAecMode(const AsrAecMode asrAecMode) 
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    //CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    return gasp->SetAsrAecMode(asrAecMode);
+}
+int32_t AudioSystemManager::GetAsrAecMode(AsrAecMode &asrAecMode) 
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    //CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    return gasp->GetAsrAecMode(asrAecMode);
+}
+int32_t AudioSystemManager::SetAsrNoiseSuppressionMode(const AsrNoiseSuppressionMode asrNoiseSuppressionMode) 
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    //CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    return gasp->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+}
+int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) 
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    //CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    return gasp->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+}
+int32_t AudioSystemManager::IsWhispering() 
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    //CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    return gasp->IsWhispering();
+}
+/** ssl **/
 
 int32_t AudioSystemManager::GetExtraParameters(const std::string &mainKey,
     const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
@@ -1038,18 +1053,16 @@ int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
     AUDIO_INFO_LOG("clientUid:%{public}d streamSetState:%{public}d",
         clientUid, streamSetState);
     int32_t result = 0;
-
+    
     result = AudioPolicyManager::GetInstance().UpdateStreamState(clientUid, streamSetState, audioStreamType);
     return result;
 }
-
 std::string AudioSystemManager::GetSelfBundleName()
 {
     std::string bundleName = "";
-
-    sptr<ISystemAbilityManager> systemAbilityManager =
+    sptr<ISystemAbilityManager> systemAbilityManager = 
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<OHOS::IRemoteObject> remoteObject =
+    sptr<OHOS::IRemoteObject> remoteObject = 
         systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
 
@@ -1057,13 +1070,15 @@ std::string AudioSystemManager::GetSelfBundleName()
     CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
 
     AppExecFwk::BundleInfo bundleInfo;
-    if (iBundleMgr->GetBundleInfoForSelf(0, bundleInfo) == ERR_OK) {
+    if (iBundleMgr->GetBundleInfoForSelf(0,bundleInfo) == ERR_OK)  {
         bundleName = bundleInfo.name;
-    } else {
+    }
+    else{
         AUDIO_DEBUG_LOG("Get bundle info failed");
     }
     return bundleName;
 }
+
 
 int32_t AudioSystemManager::OffloadDrain()
 {
@@ -1161,9 +1176,6 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             }
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
-        case OHOS::AudioStandard::DEVICE_TYPE_DP:
-            pin = AUDIO_PIN_OUT_DP;
-            break;
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SINK:
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE:
         case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO:
@@ -1398,12 +1410,12 @@ int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, boo
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
         flag, address));
 }
-
-uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)
+uint32_t AudioSystemManager::GetEffectLatency(const std::string& sessionId)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
     return gasp->GetEffectLatency(sessionId);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

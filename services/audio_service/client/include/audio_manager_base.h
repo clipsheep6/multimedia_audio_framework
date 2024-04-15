@@ -22,6 +22,9 @@
 #include "iremote_stub.h"
 #include "audio_effect.h"
 #include "pulseaudio_ipc_interface_code.h"
+/** ssl **/
+#include "audio_asr.h"
+/** ssl **/
 
 namespace OHOS {
 namespace AudioStandard {
@@ -62,8 +65,7 @@ public:
      * @param activeDevice Currently active priority device
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
-        DeviceType activeInputDevice) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) = 0;
 
     /**
      * Set Audio Parameter.
@@ -73,6 +75,50 @@ public:
      * @return none.
      */
     virtual void SetAudioParameter(const std::string &key, const std::string &value) = 0;
+
+    /** ssl **/
+    /**
+    * Set Asr Aec Mode.
+    * 
+    * @param key for the audio parameter to be set
+    * @param value associated with the key for the audio parameter to be set
+    * @return none.
+    */
+    virtual int32_t SetAsrAecMode(AsrAecMode asrAecMode) = 0;
+    /**
+    * Set Asr Aec Mode.
+    *
+    * @param key for the audio parameter to be set
+    * @param value associated with the key for the audio parameter to be set
+    * @return none.
+    */
+    virtual int32_t GetAsrAecMode(AsrAecMode &asrAecMode) = 0;
+    /**
+    * Set Asr Aec Mode.
+    *
+    * @param key for the audio parameter to be set
+    * @param value associated with the key for the audio parameter to be set
+    * @return none.
+    */
+    virtual int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) = 0;
+    /**
+    * Set Asr Aec Mode.
+    *
+    * @param key for the audio parameter to be set
+    * @param value associated with the key for the audio parameter to be set
+    * @return none.
+    */
+    virtual int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) = 0;
+    /**
+    * Set Asr Aec Mode.
+    *
+    * @param key for the audio parameter to be set
+    * @param value associated with the key for the audio parameter to be set
+    * @return none.
+    */
+    virtual int32_t IsWhispering() = 0;
+
+    /** ssl **/
 
     /**
      * Set Audio Parameter.
@@ -212,8 +258,8 @@ public:
      * @return true/false.
      */
     virtual bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-        std::unordered_map<std::string, std::string> &effectMap,
-        std::unordered_map<std::string, std::string> &enhanceMap) = 0;
+        
+        std::unordered_map<std::string, std::string> &map) = 0;
 
     /**
      * Set output device sink for effect chain manager.
@@ -296,7 +342,7 @@ public:
      *
      * @return Returns the effect algorithmic latency in ms.
     */
-    virtual uint32_t GetEffectLatency(const std::string &sessionId) = 0;
+    virtual uint32_t GetEffectLatency(const std::string& sessionId) = 0;
 
     /**
      * Get max amplitude for device.
@@ -308,8 +354,7 @@ public:
     */
     virtual float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) = 0;
 
-    virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
-
+   
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -355,10 +400,22 @@ private:
     int HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
     int HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply);
+
     int HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply);
     int HandleResetRouteForDisconnect(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectLatency(MessageParcel &data, MessageParcel &reply);
-    int HandleUpdateLatencyTimestamp(MessageParcel &data, MessageParcel &reply);
+    
+
+    /** ssl **/
+    int HandleSetAsrAecMode(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAsrAecMode(MessageParcel& data, MessageParcel& reply);
+    int HandleSetAsrNoiseSuppressionMode(MessageParcel& data, MessageParcel& reply);
+    int HandleGetAsrNoiseSuppressionMode(MessageParcel& data, MessageParcel& reply);
+    int HandleIsWhispering(MessageParcel& data, MessageParcel& reply);
+    /** ssl **/
+
+
+
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -400,7 +457,14 @@ private:
         &AudioManagerStub::HandleGetMaxAmplitude,
         &AudioManagerStub::HandleResetRouteForDisconnect,
         &AudioManagerStub::HandleGetEffectLatency,
-        &AudioManagerStub::HandleUpdateLatencyTimestamp,
+
+        /** ssl **/
+        &AudioManagerStub::HandleSetAsrAecMode,
+        & AudioManagerStub::HandleGetAsrAecMode,
+        & AudioManagerStub::HandleSetAsrNoiseSuppressionMode,
+        & AudioManagerStub::HandleGetAsrNoiseSuppressionMode,
+        & AudioManagerStub::HandleIsWhispering,
+        /** ssl **/
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),

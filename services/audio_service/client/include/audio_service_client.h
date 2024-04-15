@@ -652,7 +652,6 @@ private:
     bool isInnerCapturerStream_ = false;
     bool isWakeupCapturerStream_ = false;
     int capturerSource_ = -1;
-    uint32_t readTimeoutCount_ = 0;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 

@@ -45,7 +45,6 @@ namespace AudioStandard {
 
 namespace {
 static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
-static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
 }
 
 class ProcessCbImpl;
@@ -186,7 +185,6 @@ private:
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     bool isInited_ = false;
     bool needReSyncPosition_ = true;
-    int64_t lastPausedTime_ = INT64_MAX;
 
     float volumeInFloat_ = 1.0f;
     int32_t processVolume_ = PROCESS_VOLUME_MAX; // 0 ~ 65536
@@ -908,8 +906,6 @@ int32_t AudioProcessInClientInner::Pause(bool isFlush)
     }
     streamStatus_->store(StreamStatus::STREAM_PAUSED);
 
-    lastPausedTime_ = ClockTime::GetCurNano();
-
     return SUCCESS;
 }
 
@@ -935,14 +931,7 @@ int32_t AudioProcessInClientInner::Resume()
         threadStatusCV_.notify_all();
         return ERR_OPERATION_FAILED;
     }
-
-    if (ClockTime::GetCurNano() - lastPausedTime_ > DELAY_RESYNC_TIME) {
-        UpdateHandleInfo(false, true);
-        lastPausedTime_ = INT64_MAX;
-    } else {
-        UpdateHandleInfo();
-    }
-
+    UpdateHandleInfo();
     streamStatus_->store(StreamStatus::STREAM_RUNNING);
     threadStatusCV_.notify_all();
 

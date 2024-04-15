@@ -73,6 +73,7 @@ public:
         int32_t channelIndexMasks = 0);
 
     bool isSameDevice(const DeviceInfo &deviceInfo);
+    
 };
 
 struct DistributedRoutingInfo {
@@ -606,6 +607,51 @@ public:
      */
     void SetAudioParameter(const std::string &key, const std::string &value);
 
+    /** ssl **/
+    /**
+    *@brief set audio parameter.
+    * 
+    * @parame key The key of the set audio parameter.
+    * @param value The value of the set audio parameter.
+    * @since 9
+    */
+    int32_t SetAsrAecMode(const AsrAecMode asrAecMode);
+    /**
+    *@brief set audio parameter.
+    *
+    * @parame key The key of the set audio parameter.
+    * @param value The value of the set audio parameter.
+    * @since 9
+    */
+    int32_t GetAsrAecMode(AsrAecMode &asrAecMode);
+    /**
+    *@brief set audio parameter.
+    *
+    * @parame key The key of the set audio parameter.
+    * @param value The value of the set audio parameter.
+    * @since 9
+    */
+    int32_t SetAsrNoiseSuppressionMode(const AsrNoiseSuppressionMode asrNoiseSuppressionMode);
+    /**
+    *@brief set audio parameter.
+    *
+    * @parame key The key of the set audio parameter.
+    * @param value The value of the set audio parameter.
+    * @since 9
+    */
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode);
+    /**
+    *@brief set audio parameter.
+    *
+    * @parame key The key of the set audio parameter.
+    * @param value The value of the set audio parameter.
+    * @since 9
+    */
+    int32_t IsWhispering();
+
+
+    /** ssl **/
+
     /**
      * @brief Get audio parameter.
      *
@@ -1134,17 +1180,15 @@ public:
     int32_t SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const;
 
     /**
-     * @brief get the effect algorithmic latency value for a specified audio stream.
-     *
-     * @param sessionId the session ID value for the stream
-     * @return Returns the effect algorithmic latency in ms.
-     * @since 12
-     */
-    uint32_t GetEffectLatency(const std::string &sessionId);
+    * @brief get the effect algorithmic latency value for a specified audio stream.
+    * 
+    * @param sessionId the session ID value for the stream
+    * @return Returns the effect algorithmic latency in ms
+    * @since 12
+    */
+    uint32_t GetEffectLatency(const std::string& sessionId);
 
     static void AudioServerDied(pid_t pid);
-
-    std::string GetSelfBundleName(int32_t uid);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

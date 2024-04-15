@@ -21,6 +21,10 @@
 #include "i_audio_process.h"
 #include "audio_effect_server.h"
 
+ /** ssl **/
+#include "audio_asr.h"
+/** ssl **/
+
 using namespace std;
 
 namespace OHOS {
@@ -67,6 +71,51 @@ int AudioManagerStub::HandleSetAudioParameter(MessageParcel &data, MessageParcel
     SetAudioParameter(key, value);
     return AUDIO_OK;
 }
+
+/** ssl **/
+int AudioManagerStub::HandleSetAsrAecMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrAecMode asrAecMode = (static_cast<AsrAecMode>(data.ReadInt32()));
+    int32_t result = SetAsrAecMode(asrAecMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleGetAsrAecMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrAecMode asrAecMode = (static_cast<AsrAecMode>(data.ReadInt32()));
+    int32_t result = GetAsrAecMode(asrAecMode);
+    //const std::string key = data.ReadString();
+    //const std::string value = data.ReadString();
+    //GetAsrAecMode(key,value);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleSetAsrNoiseSuppressionMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrNoiseSuppressionMode asrNoiseSuppressionMode = (static_cast<AsrNoiseSuppressionMode>(data.ReadInt32()));
+    int32_t result = SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleGetAsrNoiseSuppressionMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrNoiseSuppressionMode asrNoiseSuppressionMode = (static_cast<AsrNoiseSuppressionMode>(data.ReadInt32()));
+    int32_t result = GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleIsWhispering(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    const std::string key = data.ReadString();
+    const std::string value = data.ReadString();
+    int32_t result = IsWhispering();
+    return result;
+}
+
+/** ssl **/
+
+
+
 
 int AudioManagerStub::HandleGetExtraAudioParameters(MessageParcel &data, MessageParcel &reply)
 {
@@ -119,9 +168,9 @@ int AudioManagerStub::HandleSetMicrophoneMute(MessageParcel &data, MessageParcel
 int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &reply)
 {
     AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
-    DeviceType activeOutputDevice = (static_cast<DeviceType>(data.ReadInt32()));
-    DeviceType activeInputDevice = (static_cast<DeviceType>(data.ReadInt32()));
-    int32_t result = SetAudioScene(audioScene, activeOutputDevice, activeInputDevice);
+
+    DeviceType activeDevice = (static_cast<DeviceType>(data.ReadInt32()));
+    int32_t result = SetAudioScene(audioScene, activeDevice);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -286,18 +335,9 @@ int AudioManagerStub::HandleCreateAudioEffectChainManager(MessageParcel &data, M
         sceneTypeToEffectChainNameMap[key] = value;
     }
 
-    unordered_map<string, string> sceneTypeToEnhanceChainNameMap;
-    mapSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(mapSize >= 0 && mapSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
-        AUDIO_ERR, "Create audio enhance chain manager failed, please check log");
-    for (i = 0; i < mapSize; i++) {
-        string key = data.ReadString();
-        string value = data.ReadString();
-        sceneTypeToEnhanceChainNameMap[key] = value;
-    }
+    
 
-    bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap,
-        sceneTypeToEnhanceChainNameMap);
+    bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap);
     CHECK_AND_RETURN_RET_LOG(createSuccess, AUDIO_ERR,
         "Create audio effect chain manager failed, please check log");
     return AUDIO_OK;
@@ -474,30 +514,6 @@ int AudioManagerStub::HandleResetRouteForDisconnect(MessageParcel &data, Message
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleGetEffectLatency(MessageParcel &data, MessageParcel &reply)
-{
-    string sessionId = data.ReadString();
-    uint32_t ret = GetEffectLatency(sessionId);
-    reply.WriteUint32(ret);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply)
-{
-    bool isOutputDevice = data.ReadBool();
-    int32_t deviceType = data.ReadInt32();
-    float result = GetMaxAmplitude(isOutputDevice, deviceType);
-    reply.WriteFloat(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleUpdateLatencyTimestamp(MessageParcel &data, MessageParcel &reply)
-{
-    std::string timestamp = data.ReadString();
-    bool isRenderer = data.ReadBool();
-    UpdateLatencyTimestamp(timestamp, isRenderer);
-    return AUDIO_OK;
-}
 
 int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
