@@ -60,8 +60,7 @@ void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, M
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     int32_t volumeLevel = data.ReadInt32();
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    int32_t volumeFlag = data.ReadInt32();
-    int result = SetSystemVolumeLevel(volumeType, volumeLevel, api_v, volumeFlag);
+    int result = SetSystemVolumeLevel(volumeType, volumeLevel, api_v);
     reply.WriteInt32(result);
 }
 

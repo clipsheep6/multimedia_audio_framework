@@ -57,7 +57,6 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr int32_t FLAG_SHOW_UI = 1;
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
@@ -512,8 +511,7 @@ int32_t AudioPolicyServer::GetMinVolumeLevel(AudioVolumeType volumeType)
     return audioPolicyService_.GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v,
-    int32_t volumeFlag)
+int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v)
 {
     if (api_v == API_9 && !PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("SetSystemVolumeLevel: No system permission");
@@ -527,7 +525,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
         return ERR_NOT_SUPPORTED;
     }
 
-    return SetSystemVolumeLevelInternal(streamType, volumeLevel, flag == FLAG_SHOW_UI);
+    return SetSystemVolumeLevelInternal(streamType, volumeLevel, false);
 }
 
 int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
