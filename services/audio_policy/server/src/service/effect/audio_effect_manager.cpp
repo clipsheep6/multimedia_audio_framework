@@ -496,13 +496,26 @@ void AddKeyValueIntoMap(std::unordered_map<T, std::string> &map, std::string &ke
     map[key] = value;
 }
 
-void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map)
+void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map,
+    const std::vector<std::string> &sceneTypesInUse)
 {
     std::string sceneType;
     std::string sceneMode;
     std::string key;
+
+    std::vector<std::string> sceneTypesInUse;
+    for (SceneMappingItem &item : supportedEffectConfig_.postProcessSceneMap) {
+        if (std::find(sceneTypesInUse.begin(), sceneTypesInUse.end(), item.sceneType) == sceneTypesInUse.end()) {
+            sceneTypesInUse.push_back(item.sceneType);
+        }
+    }
+
     for (auto &scene: supportedEffectConfig_.postProcessNew.stream) {
         sceneType = scene.scene;
+        if (std::find(sceneTypesInUse.begin(), sceneTypesInUse.end(), sceneType) == sceneTypesInUse.end() &&
+            sceneType != postSceneTypeSet_.back()) {
+                break; // The sceneType is not used in the Usage-SceneType map and it is not "SCENE_OTHERS"
+            }
         for (auto &mode: scene.streamEffectMode) {
             sceneMode = mode.mode;
             for (auto &device: mode.devicePort) {

@@ -345,6 +345,11 @@ int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *c
     return audioEffectChainManager->ReturnMultiChannelInfo(channels, channelLayout);
 }
 
+int32_t EffectChainManagerGetSceneTypeSet(char sceneTypeSet[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH])
+{
+    return AudioEffectChainManager::GetInstance()->GetSceneTypeSet(sceneTypeSet);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -898,7 +903,9 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     // Constrcut SceneTypeAndModeToEffectChainNameMap that stores effectMode associated with the effectChainName
     for (auto item = map.begin(); item != map.end(); ++item) {
         SceneTypeAndModeToEffectChainNameMap_[item->first] = item->second;
+        sceneTypeSet_.push_back(item->first);
     }
+    sceneTypeSet_.push_back("EFFECT_NONE");
 
     AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", EffectToLibraryEntryMap_.size());
     AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap_.size());
@@ -1550,6 +1557,20 @@ void AudioEffectChainManager::UpdateSensorState()
         audioEffectChain->SetHeadTrackingDisabled();
     }
 #endif
+}
+
+int32_t AudioEffectChainManager::GetSceneTypeSet(char sceneTypeSet[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH])
+{
+    static bool flag = false;
+    int32_t setSize = sceneTypeSet_.size();
+
+    if (flag) {return setSize;}
+
+    for (int32_t i = 0; i < setSize; ++i) {
+        memcpy_s(sceneTypeSet[i], MAX_SCENE_NAME_LENGTH, sceneTypeSet_[i].c_str(), sceneTypeSet_[i].size());
+    }
+    flag = true;
+    return setSize;
 }
 
 void AudioEffectChainManager::DeleteAllChains()

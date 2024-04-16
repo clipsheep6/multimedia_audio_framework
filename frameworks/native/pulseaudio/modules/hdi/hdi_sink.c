@@ -68,7 +68,6 @@
 #define IN_CHANNEL_NUM_MAX 16
 #define OUT_CHANNEL_NUM_MAX 2
 #define DEFAULT_FRAMELEN 2048
-#define SCENE_TYPE_NUM 7
 #define HDI_MIN_MS_MAINTAIN 30
 #define OFFLOAD_HDI_CACHE1 200 // ms, should equal with val in audio_service_client.cpp
 #define OFFLOAD_HDI_CACHE2 7000 // ms, should equal with val in audio_service_client.cpp
@@ -91,8 +90,7 @@ const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 
-char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE", "SCENE_SPEECH", "SCENE_RING",
-    "SCENE_OTHERS", "EFFECT_NONE"};
+static char SCENE_TYPE_SET[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH];
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -1368,7 +1366,8 @@ static int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
 
 static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenRef)
 {
-    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+    int32_t setSize = EffectChainManagerGetSceneTypeSet(SCENE_TYPE_SET);
+    for (int32_t i = 0; i < setSize; i++) {
         sceneTypeLenRef[i] = DEFAULT_IN_CHANNEL_NUM;
     }
     pa_sink_input *sinkIn;
@@ -1390,7 +1389,7 @@ static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenR
         if (processChannels == DEFAULT_NUM_CHANNEL) {
             continue;
         }
-        for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+        for (int32_t i = 0; i < setSize; i++) {
             if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i])) {
                 sceneTypeLenRef[i] = processChannels;
             }
@@ -1407,7 +1406,8 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         pa_memblock_unref(capResult.memblock);
     }
 
-    uint8_t sceneTypeLenRef[SCENE_TYPE_NUM];
+    int32_t setSize = EffectChainManagerGetSceneTypeSet(SCENE_TYPE_SET);
+    uint8_t sceneTypeLenRef[setSize];
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
@@ -1418,7 +1418,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
     int32_t bitSize = pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
-    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+    for (int32_t i = 0; i < setSize; i++) {
         size_t tmpLength = length * sceneTypeLenRef[i] / DEFAULT_IN_CHANNEL_NUM;
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
