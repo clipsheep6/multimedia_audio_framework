@@ -496,8 +496,7 @@ void AddKeyValueIntoMap(std::unordered_map<T, std::string> &map, std::string &ke
     map[key] = value;
 }
 
-void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map,
-    const std::vector<std::string> &sceneTypesInUse)
+void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map)
 {
     std::string sceneType;
     std::string sceneMode;
