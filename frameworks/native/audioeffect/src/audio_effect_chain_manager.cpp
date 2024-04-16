@@ -892,12 +892,11 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     }
     // Construct EffectChainToEffectsMap that stores all effect names of each effect chain
     for (EffectChain efc: effectChains) {
-        std::string key = efc.name;
         std::vector <std::string> effects;
         for (std::string effectName: efc.apply) {
             effects.emplace_back(effectName);
         }
-        EffectChainToEffectsMap_[key] = effects;
+        EffectChainToEffectsMap_[efc.name] = effects;
     }
 
     // Constrcut SceneTypeAndModeToEffectChainNameMap that stores effectMode associated with the effectChainName
@@ -905,7 +904,6 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
         SceneTypeAndModeToEffectChainNameMap_[item->first] = item->second;
         sceneTypeSet_.push_back(item->first);
     }
-    sceneTypeSet_.push_back("EFFECT_NONE");
 
     AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", EffectToLibraryEntryMap_.size());
     AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap_.size());
@@ -1562,12 +1560,14 @@ void AudioEffectChainManager::UpdateSensorState()
 int32_t AudioEffectChainManager::GetSceneTypeSet(char sceneTypeSet[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH])
 {
     static bool flag = false;
-    int32_t setSize = sceneTypeSet_.size();
+    int32_t setSize = sceneTypeSet_.size() + 1;
 
     if (flag) {return setSize;}
 
     for (int32_t i = 0; i < setSize; ++i) {
-        memcpy_s(sceneTypeSet[i], MAX_SCENE_NAME_LENGTH, sceneTypeSet_[i].c_str(), sceneTypeSet_[i].size());
+        int32_t ret = memcpy_s(sceneTypeSet[i], MAX_SCENE_NAME_LENGTH, sceneTypeSet_[i].c_str(),
+            sceneTypeSet_[i].size());
+        CHECK_AND_CONTINUE_LOG(ret == 0, "sceneType set memcpy failed");
     }
     flag = true;
     return setSize;
