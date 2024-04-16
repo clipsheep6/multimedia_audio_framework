@@ -20,6 +20,10 @@
 #include "audio_system_manager.h"
 #include "audio_manager_base.h"
 
+/** ssl **/
+#include "audio_info.h"
+/** ssl **/
+
 namespace OHOS {
 namespace AudioStandard {
 class AudioManagerProxy : public IRemoteProxy<IStandardAudioService> {
@@ -76,6 +80,16 @@ public:
     uint32_t GetEffectLatency(const std::string &sessionId) override;
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+
+    /** ssl **/
+    int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
+    int32_t GetAsrAecMode(AsrAecMode& asrAecMode) override;
+    int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode) override;
+    int32_t IsWhispering() override;
+
+    /** ssl **/
+
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

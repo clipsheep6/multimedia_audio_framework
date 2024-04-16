@@ -173,6 +173,8 @@ private:
     static napi_ref audioChannelLayout_;
     static napi_ref audioStreamDeviceChangeReason_;
     static napi_ref spatializationSceneType_;
+    static napi_ref asrNoiseSuppressionMode_;
+    static napi_ref asrAecMode_;
 
     static const std::map<std::string, int32_t> audioChannelMap;
     static const std::map<std::string, int32_t> samplingRateMap;
@@ -212,6 +214,8 @@ private:
     static const std::map<std::string, uint64_t> audioChannelLayoutMap;
     static const std::map<std::string, int32_t> audioDeviceChangeReasonMap;
     static const std::map<std::string, int32_t> spatializationSceneTypeMap;
+    static const std::map<std::string, int32_t> asrNoiseSuppressionModeMap;
+    static const std::map<std::string, int32_t> asrAecModeMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;
