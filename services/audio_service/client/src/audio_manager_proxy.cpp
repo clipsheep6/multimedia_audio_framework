@@ -207,8 +207,7 @@ int32_t AudioManagerProxy::OffloadSetBufferSize(uint32_t sizeMs)
     return result;
 }
 
-int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
-    DeviceType activeInputDevice)
+int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -218,8 +217,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activ
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(audioScene));
-    data.WriteInt32(static_cast<int32_t>(activeOutputDevice));
-    data.WriteInt32(static_cast<int32_t>(activeInputDevice));
+    data.WriteInt32(static_cast<int32_t>(activeDevice));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE), data, reply, option);
@@ -355,6 +353,93 @@ int32_t AudioManagerProxy::SetExtraParameters(const std::string &key,
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Set extra audio parameters failed, error: %d", error);
     return reply.ReadInt32();
 }
+
+/** ssl **/
+int32_t AudioManagerProxy::SetAsrAecMode(AsrAecMode asrAecMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrAecMode));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_AEC_MODE), data, reply, option);//枚举值对应？
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SetAudioScene failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::GetAsrAecMode(AsrAecMode& asrAecMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrAecMode));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE), data, reply, option);//枚举值对应？
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SetAudioScene failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrNoiseSuppressionMode));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE), data, reply, option);//枚举值对应？
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SetAudioScene failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrNoiseSuppressionMode));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE), data, reply, option);//枚举值对应？
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SetAudioScene failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::IsWhispering()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    //data.weiteInt32(static_cast<int32_t>(asrNoiseSuppressionMode));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::IS_WHISPERING), data, reply, option);//枚举值对应？
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SetAudioScene failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+/** ssl **/
 
 uint64_t AudioManagerProxy::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
 {
@@ -838,6 +923,8 @@ float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType
 
     return reply.ReadFloat();
 }
+
+
 
 void AudioManagerProxy::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
 {

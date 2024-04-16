@@ -306,6 +306,40 @@ void AudioSystemManager::SetAudioParameter(const std::string &key, const std::st
     gasp->SetAudioParameter(key, value);
 }
 
+
+/** ssl **/
+int32_t AudioSystemManager::SetAsrAecMode(const AsrAecMode asrAecMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    //CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    return gasp->SetAsrAecMode(asrAecMode);
+}
+int32_t AudioSystemManager::GetAsrAecMode(AsrAecMode& asrAecMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    //CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    return gasp->GetAsrAecMode(asrAecMode);
+}
+int32_t AudioSystemManager::SetAsrNoiseSuppressionMode(const AsrNoiseSuppressionMode asrNoiseSuppressionMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    //CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    return gasp->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+}
+int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    //CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    return gasp->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+}
+int32_t AudioSystemManager::IsWhispering()
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    //CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    return gasp->IsWhispering();
+}
+/** ssl **/
+
 int32_t AudioSystemManager::GetExtraParameters(const std::string &mainKey,
     const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
 {
@@ -1161,9 +1195,7 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             }
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
-        case OHOS::AudioStandard::DEVICE_TYPE_DP:
-            pin = AUDIO_PIN_OUT_DP;
-            break;
+
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SINK:
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE:
         case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO:
