@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\interfaces",
+    "\\interfaces\\inner_api",
+    "\\interfaces\\inner_api\\native",
+    "\\interfaces\\inner_api\\native\\audiocommon",
+    "\\interfaces\\inner_api\\native\\audiocommon\\include",
+    "\\services",
+    "\\services\\audio_service",
+    "\\services\\audio_service\\client",
+    "\\services\\audio_service\\client\\src"
+  ],
+  "SelectedNode": "\\interfaces\\inner_api\\native\\audiocommon\\include\\audio_info.h",
+  "PreviewInSolutionExplorer": false
+}

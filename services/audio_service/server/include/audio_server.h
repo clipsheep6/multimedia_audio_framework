@@ -31,6 +31,7 @@
 #include "i_audio_renderer_sink.h"
 #include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
+#include "audio_asr.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,14 +58,24 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
-        DeviceType activeInputDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<std::pair<std::string, std::string>>& kvpairs) override;
     void SetAudioParameter(const std::string& key, const std::string& value) override;
     void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
+
+    bool CheckAndPrintStacktrace(const std::string& key);
+    /*** ssl **/
+    int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
+    int32_t GetAsrAecMode(AsrAecMode& asrAecMode) override;
+    int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode) override;
+    int32_t IsWhispering() override;
+    /*** ssl **/
+
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     const std::string GetAudioParameter(const std::string &key) override;

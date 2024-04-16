@@ -116,15 +116,55 @@ int AudioManagerStub::HandleSetMicrophoneMute(MessageParcel &data, MessageParcel
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &reply)
+int AudioManagerStub::HandleSetAudioScene(MessageParcel& data, MessageParcel& reply)
 {
     AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
-    DeviceType activeOutputDevice = (static_cast<DeviceType>(data.ReadInt32()));
-    DeviceType activeInputDevice = (static_cast<DeviceType>(data.ReadInt32()));
-    int32_t result = SetAudioScene(audioScene, activeOutputDevice, activeInputDevice);
+
+    DeviceType activeDevice = (static_cast<DeviceType>(data.ReadInt32()));
+    int32_t result = SetAudioScene(audioScene, activeDevice);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
+
+/** ssl **/
+int AudioManagerStub::HandleSetAsrAecMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrAecMode asrAecMode = (static_cast<AsrAecMode>(data.ReadInt32()));
+    int32_t result = SetAsrAecMode(asrAecMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleGetAsrAecMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrAecMode asrAecMode = (static_cast<AsrAecMode>(data.ReadInt32()));
+    int32_t result = GetAsrAecMode(asrAecMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleSetAsrNoiseSuppressionMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrNoiseSuppressionMode asrNoiseSuppressionMode = (static_cast<AsrNoiseSuppressionMode>(data.ReadInt32()));
+    int32_t result = SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleGetAsrNoiseSuppressionMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrNoiseSuppressionMode asrNoiseSuppressionMode = (static_cast<AsrNoiseSuppressionMode>(data.ReadInt32()));
+    int32_t result = GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleIsWhispering(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    const std::string key = data.ReadString();
+    const std::string value = data.ReadString();
+    int32_t result = IsWhispering();
+    return result;
+}
+
+/** ssl **/
+
 
 int AudioManagerStub::HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply)
 {

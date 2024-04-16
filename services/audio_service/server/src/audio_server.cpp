@@ -23,6 +23,7 @@
 #include <sstream>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
@@ -321,13 +322,26 @@ bool AudioServer::CheckAndPrintStacktrace(const std::string &key)
     return false;
 }
 
-const std::string AudioServer::GetAudioParameter(const std::string &key)
+const std::string AudioServer::GetAudioParameter(const std::string& key)
 {
     if (IPCSkeleton::GetCallingUid() == MEDIA_SERVICE_UID && CheckAndPrintStacktrace(key) == true) {
         return "";
     }
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
+    AUDIO_DEBUG_LOG("server: get audio parameter");
+    if (key == "get_usb_info") {
+        IAudioRendererSink* usbAudioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
+        IAudioCapturerSource* usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
+        if (usbAudioRendererSinkInstance != nullptr && usbAudioCapturerSinkInstance != nullptr) {
+            std::string usbInfoStr =
+                usbAudioRendererSinkInstance->GetAudioParameter(AudioParamKey::USB_DEVICE, "get_usb_info");
+            // Preload usb sink and source, make pa load module faster to avoid blocking client write
+            usbAudioRendererSinkInstance->Preload(usbInfoStr);
+            usbAudioCapturerSinkInstance->Preload(usbInfoStr);
+            return usbInfoStr;
+        }
+    }
 
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance != nullptr) {
@@ -392,22 +406,11 @@ const std::string AudioServer::GetAudioParameter(const std::string& networkId, c
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     bool ret = VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION);
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || ret, "", "refused for %{public}d", callingUid);
-
-    if (networkId == LOCAL_NETWORK_ID) {
-        AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
-        if (key == AudioParamKey::USB_DEVICE) {
-            return GetUsbParameter();
-        }
-        if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
-            return GetDPParameter(condition);
-        }
-    } else {
-        IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
-        CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, "", "has no valid sink");
-        return audioRendererSinkInstance->GetAudioParameter(key, condition);
-    }
-    return "";
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || ret, "",
+        "GetAudioParameter refused for %{public}d", callingUid);
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, "", "has no valid sink");
+    return audioRendererSinkInstance->GetAudioParameter(key, condition);
 }
 
 uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
@@ -538,8 +541,7 @@ int32_t AudioServer::OffloadSetVolume(float volume)
     return audioRendererSinkInstance->SetVolume(volume, 0);
 }
 
-int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
-    DeviceType activeInputDevice)
+int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
 
@@ -547,29 +549,32 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeOutpu
     CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
         ERR_NOT_SUPPORTED, "UpdateActiveDeviceRoute refused for %{public}d", callingUid);
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS);
-    AudioCapturerSource *audioCapturerSourceInstance;
-    IAudioRendererSink *audioRendererSinkInstance;
-    if (activeOutputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
+    AudioCapturerSource* audioCapturerSourceInstance;
+    IAudioRendererSink* audioRendererSinkInstance;
+
+    if (activeDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
-    } else {
+    }
+    else {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     }
-    if (activeInputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
-    } else {
-        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
-    }
+
+
 
     if (audioCapturerSourceInstance == nullptr || !audioCapturerSourceInstance->IsInited()) {
         AUDIO_WARNING_LOG("Capturer is not initialized.");
-    } else {
-        audioCapturerSourceInstance->SetAudioScene(audioScene, activeInputDevice);
+    }
+    else {
+        audioCapturerSourceInstance->SetAudioScene(audioScene, activeDevice);
     }
 
     if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
-    } else {
-        audioRendererSinkInstance->SetAudioScene(audioScene, activeOutputDevice);
+    }
+    else {
+        audioRendererSinkInstance->SetAudioScene(audioScene, activeDevice);
     }
 
     audioScene_ = audioScene;
@@ -1223,5 +1228,174 @@ void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer
         LatencyMonitor::GetInstance().ShowTimestamp(false);
     }
 }
+
+/** ssl **/
+std::map<std::string, AsrAecMode> aecModeMap = {
+    {"BYPASS",AsrAecMode::BYPASS},
+    {"STANDARD",AsrAecMode::STANDARD}
+};
+std::map<AsrAecMode, std::string> aecModeMapVerse = {
+    {AsrAecMode::BYPASS,"BYPASS"},
+    {AsrAecMode::STANDARD,"STANDARD"}
+};
+std::map<std::string, AsrNoiseSuppressionMode> nsModeMap = {
+    {"BYPASS",AsrNoiseSuppressionMode::BYPASS},
+    {"STANDARD",AsrNoiseSuppressionMode::STANDARD},
+    {"NEAR_FIELD",AsrNoiseSuppressionMode::NEAR_FIELD},
+    {"FAR_FIELD",AsrNoiseSuppressionMode::FAR_FIELD}
+};
+std::map<AsrNoiseSuppressionMode, std::string> nsModeMapVerse = {
+    {AsrNoiseSuppressionMode::BYPASS,"BYPASS"},
+    {AsrNoiseSuppressionMode::STANDARD,"STANDARD"},
+    {AsrNoiseSuppressionMode::NEAR_FIELD,"NEAR_FIELD"},
+    {AsrNoiseSuppressionMode::FAR_FIELD,"FAR_FIELD"}
+};
+
+std::vector<std::string> splitString(const std::string& str, const std::string& pattern)
+{
+    std::vector<std::string> res;
+    if (str == "")
+        return res;
+    //在字符串末尾也加入分隔符，方便截取最后一段
+    std::string strs = str + pattern;
+    size_t pos = strs.find(pattern);
+
+    while (pos != strs.npos)
+    {
+        std::string temp = strs.substr(0, pos);
+        res.push_back(temp);
+        //去掉已分割的字符串，在剩下的字符串中进行分割
+        strs = strs.substr(pos + 1, strs.size());
+        pos = strs.find(pattern);
+    }
+    return res;
+}
+
+
+int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode) {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED, "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    //key hal保持一致
+    std::string key = "asr_aec_mode";
+    std::string value = key + "=";
+
+    auto it = aecModeMapVerse.find(asrAecMode);
+    if (it != aecModeMapVerse.end()) {
+        value = key + "=" + it->second;
+    }
+    else {
+        AudioServer::audioParameters[key] = value;//打桩，如果这里异常值怎么返回？TODO
+    }
+    //send it to hal
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    AUDIO_INFO_LOG("AudioServer: SetAsrAecMode.");
+    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    return 0;
+}
+
+int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode) {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED, "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    //key hal保持一致
+    std::string key = "asr_aec_mode";
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    std::string asrAecModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);//返回类型？hal层的返回类型是啥
+
+    std::vector<std::string> resMode = splitString(asrAecModeSink, "=");
+    std::string modeString = "";
+    if (resMode.size() == 2) {
+        modeString = resMode[1];
+        auto it = aecModeMap.find(modeString);
+        if (it != aecModeMap.end()) {
+            asrAecMode = it->second;
+        }
+        else {
+            AUDIO_INFO_LOG("Server: GetAsrAecMode Error.");//未作打桩TODO
+            return ERROR;
+        }
+    }
+    else {
+        AUDIO_INFO_LOG("Server: GetAsrAecMode Error.");
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("AudioServer: GetAsrAecMode.");
+    return 0;
+}
+
+int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED, "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    //key hal保持一致
+    std::string key = "asr_ns_mode";
+    std::string value = key + "=";
+
+    auto it = nsModeMapVerse.find(asrNoiseSuppressionMode);
+    if (it != nsModeMapVerse.end()) {
+        value = key + "=" + it->second;
+    }
+    else {
+        AudioServer::audioParameters[key] = value;//打桩，如果这里异常值怎么返回？TODO
+    }
+    //send it to hal
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    return 0;
+}
+
+int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode) {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED, "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    //key hal保持一致
+    std::string key = "asr_ns_mode";
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    std::string asrNoiseSuppressionModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);//返回类型？hal层的返回类型是啥
+
+    std::vector<std::string> resMode = splitString(asrNoiseSuppressionModeSink, "=");
+    std::string modeString = "";
+    if (resMode.size() == 2) {
+        modeString = resMode[1];
+        auto it = nsModeMap.find(modeString);
+        if (it != nsModeMap.end()) {
+            asrNoiseSuppressionMode = it->second;
+        }
+        else {
+            AUDIO_INFO_LOG("Server: GetAsrNoiseSuppressionMode Error.");//未作打桩TODO
+            return ERROR;
+        }
+    }
+    else {
+        AUDIO_INFO_LOG("Server: GetAsrNoiseSuppressionMode Error.");
+        return ERROR;
+    }
+    return 0;
+}
+
+int32_t AudioServer::IsWhispering() {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED, "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    //key hal保持一致
+    std::string key = "asr_is_whisper";
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+
+    std::string isWhisperSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);//返回类型？hal层的返回类型是啥?通用接口？
+    int32_t whisperRes = 0;
+    if (isWhisperSink == "1") {//打桩
+        whisperRes = 1;
+    }
+    return whisperRes;
+}
+
+/** ssl **/
 } // namespace AudioStandard
 } // namespace OHOS
