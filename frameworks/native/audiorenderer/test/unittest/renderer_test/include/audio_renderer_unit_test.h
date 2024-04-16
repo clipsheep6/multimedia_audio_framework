@@ -100,6 +100,17 @@ public:
     // Release memory
     static void ReleaseBufferAndFiles(uint8_t *&buffer, uint8_t *&metaBuffer,
         FILE *&wavFile, FILE *&metaFile);
+    // Init Renderer streamUsage
+    static AudioRendererOptions UTCreateAudioRenderer(StreamUsage streamUsage);
+    // Audio Interrupt Process Incoming Stream
+    static void AudioInterruptProcessIncoming(StreamUsage streamUsageExist, StreamUsage streamUsageIncoming,
+        InterruptHint hintType);
+    // Audio Interrupt Process Existing Stream
+    static void AudioInterruptProcessExisting(StreamUsage streamUsageExist, StreamUsage streamUsageIncoming,
+        InterruptHint hintType);
+    // Audio Interrupt Incoming Start Fail
+    static void AudioInterruptDenyIncoming(StreamUsage streamUsageExist, StreamUsage streamUsageIncoming,
+        bool isStart = false);
     static InterruptEvent interruptEventTest_;
 };
 } // namespace AudioStandard
