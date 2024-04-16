@@ -16,26 +16,12 @@
 #define LOG_TAG "NapiAsrProcessingController"
 
 #include "napi_asr_processing_controller.h"
-
-//#include "napi_audio_manager.h"
-//#include "napi_audio_routing_manager.h"
-//#include "napi_audio_stream_manager.h"
-//#include "napi_audio_volume_manager.h"
-//#include "napi_audio_interrupt_manager.h"
-//#include "napi_audio_spatialization_manager.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-
-//#include "xpower_event_js.h"
-//
-//#include "napi_audio_manager_callbacks.h"
-//#include "napi_audio_ringermode_callback.h"
-//#include "napi_audio_manager_interrupt_callback.h"
-//#include "napi_audio_volume_key_event.h"
 
 namespace OHOS {
     namespace AudioStandard {
@@ -50,8 +36,6 @@ namespace OHOS {
         {
             AUDIO_DEBUG_LOG("NapiAsrProcessingController::~NapiAsrProcessingController()");
         }
-
-        
 
         NapiAsrProcessingController* NapiAsrProcessingController::GetParamWithSync(const napi_env& env, napi_callback_info info,
             size_t& argc, napi_value* args)
@@ -71,19 +55,14 @@ namespace OHOS {
             return napiAsrProcessingController;
         }
 
-        
-
         napi_status NapiAsrProcessingController::InitNapiAsrProcessingController(napi_env env, napi_value& constructor)
         {
             napi_property_descriptor audio_svc_mngr_properties[] = {
-                
                 DECLARE_NAPI_FUNCTION("setAsrAecMode", SetAsrAecMode),
                 DECLARE_NAPI_FUNCTION("getAsrAecMode", GetAsrAecMode),
                 DECLARE_NAPI_FUNCTION("setAsrNoiseSuppressionMode", SetAsrNoiseSuppressionMode),
                 DECLARE_NAPI_FUNCTION("getAsrNoiseSuppressionMode", GetAsrNoiseSuppressionMode),
-
                 DECLARE_NAPI_FUNCTION("isWhispering", IsWhispering),
-
             };
 
             napi_status status = napi_define_class(env, NAPI_ASR_PROCESSING_CONTROLLER_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH,
@@ -168,6 +147,7 @@ namespace OHOS {
                 AUDIO_ERR_LOG("Failed in CreateAudioManagerWrapper, %{public}d", status);
                 goto fail;
             }
+
             status = napi_new_instance(env, constructor, 0, nullptr, &result);
             if (status != napi_ok) {
                 AUDIO_ERR_LOG("napi_new_instance failed, sttaus:%{public}d", status);
@@ -192,7 +172,6 @@ namespace OHOS {
             }
             return NapiAsrProcessingController::CreateAudioManagerWrapper(env);
         }
-
         /** ssl **/
 
         napi_value NapiAsrProcessingController::SetAsrAecMode(napi_env env, napi_callback_info info)
@@ -206,7 +185,6 @@ namespace OHOS {
                 return result;
             }
             int32_t asrAecMode=0;
-            /*NapiParamUtils::GetValueInt32(env, asrAecMode, args[PARAM0]);*/
             CHECK_AND_RETURN_RET_LOG(napiAudioManager != nullptr, result, "napiAudioManager is nullptr");
             CHECK_AND_RETURN_RET_LOG(napiAudioManager->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
             //int32_t result = 
@@ -215,6 +193,7 @@ namespace OHOS {
             // switch () {} todo
             return result;
         }
+
         napi_value NapiAsrProcessingController::GetAsrAecMode(napi_env env, napi_callback_info info)
         {
             AUDIO_INFO_LOG("GetAsrAecMode");
@@ -235,6 +214,7 @@ namespace OHOS {
             // switch () {} todo
             return result;
         }
+
         napi_value NapiAsrProcessingController::SetAsrNoiseSuppressionMode(napi_env env, napi_callback_info info)
         {
             AUDIO_INFO_LOG("SetAsrNoiseSuppressionMode");
@@ -254,6 +234,7 @@ namespace OHOS {
             // switch () {} todo
             return result;
         }
+
         napi_value NapiAsrProcessingController::GetAsrNoiseSuppressionMode(napi_env env, napi_callback_info info)
         {
             AUDIO_INFO_LOG("GetAsrNoiseSuppressionMode");
@@ -273,6 +254,7 @@ namespace OHOS {
             // switch () {} todo
             return result;
         }
+
         napi_value NapiAsrProcessingController::IsWhispering(napi_env env, napi_callback_info info)
         {
             AUDIO_INFO_LOG("IsWhispering");
@@ -290,9 +272,6 @@ namespace OHOS {
             // switch () {} todo
             return result;
         }
-
-        
-
     }  // namespace AudioStandard
 }  // namespace OHOS
 

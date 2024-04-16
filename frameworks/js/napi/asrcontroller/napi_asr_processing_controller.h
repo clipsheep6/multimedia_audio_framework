@@ -15,14 +15,9 @@
 #ifndef NAPI_ASR_PROCESSING_CONTROLLER_H
 #define NAPI_ASR_PROCESSING_CONTROLLER_H
 
-//#include <iostream>
-//#include <map>
-//#include <vector>
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
-//#include "napi_async_work.h"
 #include "audio_system_manager.h"
-
 
 namespace OHOS {
     namespace AudioStandard {
@@ -38,24 +33,19 @@ namespace OHOS {
             static napi_status InitNapiAsrProcessingController(napi_env env, napi_value& constructor);
 
         private:
-           
             static NapiAsrProcessingController* GetParamWithSync(const napi_env &env, napi_callback_info info,
                 size_t& argc, napi_value* args);
             
             static void Destructor(napi_env env, void* nativeObject, void* finalizeHint);
             static napi_value Construct(napi_env env, napi_callback_info info);
             static napi_value CreateAudioManagerWrapper(napi_env env);
-
             static napi_value SetAsrAecMode(napi_env env, napi_callback_info info);
             static napi_value GetAsrAecMode(napi_env env, napi_callback_info info);
             static napi_value SetAsrNoiseSuppressionMode(napi_env env, napi_callback_info info);
             static napi_value GetAsrNoiseSuppressionMode(napi_env env, napi_callback_info info);
             static napi_value IsWhispering(napi_env env, napi_callback_info info);
-
             static napi_value createAsrProcessingController(napi_env env, napi_callback_info info);
 
-            
-            
             AudioSystemManager* audioMngr_;
             int32_t cachedClientId_ = -1;
             napi_env env_;
