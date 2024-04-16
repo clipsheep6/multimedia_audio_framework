@@ -178,7 +178,7 @@ napi_value NapiTonePlayer::CreateTonePlayer(napi_env env, napi_callback_info inf
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetRendererInfo(env, &context->rendererInfo, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetRendererInfo failed",
             NAPI_ERR_INVALID_PARAM);
@@ -230,10 +230,10 @@ napi_value NapiTonePlayer::Load(napi_env env, napi_callback_info info)
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->toneType, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get toneType failed",
-            NAPI_ERR_INVALID_PARAM);
+            NAPI_ERR_INPUT_INVALID);
         NAPI_CHECK_ARGS_RETURN_VOID(context, ToneTypeCheck(env, context->toneType), "toneType invaild",
             NAPI_ERR_INVALID_PARAM);
     };

@@ -245,7 +245,7 @@ napi_value NapiAudioCapturer::CreateAudioCapturer(napi_env env, napi_callback_in
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetCapturerOptions(env, &context->capturerOptions, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "CreateAudioCapturer failed",
             NAPI_ERR_INVALID_PARAM);
@@ -453,13 +453,13 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
         return NapiParamUtils::GetUndefinedValue(env);
     }
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueUInt32(env, context->userSize, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetValueUInt32 userSize failed",
-            NAPI_ERR_INVALID_PARAM);
+            NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueBoolean(env, context->isBlocking, argv[PARAM1]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetValueUInt32 userSize failed",
-            NAPI_ERR_INVALID_PARAM);
+            NAPI_ERR_INPUT_INVALID);
     };
     context->GetCbInfo(env, info, inputParser);
 

@@ -179,7 +179,7 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupInfos(napi_env env, napi_callba
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[PARAM0], &valueType);
         NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_string, "invaild valueType", NAPI_ERR_INVALID_PARAM);
@@ -241,9 +241,9 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManager(napi_env env, napi_call
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->groupId, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get groupId failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get groupId failed", NAPI_ERR_INPUT_INVALID);
     };
     context->GetCbInfo(env, info, inputParser);
 

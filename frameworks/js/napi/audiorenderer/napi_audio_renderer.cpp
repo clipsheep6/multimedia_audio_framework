@@ -281,10 +281,10 @@ napi_value NapiAudioRenderer::CreateAudioRenderer(napi_env env, napi_callback_in
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetRendererOptions(env, &context->rendererOptions, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioRendererRate failed",
-            NAPI_ERR_INVALID_PARAM);
+            NAPI_ERR_INPUT_INVALID);
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -332,10 +332,10 @@ napi_value NapiAudioRenderer::SetRenderRate(napi_env env, napi_callback_info inf
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->audioRendererRate, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioRendererRate failed",
-            NAPI_ERR_INVALID_PARAM);
+            NAPI_ERR_INPUT_INVALID);
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -413,10 +413,10 @@ napi_value NapiAudioRenderer::SetRendererSamplingRate(napi_env env, napi_callbac
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueUInt32(env, context->rendererSampleRate, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get RendererSamplingRate failed",
-            NAPI_ERR_INVALID_PARAM);
+            NAPI_ERR_INPUT_INVALID);
     };
 
     context->GetCbInfo(env, info, inputParser);
@@ -516,10 +516,10 @@ napi_value NapiAudioRenderer::Write(napi_env env, napi_callback_info info)
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetArrayBuffer(env, context->data, context->bufferLen, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get buffer failed",
-            NAPI_ERR_INVALID_PARAM);
+            NAPI_ERR_INPUT_INVALID);
     };
 
     context->GetCbInfo(env, info, inputParser);
@@ -876,7 +876,7 @@ napi_value NapiAudioRenderer::SetVolume(napi_env env, napi_callback_info info)
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueDouble(env, context->volLevel, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get RendererSamplingRate failed",
             NAPI_ERR_INVALID_PARAM);
@@ -1023,7 +1023,7 @@ napi_value NapiAudioRenderer::SetInterruptMode(napi_env env, napi_callback_info 
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->interruptMode, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get interruptMode failed",
             NAPI_ERR_INVALID_PARAM);

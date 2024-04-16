@@ -222,12 +222,11 @@ napi_value NapiAudioVolumeGroupManager::GetVolume(napi_env env, napi_callback_in
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INPUT_INVALID);
         if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
             context->SignError(NAPI_ERR_UNSUPPORTED);
-            return;
         }
     };
     context->GetCbInfo(env, info, inputParser);
@@ -287,15 +286,14 @@ napi_value NapiAudioVolumeGroupManager::SetVolume(napi_env env, napi_callback_in
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INVALID_PARAM);
-        if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
-            context->SignError(context->errCode ==
-                NAPI_ERR_INVALID_PARAM? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
-        }
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->volLevel, argv[PARAM1]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volLevel failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volLevel failed", NAPI_ERR_INPUT_INVALID);
+        if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
+            context->SignError(NAPI_ERR_UNSUPPORTED);
+        }
     };
     context->GetCbInfo(env, info, inputParser);
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
@@ -330,12 +328,11 @@ napi_value NapiAudioVolumeGroupManager::GetMaxVolume(napi_env env, napi_callback
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INPUT_INVALID);
         if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
             context->SignError(NAPI_ERR_UNSUPPORTED);
-            return;
         }
     };
     context->GetCbInfo(env, info, inputParser);
@@ -396,9 +393,9 @@ napi_value NapiAudioVolumeGroupManager::GetMinVolume(napi_env env, napi_callback
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INPUT_INVALID);
         if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
             context->SignError(NAPI_ERR_UNSUPPORTED);
         }
@@ -460,15 +457,14 @@ napi_value NapiAudioVolumeGroupManager::SetMute(napi_env env, napi_callback_info
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INVALID_PARAM);
-        if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
-            context->SignError(context->errCode ==
-                NAPI_ERR_INVALID_PARAM? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
-        }
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueBoolean(env, context->isMute, argv[PARAM1]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get isMute failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get isMute failed", NAPI_ERR_INPUT_INVALID);
+        if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
+            context->SignError(NAPI_ERR_UNSUPPORTED);
+        }
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -500,9 +496,9 @@ napi_value NapiAudioVolumeGroupManager::IsStreamMute(napi_env env, napi_callback
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INPUT_INVALID);
         if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
             context->SignError(NAPI_ERR_UNSUPPORTED);
         }
@@ -569,9 +565,9 @@ napi_value NapiAudioVolumeGroupManager::SetRingerMode(napi_env env, napi_callbac
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->ringMode, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get ringMode failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get ringMode failed", NAPI_ERR_INPUT_INVALID);
         if (!NapiAudioEnum::IsLegalInputArgumentRingMode(context->ringMode)) {
             context->SignError(NAPI_ERR_UNSUPPORTED);
         }
@@ -650,9 +646,9 @@ napi_value NapiAudioVolumeGroupManager::SetMicrophoneMute(napi_env env, napi_cal
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueBoolean(env, context->isMute, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get ringMode failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get ringMode failed", NAPI_ERR_INPUT_INVALID);
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -851,10 +847,6 @@ napi_value NapiAudioVolumeGroupManager::AdjustSystemVolumeByStep(napi_env env, n
     };
     context->GetCbInfo(env, info, inputParser);
 
-    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowError(env, context->errCode);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
         auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
@@ -902,11 +894,6 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDb(napi_env env, napi_c
             (context->status == napi_ok), "deviceType invaild", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
-
-    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowError(env, context->errCode);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");

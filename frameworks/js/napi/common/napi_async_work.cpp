@@ -67,7 +67,7 @@ void ContextBase::GetCbInfo(napi_env envi, napi_callback_info info, NapiCbInfoPa
     if (parser) {
         parser(argc, argv);
     } else {
-        NAPI_CHECK_ARGS_RETURN_VOID(this, argc == 0, "required no arguments!", NAPI_ERROR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(this, argc == 0, "required no arguments!", NAPI_ERR_INPUT_INVALID);
     }
 }
 
@@ -82,6 +82,11 @@ napi_value NapiAsyncWork::Enqueue(napi_env env, std::shared_ptr<ContextBase> ctx
     NapiAsyncExecute execute, NapiAsyncComplete complete)
 {
     AUDIO_DEBUG_LOG("name=%{public}s", name.c_str());
+    if ((ctxt->status != napi_ok) && (ctxt->errCode == NAPI_ERR_INPUT_INVALID)) {
+        AUDIO_DEBUG_LOG("The param invaild, return 401 error");
+        NapiAudioError::ThrowError(env, ctxt->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
     ctxt->execute = std::move(execute);
     ctxt->complete = std::move(complete);
     ctxt->taskName = name;
