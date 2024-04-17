@@ -5699,5 +5699,10 @@ int32_t AudioPolicyService::ClosePortAndEraseIOHandle(const std::string &moduleN
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     return SUCCESS;
 }
+
+void AudioPolicyService::NotifyAccountsChanged()
+{
+    audioPolicyManager_.NotifyAccountsChanged();
+}
 } // namespace AudioStandard
 } // namespace OHOS

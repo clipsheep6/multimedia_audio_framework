@@ -2564,5 +2564,20 @@ bool AudioPolicyServer::IsHeadTrackingDataRequested(const std::string &macAddres
 {
     return audioSpatializationService_.IsHeadTrackingDataRequested(macAddress);
 }
+
+void AudioPolicyServer::NotifyAccountsChanged(const int &id)
+{
+    AUDIO_INFO_LOG("start reload the kv data, current id:%{public}d", id);
+    audioPolicyService_.NotifyAccountsChanged();
+    interruptService_.DeactivateAudioInterruptOnNotifyAccountsChanged();
+}
+
+void AudioPolicyServer::AudioOsAccountInfo::OnAccountsChanged(const int &id)
+{
+    AUDIO_INFO_LOG("OnAccountsChanged received, id: %{public}d", id);
+    if (audioPolicyServer_ != nullptr) {
+        audioPolicyServer_->NotifyAccountsChanged(id);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -427,6 +427,8 @@ public:
     
     int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
 
+    void NotifyAccountsChanged();
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

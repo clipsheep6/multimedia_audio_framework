@@ -29,6 +29,7 @@
 #include "perm_state_change_callback_customize.h"
 #include "power_state_callback_stub.h"
 #include "power_state_listener.h"
+#include "os_account_manager.h"
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
@@ -394,6 +395,21 @@ public:
     bool IsHighResolutionExist() override;
 
     int32_t SetHighResolutionExist(bool highResExist) override;
+
+    void NotifyAccountsChanged(const int &id);
+    
+    class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
+    public:
+        explicit AudioOsAccountInfo(const AccountSA::OsAccountSubscribeInfo &subscribeInfo,
+            sptr<AudioPolicyServer> audioPolicyServer) : AccountSA::OsAccountSubscriber(subscribeInfo),
+            audioPolicyServer_(audioPolicyServer) {}
+
+        ~AudioOsAccountInfo() {}
+
+        void OnAccountsChanged(const int &id) override;
+    private:
+        sptr<AudioPolicyServer> audioPolicyServer_;
+    };
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

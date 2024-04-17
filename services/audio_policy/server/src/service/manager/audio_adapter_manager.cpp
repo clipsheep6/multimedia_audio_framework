@@ -1521,5 +1521,11 @@ bool AudioAdapterManager::IsAbsVolumeScene() const
 {
     return isAbsVolumeScene_;
 }
+
+bool AudioAdapterManager::NotifyAccountsChanged()
+{
+    LoadVolumeMap();
+    LoadMuteStatusMap();
+}
 } // namespace AudioStandard
 } // namespace OHOS

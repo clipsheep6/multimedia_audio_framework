@@ -103,6 +103,8 @@ private:
 
         void OnInterrupt(const InterruptEventInternal &interruptEvent);
 
+        void DeactivateAudioInterruptOnNotifyAccountsChanged();
+
     private:
         const std::weak_ptr<AudioInterruptService> service_;
         const std::shared_ptr<AudioInterruptCallback> callback_;

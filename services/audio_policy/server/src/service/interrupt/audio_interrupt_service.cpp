@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioInterruptService"
 
 #include "audio_interrupt_service.h"
 
@@ -1164,6 +1166,15 @@ void AudioInterruptService::AudioInterruptClient::OnInterrupt(const InterruptEve
 {
     if (callback_ != nullptr) {
         callback_->OnInterrupt(interruptEvent);
+    }
+}
+
+void AudioInterruptService::DeactivateAudioInterruptOnNotifyAccountsChanged()
+{
+    for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
+        for (const auto &audioFocusInfoList : audioInterruptZone->audioFocusInfoList) {
+            DeactivateAudioInterruptInternal(zoneId, audioFocusInfoList.first);
+        }
     }
 }
 

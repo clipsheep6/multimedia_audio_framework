@@ -136,7 +136,10 @@ public:
     void SetAbsVolumeScene(bool isAbsVolumeScene);
 
     bool IsAbsVolumeScene() const;
+
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
+
+    void NotifyAccountsChanged();
 private:
     friend class PolicyCallbackImpl;
 
