@@ -32,6 +32,7 @@ ohos_shared_library("audio") {
     "audiocapturer/callback",
     "audiomanager",
     "audiomanager/callback",
+    "asrcontroller",
   ]
 
   if (audio_framework_feature_new_napi) {
@@ -68,6 +69,7 @@ ohos_shared_library("audio") {
       "audiorenderer/callback/napi_renderer_period_position_callback.cpp",
       "audiorenderer/callback/napi_renderer_position_callback.cpp",
       "audiorenderer/napi_audio_renderer.cpp",
+      "asrcontroller/napi_asr_processing_controller.cpp",
       "common/napi_async_work.cpp",
       "common/napi_audio_entry.cpp",
       "common/napi_audio_enum.cpp",

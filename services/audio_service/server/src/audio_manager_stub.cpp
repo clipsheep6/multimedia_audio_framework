@@ -21,6 +21,10 @@
 #include "i_audio_process.h"
 #include "audio_effect_server.h"
 
+/** ssl **/
+#include "audio_asr.h"
+/** ssl **/
+
 using namespace std;
 
 namespace OHOS {
@@ -67,6 +71,48 @@ int AudioManagerStub::HandleSetAudioParameter(MessageParcel &data, MessageParcel
     SetAudioParameter(key, value);
     return AUDIO_OK;
 }
+
+/** ssl **/
+int AudioManagerStub::HandleSetAsrAecMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrAecMode asrAecMode = (static_cast<AsrAecMode>(data.ReadInt32()));
+    int32_t result = SetAsrAecMode(asrAecMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleGetAsrAecMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrAecMode asrAecMode = (static_cast<AsrAecMode>(data.ReadInt32()));
+    int32_t result = GetAsrAecMode(asrAecMode);
+    //const std::string key = data.ReadString();
+    //const std::string value = data.ReadString();
+    //GetAsrAecMode(key,value);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleSetAsrNoiseSuppressionMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrNoiseSuppressionMode asrNoiseSuppressionMode = (static_cast<AsrNoiseSuppressionMode>(data.ReadInt32()));
+    int32_t result = SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleGetAsrNoiseSuppressionMode(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    AsrNoiseSuppressionMode asrNoiseSuppressionMode = (static_cast<AsrNoiseSuppressionMode>(data.ReadInt32()));
+    int32_t result = GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleIsWhispering(MessageParcel& data, MessageParcel& reply)//ssl todo
+{
+    const std::string key = data.ReadString();
+    const std::string value = data.ReadString();
+    int32_t result = IsWhispering();
+    return result;
+}
+
+/** ssl **/
 
 int AudioManagerStub::HandleGetExtraAudioParameters(MessageParcel &data, MessageParcel &reply)
 {

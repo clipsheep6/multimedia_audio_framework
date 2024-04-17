@@ -606,6 +606,52 @@ public:
      */
     void SetAudioParameter(const std::string &key, const std::string &value);
 
+    /** ssl **/
+    /**
+    *@brief set audio parameter.
+    *
+    * @parame key The key of the set audio parameter.
+    * @param value The value of the set audio parameter.
+    * @since 9
+    */
+    int32_t SetAsrAecMode(const AsrAecMode asrAecMode);
+    /**
+    *@brief set audio parameter.
+    *
+    * @parame key The key of the set audio parameter.
+    * @param value The value of the set audio parameter.
+    * @since 9
+    */
+    int32_t GetAsrAecMode(AsrAecMode& asrAecMode);
+    /**
+    *@brief set audio parameter.
+    *
+    * @parame key The key of the set audio parameter.
+    * @param value The value of the set audio parameter.
+    * @since 9
+    */
+    int32_t SetAsrNoiseSuppressionMode(const AsrNoiseSuppressionMode asrNoiseSuppressionMode);
+    /**
+    *@brief set audio parameter.
+    *
+    * @parame key The key of the set audio parameter.
+    * @param value The value of the set audio parameter.
+    * @since 9
+    */
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode);
+    /**
+    *@brief set audio parameter.
+    *
+    * @parame key The key of the set audio parameter.
+    * @param value The value of the set audio parameter.
+    * @since 9
+    */
+    int32_t IsWhispering();
+
+
+    /** ssl **/
+
+
     /**
      * @brief Get audio parameter.
      *
