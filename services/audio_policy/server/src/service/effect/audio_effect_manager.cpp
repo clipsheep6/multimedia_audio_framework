@@ -205,7 +205,8 @@ static int32_t UpdateAvailableSceneMapPost(SceneMappingItem &item, std::vector<S
 bool AudioEffectManager::VerifySceneMappingItem(const SceneMappingItem &item)
 {
     return STREAM_USAGE_MAP.find(item.name) != STREAM_USAGE_MAP.end() &&
-        std::find(postSceneTypeCollection_.begin(), postSceneTypeCollection_.end(), item.sceneType) != postSceneTypeCollection_.end();
+        std::find(postSceneTypeCollection_.begin(), postSceneTypeCollection_.end(), item.sceneType) !=
+            postSceneTypeCollection_.end();
 }
 
 void AudioEffectManager::UpdateEffectChains(std::vector<std::string> &availableLayout)
@@ -265,7 +266,7 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
     for (Stream &ss: supportedEffectConfig_.postProcessNew.stream) {
         postSceneTypeCollection_.push_back(ss.scene);
     }
-    AUDIO_INFO_LOG("postSceneTypeCollection_ size is %{public}zu", supportedEffectConfig_.postProcessNew.stream.size());
+    AUDIO_INFO_LOG("postSceneTypeCollection_ size: %{public}zu", supportedEffectConfig_.postProcessNew.stream.size());
     std::vector<SceneMappingItem> postSceneMap;
     for (SceneMappingItem &item: aeConfig.postProcess.sceneMap) {
         if (!VerifySceneMappingItem(item)) {

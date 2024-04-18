@@ -1562,7 +1562,7 @@ int32_t AudioEffectChainManager::GetSceneTypeCollection(char sceneTypeCollection
 {
     int32_t ret;
     for (uint64_t i = 0; i < sceneTypeCollection_.size(); ++i) {
-        int32_t ret = memcpy_s(sceneTypeCollection[i], MAX_SCENE_NAME_LENGTH, sceneTypeCollection_[i].c_str(),
+        ret = memcpy_s(sceneTypeCollection[i], MAX_SCENE_NAME_LENGTH, sceneTypeCollection_[i].c_str(),
             sceneTypeCollection_[i].size());
         CHECK_AND_CONTINUE_LOG(ret == 0, "sceneType Collection memcpy failed");
     }
