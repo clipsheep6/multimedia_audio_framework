@@ -593,6 +593,7 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", audioModuleInfo.lib.c_str(), moduleArgs.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    curActiveCount_++;
     return audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
 }
 
@@ -608,7 +609,13 @@ AudioIOHandle AudioAdapterManager::LoadLoopback(const LoopbackModuleInfo &module
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    curActiveCount_--;
     return audioServiceAdapter_->CloseAudioPort(ioHandle);
+}
+
+int32_t AudioAdapterManager::GetCurActivateCount() const
+{
+    return curActiveCount_ > 0 ? curActiveCount_ : 0;
 }
 
 void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)

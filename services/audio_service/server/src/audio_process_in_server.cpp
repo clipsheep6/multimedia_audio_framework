@@ -25,6 +25,17 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr int STRING_BUFFER_SIZE = 4096;
+
+template <typename...Args>
+void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
+{
+    char buf[STRING_BUFFER_SIZE] = {0};
+    int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
+    CHECK_AND_RETURN_LOG(len > 0, "snprintf_s error : buffer allocation fails");
+    out += buf;
+}
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 }
@@ -186,20 +197,20 @@ int AudioProcessInServer::Dump(int fd, const std::vector<std::u16string> &args)
     return SUCCESS;
 }
 
-void AudioProcessInServer::Dump(std::stringstream &dumpStringStream)
+void AudioProcessInServer::Dump(std::string &dumpString)
 {
-    dumpStringStream << std::endl << "uid:" << processConfig_.appInfo.appUid;
-    dumpStringStream << " pid:" << processConfig_.appInfo.appPid << std::endl;
-    dumpStringStream << " process info:" << std::endl;
-    dumpStringStream << " stream info:" << std::endl;
-    dumpStringStream << "   samplingRate:" << processConfig_.streamInfo.samplingRate << std::endl;
-    dumpStringStream << "   channels:" << processConfig_.streamInfo.channels << std::endl;
-    dumpStringStream << "   format:" << processConfig_.streamInfo.format << std::endl;
-    dumpStringStream << "   encoding:" << processConfig_.streamInfo.encoding << std::endl;
+    AppendFormat(dumpString, "\n  - uid: %d\n", processConfig_.appInfo.appUid);
+    AppendFormat(dumpString, "- pid: %d\n", processConfig_.appInfo.appUid);
+    dumpString += "process info:\n";
+    dumpString += "stream info:\n";
+    AppendFormat(dumpString, "  - samplingRate: %d\n", processConfig_.streamInfo.samplingRate);
+    AppendFormat(dumpString, "  - channels: %d\n", processConfig_.streamInfo.channels);
+    AppendFormat(dumpString, "  - format: %d\n", processConfig_.streamInfo.format);
+    AppendFormat(dumpString, "  - encoding: %d\n", processConfig_.streamInfo.encoding);
     if (streamStatus_ != nullptr) {
-        dumpStringStream << "Status:" << streamStatus_->load() << std::endl;
+        AppendFormat(dumpString, "  - Status: %d\n", streamStatus_->load());
     }
-    dumpStringStream << std::endl;
+    dumpString += "\n";
 }
 
 std::shared_ptr<OHAudioBuffer> AudioProcessInServer::GetStreamBuffer()

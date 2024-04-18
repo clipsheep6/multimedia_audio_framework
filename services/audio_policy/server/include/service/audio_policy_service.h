@@ -427,6 +427,30 @@ public:
     
     int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
 
+    //for hidump
+    void DevicesInfoDump(string& dumpString);
+    std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
+    std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(string& dumpString, DeviceFlag deviceFlag);
+    void CallStatusDump(std::string &dumpString);
+    void RingerModeDump(std::string &dumpString);
+    void MicrophoneDescriptorsDump(std::string& dumpString);
+    void AudioPolicyParserDump(std::string &dumpString);
+    void GroupInfoDump(std::string& dumpString);
+    void StreamVolumesDump (std::string &dumpString);
+    void StreamVolumeInfosDump(std::string& dumpString);
+    void DeviceVolumeInfosDump(std::string& dumpString, DeviceVolumeInfoMap &deviceVolumeInfos);
+    void RendererStreamDump(std::string& dumpString);
+    void CapturerStreamDump(std::string& dumpString);
+    void FastStreamDump(std::string& dumpString);
+    void OffloadStatusDump(std::string& dumpString);
+    void ModuleInfoCountDump(std::string& dumpString);
+    const std::string GetDeviceTypeName(DeviceType deviceType);
+    const std::string GetConnectTypeName(ConnectType connectType);
+    const std::string GetStreamName(AudioStreamType streamType);
+    const std::string GetDeviceVolumeTypeName(DeviceVolumeType deviceType);
+    bool IsStreamSupported(AudioStreamType streamType);
+    int32_t GetCurActivateCount();
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -839,6 +863,9 @@ private:
     bool updateA2dpOffloadLogFlag = false;
     std::unordered_map<uint32_t, bool> sessionHasBeenSpatialized_;
     std::mutex checkSpatializedMutex_;
+    DeviceType priorityOutputDevice_;
+    DeviceType priorityInputDevice_;
+    ConnectType conneceType_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

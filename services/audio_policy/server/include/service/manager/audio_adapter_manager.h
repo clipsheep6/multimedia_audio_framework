@@ -136,7 +136,10 @@ public:
     void SetAbsVolumeScene(bool isAbsVolumeScene);
 
     bool IsAbsVolumeScene() const;
+
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
+
+    int32_t GetCurActivateCount(void) const;
 private:
     friend class PolicyCallbackImpl;
 
@@ -236,6 +239,7 @@ private:
     float getSystemVolumeInDb_;
     bool useNonlinearAlgo_;
     bool isAbsVolumeScene_ = false;
+    int32_t curActiveCount_ = 0;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
