@@ -56,7 +56,11 @@ ohos_unittest("audio_oh_render_unit_test") {
 
   sources = [ "src/oh_audio_render_unit_test.cpp" ]
 
-  deps = [ "../../../../ohaudio:ohaudio" ]
+  deps = [
+    "../../../../ohaudio:ohaudio",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
 
   external_deps = [ "hilog:libhilog" ]
 }
