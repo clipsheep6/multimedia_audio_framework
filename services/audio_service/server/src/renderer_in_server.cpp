@@ -223,20 +223,17 @@ int32_t RendererInServer::WriteData()
     Trace::Count("RendererInServer::WriteData", (currentWriteFrame - currentReadFrame) / spanSizeInFrame_);
     Trace trace1("RendererInServer::WriteData");
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
-        if (!underRunLogFlag_) {
+        if (underRunLogFlag_ == 0) {
             AUDIO_INFO_LOG("near underrun");
-            underRunLogFlag_ = true;
-        } else {
-            AUDIO_DEBUG_LOG("near underrun");
+        } else if (underRunLogFlag_ == 100) {
+            underRunLogFlag_ = 0;
         }
-
+        underRunLogFlag_++;
         Trace trace2("RendererInServer::Underrun");
         std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
         CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
         stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
         return ERR_OPERATION_FAILED;
-    } else {
-        underRunLogFlag_ = false;
     }
 
     BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
@@ -283,7 +280,7 @@ int32_t RendererInServer::OnWriteData(size_t length)
     size_t maxEmptyCount = 1;
     size_t writableSize = stream_->GetWritableSize();
     if (mayNeedForceWrite && writableSize >= spanSizeInByte_ * maxEmptyCount) {
-        AUDIO_WARNING_LOG("Server need force write to recycle callback");
+        AUDIO_DEBUG_LOG("Server need force write to recycle callback");
         needForceWrite_ =
             writableSize / spanSizeInByte_ > 3 ? 0 : 3 - writableSize / spanSizeInByte_; // 3 is maxlength - 1
     }
@@ -300,7 +297,7 @@ int32_t RendererInServer::UpdateWriteIndex()
     Trace trace("RendererInServer::UpdateWriteIndex");
     if (needForceWrite_ < 3 && stream_->GetWritableSize() >= spanSizeInByte_) { // 3 is maxlength - 1
         if (writeLock_.try_lock()) {
-            AUDIO_INFO_LOG("Start force write data");
+            AUDIO_DEBUG_LOG("Start force write data");
             WriteData();
             needForceWrite_++;
             writeLock_.unlock();
