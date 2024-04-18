@@ -858,7 +858,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
 }
 
 void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
-    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive)
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive)
 {
     AudioInterrupt audioInterrupt = iterActive->first;
     uint32_t sessionId = audioInterrupt.sessionId;
@@ -998,7 +998,7 @@ int32_t AudioInterruptService::HitZoneIdHaveTheSamePidsZone(const std::set<int32
 
 int32_t AudioInterruptService::DealAudioInterruptZoneData(const int32_t pid,
     const std::shared_ptr<AudioInterruptZone> &audioInterruptZoneTmp,
-    std::shared_ptr<AudioInterruptZone> &audioInterruptZone)
+    const std::shared_ptr<AudioInterruptZone> &audioInterruptZone)
 {
     if (audioInterruptZoneTmp == nullptr || audioInterruptZone == nullptr) {
         return SUCCESS;
@@ -1066,6 +1066,11 @@ int32_t AudioInterruptService::ArchiveToNewAudioInterruptZone(const int32_t &fro
         return SUCCESS;
     }
     std::shared_ptr<AudioInterruptZone> toZoneAudioInterruptZone = toZoneIt->second;
+    if (toZoneAudioInterruptZone == nullptr) {
+        AUDIO_ERR_LOG("toZoneAudioInterruptZone is nullptr.");
+        return ERROR;
+    }
+    
     if (toZoneAudioInterruptZone != nullptr) {
         for (auto pid : fromZoneAudioInterruptZone->pids) {
             toZoneAudioInterruptZone->pids.insert(pid);

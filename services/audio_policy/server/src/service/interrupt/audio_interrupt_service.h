@@ -76,8 +76,8 @@ public:
     int32_t GetAudioFocusInfoList(const int32_t zoneId,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     int32_t SetAudioFocusInfoCallback(const int32_t zoneId, const sptr<IRemoteObject> &object);
-    AudioStreamType GetStreamInFocus(const int32_t zoneId);
-    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
+    AudioStreamType GetStreamInFocus(const int32_t zondId);
+    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zondId);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -129,7 +129,7 @@ private:
         const AudioInterrupt &incomingInterrupt);
     void DeactivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
     void SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
-        std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     void UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType);
@@ -144,7 +144,7 @@ private:
     int32_t HitZoneIdHaveTheSamePidsZone(const std::set<int32_t> &pids, int32_t &hitZoneId);
     int32_t DealAudioInterruptZoneData(const int32_t pid,
         const std::shared_ptr<AudioInterruptZone> &audioInterruptZoneTmp,
-        std::shared_ptr<AudioInterruptZone> &audioInterruptZone);
+        const std::shared_ptr<AudioInterruptZone> &audioInterruptZone);
     int32_t NewAudioInterruptZoneByPids(std::shared_ptr<AudioInterruptZone> &audioInterruptZone,
         const std::set<int32_t> &pids, const int32_t &zoneId);
     int32_t ArchiveToNewAudioInterruptZone(const int32_t &fromZoneId, const int32_t &toZoneId);
