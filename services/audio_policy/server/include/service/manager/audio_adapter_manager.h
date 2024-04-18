@@ -136,7 +136,18 @@ public:
     void SetAbsVolumeScene(bool isAbsVolumeScene);
 
     bool IsAbsVolumeScene() const;
+
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
+
+    SafeStatus GetCurrentDeviceSafeStatus(DeviceType deviceType);
+
+    int64_t GetCurentDeviceSafeTime(DeviceType deviceType);
+
+    int32_t SetDeviceSafeStatus(DeviceType deviceType, SafeStatus status);
+
+    int32_t SetDeviceSafeTime(DeviceType deviceType, int64_t time);
+
+    int32_t GetSafeVolumeLevel() const;
 private:
     friend class PolicyCallbackImpl;
 
@@ -199,6 +210,8 @@ private:
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute);
     void InitKVStoreInternal();
+    void InitSafeStatus(bool isFirstBoot);
+    void InitSafeTime(bool isFirstBoot);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -229,6 +242,11 @@ private:
     std::unordered_map<AudioStreamType, bool> muteStatusMap_;
     DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioRingerMode ringerMode_;
+    int32_t safeVolume_ = 0;
+    SafeStatus safeStatus_ = SAFE_ACTIVE;
+    SafeStatus safeStatusBt_ = SAFE_ACTIVE;
+    int64_t safeActiveTime_ = 0;
+    int64_t safeActiveBtTime_ = 0;
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     AudioSessionCallback *sessionCallback_;
     bool isVolumeUnadjustable_;

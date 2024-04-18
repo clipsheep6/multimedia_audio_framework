@@ -23,7 +23,7 @@ namespace AudioStandard {
 class AudioPolicyManagerStub : public IRemoteStub<IAudioPolicy> {
 public:
     virtual int32_t OnRemoteRequest(uint32_t code, MessageParcel &data,
-        MessageParcel &reply, MessageOption &option) override;
+        MessageParcel &reply, MessageOption &GetMaxAmplitudeInternaloption) override;
 
 private:
     void GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
@@ -140,6 +140,7 @@ private:
     void GetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxAmplitudeInternal(MessageParcel &data, MessageParcel &reply);
+    void DisableSafeMediaVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingDataRequestedInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
@@ -255,6 +256,7 @@ private:
         &AudioPolicyManagerStub::GetSpatializationSceneTypeInternal,
         &AudioPolicyManagerStub::SetSpatializationSceneTypeInternal,
         &AudioPolicyManagerStub::GetMaxAmplitudeInternal,
+        &AudioPolicyManagerStub::DisableSafeMediaVolumeInternal,
         &AudioPolicyManagerStub::IsHeadTrackingDataRequestedInternal,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);

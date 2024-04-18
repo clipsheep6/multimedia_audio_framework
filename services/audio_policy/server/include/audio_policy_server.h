@@ -359,6 +359,8 @@ public:
 
     float GetMaxAmplitude(const int32_t deviceId) override;
 
+    int32_t DisableSafeMediaVolume() override;
+
     bool IsHeadTrackingDataRequested(const std::string &macAddress) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {

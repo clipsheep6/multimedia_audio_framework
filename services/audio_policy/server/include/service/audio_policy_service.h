@@ -60,6 +60,7 @@
 #include "bluetooth_device_manager.h"
 #endif
 
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -427,6 +428,10 @@ public:
     
     int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
 
+    int32_t DisableSafeMediaVolume();
+
+    int32_t Dump(int32_t fd, const std::vector<std::u16string> &args);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -709,6 +714,22 @@ private:
 
     int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
 
+    bool IsWiredHeadSet(const DeviceType &deviceType);
+
+    bool IsBlueTooth(const DeviceType &deviceType);
+
+    int32_t DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice);
+
+    void CreateCheckMusicActiveThread();
+
+    void CheckBlueToothActiveMusicTime(int32_t safeVolume);
+
+    void CheckWiredActiveMusicTime(int32_t safeVolume);
+
+    int32_t CheckActiveMusicTime();
+
+    int32_t ShowDialog();
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
@@ -839,6 +860,18 @@ private:
     bool updateA2dpOffloadLogFlag = false;
     std::unordered_map<uint32_t, bool> sessionHasBeenSpatialized_;
     std::mutex checkSpatializedMutex_;
+    SafeStatus safeStatusBt_ = SAFE_UNKNOWN;
+    SafeStatus safeStatus_ = SAFE_UNKNOWN;
+    int64_t activeSafeTimeBt_ = 0;
+    int64_t activeSafeTime_ = 0;
+    std::time_t startSafeTimeBt_ = 0;
+    std::time_t startSafeTime_ = 0;
+    bool userSelect_ = false;
+    std::unique_ptr<std::thread> calculateLoopSafeTime_ = nullptr;
+
+    std::mutex dialogMutex_;
+    std::atomic<bool> isDialogSelectDestroy_ = false;
+    std::condition_variable dialogSelectCondition_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

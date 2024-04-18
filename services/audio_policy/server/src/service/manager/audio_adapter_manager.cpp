@@ -112,6 +112,16 @@ bool AudioAdapterManager::Init()
         AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
     }
 
+    char currentSafeVolumeValue[3] = {0};
+    ret = GetParameter("persist.multimedia.audio.safevolume", "8",
+        currentSafeVolumeValue, sizeof(currentSafeVolumeValue));
+    if (ret > 0) {
+        safeVolume_ = atoi(currentSafeVolumeValue);
+        AUDIO_INFO_LOG("Init: Get currentSafeVolumeValue success %{public}d", safeVolume_);
+    } else {
+        AUDIO_ERR_LOG("Init: Get currentSafeVolumeValue failed %{public}d", ret);
+    }
+
     isVolumeUnadjustable_ = system::GetBoolParameter("const.multimedia.audio.fixedvolume", false);
     AUDIO_INFO_LOG("Get fixdvolume parameter success %{public}d", isVolumeUnadjustable_);
 
@@ -147,6 +157,8 @@ void AudioAdapterManager::InitKVStoreInternal()
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
     InitMuteStatusMap(isFirstBoot);
+    InitSafeStatus(isFirstBoot);
+    InitSafeTime(isFirstBoot);
 
     // Make sure that the volume value is applied.
     auto iter = VOLUME_TYPE_LIST.begin();
@@ -1002,6 +1014,15 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
         }
     } else {
         LoadVolumeMap();
+        if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) > safeVolume_ &&
+            (currentActiveDevice_ == DEVICE_TYPE_WIRED_HEADSET ||
+            currentActiveDevice_ == DEVICE_TYPE_WIRED_HEADPHONES ||
+            currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_SCO ||
+            currentActiveDevice_ == DEVICE_TYPE_USB_HEADSET)) {
+            AUDIO_INFO_LOG("update current volume to safevolume");
+            volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
+        }
     }
 }
 
@@ -1188,6 +1209,88 @@ bool AudioAdapterManager::LoadMuteStatusFromKvStore(DeviceType deviceType, Audio
     }
 
     return false;
+}
+
+void AudioAdapterManager::InitSafeStatus(bool isFirstBoot)
+{
+    if (isFirstBoot) {
+        AUDIO_INFO_LOG("Wrote default safe status to KvStore");
+        for (auto &deviceType : DEVICE_TYPE_LIST) {
+            volumeDataMaintainer_.SaveSafeStatus(deviceType, SAFE_ACTIVE);
+        }
+    } else {
+        volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
+        volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
+    }
+}
+
+void AudioAdapterManager::InitSafeTime(bool isFirstBoot)
+{
+    if (isFirstBoot) {
+        AUDIO_INFO_LOG("Wrote default safe status to KvStore");
+        for (auto &deviceType : DEVICE_TYPE_LIST) {
+            volumeDataMaintainer_.SaveSafeVolumeTime(deviceType, 0);
+        }
+    } else {
+        volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, safeActiveTime_);
+        volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtTime_);
+    }
+}
+
+SafeStatus AudioAdapterManager::GetCurrentDeviceSafeStatus(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
+            return safeStatus_;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
+            return safeStatusBt_;
+        default:
+            AUDIO_ERR_LOG("current device : %{public}d is not support", deviceType);
+            break;
+    }
+
+    return SAFE_UNKNOWN;
+}
+
+int64_t AudioAdapterManager::GetCurentDeviceSafeTime(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, safeActiveTime_);
+            return safeActiveTime_;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtTime_);
+            return safeActiveBtTime_;
+        default:
+            AUDIO_ERR_LOG("current device : %{public}d is not support", deviceType);
+            break;
+    }
+
+    return -1;
+}
+
+int32_t AudioAdapterManager::SetDeviceSafeStatus(DeviceType deviceType, SafeStatus status)
+{
+    bool ret = volumeDataMaintainer_.SaveSafeStatus(deviceType, status);
+    CHECK_AND_RETURN_RET(ret, ERROR, "SaveSafeStatus failed");
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::SetDeviceSafeTime(DeviceType deviceType, int64_t time)
+{
+    bool ret = volumeDataMaintainer_.SaveSafeVolumeTime(deviceType, time);
+    CHECK_AND_RETURN_RET(ret, ERROR, "SetDeviceSafeTime failed");
+    return SUCCESS;
 }
 
 std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType)
@@ -1520,6 +1623,11 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
 bool AudioAdapterManager::IsAbsVolumeScene() const
 {
     return isAbsVolumeScene_;
+}
+
+int32_t AudioAdapterManager::GetSafeVolumeLevel() const
+{
+    return safeVolume_;
 }
 } // namespace AudioStandard
 } // namespace OHOS
