@@ -90,7 +90,8 @@ const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 
-static char SCENE_TYPE_SET[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH];
+char SCENE_TYPE_COLLECTION[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH];
+int32_t SCENE_TYPE_NUM = 7;
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -1366,8 +1367,7 @@ static int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
 
 static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenRef)
 {
-    int32_t setSize = EffectChainManagerGetSceneTypeSet(SCENE_TYPE_SET);
-    for (int32_t i = 0; i < setSize; i++) {
+    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         sceneTypeLenRef[i] = DEFAULT_IN_CHANNEL_NUM;
     }
     pa_sink_input *sinkIn;
@@ -1389,8 +1389,8 @@ static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenR
         if (processChannels == DEFAULT_NUM_CHANNEL) {
             continue;
         }
-        for (int32_t i = 0; i < setSize; i++) {
-            if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i])) {
+        for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+            if (pa_safe_streq(sinkSceneType, SCENE_TYPE_COLLECTION[i])) {
                 sceneTypeLenRef[i] = processChannels;
             }
         }
@@ -1406,8 +1406,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         pa_memblock_unref(capResult.memblock);
     }
 
-    int32_t setSize = EffectChainManagerGetSceneTypeSet(SCENE_TYPE_SET);
-    uint8_t sceneTypeLenRef[setSize];
+    uint8_t sceneTypeLenRef[SCENE_TYPE_NUM];
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
@@ -1418,11 +1417,11 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
     int32_t bitSize = pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
-    for (int32_t i = 0; i < setSize; i++) {
+    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         size_t tmpLength = length * sceneTypeLenRef[i] / DEFAULT_IN_CHANNEL_NUM;
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
-        int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, SCENE_TYPE_SET[i]);
+        int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, SCENE_TYPE_COLLECTION[i]);
         if (nSinkInput == 0) { continue; }
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
@@ -1433,8 +1432,8 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
         u->bufferAttr->numChanIn = sceneTypeLenRef[i];
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
-        AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", SCENE_TYPE_SET[i]);
-        EffectChainManagerProcess(SCENE_TYPE_SET[i], u->bufferAttr);
+        AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", SCENE_TYPE_COLLECTION[i]);
+        EffectChainManagerProcess(SCENE_TYPE_COLLECTION[i], u->bufferAttr);
         for (int32_t k = 0; k < u->bufferAttr->frameLen * u->bufferAttr->numChanOut; k++) {
             u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
         }
@@ -2729,9 +2728,8 @@ static void ThreadFuncRendererTimerMultiChannel(void *userdata)
 
 static int32_t GetSinkTypeNum(const char *sinkSceneType)
 {
-    int32_t setSize = EffectChainManagerGetSceneTypeSet(SCENE_TYPE_SET);
-    for (int32_t i = 0; i < setSize; i++) {
-        if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i])) {
+    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+        if (pa_safe_streq(sinkSceneType, SCENE_TYPE_COLLECTION[i])) {
             return i;
         }
     }
@@ -2779,7 +2777,7 @@ static void SetHdiParam(struct Userdata *userdata)
         userdata->sinkSceneMode = sinkSceneModeMax;
         userdata->sinkSceneType = sinkSceneTypeMax;
         userdata->hdiEffectEnabled = hdiEffectEnabledMax;
-        EffectChainManagerSetHdiParam(userdata->sinkSceneType < 0 ? "" : SCENE_TYPE_SET[userdata->sinkSceneType],
+        EffectChainManagerSetHdiParam(userdata->sinkSceneType < 0 ? "" : SCENE_TYPE_COLLECTION[userdata->sinkSceneType],
             userdata->sinkSceneMode == 0 ? "EFFECT_NONE" : "EFFECT_DEFAULT", userdata->hdiEffectEnabled);
     }
 }
@@ -3796,6 +3794,8 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         AUDIO_ERR_LOG("PaHdiSinkNewInitThread failed");
         goto fail;
     }
+
+    SCENE_TYPE_NUM = EffectChainManagerGetSceneTypeCollection(SCENE_TYPE_COLLECTION);
 
     if (u->test_mode_on) {
         u->writeCount = 0;
