@@ -189,19 +189,16 @@ void CapturerInServer::ReadData(size_t length)
         "avaliable frame:%{public}d, spanSizeInFrame:%{public}zu", currentWriteFrame, currentReadFrame,
         audioServerBuffer_->GetAvailableDataFrames(), spanSizeInFrame_);
     if (audioServerBuffer_->GetAvailableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
-        if (!overFlowLogFlag) {
+        if (overFlowLogFlag_ == 0) {
             AUDIO_INFO_LOG("OverFlow!!!");
-            overFlowLogFlag = true;
-        } else {
-            AUDIO_DEBUG_LOG("OverFlow!!!");
+        } else if (overFlowLogFlag_ == 100){
+            overFlowLogFlag_ = 0;
         }
-
+        overFlowLogFlag_++;
         BufferDesc dstBuffer = stream_->DequeueBuffer(length);
         stream_->EnqueueBuffer(dstBuffer);
         stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
         return;
-    } else {
-        overFlowLogFlag = false;
     }
     
     BufferDesc srcBuffer = stream_->DequeueBuffer(length);
