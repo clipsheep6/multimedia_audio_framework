@@ -509,13 +509,16 @@ void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_m
             sceneTypesInUse.push_back(item.sceneType);
         }
     }
+    if ((!postSceneTypeCollection_.empty()) && std::find(sceneTypesInUse.begin(), sceneTypesInUse.end(),
+        postSceneTypeCollection_.back()) == sceneTypesInUse.end()) {
+            sceneTypesInUse.push_back(postSceneTypeCollection_.back());
+        }
 
     for (auto &scene: supportedEffectConfig_.postProcessNew.stream) {
         sceneType = scene.scene;
-        if (std::find(sceneTypesInUse.begin(), sceneTypesInUse.end(), sceneType) == sceneTypesInUse.end() &&
-            sceneType != postSceneTypeCollection_.back()) {
-                break; // The sceneType is not used in the Usage-SceneType map and it is not "SCENE_OTHERS"
-            }
+        if (std::find(sceneTypesInUse.begin(), sceneTypesInUse.end(), sceneType) == sceneTypesInUse.end()) {
+            continue; // The sceneType is not used in the Usage-SceneType map
+        }
         for (auto &mode: scene.streamEffectMode) {
             sceneMode = mode.mode;
             for (auto &device: mode.devicePort) {
