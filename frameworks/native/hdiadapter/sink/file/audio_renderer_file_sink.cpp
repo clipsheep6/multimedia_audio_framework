@@ -67,7 +67,7 @@ int32_t AudioRendererFileSink::SetAudioScene(AudioScene audioScene, DeviceType a
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t AudioRendererFileSink::SetOutputRoute(DeviceType deviceType)
+int32_t AudioRendererFileSink::SetOutputRoute(std::vector<DeviceType> &types)
 {
     return ERR_NOT_SUPPORTED;
 }

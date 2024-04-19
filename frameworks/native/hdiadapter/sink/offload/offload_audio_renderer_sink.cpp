@@ -108,7 +108,7 @@ public:
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
-    int32_t SetOutputRoute(DeviceType outputDevice) override;
+    int32_t SetOutputRoute(std::vector<DeviceType> &types) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     float GetMaxAmplitude() override;
 
@@ -709,7 +709,7 @@ int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
     }
 }
 
-int32_t OffloadAudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
+int32_t OffloadAudioRendererSinkInner::SetOutputRoute(std::vector<DeviceType> &types)
 {
     AUDIO_WARNING_LOG("not supported.");
     return ERR_NOT_SUPPORTED;

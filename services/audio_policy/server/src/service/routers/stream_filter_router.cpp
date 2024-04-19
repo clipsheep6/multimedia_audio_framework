@@ -151,10 +151,21 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(Sourc
     return make_unique<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRingRenderDevice(StreamUsage streamUsage,
-    int32_t clientUID)
+vector<unique_ptr<AudioDeviceDescriptor>> StreamFilterRouter::GetRingRenderDevice(
+    StreamUsage streamUsage, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    vector<unique_ptr<AudioDeviceDescriptor>> devices;
+    unique_ptr<AudioDeviceDescriptor> desc = GetMediaRenderDevice(streamUsage, clientUID);
+    AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
+        desc->deviceType_);
+    devices.push_back(move(desc));
+    AudioRingerMode mode = audioPolicyManager_.GetRingerMode();
+    if (mode == RINGER_MODE_NORMAL) {
+        unique_ptr<AudioDeviceDescriptor> speaker =
+            AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+        devices.push_back(move(speaker));
+    }
+    return devices;
 }
 
 unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(SourceType sourceType,

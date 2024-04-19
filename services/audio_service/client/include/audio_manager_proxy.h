@@ -49,7 +49,7 @@ public:
         const std::string& value) override;
     int32_t SetExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs) override;
-    int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
+    int32_t UpdateActiveDeviceRoute(std::vector<DeviceType> &devicesType, DeviceFlag flag) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;

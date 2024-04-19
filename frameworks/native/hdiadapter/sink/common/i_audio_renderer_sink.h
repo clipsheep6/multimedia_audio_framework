@@ -69,7 +69,7 @@ public:
     virtual int32_t GetTransactionId(uint64_t *transactionId) = 0;
 
     virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) = 0;
-    virtual int32_t SetOutputRoute(DeviceType deviceType) = 0;
+    virtual int32_t SetOutputRoute(std::vector<DeviceType> &types) = 0;
 
     virtual void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) = 0;
     virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;

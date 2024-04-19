@@ -71,6 +71,36 @@ ohos_shared_library("module-inner-capturer-sink") {
   part_name = "audio_framework"
 }
 
+ohos_shared_library("module-duplicated-hdi-sink") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "../../../../../cfi_blocklist.txt"
+  }
+  sources = [ "module_duplicated_hdi_sink.c" ]
+
+  configs = [ ":capturer_config" ]
+
+  cflags = [ "-DPA_MODULE_NAME=libmodule_duplicated_hdi_sink_z_so" ]
+
+  ldflags = [
+    "-Wl",
+    "--no-undefined",
+  ]
+
+  deps = [
+    "$pulseaudio_build_path/src:pulsecommon",
+    "$pulseaudio_build_path/src/pulse:pulse",
+    "$pulseaudio_build_path/src/pulsecore:pulsecore",
+  ]
+
+  external_deps = [ "hilog:libhilog" ]
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
 ohos_shared_library("module-receiver-sink") {
   sanitize = {
     cfi = true

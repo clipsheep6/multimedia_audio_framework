@@ -410,16 +410,26 @@ int32_t AudioManagerProxy::CheckRemoteDeviceState(std::string networkId, DeviceR
     return reply.ReadInt32();
 }
 
-int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
+int32_t AudioManagerProxy::UpdateActiveDeviceRoute(std::vector<DeviceType> &types, DeviceFlag flag)
 {
+    if (types.empty()) {
+        AUDIO_ERR_LOG("devicesType is empty");
+        return 0;
+    }
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
+    vector<int32_t> vals;
+    for (size_t i = 0; i < types.size(); i++) {
+        int32_t val = types.at(i);
+        vals.push_back(val);
+    }
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
-    data.WriteInt32(type);
+    data.WriteInt32Vector(vals);
+    // data.WriteVector(types, &DeviceType);
     data.WriteInt32(flag);
 
     auto error = Remote()->SendRequest(
