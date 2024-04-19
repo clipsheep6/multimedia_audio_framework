@@ -173,7 +173,7 @@ private:
     int32_t EffectApRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
 #endif
-    void ConstructSceneTypeCollection(const std::unordered_map<std::string, std::string> &map)
+    void ConstructSceneTypeCollection(const std::unordered_map<std::string, std::string> &map);
     std::map<std::string, AudioEffectLibEntry *> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
