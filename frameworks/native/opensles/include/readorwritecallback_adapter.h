@@ -22,20 +22,23 @@
 #include <audio_renderer.h>
 #include <audio_capturer.h>
 
-namespace OHOS {
-namespace AudioStandard {
-class ReadOrWriteCallbackAdapter : public AudioRendererWriteCallback, public AudioCapturerReadCallback {
-public:
-    ReadOrWriteCallbackAdapter (SlOHBufferQueueCallback callback, SLOHBufferQueueItf itf, void *pContext);
-    ~ReadOrWriteCallbackAdapter();
-    void OnWriteData(size_t length) override;
-    void OnReadData(size_t length) override;
+namespace OHOS
+{
+    namespace AudioStandard
+    {
+        class ReadOrWriteCallbackAdapter : public AudioRendererWriteCallback, public AudioCapturerReadCallback
+        {
+        public:
+            ReadOrWriteCallbackAdapter(SlOHBufferQueueCallback callback, SLOHBufferQueueItf itf, void *pContext);
+            ~ReadOrWriteCallbackAdapter();
+            void OnWriteData(size_t length) override;
+            void OnReadData(size_t length) override;
 
-private:
-    SlOHBufferQueueCallback callback_;
-    SLOHBufferQueueItf itf_;
-    void *context_;
-};
-}  // namespace AudioStandard
-}  // namespace OHOS
+        private:
+            SlOHBufferQueueCallback callback_;
+            SLOHBufferQueueItf itf_;
+            void *context_;
+        };
+    } // namespace AudioStandard
+} // namespace OHOS
 #endif // READORWRITECALLBACK_ADAPTER_H

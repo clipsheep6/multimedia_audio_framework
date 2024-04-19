@@ -14,18 +14,10 @@
 import("//build/ohos.gni")
 import("../../../../../config.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-
 config("abstract_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "$pulseaudio_dir/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir",
-    "$pulseaudio_build_path/src",
-    "$pulseaudio_build_path/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
@@ -50,14 +42,13 @@ ohos_shared_library("module-loopback") {
 
   cflags = [ "-DPA_MODULE_NAME=libmodule_loopback_z_so" ]
 
-  deps = [
-    "$pulseaudio_build_path/src:pulsecommon",
-    "$pulseaudio_build_path/src/pulse:pulse",
-    "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "//third_party/bounds_checking_function:libsec_shared",
+  external_deps = [
+  "hilog:libhilog" ,
+  "bounds_checking_function:libsec_shared",
+  "pulseaudio:pulse",
+  "pulseaudio:pulsecore",
+  "pulseaudio:pulsecommon"
   ]
-
-  external_deps = [ "hilog:libhilog" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

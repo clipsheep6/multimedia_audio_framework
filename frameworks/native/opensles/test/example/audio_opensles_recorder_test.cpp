@@ -15,9 +15,9 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioOpenslesRecorderTest"
 
-#include <OpenSLES.h>
-#include <OpenSLES_OpenHarmony.h>
-#include <OpenSLES_Platform.h>
+#include <1.0.1/OpenSLES.h>
+#include <1.0.1/OpenSLES_OpenHarmony.h>
+#include <1.0.1/OpenSLES_Platform.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -139,7 +139,7 @@ static void OpenSLESCaptureTest()
     (*engineItf)->CreateAudioRecorder(engineItf, &pcmCapturerObject,
         &audioSource, &audioSink, 0, nullptr, nullptr);
     (*pcmCapturerObject)->Realize(pcmCapturerObject, SL_BOOLEAN_FALSE);
-    
+
     (*pcmCapturerObject)->GetInterface(pcmCapturerObject, SL_IID_RECORD, &recordItf);
     (*pcmCapturerObject)->GetInterface(pcmCapturerObject, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf);
     (*bufferQueueItf)->RegisterCallback(bufferQueueItf, BufferQueueCallback, wavFile_);
