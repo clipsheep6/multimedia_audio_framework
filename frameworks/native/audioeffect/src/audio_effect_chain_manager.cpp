@@ -345,6 +345,11 @@ int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *c
     return audioEffectChainManager->ReturnMultiChannelInfo(channels, channelLayout);
 }
 
+int32_t EffectChainManagerGetSceneTypeCollection(char sceneTypeCollection[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH])
+{
+    return AudioEffectChainManager::GetInstance()->GetSceneTypeCollection(sceneTypeCollection);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -887,18 +892,19 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     }
     // Construct EffectChainToEffectsMap that stores all effect names of each effect chain
     for (EffectChain efc: effectChains) {
-        std::string key = efc.name;
         std::vector <std::string> effects;
         for (std::string effectName: efc.apply) {
             effects.emplace_back(effectName);
         }
-        EffectChainToEffectsMap_[key] = effects;
+        EffectChainToEffectsMap_[efc.name] = effects;
     }
 
     // Constrcut SceneTypeAndModeToEffectChainNameMap that stores effectMode associated with the effectChainName
     for (auto item = map.begin(); item != map.end(); ++item) {
         SceneTypeAndModeToEffectChainNameMap_[item->first] = item->second;
     }
+
+    ConstructSceneTypeCollection(map);
 
     AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", EffectToLibraryEntryMap_.size());
     AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap_.size());
@@ -1552,6 +1558,24 @@ void AudioEffectChainManager::UpdateSensorState()
 #endif
 }
 
+int32_t AudioEffectChainManager::GetSceneTypeCollection(char sceneTypeCollection[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH])
+{
+    int32_t ret;
+    for (uint64_t i = 0; i < sceneTypeCollection_.size(); ++i) {
+        ret = memcpy_s(sceneTypeCollection[i], MAX_SCENE_NAME_LENGTH, sceneTypeCollection_[i].c_str(),
+            sceneTypeCollection_[i].size());
+        CHECK_AND_CONTINUE_LOG(ret == 0, "sceneType Collection memcpy failed");
+    }
+    
+    std::string extraSceneType = "EFFECT_NONE";
+    ret = memcpy_s(sceneTypeCollection[sceneTypeCollection_.size()], MAX_SCENE_NAME_LENGTH, extraSceneType.c_str(),
+        extraSceneType.size());
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Extra sceneType memcpy failed");
+    }
+    return sceneTypeCollection_.size() + 1; // Num of scene types plus EFFECT_NONE
+}
+
 void AudioEffectChainManager::DeleteAllChains()
 {
     SceneTypeToEffectChainCountBackupMap_.clear();
@@ -1677,6 +1701,17 @@ void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType
         if (audioEffectChain->SetEffectParam(sceneType) != 0) {
             AUDIO_WARNING_LOG("set param to effect chain failed");
             continue;
+        }
+    }
+}
+
+void AudioEffectChainManager::ConstructSceneTypeCollection(const std::unordered_map<std::string, std::string> &map)
+{
+    for (auto item = map.begin(); item != map.end(); ++item) {
+        std::string tmpSceneType = item->first.substr(0, item->first.find("_&_"));
+        auto it = std::find(sceneTypeCollection_.begin(), sceneTypeCollection_.end(), tmpSceneType);
+        if (it == sceneTypeCollection_.end()) {
+            sceneTypeCollection_.push_back(tmpSceneType);
         }
     }
 }

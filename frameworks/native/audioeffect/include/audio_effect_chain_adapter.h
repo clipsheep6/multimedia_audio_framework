@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pulse/pulseaudio.h>
+#define MAX_SCENE_NUM 20
+#define MAX_SCENE_NAME_LENGTH 20
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,6 +63,7 @@ int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_
 int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
 int32_t EffectChainManagerVolumeUpdate(const char *sessionID, const uint32_t volume);
 int32_t EffectChainManagerRotationUpdate(const uint32_t rotationState);
+int32_t EffectChainManagerGetSceneTypeCollection(char sceneTypeCollection[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH]);
 
 #ifdef __cplusplus
 }

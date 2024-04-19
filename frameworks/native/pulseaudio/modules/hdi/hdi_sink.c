@@ -68,7 +68,6 @@
 #define IN_CHANNEL_NUM_MAX 16
 #define OUT_CHANNEL_NUM_MAX 2
 #define DEFAULT_FRAMELEN 2048
-#define SCENE_TYPE_NUM 7
 #define HDI_MIN_MS_MAINTAIN 30
 #define OFFLOAD_HDI_CACHE1 200 // ms, should equal with val in audio_service_client.cpp
 #define OFFLOAD_HDI_CACHE2 7000 // ms, should equal with val in audio_service_client.cpp
@@ -90,9 +89,6 @@ const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
-
-char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE", "SCENE_SPEECH", "SCENE_RING",
-    "SCENE_OTHERS", "EFFECT_NONE"};
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -161,6 +157,8 @@ struct Userdata {
     pthread_rwlock_t rwlockSleep;
     int64_t timestampSleep;
     pa_usec_t timestampLastLog;
+    char sceneTypeCollection[MAX_SCENE_NUM][MAX_SCENE_NAME_LENGTH];
+    int32_t sceneTypeNum;
     struct {
         int32_t sessionID;
         bool firstWrite;
@@ -1353,7 +1351,9 @@ static int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
 
 static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenRef)
 {
-    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+    for (int32_t i = 0; i < u->sceneTypeNum; i++) {
         sceneTypeLenRef[i] = DEFAULT_IN_CHANNEL_NUM;
     }
     pa_sink_input *sinkIn;
@@ -1375,8 +1375,8 @@ static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenR
         if (processChannels == DEFAULT_NUM_CHANNEL) {
             continue;
         }
-        for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
-            if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i])) {
+        for (int32_t i = 0; i < u->sceneTypeNum; i++) {
+            if (pa_safe_streq(sinkSceneType, u->sceneTypeCollection[i])) {
                 sceneTypeLenRef[i] = processChannels;
             }
         }
@@ -1392,7 +1392,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         pa_memblock_unref(capResult.memblock);
     }
 
-    uint8_t sceneTypeLenRef[SCENE_TYPE_NUM];
+    uint8_t sceneTypeLenRef[u->sceneTypeNum];
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
@@ -1403,11 +1403,11 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
     int32_t bitSize = pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
-    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+    for (int32_t i = 0; i < u->sceneTypeNum; i++) {
         size_t tmpLength = length * sceneTypeLenRef[i] / DEFAULT_IN_CHANNEL_NUM;
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
-        int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, SCENE_TYPE_SET[i]);
+        int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, u->sceneTypeCollection[i]);
         if (nSinkInput == 0) { continue; }
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
@@ -1418,8 +1418,8 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
         u->bufferAttr->numChanIn = sceneTypeLenRef[i];
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
-        AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", SCENE_TYPE_SET[i]);
-        EffectChainManagerProcess(SCENE_TYPE_SET[i], u->bufferAttr);
+        AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", u->sceneTypeCollection[i]);
+        EffectChainManagerProcess(u->sceneTypeCollection[i], u->bufferAttr);
         for (int32_t k = 0; k < u->bufferAttr->frameLen * u->bufferAttr->numChanOut; k++) {
             u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
         }
@@ -2672,10 +2672,10 @@ static void ThreadFuncRendererTimerMultiChannel(void *userdata)
     }
 }
 
-static int32_t GetSinkTypeNum(const char *sinkSceneType)
+static int32_t GetSinkTypeNum(const char *sinkSceneType, struct Userdata *u)
 {
-    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
-        if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i])) {
+    for (int32_t i = 0; i < u->sceneTypeNum; i++) {
+        if (pa_safe_streq(sinkSceneType, u->sceneTypeCollection[i])) {
             return i;
         }
     }
@@ -2706,7 +2706,7 @@ static void SetHdiParam(struct Userdata *userdata)
         if (sinkSceneType && sinkSceneMode && sinkSpatialization) {
             if (sessionID > sessionIDMax) {
                 sessionIDMax = sessionID;
-                sinkSceneTypeMax = GetSinkTypeNum(sinkSceneType);
+                sinkSceneTypeMax = GetSinkTypeNum(sinkSceneType, userdata);
                 sinkSceneModeMax = pa_safe_streq(sinkSceneMode, "EFFECT_NONE") == true ? 0 : 1;
                 hdiEffectEnabledMax = hdiEffectEnabled;
             }
@@ -2723,7 +2723,8 @@ static void SetHdiParam(struct Userdata *userdata)
         userdata->sinkSceneMode = sinkSceneModeMax;
         userdata->sinkSceneType = sinkSceneTypeMax;
         userdata->hdiEffectEnabled = hdiEffectEnabledMax;
-        EffectChainManagerSetHdiParam(userdata->sinkSceneType < 0 ? "" : SCENE_TYPE_SET[userdata->sinkSceneType],
+        EffectChainManagerSetHdiParam(
+            userdata->sinkSceneType < 0 ? "" : userdata->sceneTypeCollection[userdata->sinkSceneType],
             userdata->sinkSceneMode == 0 ? "EFFECT_NONE" : "EFFECT_DEFAULT", userdata->hdiEffectEnabled);
     }
 }
@@ -3465,6 +3466,7 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     u->sinkSceneMode = -1;
     u->sinkSceneType = -1;
     u->hdiEffectEnabled = false;
+    u->sceneTypeNum = EffectChainManagerGetSceneTypeCollection(u->sceneTypeCollection);
 }
 
 static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)

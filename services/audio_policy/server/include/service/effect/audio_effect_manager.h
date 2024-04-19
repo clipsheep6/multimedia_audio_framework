@@ -50,7 +50,7 @@ private:
     int32_t existDefault_ = 0;
     bool isMasterSinkAvailable_ = false;
     bool isEffectChainManagerAvailable_ = false;
-    std::vector<std::string> postSceneTypeSet_;
+    std::vector<std::string> postSceneTypeCollection_;
 
     void UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig);
     void UpdateEffectChains(std::vector<std::string> &availableLayout);

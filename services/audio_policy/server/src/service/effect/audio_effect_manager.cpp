@@ -205,7 +205,8 @@ static int32_t UpdateAvailableSceneMapPost(SceneMappingItem &item, std::vector<S
 bool AudioEffectManager::VerifySceneMappingItem(const SceneMappingItem &item)
 {
     return STREAM_USAGE_MAP.find(item.name) != STREAM_USAGE_MAP.end() &&
-        std::find(postSceneTypeSet_.begin(), postSceneTypeSet_.end(), item.sceneType) != postSceneTypeSet_.end();
+        std::find(postSceneTypeCollection_.begin(), postSceneTypeCollection_.end(), item.sceneType) !=
+            postSceneTypeCollection_.end();
 }
 
 void AudioEffectManager::UpdateEffectChains(std::vector<std::string> &availableLayout)
@@ -263,9 +264,9 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
     supportedEffectConfig_.postProcessNew = postProcessNew;
 
     for (Stream &ss: supportedEffectConfig_.postProcessNew.stream) {
-        postSceneTypeSet_.push_back(ss.scene);
+        postSceneTypeCollection_.push_back(ss.scene);
     }
-    AUDIO_INFO_LOG("postSceneTypeSet_ size is %{public}zu", supportedEffectConfig_.postProcessNew.stream.size());
+    AUDIO_INFO_LOG("postSceneTypeCollection_ size: %{public}zu", supportedEffectConfig_.postProcessNew.stream.size());
     std::vector<SceneMappingItem> postSceneMap;
     for (SceneMappingItem &item: aeConfig.postProcess.sceneMap) {
         if (!VerifySceneMappingItem(item)) {
@@ -501,8 +502,23 @@ void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_m
     std::string sceneType;
     std::string sceneMode;
     std::string key;
+
+    std::vector<std::string> sceneTypesInUse;
+    for (SceneMappingItem &item : supportedEffectConfig_.postProcessSceneMap) {
+        if (std::find(sceneTypesInUse.begin(), sceneTypesInUse.end(), item.sceneType) == sceneTypesInUse.end()) {
+            sceneTypesInUse.push_back(item.sceneType);
+        }
+    }
+    if ((!postSceneTypeCollection_.empty()) && std::find(sceneTypesInUse.begin(), sceneTypesInUse.end(),
+        postSceneTypeCollection_.back()) == sceneTypesInUse.end()) {
+            sceneTypesInUse.push_back(postSceneTypeCollection_.back());
+        }
+
     for (auto &scene: supportedEffectConfig_.postProcessNew.stream) {
         sceneType = scene.scene;
+        if (std::find(sceneTypesInUse.begin(), sceneTypesInUse.end(), sceneType) == sceneTypesInUse.end()) {
+            continue; // The sceneType is not used in the Usage-SceneType map
+        }
         for (auto &mode: scene.streamEffectMode) {
             sceneMode = mode.mode;
             for (auto &device: mode.devicePort) {
