@@ -259,11 +259,12 @@ napi_value NapiAsrProcessingController::SetAsrNoiseSuppressionMode(napi_env env,
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
         "argCount invaild");
+
     int32_t asrNoiseSuppressionMode = 0;
     NapiParamUtils::GetValueInt32(env, asrNoiseSuppressionMode, argv[PARAM0]);
-    const int32_t asrNsModeMax = 3;
 
-    CHECK_AND_RETURN_RET_LOG(asrNoiseSuppressionMode >= 0 || asrNoiseSuppressionMode <= asrNsModeMax,
+    const int32_t asrNsModeMax = 3;
+    CHECK_AND_RETURN_RET_LOG(asrNoiseSuppressionMode >= 0 && asrNoiseSuppressionMode <= asrNsModeMax,
         ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");

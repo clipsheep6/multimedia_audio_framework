@@ -424,11 +424,6 @@ int32_t AudioServer::IsWhispering()
     int32_t whisperRes = 0;
     if (isWhisperSink == "TRUE") {
         whisperRes = 1;
-    } else if (isWhisperSink == "FALSE") {
-        whisperRes = 0;
-    } else {
-        AUDIO_ERR_LOG("failed.");
-        return ERR_READ_FAILED;
     }
     return whisperRes;
 }
