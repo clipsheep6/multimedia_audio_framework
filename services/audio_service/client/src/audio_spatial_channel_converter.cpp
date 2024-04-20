@@ -45,7 +45,7 @@ static int8_t GetBps(uint8_t format)
     return format2bps.count(format) > 0 ? format2bps[format] : INVALID_FORMAT;
 }
 
-int32_t AudioSpatialChannelConverter::GetPcmLength(int32_t channels, int8_t bps)
+size_t AudioSpatialChannelConverter::GetPcmLength(int32_t channels, int8_t bps)
 {
     if (encoding_ == ENCODING_AUDIOVIVID) {
         return channels * AUDIO_VIVID_SAMPLES * bps;
@@ -236,7 +236,7 @@ bool LibLoader::AddAlgoHandle(Library library)
 bool LibLoader::Init()
 {
     int32_t ret = 0;
-    int32_t replyData = 0;
+    uint32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle_)->command(handle_, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);

@@ -63,7 +63,7 @@ public:
     void GetOutputBufferStream(uint8_t *&buffer, uint32_t &bufferLen);
 
 private:
-    int32_t GetPcmLength(int32_t channels, int8_t bps);
+    size_t GetPcmLength(int32_t channels, int8_t bps);
 
     std::unique_ptr<uint8_t[]> outPcmBuf_;
 

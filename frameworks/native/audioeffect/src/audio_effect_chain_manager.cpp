@@ -866,17 +866,6 @@ std::string AudioEffectChainManager::GetDeviceSinkName()
     return deviceSink_;
 }
 
-int32_t AudioEffectChainManager::SetFrameLen(int32_t frameLength)
-{
-    frameLen_ = frameLength;
-    return SUCCESS;
-}
-
-int32_t AudioEffectChainManager::GetFrameLen()
-{
-    return frameLen_;
-}
-
 bool AudioEffectChainManager::GetOffloadEnabled()
 {
     if (deviceType_ == DEVICE_TYPE_SPEAKER) {

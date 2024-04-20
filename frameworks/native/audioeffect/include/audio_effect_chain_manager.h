@@ -140,8 +140,6 @@ public:
     int32_t SetOutputDeviceSink(int32_t device, std::string &sinkName);
     std::string GetDeviceTypeName();
     std::string GetDeviceSinkName();
-    int32_t GetFrameLen();
-    int32_t SetFrameLen(int32_t frameLen);
     bool GetOffloadEnabled();
     void Dump();
     int32_t UpdateMultichannelConfig(const std::string &sceneType);

@@ -545,8 +545,8 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
 
-    int32_t countLib = libraries.size();
-    int32_t countEff = effects.size();
+    uint32_t countLib = libraries.size();
+    uint32_t countEff = effects.size();
 
     dataParcel.WriteInt32(countLib);
     dataParcel.WriteInt32(countEff);
@@ -606,7 +606,7 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
     bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
 
-    int32_t countEffectChains = effectChains.size();
+    uint32_t countEffectChains = effectChains.size();
     std::vector<int32_t> listCountEffects;
 
     for (EffectChain &effectChain: effectChains) {
