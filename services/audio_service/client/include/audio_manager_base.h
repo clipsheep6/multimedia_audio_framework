@@ -452,11 +452,11 @@ private:
         &AudioManagerStub::HandleResetRouteForDisconnect,
         &AudioManagerStub::HandleGetEffectLatency,
         &AudioManagerStub::HandleUpdateLatencyTimestamp,
-        & AudioManagerStub::HandleSetAsrAecMode,
-        & AudioManagerStub::HandleGetAsrAecMode,
-        & AudioManagerStub::HandleSetAsrNoiseSuppressionMode,
-        & AudioManagerStub::HandleGetAsrNoiseSuppressionMode,
-        & AudioManagerStub::HandleIsWhispering,
+        &AudioManagerStub::HandleSetAsrAecMode,
+        &AudioManagerStub::HandleGetAsrAecMode,
+        &AudioManagerStub::HandleSetAsrNoiseSuppressionMode,
+        &AudioManagerStub::HandleGetAsrNoiseSuppressionMode,
+        &AudioManagerStub::HandleIsWhispering,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
