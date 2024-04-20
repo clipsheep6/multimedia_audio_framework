@@ -75,12 +75,15 @@ public:
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
+
     int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
     int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
     int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
     int32_t IsWhispering() override;
+
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
+
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
 
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;
