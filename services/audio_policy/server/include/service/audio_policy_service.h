@@ -165,6 +165,8 @@ public:
 
     bool IsSessionIdValid(int32_t callerUid, int32_t sessionId);
 
+    bool IsPrimaryHDISink(DeviceType deviceType);
+
     void GetAudioAdapterInfos(std::map<AdaptersType, AudioAdapterInfo> &adapterInfoMap);
 
     void GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData);
@@ -529,7 +531,7 @@ private:
     int32_t ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     void SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        unique_ptr<AudioDeviceDescriptor> &outputDevice,
+        std::vector<unique_ptr<AudioDeviceDescriptor>> &outputDevices,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
@@ -633,6 +635,8 @@ private:
 
     void LoadInnerCapturerSink(string moduleName, AudioStreamInfo streamInfo);
 
+    void LoadDuplicatedHdiSink(AudioModuleInfo &moduleInfo);
+
     void LoadReceiverSink();
 
     void LoadLoopback();
@@ -677,7 +681,7 @@ private:
 
     void FetchInputDeviceWhenNoRunningStream();
 
-    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag);
+    void UpdateActiveDeviceRoute(std::vector<InternalDeviceType> &devicesType, DeviceFlag deviceFlag);
 
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,

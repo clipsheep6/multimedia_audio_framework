@@ -81,6 +81,8 @@ public:
     std::string id;
     std::string lib;
     std::string role;
+    std::string sink1;
+    std::string sink2;
 
     // The default rate is the maximun supported rate.
     std::string rate;

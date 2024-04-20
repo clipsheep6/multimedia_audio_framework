@@ -48,12 +48,21 @@ unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallCaptureDevice(SourceType
     return desc;
 }
 
-unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+vector<unique_ptr<AudioDeviceDescriptor>> DefaultRouter::GetRingRenderDevice(
+    StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+    vector<unique_ptr<AudioDeviceDescriptor>> devices;
+    unique_ptr<AudioDeviceDescriptor> desc = GetMediaRenderDevice(streamUsage, clientUID);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
         desc->deviceType_);
-    return desc;
+    devices.push_back(move(desc));
+    AudioRingerMode mode = audioPolicyManager_.GetRingerMode();
+    if (mode == RINGER_MODE_NORMAL) {
+        unique_ptr<AudioDeviceDescriptor> speaker =
+            AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+        devices.push_back(move(speaker));
+    }
+    return devices;
 }
 
 unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)

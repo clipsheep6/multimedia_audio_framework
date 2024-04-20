@@ -38,7 +38,7 @@ public:
         static AudioRouterCenter audioRouterCenter;
         return audioRouterCenter;
     }
-    std::unique_ptr<AudioDeviceDescriptor> FetchOutputDevice(StreamUsage streamUsage, int32_t clientUID);
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> FetchOutputDevice(StreamUsage streamUsage, int32_t clientUID);
     std::unique_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
@@ -103,6 +103,7 @@ private:
         RouterType &routerType);
     unique_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType);
+    std::vector<unique_ptr<AudioDeviceDescriptor>> FetchRingRenderDevice(StreamUsage streamUsage, int32_t clientUID);
     bool HasScoDevice();
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;

@@ -576,8 +576,13 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeOutpu
     return SUCCESS;
 }
 
-int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
+int32_t AudioServer::SetIORoute(std::vector<DeviceType> &types, DeviceFlag flag)
 {
+    if (types.empty()){
+        AUDIO_ERR_LOG("types is empty");
+        return 0;
+    }
+    DeviceType type = types.at(0);
     AUDIO_INFO_LOG("SetIORoute deviceType: %{public}d, flag: %{public}d", type, flag);
     AudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
@@ -602,7 +607,7 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
             audioRendererSinkInstance->SetAudioScene(audioScene_, type);
         } else {
-            audioRendererSinkInstance->SetOutputRoute(type);
+            audioRendererSinkInstance->SetOutputRoute(types);
         }
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
@@ -611,7 +616,7 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
             audioRendererSinkInstance->SetAudioScene(audioScene_, type);
         } else {
             audioCapturerSourceInstance->SetInputRoute(type);
-            audioRendererSinkInstance->SetOutputRoute(type);
+            audioRendererSinkInstance->SetOutputRoute(types);
         }
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else {
@@ -622,13 +627,13 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
     return SUCCESS;
 }
 
-int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
+int32_t AudioServer::UpdateActiveDeviceRoute(std::vector<DeviceType> &devicesType, DeviceFlag flag)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
         ERR_NOT_SUPPORTED, "UpdateActiveDeviceRoute refused for %{public}d", callingUid);
 
-    return SetIORoute(type, flag);
+    return SetIORoute(devicesType, flag);
 }
 
 void AudioServer::SetAudioMonoState(bool audioMono)

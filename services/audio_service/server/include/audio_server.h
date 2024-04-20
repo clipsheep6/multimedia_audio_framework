@@ -71,7 +71,7 @@ public:
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
-    int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
+    int32_t UpdateActiveDeviceRoute(std::vector<DeviceType> &devicesType, DeviceFlag flag) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
 
@@ -141,7 +141,7 @@ private:
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
-    int32_t SetIORoute(DeviceType type, DeviceFlag flag);
+    int32_t SetIORoute(std::vector<DeviceType> &type, DeviceFlag flag);
     bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();

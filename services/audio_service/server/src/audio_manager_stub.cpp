@@ -128,9 +128,19 @@ int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &re
 
 int AudioManagerStub::HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply)
 {
-    DeviceType type = static_cast<DeviceType>(data.ReadInt32());
+    std::vector<int32_t> vec;
+    data.ReadInt32Vector(&vec);
+
+    std::vector<DeviceType> types;
+    for (size_t i = 0; i < vec.size(); i++) {
+        int32_t val = vec.at(i);
+        types.push_back(static_cast<DeviceType>(val));
+    }
+    // DeviceType type = static_cast<DeviceType>(data.ReadInt32Vector());
+    // data.ReadVector(types, DeviceType);
+
     DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
-    int32_t ret = UpdateActiveDeviceRoute(type, flag);
+    int32_t ret = UpdateActiveDeviceRoute(types, flag);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }

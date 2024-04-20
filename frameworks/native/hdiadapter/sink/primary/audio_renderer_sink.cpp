@@ -157,8 +157,8 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
-    int32_t SetOutputRoute(DeviceType outputDevice) override;
-    int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
+    int32_t SetOutputRoute(std::vector<DeviceType> &types) override;
+    int32_t SetOutputRoute(std::vector<DeviceType> &types, AudioPortPin &outputPortPin);
 
     int32_t Preload(const std::string &usbInfoStr) override;
 
@@ -902,30 +902,47 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     return ret;
 }
 
-int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
+int32_t AudioRendererSinkInner::SetOutputRoute(std::vector<DeviceType> &outputDevices)
 {
-    if (outputDevice == currentActiveDevice_) {
+    if (outputDevices.empty()) {
+        AUDIO_ERR_LOG("types is empty");
+        return false;
+    }
+    if (outputDevices.at(0) == currentActiveDevice_) {
         AUDIO_INFO_LOG("SetOutputRoute output device not change");
         return SUCCESS;
     }
     AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
-    return SetOutputRoute(outputDevice, outputPortPin);
+    return SetOutputRoute(outputDevices, outputPortPin);
 }
 
-int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
+int32_t AudioRendererSinkInner::SetOutputRoute(std::vector<DeviceType> &outputDevices, AudioPortPin &outputPortPin)
 {
+    if (outputDevices.size() <= 0) {
+        AUDIO_ERR_LOG("outputDevices is empty");
+        return false;
+    }
     Trace trace("AudioRendererSinkInner::SetOutputRoute pin " + std::to_string(outputPortPin) + " device " +
-        std::to_string(outputDevice));
-    currentActiveDevice_ = outputDevice;
+        std::to_string(outputDevices.at(0)));
+    currentActiveDevice_ = outputDevices.at(0);
 
     AudioRouteNode source = {};
-    AudioRouteNode sink = {};
+    int size = outputDevices.size();
+    AudioRouteNode *sink = new AudioRouteNode[size];
 
-    int32_t ret = SetOutputPortPin(outputDevice, sink);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetOutputRoute FAILED: %{public}d", ret);
+    for (size_t i = 0; i < outputDevices.size(); i++)
+    {
+        int32_t ret = SetOutputPortPin(outputDevices.at(i), sink[i]);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetOutputRoute FAILED: %{public}d", ret);
+        sink[i].portId = static_cast<int32_t>(audioPort_.portId);
+        sink[i].role = AUDIO_PORT_SINK_ROLE;
+        sink[i].type = AUDIO_PORT_DEVICE_TYPE;
+        sink[i].ext.device.moduleId = 0;
+        sink[i].ext.device.desc = (char *)"";
+    }
 
-    outputPortPin = sink.ext.device.type;
-    AUDIO_INFO_LOG("Output PIN is: 0x%{public}X DeviceType is %{public}d", outputPortPin, outputDevice);
+    outputPortPin = sink[0].ext.device.type;
+    AUDIO_INFO_LOG("Output PIN is: 0x%{public}X DeviceType is %{public}d", outputPortPin, outputDevices.at(0));
     source.portId = 0;
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
@@ -933,17 +950,11 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
     source.ext.mix.streamId = PRIMARY_OUTPUT_STREAM_ID;
     source.ext.device.desc = (char *)"";
 
-    sink.portId = static_cast<int32_t>(audioPort_.portId);
-    sink.role = AUDIO_PORT_SINK_ROLE;
-    sink.type = AUDIO_PORT_DEVICE_TYPE;
-    sink.ext.device.moduleId = 0;
-    sink.ext.device.desc = (char *)"";
-
     AudioRoute route = {
         .sources = &source,
         .sourcesLen = 1,
-        .sinks = &sink,
-        .sinksLen = 1,
+        .sinks = sink,
+        .sinksLen = size,
     };
 
     renderEmptyFrameCount_ = 3; // preRender 3 frames
@@ -957,12 +968,13 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
         return false;
     });
     int64_t stamp = ClockTime::GetCurNano();
+    int ret = 0;
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetOutputRoute failed with null adapter");
     inSwitch_.store(true);
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     inSwitch_.store(false);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    AUDIO_INFO_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
+    AUDIO_INFO_LOG("UpdateAudioRoute cost[%{public}" PRId64 "]ms", stamp);
     renderEmptyFrameCount_ = 3; // render 3 empty frame
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
@@ -1003,7 +1015,9 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
         if (activeDevice != currentActiveDevice_ ||
             (isAudioSceneUpdate &&
                 (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
-            int32_t ret = SetOutputRoute(activeDevice, audioSceneOutPort);
+            vector<DeviceType> types;
+            types.push_back(activeDevice);
+            int32_t ret = SetOutputRoute(types, audioSceneOutPort);
             if (ret < 0) {
                 AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
             }
@@ -1275,20 +1289,20 @@ int32_t AudioRendererSinkInner::InitRender()
 
     if (openSpeaker_) {
         int32_t ret = SUCCESS;
+        vector<DeviceType> types;
         if (halName_ == "usb") {
-            ret = SetOutputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
+            types.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
         } else if (halName_ == "dp") {
-            ret = SetOutputRoute(DEVICE_TYPE_DP);
+            types.push_back(DEVICE_TYPE_DP);
         } else {
-            ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
+            types.push_back(DEVICE_TYPE_SPEAKER);
         }
+        ret = SetOutputRoute(types);
         if (ret < 0) {
             AUDIO_WARNING_LOG("Update route FAILED: %{public}d", ret);
         }
     }
-
     renderInited_ = true;
-
     return SUCCESS;
 }
 

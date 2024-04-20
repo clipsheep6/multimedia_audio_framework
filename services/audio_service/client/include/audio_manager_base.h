@@ -131,7 +131,7 @@ public:
      *
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) = 0;
+    virtual int32_t UpdateActiveDeviceRoute(std::vector<DeviceType> &devicesType, DeviceFlag flag) = 0;
 
     /**
      * Get the transaction Id

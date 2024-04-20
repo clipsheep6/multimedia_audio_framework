@@ -91,8 +91,8 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
 
-    int32_t SetOutputRoute(DeviceType outputDevice) override;
-    int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
+    int32_t SetOutputRoute(std::vector<DeviceType> &types) override;
+    int32_t SetOutputRoute(std::vector<DeviceType> &types, AudioPortPin &outputPortPin);
 
     int32_t Preload(const std::string &usbInfoStr) override;
     float GetMaxAmplitude() override;
@@ -748,27 +748,41 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     return ret;
 }
 
-int32_t MultiChannelRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
+int32_t MultiChannelRendererSinkInner::SetOutputRoute(std::vector<DeviceType> &types)
 {
     AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
-    return SetOutputRoute(outputDevice, outputPortPin);
+    return SetOutputRoute(types, outputPortPin);
 }
 
-int32_t MultiChannelRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
+int32_t MultiChannelRendererSinkInner::SetOutputRoute(
+    std::vector<DeviceType> &outputDevices, AudioPortPin &outputPortPin)
 {
-    if (outputDevice == currentActiveDevice_) {
+    if (outputDevices.empty()) {
+        AUDIO_ERR_LOG("types is empty");
+        return false;
+    }
+    if (outputDevices.at(0) == currentActiveDevice_) {
         AUDIO_INFO_LOG("SetOutputRoute output device not change");
         return SUCCESS;
     }
-    currentActiveDevice_ = outputDevice;
+    currentActiveDevice_ = outputDevices.at(0);
 
     AudioRouteNode source = {};
-    AudioRouteNode sink = {};
+    int size = outputDevices.size();
+    AudioRouteNode *sink = new AudioRouteNode[size];
 
-    int32_t ret = SetOutputPortPin(outputDevice, sink);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetOutputRoute FAILED: %{public}d", ret);
+    for (size_t i = 0; i < outputDevices.size(); i++)
+    {
+        int32_t ret = SetOutputPortPin(outputDevices.at(i), sink[i]);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetOutputRoute FAILED: %{public}d", ret);
+        sink[i].portId = static_cast<int32_t>(audioPort_.portId);
+        sink[i].role = AUDIO_PORT_SINK_ROLE;
+        sink[i].type = AUDIO_PORT_DEVICE_TYPE;
+        sink[i].ext.device.moduleId = 0;
+        sink[i].ext.device.desc = (char *)"";
+    }
 
-    outputPortPin = sink.ext.device.type;
+    outputPortPin = sink[0].ext.device.type;
     AUDIO_INFO_LOG("Output PIN is: 0x%{public}X", outputPortPin);
     source.portId = 0;
     source.role = AUDIO_PORT_SOURCE_ROLE;
@@ -777,17 +791,11 @@ int32_t MultiChannelRendererSinkInner::SetOutputRoute(DeviceType outputDevice, A
     source.ext.mix.streamId = MULTICHANNEL_OUTPUT_STREAM_ID;
     source.ext.device.desc = (char *)"";
 
-    sink.portId = static_cast<int32_t>(audioPort_.portId);
-    sink.role = AUDIO_PORT_SINK_ROLE;
-    sink.type = AUDIO_PORT_DEVICE_TYPE;
-    sink.ext.device.moduleId = 0;
-    sink.ext.device.desc = (char *)"";
-
     AudioRoute route = {
         .sources = &source,
         .sourcesLen = 1,
-        .sinks = &sink,
-        .sinksLen = 1,
+        .sinks = sink,
+        .sinksLen = size,
     };
 
     renderEmptyFrameCount_ = 5; // preRender 5 frames
@@ -801,6 +809,7 @@ int32_t MultiChannelRendererSinkInner::SetOutputRoute(DeviceType outputDevice, A
         return false;
     });
     int64_t stamp = ClockTime::GetCurNano();
+    int ret = 0;
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetOutputRoute failed with null adapter");
     inSwitch_.store(true);
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
@@ -809,7 +818,6 @@ int32_t MultiChannelRendererSinkInner::SetOutputRoute(DeviceType outputDevice, A
     AUDIO_INFO_LOG("UpdateAudioRoute cost[%{public}" PRId64 "]ms", stamp);
     renderEmptyFrameCount_ = 5; // render 5 empty frame
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
-
     return SUCCESS;
 }
 
@@ -845,7 +853,9 @@ int32_t MultiChannelRendererSinkInner::SetAudioScene(AudioScene audioScene, Devi
             currentAudioScene_ = audioScene;
         }
 
-        ret = SetOutputRoute(activeDevice, audioSceneOutPort);
+        vector<DeviceType> deviceTypes;
+        deviceTypes.push_back(activeDevice);
+        ret = SetOutputRoute(deviceTypes, audioSceneOutPort);
         if (ret < 0) {
             AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
         }
