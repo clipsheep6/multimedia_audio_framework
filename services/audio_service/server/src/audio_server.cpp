@@ -23,6 +23,7 @@
 #include <sstream>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
@@ -44,6 +45,11 @@
 #include "playback_capturer_manager.h"
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
+
+/** ssl **/
+#include "audio_info.h"
+/** ssl **/
+
 
 #define PA
 #ifdef PA
@@ -246,6 +252,174 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     }
     audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
 }
+
+/** ssl **/
+std::map<std::string, AsrAecMode> aecModeMap = {
+    {"BYPASS",AsrAecMode::BYPASS},
+    {"STANDARD",AsrAecMode::STANDARD}
+};
+std::map<AsrAecMode, std::string> aecModeMapVerse = {
+    {AsrAecMode::BYPASS,"BYPASS"},
+    {AsrAecMode::STANDARD,"STANDARD"}
+};
+std::map<std::string, AsrNoiseSuppressionMode> nsModeMap = {
+    {"BYPASS",AsrNoiseSuppressionMode::BYPASS},
+    {"STANDARD",AsrNoiseSuppressionMode::STANDARD},
+    {"NEAR_FIELD",AsrNoiseSuppressionMode::NEAR_FIELD},
+    {"FAR_FIELD",AsrNoiseSuppressionMode::FAR_FIELD}
+};
+std::map<AsrNoiseSuppressionMode, std::string> nsModeMapVerse = {
+    {AsrNoiseSuppressionMode::BYPASS,"BYPASS"},
+    {AsrNoiseSuppressionMode::STANDARD,"STANDARD"},
+    {AsrNoiseSuppressionMode::NEAR_FIELD,"NEAR_FIELD"},
+    {AsrNoiseSuppressionMode::FAR_FIELD,"FAR_FIELD"}
+};
+
+std::vector<std::string> splitString(const std::string& str, const std::string& pattern)
+{
+    std::vector<std::string> res;
+    if (str == "")
+        return res;
+    //���ַ���ĩβҲ����ָ����������ȡ���һ��
+    std::string strs = str + pattern;
+    size_t pos = strs.find(pattern);
+
+    while (pos != strs.npos)
+    {
+        std::string temp = strs.substr(0, pos);
+        res.push_back(temp);
+        //ȥ���ѷָ���ַ�������ʣ�µ��ַ����н��зָ�
+        strs = strs.substr(pos + 1, strs.size());
+        pos = strs.find(pattern);
+    }
+    return res;
+}
+
+
+int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode) {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED, "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    //key hal����һ��
+    std::string key = "asr_aec_mode";
+    std::string value = key + "=";
+
+    auto it = aecModeMapVerse.find(asrAecMode);
+    if (it != aecModeMapVerse.end()) {
+        value = key + "=" + it->second;
+    } else {
+        AudioServer::audioParameters[key] = value;//��׮����������쳣ֵ��ô���أ�TODO
+    }
+    //send it to hal
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    AUDIO_INFO_LOG("AudioServer: SetAsrAecMode.");
+    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    return 0;
+}
+
+int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode) {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED, "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    //key hal����һ��
+    std::string key = "asr_aec_mode";
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    std::string asrAecModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);//�������ͣ�hal��ķ���������ɶ
+
+    std::vector<std::string> resMode = splitString(asrAecModeSink, "=");
+    std::string modeString = "";
+    if (resMode.size() == 2) {
+        modeString = resMode[1];
+        auto it = aecModeMap.find(modeString);
+        if (it != aecModeMap.end()) {
+            asrAecMode = it->second;
+        }
+        else {
+            AUDIO_INFO_LOG("Server: GetAsrAecMode Error.");//δ����׮TODO
+            return ERROR;
+        }
+    }
+    else {
+        AUDIO_INFO_LOG("Server: GetAsrAecMode Error.");
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("AudioServer: GetAsrAecMode.");
+    return 0;
+}
+
+int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED, "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    //key hal����һ��
+    std::string key = "asr_ns_mode";
+    std::string value = key + "=";
+
+    auto it = nsModeMapVerse.find(asrNoiseSuppressionMode);
+    if (it != nsModeMapVerse.end()) {
+        value = key + "=" + it->second;
+    }
+    else {
+        AudioServer::audioParameters[key] = value;//��׮����������쳣ֵ��ô���أ�TODO
+    }
+    //send it to hal
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    return 0;
+}
+
+int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode) {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED, "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    //key hal����һ��
+    std::string key = "asr_ns_mode";
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    std::string asrNoiseSuppressionModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);//�������ͣ�hal��ķ���������ɶ
+
+    std::vector<std::string> resMode = splitString(asrNoiseSuppressionModeSink, "=");
+    std::string modeString = "";
+    if (resMode.size() == 2) {
+        modeString = resMode[1];
+        auto it = nsModeMap.find(modeString);
+        if (it != nsModeMap.end()) {
+            asrNoiseSuppressionMode = it->second;
+        }
+        else {
+            AUDIO_INFO_LOG("Server: GetAsrNoiseSuppressionMode Error.");//δ����׮TODO
+            return ERROR;
+        }
+    }
+    else {
+        AUDIO_INFO_LOG("Server: GetAsrNoiseSuppressionMode Error.");
+        return ERROR;
+    }
+    return 0;
+}
+
+int32_t AudioServer::IsWhispering() {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED, "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    //key hal����һ��
+    std::string key = "asr_is_whisper";
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+
+    std::string isWhisperSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);//�������ͣ�hal��ķ���������ɶ?ͨ�ýӿڣ�
+    int32_t whisperRes = 0;
+    if (isWhisperSink == "1") {//��׮
+        whisperRes = 1;
+    }
+    return whisperRes;
+}
+
+/** ssl **/
 
 void AudioServer::SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
     const std::string& value)
