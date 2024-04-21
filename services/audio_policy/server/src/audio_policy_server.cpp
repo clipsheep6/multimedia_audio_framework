@@ -661,14 +661,27 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
 
 int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi)
 {
-    if (streamType == AudioStreamType::STREAM_RING && !isUpdateUi) {
-        if (!VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
-            AUDIO_ERR_LOG("SetStreamMute permission denied for stream type : %{public}d", streamType);
-            return ERR_PERMISSION_DENIED;
+    if (!isUpdateUi) {
+        bool notifyPermission = VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION);
+        CHECK_AND_RETURN_RET_LOG(notifyPermission, ERR_PERMISSION_DENIED,
+            "SetStreamMute permission denied for stream type : %{public}d", streamType);
+    }
+    int32_t result = SUCCESS;
+    if (streamType == AudioStreamType::STREAM_RING) {
+        int32_t curRingVolumeLevel = GetSystemVolumeLevel(STREAM_RING);
+        // TODO:若为ring,且发生变化 SetRingerModeInternal
+        if ((!mute && curRingVolumeLevel == 0) || (mute && curRingVolumeLevel > 0)) {
+            result = SetRingerModeInternal(GetRingerMode());
         }
     }
 
-    int result = audioPolicyService_.SetStreamMute(streamType, mute);
+    // TODO:调成非静音且音量为0，设置音量为1
+    if (!mute && GetSystemVolumeLevel(streamType) == 0) {
+        audioPolicyService_.SetSystemVolumeLevel(streamType, 1);
+    }
+
+    result = audioPolicyService_.SetStreamMute(streamType, mute);
+    // 音量变化回调
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
     volumeEvent.volume = GetSystemVolumeLevel(streamType);
@@ -698,25 +711,45 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
     if (streamType == STREAM_ALL) {
         for (auto audioSteamType : GET_STREAM_ALL_VOLUME_TYPES) {
             AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d ", audioSteamType);
-            int32_t setResult = SetSingleStreamVolume(audioSteamType, volumeLevel, isUpdateUi);
+            int32_t setResult = audioPolicyService_.SetSystemVolumeLevel(audioSteamType, volumeLevel, isUpdateUi);
             if (setResult != SUCCESS) {
                 return setResult;
             }
         }
-        return SUCCESS;
     }
     return SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi);
 }
 
+void AudioPolicyServer::UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel)
+{
+    AudioRingerMode ringMode = GetRingerMode();
+    //The ringer mode is automatically updated based on the ringtone volume
+    if (volumeLevel > 0 && (ringMode == RINGER_MODE_SILENT || ringMode == RINGER_MODE_VIBRATE)) {
+        // ringtone volume > 0, change the ringer mode to RINGER_MODE_NORMAL
+        SetRingerModeInternal(RINGER_MODE_NORMAL);
+    } else if (volumeLevel == 0 && ringMode == RINGER_MODE_NORMAL) {
+        // ringtone volume == 0, change the ringer mode to RINGER_MODE_VIBRATE
+        SetRingerModeInternal(RINGER_MODE_VIBRATE);
+    }
+}
+
 int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
 {
-    if ((streamType == AudioStreamType::STREAM_RING) && !isUpdateUi) {
-        int32_t curRingVolumeLevel = GetSystemVolumeLevel(STREAM_RING);
-        if ((curRingVolumeLevel > 0 && volumeLevel == 0) || (curRingVolumeLevel == 0 && volumeLevel > 0)) {
-            if (!VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
-                AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", streamType);
+    if (!isUpdateUi && !VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
+        AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", streamType);
                 return ERR_PERMISSION_DENIED;
-            }
+    }
+
+    // TODO:若为ring，且音量符合变化调节SetRingerMode
+    if (streamType == AudioStreamType::STREAM_RING) {
+        UpdateRingerModeForVolume(AudioStreamType::STREAM_RING, volumeLevel);
+    } else {
+        // TODO:不是ring，符合音量变化调节
+        int32_t curRingVolumeLevel = GetSystemVolumeLevel(streamType);
+        if (curRingVolumeLevel > 0 && volumeLevel == 0) {
+            audioPolicyService_.SetStreamMUte(streamType, true);
+        } else if (curRingVolumeLevel == 0 && volumeLevel > 0){
+            audioPolicyService_.SetStreamMUte(streamType, false);
         }
     }
 
@@ -905,11 +938,36 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
             "Access policy permission denied for ringerMode : %{public}d", ringMode);
     }
 
-    int32_t ret = audioPolicyService_.SetRingerMode(ringMode);
-    if ((ret == SUCCESS) && (audioPolicyServerHandler_ != nullptr)) {
-        audioPolicyServerHandler_->SendRingerModeUpdatedCallback(ringMode);
+    return SetRingerModeInternal(ringMode);
+}
+
+int32_t AudioPolicyServer::SetRingerModeInternal(AudioRingerMode ringerMode)
+{
+    AUDIO_INFO_LOG("SetRingerMode: %{public}d", ringerMode);
+
+    // TODO:根据模式调节决定是否静音
+    switch (ringerMode) {
+        case RINGER_MODE_SILENT:
+        case RINGER_MODE_VIBRATE:
+            SetStreamMuteInternal(STREAM_RING, true);
+            break;
+        case RINGER_MODE_NORMAL:
+            SetStreamMuteInternal(STREAM_RING, false);
+            // TODO: 如果ring调成非静音，且音量为0，设置音量为1
+            if (GetSystemVolumeLevel(STREAM_RING) == 0) {
+                AUDIO_INFO_LOG("SetStreamMute: stream type %{public}d is unmuted, but the volume is 0. Set to 1.",
+                    streamType);
+                audioPolicyService_.SetSystemVolumeLevel(STREAM_RING, 1);
+            }
+            break;
+        default:
+            break;
     }
 
+    int32_t ret = audioPolicyService_.SetRingerMode(ringerMode);
+    if ((ret == SUCCESS) && (audioPolicyServerHandler_ != nullptr)) {
+        audioPolicyServerHandler_->SendRingerModeUpdateCallback(ringerMode);
+    }
     return ret;
 }
 
