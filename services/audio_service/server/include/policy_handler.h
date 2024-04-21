@@ -23,6 +23,7 @@
 
 #include "audio_info.h"
 #include "i_policy_provider_ipc.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,7 +33,7 @@ public:
 
     ~PolicyHandler();
 
-    void Dump(std::stringstream &dumpString);
+    void Dump(std::string &dumpString);
 
     // would be called only once
     bool ConfigPolicyProvider(const sptr<IPolicyProviderIpc> policyProvider);
