@@ -38,6 +38,8 @@ public:
     typedef struct {
         int32_t zoneId; // Zone ID value should 0 on local device.
         std::set<int32_t> pids; // When Zone ID is 0, there does not need to be a value.
+        std::set<uint32_t> interruptCbSessionIdsMap;
+        std::set<int32_t> audioPolicyClientProxyCBClientPidMap;
         std::unordered_map<uint32_t /* sessionID */, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap;
         std::unordered_map<int32_t /* clientPid */, sptr<IAudioPolicyClient>> audioPolicyClientProxyCBMap;
         std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
@@ -51,7 +53,7 @@ public:
         uint32_t sessionId, const InterruptEventInternal &interruptEvent) override;
 
     void Init(sptr<AudioPolicyServer> server);
-    void AddDumpInfo(PolicyData &policyData);
+    void AddDumpInfo(std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> &audioInterruptZonesMapDump);
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
 
     // deprecated interrupt interfaces
@@ -78,6 +80,10 @@ public:
     int32_t SetAudioFocusInfoCallback(const int32_t zoneId, const sptr<IRemoteObject> &object);
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
+
+    void AudioInterruptZoneDump(string& dumpString);
+    const std::string GetStreamName(AudioStreamType streamType);
+    const std::string GetSourceName(SourceType sourceType);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;

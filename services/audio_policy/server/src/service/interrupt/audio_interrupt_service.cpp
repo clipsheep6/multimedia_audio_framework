@@ -23,6 +23,17 @@
 namespace OHOS {
 namespace AudioStandard {
 
+constexpr int STRING_BUFFER_SIZE = 4096;
+
+template <typename...Args>
+void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
+{
+    char buf[STRING_BUFFER_SIZE] = {0};
+    int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
+    CHECK_AND_RETURN_LOG(len > 0, "snprintf_s error : buffer allocation fails");
+    out += buf;
+}
+
 static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
     {INTERRUPT_HINT_PAUSE, PAUSE},
     {INTERRUPT_HINT_DUCK, DUCK},
@@ -87,12 +98,13 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     CreateAudioInterruptZoneInternal(ZONEID_DEFAULT, {});
 }
 
-void AudioInterruptService::AddDumpInfo(PolicyData &policyData)
+void AudioInterruptService::AddDumpInfo(std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>>
+    &audioInterruptZonesMapDump)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
-        std::shared_ptr<AudioInterruptZoneDump> zoneDump = make_shared<AudioInterruptZoneDump>();
+        std::shared_ptr<AudioInterruptZone> zoneDump = make_shared<AudioInterruptZone>();
         zoneDump->zoneId = zoneId;
         zoneDump->pids = audioInterruptZone->pids;
         for (auto interruptCbInfo : audioInterruptZone->interruptCbsMap) {
@@ -102,7 +114,7 @@ void AudioInterruptService::AddDumpInfo(PolicyData &policyData)
             zoneDump->audioPolicyClientProxyCBClientPidMap.insert(audioPolicyClientProxyCBInfo.first);
         }
         zoneDump->audioFocusInfoList = audioInterruptZone->audioFocusInfoList;
-        policyData.audioInterruptZonesMapDump[zoneId] = zoneDump;
+        audioInterruptZonesMapDump[zoneId] = zoneDump;
     }
 }
 
@@ -1165,6 +1177,142 @@ void AudioInterruptService::AudioInterruptClient::OnInterrupt(const InterruptEve
     if (callback_ != nullptr) {
         callback_->OnInterrupt(interruptEvent);
     }
+}
+
+void AudioInterruptService::AudioInterruptZoneDump(string &dumpString)
+{
+    std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMapDump;
+    AddDumpInfo(audioInterruptZonesMapDump);
+    dumpString += "\nAudioInterrupt Zone:\n";
+    AppendFormat(dumpString, "- %d AudioInterruptZoneDump (s) available:\n",
+        zonesMap_.size());
+    for (const auto&[zoneID, audioInterruptZoneDump] : audioInterruptZonesMapDump) {
+        if (zoneID < 0) {
+            continue;
+        }
+        AppendFormat(dumpString, "  - Zone ID: %d\n", zoneID);
+        AppendFormat(dumpString, "  - Pids size: %d\n", audioInterruptZoneDump->pids.size());
+        for (auto pid : audioInterruptZoneDump->pids) {
+            AppendFormat(dumpString, "    - pid: %d\n", pid);
+        }
+
+        AppendFormat(dumpString, "  - Interrupt callback size: %d\n",
+            audioInterruptZoneDump->interruptCbSessionIdsMap.size());
+        AppendFormat(dumpString, "    - The sessionIds as follow:\n");
+        for (auto sessionId : audioInterruptZoneDump->interruptCbSessionIdsMap) {
+            AppendFormat(dumpString, "      - SessionId: %d -- have interrupt callback.\n", sessionId);
+        }
+
+        AppendFormat(dumpString, "  - Audio policy client proxy callback size: %d\n",
+            audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap.size());
+        AppendFormat(dumpString, "    - The clientPids as follow:\n");
+        for (auto pid : audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap) {
+            AppendFormat(dumpString, "      - ClientPid: %d -- have audiopolicy client proxy callback.\n", pid);
+        }
+
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList
+            = audioInterruptZoneDump->audioFocusInfoList;
+        AppendFormat(dumpString, "  - %d Audio Focus Info (s) available:\n", audioFocusInfoList.size());
+        uint32_t invalidSessionId = static_cast<uint32_t>(-1);
+        for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
+            if ((iter->first).sessionId == invalidSessionId) {
+                continue;
+            }
+            AppendFormat(dumpString, "    - Pid: %d\n", (iter->first).pid);
+            AppendFormat(dumpString, "    - SessionId: %d\n", (iter->first).sessionId);
+            AppendFormat(dumpString, "    - AudioFocus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
+            AppendFormat(dumpString, "    - Stream Name: %s\n",
+                GetStreamName((iter->first).audioFocusType.streamType).c_str());
+            AppendFormat(dumpString, "    - Source Name: %s\n",
+                GetSourceName((iter->first).audioFocusType.sourceType).c_str());
+            AppendFormat(dumpString, "    - AudioFocus State: %d\n", iter->second);
+            dumpString += "\n";
+        }
+        dumpString += "\n";
+    }
+    return;
+}
+
+const std::string AudioInterruptService::GetStreamName(AudioStreamType streamType)
+{
+    string name;
+    switch (streamType) {
+        case STREAM_VOICE_ASSISTANT:
+            name = "VOICE_ASSISTANT";
+            break;
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
+            name = "VOICE_CALL";
+            break;
+        case STREAM_SYSTEM:
+            name = "SYSTEM";
+            break;
+        case STREAM_RING:
+            name = "RING";
+            break;
+        case STREAM_MUSIC:
+            name = "MUSIC";
+            break;
+        case STREAM_ALARM:
+            name = "ALARM";
+            break;
+        case STREAM_NOTIFICATION:
+            name = "NOTIFICATION";
+            break;
+        case STREAM_BLUETOOTH_SCO:
+            name = "BLUETOOTH_SCO";
+            break;
+        case STREAM_DTMF:
+            name = "DTMF";
+            break;
+        case STREAM_TTS:
+            name = "TTS";
+            break;
+        case STREAM_ACCESSIBILITY:
+            name = "ACCESSIBILITY";
+            break;
+        case STREAM_ULTRASONIC:
+            name = "ULTRASONIC";
+            break;
+        case STREAM_WAKEUP:
+            name = "WAKEUP";
+            break;
+        default:
+            name = "UNKNOWN";
+    }
+
+    const string streamName = name;
+    return streamName;
+}
+
+const std::string AudioInterruptService::GetSourceName(SourceType sourceType)
+{
+    string name;
+    switch (sourceType) {
+        case SOURCE_TYPE_INVALID:
+            name = "INVALID";
+            break;
+        case SOURCE_TYPE_MIC:
+            name = "MIC";
+            break;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            name = "VOICE_RECOGNITION";
+            break;
+        case SOURCE_TYPE_ULTRASONIC:
+            name = "ULTRASONIC";
+            break;
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+            name = "VOICE_COMMUNICATION";
+            break;
+        case SOURCE_TYPE_WAKEUP:
+            name = "WAKEUP";
+            break;
+        default:
+            name = "UNKNOWN";
+    }
+
+    const string sourceName = name;
+    return sourceName;
 }
 
 } // namespace AudioStandard

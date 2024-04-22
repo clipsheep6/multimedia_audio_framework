@@ -19,6 +19,11 @@
 #include <mutex>
 #include <pthread.h>
 #include <unordered_map>
+#include <queue>
+#include <vector>
+#include <list>
+#include <pwd.h>
+#include <pulse/pulseaudio.h>
 
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
@@ -32,15 +37,44 @@
 #include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
 #include "audio_asr.h"
+#include "audio_errors.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+static const int32_t AUDIO_DUMP_SUCCESS = 0;
+static const int32_t AUDIO_DUMP_INIT_ERR = -1;
+
+typedef struct {
+    std::string name;
+    pa_sample_spec sampleSpec;
+} SinkSourceInfo;
+
+typedef struct {
+    uint32_t userId;
+    uint32_t corked;                   // status
+    std::string sessionId;
+    std::string sessionStartTime;
+    std::string applicationName;
+    std::string processId;
+    std::string privacyType;
+    pa_sample_spec sampleSpec;
+}InputOutputInfo;
+
+typedef struct {
+    std::vector<SinkSourceInfo> sinkDevices;
+    std::vector<SinkSourceInfo> sourceDevices;
+    std::vector<InputOutputInfo> sinkInputs;
+    std::vector<InputOutputInfo> sourceOutputs;
+} StreamData;
+
 class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);
     explicit AudioServer(int32_t systemAbilityId, bool runOnCreate = true);
-    virtual ~AudioServer() = default;
+    ~AudioServer();
     void OnDump() override;
     void OnStart() override;
     void OnStop() override;
@@ -133,6 +167,27 @@ public:
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+
+    // for hidump
+    void ArgDataDump(std::string &dumpString, std::queue<std::u16string> argQue);
+    void ServerDataDump(std::string &dumpString);
+    void HelpInfoDump(std::string &dumpString);
+    void InitDumpFuncMap();
+    void PlaybackSinkDump(std::string &dumpString);
+    void RecordSourceDump(std::string &dumpString);
+    void HDFModulesDump(std::string &dumpString);
+    void PolicyHandlerDump(std::string &dumpString);
+    void GetPaInfo();
+    void ResetPAAudioDump();
+    int32_t PaInitialize();
+    static bool IsEndWith(const std::string &mainStr, const std::string &toMatch);
+    static bool IsValidModule(const std::string moduleName);
+    static void PAContextStateCb(pa_context *context, void *userdata);
+    static void PASinkInfoCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
+    static void PASinkInputInfoCallback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
+    static void PASourceInfoCallback(pa_context *c, const pa_source_info *i, int eol, void *userdata);
+    static void PASourceOutputInfoCallback(pa_context *c, const pa_source_output_info *i, int eol, void *userdata);
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -173,6 +228,17 @@ private:
     std::mutex audioSceneMutex_;
     bool isGetProcessEnabled_ = false;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
+    //for dump
+    using DumpFunc = void(AudioServer::*)(std::string &dumpString);
+    std::map<std::u16string, DumpFunc> dumpFuncMap;
+    pa_threaded_mainloop *mainLoop;
+    pa_mainloop_api *api;
+    pa_context *context;
+    std::mutex ctrlMutex_;
+
+    bool isMainLoopStarted_;
+    bool isContextConnected_;
+    StreamData streamData_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

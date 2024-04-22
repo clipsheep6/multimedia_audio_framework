@@ -161,6 +161,9 @@ public:
     int32_t GetSafeVolumeLevel() const;
 
     int32_t GetSafeVolumeTimeout() const;
+
+    int32_t GetCurActivateCount(void) const;
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -273,6 +276,7 @@ private:
     bool isNeedCopySystemUrlData_ = false;
     bool isLoaded_ = false;
     bool isAllCopyDone_ = false;
+    int32_t curActiveCount_ = 0;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

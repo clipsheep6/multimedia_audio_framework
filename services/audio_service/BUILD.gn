@@ -165,6 +165,7 @@ ohos_shared_library("audio_client") {
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_policy_client",
     "//third_party/libxml2:xml2",
+    ":audio_process_service",
   ]
 
   include_dirs = [
