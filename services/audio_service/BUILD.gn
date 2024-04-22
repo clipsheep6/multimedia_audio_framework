@@ -161,6 +161,7 @@ ohos_shared_library("audio_client") {
 
   deps = [
     ":audio_common",
+    ":audio_process_service",
     "$pulseaudio_build_path/src/pulse:pulse",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_policy_client",

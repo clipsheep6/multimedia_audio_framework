@@ -21,9 +21,11 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "remote_audio_renderer_sink.h"
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
+
 
 namespace OHOS {
 namespace AudioStandard {
@@ -259,19 +261,19 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
     }
 }
 
-void AudioService::Dump(std::stringstream &dumpStringStream)
+void AudioService::Dump(std::string &dumpString)
 {
     AUDIO_INFO_LOG("AudioService dump begin");
     // dump process
     for (auto paired : linkedPairedList_) {
-        paired.first->Dump(dumpStringStream);
+        paired.first->Dump(dumpString);
     }
     // dump endpoint
     for (auto item : endpointList_) {
-        dumpStringStream << std::endl << "Endpoint device id:" << item.first << std::endl;
-        item.second->Dump(dumpStringStream);
+        AppendFormat(dumpString, "  - Endpoint device id: %s\n", item.first.c_str());
+        item.second->Dump(dumpString);
     }
-    PolicyHandler::GetInstance().Dump(dumpStringStream);
+    PolicyHandler::GetInstance().Dump(dumpString);
 }
 
 float AudioService::GetMaxAmplitude(bool isOutputDevice)

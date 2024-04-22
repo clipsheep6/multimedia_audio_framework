@@ -403,6 +403,23 @@ public:
 
     int32_t SetHighResolutionExist(bool highResExist) override;
 
+    // for hidump
+    void DevicesInfoDump(std::string &dumpString);
+    void CallStatusDump(std::string &dumpString);
+    void RingerModeDump(std::string &dumpString);
+    void MicrophoneDescriptorsDump(std::string &dumpString);
+    void AudioInterruptZoneDump(std::string &dumpString);
+    void AudioPolicyParserDump(std::string &dumpString);
+    void GroupInfoDump(std::string &dumpString);
+    void StreamVolumesDump(std::string &dumpString);
+    void StreamVolumeInfosDump(std::string &dumpString);
+    void RendererStreamDump(std::string &dumpString);
+    void CapturerStreamDump(std::string &dumpString);
+    void FastStreamDump(std::string &dumpString);
+    void OffloadStatusDump(std::string &dumpString);
+    void ModuleInfoCountDump(std::string &dumpString);
+    void SafeVolumeDump(std::string &dumpString);
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -464,11 +481,6 @@ private:
     bool CheckRootCalling(uid_t callingUid, int32_t appUid);
     void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
 
-    // common
-    void GetPolicyData(PolicyData &policyData);
-    void GetDeviceInfo(PolicyData &policyData);
-    void GetGroupInfo(PolicyData &policyData);
-
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);
 
@@ -494,6 +506,11 @@ private:
     void UnRegisterPowerStateListener();
 
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
+
+    void InitPolicyDumpMap();
+    void PolicyDataDump(std::string &dumpString);
+    void ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue);
+    void InfoDumpHelp(std::string &dumpString);
 
     AudioPolicyService& audioPolicyService_;
     std::shared_ptr<AudioInterruptService> interruptService_;
@@ -529,6 +546,8 @@ private:
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
     AudioRouterCenter &audioRouterCenter_;
+    using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
+    std::map<std::u16string, DumpFunc> dumpFuncMap;
 };
 } // namespace AudioStandard
 } // namespace OHOS
