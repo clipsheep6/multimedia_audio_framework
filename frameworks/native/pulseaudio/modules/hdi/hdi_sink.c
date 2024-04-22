@@ -1407,9 +1407,9 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         pa_memblock_unref(capResult.memblock);
     }
 
-    uint8_t sceneTypeLenRef[u->sceneTypeNum];
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
+    uint8_t sceneTypeLenRef[u->sceneTypeNum];
 
     AdjustProcessParamsBeforeGetData(si, sceneTypeLenRef);
     size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
