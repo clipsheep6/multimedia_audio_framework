@@ -18,3 +18,4 @@ persist.vendor.media.offload.enable = true
 persist.multimedia.audioflag.forceipc.renderer = 1
 persist.multimedia.audio.safevolume = 15
 persist.multimedia.audio.safevolume.timeout = 1200
+persist.sys.arkui.auto.fill.input.method.enabled = false
