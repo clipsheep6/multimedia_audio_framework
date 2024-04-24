@@ -19,6 +19,7 @@ import("../../window_manager.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
+media_foundation_dir = "//foundation/multimedia/media_foundation"
 
 group("audio_service_packages") {
   deps = [
@@ -165,6 +166,7 @@ ohos_shared_library("audio_client") {
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_policy_client",
     "//third_party/libxml2:xml2",
+    ":audio_process_service",
   ]
 
   include_dirs = [
@@ -178,6 +180,8 @@ ohos_shared_library("audio_client") {
     "../../../../commonlibrary/c_utils/base/include",
     "//third_party/bounds_checking_function/include",
     "//third_party/libxml2/include",
+    "$media_foundation_dir/services/media_monitor/client/include",
+    "$media_foundation_dir/services/media_monitor/common/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
@@ -193,6 +197,8 @@ ohos_shared_library("audio_client") {
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "media_foundation:media_monitor_common",
+    "media_foundation:media_monitor_client",
   ]
 
   defines = []

@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../media_monitor_path.gni")
 
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
@@ -34,6 +35,8 @@ ohos_shared_library("pulse_audio_service_adapter") {
     "//third_party/pulseaudio/src",
     "//third_party/pulseaudio/confgure/src",
     "//third_party/pulseaudio/include",
+    media_monitor_client_path,
+    media_monitor_common_path,
   ]
 
   public_configs = [ ":audio_external_library_config" ]
@@ -43,6 +46,9 @@ ohos_shared_library("pulse_audio_service_adapter") {
   external_deps = [
     "hilog:libhilog",
     "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_common",
+    "media_foundation:media_monitor_client",
   ]
   part_name = "audio_framework"
   subsystem_name = "multimedia"
