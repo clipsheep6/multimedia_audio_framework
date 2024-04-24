@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 import("../../accessibility.gni")
 import("../../bluetooth_part.gni")
 import("../../config.gni")
+import("../../media_monitor_path.gni")
 
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
@@ -219,6 +220,8 @@ ohos_shared_library("audio_policy_service") {
     "//third_party/pulseaudio/src",
     "//third_party/pulseaudio/confgure/src",
     "//third_party/pulseaudio/include",
+    media_monitor_client_path,
+    media_monitor_common_path,
   ]
 
   external_deps = [
@@ -250,6 +253,8 @@ ohos_shared_library("audio_policy_service") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_common",
+    "media_foundation:media_monitor_client",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
