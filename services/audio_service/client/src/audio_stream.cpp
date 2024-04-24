@@ -1197,7 +1197,7 @@ void AudioStream::ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize)
 void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
     std::string name = gBundleInfo_.name;
-    int32_t versionCode = gBundleInfo_.versionCode;
+    uint32_t versionCode = gBundleInfo_.versionCode;
     if (buffer[0] == 0) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
