@@ -37,6 +37,9 @@
 #include "power_mgr_client.h"
 #endif
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -2941,6 +2944,20 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
         "SYSVOLUME", systemVolumeLevel,
         "VOLUMEFACTOR", client.volumeFactor_,
         "POWERVOLUMEFACTOR", client.powerVolumeFactor_);
+
+    std::shared_ptr<MediaMonitor::EventBean> bean = std::make_shared<MediaMonitor::EventBean>(
+        MediaMonitor::AUDIO, MediaMonitor::VOLUME_CHANGE,
+        MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", 1);
+    bean->Add("STREAMID", static_cast<int32_t>(client.sessionID_));
+    bean->Add("APP_UID", client.clientUid_);
+    bean->Add("APP_PID", client.clientPid_);
+    bean->Add("STREAMTYPE", client.streamType_);
+    bean->Add("VOLUME", vol);
+    bean->Add("SYSVOLUME", systemVolumeLevel);
+    bean->Add("VOLUMEFACTOR", client.volumeFactor_);
+    bean->Add("POWERVOLUMEFACTOR", client.powerVolumeFactor_);
+    MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType streamType)
