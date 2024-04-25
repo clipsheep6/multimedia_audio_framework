@@ -302,8 +302,7 @@ int32_t AudioSystemManager::GetAsrAecMode(AsrAecMode &asrAecMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     int32_t ret = gasp->GetAsrAecMode(asrAecMode);
-    CHECK_AND_RETURN_RET_LOG(ret == 0,
-                            AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
     return 0;
 }
 
@@ -317,8 +316,7 @@ int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     int32_t ret = gasp->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
-    CHECK_AND_RETURN_RET_LOG(ret == 0,
-                            AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
     return 0;
 }
 
