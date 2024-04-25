@@ -22,7 +22,15 @@
 #include <ctime>
 #include <sys/time.h>
 
+#include <cstdio>
+#include <queue>
+#include <vector>
+#include <list>
+#include <pwd.h>
+#include "securec.h"
+
 #include "audio_info.h"
+#include "audio_log.h"
 
 #define AUDIO_MS_PER_SECOND 1000
 #define AUDIO_US_PER_SECOND 1000000
@@ -51,6 +59,8 @@ const int32_t YEAR_BASE = 1900;
 const int32_t DECIMAL_EXPONENT = 10;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
+// constexpr int STRING_BUFFER_SIZE = 4096;
+const uint32_t STRING_BUFFER_SIZE = 4096;
 
 class Trace {
 public:
@@ -164,6 +174,23 @@ public:
 private:
     static FILE *OpenDumpFileInner(std::string para, std::string fileName, AudioDumpFileType fileType);
     static void ChangeDumpFileState(std::string para, FILE **dumpFile, std::string fileName);
+};
+
+template <typename...Args>
+void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
+{
+    char buf[STRING_BUFFER_SIZE] = {0};
+    int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
+    CHECK_AND_RETURN_LOG(len > 0, "snprintf_s error : buffer allocation fails");
+    out += buf;
+}
+
+class AudioInfoDumpUtils {
+public:
+    static const std::string GetStreamName(AudioStreamType streamType);
+    static const std::string GetDeviceTypeName(DeviceType deviceType);
+    static const std::string GetConnectTypeName(ConnectType connectType);
+    static const std::string GetSourceName(SourceType sourceType);
 };
 
 template<typename T>
