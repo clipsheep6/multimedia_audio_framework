@@ -164,11 +164,21 @@ void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
     SetStreamUsage(rendererInfo.streamUsage);
+    if (GetOffloadEnable()) {
+        rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+    } else if (GetHighResolutionEnabled()) {
+        rendererInfo_.pipeType = PIPE_TYPE_HIGHRESOLUTION;
+    } else if (GetSpatializationEnabled()) {
+        rendererInfo_.pipeType = PIPE_TYPE_SPATIALIZATION;
+    } else {
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL;
+    }
 }
 
 void AudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
+    capturerInfo_.pipeType = PIPE_TYPE_NORMAL;
 }
 
 State AudioStream::GetState()
@@ -1346,6 +1356,21 @@ int32_t AudioStream::NotifyCapturerAdded(uint32_t sessionID)
     streamInfo.samplingRate = static_cast<AudioSamplingRate> (streamParams_.samplingRate);
     streamInfo.channels = static_cast<AudioChannel> (streamParams_.channels);
     return AudioPolicyManager::GetInstance().NotifyCapturerAdded(capturerInfo_, streamInfo, sessionID);
+}
+
+bool AudioStream::GetOffloadEnable()
+{
+    return offloadEnable_;
+}
+
+bool AudioStream::GetSpatializationEnabled()
+{
+    return rendererInfo_.spatializationEnabled;
+}
+
+bool AudioStream::GetHighResolutionEnabled()
+{
+    return AudioPolicyManager::GetInstance().IsHighResolutionExist();
 }
 
 AudioStreamPolicyServiceDiedCallbackImpl::AudioStreamPolicyServiceDiedCallbackImpl()
