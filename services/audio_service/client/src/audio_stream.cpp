@@ -32,6 +32,9 @@
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 using namespace std;
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -1210,6 +1213,13 @@ void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
                 HiviewDFX::HiSysEvent::EventType::STATISTIC,
                 "APP_NAME", name,
                 "APP_VERSION_CODE", versionCode);
+
+            std::shared_ptr<MediaMonitor::EventBean> bean = std::make_shared<MediaMonitor::EventBean>(
+                MediaMonitor::ModuleId::AUDIO, MediaMonitor::EventId::BACKGROUND_SILENT_PLAYBACK,
+                MediaMonitor::EventType::BEHAVIOR_EVENT);
+            bean->Add("APP_NAME", name);
+            bean->Add("APP_VERSION_CODE", versionCode);
+            MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         }
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;
