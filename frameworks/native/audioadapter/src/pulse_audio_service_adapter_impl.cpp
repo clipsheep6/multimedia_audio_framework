@@ -30,6 +30,9 @@
 #include "hisysevent.h"
 #include <set>
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -762,10 +765,20 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     }
     AUDIO_DEBUG_LOG("volume %{public}f for stream uid %{public}d"\
         ", volumeFactor %{public}f, volumeDbCb %{public}f", vol, uid, volumeFactor, volumeDbCb);
-    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
-        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamTypeID, "VOLUME", vol,
-        "SYSVOLUME", volumeLevel, "VOLUMEFACTOR", volumeFactor, "POWERVOLUMEFACTOR", powerVolumeFactor);
+
+    std::shared_ptr<MediaMonitor::EventBean> bean = std::make_shared<MediaMonitor::EventBean>(
+        MediaMonitor::AUDIO, MediaMonitor::VOLUME_CHANGE,
+        MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", 1);
+    bean->Add("STREAMID", static_cast<int32_t>(sessionID));
+    bean->Add("APP_UID", uid);
+    bean->Add("APP_PID", pid);
+    bean->Add("STREAMTYPE", streamTypeID);
+    bean->Add("VOLUME", vol);
+    bean->Add("SYSVOLUME", volumeLevel);
+    bean->Add("VOLUMEFACTOR", volumeFactor);
+    bean->Add("POWERVOLUMEFACTOR", powerVolumeFactor);
+    MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_source_output_info *i, int eol,
