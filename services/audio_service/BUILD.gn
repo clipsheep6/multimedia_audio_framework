@@ -191,6 +191,8 @@ ohos_shared_library("audio_client") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
