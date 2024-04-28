@@ -30,9 +30,32 @@ napi_status NapiAudioError::ThrowError(napi_env env, const char *napiMessage, in
     return napi_ok;
 }
 
+napi_value NapiAudioError::ThrowErrorAndReturn(napi_env env, int32_t errCode)
+{
+    ThrowError(env, errCode);
+    return nullptr;
+}
+
+napi_value NapiAudioError::ThrowErrorAndReturn(napi_env env, int32_t errCode, const std::string &errMessage)
+{
+    ThrowError(env, errCode, errMessage);
+    return nullptr;
+}
+
 void NapiAudioError::ThrowError(napi_env env, int32_t code)
 {
     std::string messageValue = GetMessageByCode(code);
+    napi_throw_error(env, (std::to_string(code)).c_str(), messageValue.c_str());
+}
+
+void NapiAudioError::ThrowError(napi_env env, int32_t code, const std::string &errMessage)
+{
+    std::string messageValue;
+    if (code == NAPI_ERR_INVALID_PARAM || code == NAPI_ERR_INPUT_INVALID) {
+        messageValue = errMessage.c_str();
+    } else {
+        messageValue = GetMessageByCode(code);
+    }
     napi_throw_error(env, (std::to_string(code)).c_str(), messageValue.c_str());
 }
 

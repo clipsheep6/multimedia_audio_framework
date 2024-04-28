@@ -214,12 +214,13 @@ napi_value NapiAsrProcessingController::SetAsrAecMode(napi_env env, napi_callbac
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "argCount invaild");
     int32_t asrAecMode = 0;
     NapiParamUtils::GetValueInt32(env, asrAecMode, argv[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(asrAecMode == 0 || asrAecMode == 1,
-        ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "Input parameter value error. ");
+    CHECK_AND_RETURN_RET_LOG(asrAecMode == 0 || asrAecMode == 1, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be enum AsrAecMode"),
+        "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->SetAsrAecMode(static_cast<AsrAecMode>(asrAecMode));
@@ -257,15 +258,17 @@ napi_value NapiAsrProcessingController::SetAsrNoiseSuppressionMode(napi_env env,
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "argCount invaild");
 
     int32_t asrNoiseSuppressionMode = 0;
     NapiParamUtils::GetValueInt32(env, asrNoiseSuppressionMode, argv[PARAM0]);
 
     const int32_t asrNsModeMax = 3;
     CHECK_AND_RETURN_RET_LOG(asrNoiseSuppressionMode >= 0 && asrNoiseSuppressionMode <= asrNsModeMax,
-        ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "Input parameter value error. ");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of mode must be enum AsrNoiseSuppressionMode"),
+        "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->SetAsrNoiseSuppressionMode(
