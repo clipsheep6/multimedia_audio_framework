@@ -2502,5 +2502,12 @@ int32_t AudioPolicyServer::TriggerFetchDevice()
     }
     return audioPolicyService_.TriggerFetchDevice();
 }
+
+void AudioPolicyServer::NotifyAccountsChanged(const int &id)
+{
+    AUDIO_INFO_LOG("start reload the kv data, current id:%{public}d", id);
+    audioPolicyService_.NotifyAccountsChanged();
+    interruptService_->DeactivateAudioInterruptOnNotifyAccountChanged();
+}
 } // namespace AudioStandard
 } // namespace OHOS
