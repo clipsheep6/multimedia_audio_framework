@@ -1167,5 +1167,13 @@ void AudioInterruptService::AudioInterruptClient::OnInterrupt(const InterruptEve
     }
 }
 
+void AudioInterruptService::DeactivateAudioInterruptOnNotifyAccountChanged()
+{
+    for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
+        for (const auto &audioFocusInfoList : audioInterruptZone->audioFocusInfoList) {
+            DeactivateAudioInterruptInternal(zoneId, audioFocusInfoList.first);
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

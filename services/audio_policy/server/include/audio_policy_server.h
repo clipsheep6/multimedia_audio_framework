@@ -29,6 +29,7 @@
 #include "perm_state_change_callback_customize.h"
 #include "power_state_callback_stub.h"
 #include "power_state_listener.h"
+#include "os_account_manager.h"
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
@@ -381,6 +382,8 @@ public:
 
     int32_t SetHighResolutionExist(bool highResExist) override;
 
+    void NotifyAccountsChanged(const int &id);
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -475,6 +478,9 @@ private:
 
     AudioPolicyService& audioPolicyService_;
     std::shared_ptr<AudioInterruptService> interruptService_;
+#ifdef SUPPORT_USER_ACCOUNT
+    bool isAccountChangeSet_ = false;
+#endif
 
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
@@ -503,6 +509,33 @@ private:
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
     AudioRouterCenter &audioRouterCenter_;
+};
+
+class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
+public:
+    explicit AudioOsAccountInfo(const AccountSA::OsAccountSubscribeInfo &subscribeInfo,
+        AudioPolicyServer *audioPolicyServer) : AccountSA::OsAccountSubscriber(subscribeInfo),
+        audioPolicyServer_(audioPolicyServer) {}
+
+    ~AudioOsAccountInfo()
+    {
+        AUDIO_WARNING_LOG("Destructor AudioOsAccountInfo");
+    }
+
+    void OnAccountsChanged(const int &id) override
+    {
+        AUDIO_INFO_LOG("OnAccountsChanged received, id: %{public}d", id);
+    }
+
+    void OnAccountsSwitch(const int &newId, const int &oldId) override
+    {
+        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldId: %{public}d", newId, oldId);
+        if (audioPolicyServer_ != nullptr) {
+            audioPolicyServer_->NotifyAccountsChanged(newId);
+        }
+    }
+private:
+    AudioPolicyServer *audioPolicyServer_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -163,20 +163,7 @@ void AudioAdapterManager::InitKVStoreInternal()
     CHECK_AND_RETURN_LOG(!isLoaded_, "InitKVStore: the database value is loaded");
 
     AUDIO_INFO_LOG("AudioAdapterManager::%{public}s in", __func__);
-#ifdef SUPPORT_USER_ACCOUNT
-    if (!isAccountChangeSet_) {
-        AccountSA::OsAccountSubscribeInfo osAccountSubscribeInfo;
-        osAccountSubscribeInfo.SetOsAccountSubscribeType(AccountSA::OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED);
-        std::shared_ptr<AudioOsAccountInfo> accountInfoObs =
-            std::make_shared<AudioOsAccountInfo>(osAccountSubscribeInfo, this);
-        ErrCode errCode = AccountSA::OsAccountManager::SubscribeOsAccount(accountInfoObs);
-        if (errCode == SUCCESS) {
-            isAccountChangeSet_ = true;
-        } else {
-            AUDIO_ERR_LOG("SubscribeOsAccount failed");
-        }
-    }
-#endif
+
     bool isFirstBoot = false;
     volumeDataMaintainer_.RegisterCloned();
     InitAudioPolicyKvStore(isFirstBoot);
@@ -554,21 +541,6 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
-#ifdef SUPPORT_USER_ACCOUNT
-    // SubscribeOsAccount again if OsAccountManager didnot start when boot
-    if (!isAccountChangeSet_) {
-        AccountSA::OsAccountSubscribeInfo osAccountSubscribeInfo;
-        osAccountSubscribeInfo.SetOsAccountSubscribeType(AccountSA::OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED);
-        std::shared_ptr<AudioOsAccountInfo> accountInfoObs =
-            std::make_shared<AudioOsAccountInfo>(osAccountSubscribeInfo, this);
-        ErrCode errCode = AccountSA::OsAccountManager::SubscribeOsAccount(accountInfoObs);
-        if (errCode == SUCCESS) {
-            isAccountChangeSet_ = true;
-        } else {
-            AUDIO_ERR_LOG("SubscribeOsAccount failed");
-        }
-    }
-#endif
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
         SetVolumeDb(STREAM_MUSIC);
@@ -1686,9 +1658,8 @@ bool AudioAdapterManager::IsAbsVolumeScene() const
     return isAbsVolumeScene_;
 }
 
-void AudioAdapterManager::NotifyAccountsChanged(const int &id)
+void AudioAdapterManager::NotifyAccountsChanged()
 {
-    AUDIO_INFO_LOG("start reload the kv data, current id:%{public}d", id);
     LoadVolumeMap();
     LoadMuteStatusMap();
 }

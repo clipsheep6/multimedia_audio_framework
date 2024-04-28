@@ -134,6 +134,8 @@ public:
     virtual void SetActiveDevice(DeviceType deviceType) = 0;
 
     virtual DeviceType GetActiveDevice() = 0;
+    
+    virtual void NotifyAccountsChanged() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
