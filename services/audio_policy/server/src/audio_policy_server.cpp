@@ -1882,9 +1882,15 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
     return audioPolicyService_.GetMaxRendererInstances();
 }
 
-void AudioPolicyServer::RegisterDataObserver()
+void AudioPolicyServer::AsyncRegisterDataObserver()
 {
     audioPolicyService_.RegisterDataObserver();
+}
+
+void AudioPolicyServer::RegisterDataObserver()
+{
+    std::thread t(&AudioPolicyServer::AsyncRegisterDataObserver, this);
+    t.detach();
 }
 
 int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)

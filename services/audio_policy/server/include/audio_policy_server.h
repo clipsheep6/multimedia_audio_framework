@@ -453,6 +453,8 @@ private:
     AppExecFwk::BundleInfo GetBundleInfoFromUid();
     int32_t GetApiTargerVersion();
 
+    void AsyncRegisterDataObserver();
+
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);

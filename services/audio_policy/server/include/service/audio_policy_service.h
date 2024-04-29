@@ -438,6 +438,10 @@ public:
 
     int32_t DisableSafeMediaVolume();
 
+    bool GetDataShareHelperState();
+
+    void SetDataShareHelperState(bool state);
+
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args);
 
 private:
@@ -829,6 +833,7 @@ private:
     AudioEffectManager& audioEffectManager_;
 
     bool isMicrophoneMute_ = false;
+    bool isDataShareHelperStarted_ = false;
 
     int wakeupCount_ = 0;
     std::mutex wakeupCountMutex_;

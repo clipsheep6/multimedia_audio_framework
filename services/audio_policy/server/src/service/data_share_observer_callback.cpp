@@ -33,6 +33,7 @@ void DataShareObserverCallBack::OnChange()
     int32_t ret = audioPolicyService_.GetDeviceNameFromDataShareHelper(devicesName);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
     audioPolicyService_.SetDisplayName(devicesName, true);
+    audioPolicyService_.SetDataShareHelperState(true);
 }
 } // namespace AudioStandard
 } // namespace OHOS
