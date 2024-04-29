@@ -23,7 +23,6 @@ ohos_shared_library("audio") {
     debug = false
   }
   include_dirs = [
-    "//third_party/libuv/include",
     "common",
     "audiorenderer",
     "audiorenderer/callback",
@@ -101,6 +100,7 @@ ohos_shared_library("audio") {
     "hilog:libhilog",
     "hiview:libxpower_event_js",
     "napi:ace_napi",
+    "libuv:uv"
   ]
   relative_install_dir = "module/multimedia"
   part_name = "audio_framework"

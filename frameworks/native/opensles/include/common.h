@@ -34,50 +34,58 @@ struct ClassTable;
 
 /** itf struct **/
 
-struct IObject {
+struct IObject
+{
     const struct SLObjectItf_ *mItf;
     CEngine *mEngine;
     const ClassTable *mClass;
     SLuint8 mState;
 };
 
-struct IEngine {
+struct IEngine
+{
     const struct SLEngineItf_ *mItf;
     IObject *mThis;
 };
 
-struct IPlay {
+struct IPlay
+{
     const struct SLPlayItf_ *mItf;
     SLuint32 mState;
     SLuint8 mId;
 };
 
-struct IRecord {
+struct IRecord
+{
     const struct SLRecordItf_ *mItf;
     SLuint32 mState;
     SLuint8 mId;
 };
 
-struct IOHBufferQueue {
+struct IOHBufferQueue
+{
     const struct SLOHBufferQueueItf_ *mItf;
     SLuint32 mState;
     SLInterfaceID mIid;
     SLuint8 mId;
 };
 
-struct IVolume {
+struct IVolume
+{
     const struct SLVolumeItf_ *mItf;
     SLuint8 mId;
 };
 
 /** class struct **/
 
-struct CEngine {
+struct CEngine
+{
     IObject mObject;
     IEngine mEngine;
 };
 
-struct CAudioPlayer {
+struct CAudioPlayer
+{
     IObject mObject;
     IPlay mPlay;
     IVolume mVolume;
@@ -85,18 +93,21 @@ struct CAudioPlayer {
     SLuint32 mId;
 };
 
-struct CAudioRecorder {
+struct CAudioRecorder
+{
     IObject mObject;
     IRecord mRecord;
     IOHBufferQueue mBufferQueue;
     SLuint32 mId;
 };
 
-struct COutputMix {
+struct COutputMix
+{
     IObject mObject;
 };
 
-struct ClassTable {
+struct ClassTable
+{
     SLuint32 mObjectId;
     size_t mSize;
 };
@@ -125,11 +136,11 @@ void IVolumeInit(void *self, SLuint32 id);
 
 void IRecordInit(void *self, SLuint32 id);
 
-SLresult EngineDestory(void* self);
+SLresult EngineDestory(void *self);
 
-SLresult AudioPlayerDestroy(void* self);
+SLresult AudioPlayerDestroy(void *self);
 
-SLresult OutputMixDestroy(void* self);
+SLresult OutputMixDestroy(void *self);
 
 SLresult AudioRecorderDestroy(void *self);
 #endif

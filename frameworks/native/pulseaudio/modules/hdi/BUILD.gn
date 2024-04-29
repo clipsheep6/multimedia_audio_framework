@@ -16,17 +16,12 @@ import("../../../../../config.gni")
 import("../../../../../ressche_part.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 config("hdi_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
     "$pulseaudio_dir/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir",
-    "$pulseaudio_build_path/src",
-    "$pulseaudio_build_path/include",
     "../../../audioschedule/include",
     "../../../hdiadapter/common/include",
     "../../../hdiadapter/sink/bluetooth",
@@ -42,11 +37,8 @@ config("hdi_config") {
     "../../../hdiadapter/source/multichannel",
     "../../../audioeffect/include",
     "../../../playbackcapturer/include",
-    "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include"
   ]
-
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
   cflags = [
     "-Wall",
     "-Werror",
@@ -77,10 +69,6 @@ ohos_shared_library("module-hdi-sink") {
   ]
 
   deps = [
-    "$pulseaudio_build_path/src:pulsecommon",
-    "$pulseaudio_build_path/src/pulse:pulse",
-    "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "${third_party_path}/bounds_checking_function:libsec_shared",
     "../../../audioeffect:audio_effect",
     "../../../audioschedule:audio_schedule",
     "../../../audioutils:audio_utils",
@@ -89,10 +77,14 @@ ohos_shared_library("module-hdi-sink") {
   ]
 
   external_deps = [
+    "pulseaudio:pulse",
     "c_utils:utils",
     "hilog:libhilog",
+    "bounds_checking_function:libsec_shared",
+    "pulseaudio:pulsecommon",
+    "pulseaudio:pulsecore",
+    "drivers_peripheral_audio:audio_primary_driver"
   ]
-
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
   }
@@ -117,15 +109,18 @@ ohos_shared_library("module-hdi-source") {
   cflags = [ "-DPA_MODULE_NAME=libmodule_hdi_source_z_so" ]
 
   deps = [
-    "$pulseaudio_build_path/src:pulsecommon",
-    "$pulseaudio_build_path/src/pulse:pulse",
-    "$pulseaudio_build_path/src/pulsecore:pulsecore",
     "../../../audioeffect:audio_effect",
     "../../../hdiadapter/source:capturer_source_adapter",
-    "//third_party/bounds_checking_function:libsec_shared",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+  "pulseaudio:pulse",
+  "hilog:libhilog",
+  "bounds_checking_function:libsec_shared",
+  "pulseaudio:pulsecore",
+  "pulseaudio:pulsecommon",
+  "drivers_peripheral_audio:audio_primary_driver"
+  ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

@@ -33,9 +33,11 @@ ohos_unittest("audio_manager_unit_test") {
   deps = [
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
-    "../../../../audiorenderer:audio_renderer",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "../../../../audiorenderer:audio_renderer"
   ]
-  external_deps = [ "c_utils:utils" ]
+  external_deps = [ 
+  "c_utils:utils" ,
+  "googletest:gmock",
+  "googletest:gtest"
+  ]
 }

@@ -29,10 +29,6 @@ ohos_unittest("audio_policy_unit_test") {
     "../../../../../../../../foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_pulse_audio ]
-
-  include_dirs += [ multimedia_audio_framework_pulse_audio_src ]
-
   cflags = [
     "-Wall",
     "-Werror",
@@ -52,6 +48,7 @@ ohos_unittest("audio_policy_unit_test") {
     "os_account:os_account_innerkits",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "pulseaudio:pulse"
   ]
   sources = [ "src/audio_policy_unit_test.cpp" ]
 

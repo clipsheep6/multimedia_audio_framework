@@ -73,7 +73,7 @@ ohos_shared_library("fast_audio_renderer_sink") {
 
   deps = [
     "../../audioutils:audio_utils",
-    "//third_party/bounds_checking_function:libsec_shared",
+
   ]
 
   external_deps = [
@@ -81,6 +81,7 @@ ohos_shared_library("fast_audio_renderer_sink") {
     "drivers_interface_audio:audio_idl_headers",
     "drivers_interface_audio:libaudio_proxy_3.0",
     "hilog:libhilog",
+    "bounds_checking_function:libsec_shared"
   ]
   defines = []
   if (audio_framework_feature_power_manager) {
@@ -111,14 +112,11 @@ ohos_shared_library("bluetooth_renderer_sink") {
     "common",
     "../common/include",
     "../../audioutils/include",
-    "../../../../interfaces/inner_api/native/audiocommon/include",
-    "//drivers/peripheral/bluetooth/audio/interfaces/include",
-    "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include"
   ]
 
   deps = [
     "../../audioutils:audio_utils",
-    "//third_party/bounds_checking_function:libsec_shared",
   ]
 
   external_deps = [
@@ -126,6 +124,8 @@ ohos_shared_library("bluetooth_renderer_sink") {
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "hilog:libhilog",
+    "bounds_checking_function:libsec_shared",
+    "drivers_peripheral_bluetooth:audio_bluetooth_hdi_proxy_server"
   ]
   defines = []
   if (audio_framework_feature_power_manager) {
@@ -160,7 +160,6 @@ ohos_shared_library("remote_audio_renderer_sink") {
   ]
 
   deps = [
-    "${third_party_path}/bounds_checking_function:libsec_shared",
     "../../audioutils:audio_utils",
     "../devicemanager:audio_device_manager",
   ]
@@ -169,6 +168,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
     "c_utils:utils",
     "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
     "hilog:libhilog",
+    "bounds_checking_function:libsec_shared"
   ]
   defines = []
   if (audio_framework_feature_daudio_enable) {
@@ -204,7 +204,6 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
   ]
 
   deps = [
-    "${third_party_path}/bounds_checking_function:libsec_shared",
     "../../audioutils:audio_utils",
     "../devicemanager:audio_device_manager",
   ]
@@ -213,6 +212,7 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
     "c_utils:utils",
     "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
     "hilog:libhilog",
+    "bounds_checking_function:libsec_shared"
   ]
   defines = []
   if (audio_framework_feature_daudio_enable) {

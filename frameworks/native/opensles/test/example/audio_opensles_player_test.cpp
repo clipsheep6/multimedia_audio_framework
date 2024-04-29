@@ -15,8 +15,8 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioOpenslesPlayerTest"
 
-#include <OpenSLES.h>
-#include <OpenSLES_OpenHarmony.h>
+#include <1.0.1/OpenSLES.h>
+#include <1.0.1/OpenSLES_OpenHarmony.h>
 
 #include <cstdio>
 #include <climits>
@@ -62,16 +62,19 @@ SLObjectItf pcmPlayerObject2 = nullptr;
 
 int main(int argc, char *argv[])
 {
-    if (argc == 4) {
+    if (argc == 4)
+    {
         size_t headerSize = sizeof(wav_hdr);
         char *inputPath = argv[1];
         char path[PATH_MAX + 1] = {0x00};
-        if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
+        if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr))
+        {
             AUDIO_ERR_LOG("Invalid path");
             return -1;
         }
         wavFile1_ = fopen(path, "rb");
-        if (wavFile1_ == nullptr) {
+        if (wavFile1_ == nullptr)
+        {
             AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
             return -1;
         }
@@ -79,12 +82,14 @@ int main(int argc, char *argv[])
 
         headerSize = sizeof(wav_hdr);
         inputPath = argv[2];
-        if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
+        if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr))
+        {
             AUDIO_ERR_LOG("Invalid path");
             return -1;
         }
         wavFile2_ = fopen(path, "rb");
-        if (wavFile2_ == nullptr) {
+        if (wavFile2_ == nullptr)
+        {
             AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
             return -1;
         }
@@ -92,7 +97,8 @@ int main(int argc, char *argv[])
 
         OpenSlTestConcurrent();
 
-        while (!feof(wavFile1_) || !feof(wavFile2_)) {
+        while (!feof(wavFile1_) || !feof(wavFile2_))
+        {
             sleep(1);
         }
 
@@ -103,19 +109,24 @@ int main(int argc, char *argv[])
         (*engineObject)->Destroy(engineObject);
         (*outputMixObject)->Destroy(outputMixObject);
         return 0;
-    } else {
-        if (argc < 2) {
+    }
+    else
+    {
+        if (argc < 2)
+        {
             return -1;
         }
         size_t headerSize = sizeof(wav_hdr);
         char *inputPath = argv[1];
         char path[PATH_MAX + 1] = {0x00};
-        if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
+        if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr))
+        {
             AUDIO_ERR_LOG("Invalid path");
             return -1;
         }
         wavFile_ = fopen(path, "rb");
-        if (wavFile_ == nullptr) {
+        if (wavFile_ == nullptr)
+        {
             AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
             return -1;
         }
@@ -123,23 +134,27 @@ int main(int argc, char *argv[])
 
         OpenSlTest();
 
-        while (!feof(wavFile_)) {
+        while (!feof(wavFile_))
+        {
             sleep(1);
         }
         PlayerStop(playItf, bufferQueueItf);
         (*pcmPlayerObject)->Destroy(pcmPlayerObject);
 
-        if (argc < 3) {
+        if (argc < 3)
+        {
             return 0;
         }
         char *inputPath2 = argv[2];
         char path2[PATH_MAX + 1] = {0x00};
-        if ((strlen(inputPath2) > PATH_MAX) || (realpath(inputPath2, path2) == nullptr)) {
+        if ((strlen(inputPath2) > PATH_MAX) || (realpath(inputPath2, path2) == nullptr))
+        {
             AUDIO_ERR_LOG("Invalid path");
             return -1;
         }
         wavFile_ = fopen(path2, "rb");
-        if (wavFile_ == nullptr) {
+        if (wavFile_ == nullptr)
+        {
             AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
             return -1;
         }
@@ -147,7 +162,8 @@ int main(int argc, char *argv[])
 
         OpenSlTest();
 
-        while (!feof(wavFile_)) {
+        while (!feof(wavFile_))
+        {
             sleep(1);
         }
         PlayerStop(playItf, bufferQueueItf);
@@ -173,8 +189,7 @@ static void OpenSlTest()
     SLDataSink slSink = {&slOutputMix, nullptr};
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
-        0
-    };
+        0};
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
         wavHeader_.NumOfChan,
@@ -182,8 +197,7 @@ static void OpenSlTest()
         wavHeader_.bitsPerSample,
         0,
         0,
-        0
-    };
+        0};
     SLDataSource slSource = {&slBufferQueue, &pcmFormat};
     (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject, &slSource, &slSink, number, nullptr, nullptr);
     (*pcmPlayerObject)->Realize(pcmPlayerObject, SL_BOOLEAN_FALSE);
@@ -217,8 +231,7 @@ static void OpenSlTestConcurrent()
     SLDataSink slSink = {&slOutputMix, nullptr};
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
-        0
-    };
+        0};
     SLDataFormat_PCM pcmFormat1 = {
         SL_DATAFORMAT_PCM,
         wavHeader1_.NumOfChan,
@@ -226,8 +239,7 @@ static void OpenSlTestConcurrent()
         wavHeader1_.bitsPerSample,
         0,
         0,
-        0
-    };
+        0};
     SLDataFormat_PCM pcmFormat2 = {
         SL_DATAFORMAT_PCM,
         wavHeader2_.NumOfChan,
@@ -235,8 +247,7 @@ static void OpenSlTestConcurrent()
         wavHeader2_.bitsPerSample,
         0,
         0,
-        0
-    };
+        0};
     SLDataSource slSource1 = {&slBufferQueue, &pcmFormat1};
     SLDataSource slSource2 = {&slBufferQueue, &pcmFormat2};
 
@@ -253,13 +264,13 @@ static void OpenSlTestConcurrent()
     SLmillibel level1 = 0;
     (*volumeItf1)->GetMaxVolumeLevel(volumeItf1, &level1);
     SLmillibel temp = 2;
-    level1 = (SLmillibel) (level1 / temp);
+    level1 = (SLmillibel)(level1 / temp);
     (*volumeItf1)->SetVolumeLevel(volumeItf1, level1);
     (*pcmPlayerObject2)->GetInterface(pcmPlayerObject2, SL_IID_VOLUME, &volumeItf2);
     SLmillibel level2 = 0;
     (*volumeItf2)->GetMaxVolumeLevel(volumeItf2, &level2);
     temp = 15; // MaxVolumeLevel
-    level2 = (SLmillibel) (level2 / temp);
+    level2 = (SLmillibel)(level2 / temp);
     (*volumeItf2)->SetVolumeLevel(volumeItf2, level2);
 
     (*pcmPlayerObject1)->GetInterface(pcmPlayerObject1, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf1);
@@ -273,11 +284,13 @@ static void OpenSlTestConcurrent()
 static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
 {
     FILE *wavFile = (FILE *)pContext;
-    if (!feof(wavFile)) {
+    if (!feof(wavFile))
+    {
         SLuint8 *buffer = nullptr;
         SLuint32 bufferSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, &bufferSize);
-        if (buffer != nullptr) {
+        if (buffer != nullptr)
+        {
             fread(buffer, 1, size, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         }
