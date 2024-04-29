@@ -69,7 +69,8 @@
             "samgr",
             "sensor",
             "window_manager",
-            "os_account"
+            "os_account",
+            "media_foundation"
             ],
           "third_party": [
             "bounds_checking_function",
