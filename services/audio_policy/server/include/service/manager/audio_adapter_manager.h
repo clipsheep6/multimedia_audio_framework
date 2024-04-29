@@ -149,7 +149,7 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
-    int32_t Dump(int32_t fd, const std::vector<std::u16string> &args);
+    void SafeVolumeDump(std::string &dumpString);
 
     int32_t DoRestoreData();
     SafeStatus GetCurrentDeviceSafeStatus(DeviceType deviceType);
@@ -163,6 +163,9 @@ public:
     int32_t GetSafeVolumeLevel() const;
 
     int32_t GetSafeVolumeTimeout() const;
+
+    int32_t GetCurActivateCount(void) const;
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -280,6 +283,7 @@ private:
 #ifdef SUPPORT_USER_ACCOUNT
     bool isAccountChangeSet_ = false;
 #endif
+    int32_t curActiveCount_ = 0;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
