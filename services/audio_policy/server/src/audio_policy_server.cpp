@@ -121,6 +121,20 @@ void AudioPolicyServer::OnStart()
 {
     AUDIO_INFO_LOG("OnStart");
 
+#ifdef SUPPORT_USER_ACCOUNT
+    if (!isAccountChangeSet_) {
+        AccountSA::OsAccountSubscribeInfo osAccountSubscribeInfo;
+        osAccountSubscribeInfo.SetOsAccountSubscribeType(AccountSA::OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED);
+        std::shared_ptr<AudioOsAccountInfo> accountInfoObs =
+            std::make_shared<AudioOsAccountInfo>(osAccountSubscribeInfo, this);
+        ErrCode errCode = AccountSA::OsAccountManager::SubscribeOsAccount(accountInfoObs);
+        if (errCode == SUCCESS) {
+            isAccountChangeSet_ = true;
+        } else {
+            AUDIO_ERR_LOG("SubscribeOsAccount failed");
+        }
+    }
+#endif
     interruptService_ = std::make_shared<AudioInterruptService>();
     interruptService_->Init(this);
 
@@ -2487,6 +2501,13 @@ int32_t AudioPolicyServer::TriggerFetchDevice()
         return ERROR;
     }
     return audioPolicyService_.TriggerFetchDevice();
+}
+
+void AudioPolicyServer::NotifyAccountsChanged(const int &id)
+{
+    AUDIO_INFO_LOG("start reload the kv data, current id:%{public}d", id);
+    audioPolicyService_.NotifyAccountsChanged();
+    interruptService_->DeactivateAudioInterruptOnNotifyAccountChanged();
 }
 } // namespace AudioStandard
 } // namespace OHOS
