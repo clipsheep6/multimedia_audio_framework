@@ -200,7 +200,7 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckPlaySignal(uint8_t *buffer, size_t bufferSize);
-    void CheckRecordSignal(uint8_t *buffer, size_t bufferSize);
+    void CheckRecordSignal(uint8_t *buffer, size_t bufferSize);   
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 private:
