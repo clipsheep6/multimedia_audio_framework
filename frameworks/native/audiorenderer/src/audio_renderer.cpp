@@ -191,7 +191,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     }
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    AUDIO_INFO_LOG("create audiorenderer with usage: %{public}d, content: %{public}d, flags: %{public}d, "\
+    AUDIO_INFO_LOG("AudioRenderer::Create with usage: %{public}d, content: %{public}d, flags: %{public}d, "\
         "uid: %{public}d", streamUsage, contentType, rendererFlags, appInfo.appUid);
 
     audioRenderer->rendererInfo_.contentType = contentType;
@@ -493,7 +493,8 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Start");
 
-    AUDIO_INFO_LOG("AudioRenderer::Start id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("AudioRenderer::Start id: %{public}u, streamType: %{public}d, interruptMode: %{public}d",
+        sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
 
     RendererState state = GetStatus();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
@@ -501,9 +502,6 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
         "Start failed. Switching state: %{public}d", isSwitching_);
-
-    AUDIO_INFO_LOG("interruptMode: %{public}d, streamType: %{public}d, sessionID: %{public}d",
-        audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionId);
 
     if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
         audioInterrupt_.sessionId == INVALID_SESSION_ID) {

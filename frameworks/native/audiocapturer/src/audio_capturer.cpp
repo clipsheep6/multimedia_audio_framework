@@ -107,14 +107,12 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 
     auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
 
-    if (capturer == nullptr) {
-        return capturer;
-    }
-
+    CHECK_AND_RETURN_RET_LOG(capturer != nullptr, nullptr, "Failed to create capturer object");
     if (!cachePath.empty()) {
         AUDIO_DEBUG_LOG("Set application cache path");
         capturer->cachePath_ = cachePath;
     }
+    AUDIO_INFO_LOG("AudioCapturer::Create with sourceType: %{public}d, uid: %{public}d", sourceType, appInfo.appUid);
 
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
 
@@ -425,7 +423,8 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 
 bool AudioCapturerPrivate::Start() const
 {
-    AUDIO_INFO_LOG("AudioCapturer::Start %{public}u", sessionID_);
+    AUDIO_INFO_LOG("AudioCapturer::Start id %{public}u, sourceType: %{public}d",
+        sessionID_, audioInterrupt_.audioFocusType.sourceType);
 
     if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
         bool recordingStateChange = audioStream_->CheckRecordingStateChange(appInfo_.appTokenId,
@@ -436,8 +435,6 @@ bool AudioCapturerPrivate::Start() const
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         audioInterrupt_.sessionId != INVALID_SESSION_ID, false);
 
-    AUDIO_INFO_LOG("sourceType: %{public}d, sessionID: %{public}d",
-        audioInterrupt_.audioFocusType.sourceType, audioInterrupt_.sessionId);
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
 
