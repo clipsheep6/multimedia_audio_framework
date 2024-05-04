@@ -562,12 +562,22 @@ private:
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
+    bool NotifyRecreateRendererStream(bool isUpdateActiveDevice,
+        const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+
+    void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag);
+
     void FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 
     void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+
+    bool NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
+        const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
+
+    void TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag);
 
     void FetchDevice(bool isOutputDevice = true,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -752,6 +762,8 @@ private:
     int32_t CheckActiveMusicTime();
 
     int32_t ShowDialog();
+
+    bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
 
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 

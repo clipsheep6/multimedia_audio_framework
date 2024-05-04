@@ -1929,6 +1929,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
                 MuteSinkPort(desc);
             }
         }
+        if (NotifyRecreateRendererStream(isUpdateActiveDevice, rendererChangeInfo)) { continue; }
         SelectNewOutputDevice(rendererChangeInfo, desc, reason);
     }
     sameDeviceSwitchFlag_ = false;
@@ -1937,6 +1938,50 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     }
     if (runningStreamCount == 0) {
         FetchOutputDeviceWhenNoRunningStream();
+    }
+}
+
+bool AudioPolicyService::NotifyRecreateRendererStream(bool isUpdateActiveDevice,
+    const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+{
+    AUDIO_INFO_LOG("Is update active device: %{public}d, current rendererFlag: %{public}d, origianl flag: %{public}d",
+        isUpdateActiveDevice, rendererChangeInfo->rendererInfo.rendererFlags,
+        rendererChangeInfo->rendererInfo.originalFlag);
+    CHECK_AND_RETURN_RET_LOG(isUpdateActiveDevice, false, "isUpdateActiveDevice is false");
+    CHECK_AND_RETURN_RET_LOG(rendererChangeInfo->rendererInfo.originalFlag == AUDIO_FLAG_MMAP, false,
+        "original flag is false");
+    // both latency devices && different hal
+    bool currentSupportLatency = HasLowLatencyCapability(currentActiveDevice_.deviceType_,
+        currentActiveDevice_.networkId_ != LOCAL_NETWORK_ID);
+    AUDIO_INFO_LOG("Is old device support low latency: %{public}d, current device suport low latency: %{public}d",
+        rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice, currentSupportLatency);
+    if (rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice && currentSupportLatency) {
+        if ((strcmp(GetSinkPortName(rendererChangeInfo->outputDeviceInfo.deviceType).c_str(),
+            GetSinkPortName(currentActiveDevice_.deviceType_).c_str())) ||
+            ((rendererChangeInfo->outputDeviceInfo.networkId == LOCAL_NETWORK_ID) ^
+            (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID))) {
+            TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid,
+                rendererChangeInfo->sessionId, AUDIO_FLAG_MMAP);
+            return true;
+        }
+    }
+    if (rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice ^ currentSupportLatency) {
+        TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
+            currentSupportLatency ? AUDIO_FLAG_MMAP : AUDIO_FLAG_NORMAL);
+        return true;
+    }
+    return false;
+}
+
+void AudioPolicyService::TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag)
+{
+    Trace trace("AudioPolicyService::TriggerRecreateRendererStreamCallback");
+    AUDIO_INFO_LOG("Trigger recreate renderer stream, pid: %{public}d, sessionId: %{public}d, flag: %{public}d",
+        callerPid, sessionId, streamFlag);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, streamFlag);
+    } else {
+        AUDIO_WARNING_LOG("No audio policy server handler");
     }
 }
 
@@ -2039,6 +2084,9 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
             }
             needUpdateActiveDevice = false;
         }
+        if (NotifyRecreateCapturerStream(isUpdateActiveDevice, capturerChangeInfo)) {
+            continue;
+        }
         // move sourceoutput to target device
         SelectNewInputDevice(capturerChangeInfo, desc);
         AddAudioCapturerMicrophoneDescriptor(capturerChangeInfo->sessionId, desc->deviceType_);
@@ -2048,6 +2096,50 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
     }
     if (runningStreamCount == 0) {
         FetchInputDeviceWhenNoRunningStream();
+    }
+}
+
+bool AudioPolicyService::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
+    const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
+{
+    AUDIO_INFO_LOG("Is update active device: %{public}d, current capturerFlag: %{public}d, origianl flag: %{public}d",
+        isUpdateActiveDevice, capturerChangeInfo->capturerInfo.capturerFlags,
+        capturerChangeInfo->capturerInfo.originalFlag);
+    CHECK_AND_RETURN_RET_LOG(isUpdateActiveDevice, false, "isUpdateActiveDevice is false");
+    CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
+        "original flag is false");
+    // both latency devices && different hal
+    bool currentSupportLatency = HasLowLatencyCapability(currentActiveDevice_.deviceType_,
+        currentActiveDevice_.networkId_ != LOCAL_NETWORK_ID);
+    AUDIO_INFO_LOG("Is old device support low latency: %{public}d, current device suport low latency: %{public}d",
+        capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice, currentSupportLatency);
+    if (capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice && currentSupportLatency) {
+        if ((strcmp(GetSinkPortName(capturerChangeInfo->inputDeviceInfo.deviceType).c_str(),
+            GetSinkPortName(currentActiveDevice_.deviceType_).c_str())) ||
+            ((capturerChangeInfo->inputDeviceInfo.networkId == LOCAL_NETWORK_ID) ^
+            (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID))) {
+            TriggerRecreateCapturerStreamCallback(capturerChangeInfo->callerPid,
+                capturerChangeInfo->sessionId, AUDIO_FLAG_MMAP);
+            return true;
+        }
+    }
+    if (capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice ^ currentSupportLatency) {
+        TriggerRecreateCapturerStreamCallback(capturerChangeInfo->callerPid, capturerChangeInfo->sessionId,
+            currentSupportLatency ? AUDIO_FLAG_MMAP : AUDIO_FLAG_NORMAL);
+        return true;
+    }
+    return false;
+}
+
+void AudioPolicyService::TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag)
+{
+    Trace trace("AudioPolicyService::TriggerRecreateCapturerStreamCallback");
+    AUDIO_INFO_LOG("Trigger recreate capturer stream, pid: %{public}d, sessionId: %{public}d, flag: %{public}d",
+        callerPid, sessionId, streamFlag);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(callerPid, sessionId, streamFlag);
+    } else {
+        AUDIO_WARNING_LOG("No audio policy server handler");
     }
 }
 
@@ -3969,7 +4061,7 @@ static void UpdateCapturerInfoWhenNoPermission(const unique_ptr<AudioCapturerCha
     }
 }
 
-static bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote)
+bool AudioPolicyService::HasLowLatencyCapability(DeviceType deviceType, bool isRemote)
 {
     // Distributed devices are low latency devices
     if (isRemote) {
