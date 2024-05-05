@@ -27,6 +27,7 @@
 
 #include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
+#include "audio_server_dump.h"
 #include "audio_system_manager.h"
 #include "i_audio_renderer_sink.h"
 #include "i_audio_capturer_source.h"
@@ -133,6 +134,7 @@ public:
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

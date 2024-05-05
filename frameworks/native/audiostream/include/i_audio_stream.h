@@ -223,6 +223,13 @@ public:
     virtual void SetStreamTrackerState(bool trackerRegisteredState) = 0;
     virtual void GetSwitchInfo(SwitchInfo& info) = 0;
 
+    // for get pipetype
+    virtual bool GetOffloadEnable() = 0;
+
+    virtual bool GetSpatializationEnabled() = 0;
+
+    virtual bool GetHighResolutionEnabled() = 0;
+
     //for wakeup capturer
     virtual void SetWakeupCapturerState(bool isWakeupCapturer) = 0;
 
