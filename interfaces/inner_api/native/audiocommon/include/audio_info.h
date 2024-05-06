@@ -314,6 +314,8 @@ struct AudioRendererInfo {
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     std::string appName = "";
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
+    AudioSampleFormat format = SAMPLE_U8;
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
@@ -324,7 +326,9 @@ struct AudioRendererInfo {
             && parcel.WriteBool(headTrackingEnabled)
             && parcel.WriteInt32(static_cast<int32_t>(pipeType))
             && parcel.WriteString(appName)
-            && parcel.WriteInt32(static_cast<int32_t>(samplingRate));
+            && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
+            && parcel.WriteInt32(static_cast<int32_t>(format))
+            && parcel.WriteInt32(static_cast<int32_t>(channelLayout));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -337,6 +341,8 @@ struct AudioRendererInfo {
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         appName = parcel.ReadString();
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+        channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt32());
     }
 };
 
@@ -347,6 +353,8 @@ public:
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     std::string appName = "";
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
+    AudioSampleFormat format = SAMPLE_U8;
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
     AudioCapturerInfo(const AudioCapturerInfo &audioCapturerInfo)
@@ -361,7 +369,9 @@ public:
             && parcel.WriteInt32(capturerFlags)
             && parcel.WriteInt32(static_cast<int32_t>(pipeType))
             && parcel.WriteString(appName)
-            && parcel.WriteInt32(static_cast<int32_t>(samplingRate));
+            && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
+            && parcel.WriteInt32(static_cast<int32_t>(format))
+            && parcel.WriteInt32(static_cast<int32_t>(channelLayout));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -370,6 +380,8 @@ public:
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         appName = parcel.ReadString();
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+        channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt32());
     }
 };
 
