@@ -14,6 +14,7 @@
  */
 
 #include <mutex>
+#include <unistd.h>
 #include <gtest/gtest.h>
 
 #include "audio_errors.h"
@@ -35,6 +36,7 @@ namespace AudioStandard {
 namespace {
 const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
 constexpr uint32_t STREAM_FAST = 1;
+constexpr int64_t FAST_SINK_RELEASE_WAIT_IN_US = 11000000;
 const int32_t VALUE_THOUSAND = 1000;
 const int32_t VALUE_ZERO = 0;
 static size_t g_reqBufLen = 0;
@@ -123,6 +125,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_001, TestSize.Level0)
     EXPECT_EQ(0.5, volume1);
 
     audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
 }
 
 /**
@@ -155,6 +158,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_002, TestSize.Level0)
     ret = audioRenderer->GetParams(getRendererParams);
     EXPECT_EQ(SUCCESS, ret);
     audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
 }
 
 /**
@@ -203,6 +207,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_003, TestSize.Level1)
     EXPECT_GE(written, ERR_INVALID_OPERATION);
 
     audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
 }
 
 /**
@@ -229,6 +234,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_004, TestSize.Level1)
     EXPECT_EQ(false, getAudioTime);
 
     audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
 }
 
 /**
@@ -290,6 +296,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
 
     audioRenderer->Stop();
     audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
 }
 
 /**
@@ -323,6 +330,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_006, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
 }
 
 /**
@@ -364,6 +372,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_007, TestSize.Level1)
     EXPECT_EQ(true, isPaused);
 
     audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
 }
 
 /**
@@ -398,6 +407,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_008, TestSize.Level1)
     EXPECT_EQ(true, isFlushed1);
 
     audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
 }
 
 /**
@@ -438,6 +448,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_009, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     bool isReleased = audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
     EXPECT_EQ(true, isReleased);
 
     bool isStopped = audioRenderer->Stop();
@@ -474,6 +485,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_010, TestSize.Level1)
     EXPECT_EQ(true, isStopped);
 
     audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
 }
 
 /**
@@ -542,6 +554,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
 
     audioRenderer->Stop();
     audioRenderer->Release();
+    usleep(FAST_SINK_RELEASE_WAIT_IN_US);
 }
 } // namespace AudioStandard
 } // namespace OHOS
