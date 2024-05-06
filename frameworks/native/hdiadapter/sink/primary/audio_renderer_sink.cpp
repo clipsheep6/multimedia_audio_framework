@@ -45,6 +45,9 @@ namespace AudioStandard {
 namespace {
 const int32_t HALF_FACTOR = 2;
 const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
+const int32_t MAX_RENDERER_TIME = 100;
+const int32_t RENDER_TIMEOUT_TIMES_THRESHOLD = 50;
+const int32_t RENDER_TIMES_THRESHOLD = 100;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -181,6 +184,8 @@ private:
     float rightVolume_;
     int32_t routeHandle_ = -1;
     int32_t logMode_ = 0;
+    int32_t renderEventNum_ = 0;
+    int32_t overlongRenderEventNum_ = 0;
     uint32_t openSpeaker_;
     uint32_t renderId_ = 0;
     std::string adapterNameCase_;
@@ -235,6 +240,7 @@ private:
     int32_t SetAudioAttrInfo(AudioSampleAttributes &attrInfo);
     std::string GetAudioAttrInfo();
     int32_t GetCurDeviceParam(char *keyValueList);
+    void CheckRenderDuration(int64_t stamp);
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -663,8 +669,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 {
     int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
-        "Audio Render Handle is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Audio Render Handle is nullptr!");
 
     if (!started_) {
         AUDIO_WARNING_LOG("AudioRendererSinkInner::RenderFrame invalid state! not started");
@@ -705,14 +710,27 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED,
-        "RenderFrame failed ret: %{public}x", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrame failed ret: %{public}x", ret);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     if (logMode_) {
         AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     }
+    CheckRenderDuration(stamp);
     return SUCCESS;
+}
+
+void AudioRendererSinkInner::CheckRenderDuration(int64_t stamp)
+{
+    if (stamp > MAX_RENDERER_TIME && overlongRenderEventNum_++ >= RENDER_TIMEOUT_TIMES_THRESHOLD) {
+        AUDIO_ERR_LOG("Render frame timeout, %{public}d in %{public}d", overlongRenderEventNum_, renderEventNum_);
+        renderEventNum_ = 0;
+        overlongRenderEventNum_ = 0;
+    }
+    if (renderEventNum_++ >= RENDER_TIMES_THRESHOLD) {
+        renderEventNum_ = 0;
+        overlongRenderEventNum_ = 0;
+    }
 }
 
 void AudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)

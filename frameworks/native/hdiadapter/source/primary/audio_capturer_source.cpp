@@ -42,6 +42,9 @@ namespace {
     const int64_t SECOND_TO_NANOSECOND = 1000000000;
     const unsigned int DEINIT_TIME_OUT_SECONDS = 5;
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
+    const int32_t MAX_CAPTURE_TIME = 100;
+    const int32_t CAPTURE_TIMEOUT_TIMES_THRESHOLD = 50;
+    const int32_t CAPTURE_TIMES_THRESHOLD = 100;
 }
 class AudioCapturerSourceInner : public AudioCapturerSource {
 public:
@@ -102,6 +105,7 @@ private:
     void CheckLatencySignal(uint8_t *frames, size_t replyBytes);
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
+    void CheckCaptureDuration(int64_t stamp);
 
     IAudioSourceAttr attr_;
     bool sourceInited_;
@@ -113,6 +117,8 @@ private:
 
     int32_t routeHandle_ = -1;
     int32_t logMode_ = 0;
+    int32_t captureEventNum_ = 0;
+    int32_t overlongCaptureEventNum_ = 0;
     uint32_t openMic_;
     uint32_t captureId_ = 0;
     std::string adapterNameCase_;
@@ -592,7 +598,21 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     if (logMode_) {
         AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
     }
+    CheckCaptureDuration(stamp);
     return SUCCESS;
+}
+
+void AudioCapturerSourceInner::CheckCaptureDuration(int64_t stamp)
+{
+    if (stamp > MAX_CAPTURE_TIME && overlongCaptureEventNum_++ >= CAPTURE_TIMEOUT_TIMES_THRESHOLD) {
+        AUDIO_ERR_LOG("Capture frame timeout, %{public}d in %{public}d", overlongCaptureEventNum_, captureEventNum_);
+        captureEventNum_ = 0;
+        overlongCaptureEventNum_ = 0;
+    }
+    if (captureEventNum_++ >= CAPTURE_TIMES_THRESHOLD) {
+        captureEventNum_ = 0;
+        overlongCaptureEventNum_ = 0;
+    }
 }
 
 void AudioCapturerSourceInner::CheckUpdateState(char *frame, uint64_t replyBytes)
