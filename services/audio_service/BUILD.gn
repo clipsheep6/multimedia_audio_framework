@@ -28,6 +28,8 @@ group("audio_service_packages") {
 ohos_shared_library("audio_common") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
 
@@ -243,6 +245,7 @@ ohos_shared_library("audio_process_service") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -310,6 +313,7 @@ ohos_shared_library("audio_service") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -394,6 +398,7 @@ ohos_shared_library("audio_sasdk") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
 
