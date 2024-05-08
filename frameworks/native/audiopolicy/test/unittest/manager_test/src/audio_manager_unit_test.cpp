@@ -74,6 +74,7 @@ AudioRendererOptions AudioManagerUnitTest::InitializeRendererOptionsForMusic()
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = 0;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
     return rendererOptions;
 }
 
@@ -87,6 +88,7 @@ AudioRendererOptions AudioManagerUnitTest::InitializeRendererOptionsForRing()
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_RINGTONE;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
     rendererOptions.rendererInfo.rendererFlags = 0;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
     return rendererOptions;
 }
 
@@ -1559,6 +1561,7 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = 0;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1802,6 +1805,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = 0;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1842,6 +1846,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_002, TestSize.Level1)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = 0;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1880,6 +1885,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_003, TestSize.Level1)
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, appInfo);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1920,6 +1926,7 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = 0;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1962,6 +1969,7 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_002, TestSize.Level1)
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, appInfo);
     ASSERT_NE(nullptr, audioCapturer);
@@ -2006,6 +2014,7 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = 0;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
     ASSERT_NE(nullptr, audioRenderer);
@@ -2048,6 +2057,7 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_002, TestSize.Level1)
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, appInfo);
     ASSERT_NE(nullptr, audioCapturer);

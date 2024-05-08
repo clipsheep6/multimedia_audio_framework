@@ -340,6 +340,7 @@ public:
         rendererOptions.rendererInfo.contentType = contentType;
         rendererOptions.rendererInfo.streamUsage = streamUsage;
         rendererOptions.rendererInfo.rendererFlags = 0;
+        rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
 

@@ -57,6 +57,7 @@ void AudioRendererMultithreadTest::InitializeRendererOptions(AudioRendererOption
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     return;
 }

@@ -533,6 +533,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_006, TestSize.Level1)
     capturerOptions.streamInfo.channels = AudioChannel::STEREO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -712,6 +713,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCapturerInfo_001, TestSize.Level
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -738,6 +740,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCapturerInfo_002, TestSize.Level
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -769,6 +772,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCapturerInfo_003, TestSize.Level
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -797,6 +801,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCapturerInfo_004, TestSize.Level
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -829,6 +834,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCapturerInfo_Stability_001, Test
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -858,6 +864,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_001, TestSize.Level1)
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -888,6 +895,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_002, TestSize.Level1)
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -925,6 +933,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_003, TestSize.Level1)
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -968,6 +977,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Renderer_GetStreamInfo_Stability_001, TestSi
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -996,6 +1006,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetBufferDuration_001, TestSize.Lev
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1191,6 +1202,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_001, TestSize.L
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1216,6 +1228,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_002, TestSize.L
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1241,6 +1254,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_003, TestSize.L
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1273,6 +1287,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_004, TestSize.L
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1302,6 +1317,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCaptureMode_001, TestSize.Level1
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1327,6 +1343,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCaptureMode, TestSize.Level1)
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1414,6 +1431,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_AudioCapturerCallback_001, TestSize
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
     appInfo.appTokenId = VALUE_THOUSAND;
     appInfo.appUid = static_cast<int32_t>(getuid());
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, appInfo);

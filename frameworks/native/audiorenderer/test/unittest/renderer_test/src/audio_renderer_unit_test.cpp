@@ -99,6 +99,7 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     return;
 }
@@ -112,6 +113,8 @@ void AudioRendererUnitTest::InitializeRendererSpatialOptions(AudioRendererOption
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
+
     return;
 }
 
@@ -329,6 +332,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_008, TestSize.Level0)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -358,6 +362,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_009, TestSize.Level0)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MOVIE;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -387,6 +392,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_010, TestSize.Level0)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_RINGTONE;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -416,6 +422,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_011, TestSize.Level0)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MOVIE;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -445,6 +452,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_012, TestSize.Level0)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -474,6 +482,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_013, TestSize.Level0)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SPEECH;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -503,6 +512,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_014, TestSize.Level0)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -4130,6 +4140,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_001, TestSize.L
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -4156,6 +4167,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_002, TestSize.L
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -4182,6 +4194,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_003, TestSize.L
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -4215,6 +4228,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_004, TestSize.L
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -4705,6 +4719,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_001, TestSize.Level
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -4733,6 +4748,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_002, TestSize.Level
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -4766,6 +4782,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_003, TestSize.Level
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -4796,6 +4813,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_004, TestSize.Level
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -4831,6 +4849,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_Stability_001, Test
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -4862,6 +4881,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_001, TestSize.Level1)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -4893,6 +4913,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_002, TestSize.Level1)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -4930,6 +4951,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_003, TestSize.Level1)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -4960,6 +4982,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_004, TestSize.Level1)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -4999,6 +5022,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_005, TestSize.Level1)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -5039,6 +5063,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_Stability_001, TestSi
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -5074,6 +5099,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetBufferDuration_001, TestSize.Lev
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -5108,6 +5134,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetBufferDuration_002, TestSize.Lev
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -5322,6 +5349,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_SamplingRate_001, Test
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -5415,6 +5443,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_001, TestSize
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -5460,6 +5489,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_002, TestSize
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -5497,6 +5527,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_003, TestSize
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -5532,6 +5563,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_004, TestSize
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
@@ -6683,6 +6715,7 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     rendererOptionsForVoip.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
     rendererOptionsForVoip.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
     rendererOptionsForVoip.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptionsForVoip.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
     ASSERT_NE(nullptr, audioRendererForVoip);
@@ -6702,6 +6735,7 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     rendererOptionsForVoice.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
     rendererOptionsForVoice.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
     rendererOptionsForVoice.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptionsForVoice.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
     ASSERT_NE(nullptr, audioRendererForVoiceCall);
@@ -6733,6 +6767,7 @@ HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
     rendererOptionsForVoice.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
     rendererOptionsForVoice.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
     rendererOptionsForVoice.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptionsForVoice.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
     ASSERT_NE(nullptr, audioRendererForVoiceCall);
@@ -6748,6 +6783,7 @@ HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
     rendererOptionsForVoip.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
     rendererOptionsForVoip.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
     rendererOptionsForVoip.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptionsForVoip.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
     ASSERT_NE(nullptr, audioRendererForVoip);

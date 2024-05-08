@@ -58,6 +58,7 @@ AudioRendererOptions AudioCaptureRendererUnitTest::UTCreateAudioRenderer(StreamU
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
     rendererOptions.rendererInfo.streamUsage = streamUsage;
     rendererOptions.rendererInfo.rendererFlags = 0;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
     return rendererOptions;
 }
 
@@ -69,6 +70,7 @@ AudioCapturerOptions AudioCaptureRendererUnitTest::UTCreateAudioCapturer(SourceT
     capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = sourceType;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
     return capturerOptions;
 }
 

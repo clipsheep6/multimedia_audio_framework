@@ -77,6 +77,7 @@ void AudioStreamManagerUnitTest::InitializeRendererOptions(AudioRendererOptions 
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
     return;
 }
 
@@ -106,6 +107,7 @@ void AudioStreamManagerUnitTest::InitializeCapturerOptions(AudioCapturerOptions 
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
     return;
 }
 
