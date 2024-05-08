@@ -487,7 +487,7 @@ int32_t AudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
-        "Write not supported. RenderMode is callback");
+        "Write not supported. StreamCategory is callback");
 
     CHECK_AND_RETURN_RET_LOG((buffer != nullptr) && (bufferSize > 0),
         ERR_INVALID_PARAM, "Invalid buffer size:%{public}zu", bufferSize);
@@ -530,7 +530,7 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
 int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
-        "Write not supported. RenderMode is callback");
+        "Write not supported. StreamCategory is callback");
 
     if (state_ != RUNNING) {
         AUDIO_ERR_LOG("Write: Illegal state:%{public}u, sessionId: %{public}u", state_, sessionId_);

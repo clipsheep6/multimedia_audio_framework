@@ -20,6 +20,7 @@
 #include "audio_policy_client.h"
 #include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
+#include "audio_concurrency_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -90,6 +91,7 @@ private:
         std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
     AudioSystemManager *audioSystemMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+    std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -95,6 +95,8 @@ AudioStreamCollector::AudioStreamCollector() : audioSystemMgr_
     (AudioSystemManager::GetInstance())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
+    audioConcurrencyService_->Init();
     AUDIO_INFO_LOG("AudioStreamCollector()");
 }
 
