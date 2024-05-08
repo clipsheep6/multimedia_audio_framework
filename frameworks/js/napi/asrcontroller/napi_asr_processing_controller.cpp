@@ -302,7 +302,7 @@ napi_value NapiAsrProcessingController::GetAsrNoiseSuppressionMode(napi_env env,
 
 napi_value NapiAsrProcessingController::SetAsrWhisperMode(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), 
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
