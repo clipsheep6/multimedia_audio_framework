@@ -66,6 +66,7 @@ namespace AudioStandard {
         GET_ASR_AEC_MODE,
         SET_ASR_NOISE_SUPPRESSION_MODE,
         GET_ASR_NOISE_SUPPRESSION_MODE,
+        SET_ASR_WHISPER_MODE,
         IS_WHISPERING,
         AUDIO_SERVER_CODE_MAX = IS_WHISPERING,
     };

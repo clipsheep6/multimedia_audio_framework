@@ -95,6 +95,7 @@ napi_status NapiAsrProcessingController::InitNapiAsrProcessingController(napi_en
         DECLARE_NAPI_FUNCTION("getAsrAecMode", GetAsrAecMode),
         DECLARE_NAPI_FUNCTION("setAsrNoiseSuppressionMode", SetAsrNoiseSuppressionMode),
         DECLARE_NAPI_FUNCTION("getAsrNoiseSuppressionMode", GetAsrNoiseSuppressionMode),
+        DECLARE_NAPI_FUNCTION("setAsrWhisperMode", SetAsrWhisperMode),
         DECLARE_NAPI_FUNCTION("isWhispering", IsWhispering),
     };
 
@@ -296,6 +297,33 @@ napi_value NapiAsrProcessingController::GetAsrNoiseSuppressionMode(napi_env env,
     CHECK_AND_RETURN_RET_LOG(res == 0, ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED),
         "Operation not allowed");
     NapiParamUtils::SetValueInt32(env, int32_t(asrNoiseSuppressionMode), result);
+    return result;
+}
+
+napi_value NapiAsrProcessingController::SetAsrWhisperMode(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), 
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {};
+    auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "argCount invaild");
+    int32_t asrWhisperMode = 0;
+    NapiParamUtils::GetValueInt32(env, asrWhisperMode, argv[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(asrWhisperMode == 0 || asrWhisperMode == 1,
+        ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "Input parameter value error. ");
+    CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
+    int32_t res = napiAsrController->audioMngr_->SetAsrWhisperMode(static_cast<AsrWhisperMode>(asrWhisperMode));
+    bool setSuc = true;
+    if (res == 0) {
+        setSuc = true;
+    } else {
+        setSuc = false;
+    }
+    NapiParamUtils::SetValueBoolean(env, setSuc, result);
     return result;
 }
 

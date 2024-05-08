@@ -80,6 +80,7 @@ public:
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
     int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
     int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
+    int32_t SetAsrWhisperMode(AsrWhisperMode asrWhisperMode) override;
     int32_t IsWhispering() override;
 
     void NotifyDeviceInfo(std::string networkId, bool connected) override;

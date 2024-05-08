@@ -658,6 +658,14 @@ public:
      * @param value The value of the set audio parameter.
      * @since 12
      */
+    int32_t SetAsrWhisperMode(const AsrWhisperMode asrWhisperMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
     int32_t IsWhispering();
 
     /**

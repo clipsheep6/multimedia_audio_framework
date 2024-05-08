@@ -323,6 +323,12 @@ int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &
     return 0;
 }
 
+int32_t AudioSystemManager::SetAsrWhisperMode(const AsrWhisperMode asrWhisperMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    return gasp->SetAsrWhisperMode(asrWhisperMode);
+}
+
 int32_t AudioSystemManager::IsWhispering()
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
