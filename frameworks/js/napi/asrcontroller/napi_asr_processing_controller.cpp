@@ -308,7 +308,7 @@ napi_value NapiAsrProcessingController::SetAsrWhisperMode(napi_env env, napi_cal
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
         "argCount invaild");
     int32_t asrWhisperMode = 0;
     NapiParamUtils::GetValueInt32(env, asrWhisperMode, argv[PARAM0]);
