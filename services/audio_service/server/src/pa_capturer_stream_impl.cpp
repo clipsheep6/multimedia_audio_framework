@@ -402,6 +402,8 @@ void PaCapturerStreamImpl::PAStreamStartSuccessCb(pa_stream *stream, int32_t suc
         return;
     }
 
+    // test
+
     PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
     streamImpl->state_ = RUNNING;
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
