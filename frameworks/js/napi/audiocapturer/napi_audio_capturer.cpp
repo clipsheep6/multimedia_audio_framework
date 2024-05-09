@@ -1058,6 +1058,9 @@ void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_valu
     AUDIO_INFO_LOG("Register Callback is successful");
     AUDIO_INFO_LOG("Register Callback is successful");
     AUDIO_INFO_LOG("Register Callback is successful");
+    AUDIO_INFO_LOG("Register Callback is successful");
+    AUDIO_INFO_LOG("Register Callback is successful");
+    AUDIO_INFO_LOG("Register Callback is successful");
 }
 
 napi_value NapiAudioCapturer::Off(napi_env env, napi_callback_info info)
