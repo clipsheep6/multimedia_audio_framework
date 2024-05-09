@@ -141,6 +141,7 @@ RendererInClientInner::~RendererInClientInner()
     DumpFileUtil::CloseDumpFile(&dumpOutFd_);
     RendererInClientInner::ReleaseAudioStream(true);
     std::lock_guard<std::mutex> runnerlock(runnerMutex_);
+    //111
     if (!runnerReleased_ && callbackHandler_ != nullptr) {
         AUDIO_INFO_LOG("runner remove");
         callbackHandler_->ReleaseEventRunner();
