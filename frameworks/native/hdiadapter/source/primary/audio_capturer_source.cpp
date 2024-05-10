@@ -552,8 +552,9 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     }
     deviceDesc.desc = (char *)"";
 
+    AUDIO_INFO_LOG("CreateCapture for audioAdapter_: audio sourceType %{public}d, hdi sourceType %{public}d",
+        attr_.sourceType, param.sourceType);
     ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
-    AUDIO_DEBUG_LOG("CreateCapture param.sourceType: %{public}d", param.sourceType);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr && ret >= 0, ERR_NOT_STARTED, "Create capture failed");
 
     return 0;
