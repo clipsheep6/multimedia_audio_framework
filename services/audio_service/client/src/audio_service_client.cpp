@@ -2024,6 +2024,48 @@ void AudioServiceClient::HandleCapturePositionCallbacks(size_t bytesRead)
     }
 }
 
+int32_t AudioServiceClient::HandleReadStreamBlocking(size_t readSize, bool isBlocking)
+{
+    if (isBlocking) {
+        StartTimer(READ_TIMEOUT_IN_SEC);
+        pa_threaded_mainloop_wait(mainLoop);
+        StopTimer();
+        if (IsTimeOut()) {
+            AUDIO_ERR_LOG("Read timeout");
+            pa_threaded_mainloop_unlock(mainLoop);
+            readTimeoutCount_++;
+            if (readTimeoutCount_ >= MAX_COUNT_OF_READING_TIMEOUT) {
+                AUDIO_ERR_LOG("The maximum of timeout count has been exceeded. Restart pulseaudio!");
+                audioSystemManager_->GetAudioParameter(DUMP_AND_RECOVERY_AUDIO_SERVER);
+            }
+            return AUDIO_CLIENT_READ_STREAM_ERR;
+        }
+        readTimeoutCount_ = 0; // Reset the timeout count if IsTimeOut() is false.
+    }
+    pa_threaded_mainloop_unlock(mainLoop);
+    HandleCapturePositionCallbacks(readSize);
+    readTimeoutCount_ = 0; // Reset the timeout count if isBlocking is false.
+    return readSize;
+}
+
+int32_t AudioServiceClient::ReadStreamInternal(size_t readSize, bool isBlocking)
+{
+    if (internalRdBufLen_ <= 0) {
+        int32_t ret = HandleReadStreamBlocking(readSize, isBlocking);
+        return ret;
+    } else if (!internalReadBuffer_) {
+        int32_t retVal = pa_stream_drop(paStream);
+        if (retVal < 0) {
+            AUDIO_ERR_LOG("pa_stream_drop failed, retVal: %{public}d", retVal);
+            pa_threaded_mainloop_unlock(mainLoop);
+            return AUDIO_CLIENT_READ_STREAM_ERR;
+        }
+    }
+    internalRdBufIndex_ = 0;
+    AUDIO_DEBUG_LOG("buffer size from PA: %{public}zu", internalRdBufLen_);
+    return SUCCESS;
+}
+
 int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
 {
     uint8_t *buffer = stream.buffer;
@@ -2042,40 +2084,8 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                 pa_threaded_mainloop_unlock(mainLoop);
                 return AUDIO_CLIENT_READ_STREAM_ERR;
             }
-
-            if (internalRdBufLen_ <= 0) {
-                if (isBlocking) {
-                    StartTimer(READ_TIMEOUT_IN_SEC);
-                    pa_threaded_mainloop_wait(mainLoop);
-                    StopTimer();
-                    if (IsTimeOut()) {
-                        AUDIO_ERR_LOG("Read timeout");
-                        pa_threaded_mainloop_unlock(mainLoop);
-                        readTimeoutCount_++;
-                        if (readTimeoutCount_ >= MAX_COUNT_OF_READING_TIMEOUT) {
-                            AUDIO_ERR_LOG("The maximum of timeout count has been exceeded. Restart pulseaudio!");
-                            audioSystemManager_->GetAudioParameter(DUMP_AND_RECOVERY_AUDIO_SERVER);
-                        }
-                        return AUDIO_CLIENT_READ_STREAM_ERR;
-                    }
-                    readTimeoutCount_ = 0; // Reset the timeout count if IsTimeOut() is false.
-                } else {
-                    pa_threaded_mainloop_unlock(mainLoop);
-                    HandleCapturePositionCallbacks(readSize);
-                    readTimeoutCount_ = 0; // Reset the timeout count if isBlocking is false.
-                    return readSize;
-                }
-            } else if (!internalReadBuffer_) {
-                retVal = pa_stream_drop(paStream);
-                if (retVal < 0) {
-                    AUDIO_ERR_LOG("pa_stream_drop failed, retVal: %{public}d", retVal);
-                    pa_threaded_mainloop_unlock(mainLoop);
-                    return AUDIO_CLIENT_READ_STREAM_ERR;
-                }
-            } else {
-                internalRdBufIndex_ = 0;
-                AUDIO_DEBUG_LOG("buffer size from PA: %{public}zu", internalRdBufLen_);
-            }
+            ret = ReadStreamInternal(readSize, isBlocking);
+            CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
         }
 
         if (UpdateReadBuffer(buffer, length, readSize) != 0) {

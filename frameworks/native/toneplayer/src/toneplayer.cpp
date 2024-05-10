@@ -480,6 +480,28 @@ void TonePlayerPrivate::AudioToneRendererCallback()
     AUDIO_DEBUG_LOG("AudioToneRendererCallback Exited");
 }
 
+bool TonePlayerPrivate::AudioToneSequenceGenInternal(uint32_t reqSamples, bool &retVal,
+    uint32_t totalBufAvailable, BufferDesc &bufDesc)
+{
+    if (tonePlayerState_ == TONE_PLAYER_STOPPED) {
+        tonePlayerState_ = TONE_PLAYER_INIT;
+        totalBufAvailable = 0;
+        bufDesc.dataLength = 0;
+        AUDIO_DEBUG_LOG("Notifing all the STOP");
+        mutexLock_.unlock();
+        waitAudioCbkCond_.notify_all();
+        mutexLock_.lock();
+        if (audioRenderer_ != nullptr) {
+            retVal = audioRenderer_->Stop();
+        } else {
+            AUDIO_ERR_LOG("AudioToneSequenceGen audioRenderer_ is null");
+        }
+        mutexLock_.unlock();
+        return false;
+    }
+    return true;
+}
+
 bool TonePlayerPrivate::AudioToneSequenceGen(BufferDesc &bufDesc)
 {
     int8_t *audioBuffer = (int8_t *)bufDesc.buffer;
@@ -500,22 +522,8 @@ bool TonePlayerPrivate::AudioToneSequenceGen(BufferDesc &bufDesc)
                 mutexLock_.unlock();
                 break;
             }
-            if (tonePlayerState_ == TONE_PLAYER_STOPPED) {
-                tonePlayerState_ = TONE_PLAYER_INIT;
-                totalBufAvailable = 0;
-                bufDesc.dataLength = 0;
-                AUDIO_DEBUG_LOG("Notifing all the STOP");
-                mutexLock_.unlock();
-                waitAudioCbkCond_.notify_all();
-                mutexLock_.lock();
-                if (audioRenderer_ != nullptr) {
-                    retVal = audioRenderer_->Stop();
-                } else {
-                    AUDIO_ERR_LOG("AudioToneSequenceGen audioRenderer_ is null");
-                }
-                mutexLock_.unlock();
-                return false;
-            }
+            retVal = AudioToneSequenceGenInternal(reqSamples, retVal, totalBufAvailable, bufDesc);
+            CHECK_AND_RETURN_RET(retVal == true, false);
         } else if (CheckToneStarted(reqSamples, audioBuffer)) {
             bufDesc.dataLength += reqSamples * sizeof(int16_t);
             lSignal = true;
