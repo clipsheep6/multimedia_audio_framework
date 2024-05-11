@@ -3383,6 +3383,10 @@ void AudioPolicyService::RegisterNameMonitorHelper()
 void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
+        if (!isDataShareHelperStarted_) {
+            AUDIO_WARNING_LOG("Data share helper has not been started yet");
+            return;
+        }
         std::string devicesName = "";
         int32_t ret = GetDeviceNameFromDataShareHelper(devicesName);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local init device failed");
@@ -5290,11 +5294,19 @@ int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& s
 void AudioPolicyService::RegisterDataObserver()
 {
     std::string devicesName = "";
-    int32_t ret = GetDeviceNameFromDataShareHelper(devicesName);
-    AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", devicesName.c_str());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
-    SetDisplayName(devicesName, true);
+    int32_t ret;
+    for (int32_t tryCount = 0; tryCount < 3; tryCount++) { // Max try count is 3
+        ret = GetDeviceNameFromDataShareHelper(devicesName);
+        if (ret == SUCCESS) {
+            break;
+        }
+        AUDIO_ERR_LOG("Local UpdateDisplayName init device failed");
+    }
     RegisterNameMonitorHelper();
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
+    AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", devicesName.c_str());
+    SetDisplayName(devicesName, true);
+    isDataShareHelperStarted_ = true;
 }
 
 int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
@@ -6158,6 +6170,16 @@ int32_t AudioPolicyService::DisableSafeMediaVolume()
     isDialogSelectDestroy_.store(true);
     dialogSelectCondition_.notify_all();
     return SUCCESS;
+}
+
+bool AudioPolicyService::GetDataShareHelperState()
+{
+    return isDataShareHelperStarted_;
+}
+
+void AudioPolicyService::SetDataShareHelperState(bool state)
+{
+    isDataShareHelperStarted_ = state;
 }
 
 int32_t AudioPolicyService::Dump(int32_t fd, const std::vector<std::u16string> &args)
