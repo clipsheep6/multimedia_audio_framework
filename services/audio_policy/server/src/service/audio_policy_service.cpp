@@ -7253,5 +7253,23 @@ bool AudioPolicyService::LoadToneDtmfConfig()
     }
     return true;
 }
+
+int32_t AudioPolicyService::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+{
+    AUDIO_INFO_LOG("lxj AudioPolicyService in");
+    return streamCollector_.SetAudioConcurrencyCallback(sessionID, object);
+}
+
+int32_t AudioPolicyService::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("lxj unset AudioPolicyService in");
+    return streamCollector_.UnsetAudioConcurrencyCallback(sessionID);
+}
+
+int32_t AudioPolicyService::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    AUDIO_INFO_LOG("lxj unset AudioPolicyService in");
+    return streamCollector_.ActivateAudioConcurrency(pipeType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -285,6 +285,12 @@ public:
     virtual int32_t UnsetAudioDeviceRefinerCallback() = 0;
 
     virtual int32_t TriggerFetchDevice() = 0;
+
+    virtual int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) = 0;
+
+    virtual int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) = 0;
     
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");

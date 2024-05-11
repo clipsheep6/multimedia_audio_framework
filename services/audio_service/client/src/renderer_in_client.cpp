@@ -222,6 +222,8 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         AUDIO_INFO_LOG("Calling register tracker, sessionid is %{public}d", sessionId_);
         AudioRegisterTrackerInfo registerTrackerInfo;
 
+        //UpdateAudioPipeType();
+
         rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
         rendererInfo_.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
         registerTrackerInfo.sessionId = sessionId_;
@@ -263,6 +265,9 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         AUDIO_ERR_LOG("Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
     }
+
+    /*int32_t concurrencyCheckRet = ActivateAudioConcurrency();
+    CHECK_AND_RETURN_RET_LOG(concurrencyCheckRet == SUCCESS, concurrencyCheckRet, "lxj concede incoming");*/
 
     streamParams_ = curStreamParams_ = info; // keep it for later use
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
@@ -566,6 +571,11 @@ int32_t RendererInClientInner::GetAudioSessionID(uint32_t &sessionID)
         "State error %{public}d", state_.load());
     sessionID = sessionId_;
     return SUCCESS;
+}
+
+void RendererInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
+{
+    pipeType = rendererInfo_.pipeType;
 }
 
 State RendererInClientInner::GetState()
@@ -2132,6 +2142,18 @@ void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool 
     gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
 }
 
+int32_t RendererInClientInner::ActivateAudioConcurrency()
+{
+    AudioPipeType targetPipe = PIPE_TYPE_NORMAL_OUT;
+    if (IsHightResolution()) {
+        targetPipe = PIPE_TYPE_DIRECT_OUT;
+    }
+    if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        targetPipe = PIPE_TYPE_CALL_OUT;
+    }
+    return AudioPolicyManager::GetInstance().ActivateAudioConcurrency(targetPipe);
+}
+
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()
 {
     AUDIO_INFO_LOG("Instance create");
@@ -2240,6 +2262,16 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+void RendererInClientInner::UpdateAudioPipeType()
+{
+    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
+        return;
+    }
+    //check if is direct
 }
 
 RendererInClientPolicyServiceDiedCallbackImpl::RendererInClientPolicyServiceDiedCallbackImpl()

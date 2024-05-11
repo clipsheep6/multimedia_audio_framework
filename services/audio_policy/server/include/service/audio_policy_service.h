@@ -489,6 +489,11 @@ public:
     bool IsStreamSupported(AudioStreamType streamType);
     int32_t GetCurActivateCount();
 
+    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
+
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
+
+    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
