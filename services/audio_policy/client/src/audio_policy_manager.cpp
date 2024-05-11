@@ -1618,5 +1618,37 @@ int32_t AudioPolicyManager::MoveToNewPipe(const uint32_t sessionId, const AudioP
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->MoveToNewPipe(sessionId, pipeType);
 }
+int32_t AudioPolicyManager::SetAudioConcurrencyCallback(const uint32_t sessionID,
+    const std::shared_ptr<AudioConcurrencyCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "lxj audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "lxj callback is nullptr");
+
+    sptr<AudioConcurrencyStateListenerStub> listener = new(std::nothrow) AudioConcurrencyStateListenerStub();
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "lxj object null");
+    listener->SetConcurrencyCallback(callback);
+
+    sptr<IRemoteObject> object = listener->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "lxj listenerStub->AsObject is nullptr.");
+
+    return gsp->SetAudioConcurrencyCallback(sessionID, object); 
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("lxj unset cb");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "lxj audio policy manager proxy is NULL.");
+    return gsp->UnsetAudioConcurrencyCallback(sessionID);
+}
+
+int32_t AudioPolicyManager::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->ActivateAudioConcurrency(pipeType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

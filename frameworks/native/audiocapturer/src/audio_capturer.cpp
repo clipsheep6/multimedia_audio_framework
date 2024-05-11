@@ -251,6 +251,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         streamClass = GetPreferredStreamClass(audioStreamParams);
     }
+    ActivateAudioConcurrency(streamClass);
 
     // check AudioStreamParams for fast stream
     if (audioStream_ == nullptr) {
@@ -325,6 +326,7 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UpdatePlaybackCaptureConfig Failed");
     }
     InitLatencyMeasurement(audioStreamParams);
+    InitAudioConcurrencyCallback();
     return ret;
 }
 
@@ -589,6 +591,12 @@ bool AudioCapturerPrivate::Release()
 
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
+
+    std::shared_ptr<AudioCapturerConcurrencyCallbackImpl> cb = audioConcurrencyCallback_;
+    if (cb != nullptr) {
+        cb->UnsetAudioCapturerObj();
+        AudioPolicyManager::GetInstance().UnsetAudioConcurrencyCallback(sessionID_);
+    }
 
     RemoveCapturerPolicyServiceDiedCallback();
 
@@ -1128,6 +1136,64 @@ void AudioCapturerPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Register device change callback for new session failed");
     ret = AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unregister device change callback for old session failed");
+}
+
+void AudioCapturerPrivate::ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass)
+{
+    if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;
+    } else if (streamClass == IAudioStream::FAST_STREAM) {
+        capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY_IN;
+    }
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(capturerInfo_.pipeType);
+    if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
+        streamClass = IAudioStream::PA_STREAM;
+        capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
+    }
+    return;
+}
+
+int32_t AudioCapturerPrivate::InitAudioConcurrencyCallback()
+{
+    if (audioConcurrencyCallback_ == nullptr) {
+        audioConcurrencyCallback_ = std::make_shared<AudioCapturerConcurrencyCallbackImpl>();
+        CHECK_AND_RETURN_RET_LOG(audioConcurrencyCallback_ != nullptr, ERROR, "Memory Allocation Failed !!");
+    }
+    CHECK_AND_RETURN_RET_LOG(audioStream_->GetAudioSessionID(sessionID_) == SUCCESS, ERR_INVALID_INDEX,
+        "Get session id failed!");
+    audioConcurrencyCallback_->SetAudioCapturerObj(this);
+    AUDIO_INFO_LOG("lxj session: %{public}u", sessionID_);
+    return AudioPolicyManager::GetInstance().SetAudioConcurrencyCallback(sessionID_, audioConcurrencyCallback_);
+}
+
+void AudioCapturerPrivate::ConcedeStream()
+{
+    AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
+    audioStream_->GetAudioPipeType(pipeType);
+    switch (pipeType) {
+        case PIPE_TYPE_LOWLATENCY_IN:
+            SwitchStream(sessionID_, IAudioStream::PA_STREAM);            
+            break;
+        default:
+            break;
+    } 
+}
+
+AudioCapturerConcurrencyCallbackImpl::AudioCapturerConcurrencyCallbackImpl()
+{
+    AUDIO_INFO_LOG("lxj AudioCapturerConcurrencyCallbackImpl ctor");
+}
+
+AudioCapturerConcurrencyCallbackImpl::~AudioCapturerConcurrencyCallbackImpl()
+{
+    AUDIO_INFO_LOG("lxj AudioCapturerConcurrencyCallbackImpl dtor");
+}
+
+void AudioCapturerConcurrencyCallbackImpl::OnConcedeStream()
+{
+    AUDIO_INFO_LOG("lxj capturerCbImpl OnConcede");
+    std::lock_guard<std::mutex> lock(mutex_);
+    capturer_->ConcedeStream();
 }
 
 AudioCapturerStateChangeCallbackImpl::AudioCapturerStateChangeCallbackImpl()
