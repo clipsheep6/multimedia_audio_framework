@@ -1076,13 +1076,27 @@ enum RenderMode {
      * Offload render mode.
      * @since 12
      */
-    OFFLOAD,
+    //OFFLOAD,
     /**
      * Low latency render mode.
      * @since 12
      */
     LOW_LATENCY,
 };
+
+enum StreamCategory {
+    PRIMARY_OUT,
+    PRIMARY_IN,
+    LOWLATENCY_OUT,
+    LOWLATENCY_IN,
+    OFFLOAD,
+    MULTICHANNEL,
+    DIRECT_OUT,
+    DIRECT_IN,
+    CALL_OUT,
+    CALL_IN,
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

@@ -28,9 +28,9 @@ public:
     DISALLOW_COPY_AND_MOVE(AudioRoutingManagerListenerProxy);
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> desciptor, const CastType type) override;
     int32_t OnAudioOutputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, RenderMode renderMode) override;
+        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, StreamCategory streamCategory) override;
     int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, SourceType sourceType, int32_t clientUid, RenderMode renderMode) override;
+        RouterType routerType, SourceType sourceType, int32_t clientUid, StreamCategory streamCategory) override;
 
 private:
     static inline BrokerDelegator<AudioRoutingManagerListenerProxy> delegator_;
