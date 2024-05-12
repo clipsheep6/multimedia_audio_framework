@@ -1975,8 +1975,7 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
             int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
                 GetEncryptAddr(desc->macAddress_).c_str());
-            if (rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_MMAP &&
-                a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+            if (rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
                 const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
                 CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
                 gsp->ResetAudioEndpoint();
