@@ -1451,7 +1451,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         time(&g_effectStartVolZeroTimeMap[i]);
     }
 
-    char *sinkSceneType = SCENE_TYPE_SET[i];
+    char *sinkSceneType;
     if (g_effectAllStreamVolumeZeroMap[i] && difftime(currentTime, g_effectStartVolZeroTimeMap[i]) >
         WAIT_CLOSE_PA_OR_EFFECT_TIME) {
         sinkSceneType = SCENE_TYPE_SET[SCENE_TYPE_NUM - 1]; // EFFECT_NONE
