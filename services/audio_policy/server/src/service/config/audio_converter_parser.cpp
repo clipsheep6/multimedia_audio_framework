@@ -24,6 +24,9 @@
 #include "config_policy_utils.h"
 #endif
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -193,6 +196,13 @@ ConverterConfig AudioConverterParser::LoadConfig()
     ConverterConfig &result = *cfg_;
 
     ParseEffectConfigFile(doc);
+    if (doc == nullptr) {
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
+            Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_CONVERTER_CONFIG);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    }
     CHECK_AND_RETURN_RET_LOG(doc != nullptr, result, "error: could not parse file %{public}s",
         AUDIO_CONVERTER_CONFIG_FILE);
 

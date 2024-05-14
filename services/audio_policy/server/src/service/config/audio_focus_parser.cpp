@@ -20,6 +20,9 @@
 #include "config_policy_utils.h"
 #endif
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -135,6 +138,10 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
     if (path == nullptr || *path == '\0' || (doc = xmlReadFile(path, nullptr, 0)) == nullptr) {
         AUDIO_ERR_LOG("error: could not parse audio_interrupt_policy_config.xml");
         LoadDefaultConfig(focusMap);
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR, Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_INTERRUPT_POLICY_CONFIG);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         return ERROR;
     }
 
@@ -143,6 +150,10 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
     CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");
     if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_focus_policy"))) {
         AUDIO_ERR_LOG("Missing tag - focus_policy in : %s", AUDIO_FOCUS_CONFIG_FILE);
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR, Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_INTERRUPT_POLICY_CONFIG);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         xmlFreeDoc(doc);
         xmlCleanupParser();
         return ERROR;

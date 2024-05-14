@@ -19,9 +19,12 @@
 
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_tools.h"
 #include "audio_focus_parser.h"
 #include "audio_policy_manager_listener_proxy.h"
 #include "audio_utils.h"
+#include "media_monitor_manager.h"
+#include "event_bean.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,9 +83,25 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
 
     // load configuration
     std::unique_ptr<AudioFocusParser> parser = make_unique<AudioFocusParser>();
+    if (parser == nullptr) {
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_SERVICE_STARTUP_ERROR,
+            Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID));
+        bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_INTERRUPT_SERVER));
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    }
     CHECK_AND_RETURN_LOG(parser != nullptr, "create parser failed");
-
-    CHECK_AND_RETURN_LOG(!parser->LoadConfig(focusCfgMap_), "load fail");
+    int32_t ret = parser->LoadConfig(focusCfgMap_);
+    if (ret) {
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_SERVICE_STARTUP_ERROR,
+            Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID));
+        bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_INTERRUPT_SERVER));
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    }
+    CHECK_AND_RETURN_LOG(!ret, "load fail");
 
     AUDIO_DEBUG_LOG("configuration loaded. mapSize: %{public}zu", focusCfgMap_.size());
 
@@ -1109,6 +1128,16 @@ int32_t AudioInterruptService::ArchiveToNewAudioInterruptZone(const int32_t &fro
         zonesMap_.insert_or_assign(toZoneId, audioInterruptZone);
         zonesMap_.erase(fromZoneIt);
     }
+
+    auto uid = IPCSkeleton::GetCallingUid();
+    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid(uid);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_FOCUS_MIGRATE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("APP_NAME", bundleInfo.name);
+    bean->Add("MIGRATE_DIRECTION", toZoneId);
+    bean->Add("DEVICE_DESC", (toZoneId == 1) ? REMOTE_NETWORK_ID : LOCAL_NETWORK_ID);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 
     return SUCCESS;
 }

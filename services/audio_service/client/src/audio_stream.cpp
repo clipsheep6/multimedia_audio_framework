@@ -22,15 +22,13 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "audio_tools.h"
 #include "parameters.h"
 #include "audio_stream.h"
 #include "hisysevent.h"
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
-
-#include "bundle_mgr_interface.h"
-#include "bundle_mgr_proxy.h"
 
 #include "media_monitor_manager.h"
 #include "event_bean.h"
@@ -48,46 +46,10 @@ const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_MS = 80;
 constexpr int32_t CB_READ_BUFFERS_WAIT_IN_MS = 80;
-constexpr unsigned int GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS = 10;
 #ifdef SONIC_ENABLE
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 #endif
 static AppExecFwk::BundleInfo gBundleInfo_;
-
-static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
-{
-    AudioXCollie audioXCollie("AudioStream::GetBundleInfoFromUid", GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS);
-
-    std::string bundleName {""};
-    AppExecFwk::BundleInfo bundleInfo;
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (systemAbilityManager == nullptr) {
-        return bundleInfo;
-    }
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (remoteObject == nullptr) {
-        return bundleInfo;
-    }
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    if (bundleMgrProxy == nullptr) {
-        return bundleInfo;
-    }
-    if (bundleMgrProxy != nullptr) {
-        bundleMgrProxy->GetNameForUid(appUid, bundleName);
-    }
-
-    bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
-        bundleInfo,
-        AppExecFwk::Constants::ALL_USERID);
-
-    return bundleInfo;
-}
 
 AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid)
     : eStreamType_(eStreamType),
@@ -180,6 +142,8 @@ void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
     } else {
         rendererInfo_.pipeType = PIPE_TYPE_NORMAL;
     }
+    rendererInfo_.appName = gBundleInfo_.name;
+    rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
 }
 
 void AudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)

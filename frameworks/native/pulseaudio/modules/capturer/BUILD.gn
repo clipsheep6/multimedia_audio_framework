@@ -50,6 +50,7 @@ ohos_shared_library("module-inner-capturer-sink") {
   deps = [ "../../../audioutils:audio_utils" ]
 
   external_deps = [
+    "c_utils:utils",
     "hilog:libhilog",
     "pulseaudio:pulse",
     "pulseaudio:pulsecommon",

@@ -463,7 +463,6 @@ private:
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);
 
-    AppExecFwk::BundleInfo GetBundleInfoFromUid();
     int32_t GetApiTargerVersion();
 
     // externel function call

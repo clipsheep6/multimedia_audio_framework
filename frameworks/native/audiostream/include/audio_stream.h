@@ -123,7 +123,6 @@ public:
     int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
 
     bool RestoreAudioStream() override;
-
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;

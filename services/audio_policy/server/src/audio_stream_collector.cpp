@@ -23,6 +23,8 @@
 #include "i_standard_client_tracker.h"
 #include "hisysevent.h"
 #include "audio_spatialization_service.h"
+#include "media_monitor_manager.h"
+#include "event_bean.h"
 
 #include "media_monitor_manager.h"
 #include "event_bean.h"
@@ -843,6 +845,15 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
         if ((*it)->clientUID == uid || uid == 0) {
             (*it)->muted = muteStatus;
             capturerInfoUpdated = true;
+            std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+                Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::CAPTURE_MUTE_STATUS_CHANGE,
+                Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+            bean->Add("ISOUTPUT", 0);
+            bean->Add("STREAMID", (*it)->sessionId);
+            bean->Add("STREAM_TYPE", (*it)->capturerInfo.sourceType);
+            bean->Add("DEVICETYPE", (*it)->inputDeviceInfo.deviceType);
+            bean->Add("MUTED", (*it)->muted);
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         }
     }
 
@@ -881,7 +892,7 @@ void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInf
     bean->Add("STREAMTYPE", streamType);
     bean->Add("STATE", streamChangeInfo.audioRendererChangeInfo.rendererState);
     bean->Add("DEVICETYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType);
-    bean->Add("DEVICECATEGORY", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceCategory);
+    bean->Add("BT_TYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceCategory);
     bean->Add("APP_NAME", streamChangeInfo.audioRendererChangeInfo.rendererInfo.appName);
     bean->Add("PIPE_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType);
     bean->Add("STREAM_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
@@ -909,7 +920,7 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
     bean->Add("STREAMTYPE", streamType);
     bean->Add("STATE", streamChangeInfo.audioCapturerChangeInfo.capturerState);
     bean->Add("DEVICETYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType);
-    bean->Add("DEVICECATEGORY", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceCategory);
+    bean->Add("BT_TYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceCategory);
     bean->Add("APP_NAME", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.appName);
     bean->Add("PIPE_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.pipeType);
     bean->Add("STREAM_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
@@ -939,7 +950,7 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
     bean->Add("STREAMTYPE", streamType);
     bean->Add("STATE", audioRendererChangeInfo->rendererState);
     bean->Add("DEVICETYPE", audioRendererChangeInfo->outputDeviceInfo.deviceType);
-    bean->Add("DEVICECATEGORY", audioRendererChangeInfo->outputDeviceInfo.deviceCategory);
+    bean->Add("BT_TYPE", audioRendererChangeInfo->outputDeviceInfo.deviceCategory);
     bean->Add("APP_NAME", audioRendererChangeInfo->rendererInfo.appName);
     bean->Add("PIPE_TYPE", audioRendererChangeInfo->rendererInfo.pipeType);
     bean->Add("STREAM_TYPE", audioRendererChangeInfo->rendererInfo.streamUsage);
@@ -966,7 +977,7 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
     bean->Add("STREAMTYPE", streamType);
     bean->Add("STATE", audioCapturerChangeInfo->capturerState);
     bean->Add("DEVICETYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceType);
-    bean->Add("DEVICECATEGORY", audioCapturerChangeInfo->inputDeviceInfo.deviceCategory);
+    bean->Add("BT_TYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceCategory);
     bean->Add("APP_NAME", audioCapturerChangeInfo->capturerInfo.appName);
     bean->Add("PIPE_TYPE", audioCapturerChangeInfo->capturerInfo.pipeType);
     bean->Add("STREAM_TYPE", audioCapturerChangeInfo->capturerInfo.sourceType);

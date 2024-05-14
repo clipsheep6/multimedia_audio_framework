@@ -23,6 +23,7 @@
 #include <climits>
 #include <string>
 #include "audio_utils_c.h"
+#include "audio_tools.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #ifdef FEATURE_HITRACE_METER
@@ -37,10 +38,41 @@
 #include "xcollie/xcollie_define.h"
 #include "securec.h"
 
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+
 using OHOS::Security::AccessToken::AccessTokenKit;
 
 namespace OHOS {
 namespace AudioStandard {
+
+
+AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
+{
+    std::string bundleName {""};
+    AppExecFwk::BundleInfo bundleInfo;
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, bundleInfo, "systemAbilityManager is nullptr");
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleInfo, "remoteObject is nullptr");
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, bundleInfo, "bundleMgrProxy is nullptr");
+
+    bundleMgrProxy->GetNameForUid(appUid, bundleName);
+
+    bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
+        bundleInfo,
+        AppExecFwk::Constants::ALL_USERID);
+
+    return bundleInfo;
+}
+
 int64_t ClockTime::GetCurNano()
 {
     int64_t result = -1; // -1 for bad result.

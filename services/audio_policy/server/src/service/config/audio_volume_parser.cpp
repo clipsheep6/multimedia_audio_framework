@@ -20,6 +20,9 @@
 #include "config_policy_utils.h"
 #endif
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 namespace OHOS {
 namespace AudioStandard {
 AudioVolumeParser::AudioVolumeParser()
@@ -58,6 +61,11 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
     CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");
     if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_volume_config"))) {
         AUDIO_ERR_LOG("Missing tag - audio_volume_config in : %s", path);
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
+            Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_VOLUME_CONFIG);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         xmlFreeDoc(doc);
         xmlCleanupParser();
         return ERROR;
@@ -66,6 +74,11 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
         currNode = currNode->children;
     } else {
         AUDIO_ERR_LOG("empty volume config in : %s", path);
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
+            Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_VOLUME_CONFIG);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         xmlFreeDoc(doc);
         xmlCleanupParser();
         return ERROR;
