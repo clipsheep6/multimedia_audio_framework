@@ -778,6 +778,8 @@ private:
     void GetOffloadCurrentTimeStamp(uint64_t paTimeStamp, uint64_t paWriteIndex, uint64_t &outTimeStamp);
     void GetOffloadApproximatelyCacheTime(uint64_t timestamp, uint64_t paWriteIndex, uint64_t &cacheTimePaDsp);
     int32_t CreateStreamWithPa(AudioStreamParams audioParams, AudioStreamType audioType);
+    int32_t HandleReadStreamBlocking(size_t readSize, bool isBlocking);
+    int32_t ReadStreamInternal(size_t readSize, bool isBlocking);
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();

@@ -130,7 +130,7 @@ private:
     int32_t PrepareMmapBuffer();
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
-    int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanosec) override;
+    int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
 
     bool isBluetoothLowLatency_ = false;
     uint32_t bufferTotalFrameSize_ = 0;
@@ -294,14 +294,15 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapte
             continue;
         }
         AUDIO_DEBUG_LOG("SwitchAdapter: adapter name for %{public}d: %{public}s", index, desc->adapterName);
-        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
-            for (uint32_t port = 0; port < desc->portNum; port++) {
-                // Only find out the port of out in the sound card
-                if (desc->ports[port].dir == portFlag) {
-                    renderPort = desc->ports[port];
-                    AUDIO_DEBUG_LOG("SwitchAdapter: index found %{public}d", index);
-                    return index;
-                }
+        if (strcmp(desc->adapterName, adapterNameCase.c_str())) {
+            continue;
+        }
+        for (uint32_t port = 0; port < desc->portNum; port++) {
+            // Only find out the port of out in the sound card
+            if (desc->ports[port].dir == portFlag) {
+                renderPort = desc->ports[port];
+                AUDIO_DEBUG_LOG("SwitchAdapter: index found %{public}d", index);
+                return index;
             }
         }
     }

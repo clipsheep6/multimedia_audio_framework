@@ -101,6 +101,8 @@ private:
     void GetCurrentSegmentUpdated(std::shared_ptr<ToneInfo> toneDesc);
     bool CheckToneContinuity ();
     bool AudioToneSequenceGen(BufferDesc &bufDesc);
+    bool AudioToneSequenceGenInternal(uint32_t reqSamples, bool &retVal,
+        uint32_t totalBufAvailable, BufferDesc &bufDesc);
     std::unique_ptr<std::thread> toneDataGenLoop_ = nullptr;
 };
 } // namespace AudioStandard

@@ -469,15 +469,16 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32_t size
         }
         AUDIO_INFO_LOG("size: %{public}d, adapterNameCase %{public}s, adapterName %{public}s",
             size, adapterNameCase.c_str(), desc->adapterName);
-        if (!adapterNameCase.compare(desc->adapterName)) {
-            for (uint32_t port = 0; port < desc->portsLen; port++) {
-                // Only find out the port of out in the sound card
-                if (desc->ports[port].dir == portFlag) {
+        if (adapterNameCase.compare(desc->adapterName)) {
+            continue;
+        }
+        for (uint32_t port = 0; port < desc->portsLen; port++) {
+            // Only find out the port of out in the sound card
+            if (desc->ports[port].dir == portFlag) {
                     capturePort = desc->ports[port];
                     return index;
                 }
             }
-        }
     }
     AUDIO_ERR_LOG("SwitchAdapterCapture Fail");
 

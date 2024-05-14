@@ -180,20 +180,26 @@ void AudioFocusParser::ParseFocusMap(xmlNode *node, const std::string &curStream
         if (currNode->type == XML_ELEMENT_NODE) {
             if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_table"))) {
                 AUDIO_DEBUG_LOG("node type: Element, name: %s", currNode->name);
-                xmlNode *sNode = currNode->children;
-                while (sNode) {
-                    if (sNode->type == XML_ELEMENT_NODE) {
-                        if (!xmlStrcmp(sNode->name, reinterpret_cast<const xmlChar*>("deny"))) {
-                            ParseRejectedStreams(sNode->children, curStream, focusMap);
-                        } else {
-                            ParseAllowedStreams(sNode->children, curStream, focusMap);
-                        }
-                    }
-                    sNode = sNode->next;
-                }
+                xmlNode *sNode = node->children;
+                ParseFocusMapInternal(sNode, curStream, focusMap);
             }
         }
         currNode = currNode->next;
+    }
+}
+
+void AudioFocusParser::ParseFocusMapInternal(xmlNode *node, const std::string &curStream,
+    std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
+{
+    while (node) {
+        if (node->type == XML_ELEMENT_NODE) {
+            if (!xmlStrcmp(node->name, reinterpret_cast<const xmlChar*>("deny"))) {
+                ParseRejectedStreams(node->children, curStream, focusMap);
+            } else {
+                ParseAllowedStreams(node->children, curStream, focusMap);
+            }
+        }
+        node = node->next;
     }
 }
 
