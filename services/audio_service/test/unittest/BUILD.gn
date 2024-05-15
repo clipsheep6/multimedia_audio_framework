@@ -55,3 +55,27 @@ ohos_unittest("audio_balance_unit_test") {
     "samgr:samgr_proxy",
   ]
 }
+
+ohos_unittest("audio_device_descriptor_unit_test") {
+  module_out_path = module_output_path
+  sources = [ "audio_device_descriptor_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "$pulseaudio_build_path/src/pulse:pulse",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../audio_service:audio_client",
+    "../../../audio_service:audio_common",
+    "//third_party/googletest:gtest_main",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
