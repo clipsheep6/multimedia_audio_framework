@@ -6461,6 +6461,101 @@ void AudioPolicyService::XmlParsedDataMapDump(std::string &dumpString)
     }
 }
 
+void AudioPolicyService::EffectManagerInfoDump(std::string& dumpString)
+{
+    int count = 0;
+    GetEffectManagerInfo(oriEffectConfig_, availableEffects_);
+    GetAudioAdapterInfos(adapterInfoMap_);
+    dumpString += "\nEffect Manager INFO\n";
+    AppendFormat(dumpString, "  XML version:%s \n", oriEffectConfig_.version.c_str());
+    // xml -- Library
+    AppendFormat(dumpString, "- %d library (s) available :\n", oriEffectConfig_.libraries.size());
+    for (Library x : oriEffectConfig_.libraries) {
+        count++;
+        AppendFormat(dumpString, "  library%d\n", count);
+        AppendFormat(dumpString, "  - library name = %s \n", x.name.c_str());
+        AppendFormat(dumpString, "  - library path = %s \n", x.path.c_str());
+        dumpString += "\n";
+    }
+    // xml -- effect
+    count = 0;
+    AppendFormat(dumpString, "- %d effect (s) available :\n", oriEffectConfig_.effects.size());
+    for (Effect x : oriEffectConfig_.effects) {
+        count++;
+        AppendFormat(dumpString, "  effect%d\n", count);
+        AppendFormat(dumpString, "  - effect name = %s \n", x.name.c_str());
+        AppendFormat(dumpString, "  - effect libraryName = %s \n", x.libraryName.c_str());
+        dumpString += "\n";
+    }
+
+    // xml -- effectChain
+    count = 0;
+    AppendFormat(dumpString, "- %d effectChain (s) available :\n",
+        oriEffectConfig_.effectChains.size());
+    for (EffectChain x : oriEffectConfig_.effectChains) {
+        count++;
+        AppendFormat(dumpString, "  effectChain%d\n", count);
+        AppendFormat(dumpString, "  - effectChain name = %s \n", x.name.c_str());
+        int countEffect = 0;
+        for (string effectUnit : x.apply) {
+            countEffect++;
+            AppendFormat(dumpString, "    - effectUnit%d = %s \n", countEffect, effectUnit.c_str());
+        }
+        dumpString += "\n";
+    }
+
+    EffectManagerInfoDumpPart(dumpString, oriEffectConfig_);
+
+    // successful lib
+    count = 0;
+    AppendFormat(dumpString, "- %d available Effect (s) available :\n", availableEffects_.size());
+    for (Effect x : availableEffects_) {
+        count++;
+        AppendFormat(dumpString, "  available Effect%d\n", count);
+        AppendFormat(dumpString, "  - available Effect%d name = %s \n", count, x.name.c_str());
+        AppendFormat(dumpString, "  - available Effect%d libraryName = %s \n", count, x.libraryName.c_str());
+        dumpString += "\n";
+    }
+}
+
+void AudioPolicyService::EffectManagerInfoDumpPart(string &dumpString, OriginalEffectConfig &oriEffectConfig)
+{
+    int32_t count;
+    // xml -- Preprocess
+    AppendFormat(dumpString, "- %d preProcess (s) available :\n",
+        oriEffectConfig.preProcess.size());
+    for (Preprocess x : oriEffectConfig.preProcess) {
+        AppendFormat(dumpString, "  preProcess stream = %s \n", x.stream.c_str());
+        count = 0;
+        for (string modeName : x.mode) {
+            count++;
+            AppendFormat(dumpString, "  - modeName%d = %s \n", count, modeName.c_str());
+            for (Device deviceInfo : x.device[count - 1]) {
+                AppendFormat(dumpString, "    - device type = %s \n", deviceInfo.type.c_str());
+                AppendFormat(dumpString, "    - device chain = %s \n", deviceInfo.chain.c_str());
+            }
+        }
+        dumpString += "\n";
+    }
+
+    // xml -- Postprocess
+    AppendFormat(dumpString, "- %d postProcess (s) available :\n",
+        oriEffectConfig.preProcess.size());
+    for (EffectSceneStream x : oriEffectConfig.postProcess.effectSceneStreams) {
+        AppendFormat(dumpString, "  postprocess stream = %s \n", x.stream.c_str());
+        count = 0;
+        for (string modeName : x.mode) {
+            count++;
+            AppendFormat(dumpString, "  - modeName%d = %s \n", count, modeName.c_str());
+            for (Device deviceInfo : x.device[count - 1]) {
+                AppendFormat(dumpString, "    - device type = %s \n", deviceInfo.type.c_str());
+                AppendFormat(dumpString, "    - device chain = %s \n", deviceInfo.chain.c_str());
+            }
+        }
+        dumpString += "\n";
+    }
+}
+
 void AudioPolicyService::GetGroupInfoDump(std::string &dumpString)
 {
     dumpString += "\nVolume GroupInfo:\n";

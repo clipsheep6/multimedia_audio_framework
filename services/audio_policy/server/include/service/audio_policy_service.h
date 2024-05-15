@@ -464,6 +464,8 @@ public:
     void GetCapturerStreamDump(std::string &dumpString);
     void GetSafeVolumeDump(std::string &dumpString);
     void GetOffloadStatusDump(std::string &dumpString);
+    void EffectManagerInfoDump(std::string &dumpString);
+    void EffectManagerInfoDumpPart(std::string &dumpString, OriginalEffectConfig &oriEffectConfig);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
@@ -949,6 +951,9 @@ private:
     DeviceType priorityOutputDevice_;
     DeviceType priorityInputDevice_;
     ConnectType conneceType_;
+
+    OriginalEffectConfig oriEffectConfig_;
+    std::vector<Effect> availableEffects_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
