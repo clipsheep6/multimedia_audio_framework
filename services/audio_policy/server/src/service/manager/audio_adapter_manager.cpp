@@ -1228,7 +1228,7 @@ void AudioAdapterManager::InitSafeStatus(bool isFirstBoot)
 {
     if (isFirstBoot) {
         AUDIO_INFO_LOG("Wrote default safe status to KvStore");
-        for (auto &deviceType : DEVICE_TYPE_LIST) {
+        for (const auto &deviceType : DEVICE_TYPE_LIST) {
             // Adapt to safe volume upgrade scenarios
             if (!volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_) &&
                 (deviceType == DEVICE_TYPE_WIRED_HEADSET)) {
@@ -1249,7 +1249,7 @@ void AudioAdapterManager::InitSafeTime(bool isFirstBoot)
 {
     if (isFirstBoot) {
         AUDIO_INFO_LOG("Wrote default safe status to KvStore");
-        for (auto &deviceType : DEVICE_TYPE_LIST) {
+        for (const auto &deviceType : DEVICE_TYPE_LIST) {
             if (!volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, safeActiveTime_) &&
                 (deviceType == DEVICE_TYPE_WIRED_HEADSET)) {
                 volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
