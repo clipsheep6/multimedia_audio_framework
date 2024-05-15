@@ -40,6 +40,7 @@
 #include "audio_manager_base.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
+#include "audio_tools.h"
 #include "audio_policy_manager.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
@@ -78,6 +79,8 @@ private:
     std::mutex mutex_;
     std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> policyServiceDiedCallback_;
 };
+
+static AppExecFwk::BundleInfo gBundleInfo_;
 
 class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<CapturerInClientInner> {
@@ -374,6 +377,7 @@ CapturerInClientInner::CapturerInClientInner(AudioStreamType eStreamType, int32_
 {
     AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_RECORD, appUid);
+    gBundleInfo_ = GetBundleInfoFromUid(appUid);
     state_ = NEW;
 }
 
@@ -438,6 +442,9 @@ void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
 {
     capturerInfo_ = capturerInfo;
     capturerInfo_.pipeType = PIPE_TYPE_NORMAL;
+    rendererInfo_.appName = gBundleInfo_.name;
+    rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
+
     AUDIO_INFO_LOG("SetCapturerInfo with SourceType %{public}d flag %{public}d", capturerInfo_.sourceType,
         capturerInfo_.capturerFlags);
     return;

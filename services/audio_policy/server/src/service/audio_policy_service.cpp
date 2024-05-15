@@ -27,6 +27,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "audio_tools.h"
 #include "audio_manager_listener_stub.h"
 #include "datashare_helper.h"
 #include "datashare_predicates.h"
@@ -125,6 +126,8 @@ const int ADDRESS_STR_LEN = 17;
 const int START_POS = 6;
 const int END_POS = 13;
 const int32_t ONE_MINUTE = 60;
+constexpr int32_t MS_PER_S = 1000;
+constexpr int32_t NS_PER_MS = 1000000;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -285,6 +288,13 @@ static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
     }
 }
 
+static int64_t GetCurrentTimeMS()
+{
+    timespec tm {};
+    clock_gettime(CLOCK_MONOTONIC, &tm);
+    return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+}
+
 AudioPolicyService::~AudioPolicyService()
 {
     AUDIO_DEBUG_LOG("~AudioPolicyService()");
@@ -299,22 +309,26 @@ bool AudioPolicyService::Init(void)
     audioDeviceManager_.ParseDeviceXml();
     audioPnpServer_.init();
 
-    CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser_.LoadConfiguration(), false,
-        "Audio Policy Config Load Configuration failed");
-    CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser_.Parse(), false, "Audio Config Parse failed");
+    bool ret = audioPolicyConfigParser_.LoadConfiguration();
+    if (!ret) {
+        WriteServiceStartupError("Audio Policy Config Load Configuration failed");
+    }
+    CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Policy Config Load Configuration failed");
+    ret = audioPolicyConfigParser_.Parse();
+    if (!ret) {
+        WriteServiceStartupError("Audio Config Parse failed");
+    }
+    CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Config Parse failed");
 
 #ifdef FEATURE_DTMF_TONE
-    std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
-    CHECK_AND_RETURN_RET_LOG(audioToneParser != nullptr, false, "Failed to create AudioToneParser");
-    std::string AUDIO_TONE_CONFIG_FILE = "system/etc/audio/audio_tone_dtmf_config.xml";
-
-    if (audioToneParser->LoadConfig(toneDescriptorMap)) {
-        AUDIO_ERR_LOG("Audio Tone Load Configuration failed");
-        return false;
-    }
+    ret = LoadToneDtmfConfig();
+    CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Tone Load Configuration failed");
 #endif
 
     int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
+    if (status != SUCCESS) {
+        WriteServiceStartupError("[Policy Service] Register for device status events failed");
+    }
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, false, "[Policy Service] Register for device status events failed");
 
     RegisterRemoteDevStatusCallback();
@@ -327,6 +341,8 @@ bool AudioPolicyService::Init(void)
             false, "Get shared memory failed!");
         volumeVector_ = reinterpret_cast<Volume *>(policyVolumeMap_->GetBase());
     }
+
+    CreateRecoveryThread();
     return true;
 }
 
@@ -349,6 +365,76 @@ const sptr<IStandardAudioService> AudioPolicyService::GetAudioServerProxy()
     }
     const sptr<IStandardAudioService> gsp = g_adProxy;
     return gsp;
+}
+
+void AudioPolicyService::CreateRecoveryThread()
+{
+    if (RecoveryDevicesThread_ != nullptr) {
+        RecoveryDevicesThread_->detach();
+    }
+    RecoveryDevicesThread_ = std::make_unique<std::thread>(&AudioPolicyService::RecoveryPerferredDevices, this);
+    pthread_setname_np(RecoveryDevicesThread_->native_handle(), "OS_APSRecovery");
+}
+
+void AudioPolicyService::RecoveryPerferredDevices()
+{
+    AUDIO_DEBUG_LOG("Start recovery peferred devices.");
+    int32_t tryCounter = 5;
+    uint32_t firstSleepTime = 1000000;
+    uint32_t sleepTime = 300000;
+    int32_t result = -1;
+    std::map<Media::MediaMonitor::PerferredType,
+        std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> perferredDevices;
+    usleep(firstSleepTime);
+    while (result != SUCCESS && tryCounter-- > 0) {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().GetAudioRouteMsg(perferredDevices);
+        if (perferredDevices.size() == 0) {
+            AUDIO_ERR_LOG("The length of perferredDevices is 0 and does not need to be set.");
+            continue;
+        }
+        result = HandleRecoveryPerferredDevices(perferredDevices);
+        if (result != SUCCESS) {
+            usleep(sleepTime);
+        }
+    }
+}
+
+int32_t AudioPolicyService::HandleRecoveryPerferredDevices(std::map<Media::MediaMonitor::PerferredType,
+    std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> &perferredDevices)
+{
+    int32_t result = -1;
+    for (auto iter = perferredDevices.begin(); iter != perferredDevices.end(); ++iter) {
+        auto isPresent = [&iter] (const sptr<AudioDeviceDescriptor> &desc) {
+            if (iter->second->deviceType_ == desc->deviceType_) {
+                return true;
+            }
+            return false;
+        };
+        auto it = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+        if (it != connectedDevices_.end()) {
+            vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+            deviceDescriptorVector.push_back(*it);
+            if (iter->first == Media::MediaMonitor::MEDIA_RENDER ||
+                iter->first == Media::MediaMonitor::CALL_RENDER ||
+                iter->first == Media::MediaMonitor::RING_RENDER ||
+                iter->first == Media::MediaMonitor::TONE_RENDER) {
+                sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+                audioRendererFilter->uid = -1;
+                audioRendererFilter->rendererInfo.streamUsage =
+                    static_cast<StreamUsage>(iter->second->usageOrSourceType_);
+                result = SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
+
+            } else if (iter->first == Media::MediaMonitor::CALL_CAPTURE ||
+                        iter->first == Media::MediaMonitor::RECORD_CAPTURE) {
+                sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+                audioCapturerFilter->uid = -1;
+                audioCapturerFilter->capturerInfo.sourceType =
+                    static_cast<SourceType>(iter->second->usageOrSourceType_);
+                result = SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
+            }
+        }
+    }
+    return result;
 }
 
 void AudioPolicyService::InitKVStore()
@@ -1057,6 +1143,19 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         UpdateA2dpOffloadFlagForAllStream(deviceType);
     }
     OnPreferredOutputDeviceUpdated(currentActiveDevice_);
+    auto uid = IPCSkeleton::GetCallingUid();
+    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid(uid);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::SET_FORCE_USE_AUDIO_DEVICE,
+        Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+    bean->Add("APP_NAME", bundleInfo.name);
+    bean->Add("DEVICE_TYPE", currentActiveDevice_.deviceType_);
+    bean->Add("STREAM_TYPE", strUsage);
+    bean->Add("BT_TYPE", currentActiveDevice_.deviceCategory_);
+    bean->Add("DEVICE_NAME", currentActiveDevice_.deviceName_);
+    bean->Add("ADDRESS", currentActiveDevice_.macAddress_);
+    bean->Add("IS_PLAYBACK", 1);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     return SUCCESS;
 }
 
@@ -1274,18 +1373,33 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     int32_t res = DeviceParamsCheck(DeviceRole::INPUT_DEVICE, selectedDesc);
     CHECK_AND_RETURN_RET(res == SUCCESS, res);
 
+    SourceType srcType = audioCapturerFilter->capturerInfo.sourceType;
+
     if (audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST && selectedDesc.size() == 1) {
         return SelectFastInputDevice(audioCapturerFilter, selectedDesc[0]);
     }
 
     AudioScene scene = GetAudioScene(true);
-    SourceType srcType = audioCapturerFilter->capturerInfo.sourceType;
     if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
         srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         audioStateManager_.SetPerferredCallCaptureDevice(selectedDesc[0]);
     } else {
         audioStateManager_.SetPerferredRecordCaptureDevice(selectedDesc[0]);
     }
+    auto uid = IPCSkeleton::GetCallingUid();
+    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid(uid);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::SET_FORCE_USE_AUDIO_DEVICE,
+        Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+    bean->Add("APP_NAME", bundleInfo.name);
+    bean->Add("DEVICE_TYPE", selectedDesc[0]->deviceType_);
+    bean->Add("STREAM_TYPE", srcType);
+    bean->Add("BT_TYPE", selectedDesc[0]->deviceCategory_);
+    bean->Add("DEVICE_NAME", selectedDesc[0]->deviceName_);
+    bean->Add("ADDRESS", selectedDesc[0]->macAddress_);
+    bean->Add("AUDIO_SCENE", scene);
+    bean->Add("IS_PLAYBACK", 0);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     FetchDevice(false);
     return SUCCESS;
 }
@@ -1944,6 +2058,15 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         }
         if (needUpdateActiveDevice) {
             if (!IsSameDevice(desc, currentActiveDevice_)) {
+                int64_t timeStamp = GetCurrentTimeMS();
+                std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+                    Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_ROUTE_CHANGE,
+                    Media::MediaMonitor::BEHAVIOR_EVENT);
+                bean->Add("REASON", static_cast<int32_t>(reason));
+                bean->Add("TIMESTAMP", static_cast<uint64_t>(timeStamp));
+                bean->Add("DEVICE_TYPE_BEFORE_CHANGE", currentActiveDevice_.deviceType_);
+                bean->Add("DEVICE_TYPE_AFTER_CHANGE", desc->deviceType_);
+                Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
                 currentActiveDevice_ = AudioDeviceDescriptor(*desc);
                 AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
                 isUpdateActiveDevice = true;
@@ -2035,7 +2158,8 @@ int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDe
     return SUCCESS;
 }
 
-void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
+void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
+    const AudioStreamDeviceChangeReason reason)
 {
     AUDIO_INFO_LOG("size %{public}zu", capturerChangeInfos.size());
     bool needUpdateActiveDevice = true;
@@ -2064,6 +2188,15 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         }
         if (needUpdateActiveDevice) {
             if (!IsSameDevice(desc, currentActiveInputDevice_)) {
+                int64_t timeStamp = GetCurrentTimeMS();
+                std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+                    Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_ROUTE_CHANGE,
+                    Media::MediaMonitor::BEHAVIOR_EVENT);
+                bean->Add("REASON", static_cast<int32_t>(reason));
+                bean->Add("TIMESTAMP", static_cast<uint64_t>(timeStamp));
+                bean->Add("DEVICE_TYPE_BEFORE_CHANGE", currentActiveInputDevice_.deviceType_);
+                bean->Add("DEVICE_TYPE_AFTER_CHANGE", desc->deviceType_);
+                Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
                 currentActiveInputDevice_ = AudioDeviceDescriptor(*desc);
                 AUDIO_DEBUG_LOG("currentActiveInputDevice update %{public}d", currentActiveInputDevice_.deviceType_);
                 isUpdateActiveDevice = true;
@@ -2095,7 +2228,7 @@ void AudioPolicyService::FetchDevice(bool isOutputDevice, const AudioStreamDevic
     } else {
         vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
         streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
-        FetchInputDevice(capturerChangeInfos);
+        FetchInputDevice(capturerChangeInfos, reason);
     }
 }
 
@@ -4027,9 +4160,11 @@ void AudioPolicyService::UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<Aud
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;
         deviceInfo.macAddress = desc->macAddress_;
+        deviceInfo.deviceCategory = desc->deviceCategory_;
     } else {
         deviceInfo.deviceName = "";
         deviceInfo.macAddress = "";
+        deviceInfo.deviceCategory = CATEGORY_DEFAULT;
     }
 
     deviceInfo.isLowLatencyDevice = HasLowLatencyCapability(deviceInfo.deviceType,
@@ -4378,7 +4513,7 @@ void AudioPolicyService::WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDe
     bean->Add("NETWORKID", deviceDescriptor->networkId_);
     bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
-    bean->Add("CATEGORY", deviceDescriptor->deviceCategory_);
+    bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -4395,7 +4530,7 @@ void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDes
     bean->Add("NETWORKID", deviceDescriptor->networkId_);
     bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
-    bean->Add("CATEGORY", deviceDescriptor->deviceCategory_);
+    bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -6631,6 +6766,38 @@ void AudioPolicyService::GetOffloadStatusDump(std::string &dumpString)
 int32_t AudioPolicyService::GetCurActivateCount()
 {
     return audioPolicyManager_.GetCurActivateCount();
+}
+
+void AudioPolicyService::WriteServiceStartupError(string reason)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_SERVICE_STARTUP_ERROR,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID));
+    bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVER));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+bool AudioPolicyService::LoadToneDtmfConfig()
+{
+    std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
+    if (audioToneParser == nullptr) {
+        WriteServiceStartupError("Audio Tone Load Configuration failed");
+    }
+    CHECK_AND_RETURN_RET_LOG(audioToneParser != nullptr, false, "Failed to create AudioToneParser");
+    std::string AUDIO_TONE_CONFIG_FILE = "system/etc/audio/audio_tone_dtmf_config.xml";
+
+    if (audioToneParser->LoadConfig(toneDescriptorMap)) {
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::LOAD_CONFIG_ERROR,
+            Media::MediaMonitor::EventType::FAULT_EVENT);
+        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_TONE_DTMF_CONFIG);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+        WriteServiceStartupError("Audio Tone Load Configuration failed");
+        AUDIO_ERR_LOG("Audio Tone Load Configuration failed");
+        return false;
+    }
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

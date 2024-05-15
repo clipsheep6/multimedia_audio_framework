@@ -22,13 +22,23 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "audio_tools.h"
 
 #include "fast_audio_stream.h"
+
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
+
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+
+static AppExecFwk::BundleInfo gBundleInfo_;
+
 FastAudioStream::FastAudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid)
     : eStreamType_(eStreamType),
       eMode_(eMode),
@@ -38,6 +48,7 @@ FastAudioStream::FastAudioStream(AudioStreamType eStreamType, AudioMode eMode, i
 {
     AUDIO_INFO_LOG("FastAudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(eMode, appUid);
+    gBundleInfo_ = GetBundleInfoFromUid(appUid);
     AUDIO_DEBUG_LOG("AudioStreamTracker created");
 }
 
@@ -66,12 +77,16 @@ void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
     rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY;
+    rendererInfo_.appName = gBundleInfo_.name;
+    rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
     capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY;
+    rendererInfo_.appName = gBundleInfo_.name;
+    rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
 int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,

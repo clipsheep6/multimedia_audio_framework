@@ -159,6 +159,7 @@ ohos_shared_library("audio_client") {
     ":audio_process_service",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_policy_client",
+    ":audio_process_service",
   ]
 
   include_dirs = [ "server/include" ]
@@ -178,6 +179,8 @@ ohos_shared_library("audio_client") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "media_foundation:media_monitor_common",
+    "media_foundation:media_monitor_client",
   ]
 
   public_external_deps = [
@@ -376,6 +379,8 @@ ohos_shared_library("audio_service") {
     "pulseaudio:pulseaudio",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "media_foundation:media_monitor_common",
+    "media_foundation:media_monitor_client",
   ]
 
   public_external_deps = [ "libxml2:libxml2" ]
