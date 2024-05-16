@@ -60,8 +60,9 @@ public:
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    void Dump(std::stringstream &dumpString);
+    void Dump(std::string &dumpString);
     float GetMaxAmplitude(bool isOutputDevice);
+    void ResetAudioEndpoint();
 
     void RemoveRenderer(uint32_t sessionId);
 

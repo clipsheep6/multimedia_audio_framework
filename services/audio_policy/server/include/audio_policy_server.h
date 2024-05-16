@@ -51,6 +51,7 @@ namespace AudioStandard {
 
 constexpr uint64_t DSTATUS_SESSION_ID = 4294967296;
 constexpr uint32_t DSTATUS_DEFAULT_RATE = 48000;
+constexpr uint32_t LOCAL_USER_ID = 100;
 
 class AudioPolicyService;
 class AudioInterruptService;
@@ -387,6 +388,17 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
+    // for hidump
+    void AudioDevicesDump(std::string &dumpString);
+    void AudioModeDump(std::string &dumpString);
+    void AudioInterruptZoneDump(std::string &dumpString);
+    void AudioPolicyParserDump(std::string &dumpString);
+    void AudioVolumeDump(std::string &dumpString);
+    void AudioStreamDump(std::string &dumpString);
+    void OffloadStatusDump(std::string &dumpString);
+    void XmlParsedDataMapDump(std::string &dumpString);
+    void EffectManagerInfoDump(std::string &dumpString);
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -428,9 +440,10 @@ private:
     void CheckSubscribePowerStateChange();
 
     // for audio volume and mute status
+    int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
-    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType, bool isFromVolumeKey);
+    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi);
@@ -447,11 +460,6 @@ private:
     uint64_t GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId, uint64_t appFullTokenId);
     bool CheckRootCalling(uid_t callingUid, int32_t appUid);
     void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
-
-    // common
-    void GetPolicyData(PolicyData &policyData);
-    void GetDeviceInfo(PolicyData &policyData);
-    void GetGroupInfo(PolicyData &policyData);
 
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);
@@ -480,6 +488,11 @@ private:
     void UnRegisterPowerStateListener();
 
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
+
+    void InitPolicyDumpMap();
+    void PolicyDataDump(std::string &dumpString);
+    void ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue);
+    void InfoDumpHelp(std::string &dumpString);
 
     AudioPolicyService& audioPolicyService_;
     std::shared_ptr<AudioInterruptService> interruptService_;
@@ -511,6 +524,8 @@ private:
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
     AudioRouterCenter &audioRouterCenter_;
+    using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
+    std::map<std::u16string, DumpFunc> dumpFuncMap;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
@@ -531,7 +546,8 @@ public:
 
     void OnAccountsSwitch(const int &newId, const int &oldId) override
     {
-        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldId: %{public}d", newId, oldId);
+        CHECK_AND_RETURN_LOG(oldId >= LOCAL_USER_ID, "invalid id");
+        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldid: %{public}d", newId, oldId);
         if (audioPolicyServer_ != nullptr) {
             audioPolicyServer_->NotifyAccountsChanged(newId);
         }

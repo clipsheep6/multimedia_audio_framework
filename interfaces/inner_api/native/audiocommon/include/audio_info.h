@@ -312,6 +312,9 @@ struct AudioRendererInfo {
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
     int32_t originalFlag = AUDIO_FLAG_NORMAL;
+    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    std::string appName = "";
+    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
@@ -320,7 +323,10 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(originalFlag)
             && parcel.WriteString(sceneType)
             && parcel.WriteBool(spatializationEnabled)
-            && parcel.WriteBool(headTrackingEnabled);
+            && parcel.WriteBool(headTrackingEnabled)
+            && parcel.WriteInt32(static_cast<int32_t>(pipeType))
+            && parcel.WriteString(appName)
+            && parcel.WriteInt32(static_cast<int32_t>(samplingRate));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -331,6 +337,9 @@ struct AudioRendererInfo {
         sceneType = parcel.ReadString();
         spatializationEnabled = parcel.ReadBool();
         headTrackingEnabled = parcel.ReadBool();
+        pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        appName = parcel.ReadString();
+        samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
     }
 };
 
@@ -338,7 +347,10 @@ class AudioCapturerInfo {
 public:
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
-    int32_t originalFlag = 0;
+    int32_t originalFlag = AUDIO_FLAG_NORMAL;
+    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    std::string appName = "";
+    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
     AudioCapturerInfo(const AudioCapturerInfo &audioCapturerInfo)
@@ -351,13 +363,19 @@ public:
     {
         return parcel.WriteInt32(static_cast<int32_t>(sourceType)) &&
             parcel.WriteInt32(capturerFlags) &&
-            parcel.WriteInt32(originalFlag);
+            parcel.WriteInt32(originalFlag) &&
+            parcel.WriteInt32(static_cast<int32_t>(pipeType)) &&
+            parcel.WriteString(appName) &&
+            parcel.WriteInt32(static_cast<int32_t>(samplingRate));
     }
     void Unmarshalling(Parcel &parcel)
     {
         sourceType = static_cast<SourceType>(parcel.ReadInt32());
         capturerFlags = parcel.ReadInt32();
         originalFlag = parcel.ReadInt32();
+        pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        appName = parcel.ReadString();
+        samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
     }
 };
 
@@ -407,6 +425,11 @@ enum AudioScene : int32_t {
      * AvSession set call end flag
      */
     AUDIO_SCENE_CALL_END,
+    /**
+     * Voice ringing audio scene
+     * Only available for system api.
+     */
+    AUDIO_SCENE_VOICE_RINGING,
     /**
      * Max
      */
@@ -702,6 +725,8 @@ public:
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
     DeviceInfo outputDeviceInfo;
+    std::string appName;
+    AudioSamplingRate samplingRate;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
     {
@@ -722,6 +747,7 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
             && parcel.WriteInt32(rendererInfo.rendererFlags)
             && parcel.WriteInt32(rendererInfo.originalFlag)
+            && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(rendererState))
             && outputDeviceInfo.Marshalling(parcel);
     }
@@ -738,6 +764,7 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
             && parcel.WriteInt32(rendererInfo.rendererFlags)
             && parcel.WriteInt32(rendererInfo.originalFlag)
+            && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
                 RENDERER_INVALID)
             && outputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion);
@@ -756,6 +783,7 @@ public:
         rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         rendererInfo.rendererFlags = parcel.ReadInt32();
         rendererInfo.originalFlag = parcel.ReadInt32();
+        rendererInfo.Unmarshalling(parcel);
 
         rendererState = static_cast<RendererState>(parcel.ReadInt32());
         outputDeviceInfo.Unmarshalling(parcel);
@@ -798,12 +826,12 @@ public:
     bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
     {
         return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(clientUID)
+            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
             && parcel.WriteInt32(sessionId)
             && parcel.WriteInt32(callerPid)
             && parcel.WriteInt32(clientPid)
             && capturerInfo.Marshalling(parcel)
-            && parcel.WriteInt32(static_cast<int32_t>(capturerState))
+            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(capturerState) : CAPTURER_INVALID)
             && inputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
             && parcel.WriteBool(muted)
             && parcel.WriteUint32(appTokenId);
@@ -965,6 +993,43 @@ struct SourceInfo {
     uint32_t rate_;
     uint32_t channels_;
 };
+
+/**
+ * @brief Device group used by set/get volume.
+ */
+enum DeviceGroup {
+    /** Invalid device group */
+    DEVICE_GROUP_INVALID = -1,
+    /** Built in device */
+    DEVICE_GROUP_BUILT_IN,
+    /** Wired device */
+    DEVICE_GROUP_WIRED,
+    /** Wireless device */
+    DEVICE_GROUP_WIRELESS,
+    /** Remote cast device */
+    DEVICE_GROUP_REMOTE_CAST,
+};
+
+static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
+    {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_BUILT_IN},
+    {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
+    {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_DP, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
+    {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
+    {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+};
+
+static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
+{
+    auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
+    if (it == DEVICE_GROUP_FOR_VOLUME.end()) {
+        return DEVICE_GROUP_INVALID;
+    }
+    return it->second;
+}
 
 enum RouterType {
     /**

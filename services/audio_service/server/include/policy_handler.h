@@ -32,7 +32,7 @@ public:
 
     ~PolicyHandler();
 
-    void Dump(std::stringstream &dumpString);
+    void Dump(std::string &dumpString);
 
     // would be called only once
     bool ConfigPolicyProvider(const sptr<IPolicyProviderIpc> policyProvider);
@@ -43,8 +43,6 @@ public:
 
     // keep same with AudioPolicyServer
     AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
-
-    DeviceType GetDeviceTypeForVolumeVector(DeviceType deviceType);
 
     bool GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol);
 
@@ -59,6 +57,8 @@ public:
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
 
     int32_t NotifyWakeUpCapturerRemoved();
+
+    bool IsAbsVolumeSupported();
 
     bool GetHighResolutionExist();
 
