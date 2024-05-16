@@ -316,7 +316,7 @@ static void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
-        Write24Bit(b, ((int32_t) v) >> BIT_8);
+        Write24Bit(b, ((uint32_t) v) >> BIT_8);
         b += OFFSET_BIT_24;
     }
 }
@@ -999,8 +999,9 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsign
 
     /* We optimize for the case where the order of the inputs has not changed */
     pa_mix_info *infoCur = NULL;
+    pa_sink_input *sceneSinkInput = NULL;
     for (uint32_t k = 0; k < n; k++) {
-        pa_sink_input *sceneSinkInput = infoIn[k].userdata;
+        sceneSinkInput = infoIn[k].userdata;
         pa_sink_input_assert_ref(sceneSinkInput);
 
         /* Drop read data */
@@ -1408,7 +1409,7 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
     int32_t bitSize = pa_sample_size_of_format(u->format);
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
     void *dst = pa_memblock_acquire_chunk(chunkIn);
-    int32_t frameLen = bitSize > 0 ? (int32_t)(length / bitSize) : 0;
+    int32_t frameLen = bitSize > 0 ? (int32_t)(static_cast<ssize_t>(length) / bitSize) : 0;
     for (int32_t i = 0; i < frameLen; i++) {
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
@@ -2628,7 +2629,7 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
         }
         if (u->offload.fullTs != 0) {
             if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) { // 10 is min checking size
-                const int64_t s = (u->offload.fullTs + 10 * PA_USEC_PER_MSEC) - now;
+                const int64_t s = (int64_t)((u->offload.fullTs + 10 * PA_USEC_PER_MSEC) - now);
                 sleepForUsec = sleepForUsec == -1 ? s : PA_MIN(s, sleepForUsec);
             } else if (pa_atomic_load(&u->offload.hdistate) == 1) {
                 u->offload.fullTs = 0;
@@ -2880,9 +2881,10 @@ static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUse
     unsigned nPrimary;
     unsigned nOffload;
     unsigned nHd;
+    unsigned nNum = 0;
     int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
     if (n != 0 && !monitorLinked(u->sink, true)) {
-        flag &= nPrimary > 0;
+        flag &= nPrimary > nNum;
     }
     if (flag) {
         now = pa_rtclock_now();
