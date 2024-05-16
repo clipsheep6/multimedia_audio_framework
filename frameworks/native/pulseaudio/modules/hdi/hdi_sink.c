@@ -2881,10 +2881,9 @@ static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUse
     unsigned nPrimary;
     unsigned nOffload;
     unsigned nHd;
-    unsigned nNum = 0;
     int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
     if (n != 0 && !monitorLinked(u->sink, true)) {
-        flag &= nPrimary > nNum;
+        flag &= nPrimary > 0;
     }
     if (flag) {
         now = pa_rtclock_now();
