@@ -93,6 +93,7 @@ public:
     int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
     bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
+    void SwitchStream(const uint32_t sessionId, const int32_t streamFlag);
     int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback) override;
     int32_t UnregisterAudioRendererEventListener(const int32_t clientPid) override;
@@ -147,14 +148,14 @@ public:
 
 protected:
     // Method for switching between normal and low latency paths
-    void SwitchStream(bool isLowLatencyDevice);
+    void SwitchStream(bool isLowLatencyDevice, bool isHalNeedChange);
 
 private:
     int32_t InitAudioInterruptCallback();
     int32_t InitOutputDeviceChangeCallback();
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
-    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass);
+    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId);
     void SetSelfRendererStateCallback();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
@@ -229,15 +230,20 @@ private:
     std::mutex mutex_;
 };
 
-class OutputDeviceChangeWithInfoCallbackImpl : public OutputDeviceChangeWithInfoCallback {
+class OutputDeviceChangeWithInfoCallbackImpl : public DeviceChangeWithInfoCallback {
 public:
     OutputDeviceChangeWithInfoCallbackImpl() = default;
     virtual ~OutputDeviceChangeWithInfoCallbackImpl() = default;
-    void OnOutputDeviceChangeWithInfo(
+    void OnDeviceChangeWithInfo(
         const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+    void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag) override;
     void SaveCallback(const std::weak_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
     {
         callback_ = callback;
+    }
+    void RemoveCallback()
+    {
+        callback_.reset();
     }
     void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
     {
