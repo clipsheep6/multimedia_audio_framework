@@ -2561,7 +2561,7 @@ void AudioServiceClient::SetRendererPeriodPositionCallback(int64_t periodPositio
 {
     std::lock_guard<std::mutex> lock(rendererPeriodReachedMutex_);
     AUDIO_INFO_LOG("Registering render period position callback");
-    mFramePeriodNumber = periodPosition;
+    mFramePeriodNumber = static_cast<uint64_t>(periodPosition);
     if ((mFrameSize != 0) && (mFramePeriodNumber != 0)) {
         mFramePeriodWritten = (mTotalBytesWritten / mFrameSize) % mFramePeriodNumber;
     } else {

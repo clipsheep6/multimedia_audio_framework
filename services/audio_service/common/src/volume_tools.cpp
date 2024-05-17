@@ -140,7 +140,7 @@ inline int32_t VolumeFlatten(int32_t vol)
 
 void ProcessOneFrame(uint8_t *ptr, AudioSampleFormat format, int32_t vol)
 {
-    int64_t temp = 0;
+    uint64_t temp = 0;
     int16_t *raw16 = nullptr;
     int32_t *raw32 = nullptr;
     float *rawFloat = nullptr;
@@ -153,7 +153,7 @@ void ProcessOneFrame(uint8_t *ptr, AudioSampleFormat format, int32_t vol)
             break;
         case SAMPLE_S16LE:
             raw16 = reinterpret_cast<int16_t *>(ptr);
-            temp = (*raw16 * static_cast<int64_t>(vol)) >> VOLUME_SHIFT;
+            temp = (*raw16 * static_cast<uint64_t>(vol)) >> VOLUME_SHIFT;
             *raw16 = temp > INT16_MAX ? INT16_MAX : (temp < INT16_MIN ? INT16_MIN : temp);
             break;
         case SAMPLE_S24LE:
