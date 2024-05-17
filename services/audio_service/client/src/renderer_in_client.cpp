@@ -1746,7 +1746,7 @@ int32_t RendererInClientInner::WriteCacheData()
 
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 {
-    totalBytesWritten_ += bytesWritten;
+    totalBytesWritten_ += static_cast<int64_t>(bytesWritten);
     if (sizePerFrameInByte_ == 0) {
         AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
         return;
