@@ -1746,7 +1746,7 @@ int32_t RendererInClientInner::WriteCacheData()
 
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 {
-    totalBytesWritten_ += bytesWritten;
+    totalBytesWritten_ += static_cast<int64_t>(bytesWritten);
     if (sizePerFrameInByte_ == 0) {
         AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
         return;
@@ -1997,7 +1997,7 @@ int32_t RendererInClientInner::SetVolumeWithRamp(float volume, int32_t duration)
         ERR_ILLEGAL_STATE, "Illegal state %{public}d", state_.load());
 
     if (FLOAT_COMPARE_EQ(clientVolume_, volume)) {
-        AUDIO_INFO_LOG("set same volume %{publid}f", volume);
+        AUDIO_INFO_LOG("set same volume %{public}f", volume);
         return SUCCESS;
     }
 
