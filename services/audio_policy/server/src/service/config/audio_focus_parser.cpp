@@ -143,7 +143,6 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
             return ERROR;
         }
     }
-
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
     CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");
@@ -153,7 +152,6 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
         xmlCleanupParser();
         return ERROR;
     }
-
     if (currNode->children) {
         currNode = currNode->children;
     } else {
@@ -162,7 +160,6 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
         xmlCleanupParser();
         return ERROR;
     }
-
     while (currNode != nullptr) {
         if ((currNode->type == XML_ELEMENT_NODE) &&
             (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_type")))) {
@@ -172,7 +169,6 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
             currNode = currNode->next;
         }
     }
-
     xmlFreeDoc(doc);
     xmlCleanupParser();
     return SUCCESS;
