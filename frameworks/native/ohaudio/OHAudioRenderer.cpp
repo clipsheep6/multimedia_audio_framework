@@ -17,8 +17,11 @@
 
 #include "OHAudioRenderer.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 using OHOS::AudioStandard::Timestamp;
+using OHOS::AudioStandard::ObjectRefMap;
+using OHOS::AudioStandard::OHAudioRenderer;
 
 static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
@@ -90,9 +93,12 @@ OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer *renderer)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    ObjectRefMap objectGuard(audioRenderer);
+    auto *safeRender = objectGuard.GetPtr();
+    CHECK_AND_RETURN_RET_LOG(safeRender != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "desired render does not exist");
 
-    if (audioRenderer->Release()) {
-        delete audioRenderer;
+    if (safeRender->Release()) {
+        ObjectRefMap<OHAudioRenderer>::DecreaseRef(safeRender);
         audioRenderer = nullptr;
         return AUDIOSTREAM_SUCCESS;
     } else {
@@ -328,6 +334,13 @@ OHAudioRenderer::OHAudioRenderer()
 OHAudioRenderer::~OHAudioRenderer()
 {
     AUDIO_INFO_LOG("OHAudioRenderer destroyed!");
+}
+
+OHAudioRenderer *OHAudioRenderer::Create()
+{
+    OHAudioRenderer *ohAudioRenderer = new OHAudioRenderer();
+    ObjectRefMap<OHAudioRenderer>::Insert(ohAudioRenderer);
+    return ohAudioRenderer;
 }
 
 bool OHAudioRenderer::Initialize(const AudioRendererOptions &rendererOptions)
