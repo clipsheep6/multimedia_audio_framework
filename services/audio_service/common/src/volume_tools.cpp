@@ -140,7 +140,7 @@ inline int32_t VolumeFlatten(int32_t vol)
 
 void ProcessOneFrame(uint8_t *ptr, AudioSampleFormat format, int32_t vol)
 {
-    uint64_t temp = 0;
+    int64_t temp = 0;
     int16_t *raw16 = nullptr;
     int32_t *raw32 = nullptr;
     float *rawFloat = nullptr;

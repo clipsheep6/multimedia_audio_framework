@@ -1301,7 +1301,7 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
     dataLength /= 2; // SAMPLE_S16LE--> 2 byte
     int16_t *dstPtr = reinterpret_cast<int16_t *>(dstData.bufferDesc.buffer);
     for (size_t offset = 0; dataLength > 0; dataLength--) {
-        uint64_t sum = 0;
+        int64_t sum = 0;
         for (size_t i = 0; i < srcListSize; i++) {
             int32_t vol = srcDataList[i].volumeStart; // change to modify volume of each channel
             int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset;
