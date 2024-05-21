@@ -3511,7 +3511,7 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
 
         // RenderMarkReach
         case RENDERER_MARK_REACHED_REQUEST:
-            mFrameMarkPosition = event->GetParam();
+            mFrameMarkPosition = static_cast<uint64_t>(event->GetParam());
             HandleRenderMarkReachedEvent(mFrameMarkPosition);
             break;
         case SET_RENDERER_MARK_REACHED_REQUEST:
@@ -3524,7 +3524,7 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
 
         // RenderPeriodReach
         case RENDERER_PERIOD_REACHED_REQUEST:
-            mFramePeriodNumber = event->GetParam();
+            mFramePeriodNumber = static_cast<uint64_t>(event->GetParam());
             HandleRenderPeriodReachedEvent(mFramePeriodNumber);
             break;
         case SET_RENDERER_PERIOD_REACHED_REQUEST:
@@ -3537,7 +3537,7 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
 
         // CapturerMarkReach
         case CAPTURER_MARK_REACHED_REQUEST:
-            mFrameMarkPosition = event->GetParam();
+            mFrameMarkPosition = static_cast<uint64_t>(event->GetParam());
             HandleCapturerMarkReachedEvent(mFrameMarkPosition);
             break;
         case SET_CAPTURER_MARK_REACHED_REQUEST:
@@ -3550,7 +3550,7 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
 
         // CapturerPeriodReach
         case CAPTURER_PERIOD_REACHED_REQUEST:
-            mFramePeriodNumber = event->GetParam();
+            mFramePeriodNumber = static_cast<uint64_t>(event->GetParam());
             HandleCapturerPeriodReachedEvent(mFramePeriodNumber);
             break;
         case SET_CAPTURER_PERIOD_REACHED_REQUEST:
