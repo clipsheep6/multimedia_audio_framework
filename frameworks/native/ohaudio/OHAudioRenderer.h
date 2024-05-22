@@ -187,6 +187,9 @@ class OHAudioRenderer {
         void UnsetRendererPositionCallback();
         uint32_t GetUnderflowCount();
         void SetInterruptMode(InterruptMode mode);
+        void SetSilentModeAndMixWithOthers(bool on);
+        bool GetSilentModeAndMixWithOthers();
+
     private:
         std::unique_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;

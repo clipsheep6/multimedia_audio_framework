@@ -179,6 +179,10 @@ public:
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
 
+    void SetSilentModeAndMixWithOthers(bool on) override;
+
+    bool GetSilentModeAndMixWithOthers() override;
+
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
 
@@ -210,6 +214,8 @@ private:
     bool streamTrackerRegistered_ = false;
     std::shared_ptr<FastPolicyServiceDiedCallbackImpl> audioStreamPolicyServiceDiedCB_ = nullptr;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
+    float tempVolumeFactor_ = 1.0f;
+    bool silentModeAndMixWithOthers_ = false;
 };
 
 class FastPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {
