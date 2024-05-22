@@ -1047,6 +1047,16 @@ float AudioStream::GetLowPowerVolume()
     return GetStreamLowPowerVolume();
 }
 
+void AudioStream::SetSilentModeAndMixWithOthers(bool on)
+{
+    SetStreamSilentModeAndMixWithOthers(on);
+}
+
+bool AudioStream::GetSilentModeAndMixWithOthers()
+{
+    return GetStreamSilentModeAndMixWithOthers();
+}
+
 int32_t AudioStream::SetOffloadMode(int32_t state, bool isAppBack)
 {
     return SetStreamOffloadMode(state, isAppBack);
@@ -1185,6 +1195,9 @@ void AudioStream::ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize)
 
 void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
+    if (GetStreamSilentModeAndMixWithOthers()) {
+        return;
+    }
     if (buffer[0] == 0) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
