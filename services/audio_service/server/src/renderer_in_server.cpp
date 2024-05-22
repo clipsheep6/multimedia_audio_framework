@@ -374,7 +374,7 @@ int32_t RendererInServer::Start()
     resetTime_ = true;
 
     if (isInnerCapEnabled_) {
-        std::lock_guard<std::mutex> lock(dupMutex_);
+        std::lock_guard<std::mutex> lockInner(dupMutex_);
         if (dupStream_ != nullptr) {
             dupStream_->Start();
         }
@@ -393,7 +393,7 @@ int32_t RendererInServer::Pause()
     status_ = I_STATUS_PAUSING;
     int ret = IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
     if (isInnerCapEnabled_) {
-        std::lock_guard<std::mutex> lock(dupMutex_);
+        std::lock_guard<std::mutex> lockInner(dupMutex_);
         if (dupStream_ != nullptr) {
             dupStream_->Pause();
         }
@@ -437,7 +437,7 @@ int32_t RendererInServer::Flush()
     int ret = stream_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Flush stream failed, reason: %{public}d", ret);
     if (isInnerCapEnabled_) {
-        std::lock_guard<std::mutex> lock(dupMutex_);
+        std::lock_guard<std::mutex> lockInner(dupMutex_);
         if (dupStream_ != nullptr) {
             dupStream_->Flush();
         }
