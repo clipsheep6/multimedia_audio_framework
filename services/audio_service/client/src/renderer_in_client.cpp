@@ -34,8 +34,6 @@
 #include "securec.h"
 #include "safe_block_queue.h"
 #include "hisysevent.h"
-#include "bundle_mgr_interface.h"
-#include "bundle_mgr_proxy.h"
 
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -64,7 +62,6 @@
 #include "policy_handler.h"
 
 #include "media_monitor_manager.h"
-#include "event_bean.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -93,43 +90,10 @@ static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
-constexpr unsigned int GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS = 10;
 static const int32_t MEDIA_SERVICE_UID = 1013;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
-static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
-{
-    AudioXCollie audioXCollie("RendererInClient::GetBundleInfoFromUid", GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS);
-
-    std::string bundleName {""};
-    AppExecFwk::BundleInfo bundleInfo;
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (systemAbilityManager == nullptr) {
-        return bundleInfo;
-    }
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (remoteObject == nullptr) {
-        return bundleInfo;
-    }
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    if (bundleMgrProxy == nullptr) {
-        return bundleInfo;
-    }
-    if (bundleMgrProxy != nullptr) {
-        bundleMgrProxy->GetNameForUid(appUid, bundleName);
-    }
-
-    bundleMgrProxy->GetBundleInfoForSelf(AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
-        bundleInfo);
-    return bundleInfo;
-}
 
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -142,7 +106,6 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
     AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
     state_ = NEW;
-    gBundleInfo_ = GetBundleInfoFromUid(appUid);
 }
 
 RendererInClientInner::~RendererInClientInner()
@@ -161,6 +124,7 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
+    bool logFlag = true;
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
@@ -177,15 +141,18 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         return SUCCESS;
     }
     if (operation == UNDERFLOW_COUNT_ADD) {
+        logFlag = false;
         if (!offloadEnable_) {
             underrunCount_++;
         }
-        AUDIO_WARNING_LOG("recv underrun %{public}d", underrunCount_);
+        AUDIO_DEBUG_LOG("recv underrun %{public}d", underrunCount_);
         // in plan next: do more to reduce underrun
         writeDataCV_.notify_all();
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
+    if (logFlag) {
+        AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
+    }
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
     notifiedResult_ = result;
@@ -225,6 +192,9 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
     rendererInfo_.spatializationEnabled = spatializationState.spatializationEnabled;
     rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
+    rendererInfo_.encodingType = curStreamParams_.encoding;
+    rendererInfo_.channelLayout = curStreamParams_.channelLayout;
+
     if (GetOffloadEnable()) {
         rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
     } else if (GetHighResolutionEnabled()) {
@@ -250,7 +220,7 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         AudioRegisterTrackerInfo registerTrackerInfo;
 
         rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
-
+        rendererInfo_.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
         registerTrackerInfo.sessionId = sessionId_;
         registerTrackerInfo.clientPid = clientPid_;
         registerTrackerInfo.state = state_;
@@ -269,6 +239,12 @@ void RendererInClientInner::UpdateTracker(const std::string &updateCase)
         AUDIO_DEBUG_LOG("Renderer:Calling Update tracker for %{public}s", updateCase.c_str());
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+}
+
+bool RendererInClientInner::IsHightResolution() const noexcept
+{
+    return eStreamType_ == STREAM_MUSIC && curStreamParams_.samplingRate >= SAMPLE_RATE_48000 &&
+           curStreamParams_.format >= SAMPLE_S24LE;
 }
 
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
@@ -318,6 +294,13 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
+    int32_t type = -1;
+    if (IsHightResolution()) {
+        type = ipcStream_->GetStreamManagerType();
+        if (type == AUDIO_DIRECT_MANAGER_TYPE) {
+            rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+        }
+    }
 
     proxyObj_ = proxyObj;
     RegisterTracker(proxyObj);
@@ -1457,7 +1440,7 @@ bool RendererInClientInner::DrainAudioStream()
         return false;
     }
     std::lock_guard<std::mutex> lock(writeMutex_);
-    CHECK_AND_RETURN_RET_LOG(DrainRingCache() == SUCCESS, false, "Drain cache failed");
+    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true) == SUCCESS, false, "Drain cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Drain();
@@ -1550,6 +1533,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
     BufferDesc bufDesc = {pcmBuffer, pcmBufferSize, pcmBufferSize, metaBuffer, metaBufferSize};
     CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_WRITE_FAILED, "Write: converter isn't init.");
     CHECK_AND_RETURN_RET_LOG(converter_->CheckInputValid(bufDesc), ERR_INVALID_PARAM, "Write: Invalid input.");
+
+    WriteMuteDataSysEvent(pcmBuffer, pcmBufferSize);
+
     converter_->Process(bufDesc);
     uint8_t *buffer;
     uint32_t bufferSize;
@@ -1633,7 +1619,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     return bufferSize - targetSize;
 }
 
-
 void RendererInClientInner::ResetFramePosition()
 {
     Trace trace("RendererInClientInner::ResetFramePosition");
@@ -1647,10 +1632,34 @@ void RendererInClientInner::ResetFramePosition()
     lastFramePosition_ = 0;
 }
 
+void RendererInClientInner::VolumeHandle(BufferDesc &desc)
+{
+    // volume process in client
+    if (volumeRamp_.IsActive()) {
+        // do not call SetVolume here.
+        clientOldVolume_ = clientVolume_;
+        clientVolume_ = volumeRamp_.GetRampVolume();
+    }
+    float applyVolume = clientVolume_;
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= lowPowerVolume_;
+    }
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, duckVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= duckVolume_;
+    }
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
+        Trace traceVol("RendererInClientInner::VolumeTools::Process " + std::to_string(clientVolume_));
+        AudioChannel channel = clientConfig_.streamInfo.channels;
+        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, applyVolume, applyVolume);
+        int32_t volRet = VolumeTools::Process(desc, clientConfig_.streamInfo.format, mapVols);
+        if (volRet != SUCCESS) {
+            AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
+        }
+    }
+}
+
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
-    std::string name = gBundleInfo_.name;
-    int32_t versionCode = gBundleInfo_.versionCode;
     if (buffer[0] == 0) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -1662,8 +1671,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
             std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
                 Media::MediaMonitor::AUDIO, Media::MediaMonitor::BACKGROUND_SILENT_PLAYBACK,
                 Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
-            bean->Add("APP_NAME", name);
-            bean->Add("APP_VERSION_CODE", versionCode);
+            bean->Add("CLIENT_UID", appUid_);
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
             ReportDataToResSched();
         }
@@ -1688,9 +1696,20 @@ void RendererInClientInner::ReportDataToResSched()
     #endif
 }
 
-int32_t RendererInClientInner::WriteCacheData()
+int32_t RendererInClientInner::WriteCacheData(bool isDrain)
 {
-    Trace traceCache("RendererInClientInner::WriteCacheData");
+    std::string str = isDrain ? "RendererInClientInner::WriteCacheData" : "RendererInClientInner::DrainCacheData";
+    Trace traceCache(str);
+
+    OptResult result = ringCache_->GetReadableSize();
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_OPERATION_FAILED, "ring cache unreadable");
+    size_t readableSize = result.size;
+    if (readableSize == 0) {
+        AUDIO_WARNING_LOG("Readable size is already zero");
+        return SUCCESS;
+    }
+    size_t targetSize = isDrain ? std::min(readableSize, clientSpanSizeInByte_) : clientSpanSizeInByte_;
+
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
 
@@ -1708,33 +1727,13 @@ int32_t RendererInClientInner::WriteCacheData()
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
     int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
-    OptResult result = ringCache_->Dequeue({desc.buffer, desc.bufLength});
+    result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
     AUDIO_DEBUG_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_ "
         "%{public}u", curWriteIndex, spanSizeInFrame_);
 
-    // volume process in client
-    if (volumeRamp_.IsActive()) {
-        // do not call SetVolume here.
-        clientOldVolume_ = clientVolume_;
-        clientVolume_ = volumeRamp_.GetRampVolume();
-    }
-    float applyVolume = clientVolume_;
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
-        applyVolume *= lowPowerVolume_;
-    }
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, duckVolume_, AUDIO_VOLOMUE_EPSILON)) {
-        applyVolume *= duckVolume_;
-    }
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
-        Trace traceVol("RendererInClientInner::VolumeTools::Process " + std::to_string(clientVolume_));
-        AudioChannel channel = clientConfig_.streamInfo.channels;
-        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, applyVolume, applyVolume);
-        int32_t volRet = VolumeTools::Process(desc, clientConfig_.streamInfo.format, mapVols);
-        if (volRet != SUCCESS) {
-            AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
-        }
-    }
+    VolumeHandle(desc);
+
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
@@ -1965,7 +1964,7 @@ uint32_t RendererInClientInner::GetRendererSamplingRate()
 int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 {
     // bufferSizeInMsec is checked between 5ms and 20ms.
-    bufferSizeInMsec_ = bufferSizeInMsec;
+    bufferSizeInMsec_ = static_cast<uint32_t>(bufferSizeInMsec);
     AUDIO_INFO_LOG("SetBufferSizeInMsec to %{public}d", bufferSizeInMsec_);
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         uint64_t bufferDurationInUs = bufferSizeInMsec_ * AUDIO_US_PER_MS;
@@ -1997,7 +1996,7 @@ int32_t RendererInClientInner::SetVolumeWithRamp(float volume, int32_t duration)
         ERR_ILLEGAL_STATE, "Illegal state %{public}d", state_.load());
 
     if (FLOAT_COMPARE_EQ(clientVolume_, volume)) {
-        AUDIO_INFO_LOG("set same volume %{publid}f", volume);
+        AUDIO_INFO_LOG("set same volume %{public}f", volume);
         return SUCCESS;
     }
 
@@ -2012,7 +2011,35 @@ void RendererInClientInner::SetStreamTrackerState(bool trackerRegisteredState)
 
 void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 {
-    // in plan
+    info.params = streamParams_;
+
+    info.rendererInfo = rendererInfo_;
+    info.capturerInfo = capturerInfo_;
+    info.eStreamType = eStreamType_;
+    info.renderMode = renderMode_;
+    info.state = state_;
+    info.sessionId = sessionId_;
+    info.streamTrackerRegistered = streamTrackerRegistered_;
+    GetStreamSwitchInfo(info);
+}
+
+void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
+{
+    info.cachePath = cachePath_;
+    info.underFlowCount = underrunCount_;
+    info.effectMode = effectMode_;
+    info.renderRate = rendererRate_;
+    info.clientPid = clientPid_;
+    info.clientUid = clientUid_;
+    info.volume = clientVolume_;
+
+    info.frameMarkPosition = rendererMarkPosition_;
+    info.renderPositionCb = rendererPositionCallback_;
+
+    info.framePeriodNumber = rendererPeriodSize_;
+    info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
+
+    info.rendererWriteCallback = writeCb_;
 }
 
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()
