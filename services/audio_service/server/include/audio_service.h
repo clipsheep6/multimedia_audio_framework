@@ -60,7 +60,7 @@ public:
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    void Dump(std::stringstream &dumpString);
+    void Dump(std::string &dumpString);
     float GetMaxAmplitude(bool isOutputDevice);
     void ResetAudioEndpoint();
 
@@ -79,6 +79,7 @@ private:
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig);
     int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
+    bool IsEndpointTypeVoip(const AudioProcessConfig &config);
 
 private:
     std::mutex processListMutex_;

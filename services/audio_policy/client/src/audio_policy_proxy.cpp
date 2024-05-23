@@ -514,7 +514,7 @@ int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioRendererFilter Marshalling() failed");
 
     uint32_t size = audioDeviceDescriptors.size();
-    int validSize = 20; // Use 20 as limit.
+    uint32_t validSize = 20; // Use 20 as limit.
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
@@ -558,7 +558,7 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioCapturerFilter Marshalling() failed");
 
     uint32_t size = audioDeviceDescriptors.size();
-    int validSize = 20; // Use 20 as limit.
+    uint32_t validSize = 20; // Use 20 as limit.
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
@@ -1324,7 +1324,7 @@ static Stream PostprocessProcess(MessageParcel &reply)
     return stream;
 }
 
-static int32_t QueryEffectSceneModeChkReply(int countPre, int countPost)
+static int32_t QueryEffectSceneModeChkReply(uint32_t countPre, uint32_t countPost)
 {
     CHECK_AND_RETURN_RET_LOG((countPre >= 0) && (countPre <= AUDIO_EFFECT_COUNT_UPPER_LIMIT), -1,
         "QUERY_EFFECT_SCENEMODE read replyParcel failed");
@@ -1335,7 +1335,7 @@ static int32_t QueryEffectSceneModeChkReply(int countPre, int countPost)
 
 int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
-    int i;
+    uint32_t i;
     int32_t error;
     MessageParcel data;
     MessageParcel reply;
@@ -1345,9 +1345,9 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_EFFECT_SCENEMODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get scene & mode failed, error: %d", error);
-    int countPre = reply.ReadInt32();
-    int countPost = reply.ReadInt32();
-    int32_t countPostMap = reply.ReadInt32();
+    uint32_t countPre = reply.ReadUint32();
+    uint32_t countPost = reply.ReadUint32();
+    uint32_t countPostMap = reply.ReadUint32();
     error = QueryEffectSceneModeChkReply(countPre, countPost);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get scene & mode failed, error: %d", error);
     // preprocess

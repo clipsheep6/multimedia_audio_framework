@@ -124,6 +124,10 @@ public:
 
     bool RestoreAudioStream() override;
 
+    bool GetOffloadEnable() override;
+    bool GetSpatializationEnabled() override;
+    bool GetHighResolutionEnabled() override;
+
 private:
     enum {
         BIN_TEST_MODE = 1,   //for bin file test
@@ -192,6 +196,8 @@ private:
 
     uint64_t lastFramePosition_ = 0;
     uint64_t lastFrameTimestamp_ = 0;
+
+    int32_t appUid_ = -1;
 };
 
 class AudioStreamPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {

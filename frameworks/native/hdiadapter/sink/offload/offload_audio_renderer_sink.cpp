@@ -566,6 +566,8 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 
 int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
+    int64_t stamp = ClockTime::GetCurNano();
+
     CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "failed! state not in started");
     int32_t ret;
@@ -589,6 +591,12 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     }
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrameOffload failed! ret: %{public}x", ret);
     renderPos_ += writeLen;
+
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+    int64_t stampThreshold = 20;  // 20ms
+    if (stamp >= stampThreshold) {
+        AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
+    }
     return SUCCESS;
 }
 
@@ -927,7 +935,7 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
         return;
     }
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    uint32_t byteSize = GetFormatByteSize(attr_.format);
+    int32_t byteSize = GetFormatByteSize(attr_.format);
     size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
         (byteSize * sizeof(uint8_t) * attr_.channel);
     detectedTime_ += newlyCheckedTime;
@@ -956,7 +964,6 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
 
 int32_t OffloadAudioRendererSinkInner::SetPaPower(int32_t flag)
 {
-    AUDIO_WARNING_LOG("not supported.");
     (void)flag;
     return ERR_NOT_SUPPORTED;
 }

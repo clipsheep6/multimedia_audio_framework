@@ -38,7 +38,6 @@
 #endif
 
 #include "media_monitor_manager.h"
-#include "event_bean.h"
 
 using namespace std;
 
@@ -49,6 +48,7 @@ AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint32_t INIT_TIMEOUT_IN_SEC = 3;
+const uint32_t GET_LATENCY_TIMEOUT_IN_SEC = 3;
 const uint32_t CONNECT_TIMEOUT_IN_SEC = 10;
 const uint32_t DRAIN_TIMEOUT_IN_SEC = 3;
 const uint32_t CORK_TIMEOUT_IN_SEC = 3;
@@ -103,7 +103,8 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_VOICE_MESSAGE, "voice_message"},
     {STREAM_NAVIGATION, "navigation"},
     {STREAM_SOURCE_VOICE_CALL, "source_voice_call"},
-    {STREAM_VOICE_COMMUNICATION, "voice_call"}
+    {STREAM_VOICE_COMMUNICATION, "voice_call"},
+    {STREAM_VOICE_RING, "ring"},
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -363,6 +364,7 @@ void AudioServiceClient::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, in
         asClient->isGetLatencySuccess_ = false;
     }
     const pa_timing_info *info = pa_stream_get_timing_info(stream);
+    CHECK_AND_RETURN_LOG(info, "get pa_timing_info is null");
     asClient->offloadWriteIndex_ = pa_bytes_to_usec(info->write_index, &asClient->sampleSpec);
     asClient->offloadReadIndex_ = pa_bytes_to_usec(info->read_index, &asClient->sampleSpec);
     asClient->offloadTimeStamp_ = info->timestamp.tv_sec * AUDIO_US_PER_SECOND + info->timestamp.tv_usec;
@@ -2261,16 +2263,8 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timestamp)
     CHECK_AND_RETURN_RET(ret >= 0, AUDIO_CLIENT_PA_ERR);
     pa_threaded_mainloop_lock(mainLoop);
 
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
-        if (operation != nullptr) {
-            while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-                pa_threaded_mainloop_wait(mainLoop);
-            }
-            pa_operation_unref(operation);
-        } else {
-            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-        }
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && HandleRenderUpdateTimingInfo() != AUDIO_CLIENT_SUCCESS) {
+        return AUDIO_CLIENT_ERR;
     }
 
     const pa_timing_info *info = pa_stream_get_timing_info(paStream);
@@ -2301,6 +2295,26 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timestamp)
 
     pa_threaded_mainloop_unlock(mainLoop);
 
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+int32_t AudioServiceClient::HandleRenderUpdateTimingInfo()
+{
+    pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
+    CHECK_AND_RETURN_RET_LOG(operation != nullptr, AUDIO_CLIENT_SUCCESS, "pa_stream_update_timing_info failed");
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        StartTimer(GET_LATENCY_TIMEOUT_IN_SEC);
+        pa_threaded_mainloop_wait(mainLoop);
+        StopTimer();
+        if (IsTimeOut()) {
+            AUDIO_ERR_LOG("Get audio latency timeout");
+            TimeoutRecover(PA_ERR_TIMEOUT);
+            pa_operation_unref(operation);
+            pa_threaded_mainloop_unlock(mainLoop);
+            return AUDIO_CLIENT_ERR;
+        }
+    }
+    pa_operation_unref(operation);
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -2364,10 +2378,11 @@ int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t
     } else {
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
-    StartTimer(INIT_TIMEOUT_IN_SEC);
+    StartTimer(GET_LATENCY_TIMEOUT_IN_SEC);
     pa_threaded_mainloop_wait(mainLoop);
     StopTimer();
     if (IsTimeOut()) {
+        TimeoutRecover(PA_ERR_TIMEOUT);
         AUDIO_ERR_LOG("Get audio position timeout");
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
@@ -2398,12 +2413,12 @@ int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t
 
 void AudioServiceClient::GetAudioLatencyOffload(uint64_t &latency)
 {
-    uint64_t timeNow = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
+    uint64_t timeNow = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count());
     bool offloadPwrActive = offloadStatePolicy_ != OFFLOAD_INACTIVE_BACKGROUND;
     if (offloadPwrActive ||
         timeNow >
-        static_cast<int64_t>(offloadLastUpdatePaInfoTs_ + AUDIO_US_PER_SECOND / 20)) { // 20 times per sec is max
+        static_cast<uint64_t>(offloadLastUpdatePaInfoTs_ + AUDIO_US_PER_SECOND / 20)) { // 20 times per sec is max
         pa_threaded_mainloop_lock(mainLoop);
         pa_operation *operation = pa_stream_update_timing_info(
             paStream, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
@@ -2457,10 +2472,11 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
     AUDIO_DEBUG_LOG("waiting for audio latency information");
-    StartTimer(INIT_TIMEOUT_IN_SEC);
+    StartTimer(GET_LATENCY_TIMEOUT_IN_SEC);
     pa_threaded_mainloop_wait(mainLoop);
     StopTimer();
     if (IsTimeOut()) {
+        TimeoutRecover(PA_ERR_TIMEOUT);
         AUDIO_ERR_LOG("Get audio latency timeout");
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
@@ -2932,6 +2948,11 @@ int32_t AudioServiceClient::UnsetStreamOffloadMode()
 {
     lastOffloadUpdateFinishTime_ = 0;
     offloadEnable_ = false;
+
+    int32_t retCheck = CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
+    AUDIO_INFO_LOG("calling unset stream offloadMode paStatus: %{public}d", retCheck);
+    CHECK_AND_RETURN_RET(retCheck >= 0, AUDIO_CLIENT_PA_ERR);
+
     pa_threaded_mainloop_lock(mainLoop);
     int32_t ret = UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
     pa_threaded_mainloop_unlock(mainLoop);
@@ -3024,6 +3045,7 @@ AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType 
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
+        case STREAM_VOICE_RING:
             return STREAM_RING;
         case STREAM_MUSIC:
         case STREAM_MEDIA:

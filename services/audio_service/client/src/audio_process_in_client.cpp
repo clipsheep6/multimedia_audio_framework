@@ -294,7 +294,10 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     AudioProcessConfig resetConfig = config;
-    resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
+    if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
+        config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
+        resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
+    }
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig);
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
     sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
@@ -667,7 +670,13 @@ int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 
 bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
 {
-    if (config.streamInfo.encoding != ENCODING_PCM || config.streamInfo.samplingRate != SAMPLE_RATE_48000) {
+    if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
+        config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION &&
+        config.streamInfo.samplingRate != SAMPLE_RATE_48000) {
+        return false;
+    }
+
+    if (config.streamInfo.encoding != ENCODING_PCM) {
         return false;
     }
 
@@ -808,7 +817,7 @@ int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const 
         AudioStreamData srcData = {processConfig_.streamInfo, srcDesc, 0, 0};
         AudioStreamData dstData = {g_targetStreamInfo, dstDesc, 0, 0};
         bool succ = ChannelFormatConvert(srcData, dstData);
-        CHECK_AND_RETURN_RET_LOG(succ == true, ERR_OPERATION_FAILED, "Convert data failed!");
+        CHECK_AND_RETURN_RET_LOG(succ, ERR_OPERATION_FAILED, "Convert data failed!");
         AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
         if (bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
             ProcessVolume(dstData);
@@ -1106,7 +1115,10 @@ int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame,
 {
     Trace trace("AudioProcessInClient::GetPredictNextRead");
     CHECK_AND_RETURN_RET_LOG(spanSizeInFrame_ != 0, 0, "spanSizeInFrame is 0.");
-    uint64_t handleSpanCnt = posInFrame / spanSizeInFrame_;
+    uint64_t handleSpanCnt = 0;
+    if (spanSizeInFrame_ != 0) {
+        handleSpanCnt = posInFrame / spanSizeInFrame_;
+    }
     uint32_t startPeriodCnt = 20; // sync each time when start
     uint32_t oneBigPeriodCnt = 40; // 200ms
     if (isIndependent) {

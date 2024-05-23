@@ -35,6 +35,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 const unsigned int REQUEST_THREAD_PRIORITY_TIME_OUT_SECONDS = 10;
+constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
@@ -65,7 +66,7 @@ AudioSystemManager *AudioSystemManager::GetInstance()
     return &audioManager;
 }
 
-uint32_t AudioSystemManager::GetCallingPid()
+int32_t AudioSystemManager::GetCallingPid()
 {
     return getpid();
 }
@@ -122,6 +123,7 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::CreateS
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_DTMF)] = STREAM_DTMF;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
 
     return streamMap;
 }
@@ -189,6 +191,7 @@ int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
 
 std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
 {
+    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName_FromUid", GET_BUNDLE_INFO_TIME_OUT_SECONDS);
     std::string bundleName = "";
 
     sptr<ISystemAbilityManager> systemAbilityManager =
@@ -278,6 +281,7 @@ bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:{
             bool ret = PermissionUtil::VerifySelfPermission();
@@ -377,6 +381,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
@@ -404,6 +409,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
@@ -480,6 +486,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
@@ -509,6 +516,7 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
@@ -530,14 +538,14 @@ int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, flag, callback);
 }
 
 int32_t AudioSystemManager::UnsetDeviceChangeCallback(DeviceFlag flag)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     return AudioPolicyManager::GetInstance().UnsetDeviceChangeCallback(clientId, flag);
 }
 
@@ -689,7 +697,7 @@ int32_t AudioSystemManager::RegisterFocusInfoChangeCallback(
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
 
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     AUDIO_DEBUG_LOG("RegisterFocusInfoChangeCallback clientId:%{public}d", clientId);
     if (audioFocusInfoCallback_ == nullptr) {
         audioFocusInfoCallback_ = std::make_shared<AudioFocusInfoChangeCallbackImpl>();
@@ -711,7 +719,7 @@ int32_t AudioSystemManager::RegisterFocusInfoChangeCallback(
 int32_t AudioSystemManager::UnregisterFocusInfoChangeCallback(
     const std::shared_ptr<AudioFocusInfoChangeCallback> &callback)
 {
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     int32_t ret = 0;
 
     if (callback == nullptr) {
@@ -901,7 +909,7 @@ int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
 
 int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const std::shared_ptr<AudioManagerCallback> &callback)
 {
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     AUDIO_INFO_LOG("client id: %{public}d", clientId);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
 
@@ -931,7 +939,7 @@ int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const std::shared_p
 
 int32_t AudioSystemManager::UnsetAudioManagerInterruptCallback()
 {
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     AUDIO_INFO_LOG("client id: %{public}d", clientId);
 
     int32_t ret = AudioPolicyManager::GetInstance().UnsetAudioManagerInterruptCallback(clientId);
@@ -945,7 +953,7 @@ int32_t AudioSystemManager::UnsetAudioManagerInterruptCallback()
 
 int32_t AudioSystemManager::RequestAudioFocus(const AudioInterrupt &audioInterrupt)
 {
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     AUDIO_INFO_LOG("RequestAudioFocus client id: %{public}d", clientId);
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.contentType >= CONTENT_TYPE_UNKNOWN &&
         audioInterrupt.contentType <= CONTENT_TYPE_ULTRASONIC, ERR_INVALID_PARAM, "Invalid content type");
@@ -958,7 +966,7 @@ int32_t AudioSystemManager::RequestAudioFocus(const AudioInterrupt &audioInterru
 
 int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterrupt)
 {
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     AUDIO_INFO_LOG("AbandonAudioFocus client id: %{public}d", clientId);
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.contentType >= CONTENT_TYPE_UNKNOWN &&
         audioInterrupt.contentType <= CONTENT_TYPE_ULTRASONIC, ERR_INVALID_PARAM, "Invalid content type");
@@ -1044,11 +1052,11 @@ bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
 {
     AUDIO_INFO_LOG("RequestIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
-    audioInterrupt.sessionId = clientId;
+    audioInterrupt.sessionId = static_cast<uint32_t>(clientId);
     int32_t result = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 
     AUDIO_DEBUG_LOG("Rresult -> %{public}d", result);
@@ -1058,11 +1066,11 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
 {
     AUDIO_INFO_LOG("AbandonIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
-    audioInterrupt.sessionId = clientId;
+    audioInterrupt.sessionId = static_cast<uint32_t>(clientId);
     int32_t result = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     AUDIO_DEBUG_LOG("result -> %{public}d", result);
     return (result == SUCCESS) ? true:false;
@@ -1088,6 +1096,8 @@ int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
 
 std::string AudioSystemManager::GetSelfBundleName()
 {
+    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName", GET_BUNDLE_INFO_TIME_OUT_SECONDS);
+
     std::string bundleName = "";
 
     sptr<ISystemAbilityManager> systemAbilityManager =
@@ -1320,13 +1330,13 @@ int32_t AudioSystemManager::SetAvailableDeviceChangeCallback(const AudioDeviceUs
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     return AudioPolicyManager::GetInstance().SetAvailableDeviceChangeCallback(clientId, usage, callback);
 }
 
 int32_t AudioSystemManager::UnsetAvailableDeviceChangeCallback(AudioDeviceUsage usage)
 {
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     return AudioPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(clientId, usage);
 }
 

@@ -46,7 +46,6 @@
             "config_policy",
             "data_share",
             "device_manager",
-            "distributed_audio",
             "drivers_interface_audio",
             "drivers_interface_distributed_audio",
             "drivers_peripheral_audio",
@@ -73,8 +72,8 @@
             "bounds_checking_function",
             "pulseaudio",
             "libuv",
-            "googletest",
             "cJSON",
+            "opensles",
             "media_foundation"
             ],
           "third_party": [

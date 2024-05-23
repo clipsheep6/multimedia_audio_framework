@@ -47,7 +47,8 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
     // The three devices represent the three volume groups(build-in, wireless, wired).
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_BLUETOOTH_A2DP,
-    DEVICE_TYPE_WIRED_HEADSET
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_REMOTE_CAST
 };
 
 static std::map<VolumeDataMaintainer::VolumeDataMaintainerStreamType, AudioStreamType> AUDIO_STREAMTYPE_MAP = {
@@ -384,6 +385,7 @@ bool VolumeDataMaintainer::SaveSafeStatus(DeviceType deviceType, SafeStatus safe
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
             ret = settingProvider.PutIntValue(AUDIO_SAFE_VOLUME_STATE, static_cast<int32_t>(safeStatus));
             break;
         default:
@@ -410,6 +412,7 @@ bool VolumeDataMaintainer::GetSafeStatus(DeviceType deviceType, SafeStatus &safe
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
             ret = settingProvider.GetIntValue(AUDIO_SAFE_VOLUME_STATE, value);
             break;
         default:
@@ -440,6 +443,7 @@ bool VolumeDataMaintainer::SaveSafeVolumeTime(DeviceType deviceType, int64_t tim
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
             ret = settingProvider.PutLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS, time, "secure");
             break;
         default:
@@ -466,6 +470,7 @@ bool VolumeDataMaintainer::GetSafeVolumeTime(DeviceType deviceType, int64_t &tim
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
             ret = settingProvider.GetLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS, time, "secure");
             break;
         default:
@@ -535,7 +540,11 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
             type = "_wired";
+            return type;
+        case DEVICE_TYPE_REMOTE_CAST:
+            type = "_remote_cast";
             return type;
         default:
             AUDIO_ERR_LOG("device %{public}d is not supported for dataShare", deviceType);

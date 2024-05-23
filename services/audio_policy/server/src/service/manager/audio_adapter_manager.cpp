@@ -28,6 +28,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_volume_parser.h"
+#include "audio_utils.h"
+#include "audio_policy_server_handler.h"
 
 using namespace std;
 
@@ -48,7 +50,8 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
     // The three devices represent the three volume groups(build-in, wireless, wired).
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_BLUETOOTH_A2DP,
-    DEVICE_TYPE_WIRED_HEADSET
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_REMOTE_CAST
 };
 
 static const std::vector<AudioStreamType> VOICE_CALL_VOLUME_TYPE_LIST = {
@@ -61,6 +64,7 @@ static const std::vector<AudioStreamType> VOICE_CALL_VOLUME_TYPE_LIST = {
 static const std::vector<AudioStreamType> RINGTONE_VOLUME_TYPE_LIST = {
     // all stream types for ringtone volume type
     STREAM_RING,
+    STREAM_VOICE_RING,
     STREAM_SYSTEM,
     STREAM_NOTIFICATION,
     STREAM_SYSTEM_ENFORCED,
@@ -169,6 +173,14 @@ void AudioAdapterManager::InitKVStoreInternal()
     bool isFirstBoot = false;
     volumeDataMaintainer_.RegisterCloned();
     InitAudioPolicyKvStore(isFirstBoot);
+    auto handler = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendKvDataUpdate(isFirstBoot);
+    }
+}
+
+void AudioAdapterManager::HandleKvData(bool isFirstBoot)
+{
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
     InitMuteStatusMap(isFirstBoot);
@@ -322,12 +334,12 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
         "SetSystemVolumeLevel audio adapter null");
 
-    AUDIO_INFO_LOG("SetVolumeDb: streamType %{public}d, volumeDb %{public}f", streamType, volumeDb);
+    AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d", streamType, volumeDb, volumeLevel);
     if (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION) {
         return SetVolumeDbForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST, volumeDb);
     } else if (streamType == STREAM_MUSIC) {
         return SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamType == STREAM_RING) {
+    } else if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING) {
         return SetVolumeDbForVolumeTypeGroup(RINGTONE_VOLUME_TYPE_LIST, volumeDb);
     }
 
@@ -591,6 +603,7 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", audioModuleInfo.lib.c_str(), moduleArgs.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    curActiveCount_++;
     return audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
 }
 
@@ -606,7 +619,13 @@ AudioIOHandle AudioAdapterManager::LoadLoopback(const LoopbackModuleInfo &module
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    curActiveCount_--;
     return audioServiceAdapter_->CloseAudioPort(ioHandle);
+}
+
+int32_t AudioAdapterManager::GetCurActivateCount() const
+{
+    return curActiveCount_ > 0 ? curActiveCount_ : 0;
 }
 
 void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
@@ -809,6 +828,7 @@ std::string AudioAdapterManager::GetVolumeKeyForKvStore(DeviceType deviceType, A
         case STREAM_MUSIC:
             return typeStr + "_music_volume";
         case STREAM_RING:
+        case STREAM_VOICE_RING:
             return typeStr + "_ring_volume";
         case STREAM_SYSTEM:
             return typeStr + "_system_volume";
@@ -873,6 +893,7 @@ AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType strea
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
+        case STREAM_VOICE_RING:
             return STREAM_RING;
         case STREAM_MUSIC:
         case STREAM_MEDIA:
@@ -1343,8 +1364,8 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_DP:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
             type = "wired";
             break;
         default:
@@ -1356,6 +1377,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
         case STREAM_MUSIC:
             return type + "_music_mute_status";
         case STREAM_RING:
+        case STREAM_VOICE_RING:
             return type + "_ring_mute_status";
         case STREAM_SYSTEM:
             return type + "_system_mute_status";
@@ -1495,7 +1517,7 @@ uint32_t AudioAdapterManager::GetPositionInVolumePoints(std::vector<VolumePoint>
     int32_t rightPos = volumePoints.size() - 1;
     while (leftPos <= rightPos) {
         int32_t midPos = leftPos + (rightPos - leftPos)/NUMBER_TWO;
-        int32_t c = volumePoints[midPos].index - idx;
+        int32_t c = static_cast<int32_t>(volumePoints[midPos].index) - idx;
         if (c == 0) {
             leftPos = midPos;
             break;
@@ -1531,7 +1553,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     GetVolumePoints(streamAlias, deviceCategory, volumePoints);
     uint32_t pointSize = volumePoints.size();
 
-    int32_t volSteps = 1 + volumePoints[pointSize - 1].index - volumePoints[0].index;
+    int32_t volSteps = static_cast<int32_t>(1 + volumePoints[pointSize - 1].index - volumePoints[0].index);
     int32_t idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
     int32_t position = GetPositionInVolumePoints(volumePoints, idxRatio);
     if (position == 0) {
@@ -1653,25 +1675,23 @@ int32_t AudioAdapterManager::GetSafeVolumeTimeout() const
     return safeVolumeTimeout_;
 }
 
-int32_t AudioAdapterManager::Dump(int32_t fd, const std::vector<std::u16string> &args)
+void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
 {
-    std::stringstream dumpStringStream;
+    dumpString += "SafeVolume info:\n";
     for (auto &streamType : VOLUME_TYPE_LIST) {
-        dumpStringStream << std::endl << "AudioStreamType: " << streamType <<
-            ", volumeLevel: " << volumeDataMaintainer_.GetStreamVolume(streamType) << std::endl;
-        dumpStringStream << std::endl << "AudioStreamType: " << streamType << ", streamMuteStatus: " <<
-            volumeDataMaintainer_.GetStreamMute(streamType) << std::endl;
+        AppendFormat(dumpString, "  - samplingAudioStreamTypeate: %d", streamType);
+        AppendFormat(dumpString, "   volumeLevel: %d\n", volumeDataMaintainer_.GetStreamVolume(streamType));
+        AppendFormat(dumpString, "  - AudioStreamType: %d", streamType);
+        AppendFormat(dumpString, "   streamMuteStatus: %d\n", volumeDataMaintainer_.GetStreamMute(streamType));
     }
     std::string statusBt = (safeStatusBt_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
     std::string status = (safeStatus_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
-    dumpStringStream << std::endl << "ringerMode: " << ringerMode_ << std::endl;
-    dumpStringStream << std::endl << "SafeVolume: " << safeVolume_ << std::endl;
-    dumpStringStream << std::endl << "BtSafeStatus: " << statusBt.c_str() << std::endl;
-    dumpStringStream << std::endl << "SafeStatus: " << status.c_str() << std::endl;
-    dumpStringStream << std::endl << "ActiveBtSafeTime: " << safeActiveBtTime_ << std::endl;
-    dumpStringStream << std::endl << "ActiveSafeTime: " << safeActiveTime_ << std::endl;
-    std::string dumpString = dumpStringStream.str();
-    return write(fd, dumpString.c_str(), dumpString.size());
+    AppendFormat(dumpString, "  - ringerMode: %d\n", ringerMode_);
+    AppendFormat(dumpString, "  - SafeVolume: %d\n", safeVolume_);
+    AppendFormat(dumpString, "  - BtSafeStatus: %s\n", statusBt.c_str());
+    AppendFormat(dumpString, "  - SafeStatus: %s\n", status.c_str());
+    AppendFormat(dumpString, "  - ActiveBtSafeTime: %llu\n", safeActiveBtTime_);
+    AppendFormat(dumpString, "  - ActiveSafeTime: %llu\n", safeActiveTime_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

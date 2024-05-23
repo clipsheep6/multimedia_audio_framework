@@ -65,11 +65,15 @@ int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureC
 void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
+    rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+    rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
+    capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY_IN;
+    capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
 int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
@@ -99,10 +103,12 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         config.rendererInfo.contentType = rendererInfo_.contentType;
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+        config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
         config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+        config.capturerInfo.originalFlag = capturerInfo_.originalFlag;
     } else {
         return ERR_INVALID_OPERATION;
     }
@@ -167,8 +173,8 @@ bool FastAudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "GetAudioTime failed: null process");
     int64_t timeSec = 0;
     int64_t timeNsec = 0;
-    int32_t ret = processClient_->GetAudioTime(timestamp.framePosition, timeSec, timeNsec);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "GetBufferSize error.");
+    bool ret = processClient_->GetAudioTime(timestamp.framePosition, timeSec, timeNsec);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "GetBufferSize error.");
     timestamp.time.tv_sec = timeSec;
     timestamp.time.tv_nsec = timeNsec;
     return true;
@@ -769,6 +775,9 @@ int32_t FastAudioStream::SetVolumeWithRamp(float volume, int32_t duration)
 
 void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo)
 {
+    rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
+    capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
+
     registerTrackerInfo.sessionId = sessionId_;
     registerTrackerInfo.clientPid = clientPid_;
     registerTrackerInfo.state = state_;
@@ -871,6 +880,24 @@ bool FastAudioStream::RestoreAudioStream()
 error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
+    return false;
+}
+
+bool FastAudioStream::GetOffloadEnable()
+{
+    AUDIO_WARNING_LOG("not supported in fast audio stream");
+    return false;
+}
+
+bool FastAudioStream::GetSpatializationEnabled()
+{
+    AUDIO_WARNING_LOG("not supported in fast audio stream");
+    return false;
+}
+
+bool FastAudioStream::GetHighResolutionEnabled()
+{
+    AUDIO_WARNING_LOG("not supported in fast audio stream");
     return false;
 }
 
