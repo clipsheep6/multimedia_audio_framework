@@ -310,9 +310,17 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     }
 
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
-    volumeDataMaintainer_.SaveVolume(currentActiveDevice_, streamType, volumeLevel);
+    auto handler = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
+    }
 
     return SetVolumeDb(streamType);
+}
+
+void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel)
+{
+    volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel);
 }
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
