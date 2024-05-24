@@ -448,6 +448,10 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
     size_t originalSpanSizeInFrame = static_cast<size_t>(spanSizeInFrame_);
     size_t tmp = static_cast<size_t>(frameSize);
+    if (spanSizeInFrame_ == 0) {
+        AUDIO_ERR_LOG("SetPreferredFrameSize failed.");
+        return;
+    }
     size_t count = static_cast<size_t>(frameSize / spanSizeInFrame_);
     size_t rest = frameSize % spanSizeInFrame_;
     if (tmp <= originalSpanSizeInFrame) {
@@ -1380,7 +1384,8 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
 
     int tryCount = 10; // try 10 * 2 = 20ms
     SpanStatus targetStatus = SpanStatus::SPAN_READ_DONE;
-    while (!tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_WRITTING) && tryCount-- > 0) {
+    while (!tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_WRITTING) && tryCount > 0) {
+        tryCount--;
         AUDIO_WARNING_LOG("span %{public}" PRIu64" not ready, status: %{public}d, wait 2ms.", curWritePos,
             targetStatus);
         targetStatus = SpanStatus::SPAN_READ_DONE;
