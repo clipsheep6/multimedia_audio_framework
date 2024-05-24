@@ -112,6 +112,15 @@ public:
     virtual int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode) = 0;
 
     /**
+     * Set Asr Whisper Mode.
+     *
+     * @param key for the audio parameter to be set
+     * @param value associated with the key for the audio parameter to be set
+     * @return none.
+     */
+    virtual int32_t SetAsrWhisperMode(AsrWhisperMode asrWhisperMode) = 0;
+
+    /**
      * Set Asr Aec Mode.
      *
      * @param key for the audio parameter to be set
@@ -415,6 +424,7 @@ private:
     int HandleGetAsrAecMode(MessageParcel &data, MessageParcel &reply);
     int HandleSetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleGetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAsrWhisperMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
@@ -463,6 +473,7 @@ private:
         &AudioManagerStub::HandleGetAsrAecMode,
         &AudioManagerStub::HandleSetAsrNoiseSuppressionMode,
         &AudioManagerStub::HandleGetAsrNoiseSuppressionMode,
+        &AudioManagerStub::HandleSetAsrWhisperMode,
         &AudioManagerStub::HandleIsWhispering,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);

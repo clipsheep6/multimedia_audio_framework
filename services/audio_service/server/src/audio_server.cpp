@@ -106,6 +106,16 @@ std::map<AsrNoiseSuppressionMode, std::string> nsModeMapVerse = {
     {AsrNoiseSuppressionMode::FAR_FIELD, "FAR_FIELD"}
 };
 
+std::map<std::string, AsrWhisperMode> whisperModeMap = {
+    {"ON", AsrWhisperMode::ON},
+    {"OFF", AsrWhisperMode::OFF}
+};
+
+std::map<AsrWhisperMode, std::string> whisperModeMapVerse = {
+    {AsrWhisperMode::ON, "ON"},
+    {AsrWhisperMode::OFF, "OFF"}
+};
+
 class CapturerStateOb final : public ICapturerStateCallback {
 public:
     explicit CapturerStateOb(std::function<void(bool, int32_t)> callback) : callback_(callback)
@@ -462,6 +472,29 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNois
         AUDIO_ERR_LOG("read failed.");
         return ERR_READ_FAILED;
     }
+    return 0;
+}
+
+int32_t AudioServer::SetAsrWhisperMode(AsrWhisperMode asrWhisperMode)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "Check playback permission failed,no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    std::string key = "asr_whisper_mode";
+    std::string value = key + "=";
+
+    auto it = whisperModeMapVerse.find(asrWhisperMode);
+    if (it != whisperModeMapVerse.end()) {
+        value = key + "=" + it->second;
+    } else {
+        AUDIO_ERR_LOG("write failed.");
+        return ERR_WRITE_FAILED;
+    }
+    AudioServer::audioParameters[key] = value;
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
     return 0;
 }
 
