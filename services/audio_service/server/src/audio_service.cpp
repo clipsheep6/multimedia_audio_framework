@@ -360,6 +360,17 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     return process;
 }
 
+bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config)
+{
+    if ((config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION &&
+        config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_FAST) ||
+        (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        config.capturerInfo.capturerFlags == AUDIO_FLAG_VOIP_FAST)) {
+        return true;
+    }
+    return false;
+}
+
 void AudioService::ResetAudioEndpoint()
 {
     std::lock_guard<std::mutex> lock(processListMutex_);
