@@ -242,7 +242,9 @@ void BluetoothRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* c
 
 void BluetoothRendererSinkInner::DeInit()
 {
+    Trace trace("BluetoothRendererSinkInner::DeInit");
     AUDIO_INFO_LOG("DeInit.");
+
     started_ = false;
     rendererInited_ = false;
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
@@ -664,6 +666,7 @@ int32_t BluetoothRendererSinkInner::Stop(void)
 
     if (started_) {
         AUDIO_DEBUG_LOG("Stop control before");
+        Trace trace("BluetoothRendererSinkInner::Stop::control.Stop");
         ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
         AUDIO_DEBUG_LOG("Stop control after");
         if (!ret) {
