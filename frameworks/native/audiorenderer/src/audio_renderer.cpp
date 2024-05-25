@@ -604,9 +604,10 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
         return false;
     }
 
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
-
+    if (!audioStream_->GetSilentModeAndMixWithOthers()) {
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
+    }
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_RETURN_RET(audioInterrupt_.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION, true);
 
@@ -1080,6 +1081,23 @@ void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
         return;
     }
     audioInterrupt_.mode = mode;
+}
+
+void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
+{
+    if (GetSilentModeAndMixWithOthers() && !on && GetStatus() == RENDERER_RUNNING) {
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+	CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed");
+    } else if (!GetSilentModeAndMixWithOthers() && on && GetStatus() == RENDERER_RUNNING) {
+        int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
+    }
+    audioStream->SetSilentModeAndMixWithOthers(on);
+}
+
+bool AudioRendererPrivate::GetSilentModeAndMixWithOthers()
+{
+    return audioStream->GetSilentModeAndMixWithOthers();
 }
 
 int32_t AudioRendererPrivate::SetParallelPlayFlag(bool parallelPlayFlag)
