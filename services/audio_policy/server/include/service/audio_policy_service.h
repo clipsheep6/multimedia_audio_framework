@@ -845,6 +845,7 @@ private:
         const AudioStreamDeviceChangeReason reason);
     void WriteInputRouteChangeEvent(unique_ptr<AudioDeviceDescriptor> &desc,
         const AudioStreamDeviceChangeReason reason);
+    void WriteSelectDeviceEvent(StreamUsage strUsage);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -869,7 +870,6 @@ private:
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
-    DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     std::vector<std::pair<DeviceType, bool>> pnpDeviceList_;
@@ -905,23 +905,6 @@ private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
 
-    std::vector<DeviceType> outputPriorityList_ = {
-        DEVICE_TYPE_BLUETOOTH_SCO,
-        DEVICE_TYPE_BLUETOOTH_A2DP,
-        DEVICE_TYPE_DP,
-        DEVICE_TYPE_USB_HEADSET,
-        DEVICE_TYPE_WIRED_HEADSET,
-        DEVICE_TYPE_SPEAKER
-    };
-    std::vector<DeviceType> inputPriorityList_ = {
-        DEVICE_TYPE_BLUETOOTH_SCO,
-        DEVICE_TYPE_BLUETOOTH_A2DP,
-        DEVICE_TYPE_USB_HEADSET,
-        DEVICE_TYPE_WIRED_HEADSET,
-        DEVICE_TYPE_WAKEUP,
-        DEVICE_TYPE_MIC
-    };
-
     std::vector<sptr<VolumeGroupInfo>> volumeGroups_;
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
     std::unordered_map<std::string, std::string> volumeGroupData_;
@@ -935,7 +918,7 @@ private:
 
     std::mutex fetchDeviceSharedMutex_;
 
-    std::mutex deviceStatusUpdateSharedMutex_;
+    mutable std::shared_mutex deviceStatusUpdateSharedMutex_;
     std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
@@ -974,9 +957,6 @@ private:
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;
 
-    SourceType currentSourceType = SOURCE_TYPE_MIC;
-    uint32_t currentRate = 0;
-    bool updateA2dpOffloadLogFlag = false;
     std::unordered_map<uint32_t, bool> sessionHasBeenSpatialized_;
     std::mutex checkSpatializedMutex_;
     SafeStatus safeStatusBt_ = SAFE_UNKNOWN;
