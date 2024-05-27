@@ -25,7 +25,7 @@ namespace AudioStandard {
 typedef struct {
     const char *adapterName;
     uint32_t openMicSpeaker;
-    HdiAdapterFormat format = HdiAdapterFormat::INVALID_WIDTH;
+    HdiAdapterFormat format;
     uint32_t sampleRate = 0;
     uint32_t channel = 0;
     float volume = 0.0f;
