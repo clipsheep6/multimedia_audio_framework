@@ -134,6 +134,7 @@ void PaRendererStreamImpl::PAStreamEventCb(pa_stream *stream, const char *event,
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();
     CHECK_AND_RETURN_LOG(streamImpl, "PAStreamEventCb: userdata is null");
+    AUDIO_INFO_LOG("PAStreamEventCb streamIndex_:%{public}u", streamImpl->streamIndex_);
     if (!strcmp(event, "fading_out_done")) {
         streamImpl->isFadeoutDone_.store(true);
         pa_threaded_mainloop_signal(streamImpl->mainloop_, 0);
@@ -143,7 +144,7 @@ void PaRendererStreamImpl::PAStreamEventCb(pa_stream *stream, const char *event,
 
 int32_t PaRendererStreamImpl::Start()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Start");
+    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Start streamIndex_:%{public}u", streamIndex_);
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -163,7 +164,7 @@ int32_t PaRendererStreamImpl::Start()
 
 int32_t PaRendererStreamImpl::Pause()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Pause");
+    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Pause streamIndex_:%{public}u", streamIndex_);
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -175,7 +176,24 @@ int32_t PaRendererStreamImpl::Pause()
         return ERR_OPERATION_FAILED;
     }
 
+    pa_proplist *propList = pa_proplist_new();
+    if (propList != nullptr) {
+        isFadeoutDone_.store(false);
+        pa_proplist_sets(propList, "fadeoutPause", "1");
+        pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
+            nullptr, nullptr);
+        pa_proplist_free(propList);
+        pa_operation_unref(updatePropOperation);
+        AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        pa_threaded_mainloop_wait(mainloop_);
+        AUDIO_INFO_LOG("after pa_threaded_mainloop_wait");
+    } else {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+    }
+
+    AUDIO_INFO_LOG("pa_stream_cork1");
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
+    AUDIO_INFO_LOG("pa_stream_cork2");
     pa_operation_unref(operation);
 
     return SUCCESS;
@@ -183,7 +201,7 @@ int32_t PaRendererStreamImpl::Pause()
 
 int32_t PaRendererStreamImpl::Flush()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Flush");
+    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Flush streamIndex_:%{public}u", streamIndex_);
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -209,7 +227,7 @@ int32_t PaRendererStreamImpl::Flush()
 
 int32_t PaRendererStreamImpl::Drain()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Drain");
+    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Drain streamIndex_:%{public}u", streamIndex_);
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -230,7 +248,7 @@ int32_t PaRendererStreamImpl::Drain()
 
 int32_t PaRendererStreamImpl::Stop()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Stop");
+    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Stop streamIndex_:%{public}u", streamIndex_);
     state_ = STOPPING;
     PaLockGuard lock(mainloop_);
 
@@ -247,6 +265,7 @@ int32_t PaRendererStreamImpl::Stop()
 
 int32_t PaRendererStreamImpl::Release()
 {
+    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Release streamIndex_:%{public}u", streamIndex_);
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_RELEASED);
@@ -597,6 +616,8 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
     auto streamImpl = paRendererStreamWeakPtr.lock();
     CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
 
+    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::PAStreamWriteCb streamIndex_:%{public}u", streamImpl->streamIndex_);
+
     Trace trace("PaRendererStreamImpl::PAStreamWriteCb sink-input:" + std::to_string(streamImpl->sinkInputIndex_) +
         " length:" + std::to_string(length));
     std::shared_ptr<IWriteCallback> writeCallback = streamImpl->writeCallback_.lock();
@@ -633,6 +654,7 @@ void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();
     CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
+    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::PAStreamUnderFlowCb streamIndex_:%{public}u", streamImpl->streamIndex_);
 
     streamImpl->underFlowCount_++;
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
@@ -701,6 +723,7 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();
     CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
+    AUDIO_INFO_LOG("PAStreamPauseSuccessCb in streamIndex_:%{public}u", streamImpl->streamIndex_);
 
     streamImpl->state_ = PAUSED;
     streamImpl->offloadTsLast_ = 0;
