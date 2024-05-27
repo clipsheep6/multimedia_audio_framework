@@ -1203,8 +1203,6 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
                 pa_sink_input_handle_ohos_underrun(sinkIn);
-                pa_memblock_unref(infoIn->chunk.memblock);
-                continue;
             }
             AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
 
