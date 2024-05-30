@@ -82,6 +82,9 @@ public:
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
     int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
     int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
+    int32_t SetAsrWhisperMode(AsrWhisperMode asrWhisperMode) override;
+    int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool ON) override;
+    int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool ON) override;
     int32_t IsWhispering() override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;

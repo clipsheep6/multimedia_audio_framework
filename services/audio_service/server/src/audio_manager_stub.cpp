@@ -103,6 +103,32 @@ int AudioManagerStub::HandleGetAsrNoiseSuppressionMode(MessageParcel &data, Mess
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetAsrWhisperMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrWhisperMode asrWhisperMode = (static_cast<AsrWhisperMode>(data.ReadInt32()));
+    int32_t result = SetAsrWhisperMode(asrWhisperMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetAsrVoiceControlMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrVoiceControlMode asrVoiceControlMode = (static_cast<AsrVoiceControlMode>(data.ReadInt32()));
+    bool ON = data.ReadBool();
+    int32_t result = SetAsrVoiceControlMode(asrVoiceControlMode, ON);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrVoiceMuteMode asrVoiceMuteMode = (static_cast<AsrVoiceMuteMode>(data.ReadInt32()));
+    bool ON = data.ReadBool();
+    int32_t result = SetAsrVoiceMuteMode(asrVoiceMuteMode, ON);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleIsWhispering(MessageParcel &data, MessageParcel &reply)
 {
     const std::string key = data.ReadString();

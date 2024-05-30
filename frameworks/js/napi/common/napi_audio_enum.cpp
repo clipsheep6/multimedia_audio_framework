@@ -74,6 +74,9 @@ napi_ref NapiAudioEnum::audioStreamDeviceChangeReason_ = nullptr;
 napi_ref NapiAudioEnum::spatializationSceneType_ = nullptr;
 napi_ref NapiAudioEnum::asrNoiseSuppressionMode_ = nullptr;
 napi_ref NapiAudioEnum::asrAecMode_ = nullptr;
+napi_ref NapiAudioEnum::asrWhisperMode_ = nullptr;
+napi_ref NapiAudioEnum::asrVoiceControlMode_ = nullptr;
+napi_ref NapiAudioEnum::asrVoiceMuteMode_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -463,6 +466,26 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
     {"STANDARD", static_cast<int32_t>(AsrAecMode::STANDARD)},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::asrWhisperModeMap = {
+    {"ON", static_cast<int32_t>(AsrWhisperMode::ON)},
+    {"OFF", static_cast<int32_t>(AsrWhisperMode::OFF)},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::asrVoiceControlModeMap = {
+    {"AUDIO_2_VOICETX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_2_VOICETX)},
+    {"AUDIO_MIX_2_VOICETX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_MIX_2_VOICETX)},
+    {"AUDIO_2_VOICE_TX_EX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX)},
+    {"AUDIO_MIX_2_VOICE_TX_EX", static_cast<int32_t>(AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX)},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::asrVoiceMuteModeMap = {
+    {"OUTPUT_MUTE", static_cast<int32_t>(AsrVoiceMuteMode::OUTPUT_MUTE)},
+    {"INPUT_MUTE", static_cast<int32_t>(AsrVoiceMuteMode::INPUT_MUTE)},
+    {"TTS_MUTE", static_cast<int32_t>(AsrVoiceMuteMode::TTS_MUTE)},
+    {"CALL_MUTE", static_cast<int32_t>(AsrVoiceMuteMode::CALL_MUTE)},
+    {"OUTPUT_MUTE_EX", static_cast<int32_t>(AsrVoiceMuteMode::OUTPUT_MUTE_EX)},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -577,6 +600,10 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AsrNoiseSuppressionMode", CreateEnumObject(env, asrNoiseSuppressionModeMap,
             asrNoiseSuppressionMode_)),
         DECLARE_NAPI_PROPERTY("AsrAecMode", CreateEnumObject(env, asrAecModeMap, asrAecMode_)),
+        DECLARE_NAPI_PROPERTY("AsrWhisperMode", CreateEnumObject(env, asrWhisperModeMap, asrWhisperMode_)),
+        DECLARE_NAPI_PROPERTY("AsrVoiceControlMode", CreateEnumObject(env,
+            asrVoiceControlModeMap, asrVoiceControlMode_)),
+        DECLARE_NAPI_PROPERTY("AsrVoiceMuteMode", CreateEnumObject(env, asrVoiceMuteModeMap, asrVoiceMuteMode_)),
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
