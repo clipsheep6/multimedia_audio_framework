@@ -20,12 +20,14 @@
 #include "audio_info.h"
 #include "audio_policy_server.h"
 #include "audio_interrupt_service.h"
+#include "system_ability_definition.h"
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 const int32_t LIMITSIZE = 4;
+const bool RUN_ON_CREATE = false;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 
 void InitFuzzTest(const uint8_t *rawData, size_t size)
@@ -33,7 +35,7 @@ void InitFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    sptr<AudioPolicyServer> server = nullptr;
+    sptr<AudioPolicyServer> server = new AudioPolicyServer(AUDIO_POLICY_SERVICE_ID, RUN_ON_CREATE);
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
 
     interruptService->Init(server);
@@ -85,7 +87,8 @@ void ActivateAudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    
+
+    sptr<AudioPolicyServer> server = new AudioPolicyServer(AUDIO_POLICY_SERVICE_ID, RUN_ON_CREATE);
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
 
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
@@ -94,6 +97,7 @@ void ActivateAudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     audioInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
     audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
 
+    interruptService->Init(server);
     interruptService->ActivateAudioInterrupt(zoneId, audioInterrupt);
 }
 
