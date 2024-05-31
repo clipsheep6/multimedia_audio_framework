@@ -1774,7 +1774,7 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
         AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
         return;
     }
-    int64_t writtenFrameNumber = totalBytesWritten_ / sizePerFrameInByte_;
+    int64_t writtenFrameNumber = static_cast<int64_t>(totalBytesWritten_) / static_cast<int64_t>(sizePerFrameInByte_);
     AUDIO_DEBUG_LOG("frame size: %{public}zu", sizePerFrameInByte_);
 
     {
