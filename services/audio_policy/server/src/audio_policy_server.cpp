@@ -2609,5 +2609,24 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
 }
+
+int32_t AudioPolicyServer::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+{
+    AUDIO_INFO_LOG("lxj AudioPolicyServer in");
+    return audioPolicyService_.SetAudioConcurrencyCallback(sessionID, object);
+}
+
+int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("lxj unset AudioPolicyServer in");
+    return audioPolicyService_.UnsetAudioConcurrencyCallback(sessionID);
+
+}
+
+int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    AUDIO_INFO_LOG("lxj activate concurrency in AudioPolicyServer");
+    return audioPolicyService_.ActivateAudioConcurrency(pipeType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

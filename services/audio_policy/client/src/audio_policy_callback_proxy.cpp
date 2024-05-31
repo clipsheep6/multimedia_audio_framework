@@ -147,5 +147,49 @@ int32_t AudioPolicyProxy::UnsetAvailableDeviceChangeCallback(const int32_t clien
 
     return reply.ReadInt32();
 }
+
+
+int32_t AudioPolicyProxy::SetAudioConcurrencyCallback(const uint32_t sessionID,
+    const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT,
+        "lxj SetAudioInterruptCallback object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "lxj WriteInterfaceToken failed");
+
+    //AUDIO_INFO_LOG("lxj set cb stop here");
+    //return SUCCESS;
+
+    data.WriteUint32(sessionID);
+    (void)data.WriteRemoteObject(object);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_CONCURRENCY_CALLBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "lxj SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "lxj WriteInterfaceToken failed");
+    //AUDIO_INFO_LOG("lxj unset stop here");
+    //return SUCCESS;
+    data.WriteUint32(sessionID);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_CONCURRENCY_CALLBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "lxj unset callback failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

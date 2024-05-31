@@ -1149,5 +1149,29 @@ void AudioPolicyManagerStub::DisableSafeMediaVolumeInternal(MessageParcel &data,
     int32_t ret = DisableSafeMediaVolume();
     reply.WriteInt32(ret);
 }
+
+void AudioPolicyManagerStub::SetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_INFO_LOG("lxj AudioPolicyManagerStub in");
+    uint32_t sessionID = data.ReadUint32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "lxj AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+    int32_t result = SetAudioConcurrencyCallback(sessionID, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionID = data.ReadUint32();
+    int32_t result = UnsetAudioConcurrencyCallback(sessionID);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::ActivateAudioConcurrencyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioPipeType pipeType = static_cast<AudioPipeType>(data.ReadInt32());
+    int32_t result = ActivateAudioConcurrency(pipeType);
+    reply.WriteInt32(result);
+}
 } // namespace audio_policy
 } // namespace OHOS

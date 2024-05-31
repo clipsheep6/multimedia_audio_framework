@@ -115,6 +115,8 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     }
     CHECK_AND_RETURN_RET_LOG(AudioProcessInClient::CheckIfSupport(config), ERR_INVALID_PARAM,
         "Stream is not supported.");
+    /*int32_t concurrencyCheckRet = ActivateAudioConcurrency();
+    CHECK_AND_RETURN_RET_LOG(concurrencyCheckRet == SUCCESS, concurrencyCheckRet, "lxj concede incoming");*/
     processconfig_ = config;
     processClient_ = AudioProcessInClient::Create(config);
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_INVALID_PARAM,
@@ -160,6 +162,11 @@ int32_t FastAudioStream::GetAudioSessionID(uint32_t &sessionID)
     int32_t ret = processClient_->GetSessionID(sessionID);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSessionID error.");
     return ret;
+}
+
+void FastAudioStream::GetAudioPipeType(AudioPipeType &pipeType)
+{
+    pipeType = eMode_ == AUDIO_MODE_PLAYBACK ? rendererInfo_.pipeType : capturerInfo_.pipeType;
 }
 
 State FastAudioStream::GetState()
@@ -787,6 +794,7 @@ void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &regist
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
     capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 
+    UpdateAudioPipeType();
     registerTrackerInfo.sessionId = sessionId_;
     registerTrackerInfo.clientPid = clientPid_;
     registerTrackerInfo.state = state_;
@@ -908,6 +916,37 @@ bool FastAudioStream::GetHighResolutionEnabled()
 {
     AUDIO_WARNING_LOG("not supported in fast audio stream");
     return false;
+}
+
+int32_t FastAudioStream::ActivateAudioConcurrency()
+{
+    AudioPipeType targetPipe = eMode_ == AUDIO_MODE_PLAYBACK ? PIPE_TYPE_LOWLATENCY_OUT : PIPE_TYPE_LOWLATENCY_IN;
+    if (eMode_ == AUDIO_MODE_PLAYBACK && rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        targetPipe = PIPE_TYPE_CALL_OUT;
+    }
+    if (eMode_ == AUDIO_MODE_RECORD && capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        targetPipe = PIPE_TYPE_CALL_IN;
+    }
+    return AudioPolicyManager::GetInstance().ActivateAudioConcurrency(targetPipe);
+}
+
+void FastAudioStream::UpdateAudioPipeType()
+{
+    if (eMode_ == AUDIO_MODE_PLAYBACK) {
+        if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+            rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
+            return;
+        }
+        rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+        return;
+    } else {
+        if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+            capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;
+            return;
+        }
+        capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY_IN;
+        return;
+    }
 }
 
 FastPolicyServiceDiedCallbackImpl::FastPolicyServiceDiedCallbackImpl()

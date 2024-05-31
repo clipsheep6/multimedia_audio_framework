@@ -24,9 +24,11 @@
 #include "audio_info.h"
 #include "audio_system_manager.h"
 #include "audio_policy_client.h"
+#include "i_standard_concurrency_state_listener.h"
 #include "i_standard_audio_policy_manager_listener.h"
 #include "i_standard_audio_routing_manager_listener.h"
 #include "i_audio_interrupt_event_dispatcher.h"
+#include "i_audio_concurrency_event_dispatcher.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -68,6 +70,7 @@ public:
         SPATIALIZATION_ENABLED_CHANGE,
         HEAD_TRACKING_ENABLED_CHANGE,
         DATABASE_UPDATE,
+        CONCURRENCY_EVENT_WITH_SESSIONID,
     };
     /* event data */
     class EventContextObj {
@@ -128,6 +131,7 @@ public:
     void AddDistributedRoutingRoleChangeCbsMap(int32_t clientId,
         const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId);
+    void AddConcurrencyEventDispatcher(std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher);
     bool SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
     bool SendAvailableDeviceChange(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
     bool SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent);
@@ -161,6 +165,7 @@ public:
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
     bool SendKvDataUpdate(const bool &isFirstBoot);
     int32_t SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
+    bool SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -193,11 +198,13 @@ private:
     void HandleSpatializatonEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     std::mutex runnerMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
+    std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
 
     std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
