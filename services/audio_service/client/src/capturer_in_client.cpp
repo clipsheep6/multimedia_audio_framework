@@ -102,6 +102,7 @@ public:
         AudioPermissionState state) override;
     State GetState() override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
+    void GetAudioPipeType(AudioPipeType &pipeType) override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     int32_t GetBufferSize(size_t &bufferSize) override;
@@ -249,6 +250,8 @@ private:
     int32_t HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer, bool isBlockingRead);
     int32_t RegisterCapturerInClientPolicyServerDiedCb();
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
+    int32_t ActivateAudioConcurrency();
+    void UpdateAudioPipeType();
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -504,6 +507,8 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
     }
 
+    int32_t concurrencyCheckRet = ActivateAudioConcurrency();
+    CHECK_AND_RETURN_RET_LOG(concurrencyCheckRet == SUCCESS, concurrencyCheckRet, "lxj concede incoming");
     streamParams_ = info; // keep it for later use
     paramsIsSet_ = true;
     int32_t initRet = InitIpcStream();
@@ -838,6 +843,11 @@ int32_t CapturerInClientInner::GetAudioSessionID(uint32_t &sessionID)
         "State error %{public}d", state_.load());
     sessionID = sessionId_;
     return SUCCESS;
+}
+
+void CapturerInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
+{
+    pipeType = capturerInfo_.pipeType;
 }
 
 State CapturerInClientInner::GetState()
@@ -1954,6 +1964,24 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+int32_t CapturerInClientInner::ActivateAudioConcurrency()
+{
+    AudioPipeType targetPipe = PIPE_TYPE_NORMAL_IN;
+    if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        targetPipe = PIPE_TYPE_CALL_IN;
+    }
+    return AudioPolicyManager::GetInstance().ActivateAudioConcurrency(targetPipe);
+}
+
+void CapturerInClientInner::UpdateAudioPipeType()
+{
+    capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
+    if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;
+        return;
+    }
 }
 
 CapturerInClientPolicyServiceDiedCallbackImpl::CapturerInClientPolicyServiceDiedCallbackImpl()

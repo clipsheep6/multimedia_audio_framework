@@ -77,6 +77,7 @@ public:
     bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
+    void GetAudioPipeType(AudioPipeType &pipeType) override;
     State GetState() override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
@@ -185,6 +186,8 @@ private:
 
     int32_t RegisterAudioStreamPolicyServerDiedCb();
     int32_t UnregisterAudioStreamPolicyServerDiedCb();
+    int32_t ActivateAudioConcurrency();
+    void UpdateAudioPipeType();
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;
