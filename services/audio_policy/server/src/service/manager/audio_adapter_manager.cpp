@@ -58,7 +58,8 @@ static const std::vector<AudioStreamType> VOICE_CALL_VOLUME_TYPE_LIST = {
     // all stream types for voice call volume type
     STREAM_VOICE_CALL,
     STREAM_VOICE_MESSAGE,
-    STREAM_VOICE_COMMUNICATION
+    STREAM_VOICE_COMMUNICATION,
+    STREAM_VOICE_CALL_ASSISTANT
 };
 
 static const std::vector<AudioStreamType> RINGTONE_VOLUME_TYPE_LIST = {
@@ -887,6 +888,7 @@ AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType strea
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
         case STREAM_VOICE_COMMUNICATION:
+        case STREAM_VOICE_CALL_ASSISTANT:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
