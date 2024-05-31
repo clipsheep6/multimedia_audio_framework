@@ -68,6 +68,7 @@ public:
         SPATIALIZATION_ENABLED_CHANGE,
         HEAD_TRACKING_ENABLED_CHANGE,
         DATABASE_UPDATE,
+        VOLUME_DATABASE_SAVE,
     };
     /* event data */
     class EventContextObj {
@@ -116,6 +117,16 @@ public:
         int32_t error_;
     };
 
+    struct VolumeDataEvent {
+        VolumeDataEvent() = delete;
+        VolumeDataEvent(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel)
+            : deviceType_(deviceType), streamType_(streamType), volumeLevel_(volumeLevel)
+        {}
+        DeviceType deviceType_;
+        AudioStreamType streamType_;
+        int32_t volumeLevel_;
+    };
+
     void Init(std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher);
 
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient> &cb);
@@ -160,7 +171,7 @@ public:
     bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
     bool SendKvDataUpdate(const bool &isFirstBoot);
-
+    bool SendSaveVolume(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel);
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
 
@@ -192,6 +203,7 @@ private:
     void HandleSpatializatonEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleVolumeDataBaseSave(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

@@ -453,6 +453,17 @@ bool AudioPolicyServerHandler::SendKvDataUpdate(const bool &isFirstBoot)
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendSaveVolume(const DeviceType &deviceType,
+    const AudioStreamType &streamType, const int32_t &volumeLevel)
+{
+    auto eventContextObj = std::make_shared<VolumeDataEvent>(deviceType, streamType, volumeLevel);
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = true;
+    ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::VOLUME_DATABASE_SAVE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendSaveVolume event failed");
+    return ret;
+}
+
 void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -800,6 +811,14 @@ void AudioPolicyServerHandler::HandleUpdateKvDataEvent(const AppExecFwk::InnerEv
     AudioPolicyManagerFactory::GetAudioPolicyManager().HandleKvData(isFristBoot);
 }
 
+void AudioPolicyServerHandler::HandleVolumeDataBaseSave(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<VolumeDataEvent> eventContextObj = event->GetSharedObject<VolumeDataEvent>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    AudioPolicyManagerFactory::GetAudioPolicyManager().HandleSaveVolume(eventContextObj->deviceType_,
+        eventContextObj->streamType_, eventContextObj->volumeLevel_);
+}
+
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -842,6 +861,9 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::DATABASE_UPDATE:
             HandleUpdateKvDataEvent(event);
+            break;
+        case EventAudioServerCmd::VOLUME_DATABASE_SAVE:
+            HandleVolumeDataBaseSave(event);
             break;
         default:
             break;
