@@ -82,6 +82,9 @@ public:
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
     int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
     int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
+    int32_t SetAsrWhisperMode(AsrWhisperMode asrWhisperMode) override;
+    int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) override;
+    int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
     bool GetEffectOffloadEnabled() override;
 private:
