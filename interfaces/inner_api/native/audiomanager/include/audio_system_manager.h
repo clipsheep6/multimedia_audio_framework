@@ -666,7 +666,7 @@ public:
      * @param value The value of the set audio parameter.
      * @since 12
      */
-    int32_t SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool ON);
+    int32_t SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool on);
     /**
      * @brief set audio parameter.
      *
@@ -674,7 +674,7 @@ public:
      * @param value The value of the set audio parameter.
      * @since 12
      */
-    int32_t SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool ON);
+    int32_t SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on);
     /**
      * @brief set audio parameter.
      *

@@ -127,7 +127,7 @@ public:
      * @param value associated with the key for the audio parameter to be set
      * @return none.
      */
-    virtual int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool ON) = 0;
+    virtual int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) = 0;
 
     /**
      * Set Voice Mute Mode.
@@ -136,7 +136,7 @@ public:
      * @param value associated with the key for the audio parameter to be set
      * @return none.
      */
-    virtual int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool ON) = 0;
+    virtual int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) = 0;
 
     /**
      * Set Asr Aec Mode.

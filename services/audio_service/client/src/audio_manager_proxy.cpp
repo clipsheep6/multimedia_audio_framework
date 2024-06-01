@@ -443,7 +443,7 @@ int32_t AudioManagerProxy::SetAsrWhisperMode(AsrWhisperMode asrWhisperMode)
     return result;
 }
 
-int32_t AudioManagerProxy::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool ON)
+int32_t AudioManagerProxy::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -452,7 +452,7 @@ int32_t AudioManagerProxy::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceCo
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(asrVoiceControlMode));
-    data.WriteBool(ON);
+    data.WriteBool(on);
 
     int32_t error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_CONTROL_MODE),
         data, reply, option);
@@ -461,7 +461,7 @@ int32_t AudioManagerProxy::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceCo
     return result;
 }
 
-int32_t AudioManagerProxy::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool ON)
+int32_t AudioManagerProxy::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -470,7 +470,7 @@ int32_t AudioManagerProxy::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(asrVoiceMuteMode));
-    data.WriteBool(ON);
+    data.WriteBool(on);
 
     int32_t error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_MUTE_MODE),
         data, reply, option);

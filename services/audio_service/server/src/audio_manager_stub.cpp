@@ -114,8 +114,8 @@ int AudioManagerStub::HandleSetAsrWhisperMode(MessageParcel &data, MessageParcel
 int AudioManagerStub::HandleSetAsrVoiceControlMode(MessageParcel &data, MessageParcel &reply)
 {
     AsrVoiceControlMode asrVoiceControlMode = (static_cast<AsrVoiceControlMode>(data.ReadInt32()));
-    bool ON = data.ReadBool();
-    int32_t result = SetAsrVoiceControlMode(asrVoiceControlMode, ON);
+    bool on = data.ReadBool();
+    int32_t result = SetAsrVoiceControlMode(asrVoiceControlMode, on);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -123,8 +123,8 @@ int AudioManagerStub::HandleSetAsrVoiceControlMode(MessageParcel &data, MessageP
 int AudioManagerStub::HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply)
 {
     AsrVoiceMuteMode asrVoiceMuteMode = (static_cast<AsrVoiceMuteMode>(data.ReadInt32()));
-    bool ON = data.ReadBool();
-    int32_t result = SetAsrVoiceMuteMode(asrVoiceMuteMode, ON);
+    bool on = data.ReadBool();
+    int32_t result = SetAsrVoiceMuteMode(asrVoiceMuteMode, on);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }

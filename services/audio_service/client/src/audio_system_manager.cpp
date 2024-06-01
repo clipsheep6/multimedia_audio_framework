@@ -331,16 +331,16 @@ int32_t AudioSystemManager::SetAsrWhisperMode(const AsrWhisperMode asrWhisperMod
     return gasp->SetAsrWhisperMode(asrWhisperMode);
 }
 
-int32_t AudioSystemManager::SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool ON)
+int32_t AudioSystemManager::SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool on)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    return gasp->SetAsrVoiceControlMode(asrVoiceControlMode, ON);
+    return gasp->SetAsrVoiceControlMode(asrVoiceControlMode, on);
 }
 
-int32_t AudioSystemManager::SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool ON)
+int32_t AudioSystemManager::SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    return gasp->SetAsrVoiceMuteMode(asrVoiceMuteMode, ON);
+    return gasp->SetAsrVoiceMuteMode(asrVoiceMuteMode, on);
 }
 
 int32_t AudioSystemManager::IsWhispering()
