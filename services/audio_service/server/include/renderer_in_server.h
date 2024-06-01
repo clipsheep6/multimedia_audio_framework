@@ -91,6 +91,10 @@ public:
 private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHightResolution() const noexcept;
+    void DoFadingOutFor8Bit(BufferDesc& bufferDesc, size_t bitSize);
+    void DoFadingOutFor16Bit(BufferDesc& bufferDesc, size_t bitSize);
+    void DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t bitSize);
+    void DoFadingOutFor32Bit(BufferDesc& bufferDesc, size_t bitSize);
     void DoFadingOut(BufferDesc& bufferDesc);
     void CheckFadingOutDone(int32_t fadeFlag, BufferDesc& bufferDesc);
     std::mutex statusLock_;
