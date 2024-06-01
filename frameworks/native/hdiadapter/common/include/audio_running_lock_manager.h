@@ -18,9 +18,9 @@
 
 #include <unordered_set>
 #include <mutex>
-#include <unordered_set>
 #include <vector>
 #include "audio_errors.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,6 +74,7 @@ public:
             lastAppsUid_ = currentAppsUid_;
             appsUid.insert(appsUid.end(), currentAppsUid_.begin(), currentAppsUid_.end());
         }
+        AUDIO_INFO_LOG("UpdateWorkSource %{public}zu appsUid", appsUid.size());
         return runningLock_->UpdateWorkSource(appsUid);
     }
 
