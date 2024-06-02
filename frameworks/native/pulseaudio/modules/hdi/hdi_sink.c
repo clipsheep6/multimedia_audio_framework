@@ -1088,14 +1088,117 @@ static void SinkRenderMultiChannelInputsDrop(pa_sink *si, pa_mix_info *infoIn, u
 
 static void silenceData(pa_mix_info *infoIn)
 {
+    AUDIO_INFO_LOG("silenceData");
     pa_memchunk_make_writable(&infoIn->chunk, 0);
     void *tmpdata = pa_memblock_acquire_chunk(&infoIn->chunk);
     memset_s(tmpdata, infoIn->chunk.length, 0, infoIn->chunk.length);
     pa_memblock_release(infoIn->chunk.memblock);
 }
 
+static void Fading8Bit(uint8_t *data, int32_t frameLen, int32_t channels, int32_t fadeType)
+{
+    AUDIO_INFO_LOG("FadingIn8Bit frameLen:%{public}d", frameLen);
+    if (frameLen == 0 || channels == 0) {
+        return;
+    }
+    for (int32_t i = 0; i < frameLen / channels; i++) {
+        for (int32_t j = 0; j < channels; j++) {
+            float fadeRatio = 1.0f;
+            if (fadeType == 0) {
+                fadeRatio = (float)(i * channels + j) / frameLen;
+            } else {
+                fadeRatio = (float)(frameLen - (i * channels + j)) / frameLen;
+            }
+            data[i * channels + j] *= fadeRatio;
+        }
+    }
+}
+
+static void Fading16Bit(int16_t *data, int32_t frameLen, int32_t channels, int32_t fadeType)
+{
+    AUDIO_INFO_LOG("FadingIn16Bit frameLen:%{public}d", frameLen);
+    if (frameLen == 0 || channels == 0) {
+        return;
+    }
+    for (int32_t i = 0; i < frameLen / channels; i++) {
+        for (int32_t j = 0; j < channels; j++) {
+            float fadeRatio = 1.0f;
+            if (fadeType == 0) {
+                fadeRatio = (float)(i * channels + j) / frameLen;
+            } else {
+                fadeRatio = (float)(frameLen - (i * channels + j)) / frameLen;
+            }
+            data[i * channels + j] *= fadeRatio;
+        }
+    }
+}
+
+static void Fading24Bit(uint8_t *data, int32_t frameLen, int32_t channels, int32_t fadeType)
+{
+    AUDIO_INFO_LOG("FadingIn24Bit frameLen:%{public}d", frameLen);
+    if (frameLen == 0 || channels == 0) {
+        return;
+    }
+    for (int32_t i = 0; i < frameLen / channels; i++) {
+        for (int32_t j = 0; j < channels; j++) {
+            float fadeRatio = 1.0f;
+            if (fadeType == 0) {
+                fadeRatio = (float)(i * channels + j) / frameLen;
+            } else {
+                fadeRatio = (float)(frameLen - (i * channels + j)) / frameLen;
+            }
+            int32_t s = Read24Bit(data);
+            s *= fadeRatio;
+            Write24Bit(data, s);
+            data += OFFSET_BIT_24;
+        }
+    }
+}
+
+static void Fading32Bit(int32_t *data, int32_t frameLen, int32_t channels, int32_t fadeType)
+{
+    AUDIO_INFO_LOG("FadingIn32Bit frameLen:%{public}d", frameLen);
+    if (frameLen == 0 || channels == 0) {
+        return;
+    }
+    for (int32_t i = 0; i < frameLen / channels; i++) {
+        for (int32_t j = 0; j < channels; j++) {
+            float fadeRatio = 1.0f;
+            if (fadeType == 0) {
+                fadeRatio = (float)(i * channels + j) / frameLen;
+            } else {
+                fadeRatio = (float)(frameLen - (i * channels + j)) / frameLen;
+            }
+            data[i * channels + j] *= fadeRatio;
+        }
+    }
+}
+
+static void DoFading(void *data, int32_t frameLen, int32_t channels, int32_t bitSize, int32_t fadeType)
+{
+    AUDIO_INFO_LOG("DoFading frameLen:%{public}d channels:%{public}d bitSize:%{public}d fadeType:%{public}d",
+        frameLen, channels, bitSize, fadeType);
+    switch (bitSize) {
+        case 1:
+            Fading8Bit((uint8_t*)data, frameLen, channels, fadeType);
+            break;
+        case 2:
+            Fading16Bit((int16_t*)data, frameLen, channels, fadeType);
+            break;
+        case 3:
+            Fading24Bit((uint8_t*)data, frameLen, channels, fadeType);
+            break;
+        case 4:
+            Fading32Bit((int32_t*)data, frameLen, channels, fadeType);
+            break;
+        default:
+            break;
+    }
+}
+
 static int32_t DoFadingIn(int16_t *data, int32_t frameLen, int32_t channels)
 {
+    AUDIO_INFO_LOG("DoFadingIn frameLen:%{public}d", frameLen);
     if (frameLen == 0 || channels == 0) {
         return 0;
     }
@@ -1110,6 +1213,7 @@ static int32_t DoFadingIn(int16_t *data, int32_t frameLen, int32_t channels)
 
 static int32_t DoFadingOut(int16_t *data, int32_t frameLen, int32_t channels)
 {
+    AUDIO_INFO_LOG("DoFadingOut frameLen:%{public}d", frameLen);
     if (frameLen == 0 || channels == 0) {
         return 0;
     }
@@ -1134,10 +1238,15 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
 
     const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
     if (pa_safe_streq(sinkFadeoutPause, "2") && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
-        silenceData(infoIn);
+        // silenceData(infoIn);
         return;
     }
 
+    if ((pa_atomic_load(&u->primary.fadingFlagForPrimary) != 1) && (!pa_safe_streq(sinkFadeoutPause, "1"))) {
+        return;
+    }
+    AUDIO_INFO_LOG("sinkFadeoutPause:%{public}s thread_info.state:%{public}d",
+        sinkFadeoutPause, sinkIn->thread_info.state);
     pa_memchunk_make_writable(&infoIn->chunk, 0);
     void *tmpdata = pa_memblock_acquire_chunk(&infoIn->chunk);
     int16_t *data = (int16_t *)tmpdata;
@@ -1147,16 +1256,19 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         int32_t channels = u->ss.channels;
         //do fading in
         if (pa_atomic_load(&u->primary.fadingFlagForPrimary) == 1) {
-            if (DoFadingIn(data, frameLen, channels)) {
-                u->primary.primaryFadingInDone = 1;
-            }
-        }
-        //do fading out
-        if (pa_safe_streq(sinkFadeoutPause, "1")) {
-            if (DoFadingOut(data, frameLen, channels)) {
-                pa_proplist_sets(sinkIn->proplist, "fadeoutPause", "2");
-                pa_sink_input_send_event(sinkIn, "fading_out_done", NULL);
-            }
+            AUDIO_INFO_LOG("format:%{public}d bitSize:%{public}d channels:%{public}d", u->format, bitSize, channels);
+            DoFading(data, frameLen, channels, bitSize, 0);
+            u->primary.primaryFadingInDone = 1;
+
+            // DoFading(data, frameLen, channels, bitSize, 1);
+            // pa_proplist_sets(sinkIn->proplist, "fadeoutPause", "2");
+            // pa_sink_input_send_event(sinkIn, "fading_out_done", NULL);
+        } else if (pa_safe_streq(sinkFadeoutPause, "1")) {
+            //do fading out
+            AUDIO_INFO_LOG("format:%{public}d bitSize:%{public}d channels:%{public}d", u->format, bitSize, channels);
+            DoFading(data, frameLen, channels, bitSize, 1);
+            pa_proplist_sets(sinkIn->proplist, "fadeoutPause", "2");
+            // pa_sink_input_send_event(sinkIn, "fading_out_done", NULL);
         }
     }
     pa_memblock_release(infoIn->chunk.memblock);
