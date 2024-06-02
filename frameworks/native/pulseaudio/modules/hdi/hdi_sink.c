@@ -1155,7 +1155,6 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         if (pa_safe_streq(sinkFadeoutPause, "1")) {
             if (DoFadingOut(data, frameLen, channels)) {
                 pa_proplist_sets(sinkIn->proplist, "fadeoutPause", "2");
-                pa_sink_input_send_event(sinkIn, "fading_out_done", NULL);
             }
         }
     }
@@ -1282,7 +1281,6 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
         if (pa_safe_streq(sinkFadeoutPause, "1")) {
             if (DoFadingOut(data, frameLen, channels)) {
                 pa_proplist_sets(sinkIn->proplist, "fadeoutPause", "2");
-                pa_sink_input_send_event(sinkIn, "fading_out_done", NULL);
             }
         }
     }
