@@ -57,6 +57,9 @@ public:
     int32_t Pause(void) override;
     int32_t Resume(void) override;
     int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
+    int32_t CaptureFrameWithEc(
+        char *frame, uint64_t requestBytes, uint64_t &replyBytes,
+        char *frameEc, uint64_t requestBytesEc, uint64_t &replyBytesEc) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetMute(bool isMute) override;
@@ -166,6 +169,9 @@ public:
     int32_t Pause(void) override;
     int32_t Resume(void) override;
     int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
+    int32_t CaptureFrameWithEc(
+        char *frame, uint64_t requestBytes, uint64_t &replyBytes,
+        char *frameEc, uint64_t requestBytesEc, uint64_t &replyBytesEc) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetMute(bool isMute) override;
@@ -557,6 +563,21 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
 
+    // for ec stream
+    if (attr_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        param.ecSampleAttributes.ecInterleaved = true;
+        param.ecSampleAttributes.ecFormat = param.format;
+        param.ecSampleAttributes.ecSampleRate = param.sampleRate;
+        param.ecSampleAttributes.ecChannelCount = param.channelCount;
+        param.ecSampleAttributes.ecPeriod = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
+        param.ecSampleAttributes.ecFrameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
+        param.ecSampleAttributes.ecIsBigEndian = false;
+        param.ecSampleAttributes.ecIsSignedData = true
+        param.ecSampleAttributes.ecStartThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+        param.ecSampleAttributes.ecStopThreshold = INT_32_MAX
+        param.ecSampleAttributes.ecSilenceThreshold = AUDIO_BUFF_SIZE
+    }
+
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
     deviceDesc.pins = PIN_IN_MIC;
@@ -609,6 +630,27 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     if (logMode_) {
         AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
     }
+    return SUCCESS;
+}
+
+int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
+    char *frame, uint64_t requestBytes, uint64_t &replyBytes,
+    char *frameEc, uint64_t requestBytesEc, uint64_t &replyBytesEc)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
+
+    struct AudioCaptureFrameInfo frameInfo;
+    frameInfo.frame = frame;
+    frameInfo.frameSize = requestBytes;
+    frameInfo.frameEc = frame;
+    frameInfo.frameEcSize = requestBytesEc;
+
+    int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, frameInfo);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
+
+    replyBytes = frameInfo.replyBytes;
+    replyBytesEc = frameInfo.replyBytesEc;
+
     return SUCCESS;
 }
 
@@ -1337,6 +1379,14 @@ int32_t AudioCapturerSourceWakeup::CaptureFrame(char *frame, uint64_t requestByt
     int32_t res = wakeupBuffer_->Poll(frame, requestBytes, replyBytes, noStart_);
     noStart_ += replyBytes;
     return res;
+}
+
+int32_t AudioCapturerSourceWakeup::CaptureFrameWithEc(
+    char *frame, uint64_t requestBytes, uint64_t &replyBytes,
+    char *frameEc, uint64_t requestBytesEc, uint64_t &replyBytesEc)
+{
+    AUDIO_ERR_LOG("not supported!");
+    return ERR_DEVICE_NOT_SUPPORTED;
 }
 
 int32_t AudioCapturerSourceWakeup::SetVolume(float left, float right)

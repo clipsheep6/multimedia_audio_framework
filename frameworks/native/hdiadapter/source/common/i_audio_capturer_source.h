@@ -72,6 +72,9 @@ public:
     virtual int32_t Resume(void) = 0;
 
     virtual int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) = 0;
+    virtual int32_t CaptureFrameWithEc(
+        char *frame, uint64_t requestBytes, uint64_t &replyBytes,
+        char *frameEc, uint64_t requestBytesEc, uint64_t &replyBytesEc) = 0;
 
     virtual int32_t SetVolume(float left, float right) = 0;
     virtual int32_t GetVolume(float &left, float &right) = 0;

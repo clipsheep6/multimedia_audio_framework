@@ -184,6 +184,24 @@ int32_t IAudioCapturerSourceFrame(void *wapper, char *frame, uint64_t requestByt
     return ret;
 }
 
+int32_t IAudioCapturerSourceFrameWithEc(void *wapper,
+    char *frame, uint64_t requestBytes, uint64_t *replyBytes,
+    char *frameEc, uint64_t requestBytesEc, uint64_t *replyBytesEc)
+{
+    int32_t ret;
+    IAudioCapturerSource *iAudioCapturerSource = static_cast<IAudioCapturerSource *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(iAudioCapturerSource != nullptr, ERR_INVALID_HANDLE, "null audioCapturerSource");
+    bool isInited = iAudioCapturerSource->IsInited();
+    CHECK_AND_RETURN_RET_LOG(isInited, ERR_DEVICE_INIT,
+        "audioCapturer Not Inited! Init the capturer first\n");
+
+    ret = iAudioCapturerSource->CaptureFrameWithEc(
+        frame, requestBytes, *replyBytes,
+        frameEc, requestBytesEc, *replyBytesEc);
+
+    return ret;
+}
+
 int32_t IAudioCapturerSourceSetVolume(void *wapper, float left, float right)
 {
     int32_t ret;

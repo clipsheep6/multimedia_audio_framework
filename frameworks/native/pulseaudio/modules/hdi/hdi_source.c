@@ -199,7 +199,10 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
 {
     uint64_t requestBytes;
     uint64_t replyBytes = 0;
+    uint64_t requestBytesEc;
+    uint64_t replyBytesEc = 0;
     void *p = NULL;
+    void *pEc = NULL;
 
     chunk->length = u->buffer_size;
     AUDIO_DEBUG_LOG("HDI Source: chunk.length = u->buffer_size: %{public}zu", chunk->length);
@@ -209,7 +212,19 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
     pa_assert(p);
 
     requestBytes = pa_memblock_get_length(chunk->memblock);
-    u->sourceAdapter->CapturerSourceFrame(u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
+
+    // need allocat buffer for pEc and decide requestBytesEc here
+    requestBytesEc = requestBytes
+
+    if (u->attrs.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
+        u->sourceAdapter->CapturerSourceFrame(
+            u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
+    } else {
+        u->sourceAdapter->CapturerSourceFrameWithEc(
+            u->sourceAdapter->wapper,
+            (char *)p, (uint64_t)requestBytes, &replyBytes,
+            (char *)pEc, (uint64_t)requestBytesEc, &replyBytesEc);
+    }
 
     pa_memblock_release(chunk->memblock);
     AUDIO_DEBUG_LOG("HDI Source: request bytes: %{public}" PRIu64 ", replyBytes: %{public}" PRIu64,
