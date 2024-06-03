@@ -248,12 +248,13 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
             continue;
         }
         if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
-            for (uint32_t port = 0; port < desc->portsLen; port++) {
-                // Only find out the port of out in the sound card
-                if (desc->ports[port].dir == portFlag) {
-                    renderPort = desc->ports[port];
-                    return index;
-                }
+            continue;
+        }
+        for (uint32_t port = 0; port < desc->portsLen; port++) {
+            // Only find out the port of out in the sound card
+            if (desc->ports[port].dir == portFlag) {
+                renderPort = desc->ports[port];
+                return index;
             }
         }
     }
