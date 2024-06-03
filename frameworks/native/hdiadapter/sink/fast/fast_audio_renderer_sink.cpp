@@ -241,25 +241,13 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
     if (descs == nullptr) {
         return ERROR;
     }
-
+    if (strcmp(desc->adapterName, adapterNameCase.c_str())) {
+        continue;
+    }
     for (int32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
-        }
-<<<<<<< HEAD
-        if (strcmp(desc->adapterName, adapterNameCase.c_str())) {
-=======
-        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
->>>>>>> 82e393d2c0d044d277d09637845a55a55c0d9f1c
-            continue;
-        }
-        for (uint32_t port = 0; port < desc->portsLen; port++) {
-            // Only find out the port of out in the sound card
-            if (desc->ports[port].dir == portFlag) {
-                renderPort = desc->ports[port];
-                return index;
-            }
         }
     }
     AUDIO_ERR_LOG("SwitchAdapterRender Fail");
