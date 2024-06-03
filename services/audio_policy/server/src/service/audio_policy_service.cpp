@@ -2546,6 +2546,8 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
 
 void AudioPolicyService::UnloadA2dpModule()
 {
+    std::string activePort = BLUETOOTH_SPEAKER;
+    audioPolicyManager_.SuspendAudioDevice(activePort, true);
     ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
 }
 

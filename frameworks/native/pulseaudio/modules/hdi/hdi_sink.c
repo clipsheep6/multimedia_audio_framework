@@ -4191,6 +4191,7 @@ static void UserdataFreeThread(struct Userdata *u)
 
 static void UserdataFree(struct Userdata *u)
 {
+    AUTO_CTRACE("hdi_sink::UserdataFree");
     pa_assert(u);
 
     if (u->sink) {
