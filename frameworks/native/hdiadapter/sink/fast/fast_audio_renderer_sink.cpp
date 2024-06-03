@@ -247,7 +247,11 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
+<<<<<<< HEAD
         if (strcmp(desc->adapterName, adapterNameCase.c_str())) {
+=======
+        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
+>>>>>>> 82e393d2c0d044d277d09637845a55a55c0d9f1c
             continue;
         }
         for (uint32_t port = 0; port < desc->portsLen; port++) {

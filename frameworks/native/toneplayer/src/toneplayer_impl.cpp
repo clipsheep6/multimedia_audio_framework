@@ -38,6 +38,22 @@ constexpr int32_t AMPLITUDE = 8000;
 constexpr int32_t BIT8 = 8;
 }
 
+std::shared_ptr<TonePlayer> TonePlayer::Create(const AudioRendererInfo &rendererInfo)
+{
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        return nullptr;
+    }
+    return std::make_shared<TonePlayerImpl>("", rendererInfo);
+}
+
+std::shared_ptr<TonePlayer> TonePlayer::Create(const std::string cachePath, const AudioRendererInfo &rendererInfo)
+{
+    bool checkPermission = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(checkPermission, nullptr, "Create: No system permission");
+    return std::make_shared<TonePlayerImpl>(cachePath, rendererInfo);
+}
+
 TonePlayerImpl::TonePlayerImpl(const std::string cachePath, const AudioRendererInfo &rendereInfo)
 {
     toneState_ = TONE_IDLE;
