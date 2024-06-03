@@ -453,7 +453,7 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
         asrAecModeSink = it->second;
     } else {
         AUDIO_ERR_LOG("read failed.");
-        return ERR_READ_FAILED;
+        return ERR_INVALID_PARAM;
     }
 
     std::vector<std::string> resMode = splitString(asrAecModeSink, "=");
@@ -513,7 +513,7 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNois
         asrNoiseSuppressionModeSink = it->second;
     } else {
         AUDIO_ERR_LOG("read failed.");
-        return ERR_READ_FAILED;
+        return ERR_INVALID_PARAM;
     }
 
     std::vector<std::string> resMode = splitString(asrNoiseSuppressionModeSink, "=");

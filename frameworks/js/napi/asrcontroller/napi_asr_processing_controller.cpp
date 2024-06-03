@@ -37,17 +37,39 @@ static const std::map<int32_t, int32_t> ERR_MAP = {
     {ERR_SYSTEM_PERMISSION_DENIED, NAPI_ERR_PERMISSION_DENIED},
     {ERR_INVALID_PARAM, NAPI_ERR_INVALID_PARAM},
     {ERROR, NAPI_ERR_UNSUPPORTED},
-    {ERR_READ_FAILED, NAPI_ERR_INVALID_PARAM},
     {-1, NAPI_ERR_UNSUPPORTED},
 };
 
 static const std::map<int32_t, std::string> ERR_INFO_MAP = {
-    {ERR_SYSTEM_PERMISSION_DENIED, NAPI_ERROR_PERMISSION_DENIED_INFO},
-    {ERR_INVALID_PARAM, NAPI_ERR_INVALID_PARAM_INFO},
-    {ERROR, NAPI_ERR_UNSUPPORTED_INFO},
-    {ERR_READ_FAILED, NAPI_ERR_INVALID_PARAM_INFO},
-    {-1, NAPI_ERR_UNSUPPORTED_INFO},
+    {ERR_SYSTEM_PERMISSION_DENIED, "Caller is not a system application."},
+    {ERR_INVALID_PARAM, "Parameter verification failed. : The param of mode must be mode enum"},
+    {ERROR, "Operation not allowed."},
+    {-1, "Operation not allowed."},
 };
+
+static int32_t GetResInt(int32_t errNum)
+{
+    auto it = ERR_MAP.find(errNum);
+    int32_t errInt = NAPI_ERR_UNSUPPORTED;
+    if (it != ERR_MAP.end()) {
+        errInt = it->second;
+    } else {
+        AUDIO_ERR_LOG("err not found.");
+    }
+    return errInt;
+}
+
+static std::string GetResStr(int32_t errNum)
+{
+    auto it = ERR_INFO_MAP.find(errNum);
+    std::string errStr = "Operation not allowed.";
+    if (it != ERR_INFO_MAP.end()) {
+        errStr = it->second;
+    } else {
+        AUDIO_ERR_LOG("err not found.");
+    }
+    return errStr;
+}
 
 static bool CheckCapturerValid(napi_env env, napi_value capturer)
 {
@@ -223,30 +245,6 @@ napi_value NapiAsrProcessingController::CreateAsrProcessingController(napi_env e
     return NapiAsrProcessingController::CreateAsrProcessingControllerWrapper(env);
 }
 
-static int32_t getResInt(int32_t errNum)
-{
-    auto it = ERR_MAP.find(errNum);
-    int32_t errInt = NAPI_ERR_UNSUPPORTED;
-    if (it != ERR_MAP.end()) {
-        errInt = it->second;
-    } else {
-        AUDIO_ERR_LOG("err not found.");
-    }
-    return errInt;
-}
-
-static std::string getResStr(int32_t errNum)
-{
-    auto it = ERR_INFO_MAP.find(errNum);
-    std::string errStr = NAPI_ERR_UNSUPPORTED_INFO;
-    if (it != ERR_INFO_MAP.end()) {
-        errStr = it->second;
-    } else {
-        AUDIO_ERR_LOG("err not found.");
-    }
-    return errStr;
-}
-
 napi_value NapiAsrProcessingController::SetAsrAecMode(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
@@ -267,7 +265,7 @@ napi_value NapiAsrProcessingController::SetAsrAecMode(napi_env env, napi_callbac
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->SetAsrAecMode(static_cast<AsrAecMode>(asrAecMode));
     CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env,
-        getResInt(res), getResStr(res)), "SetAsrAecMode fail");
+        GetResInt(res), GetResStr(res)), "SetAsrAecMode fail");
     bool setSuc = ((res == 0) ? true : false);
     NapiParamUtils::SetValueBoolean(env, setSuc, result);
     return result;
@@ -283,7 +281,7 @@ napi_value NapiAsrProcessingController::GetAsrAecMode(napi_env env, napi_callbac
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->GetAsrAecMode(asrAecMode);
     CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env,
-        getResInt(res), getResStr(res)), "GetAsrAecMode fail");
+        GetResInt(res), GetResStr(res)), "GetAsrAecMode fail");
     NapiParamUtils::SetValueInt32(env, int32_t(asrAecMode), result);
     return result;
 }
@@ -311,7 +309,7 @@ napi_value NapiAsrProcessingController::SetAsrNoiseSuppressionMode(napi_env env,
     int32_t res = napiAsrController->audioMngr_->SetAsrNoiseSuppressionMode(
         static_cast<AsrNoiseSuppressionMode>(asrNoiseSuppressionMode));
     CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env,
-        getResInt(res), getResStr(res)), "SetNSMode fail");
+        GetResInt(res), GetResStr(res)), "SetNSMode fail");
     bool setSuc = ((res == 0) ? true : false);
     NapiParamUtils::SetValueBoolean(env, setSuc, result);
     return result;
@@ -327,7 +325,7 @@ napi_value NapiAsrProcessingController::GetAsrNoiseSuppressionMode(napi_env env,
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
     CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env,
-        getResInt(res), getResStr(res)), "GetNSMode fail");
+        GetResInt(res), GetResStr(res)), "GetNSMode fail");
     NapiParamUtils::SetValueInt32(env, int32_t(asrNoiseSuppressionMode), result);
     return result;
 }
@@ -351,7 +349,7 @@ napi_value NapiAsrProcessingController::SetAsrWhisperMode(napi_env env, napi_cal
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->SetAsrWhisperMode(static_cast<AsrWhisperMode>(asrWhisperMode));
     CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env,
-        getResInt(res), getResStr(res)), "SetAsrWhisperMode fail");
+        GetResInt(res), GetResStr(res)), "SetAsrWhisperMode fail");
     bool setSuc = ((res == 0) ? true : false);
     NapiParamUtils::SetValueBoolean(env, setSuc, result);
     return result;
@@ -384,7 +382,7 @@ napi_value NapiAsrProcessingController::SetAsrVoiceControlMode(napi_env env, nap
     int32_t res = napiAsrController->audioMngr_->SetAsrVoiceControlMode(
         static_cast<AsrVoiceControlMode>(asrVoiceControlMode), on);
     CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env,
-        getResInt(res), getResStr(res)), "SetVCMode fail");
+        GetResInt(res), GetResStr(res)), "SetVCMode fail");
     bool setSuc = ((res == 0) ? true : false);
     NapiParamUtils::SetValueBoolean(env, setSuc, result);
     return result;
@@ -417,7 +415,7 @@ napi_value NapiAsrProcessingController::SetAsrVoiceMuteMode(napi_env env, napi_c
     int32_t res = napiAsrController->audioMngr_->SetAsrVoiceMuteMode(
         static_cast<AsrVoiceMuteMode>(asrVoiceMuteMode), on);
     CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env,
-        getResInt(res), getResStr(res)), "SetVMMode fail");
+        GetResInt(res), GetResStr(res)), "SetVMMode fail");
     bool setSuc = ((res == 0) ? true : false);
     NapiParamUtils::SetValueBoolean(env, setSuc, result);
     return result;
@@ -432,7 +430,7 @@ napi_value NapiAsrProcessingController::IsWhispering(napi_env env, napi_callback
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->IsWhispering();
     CHECK_AND_RETURN_RET_LOG(res == 0 || res == 1, NapiAudioError::ThrowErrorAndReturn(env,
-        getResInt(res), getResStr(res)), "IsWhispering fail");
+        GetResInt(res), GetResStr(res)), "IsWhispering fail");
     bool setSuc = ((res == 0) ? true : false);
     NapiParamUtils::SetValueBoolean(env, setSuc, result);
     return result;
