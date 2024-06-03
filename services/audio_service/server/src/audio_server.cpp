@@ -466,11 +466,11 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
             asrAecMode = it->second;
         } else {
             AUDIO_ERR_LOG("read failed.");
-            return ERR_READ_FAILED;
+            return ERR_INVALID_PARAM;
         }
     } else {
         AUDIO_ERR_LOG("read failed.");
-        return ERR_READ_FAILED;
+        return ERR_INVALID_PARAM;
     }
     return 0;
 }
@@ -526,11 +526,11 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNois
             asrNoiseSuppressionMode = it->second;
         } else {
             AUDIO_ERR_LOG("read failed.");
-            return ERR_READ_FAILED;
+            return ERR_INVALID_PARAM;
         }
     } else {
         AUDIO_ERR_LOG("read failed.");
-        return ERR_READ_FAILED;
+        return ERR_INVALID_PARAM;
     }
     return 0;
 }
