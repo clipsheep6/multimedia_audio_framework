@@ -572,10 +572,10 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
         param.ecSampleAttributes.ecPeriod = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
         param.ecSampleAttributes.ecFrameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
         param.ecSampleAttributes.ecIsBigEndian = false;
-        param.ecSampleAttributes.ecIsSignedData = true
+        param.ecSampleAttributes.ecIsSignedData = true;
         param.ecSampleAttributes.ecStartThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
-        param.ecSampleAttributes.ecStopThreshold = INT_32_MAX
-        param.ecSampleAttributes.ecSilenceThreshold = AUDIO_BUFF_SIZE
+        param.ecSampleAttributes.ecStopThreshold = INT_32_MAX;
+        param.ecSampleAttributes.ecSilenceThreshold = AUDIO_BUFF_SIZE;
     }
 
     struct AudioDeviceDescriptor deviceDesc;
@@ -640,12 +640,12 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
 
     struct AudioCaptureFrameInfo frameInfo;
-    frameInfo.frame = frame;
+    frameInfo.frame = reinterpret_cast<int8_t*>(frame);
     frameInfo.frameSize = requestBytes;
-    frameInfo.frameEc = frame;
+    frameInfo.frameEc = reinterpret_cast<int8_t*>(frame);
     frameInfo.frameEcSize = requestBytesEc;
 
-    int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, frameInfo);
+    int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameInfo);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
 
     replyBytes = frameInfo.replyBytes;
