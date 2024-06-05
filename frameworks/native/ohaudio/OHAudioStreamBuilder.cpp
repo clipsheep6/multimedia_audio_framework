@@ -369,7 +369,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
         privacyType_
     };
 
-    OHAudioRenderer *audioRenderer = new OHAudioRenderer();
+    OHAudioRenderer *audioRenderer = OHAudioRenderer::Create();
     if (audioRenderer->Initialize(options)) {
         audioRenderer->SetRendererCallbackType(writeDataCallbackType_);
         audioRenderer->SetRendererCallback(rendererCallbacks_, userData_, metadataUserData_);
