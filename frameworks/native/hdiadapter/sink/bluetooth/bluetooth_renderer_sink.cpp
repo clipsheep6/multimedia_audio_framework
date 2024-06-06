@@ -31,6 +31,7 @@
 #ifdef FEATURE_POWER_MANAGER
 #include "running_lock.h"
 #include "power_mgr_client.h"
+#include "audio_running_lock_manager.h"
 #endif
 
 #include "audio_errors.h"
@@ -53,6 +54,7 @@ const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
 const uint32_t RENDER_FRAME_INTERVAL_IN_MICROSECONDS = 10000;
 const uint32_t SECOND_TO_NANOSECOND = 1000000000;
 const uint32_t SECOND_TO_MILLISECOND = 1000;
+const uint32_t  WAIT_TIME_FOR_RETRY_IN_MICROSECOND = 50000;
 const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
@@ -107,6 +109,10 @@ public:
     bool GetAudioMonoState();
     float GetAudioBalanceValue();
 
+    int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
+        const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
     explicit BluetoothRendererSinkInner(bool isBluetoothLowLatency = false);
     ~BluetoothRendererSinkInner();
 private:
@@ -125,6 +131,7 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    int32_t initCount_ = 0;
 
     // Low latency
     int32_t PrepareMmapBuffer();
@@ -149,7 +156,7 @@ private:
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
-    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
+    std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
 
     int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
@@ -244,6 +251,10 @@ void BluetoothRendererSinkInner::DeInit()
 {
     Trace trace("BluetoothRendererSinkInner::DeInit");
     AUDIO_INFO_LOG("DeInit.");
+    if (--initCount_ > 0) {
+        AUDIO_WARNING_LOG("Sink is still being used, count: %{public}d", initCount_);
+        return;
+    }
     started_ = false;
     rendererInited_ = false;
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
@@ -407,6 +418,10 @@ AudioFormat BluetoothRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat form
 int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("Init: %{public}d", attr.format);
+    if (rendererInited_) {
+        AUDIO_ERR_LOG("Already inited");
+        return true;
+    }
 
     attr_.format = ConvertToHdiFormat(attr.format);
     attr_.sampleRate = attr.sampleRate;
@@ -447,6 +462,7 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
     }
 
     rendererInited_ = true;
+    initCount_++;
 
     return SUCCESS;
 }
@@ -492,6 +508,15 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
         break;
     }
+
+#ifdef FEATURE_POWER_MANAGER
+    if (runningLockManager_) {
+        runningLockManager_->UpdateAppsUidToPowerMgr();
+    } else {
+        AUDIO_ERR_LOG("runningLockManager_ is nullptr");
+    }
+#endif
+
     return ret;
 }
 
@@ -549,14 +574,18 @@ int32_t BluetoothRendererSinkInner::Start(void)
     Trace trace("BluetoothRendererSinkInner::Start");
     AUDIO_INFO_LOG("Start.");
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ == nullptr) {
-        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioBluetoothBackgroundPlay",
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    if (runningLockManager_ == nullptr) {
+        keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioBluetoothBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        if (keepRunningLock) {
+            runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
+        }
     }
 
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock lock result: %{public}d",
-            keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING)); // -1 for lasting.
+            runningLockManager_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING)); // -1 for lasting.
     } else {
         AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
     }
@@ -567,17 +596,20 @@ int32_t BluetoothRendererSinkInner::Start(void)
 
     InitLatencyMeasurement();
 
+    int32_t tryCount = 3; // try to start bluetooth render up to 3 times;
     if (!started_) {
-        ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
-        if (!ret) {
-            started_ = true;
-            return SUCCESS;
-        } else {
-            AUDIO_ERR_LOG("Start failed!");
-            return ERR_NOT_STARTED;
+        while (tryCount-- > 0) {
+            AUDIO_INFO_LOG("Try to start bluetooth render");
+            ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+            if (!ret) {
+                started_ = true;
+                return SUCCESS;
+            } else {
+                AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
+                usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
+            }
         }
     }
-
     return SUCCESS;
 }
 
@@ -652,9 +684,9 @@ int32_t BluetoothRendererSinkInner::Stop(void)
     DeinitLatencyMeasurement();
 
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
-        keepRunningLock_->UnLock();
+        runningLockManager_->UnLock();
     } else {
         AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
     }
@@ -881,7 +913,8 @@ static uint32_t HdiFormatToByte(HDI::Audio_Bluetooth::AudioFormat format)
 
 int64_t BluetoothRendererSinkInner::BytesToNanoTime(size_t lens)
 {
-    int64_t res = AUDIO_NS_PER_SECOND * lens / (attr_.sampleRate * attr_.channel * HdiFormatToByte(attr_.format));
+    int64_t res = static_cast<int64_t>(AUDIO_NS_PER_SECOND * lens /
+        (attr_.sampleRate * attr_.channel * HdiFormatToByte(attr_.format)));
     return res;
 }
 
@@ -978,6 +1011,34 @@ void BluetoothRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
             signalDetectAgent_->lastPeakBufferTime_);
         LatencyMonitor::GetInstance().ShowBluetoothTimestamp();
     }
+}
+
+int32_t BluetoothRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
+    const size_t size)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    return runningLockManager_->UpdateAppsUid(appsUid, appsUid + size);
+#endif
+
+    return SUCCESS;
+}
+
+int32_t BluetoothRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    runningLockManager_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    runningLockManager_->UpdateAppsUidToPowerMgr();
+#endif
+
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

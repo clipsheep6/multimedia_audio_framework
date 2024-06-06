@@ -19,6 +19,8 @@
 #include <cstdint>
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_effect.h"
+#include "audio_concurrency_callback.h"
+#include "audio_concurrency_state_listener_stub.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_base.h"
 #include "audio_policy_manager_listener_stub.h"
@@ -77,6 +79,8 @@ public:
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
@@ -365,16 +369,26 @@ public:
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     
+    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID,
+        const std::shared_ptr<AudioConcurrencyCallback> &callback);
+
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
+
+    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
+    std::mutex focusInfoMutex_;
+    std::mutex rendererStateMutex_;
+    std::mutex capturerStateMutex_;
     sptr<AudioPolicyClientStubImpl> audioPolicyClientStubCB_;
     std::atomic<bool> isAudioPolicyClientRegisted_ = false;
 

@@ -113,10 +113,11 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsa
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     if (audioDeviceRefinerCb_ != nullptr) {
-        audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType, streamUsage, clientUID, PRIMARY);
+        audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType,
+            streamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
     }
-    AUDIO_INFO_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
-        descs[0]->deviceType_);
+    AUDIO_INFO_LOG("usage:%{public}d uid:%{public}d fetch device type:id %{public}d:%{public}d router:%{public}d",
+        streamUsage, clientUID, descs[0]->deviceType_, descs[0]->deviceId_, routerType);
     return move(descs[0]);
 }
 
@@ -156,10 +157,10 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     if (audioDeviceRefinerCb_ != nullptr) {
-        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUID, PRIMARY);
+        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUID, PIPE_TYPE_NORMAL_IN);
     }
-    AUDIO_INFO_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
-        descs[0]->deviceType_);
+    AUDIO_INFO_LOG("source:%{public}d uid:%{public}d fetch device type:id %{public}d:%{public}d router:%{public}d",
+        sourceType, clientUID, descs[0]->deviceType_, descs[0]->deviceId_, routerType);
     return move(descs[0]);
 }
 

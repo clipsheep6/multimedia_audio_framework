@@ -115,6 +115,9 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 
     powerStateCallbackRegister_ = false;
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
+    if (volumeApplyToAll_) {
+        audioPolicyService_.SetNormalVoipFlag(true);
+    }
 }
 
 void AudioPolicyServer::OnDump()
@@ -901,6 +904,18 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
     return deviceDescs;
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevicesInner(DeviceFlag deviceFlag)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("only for audioUid");
+        return {};
+    }
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetDevicesInner(deviceFlag);
+
+    return deviceDescs;
+}
+
 int32_t AudioPolicyServer::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
     uint32_t sessionId)
 {
@@ -945,6 +960,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDev
     }
 
     return deviceDescs;
+}
+
+int32_t AudioPolicyServer::SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    return audioPolicyService_.SetClientCallbacksEnable(callbackchange, enable);
 }
 
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
@@ -1215,11 +1235,6 @@ void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
 void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
 {
     audioPolicyService_.CloseWakeUpAudioCapturer();
-}
-
-void AudioPolicyServer::OnPlaybackCapturerStop()
-{
-    audioPolicyService_.UnloadLoopback();
 }
 
 AudioStreamType AudioPolicyServer::GetStreamInFocus(const int32_t zoneID)
@@ -1886,19 +1901,22 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
     if (res < 0) {
         AUDIO_ERR_LOG("Call GetHapTokenInfo fail.");
     }
-    bool bSetMute;
-    if (result.permStateChangeType > 0) {
-        bSetMute = false;
-    } else {
-        bSetMute = true;
-    }
 
+    bool targetMuteState = (result.permStateChangeType > 0) ? false : true;
     int32_t appUid = getUidByBundleName(hapTokenInfo.bundleName, hapTokenInfo.userID);
     if (appUid < 0) {
         AUDIO_ERR_LOG("fail to get uid.");
     } else {
-        server_->audioPolicyService_.SetSourceOutputStreamMute(appUid, bSetMute);
-        AUDIO_DEBUG_LOG("get uid value:%{public}d", appUid);
+        int32_t streamSet = server_->audioPolicyService_.SetSourceOutputStreamMute(appUid, targetMuteState);
+        if (streamSet > 0) {
+            AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
+                targetMuteState, appUid);
+            if (targetMuteState) {
+                PrivacyKit::StopUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+            } else {
+                PrivacyKit::StartUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+            }
+        }
     }
 }
 
@@ -2615,6 +2633,21 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
 {
     return audioPolicyService_.MoveToNewPipe(sessionId, pipeType);
+}
+
+int32_t AudioPolicyServer::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+{
+    return audioPolicyService_.SetAudioConcurrencyCallback(sessionID, object);
+}
+
+int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    return audioPolicyService_.UnsetAudioConcurrencyCallback(sessionID);
+}
+
+int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    return audioPolicyService_.ActivateAudioConcurrency(pipeType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

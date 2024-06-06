@@ -94,6 +94,10 @@ AudioStreamCollector::AudioStreamCollector() : audioSystemMgr_
     (AudioSystemManager::GetInstance())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
+    audioPolicyServerHandler_->AddConcurrencyEventDispatcher(audioConcurrencyService_);
+    audioConcurrencyService_->Init();
+    audioConcurrencyService_->SetCallbackHandler(audioPolicyServerHandler_);
     AUDIO_INFO_LOG("AudioStreamCollector()");
 }
 
@@ -104,7 +108,7 @@ AudioStreamCollector::~AudioStreamCollector()
 
 int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("AddRendererStream playback client id %{public}d session %{public}d",
+    AUDIO_INFO_LOG("Add playback client uid %{public}d sessionId %{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     rendererStatequeue_.insert({{streamChangeInfo.audioRendererChangeInfo.clientUID,
@@ -126,9 +130,6 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     rendererChangeInfo->channelCount = streamChangeInfo.audioRendererChangeInfo.channelCount;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-
-    AUDIO_DEBUG_LOG("audioRendererChangeInfos_: Added for client %{public}d session %{public}d",
-        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
         "audioPolicyServerHandler_ is nullptr, callback error");
@@ -191,7 +192,7 @@ bool AudioStreamCollector::ExistStreamForPipe(AudioPipeType pipeType)
 
 int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("AddCapturerStream recording client id %{public}d session %{public}d",
+    AUDIO_INFO_LOG("Add recording client uid %{public}d sessionId %{public}d",
         streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
     capturerStatequeue_.insert({{streamChangeInfo.audioCapturerChangeInfo.clientUID,
@@ -213,9 +214,6 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     capturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
     capturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
     audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
-
-    AUDIO_DEBUG_LOG("audioCapturerChangeInfos_: Added for client %{public}d session %{public}d",
-        streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
         "audioPolicyServerHandler_ is nullptr, callback error");
@@ -339,10 +337,6 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
         }
     }
 
-    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED &&
-        !ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL) && audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendPipeStreamCleanEvent(PIPE_TYPE_MULTICHANNEL);
-    }
     AUDIO_INFO_LOG("UpdateRendererStream: Not found clientUid:%{public}d sessionId:%{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.clientUID);
     return SUCCESS;
@@ -630,12 +624,8 @@ void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid
         auto temp = audioRendererBegin;
         audioRendererBegin = audioRendererChangeInfos_.erase(temp);
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
-            AUDIO_DEBUG_LOG("TrackerClientDied:client %{public}d cleared", sessionID);
+            AUDIO_INFO_LOG("TrackerClientDied:client %{public}d cleared", sessionID);
         }
-    }
-
-    if (!ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL) && audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendPipeStreamCleanEvent(PIPE_TYPE_MULTICHANNEL);
     }
 }
 
@@ -645,7 +635,8 @@ void AudioStreamCollector::RegisteredCapturerTrackerClientDied(const int32_t uid
     auto audioCapturerBegin = audioCapturerChangeInfos_.begin();
     while (audioCapturerBegin != audioCapturerChangeInfos_.end()) {
         const auto &audioCapturerChangeInfo = *audioCapturerBegin;
-        if (audioCapturerChangeInfo == nullptr || audioCapturerChangeInfo->clientUID != uid) {
+        if (audioCapturerChangeInfo == nullptr ||
+            (audioCapturerChangeInfo->clientUID != uid && audioCapturerChangeInfo->createrUID != uid)) {
             audioCapturerBegin++;
             continue;
         }
@@ -660,7 +651,7 @@ void AudioStreamCollector::RegisteredCapturerTrackerClientDied(const int32_t uid
         auto temp = audioCapturerBegin;
         audioCapturerBegin = audioCapturerChangeInfos_.erase(temp);
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
-            AUDIO_DEBUG_LOG("TrackerClientDied:client %{public}d cleared", sessionID);
+            AUDIO_INFO_LOG("TrackerClientDied:client %{public}d cleared", sessionID);
         }
     }
 }
@@ -935,6 +926,23 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     }
 
     return SUCCESS;
+}
+
+int32_t AudioStreamCollector::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+{
+    return audioConcurrencyService_->SetAudioConcurrencyCallback(sessionID, object);
+}
+
+int32_t AudioStreamCollector::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    return audioConcurrencyService_->UnsetAudioConcurrencyCallback(sessionID);
+}
+
+int32_t AudioStreamCollector::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    return audioConcurrencyService_->ActivateAudioConcurrency(pipeType,
+        audioRendererChangeInfos_, audioCapturerChangeInfos_);
 }
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

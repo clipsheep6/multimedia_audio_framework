@@ -184,6 +184,10 @@ public:
 
     void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 
+    void SetNormalVoipFlag(const bool &normalVoipFlag);
+
+    int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId);
+
     bool GetVoipConfig();
 
     // Audio Policy Parser callbacks
@@ -346,6 +350,8 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
+
     void GetEffectManagerInfo();
 
     float GetMinStreamVolume(void);
@@ -371,8 +377,6 @@ public:
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config);
 
     int32_t SetCaptureSilentState(bool state);
-
-    void UnloadLoopback();
 
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc);
 
@@ -491,6 +495,11 @@ public:
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     int32_t DynamicUnloadModule(const AudioPipeType pipeType);
 
+    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
+
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
+
+    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -613,6 +622,8 @@ private:
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
+    bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+
     void FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
@@ -702,15 +713,9 @@ private:
 
     void UpdateEffectDefaultSink(DeviceType deviceType);
 
-    void LoadEffectSinks();
-
     void LoadSinksForCapturer();
 
     void LoadInnerCapturerSink(string moduleName, AudioStreamInfo streamInfo);
-
-    void LoadReceiverSink();
-
-    void LoadLoopback();
 
     DeviceType FindConnectedHeadset();
 
@@ -1022,6 +1027,7 @@ private:
     std::unique_ptr<std::thread> calculateLoopSafeTime_ = nullptr;
     bool safeVolumeExit_ = false;
     bool isAbsBtFirstBoot_ = true;
+    bool normalVoipFlag_ = false;
 
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;
@@ -1029,9 +1035,9 @@ private:
     std::unique_ptr<std::thread> safeVolumeDialogThrd_ = nullptr;
     std::atomic<bool> isSafeVolumeDialogShowing_ = false;
 
-    DeviceType priorityOutputDevice_;
-    DeviceType priorityInputDevice_;
-    ConnectType conneceType_;
+    DeviceType priorityOutputDevice_ = DEVICE_TYPE_INVALID;
+    DeviceType priorityInputDevice_ = DEVICE_TYPE_INVALID;
+    ConnectType conneceType_ = CONNECT_TYPE_LOCAL;
 
     SupportedEffectConfig supportedEffectConfig_;
     ConverterConfig converterConfig_;

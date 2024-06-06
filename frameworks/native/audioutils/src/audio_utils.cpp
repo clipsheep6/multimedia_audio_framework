@@ -787,13 +787,13 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
             rightZeroSignal = index + 1;
             hasNoneZero = true;
             if (currentPeakIndex == -1 || tempMax > currentPeakSignal) {
-                currentPeakIndex = index;
+                currentPeakIndex = static_cast<int32_t>(index);
                 currentPeakSignal = tempMax;
             }
         }
     }
     if (!hasNoneZero) {
-        blankPeriod_ += frameCount;
+        blankPeriod_ += static_cast<int32_t>(frameCount);
     } else {
         if (!hasFirstNoneZero_) {
             lastPeakBufferTime_ = curTime;
@@ -804,7 +804,7 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
             lastPeakSignalPos_ = currentPeakIndex;
         }
         blankHaveOutput_ = false;
-        blankPeriod_ = frameCount - rightZeroSignal;
+        blankPeriod_ = static_cast<int32_t>(frameCount - rightZeroSignal);
     }
     int32_t thresholdBlankPeriod = BLANK_THRESHOLD_MS * sampleRate_ / MILLISECOND_PER_SECOND;
     if (blankPeriod_ > thresholdBlankPeriod) {
@@ -828,7 +828,7 @@ bool AudioLatencyMeasurement::MockPcmData(uint8_t *buffer, size_t bufferLen)
     memset_s(buffer, bufferLen, 0, bufferLen);
     int16_t *signal = signalData_.get();
     size_t newlyMocked = bufferLen * MILLISECOND_PER_SECOND /
-        (channelCount_ * sampleRate_ * formatByteSize_);
+        static_cast<size_t>(channelCount_ * sampleRate_ * formatByteSize_);
     mockedTime_ += newlyMocked;
     if (mockedTime_ >= MOCK_INTERVAL) {
         mockedTime_ = 0;
@@ -1121,6 +1121,35 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
 
     const std::string deviceTypeName = device;
     return deviceTypeName;
+}
+
+std::string GetEncryptStr(const std::string &src)
+{
+    if (src.empty()) {
+        return std::string("");
+    }
+
+    int32_t strLen = src.length();
+    std::string dst;
+
+    size_t FIRST_CHAR = 1;
+    size_t MIN_LEN = 8;
+    size_t HEAD_STR_LEN = 2;
+    size_t TAIL_STR_LEN = 5;
+    if (strLen < MIN_LEN) {
+        // src: abcdef
+        // dst: *bcdef
+        dst = '*' + src.substr(FIRST_CHAR, strLen - FIRST_CHAR);
+    } else {
+        // src: 00:00:00:00:00:00
+        // dst: 00**********00:00
+        dst = src.substr(0, HEAD_STR_LEN);
+        std::string tempStr(strLen - HEAD_STR_LEN - TAIL_STR_LEN, '*');
+        dst += tempStr;
+        dst += src.substr(strLen - TAIL_STR_LEN, TAIL_STR_LEN);
+    }
+
+    return dst;
 }
 } // namespace AudioStandard
 } // namespace OHOS

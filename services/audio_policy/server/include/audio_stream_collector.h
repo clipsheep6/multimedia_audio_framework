@@ -20,6 +20,7 @@
 #include "audio_policy_client.h"
 #include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
+#include "audio_concurrency_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,7 +65,11 @@ public:
     void GetRendererStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioRendererChangeInfo &rendererInfo);
     void GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioCapturerChangeInfo &capturerInfo);
     int32_t GetPipeType(const int32_t sessionId, AudioPipeType &pipeType);
+    bool ExistStreamForPipe(AudioPipeType pipeType);
 
+    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
+    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
@@ -92,12 +97,12 @@ private:
         std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
         std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
-    bool ExistStreamForPipe(AudioPipeType pipeType);
     void RegisteredRendererTrackerClientDied(const int32_t uid);
     void RegisteredCapturerTrackerClientDied(const int32_t uid);
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     AudioSystemManager *audioSystemMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+    std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

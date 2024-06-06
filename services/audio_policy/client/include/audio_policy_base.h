@@ -57,6 +57,8 @@ public:
 
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) = 0;
 
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) = 0;
+
     virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) = 0;
 
     virtual int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
@@ -162,6 +164,8 @@ public:
 
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) = 0;
+
+    virtual int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) = 0;
 
     virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
@@ -283,7 +287,13 @@ public:
     virtual int32_t UnsetAudioDeviceRefinerCallback() = 0;
 
     virtual int32_t TriggerFetchDevice() = 0;
-    
+
+    virtual int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) = 0;
+
+    virtual int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) = 0;
+
     virtual int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");

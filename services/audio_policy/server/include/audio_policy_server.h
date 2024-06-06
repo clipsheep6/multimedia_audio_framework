@@ -130,6 +130,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
+
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint32_t sessionId) override;
 
@@ -190,8 +192,6 @@ public:
 
     void ProcessSessionAdded(SessionEvent sessionEvent);
 
-    void OnPlaybackCapturerStop() override;
-
     void ProcessorCloseWakeupSource(const uint64_t sessionID);
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
@@ -243,6 +243,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
+
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) override;
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneId = 0) override;
@@ -353,6 +355,12 @@ public:
     int32_t TriggerFetchDevice() override;
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) override;
+
+    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) override;
+
+    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:

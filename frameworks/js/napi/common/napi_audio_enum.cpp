@@ -77,6 +77,7 @@ napi_ref NapiAudioEnum::asrAecMode_ = nullptr;
 napi_ref NapiAudioEnum::asrWhisperDetectionMode_ = nullptr;
 napi_ref NapiAudioEnum::asrVoiceControlMode_ = nullptr;
 napi_ref NapiAudioEnum::asrVoiceMuteMode_ = nullptr;
+napi_ref NapiAudioEnum::audioDataCallbackResult_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -484,6 +485,9 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrVoiceMuteModeMap = {
     {"TTS_MUTE", static_cast<int32_t>(AsrVoiceMuteMode::TTS_MUTE)},
     {"CALL_MUTE", static_cast<int32_t>(AsrVoiceMuteMode::CALL_MUTE)},
     {"OUTPUT_MUTE_EX", static_cast<int32_t>(AsrVoiceMuteMode::OUTPUT_MUTE_EX)},
+const std::map<std::string, int32_t> NapiAudioEnum::audioDataCallbackResultMap = {
+    {"INVALID", NapiAudioEnum::CALLBACK_RESULT_INVALID},
+    {"VALID", NapiAudioEnum::CALLBACK_RESULT_VALID}
 };
 
 NapiAudioEnum::NapiAudioEnum()
@@ -624,10 +628,8 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("SourceType", CreateEnumObject(env, sourceTypeMap, sourceType_)),
         DECLARE_NAPI_PROPERTY("VolumeAdjustType", CreateEnumObject(env, volumeAdjustTypeMap, volumeAdjustType_)),
         DECLARE_NAPI_PROPERTY("ChannelBlendMode", CreateEnumObject(env, channelBlendModeMap, channelBlendMode_)),
-        DECLARE_NAPI_PROPERTY("AudioRendererRate",
-            CreateEnumObject(env, rendererRateMap, audioRendererRate_)),
-        DECLARE_NAPI_PROPERTY("InterruptType",
-            CreateEnumObject(env, interruptEventTypeMap, interruptEventType_)),
+        DECLARE_NAPI_PROPERTY("AudioRendererRate", CreateEnumObject(env, rendererRateMap, audioRendererRate_)),
+        DECLARE_NAPI_PROPERTY("InterruptType", CreateEnumObject(env, interruptEventTypeMap, interruptEventType_)),
         DECLARE_NAPI_PROPERTY("InterruptForceType", CreateEnumObject(env, interruptForceTypeMap, interruptForceType_)),
         DECLARE_NAPI_PROPERTY("InterruptHint", CreateEnumObject(env, interruptHintTypeMap, interruptHintType_)),
         DECLARE_NAPI_PROPERTY("AudioState", CreateEnumObject(env, audioStateMap, audioState_)),
@@ -657,6 +659,8 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, interruptRequestResultTypeMap, interruptRequestResultType_)),
         DECLARE_NAPI_PROPERTY("ToneType", CreateEnumObject(env, toneTypeMap, toneType_)),
         DECLARE_NAPI_PROPERTY("DeviceUsage", CreateEnumObject(env, audioDeviceUsageMap, audioDviceUsage_)),
+        DECLARE_NAPI_PROPERTY("AudioDataCallbackResult",
+            CreateEnumObject(env, audioDataCallbackResultMap, audioDataCallbackResult_)),
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);

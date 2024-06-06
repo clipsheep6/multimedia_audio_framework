@@ -230,6 +230,18 @@ void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParc
     }
 }
 
+void AudioPolicyManagerStub::GetDevicesInnerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int deviceFlag = data.ReadInt32();
+    DeviceFlag deviceFlagConfig = static_cast<DeviceFlag>(deviceFlag);
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevicesInner(deviceFlagConfig);
+    int32_t size = static_cast<int32_t>(devices.size());
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
+}
+
 void AudioPolicyManagerStub::NotifyCapturerAddedInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioCapturerInfo capturerInfo;
@@ -266,6 +278,14 @@ void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageP
     for (uint32_t i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
     }
+}
+
+void AudioPolicyManagerStub::SetClientCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply)
+{
+    CallbackChange callbackchange = static_cast<CallbackChange>(data.ReadInt32());
+    bool enable = data.ReadBool();
+    int32_t result = SetClientCallbacksEnable(callbackchange, enable);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
@@ -1148,6 +1168,29 @@ void AudioPolicyManagerStub::DisableSafeMediaVolumeInternal(MessageParcel &data,
 {
     int32_t ret = DisableSafeMediaVolume();
     reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::SetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionID = data.ReadUint32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+    int32_t result = SetAudioConcurrencyCallback(sessionID, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionID = data.ReadUint32();
+    int32_t result = UnsetAudioConcurrencyCallback(sessionID);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::ActivateAudioConcurrencyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioPipeType pipeType = static_cast<AudioPipeType>(data.ReadInt32());
+    int32_t result = ActivateAudioConcurrency(pipeType);
+    reply.WriteInt32(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

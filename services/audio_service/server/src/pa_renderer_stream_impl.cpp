@@ -84,7 +84,6 @@ int32_t PaRendererStreamImpl::InitParams()
     pa_stream_set_underflow_callback(paStream_, PAStreamUnderFlowCb, reinterpret_cast<void *>(this));
     pa_stream_set_started_callback(paStream_, PAStreamSetStartedCb, reinterpret_cast<void *>(this));
     pa_stream_set_underflow_ohos_callback(paStream_, PAStreamUnderFlowCountAddCb, reinterpret_cast<void *>(this));
-    pa_stream_set_event_callback(paStream_, PAStreamEventCb, reinterpret_cast<void *>(this));
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
@@ -123,24 +122,6 @@ int32_t PaRendererStreamImpl::InitParams()
     return SUCCESS;
 }
 
-void PaRendererStreamImpl::PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata)
-{
-    CHECK_AND_RETURN_LOG(userdata, "userdata is null");
-
-    std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
-    if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
-        AUDIO_ERR_LOG("streamImpl is nullptr");
-        return;
-    }
-    auto streamImpl = paRendererStreamWeakPtr.lock();
-    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamEventCb: userdata is null");
-    if (!strcmp(event, "fading_out_done")) {
-        streamImpl->isFadeoutDone_.store(true);
-        pa_threaded_mainloop_signal(streamImpl->mainloop_, 0);
-        AUDIO_INFO_LOG("isFadeoutDone_ = true");
-    }
-}
-
 int32_t PaRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Start");
@@ -164,20 +145,38 @@ int32_t PaRendererStreamImpl::Start()
 int32_t PaRendererStreamImpl::Pause()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Pause");
-    PaLockGuard lock(mainloop_);
+    pa_threaded_mainloop_lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        pa_threaded_mainloop_unlock(mainloop_);
         return ERR_ILLEGAL_STATE;
     }
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
         AUDIO_ERR_LOG("Stream Stop Failed");
+        pa_threaded_mainloop_unlock(mainloop_);
         return ERR_OPERATION_FAILED;
+    }
+    pa_proplist *propList = pa_proplist_new();
+    if (propList != nullptr) {
+        pa_proplist_sets(propList, "fadeoutPause", "1");
+        pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
+            nullptr, nullptr);
+        pa_proplist_free(propList);
+        pa_operation_unref(updatePropOperation);
+        AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        pa_threaded_mainloop_unlock(mainloop_);
+        {
+            std::unique_lock<std::mutex> lock(fadingMutex_);
+            const int32_t WAIT_TIME_MS = 40;
+            fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+        }
+        pa_threaded_mainloop_lock(mainloop_);
     }
 
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
-
+    pa_threaded_mainloop_unlock(mainloop_);
     return SUCCESS;
 }
 
@@ -344,7 +343,7 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
 
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp = tm.tv_sec * AUDIO_NS_PER_S + tm.tv_nsec;
+    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ",readIndex %{public}" PRIu64
         ",timestamp %{public}" PRIu64 ", effect latency: %{public}u ms",
@@ -715,8 +714,14 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
 void PaRendererStreamImpl::PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     CHECK_AND_RETURN_LOG(userdata, "PAStreamFlushSuccessCb: userdata is null");
+    std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
+    if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
+        AUDIO_ERR_LOG("streamImpl is nullptr");
+        return;
+    }
+    auto streamImpl = paRendererStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "Userdata is null");
 
-    PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_FLUSHED);

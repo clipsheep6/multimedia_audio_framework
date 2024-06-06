@@ -315,6 +315,17 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFl
     return gsp->GetDevices(deviceFlag);
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevicesInner(DeviceFlag deviceFlag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+        std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+        return deviceInfo;
+    }
+    return gsp->GetDevicesInner(deviceFlag);
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
@@ -347,6 +358,13 @@ int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInter
     return gsp->GetAudioFocusInfoList(focusInfoList, zoneID);
 }
 
+int32_t AudioPolicyManager::SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetClientCallbacksEnable(callbackchange, enable);
+}
+
 int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t clientId,
     const std::shared_ptr<AudioFocusInfoChangeCallback> &callback)
 {
@@ -363,15 +381,25 @@ int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t client
         }
     }
 
+    std::lock_guard<std::mutex> lockCbMap(focusInfoMutex_);
     audioPolicyClientStubCB_->AddFocusInfoChangeCallback(callback);
+    size_t callbackSize = audioPolicyClientStubCB_->GetFocusInfoChangeCallbackSize();
+    if (callbackSize == 1) {
+        SetClientCallbacksEnable(CALLBACK_FOCUS_INFO_CHANGE, true);
+    }
+
     return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clientId)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterFocusInfoChangeCallback");
+    std::lock_guard<std::mutex> lockCbMap(focusInfoMutex_);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveFocusInfoChangeCallback();
+        if (audioPolicyClientStubCB_->GetFocusInfoChangeCallbackSize() == 0) {
+            SetClientCallbacksEnable(CALLBACK_FOCUS_INFO_CHANGE, false);
+        }
     }
     return SUCCESS;
 }
@@ -729,7 +757,12 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
         }
     }
 
+    std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
     audioPolicyClientStubCB_->AddRendererStateChangeCallback(callback);
+    size_t callbackSize = audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize();
+    if (callbackSize == 1) {
+        SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, true);
+    }
     isAudioRendererEventListenerRegistered = true;
     return SUCCESS;
 }
@@ -737,8 +770,12 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
 int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioRendererEventListener");
+    std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
         audioPolicyClientStubCB_->RemoveRendererStateChangeCallback();
+        if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
+            SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
+        }
         isAudioRendererEventListenerRegistered = false;
     }
     return SUCCESS;
@@ -760,7 +797,12 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
         }
     }
 
+    std::lock_guard<std::mutex> lockCbMap(capturerStateMutex_);
     audioPolicyClientStubCB_->AddCapturerStateChangeCallback(callback);
+    size_t callbackSize = audioPolicyClientStubCB_->GetCapturerStateChangeCallbackSize();
+    if (callbackSize == 1) {
+        SetClientCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, true);
+    }
     isAudioCapturerEventListenerRegistered = true;
     return SUCCESS;
 }
@@ -768,8 +810,12 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
 int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t clientPid)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioCapturerEventListener");
+    std::lock_guard<std::mutex> lockCbMap(capturerStateMutex_);
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioCapturerEventListenerRegistered) {
         audioPolicyClientStubCB_->RemoveCapturerStateChangeCallback();
+        if (audioPolicyClientStubCB_->GetCapturerStateChangeCallbackSize() == 0) {
+            SetClientCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, false);
+        }
         isAudioCapturerEventListenerRegistered = false;
     }
     return SUCCESS;
@@ -1587,6 +1633,36 @@ int32_t AudioPolicyManager::MoveToNewPipe(const uint32_t sessionId, const AudioP
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->MoveToNewPipe(sessionId, pipeType);
+}
+int32_t AudioPolicyManager::SetAudioConcurrencyCallback(const uint32_t sessionID,
+    const std::shared_ptr<AudioConcurrencyCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    sptr<AudioConcurrencyStateListenerStub> listener = new(std::nothrow) AudioConcurrencyStateListenerStub();
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
+    listener->SetConcurrencyCallback(callback);
+
+    sptr<IRemoteObject> object = listener->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr.");
+
+    return gsp->SetAudioConcurrencyCallback(sessionID, object);
+}
+
+int32_t AudioPolicyManager::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->UnsetAudioConcurrencyCallback(sessionID);
+}
+
+int32_t AudioPolicyManager::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->ActivateAudioConcurrency(pipeType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

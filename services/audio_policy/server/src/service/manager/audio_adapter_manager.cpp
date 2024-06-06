@@ -29,7 +29,7 @@
 #include "audio_log.h"
 #include "audio_volume_parser.h"
 #include "audio_utils.h"
-#include "audio_policy_server_handler.h"
+#include "audio_adapter_manager_handler.h"
 
 using namespace std;
 
@@ -173,7 +173,7 @@ void AudioAdapterManager::InitKVStoreInternal()
     bool isFirstBoot = false;
     volumeDataMaintainer_.RegisterCloned();
     InitAudioPolicyKvStore(isFirstBoot);
-    auto handler = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
     if (handler != nullptr) {
         handler->SendKvDataUpdate(isFirstBoot);
     }
@@ -310,9 +310,17 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     }
 
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
-    volumeDataMaintainer_.SaveVolume(currentActiveDevice_, streamType, volumeLevel);
+    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
+    }
 
     return SetVolumeDb(streamType);
+}
+
+void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel)
+{
+    volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel);
 }
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
@@ -600,20 +608,13 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
-    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", audioModuleInfo.lib.c_str(), moduleArgs.c_str());
+
+    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s",
+        audioModuleInfo.lib.c_str(), audioModuleInfo.className.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_++;
     return audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
-}
-
-AudioIOHandle AudioAdapterManager::LoadLoopback(const LoopbackModuleInfo &moduleInfo)
-{
-    std::string moduleArgs = GetLoopbackModuleArgs(moduleInfo);
-    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", moduleInfo.lib.c_str(), moduleArgs.c_str());
-
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
-    return audioServiceAdapter_->OpenAudioPort(moduleInfo.lib, moduleArgs.c_str());
 }
 
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
@@ -727,7 +728,6 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
     if (!audioModuleInfo.format.empty()) {
         args.append(" format=");
         args.append(audioModuleInfo.format);
-        AUDIO_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
     }
 
     if (!audioModuleInfo.fixedLatency.empty()) {
@@ -749,21 +749,7 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(" offload_enable=");
         args.append(audioModuleInfo.offloadEnable);
     }
-}
-
-std::string AudioAdapterManager::GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const
-{
-    std::string args;
-
-    if (moduleInfo.sink.empty() || moduleInfo.source.empty()) {
-        return "";
-    }
-
-    args.append(" source=");
-    args.append(moduleInfo.source);
-    args.append(" sink=");
-    args.append(moduleInfo.sink);
-    return args;
+    AUDIO_INFO_LOG("[Adapter load-module] [PolicyManager] common args:%{public}s", args.c_str());
 }
 
 // Private Members
@@ -1563,22 +1549,22 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
         }
         AUDIO_DEBUG_LOG("position = 0, return 0.0");
         return 0.0f;
-    } else if (position >= pointSize) {
+    } else if (position >= static_cast<int32_t>(pointSize)) {
         AUDIO_DEBUG_LOG("position > pointSize, return %{public}f",
             exp(volumePoints[pointSize - 1].dbValue * 0.115129f));
         return exp((volumePoints[pointSize - 1].dbValue / 100.0f) * 0.115129f);
     }
-    float indexFactor = ((float)(idxRatio - volumePoints[position-1].index)) /
-        (float(volumePoints[position].index - volumePoints[position-1].index));
+    float indexFactor = (static_cast<float>(idxRatio - static_cast<int32_t>(volumePoints[position - 1].index))) /
+        (static_cast<float>(volumePoints[position].index - volumePoints[position - 1].index));
 
-    float dbValue = (volumePoints[position-1].dbValue / 100.0f) +
-        indexFactor * ((volumePoints[position].dbValue / 100.0f) - (volumePoints[position-1].dbValue / 100.0f));
+    float dbValue = (volumePoints[position - 1].dbValue / 100.0f) +
+        indexFactor * ((volumePoints[position].dbValue / 100.0f) - (volumePoints[position - 1].dbValue / 100.0f));
 
     AUDIO_DEBUG_LOG(" index=[%{public}d, %{public}d, %{public}d]"
         "db=[%{public}0.1f %{public}0.1f %{public}0.1f] factor=[%{public}f]",
-        volumePoints[position-1].index, idxRatio, volumePoints[position].index,
-        ((float)volumePoints[position - 1].dbValue / 100.0f), dbValue,
-        ((float)volumePoints[position].dbValue / 100.0f), exp(dbValue * 0.115129f));
+        volumePoints[position - 1].index, idxRatio, volumePoints[position].index,
+        (static_cast<float>(volumePoints[position - 1].dbValue) / 100.0f), dbValue,
+        (static_cast<float>(volumePoints[position].dbValue) / 100.0f), exp(dbValue * 0.115129f));
 
     return exp(dbValue * 0.115129f);
 }

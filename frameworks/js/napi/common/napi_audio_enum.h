@@ -184,6 +184,7 @@ private:
     static napi_ref asrWhisperDetectionMode_;
     static napi_ref asrVoiceControlMode_;
     static napi_ref asrVoiceMuteMode_;
+    static napi_ref audioDataCallbackResult_;
 
     static const std::map<std::string, int32_t> audioChannelMap;
     static const std::map<std::string, int32_t> samplingRateMap;
@@ -228,6 +229,7 @@ private:
     static const std::map<std::string, int32_t> asrWhisperDetectionModeMap;
     static const std::map<std::string, int32_t> asrVoiceControlModeMap;
     static const std::map<std::string, int32_t> asrVoiceMuteModeMap;
+    static const std::map<std::string, int32_t> audioDataCallbackResultMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;

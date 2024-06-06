@@ -35,11 +35,16 @@ namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const int64_t MOCK_LATENCY = 45000000; // 45000000 -> 45ms
     static const uint32_t UNDERRUN_LOG_LOOP_COUNT = 100;
-    static const int32_t BITSIZE_FOR_FADEOUT = 2;
     static const int32_t NO_FADING = 0;
     static const int32_t DO_FADINGOUT = 1;
     static const int32_t FADING_OUT_DONE = 2;
+    static const int32_t BYTE_LEN_FOR_INVALID_SAMPLE_FORMAT = 0;
+    static const int32_t BYTE_LEN_FOR_8BIT = 1;
+    static const int32_t BYTE_LEN_FOR_16BIT = 2;
+    static const int32_t BYTE_LEN_FOR_24BIT = 3;
+    static const int32_t BYTE_LEN_FOR_32BIT = 4;
     static constexpr int32_t ONE_MINUTE = 60;
+    static const int32_t UINT8_SILENCE_VALUE = 128;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -129,8 +134,14 @@ int32_t RendererInServer::Init()
         managerType_ = DIRECT_PLAYBACK;
         AUDIO_INFO_LOG("current stream marked as high resolution");
     }
+
+    if (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
+        AUDIO_INFO_LOG("current stream marked as VoIP direct stream");
+        managerType_ = VOIP_PLAYBACK;
+    }
+
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
-    if (ret != SUCCESS && managerType_ == DIRECT_PLAYBACK) {
+    if (ret != SUCCESS && (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK)) {
         Trace trace("high resolution create failed use normal replace");
         managerType_ = PLAYBACK;
         ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
@@ -243,15 +254,129 @@ BufferDesc RendererInServer::DequeueBuffer(size_t length)
     return stream_->DequeueBuffer(length);
 }
 
+void RendererInServer::DoFadingOutFor8Bit(BufferDesc& bufferDesc, size_t byteLen)
+{
+    if (byteLen == 0) {
+        return;
+    }
+    uint8_t *data = (uint8_t *)bufferDesc.buffer;
+    size_t length = bufferDesc.bufLength / byteLen;
+    if (length == 0) {
+        return;
+    }
+    int32_t numChannels = processConfig_.streamInfo.channels;
+    for (size_t i = 0; i < length / numChannels; i++) {
+        for (int32_t j = 0; j < numChannels; j++) {
+            float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
+            data[i * numChannels + j] =
+                (data[i * numChannels + j] - UINT8_SILENCE_VALUE) * fadeoutRatio + UINT8_SILENCE_VALUE;
+        }
+    }
+}
+
+void RendererInServer::DoFadingOutFor16Bit(BufferDesc& bufferDesc, size_t byteLen)
+{
+    if (byteLen == 0) {
+        return;
+    }
+    int16_t *data = (int16_t *)bufferDesc.buffer;
+    size_t length = bufferDesc.bufLength / byteLen;
+    if (length == 0) {
+        return;
+    }
+    int32_t numChannels = processConfig_.streamInfo.channels;
+    for (size_t i = 0; i < length / numChannels; i++) {
+        for (int32_t j = 0; j < numChannels; j++) {
+            float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
+            data[i * numChannels + j] *= fadeoutRatio;
+        }
+    }
+}
+
+void RendererInServer::DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t byteLen)
+{
+    int8_t *data = (int8_t *)bufferDesc.buffer;
+    size_t length = bufferDesc.bufLength;
+    if (length == 0) {
+        return;
+    }
+
+    int32_t numChannels = processConfig_.streamInfo.channels;
+    size_t step = byteLen * numChannels;
+    size_t lastPos = 0;
+    for (size_t i = 0; i < length;) {
+        if ((i + step) < length) {
+            float fadeoutRatio = (float)(length - i) / (length);
+            for (size_t j = 0; j < step; j++) {
+                data[i + j] *= fadeoutRatio;
+            }
+            lastPos = i + step;
+        }
+        i += step;
+    }
+    while (lastPos < length) {
+        data[lastPos++] = 0;
+    }
+}
+
+void RendererInServer::DoFadingOutFor32Bit(BufferDesc& bufferDesc, size_t byteLen)
+{
+    if (byteLen == 0) {
+        return;
+    }
+    int32_t *data = (int32_t *)bufferDesc.buffer;
+    size_t length = bufferDesc.bufLength / byteLen;
+    if (length == 0) {
+        return;
+    }
+    int32_t numChannels = processConfig_.streamInfo.channels;
+    for (size_t i = 0; i < length / numChannels; i++) {
+        for (int32_t j = 0; j < numChannels; j++) {
+            float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
+            data[i * numChannels + j] *= fadeoutRatio;
+        }
+    }
+}
+
 void RendererInServer::DoFadingOut(BufferDesc& bufferDesc)
 {
     std::lock_guard<std::mutex> lock(fadeoutLock_);
+    size_t byteLen;
+
+    switch (processConfig_.streamInfo.format) {
+        case SAMPLE_U8:
+            byteLen = BYTE_LEN_FOR_8BIT;
+            break;
+        case SAMPLE_S16:
+            byteLen = BYTE_LEN_FOR_16BIT;
+            break;
+        case SAMPLE_S24:
+            byteLen = BYTE_LEN_FOR_24BIT;
+            break;
+        case SAMPLE_S32:
+            byteLen = BYTE_LEN_FOR_32BIT;
+            break;
+        default:
+            byteLen = BYTE_LEN_FOR_INVALID_SAMPLE_FORMAT;
+            break;
+    }
+
     if (fadeoutFlag_ == DO_FADINGOUT) {
-        int16_t *data = (int16_t *)bufferDesc.buffer;
-        size_t length = bufferDesc.bufLength / BITSIZE_FOR_FADEOUT;
-        for (size_t i = 0; i < length; i++) {
-            float fadeoutRatio = (float)(length - i) / (length);
-            data[i] *= fadeoutRatio; // Multiply each sample by fade ratio
+        switch (byteLen) {
+            case BYTE_LEN_FOR_8BIT:
+                DoFadingOutFor8Bit(bufferDesc, byteLen);
+                break;
+            case BYTE_LEN_FOR_16BIT:
+                DoFadingOutFor16Bit(bufferDesc, byteLen);
+                break;
+            case BYTE_LEN_FOR_24BIT:
+                DoFadingOutFor24Bit(bufferDesc, byteLen);
+                break;
+            case BYTE_LEN_FOR_32BIT:
+                DoFadingOutFor32Bit(bufferDesc, byteLen);
+                break;
+            default:
+                break;
         }
     }
 }
@@ -259,6 +384,10 @@ void RendererInServer::DoFadingOut(BufferDesc& bufferDesc)
 void RendererInServer::CheckFadingOutDone(int32_t fadeoutFlag_, BufferDesc& bufferDesc)
 {
     std::lock_guard<std::mutex> lock(fadeoutLock_);
+    if (fadeoutFlag_ == FADING_OUT_DONE && processConfig_.streamInfo.format == SAMPLE_U8) {
+        memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0x80, bufferDesc.bufLength);
+        return;
+    }
     if (fadeoutFlag_ == FADING_OUT_DONE) {
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
     }
@@ -795,7 +924,8 @@ bool RendererInServer::IsHighResolution() const noexcept
     if ((processConfig_.deviceType == DEVICE_TYPE_WIRED_HEADSET ||
         processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) &&
         processConfig_.streamType == STREAM_MUSIC && processConfig_.streamInfo.samplingRate >= SAMPLE_RATE_48000 &&
-        processConfig_.streamInfo.format >= SAMPLE_S24LE) {
+        processConfig_.streamInfo.format >= SAMPLE_S24LE &&
+        processConfig_.rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
         if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() <= 0) {
             return true;
         }
