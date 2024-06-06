@@ -83,21 +83,21 @@ enum class AsrAecMode {
  * @systemapi
  * @since 12
  */
-enum class AsrWhisperMode {
+enum class AsrWhisperDetectionMode {
     /**
-     * Whisper ON.
+     * Using Bypass WhisperDetection.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 12
      */
-    ON = 0,
+    BYPASS = 0,
     /**
-     * Whisper OFF.
+     * Using standard WhisperDetection.
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
      * @since 12
      */
-    OFF = 1,
+    STANDARD = 1,
 };
 
 /**

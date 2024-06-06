@@ -74,7 +74,7 @@ napi_ref NapiAudioEnum::audioStreamDeviceChangeReason_ = nullptr;
 napi_ref NapiAudioEnum::spatializationSceneType_ = nullptr;
 napi_ref NapiAudioEnum::asrNoiseSuppressionMode_ = nullptr;
 napi_ref NapiAudioEnum::asrAecMode_ = nullptr;
-napi_ref NapiAudioEnum::asrWhisperMode_ = nullptr;
+napi_ref NapiAudioEnum::asrWhisperDetectionMode_ = nullptr;
 napi_ref NapiAudioEnum::asrVoiceControlMode_ = nullptr;
 napi_ref NapiAudioEnum::asrVoiceMuteMode_ = nullptr;
 
@@ -466,9 +466,9 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
     {"STANDARD", static_cast<int32_t>(AsrAecMode::STANDARD)},
 };
 
-const std::map<std::string, int32_t> NapiAudioEnum::asrWhisperModeMap = {
-    {"ON", static_cast<int32_t>(AsrWhisperMode::ON)},
-    {"OFF", static_cast<int32_t>(AsrWhisperMode::OFF)},
+const std::map<std::string, int32_t> NapiAudioEnum::asrWhisperDetectionModeMap = {
+    {"BYPASS", static_cast<int32_t>(AsrWhisperDetectionMode::BYPASS)},
+    {"STANDARD", static_cast<int32_t>(AsrWhisperDetectionMode::STANDARD)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrVoiceControlModeMap = {
@@ -600,7 +600,8 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AsrNoiseSuppressionMode", CreateEnumObject(env, asrNoiseSuppressionModeMap,
             asrNoiseSuppressionMode_)),
         DECLARE_NAPI_PROPERTY("AsrAecMode", CreateEnumObject(env, asrAecModeMap, asrAecMode_)),
-        DECLARE_NAPI_PROPERTY("AsrWhisperMode", CreateEnumObject(env, asrWhisperModeMap, asrWhisperMode_)),
+        DECLARE_NAPI_PROPERTY("AsrWhisperDetectionMode", CreateEnumObject(env,
+            asrWhisperDetectionModeMap, asrWhisperDetectionMode_)),
         DECLARE_NAPI_PROPERTY("AsrVoiceControlMode", CreateEnumObject(env,
             asrVoiceControlModeMap, asrVoiceControlMode_)),
         DECLARE_NAPI_PROPERTY("AsrVoiceMuteMode", CreateEnumObject(env, asrVoiceMuteModeMap, asrVoiceMuteMode_)),

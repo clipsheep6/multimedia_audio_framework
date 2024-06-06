@@ -129,7 +129,8 @@ napi_status NapiAsrProcessingController::InitNapiAsrProcessingController(napi_en
         DECLARE_NAPI_FUNCTION("getAsrAecMode", GetAsrAecMode),
         DECLARE_NAPI_FUNCTION("setAsrNoiseSuppressionMode", SetAsrNoiseSuppressionMode),
         DECLARE_NAPI_FUNCTION("getAsrNoiseSuppressionMode", GetAsrNoiseSuppressionMode),
-        DECLARE_NAPI_FUNCTION("setAsrWhisperMode", SetAsrWhisperMode),
+        DECLARE_NAPI_FUNCTION("setAsrWhisperDetectionMode", SetAsrWhisperDetectionMode),
+        DECLARE_NAPI_FUNCTION("getAsrWhisperDetectionMode", GetAsrWhisperDetectionMode),
         DECLARE_NAPI_FUNCTION("setAsrVoiceControlMode", SetAsrVoiceControlMode),
         DECLARE_NAPI_FUNCTION("setAsrVoiceMuteMode", SetAsrVoiceMuteMode),
         DECLARE_NAPI_FUNCTION("isWhispering", IsWhispering),
@@ -330,7 +331,7 @@ napi_value NapiAsrProcessingController::GetAsrNoiseSuppressionMode(napi_env env,
     return result;
 }
 
-napi_value NapiAsrProcessingController::SetAsrWhisperMode(napi_env env, napi_callback_info info)
+napi_value NapiAsrProcessingController::SetAsrWhisperDetectionMode(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -339,19 +340,35 @@ napi_value NapiAsrProcessingController::SetAsrWhisperMode(napi_env env, napi_cal
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
         "argCount invaild");
 
-    int32_t asrWhisperMode = 0;
-    int32_t ret_mode = NapiParamUtils::GetValueInt32(env, asrWhisperMode, argv[PARAM0]);
+    int32_t asrWhisperDetectionMode = 0;
+    int32_t ret_mode = NapiParamUtils::GetValueInt32(env, asrWhisperDetectionMode, argv[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(ret_mode == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of mode must be mode enum"), "Input parameter value error. ");
-    CHECK_AND_RETURN_RET_LOG(asrWhisperMode == 0 || asrWhisperMode == 1,
+    CHECK_AND_RETURN_RET_LOG(asrWhisperDetectionMode == 0 || asrWhisperDetectionMode == 1,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
-    int32_t res = napiAsrController->audioMngr_->SetAsrWhisperMode(static_cast<AsrWhisperMode>(asrWhisperMode));
+    int32_t res = napiAsrController->audioMngr_->SetAsrWhisperDetectionMode(
+        static_cast<AsrWhisperDetectionMode>(asrWhisperDetectionMode));
     CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env,
-        GetResInt(res), GetResStr(res)), "SetAsrWhisperMode fail");
+        GetResInt(res), GetResStr(res)), "SetAsrWhisperDetectionMode fail");
     bool setSuc = ((res == 0) ? true : false);
     NapiParamUtils::SetValueBoolean(env, setSuc, result);
+    return result;
+}
+
+napi_value NapiAsrProcessingController::GetAsrWhisperDetectionMode(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAsrController = GetParamWithSync(env, info, argc, nullptr);
+    AsrWhisperDetectionMode asrWhisperDetectionMode;
+    CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
+    int32_t res = napiAsrController->audioMngr_->GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+    CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env,
+        GetResInt(res), GetResStr(res)), "GetAsrWhisperDetectionMode fail");
+    NapiParamUtils::SetValueInt32(env, int32_t(asrWhisperDetectionMode), result);
     return result;
 }
 

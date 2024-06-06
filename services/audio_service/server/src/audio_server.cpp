@@ -126,14 +126,14 @@ static const std::map<AsrNoiseSuppressionMode, std::string> NS_MODE_MAP_VERSE = 
     {AsrNoiseSuppressionMode::FAR_FIELD, "FAR_FIELD"}
 };
 
-static const std::map<std::string, AsrWhisperMode> WHISPER_MODE_MAP = {
-    {"ON", AsrWhisperMode::ON},
-    {"OFF", AsrWhisperMode::OFF},
+static const std::map<std::string, AsrWhisperDetectionMode> WHISPER_DETECTION_MODE_MAP = {
+    {"BYPASS", AsrWhisperDetectionMode::BYPASS},
+    {"STANDARD", AsrWhisperDetectionMode::STANDARD},
 };
 
-static const std::map<AsrWhisperMode, std::string> WHISPER_MODE_MAP_VERSE = {
-    {AsrWhisperMode::ON, "ON"},
-    {AsrWhisperMode::OFF, "OFF"},
+static const std::map<AsrWhisperDetectionMode, std::string> WHISPER_DETECTION_MODE_MAP_VERSE = {
+    {AsrWhisperDetectionMode::BYPASS, "BYPASS"},
+    {AsrWhisperDetectionMode::STANDARD, "STANDARD"},
 };
 
 static const std::map<std::string, AsrVoiceControlMode> VC_MODE_MAP = {
@@ -452,7 +452,7 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
     if (it != AudioServer::audioParameters.end()) {
         asrAecModeSink = it->second;
     } else {
-        AUDIO_ERR_LOG("read failed.");
+        AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
     }
 
@@ -465,11 +465,11 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
         if (it != AEC_MODE_MAP.end()) {
             asrAecMode = it->second;
         } else {
-            AUDIO_ERR_LOG("read failed.");
+            AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
         }
     } else {
-        AUDIO_ERR_LOG("read failed.");
+        AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
     }
     return 0;
@@ -512,7 +512,7 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNois
     if (it != AudioServer::audioParameters.end()) {
         asrNoiseSuppressionModeSink = it->second;
     } else {
-        AUDIO_ERR_LOG("read failed.");
+        AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
     }
 
@@ -525,26 +525,26 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNois
         if (it != NS_MODE_MAP.end()) {
             asrNoiseSuppressionMode = it->second;
         } else {
-            AUDIO_ERR_LOG("read failed.");
+            AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
         }
     } else {
-        AUDIO_ERR_LOG("read failed.");
+        AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
     }
     return 0;
 }
 
-int32_t AudioServer::SetAsrWhisperMode(AsrWhisperMode asrWhisperMode)
+int32_t AudioServer::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    std::string key = "asr_whisper_mode";
+    std::string key = "asr_wd_mode";
     std::string value = key + "=";
 
-    auto it = WHISPER_MODE_MAP_VERSE.find(asrWhisperMode);
-    if (it != WHISPER_MODE_MAP_VERSE.end()) {
+    auto it = WHISPER_DETECTION_MODE_MAP_VERSE.find(asrWhisperDetectionMode);
+    if (it != WHISPER_DETECTION_MODE_MAP_VERSE.end()) {
         value = key + "=" + it->second;
     } else {
         AUDIO_ERR_LOG("get value failed.");
@@ -555,6 +555,43 @@ int32_t AudioServer::SetAsrWhisperMode(AsrWhisperMode asrWhisperMode)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
     audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    return 0;
+}
+
+int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhisperDetectionMode)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "Check playback permission failed, no system permission");
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    std::string key = "asr_wd_mode";
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    std::string asrWhisperDetectionModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);
+    auto it = AudioServer::audioParameters.find(key);
+    if (it != AudioServer::audioParameters.end()) {
+        asrWhisperDetectionModeSink = it->second;
+    } else {
+        AUDIO_ERR_LOG("get value failed.");
+        return ERR_INVALID_PARAM;
+    }
+
+    std::vector<std::string> resMode = splitString(asrWhisperDetectionModeSink, "=");
+    const int32_t resSize = 2;
+    std::string modeString = "";
+    if (resMode.size() == resSize) {
+        modeString = resMode[1];
+        auto it = WHISPER_DETECTION_MODE_MAP.find(modeString);
+        if (it != WHISPER_DETECTION_MODE_MAP.end()) {
+            asrWhisperDetectionMode = it->second;
+        } else {
+            AUDIO_ERR_LOG("get value failed.");
+            return ERR_INVALID_PARAM;
+        }
+    } else {
+        AUDIO_ERR_LOG("get value failed.");
+        return ERR_INVALID_PARAM;
+    }
     return 0;
 }
 

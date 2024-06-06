@@ -634,7 +634,7 @@ public:
      * @param value The value of the set audio parameter.
      * @since 12
      */
-    int32_t GetAsrAecMode(AsrAecMode& asrAecMode);
+    int32_t GetAsrAecMode(AsrAecMode &asrAecMode);
     /**
      * @brief set audio parameter.
      *
@@ -650,7 +650,7 @@ public:
      * @param value The value of the set audio parameter.
      * @since 12
      */
-    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode);
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode);
     /**
      * @brief set audio parameter.
      *
@@ -658,7 +658,15 @@ public:
      * @param value The value of the set audio parameter.
      * @since 12
      */
-    int32_t SetAsrWhisperMode(const AsrWhisperMode asrWhisperMode);
+    int32_t SetAsrWhisperDetectionMode(const AsrWhisperDetectionMode asrWhisperDetectionMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode);
     /**
      * @brief set audio parameter.
      *

@@ -325,10 +325,18 @@ int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &
     return 0;
 }
 
-int32_t AudioSystemManager::SetAsrWhisperMode(const AsrWhisperMode asrWhisperMode)
+int32_t AudioSystemManager::SetAsrWhisperDetectionMode(const AsrWhisperDetectionMode asrWhisperDetectionMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    return gasp->SetAsrWhisperMode(asrWhisperMode);
+    return gasp->SetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+}
+
+int32_t AudioSystemManager::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    int32_t ret = gasp->GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrWhisperDetection Mode audio parameters failed");
+    return 0;
 }
 
 int32_t AudioSystemManager::SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool on)
