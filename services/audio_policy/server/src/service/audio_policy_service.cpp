@@ -7143,7 +7143,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDumpDeviceInfo(s
                 deviceFlag == DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG) {
                 conneceType_  = CONNECT_TYPE_DISTRIBUTED;
             }
-            AppendFormat(dumpString, "  - connect type:%s\n", AudioInfoDumpUtils::GetConnectTypeName(conneceType_).c_str());
+            AppendFormat(dumpString, "  - connect type:%s\n",
+                AudioInfoDumpUtils::GetConnectTypeName(conneceType_).c_str());
             for (auto &samplingRate : devDesc->audioStreamInfo_.samplingRate) {
                 AppendFormat(dumpString, "  - device sampleRates:%d\n", samplingRate);
             }
