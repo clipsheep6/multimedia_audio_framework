@@ -7135,11 +7135,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDumpDeviceInfo(s
             dumpString += "\n";
             AppendFormat(dumpString, "  - device name:%s\n",
             AudioInfoDumpUtils::GetDeviceTypeName(devDesc->deviceType_).c_str());
-        AppendFormat(dumpString, "  - device type:%d\n", devDesc->deviceType_);
-        AppendFormat(dumpString, "  - device id:%d\n", devDesc->deviceId_);
-        if (deviceFlag == DeviceFlag::INPUT_DEVICES_FLAG || deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
-            conneceType_  = CONNECT_TYPE_LOCAL;
-        } else if (deviceFlag == DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG ||
+            AppendFormat(dumpString, "  - device type:%d\n", devDesc->deviceType_);
+            AppendFormat(dumpString, "  - device id:%d\n", devDesc->deviceId_);
+            if (deviceFlag == DeviceFlag::INPUT_DEVICES_FLAG || deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
+                conneceType_  = CONNECT_TYPE_LOCAL;
+            } else if (deviceFlag == DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG ||
                 deviceFlag == DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG) {
                 conneceType_  = CONNECT_TYPE_DISTRIBUTED;
             }
