@@ -67,6 +67,7 @@ static const std::string PIPE_DISTRIBUTED_INPUT = "distributed_input";
 static const std::string PIPE_FAST_DISTRIBUTED_INPUT = "fast_distributed_input";
 std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
+static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 3; // 3s
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
