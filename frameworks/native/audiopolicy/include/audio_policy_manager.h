@@ -379,6 +379,8 @@ public:
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
+
+    int32_t SetRingerStreamMute();
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
