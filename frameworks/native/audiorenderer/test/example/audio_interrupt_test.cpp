@@ -228,6 +228,7 @@ bool AudioInterruptTest::InitRender()
     rendererOptions.rendererInfo.contentType = contentType_;
     rendererOptions.rendererInfo.streamUsage = streamUsage_;
     rendererOptions.rendererInfo.rendererFlags = 0;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
     audioRenderer_ = AudioRenderer::Create(rendererOptions);
     if (audioRenderer_ == nullptr) {

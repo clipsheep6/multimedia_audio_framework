@@ -80,6 +80,7 @@ public:
         rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
         rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
         rendererOptions.rendererInfo.rendererFlags = 0;
+        rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 
         audioRenderer_ = AudioRenderer::Create(rendererOptions);
         if (audioRenderer_== nullptr) {

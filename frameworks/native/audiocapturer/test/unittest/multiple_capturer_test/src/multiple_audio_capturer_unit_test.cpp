@@ -39,6 +39,7 @@ void MultipleAudioCapturerUnitTest::AudioCapUnitTestFunc(unique_ptr<AudioCapture
     capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = sourceType;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
     audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
 

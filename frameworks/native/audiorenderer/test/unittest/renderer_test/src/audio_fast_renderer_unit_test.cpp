@@ -65,6 +65,7 @@ void InitializeFastRendererOptions(AudioRendererOptions &rendererOptions)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = STREAM_FAST;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
 }
 
 void AudioFastRendererUnitTest::SetUpTestCase(void)

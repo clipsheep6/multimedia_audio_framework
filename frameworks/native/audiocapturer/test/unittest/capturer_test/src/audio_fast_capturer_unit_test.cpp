@@ -67,6 +67,7 @@ void AudioFastCapturerUnitTest::InitializeFastCapturerOptions(AudioCapturerOptio
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = STREAM_FAST;
+    capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
     return;
 }
 

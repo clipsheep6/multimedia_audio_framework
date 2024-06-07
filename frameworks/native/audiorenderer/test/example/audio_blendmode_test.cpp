@@ -61,6 +61,7 @@ static unique_ptr<AudioRenderer> CreateAudioRenderer(wav_hdr &wavHeader)
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = 0;
+    rendererOptions.rendererInfo.pipeType = PIPE_TYPE_NORMAL;
     return AudioRenderer::Create(rendererOptions);
 }
 

@@ -45,6 +45,7 @@ namespace {
             capturerOptions.streamInfo.channels = AudioChannel::MONO;
             capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
             capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+            capturerOptions.capturerInfo.pipeType = PIPE_TYPE_NORMAL;
             audioCapturer = AudioCapturer::Create(capturerOptions);
             sleep(1);
         }
