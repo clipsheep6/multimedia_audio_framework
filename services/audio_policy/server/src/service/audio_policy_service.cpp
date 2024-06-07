@@ -5834,6 +5834,16 @@ int32_t AudioPolicyService::LoadOffloadModule()
 int32_t AudioPolicyService::UnloadOffloadModule()
 {
     AUDIO_INFO_LOG("unload offload module");
+    std::unique_lock<std::mutex> lock(offloadCloseMutex_);
+    isOffloadOpened_.store(false);
+    // Try to wait 3 seconds before unloading the module, because the audio driver takes some time to process
+    // the shutdown process..
+    auto status = offloadCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_S),
+        [this] () { return isOffloadOpened_.load(); });
+    if (status) {
+        AUDIO_INFO_LOG("offload restart");
+        return ERROR;
+    }
     return ClosePortAndEraseIOHandle(OFFLOAD_PRIMARY_SPEAKER);
 }
 
