@@ -6897,10 +6897,10 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
     if (active) {
         if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             (*itr)->isEnable_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(new (std::nothrow) AudioDeviceDescriptor(**itr), ENABLE_UPDATE);
+            audioDeviceManager_.UpdateDevicesListInfo(new(std::nothrow) AudioDeviceDescriptor(**itr), ENABLE_UPDATE);
             ClearScoDeviceSuspendState(address);
         }
-        audioStateManager_.SetPerferredCallRenderDevice(new (std::nothrow) AudioDeviceDescriptor(**itr));
+        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor(**itr));
 #ifdef BLUETOOTH_ENABLE
         if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
             deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -6915,7 +6915,7 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
         }
 #endif
     } else {
-        audioStateManager_.SetPerferredCallRenderDevice(new (std::nothrow) AudioDeviceDescriptor());
+        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
 #ifdef BLUETOOTH_ENABLE
         if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
             deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
