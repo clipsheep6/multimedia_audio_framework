@@ -297,6 +297,8 @@ public:
     virtual int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) = 0;
 
     virtual int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) = 0;
+
+    virtual int32_t SetRingerStreamMute() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

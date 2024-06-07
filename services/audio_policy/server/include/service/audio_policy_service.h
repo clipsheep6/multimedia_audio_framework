@@ -504,6 +504,9 @@ public:
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
+
+    int32_t SetRingerStreamMute();
+    bool GetRingerModeMute();
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -604,7 +607,7 @@ private:
     int32_t ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     void MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        unique_ptr<AudioDeviceDescriptor> &outputDevice,
+        vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
@@ -763,6 +766,8 @@ private:
 
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag);
 
+    void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices);
+
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -892,6 +897,15 @@ private:
     int32_t UnloadMchModule();
 
     int32_t MoveToNewPipeInner(const uint32_t sessionId, const AudioPipeType pipeType);
+
+    bool IsRingerOrAlarmerStreamUsage(StreamUsage usage);
+
+    bool IsRingerOrAlarmerDualDevicesRange(InternalDeviceType deviceType);
+
+    bool DealRingerOrAlarmerDualDevices(vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
+
+    void DealAudioSceneOutputDevices(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
+        bool &haveArmUsbDevice);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -1053,6 +1067,8 @@ private:
     std::mutex offloadCloseMutex_;
     std::atomic<bool> isOffloadOpened_ = false;
     std::condition_variable offloadCloseCondition_;
+
+    bool ringerModeMute_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -400,7 +400,11 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         return SUCCESS;
     }
 
-    volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
+    if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING) {
+        volumeDataMaintainer_.SaveMuteStatus(DEVICE_TYPE_SPEAKER, streamType, mute);
+    } else {
+        volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
+    }
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
     return SetVolumeDb(streamType);
