@@ -5816,6 +5816,15 @@ AudioModuleInfo AudioPolicyService::ConstructOffloadAudioModuleInfo(DeviceType d
 int32_t AudioPolicyService::LoadOffloadModule()
 {
     AUDIO_INFO_LOG("load offload mode");
+    std::unique_lock<std::mutex> lock(offloadCloseMutex_);
+    isOffloadOpened_.store(true);
+    offloadCloseCondition_.notify_all();
+
+    if (IOHandles_.find(OFFLOAD_PRIMARY_SPEAKER) != IOHandles_.end()) {
+        AUDIO_ERR_LOG("offload is open");
+        return ERROR;
+    }
+
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
     AudioModuleInfo moduleInfo = ConstructOffloadAudioModuleInfo(deviceType);
     OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
