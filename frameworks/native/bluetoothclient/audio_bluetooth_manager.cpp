@@ -39,6 +39,12 @@ std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
 std::mutex g_hfpInstanceLock;
 
+bool g_isA2dpReconnected = false;
+bool g_isHfpReconnected = false;
+
+std::vector<std::pair<BluetoothRemoteDevice, int32_t>> resetMediaStackList_;
+std::vector<std::pair<BluetoothRemoteDevice, int32_t>> resetHfpStackList_;
+
 static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
     AUDIO_DEBUG_LOG("codec info rate[%{public}d]  format[%{public}d]  channel[%{public}d]",
@@ -217,10 +223,23 @@ void AudioA2dpManager::CheckA2dpDeviceReconnect()
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
     a2dpInstance_->GetDevicesByStates(states, devices);
+    AUDIO_INFO_LOG("reconnect a2dp size %{public}zu", devices.size());
     for (auto &device : devices) {
         a2dpListener_->OnConnectionStateChanged(device, static_cast<int32_t>(BTConnectState::CONNECTED),
             static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
     }
+
+    g_isA2dpReconnected = true;
+    for (const auto&[device, action] : resetMediaStackList_) {
+        AUDIO_INFO_LOG("reconnect set media stack action: %{public}d", action);
+
+        MediaBluetoothDeviceManager::SetMediaStack(device, action);
+
+        // Bt does't notify OnHfpStackChanged when audio restart,
+        // Using OnMediaStackChanged set hfp wearing status (need fix)
+        HfpBluetoothDeviceManager::SetHfpStack(device, action);
+    }
+    resetMediaStackList_.clear();
 }
 
 void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
@@ -255,6 +274,9 @@ void AudioA2dpListener::OnPlayingStatusChanged(const BluetoothRemoteDevice &devi
 void AudioA2dpListener::OnMediaStackChanged(const BluetoothRemoteDevice &device, int action)
 {
     AUDIO_INFO_LOG("OnMediaStackChanged, action: %{public}d", action);
+    if (!g_isA2dpReconnected) {
+        resetMediaStackList_.push_back({device, action});
+    }
     MediaBluetoothDeviceManager::SetMediaStack(device, action);
 }
 
@@ -286,10 +308,18 @@ void AudioHfpManager::CheckHfpDeviceReconnect()
     CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "HFP profile instance unavailable");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices = hfpInstance_->GetDevicesByStates(states);
+    AUDIO_INFO_LOG("reconnect hfp size %{public}zu", devices.size());
     for (auto &device : devices) {
         hfpListener_->OnConnectionStateChanged(device, static_cast<int32_t>(BTConnectState::CONNECTED),
             static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
     }
+
+    g_isHfpReconnected = true;
+    for (const auto&[device, action] : resetHfpStackList_) {
+        AUDIO_INFO_LOG("reconnect set hfp stack action: %{public}d", action);
+        HfpBluetoothDeviceManager::SetHfpStack(device, action);
+    }
+    resetHfpStackList_.clear();
 }
 
 int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
@@ -451,6 +481,9 @@ void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &dev
 void AudioHfpListener::OnHfpStackChanged(const BluetoothRemoteDevice &device, int action)
 {
     AUDIO_INFO_LOG("OnHfpStackChanged, action: %{public}d", action);
+    if (!g_isHfpReconnected) {
+        resetHfpStackList_.push_back({device, action});
+    }
     HfpBluetoothDeviceManager::SetHfpStack(device, action);
 }
 } // namespace Bluetooth

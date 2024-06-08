@@ -6013,8 +6013,9 @@ void AudioPolicyService::RegisterBluetoothListener()
     Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
     isBtListenerRegistered = true;
     const sptr<IStandardAudioService> gsp = RegisterBluetoothDeathCallback();
-    Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();
+
     Bluetooth::AudioHfpManager::CheckHfpDeviceReconnect();
+    Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();
 #endif
 }
 
