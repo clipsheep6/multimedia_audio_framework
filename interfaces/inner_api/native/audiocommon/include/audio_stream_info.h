@@ -148,9 +148,13 @@ enum AudioStreamType {
      */
     STREAM_VOICE_RING = 25,
     /**
+     * Indicates audio streams for voice call assistant.
+     */
+    STREAM_VOICE_CALL_ASSISTANT = 26,
+    /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
-    STREAM_TYPE_MAX = STREAM_VOICE_RING,
+    STREAM_TYPE_MAX = STREAM_VOICE_CALL_ASSISTANT,
 
     /**
      * Indicates audio streams used for only one volume bar of a device.
@@ -187,7 +191,8 @@ enum StreamUsage {
     STREAM_USAGE_RANGING,
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
     STREAM_USAGE_VOICE_RINGTONE,
-    STREAM_USAGE_MAX = STREAM_USAGE_VOICE_RINGTONE
+    STREAM_USAGE_VOICE_CALL_ASSISTANT,
+    STREAM_USAGE_MAX = STREAM_USAGE_VOICE_CALL_ASSISTANT
 };
 
 /**
