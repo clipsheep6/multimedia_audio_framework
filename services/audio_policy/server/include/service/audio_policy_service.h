@@ -440,6 +440,10 @@ public:
 
     void OnPreferredStateUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
 
+    void DeviceCategoryStateUpdated(AudioDeviceDescriptor &desc);
+
+    void SetDeviceByDeviceType(AudioDeviceDescriptor &desc);
+
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
     void UpdateA2dpOffloadFlagBySpatialService(
