@@ -4520,6 +4520,8 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
 
     if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED)) {
         FetchDevice(true);
+    } else if (mode == AUDIO_MODE_PLAYBACK && rendererState == RENDERER_RUNNING) {
+        FetchOutputDeviceForStartInner(streamChangeInfo);
     }
 
     UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
@@ -4532,6 +4534,11 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     AUDIO_INFO_LOG("fetch device for track, sessionid:%{public}d start",
         streamChangeInfo.audioRendererChangeInfo.sessionId);
 
+    FetchOutputDeviceForStartInner(streamChangeInfo);
+}
+
+void AudioPolicyService::FetchOutputDeviceForStartInner(AudioStreamChangeInfo &streamChangeInfo)
+{
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     rendererChangeInfo.push_back(
         make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));

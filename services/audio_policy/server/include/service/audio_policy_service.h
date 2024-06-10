@@ -896,6 +896,8 @@ private:
 
     int32_t MoveToNewPipeInner(const uint32_t sessionId, const AudioPipeType pipeType);
 
+    void FetchOutputDeviceForStartInner(AudioStreamChangeInfo &streamChangeInfo);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
