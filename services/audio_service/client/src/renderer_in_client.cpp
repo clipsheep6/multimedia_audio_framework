@@ -1300,6 +1300,7 @@ bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
+    SetRingerStreamMute();
     if (!offloadEnable_) {
         DrainAudioStream();
     }
@@ -2283,6 +2284,11 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+void RendererInClientInner::SetRingerStreamMute()
+{
+    AudioPolicyManager::GetInstance().SetRingerStreamMute();
 }
 
 RendererInClientPolicyServiceDiedCallbackImpl::RendererInClientPolicyServiceDiedCallbackImpl()
