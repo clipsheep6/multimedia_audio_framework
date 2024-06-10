@@ -6675,17 +6675,6 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             ClearScoDeviceSuspendState(desc.macAddress_);
         }
-        unique_ptr<AudioDeviceDescriptor> userSelectMediaDevice =
-            AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
-        unique_ptr<AudioDeviceDescriptor> userSelectCallDevice =
-            AudioStateManager::GetAudioStateManager().GetPerferredCallRenderDevice();
-        if ((userSelectMediaDevice->deviceType_ == desc.deviceType_ &&
-            userSelectMediaDevice->macAddress_ == desc.macAddress_) ||
-            (userSelectCallDevice->deviceType_ == desc.deviceType_ &&
-            userSelectCallDevice->macAddress_ == desc.macAddress_)) {
-            AUDIO_INFO_LOG("Current enable state has been set true during user selection, no need to be set again.");
-            return;
-        }
     } else if (command == ENABLE_UPDATE && desc.isEnable_ == false) {
         UnloadA2dpModule();
     }
