@@ -955,12 +955,12 @@ int32_t RendererInServer::InitDupStream()
     dupStream_->RegisterStatusCallback(dupStreamCallback_);
     dupStream_->RegisterWriteCallback(dupStreamCallback_);
 
-    AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_);
+    AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", dupStreamIndex_, status_);
 
     isInnerCapEnabled_ = true;
 
     if (status_ == I_STATUS_STARTED) {
-        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
+        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", dupStreamIndex_);
         dupStream_->Start();
     }
     return SUCCESS;
