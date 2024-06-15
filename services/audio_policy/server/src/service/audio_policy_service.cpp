@@ -6251,7 +6251,7 @@ void AudioPolicyService::AddMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &de
         if (iter == connectedMicrophones_.end()) {
             sptr<MicrophoneDescriptor> micDesc = new (std::nothrow) MicrophoneDescriptor(startMicrophoneId++,
                 deviceDescriptor->deviceType_);
-            CHECK_AND_RETURN_RET_LOG(micDesc != nullptr, result, "MicrophoneDescriptor malloc fail!");
+            CHECK_AND_RETURN_RET_LOG(micDesc != nullptr, false, "MicrophoneDescriptor malloc fail!");
             connectedMicrophones_.push_back(micDesc);
         }
     }
@@ -6863,7 +6863,7 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
     CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
     auto deviceDescriptor = new(std::nothrow) AudioDeviceDescriptor(**itr);
-    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, result, "AudioDeviceDescriptor malloc fail");
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, false, "AudioDeviceDescriptor malloc fail");
     if (active) {
         if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             (*itr)->isEnable_ = true;
