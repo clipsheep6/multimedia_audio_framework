@@ -6251,7 +6251,10 @@ void AudioPolicyService::AddMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &de
         if (iter == connectedMicrophones_.end()) {
             sptr<MicrophoneDescriptor> micDesc = new (std::nothrow) MicrophoneDescriptor(startMicrophoneId++,
                 deviceDescriptor->deviceType_);
-            CHECK_AND_RETURN_RET_LOG(micDesc != nullptr, false, "MicrophoneDescriptor malloc fail!");
+            if (micDesc == nullptr) {
+                AUDIO_ERR_LOG("MicrophoneDescriptor malloc fail!");
+                return;
+            }
             connectedMicrophones_.push_back(micDesc);
         }
     }
