@@ -6865,8 +6865,6 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
     auto itr = std::find_if(callDevices.begin(), callDevices.end(), isPresent);
     CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
-    auto deviceDescriptor = new(std::nothrow) AudioDeviceDescriptor(**itr);
-    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, false, "AudioDeviceDescriptor malloc fail");
     if (active) {
         if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             (*itr)->isEnable_ = true;
