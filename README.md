@@ -7,7 +7,6 @@ The audio framework is used to implement audio-related features, including audio
 **Figure 1** Architecture of the audio framework
 
 
-
 ![](figures/en-us_image_0000001152315135.png)
 
 ### Basic Concepts
