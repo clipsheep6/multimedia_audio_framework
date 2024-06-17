@@ -6870,21 +6870,26 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
     if (active) {
         if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             (*itr)->isEnable_ = true;
+            auto deviceDescriptor = new(std::nothrow) AudioDeviceDescriptor(**itr);
+            CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, result, "AudioDeviceDescriptor malloc fail");
             audioDeviceManager_.UpdateDevicesListInfo(deviceDescriptor, ENABLE_UPDATE);
             ClearScoDeviceSuspendState(address);
         }
-        audioStateManager_.SetPerferredCallRenderDevice(deviceDescriptor);
+        auto renderDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor(**itr);
+        CHECK_AND_RETURN_RET_LOG(renderDeviceDescriptor != nullptr, result, "AudioRenderDeviceDescriptor malloc fail");
+        audioStateManager_.SetPerferredCallRenderDevice(renderDeviceDescriptor);
 #ifdef BLUETOOTH_ENABLE
-        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-            deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
+        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
             Bluetooth::AudioHfpManager::DisconnectSco();
         }
-        if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
-            deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO && deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+            auto selectionEventDescriptor = new(std::nothrow) AudioDeviceDescriptor(**itr);
+            CHECK_AND_RETURN_RET_LOG(selectionEventDescriptor != nullptr,
+                result, "AudioSelectionEventDescriptor malloc fail");
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
-                deviceDescriptor->macAddress_, USER_SELECT_BT);
+                selectionEventDescriptor->macAddress_, USER_SELECT_BT);
         }
 #endif
     } else {
