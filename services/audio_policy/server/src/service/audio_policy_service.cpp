@@ -6866,6 +6866,15 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
     a2dpOffloadFlag_ = NO_A2DP_DEVICE;
 }
 
+inline void AudioPolicyService::SendUserSelectionEventWithBluetooth(InternalDeviceType deviceType)
+{
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
+        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+            currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+        Bluetooth::AudioHfpManager::DisconnectSco();
+    }
+}
+
 int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
@@ -6888,28 +6897,27 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
     if (active) {
         if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             (*itr)->isEnable_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(new(std::nothrow) AudioDeviceDescriptor(**itr), ENABLE_UPDATE);
+            auto deviceDescriptor = new(std::nothrow) AudioDeviceDescriptor(**itr);
+            CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, false, "AudioDeviceDescriptor malloc fail");
+            audioDeviceManager_.UpdateDevicesListInfo(deviceDescriptor, ENABLE_UPDATE);
             ClearScoDeviceSuspendState(address);
         }
-        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor(**itr));
+        auto renderDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor(**itr);
+        CHECK_AND_RETURN_RET_LOG(renderDeviceDescriptor != nullptr, false, "AudioRenderDeviceDescriptor malloc fail");
+        audioStateManager_.SetPerferredCallRenderDevice(renderDeviceDescriptor);
 #ifdef BLUETOOTH_ENABLE
-        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-            deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
-            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
-                currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
-            Bluetooth::AudioHfpManager::DisconnectSco();
-        }
-        if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
-            deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        SendUserSelectionEventWithBluetooth(deviceType);
+        if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO && deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 (new(std::nothrow) AudioDeviceDescriptor(**itr))->macAddress_, USER_SELECT_BT);
         }
 #endif
     } else {
-        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+        auto callRenderDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+        CHECK_AND_RETURN_RET_LOG(callRenderDeviceDescriptor != nullptr, false, "AudioCallRenderDevice malloc fail");
+        audioStateManager_.SetPerferredCallRenderDevice(callRenderDeviceDescriptor);
 #ifdef BLUETOOTH_ENABLE
-        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-            deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
             Bluetooth::AudioHfpManager::DisconnectSco();
