@@ -94,6 +94,7 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("isActiveSync", IsStreamActiveSync),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArray", GetEffectInfoArray),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArraySync", GetEffectInfoArraySync),
+        DECLARE_NAPI_FUNCTION("getAudioEnhanceInfoArraySync", GetEnhanceInfoArraySync),
         DECLARE_NAPI_FUNCTION("getHardwareOutputSamplingRate", GetHardwareOutputSamplingRate),
     };
 
@@ -644,6 +645,37 @@ napi_value NapiAudioStreamMgr::Off(napi_env env, napi_callback_info info)
 
     UnregisterCallback(env, jsThis, callbackName);
     return undefinedResult;
+}
+
+napi_value NapiAudioStreamMgr::GetEnhanceInfoArraySync(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of usage must be number"), "invalid valueType");
+
+    int32_t sourceType;
+    NapiParamUtils::GetValueInt32(env, sourceType, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(sourceType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of usage must be enum enhanceMode"), "get enhanceMode failed");
+
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr, result, "napiStreamMgr is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,
+        "audioStreamMngr_ is nullptr");
+    AudioSceneEnhanceInfo audioSceneEnhanceInfo;
+    int32_t ret = napiStreamMgr->audioStreamMngr_->GetEnhanceInfoArray(audioSceneEnhanceInfo,
+        static_cast<SourceType>(sourceType));
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, result, "GetEnhanceInfoArray failure!");
+    NapiParamUtils::SetEnhanceInfo(env, audioSceneEnhanceInfo, result);
+    return result;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

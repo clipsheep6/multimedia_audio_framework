@@ -331,6 +331,24 @@ int32_t IpcStreamInServer::GetAudioEffectMode(int32_t &effectMode)
     return ERR_OPERATION_FAILED;
 }
 
+int32_t IpcStreamInServer::SetAudioEnhanceMode(int32_t enhanceMode)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && capturerInServer_ != nullptr) {
+        return capturerInServer_->SetAudioEnhanceMode(enhanceMode);
+    }
+    AUDIO_ERR_LOG("SetAudioEnhanceMode failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::GetAudioEnhanceMode(int32_t &enhanceMode)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && capturerInServer_ != nullptr) {
+        return capturerInServer_->GetAudioEnhanceMode(enhanceMode);
+    }
+    AUDIO_ERR_LOG("GetAudioEnhanceMode failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
+
 int32_t IpcStreamInServer::SetPrivacyType(int32_t privacyType)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {

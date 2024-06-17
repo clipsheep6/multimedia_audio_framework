@@ -922,6 +922,21 @@ napi_status NapiParamUtils::SetCapturerChangeInfos(const napi_env &env,
     return napi_ok;
 }
 
+napi_status NapiParamUtils::SetEnhanceInfo(const napi_env &env,
+    const AudioSceneEnhanceInfo &audioSceneEnhanceInfo, napi_value &result)
+{
+    int32_t position = 0;
+    napi_value jsEffectInofObj = nullptr;
+    napi_create_array_with_length(env, audioSceneEnhanceInfo.mode.size(), &result);
+    napi_create_object(env, &jsEffectInofObj);
+    for (const auto &mode : audioSceneEnhanceInfo.mode) {
+        SetValueUInt32(env, mode, jsEffectInofObj);
+        napi_set_element(env, result, position, jsEffectInofObj);
+        position++;
+    }
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::SetEffectInfo(const napi_env &env,
     const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result)
 {

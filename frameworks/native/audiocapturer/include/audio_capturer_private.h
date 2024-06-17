@@ -93,6 +93,9 @@ public:
     void SwitchStream(const uint32_t sessionId, const int32_t streamFlag);
     void ConcedeStream();
 
+    AudioEnhanceMode GetAudioEnhanceMode() const override;
+    int32_t SetAudioEnhanceMode(AudioEnhanceMode enhanceMode) override;
+
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
     AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};

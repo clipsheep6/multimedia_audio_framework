@@ -139,6 +139,8 @@ public:
     float GetSingleStreamVolume() override;
     AudioEffectMode GetAudioEffectMode() override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
+    AudioEnhanceMode GetAudioEnhanceMode() override;
+    int32_t SetAudioEnhanceMode(AudioEnhanceMode enhanceMode) override;
     int64_t GetFramesRead() override;
     int64_t GetFramesWritten() override;
 
@@ -293,6 +295,7 @@ private:
     bool needSetThreadPriority_ = true;
 
     AudioStreamParams streamParams_; // in plan: replace it with AudioCapturerParams
+    AudioEnhanceMode enhanceMode_ = ENHANCE_DEFAULT;
 
     // callbacks
     std::mutex streamCbMutex_;
@@ -1252,6 +1255,25 @@ int32_t CapturerInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 {
     AUDIO_WARNING_LOG("SetAudioEffectMode is only for renderer");
     return ERROR;
+}
+AudioEnhanceMode CapturerInClientInner::GetAudioEnhanceMode()
+{
+    AUDIO_DEBUG_LOG("Current audio enhance mode is %{public}d", enhanceMode_);
+    return enhanceMode_;
+}
+
+int32_t CapturerInClientInner::SetAudioEnhanceMode(AudioEnhanceMode enhanceMode)
+{
+     if (enhanceMode_ == enhanceMode) {
+        AUDIO_INFO_LOG("Set same enhance mode");
+        return SUCCESS;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetAudioEffectMode(effectMode);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Set audio enhance mode failed");
+   enhanceMode_ = enhanceMode
+    return SUCCESS;
 }
 
 int64_t CapturerInClientInner::GetFramesWritten()

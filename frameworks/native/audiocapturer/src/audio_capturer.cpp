@@ -431,7 +431,14 @@ int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
 
     return result;
 }
-
+AudioEnhanceMode AudioCapturerPrivate::GetAudioEnhanceMode() const
+{
+    return audioStream_->GetAudioEnhanceMode();
+}
+int32_t AudioCapturerPrivate::SetAudioEnhanceMode(AudioEnhanceMode enhanceMode) 
+{
+    return audioStream_->SetAudioEnhanceMode(enhanceMode);
+}
 int32_t AudioCapturerPrivate::GetCapturerInfo(AudioCapturerInfo &capturerInfo) const
 {
     capturerInfo = capturerInfo_;

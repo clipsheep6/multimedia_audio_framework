@@ -60,7 +60,15 @@
             </streamEffectMode>
         </stream>
         <stream scene="SCENE_MEETING">
-            <streamEffectMode mode="EFFECT_DEFAULT">
+            <streamEffectMode mode="ENHANCE_NONE">
+                <devicePort type="DEVICE_TYPE_MIC" effectChain="EFFECTCHAIN_PURE"/>
+                <devicePort type="DEVICE_TYPE_BT" effectChain="EFFECTCHAIN_PURE"/>
+            </streamEffectMode>
+             <streamEffectMode mode="ENHANCE_DEFAULT">
+                <devicePort type="DEVICE_TYPE_MIC" effectChain="EFFECTCHAIN_PURE"/>
+                <devicePort type="DEVICE_TYPE_BT" effectChain="EFFECTCHAIN_PURE"/>
+            </streamEffectMode>
+             <streamEffectMode mode="ENHANCE_DENOISING">
                 <devicePort type="DEVICE_TYPE_MIC" effectChain="EFFECTCHAIN_PURE"/>
                 <devicePort type="DEVICE_TYPE_BT" effectChain="EFFECTCHAIN_PURE"/>
             </streamEffectMode>

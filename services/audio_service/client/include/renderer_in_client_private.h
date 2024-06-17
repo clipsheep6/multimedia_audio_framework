@@ -118,6 +118,8 @@ public:
     float GetSingleStreamVolume() override;
     AudioEffectMode GetAudioEffectMode() override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
+    AudioEnhanceMode GetAudioEnhanceMode() override;
+    int32_t SetAudioEnhanceMode(AudioEnhanceMode enhanceMode) override;
     int64_t GetFramesWritten() override;
     int64_t GetFramesRead() override;
 

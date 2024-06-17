@@ -1139,7 +1139,17 @@ float RendererInClientInner::GetSingleStreamVolume()
     // in plan
     return 0.0;
 }
+AudioEnhanceMode RendererInClientInner::GetAudioEnhanceMode()
+{
+    AUDIO_WARNING_LOG("GetAudioEnhanceMode is only for Capturer");
+    return ENHANCE_NONE;
+}
 
+int32_t RendererInClientInner::SetAudioEnhanceMode(AudioEnhanceMode enhanceMode)
+{
+    AUDIO_WARNING_LOG("SetAudioEnhanceMode is only for Capturer");
+    return ERROR;
+}
 AudioEffectMode RendererInClientInner::GetAudioEffectMode()
 {
     AUDIO_DEBUG_LOG("Current audio effect mode is %{public}d", effectMode_);

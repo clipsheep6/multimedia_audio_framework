@@ -549,6 +549,21 @@ public:
      */
     int32_t SetStreamAudioEffectMode(AudioEffectMode effectMode);
 
+    /**
+     * @brief Gets the audio enhance mode.
+     *
+     * @return  Returns current audio enhance mode.
+     */
+    AudioEnhanceMode GetStreamAudioEnhanceMode();
+        /**
+     * @brief Sets the audio enhance mode.
+     *
+     * @param enhanceMode The audio enhance mode at which the stream needs to be captured.
+     * @return  Returns {@link SUCCESS} if audio enhance mode is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetStreamAudioEnhanceMode(AudioEnhanceMode enhanceMode);
+
     void SetStreamUsage(StreamUsage usage);
 	
     int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);
@@ -830,6 +845,7 @@ private:
     static pa_sample_spec ConvertToPAAudioParams(AudioStreamParams audioParams);
     static AudioStreamParams ConvertFromPAAudioParams(pa_sample_spec paSampleSpec);
     static const std::string GetEffectModeName(AudioEffectMode effectMode);
+    static const std::string GetEnhanceModeName(AudioEnhanceMode enhanceMode);
     uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;

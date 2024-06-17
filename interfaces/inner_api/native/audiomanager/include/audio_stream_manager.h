@@ -201,7 +201,15 @@ public:
      * @since 9
      */
     int32_t GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo, StreamUsage streamUsage);
-
+    /**
+     * @brief Get Audio Capture Effect Infos.
+     *
+     * @param AudioSceneEffectInfo  AudioSceneEffectInfo
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
+    int32_t GetEnhanceInfoArray(AudioSceneEnhanceInfo &audioSceneEnhanceInfo, SourceType sourceType);
     /**
      * @brief Is stream active.
      *
@@ -221,10 +229,6 @@ public:
     int32_t GetHardwareOutputSamplingRate(sptr<AudioDeviceDescriptor> &desc);
 };
 
-static const std::map<std::string, AudioEffectMode> effectModeMap = {
-    {"EFFECT_NONE", EFFECT_NONE},
-    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
-};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_STREAM_MANAGER_H

@@ -88,6 +88,7 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
+    static bool IsLegalInputArgumentAudioEnhanceMode(int32_t audioEnhanceMode);
     static bool IsLegalInputArgumentChannelBlendMode(int32_t blendMode);
     static bool IsLegalCapturerType(int32_t type);
     static bool IsLegalInputArgumentVolType(int32_t inputType);
@@ -159,6 +160,7 @@ private:
     static napi_ref audioState_;
     static napi_ref sampleFormat_;
     static napi_ref audioEffectMode_;
+    static napi_ref audioEnhanceMode_;
     static napi_ref audioPrivacyType_;
     static napi_ref audioVolumeTypeRef_;
     static napi_ref deviceFlagRef_;
@@ -203,6 +205,7 @@ private:
     static const std::map<std::string, int32_t> audioStateMap;
     static const std::map<std::string, int32_t> audioPrivacyTypeMap;
     static const std::map<std::string, int32_t> effectModeMap;
+    static const std::map<std::string, int32_t> enhanceModeMap;
     static const std::map<std::string, int32_t> deviceChangeTypeMap;
     static const std::map<std::string, int32_t> audioSceneMap;
     static const std::map<std::string, int32_t> interruptActionTypeMap;

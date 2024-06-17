@@ -49,6 +49,8 @@ private:
     int32_t HandleGetLowPowerVolume(MessageParcel &data, MessageParcel &reply);
     int32_t HandleSetAudioEffectMode(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetAudioEffectMode(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleSetAudioEnhanceMode(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleGetAudioEnhanceMode(MessageParcel &data, MessageParcel &reply);
     int32_t HandleSetPrivacyType(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetPrivacyType(MessageParcel &data, MessageParcel &reply);
 

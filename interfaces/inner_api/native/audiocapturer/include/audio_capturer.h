@@ -649,6 +649,22 @@ public:
      * @since 11
      */
     virtual int32_t SetCaptureSilentState(bool state) = 0;
+    /**
+     * @brief Gets the audio enhance mode.
+     *
+     * @return  Returns current audio enhance mode.
+     * @since 10
+     */
+    virtual AudioEnhanceMode GetAudioEnhanceMode() const = 0;
+    /**
+     * @brief Sets the audio enhance mode.
+     *
+     * * @param enhanceMode The audio enhance mode at which the stream needs to be captured.
+     * @return  Returns {@link SUCCESS} if audio enhance mode is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t SetAudioEnhanceMode(AudioEnhanceMode enhanceMode) = 0;
 
     virtual uint32_t GetOverflowCount() const = 0;
 

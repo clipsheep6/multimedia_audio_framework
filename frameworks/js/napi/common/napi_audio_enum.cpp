@@ -247,7 +247,11 @@ const std::map<std::string, int32_t> NapiAudioEnum::effectModeMap = {
     {"EFFECT_NONE", EFFECT_NONE},
     {"EFFECT_DEFAULT", EFFECT_DEFAULT}
 };
-
+const std::map<std::string, int32_t> NapiAudioEnum::enhanceModeMap = {
+    {"ENHANCE_NONE", ENHANCE_NONE},
+    {"ENHANCE_DEFAULT", ENHANCE_DEFAULT},
+    {"ENHANCE_DENOISING", ENHANCE_DENOISING}
+};
 const std::map<std::string, int32_t> NapiAudioEnum::audioPrivacyTypeMap = {
     {"PRIVACY_TYPE_PUBLIC", PRIVACY_TYPE_PUBLIC},
     {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE}
@@ -1034,7 +1038,21 @@ bool NapiAudioEnum::IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode)
     }
     return result;
 }
-
+bool NapiAudioEnum::IsLegalInputArgumentAudioEnhanceMode(int32_t audioEnhanceMode)
+{
+    bool result = false;
+    switch (audioEnhanceMode) {
+        case AudioEnhanceMode::ENHANCE_NONE:
+        case AudioEnhanceMode::ENHANCE_DEFAULT:
+        case AudioEnhanceMode::ENHANCE_DENOISING:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 bool NapiAudioEnum::IsLegalInputArgumentChannelBlendMode(int32_t blendMode)
 {
     bool result = false;

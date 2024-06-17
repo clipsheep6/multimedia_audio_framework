@@ -229,7 +229,23 @@ int32_t IpcStreamStub::HandleGetAudioEffectMode(MessageParcel &data, MessageParc
 
     return AUDIO_OK;
 }
+int32_t IpcStreamStub::HandleSetAudioEnhanceMode(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t enhanceMode = data.ReadInt32();
+    reply.WriteInt32(SetAudioEnhanceMode(enhanceMode));
 
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleGetAudioEnhanceMode(MessageParcel &data, MessageParcel &reply)
+{
+    (void)data;
+    int32_t enhanceMode = -1;
+    reply.WriteInt32(GetAudioEnhanceMode(enhanceMode));
+    reply.WriteInt32(enhanceMode);
+
+    return AUDIO_OK;
+}
 int32_t IpcStreamStub::HandleSetPrivacyType(MessageParcel &data, MessageParcel &reply)
 {
     int32_t privacyType = data.ReadInt32();

@@ -72,6 +72,8 @@ napi_status NapiAudioCapturer::InitAudioCapturer(napi_env env, napi_value &const
         DECLARE_NAPI_FUNCTION("getCurrentMicrophones", GetCurrentMicrophones),
         DECLARE_NAPI_FUNCTION("getOverflowCount", GetOverflowCount),
         DECLARE_NAPI_FUNCTION("getOverflowCountSync", GetOverflowCountSync),
+        DECLARE_NAPI_FUNCTION("setAudioEnhanceMode", SetAudioEnhanceMode),
+        DECLARE_NAPI_FUNCTION("getAudioEnhanceMode", GetAudioEnhanceMode),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_GETTER("state", GetState),
@@ -1212,6 +1214,78 @@ void NapiAudioCapturer::UnregisterCapturerReadDataCallback(napi_env env, size_t 
     cb->RemoveCallbackReference(env, callback);
 
     AUDIO_INFO_LOG("Unregister Callback is successful");
+}
+
+napi_value NapiAudioCapturer::GetAudioEnhanceMode(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioCapturerAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, "GetAudioEnhanceMode failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioCapturer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
+            "context object state is error.");
+        context->intValue = napiAudioCapturer->audioCapturer_->GetAudioEnhanceMode();
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueInt32(env, context->intValue, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetAudioEnhanceMode", executor, complete);
+}
+
+napi_value NapiAudioCapturer::SetAudioEnhanceMode(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioCapturerAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, "SetAudioEnhanceMode failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "mandatory parameters are left unspecified",
+            NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueInt32(env, context->audioEnhanceMode, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of mode must be number", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context,
+            NapiAudioEnum::IsLegalInputArgumentAudioEnhanceMode(context->audioEnhanceMode),
+            "parameter verification failed: The param of mode must be enum AudioEnhanceMode",
+             NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioCapturer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
+            "context object state is error.");
+        AudioEnhanceMode audioEnhanceMode = static_cast<AudioEnhanceMode>(context->audioEnhanceMode);
+        context->intValue = napiAudioCapturer->audioCapturer_->SetAudioEnhanceMode(audioEnhanceMode);
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetAudioEnhanceMode", executor, complete);
 }
 } // namespace AudioStandard
 } // namespace OHOS

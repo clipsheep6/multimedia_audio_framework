@@ -53,6 +53,7 @@ private:
         size_t bytesRead;
         size_t bufferSize;
         uint32_t audioStreamId;
+        int32_t audioEnhanceMode;
         bool isBlocking;
         bool isTrue;
         SourceType sourceType;
@@ -82,6 +83,8 @@ private:
     static napi_value GetBufferSizeSync(napi_env env, napi_callback_info info);
     static napi_value GetAudioStreamId(napi_env env, napi_callback_info info);
     static napi_value GetAudioStreamIdSync(napi_env env, napi_callback_info info);
+    static napi_value SetAudioEnhanceMode(napi_env env, napi_callback_info info);
+    static napi_value GetAudioEnhanceMode(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value GetCurrentInputDevices(napi_env env, napi_callback_info info);
