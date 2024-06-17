@@ -6866,7 +6866,7 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
     a2dpOffloadFlag_ = NO_A2DP_DEVICE;
 }
 
-inline void AudioPolicyService::SendUserSelectionEventWithBluetooth(InternalDeviceType deviceType)
+inline void SendUserSelectionEventWithBluetooth(InternalDeviceType deviceType)
 {
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
