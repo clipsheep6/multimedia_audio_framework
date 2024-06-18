@@ -453,7 +453,7 @@ public:
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
 
-    void SendUserSelectionEventWithBluetooth(InternalDeviceType deviceType);
+    int32_t SetCallDeviceByDeviceType(InternalDeviceType deviceType, std::string address);
 
     std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
