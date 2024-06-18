@@ -6904,7 +6904,6 @@ int32_t AudioPolicyService::SetCallDeviceByDeviceType(InternalDeviceType deviceT
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO, deviceDescriptor->macAddress_, USER_SELECT_BT);
     }
 #endif
-    FetchDevice(true);
     return SUCCESS;
 }
 
@@ -6917,7 +6916,11 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
     if (active) {
-        SetCallDeviceByDeviceType(deviceType, address);
+        int32_t result = SetCallDeviceByDeviceType(deviceType, address);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to set call device by device type.");
+            return ERROR;
+        }
     } else {
         auto callRenderDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
         CHECK_AND_RETURN_RET_LOG(callRenderDeviceDescriptor != nullptr, ERR_MEMORY_ALLOC_FAILED,
