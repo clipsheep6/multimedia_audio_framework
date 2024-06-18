@@ -717,7 +717,9 @@ private:
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
     std::string effectSceneName = "";
+    std::string enhanceSceneName= "";
     AudioEffectMode effectMode;
+    AudioEnhanceMode enhanceMode;
     std::shared_ptr<AudioCapturerReadCallback> readCallback_;
     std::shared_ptr<AudioRendererWriteCallback> writeCallback_;
     int64_t writeCbStamp_ = 0; // used to measure callback duration

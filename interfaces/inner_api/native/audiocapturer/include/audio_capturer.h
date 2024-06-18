@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "audio_info.h"
+#include "audio_effect.h"
 #include "microphone_descriptor.h"
 #include "timestamp.h"
 

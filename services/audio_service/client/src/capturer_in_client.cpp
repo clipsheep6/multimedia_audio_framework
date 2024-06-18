@@ -1270,9 +1270,9 @@ int32_t CapturerInClientInner::SetAudioEnhanceMode(AudioEnhanceMode enhanceMode)
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->SetAudioEffectMode(effectMode);
+    int32_t ret = ipcStream_->SetAudioEnhanceMode(enhanceMode);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Set audio enhance mode failed");
-   enhanceMode_ = enhanceMode
+    enhanceMode_ = enhanceMode;
     return SUCCESS;
 }
 

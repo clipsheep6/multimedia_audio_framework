@@ -94,7 +94,7 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("isActiveSync", IsStreamActiveSync),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArray", GetEffectInfoArray),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArraySync", GetEffectInfoArraySync),
-        DECLARE_NAPI_FUNCTION("getAudioEnhanceInfoArraySync", GetEnhanceInfoArraySync),
+        DECLARE_NAPI_FUNCTION("getSupportedAudioEnhanceMode", GetSupportedAudioEnhanceMode),
         DECLARE_NAPI_FUNCTION("getHardwareOutputSamplingRate", GetHardwareOutputSamplingRate),
     };
 
@@ -647,7 +647,7 @@ napi_value NapiAudioStreamMgr::Off(napi_env env, napi_callback_info info)
     return undefinedResult;
 }
 
-napi_value NapiAudioStreamMgr::GetEnhanceInfoArraySync(napi_env env, napi_callback_info info)
+napi_value NapiAudioStreamMgr::GetSupportedAudioEnhanceMode(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;

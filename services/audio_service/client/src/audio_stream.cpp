@@ -1087,7 +1087,7 @@ AudioEffectMode AudioStream::GetAudioEffectMode()
 
 int32_t AudioStream::SetAudioEnhanceMode(AudioEnhanceMode enhanceMode)
 {
-    return SetStreamAudioEffectMode(enhanceMode);
+    return SetStreamAudioEnhanceMode(enhanceMode);
 }
 AudioEnhanceMode AudioStream::GetAudioEnhanceMode()
 {

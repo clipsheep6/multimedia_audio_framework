@@ -571,7 +571,8 @@ AudioServiceClient::AudioServiceClient()
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
     effectSceneName = "";
     effectMode = EFFECT_DEFAULT;
-
+    enhanceSceneName = "SCENE_MEETING";
+    enhanceMode = ENHANCE_DEFAULT;
     mFrameSize = 0;
     mFrameMarkPosition = 0;
     mMarkReached = false;
@@ -3643,7 +3644,7 @@ AudioEffectMode AudioServiceClient::GetStreamAudioEffectMode()
 {
     return effectMode;
 }
-AudioEnhancceMode AudioServiceClient::GetStreamAudioEnhanceMode()
+AudioEnhanceMode AudioServiceClient::GetStreamAudioEnhanceMode()
 {
     return enhanceMode;
 }

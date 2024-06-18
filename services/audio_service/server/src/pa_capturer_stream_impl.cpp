@@ -101,6 +101,55 @@ int32_t PaCapturerStreamImpl::InitParams()
     return SUCCESS;
 }
 
+int32_t PaCapturerStreamImpl::SetAudioEnhanceMode(int32_t enhanceMode)
+{
+    AUDIO_INFO_LOG("SetAudioEnhanceMode: %{public}d", enhanceMode);
+    PaLockGuard lock(mainloop_);
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
+    }
+
+    enhanceMode_ = enhanceMode;
+    const std::string enhanceModeName = GetEnhanceModeName(enhanceMode_);
+
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        return ERR_OPERATION_FAILED;
+    }
+
+    pa_proplist_sets(propList, "scene.mode", enhanceModeName.c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    return SUCCESS;
+}
+
+const std::string PaCapturerStreamImpl::GetEnhanceModeName(int32_t enhanceMode)
+{
+    std::string name;
+    switch (enhanceMode) {
+        case AudioEnhanceMode::ENHANCE_NONE:
+            name = "ENHANCE_NONE";
+            break;
+        case AudioEnhanceMode::ENHANCE_DENOISING:
+            name = "ENHANCE_DENOISING";
+            break;
+        default:
+            name = "ENHANCE_DEFAULT";
+    }
+
+    const std::string modeName = name;
+    return modeName;
+}
+
+int32_t PaCapturerStreamImpl::GetAudioEnhanceMode(int32_t &enhanceMode)
+{
+    enhanceMode = enhanceMode_;
+    return SUCCESS;
+}
 int32_t PaCapturerStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Start");

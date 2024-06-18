@@ -428,7 +428,7 @@ int32_t FastAudioStream::SetAudioEffectMode(AudioEffectMode effectMode)
 AudioEnhanceMode FastAudioStream::GetAudioEnhanceMode()
 {
     AUDIO_ERR_LOG("GetAudioEnhanceMode not supported");
-    return EFFECT_NONE;
+    return ENHANCE_NONE;
 }
 
 int32_t FastAudioStream::SetAudioEnhanceMode(AudioEnhanceMode enhanceMode)

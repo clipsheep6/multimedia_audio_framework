@@ -35,7 +35,8 @@ public:
     int32_t GetStreamFramesRead(uint64_t &framesRead) override;
     int32_t GetCurrentTimeStamp(uint64_t &timestamp) override;
     int32_t GetLatency(uint64_t &latency) override;
-
+    int32_t SetAudioEnhanceMode(int32_t enhanceMode) override;
+    int32_t GetAudioEnhanceMode(int32_t &enhanceMode) override;
     void RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback) override;
     void RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback) override;
     BufferDesc DequeueBuffer(size_t length) override;
@@ -58,7 +59,7 @@ private:
     static void PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
-
+    const std::string GetEnhanceModeName(int32_t enhanceMode);
     pa_stream *paStream_ = nullptr;
     AudioProcessConfig processConfig_;
     std::weak_ptr<IStatusCallback> statusCallback_;
@@ -69,7 +70,7 @@ private:
     State state_ = INVALID;
     uint32_t underFlowCount_;
     pa_threaded_mainloop *mainloop_;
-
+    AudioEnhanceMode enhanceMode_;
     size_t byteSizePerFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
     size_t minBufferSize_ = 0;
