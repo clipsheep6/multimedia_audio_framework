@@ -48,13 +48,13 @@
 
     <preProcess>
         <stream scene="SCENE_VOIP_3A">
-            <streamEffectMode mode="EFFECT_DEFAULT">
+            <streamEffectMode mode="ENHANCE_DEFAULT">
                 <devicePort type="DEVICE_TYPE_MIC" effectChain="EFFECTCHAIN_VOIP_3A"/>
                 <devicePort type="DEVICE_TYPE_BT" effectChain="EFFECTCHAIN_VOIP_3A"/>
             </streamEffectMode>
         </stream>
         <stream scene="SCENE_RECORD">
-            <streamEffectMode mode="EFFECT_DEFAULT">
+            <streamEffectMode mode="ENHANCE_DEFAULT">
                 <devicePort type="DEVICE_TYPE_MIC" effectChain="EFFECTCHAIN_HD"/>
                 <devicePort type="DEVICE_TYPE_BT" effectChain="EFFECTCHAIN_HD"/>
             </streamEffectMode>
