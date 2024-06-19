@@ -571,7 +571,8 @@ AudioServiceClient::AudioServiceClient()
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
     effectSceneName = "";
     effectMode = EFFECT_DEFAULT;
-
+    enhanceSceneName = "SCENE_MEETING";
+    enhanceMode = ENHANCE_DEFAULT;
     mFrameSize = 0;
     mFrameMarkPosition = 0;
     mMarkReached = false;
@@ -3620,11 +3621,33 @@ const std::string AudioServiceClient::GetEffectModeName(AudioEffectMode effectMo
     return modeName;
 }
 
+const std::string AudioServiceClient::GetEnhanceModeName(AudioEnhanceMode enhanceMode)
+{
+    std::string name;
+    switch (enhanceMode) {
+        case ENHANCE_NONE:
+            name = "ENHANCE_NONE";
+            break;
+        case ENHANCE_DENOISING:
+            name = "ENHANCE_DENOISING";
+            break;
+        default:
+            name = "ENHANCE_DEFAULT";
+    }
+
+    const std::string modeName = name;
+    return modeName;
+}
+
+
 AudioEffectMode AudioServiceClient::GetStreamAudioEffectMode()
 {
     return effectMode;
 }
-
+AudioEnhanceMode AudioServiceClient::GetStreamAudioEnhanceMode()
+{
+    return enhanceMode;
+}
 int64_t AudioServiceClient::GetStreamFramesWritten()
 {
     CHECK_AND_RETURN_RET_LOG(mFrameSize != 0, ERROR, "Error frame size");
@@ -3670,6 +3693,38 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::SetStreamAudioEnhanceMode(AudioEnhanceMode audioEnhanceMode)
+{
+    AUDIO_INFO_LOG("Mode: %{public}d", audioEnhanceMode);
+
+    int32_t ret = CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, AUDIO_CLIENT_PA_ERR,
+        "set stream audio enhance mode: invalid stream state");
+
+    pa_threaded_mainloop_lock(mainLoop);
+
+    enhanceMode = audioEnhanceMode;
+
+    const std::string enhanceModeName = GetEnhanceModeName(audioEnhanceMode);
+
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_sets(propList, "scene.type", enhanceSceneName.c_str());
+    pa_proplist_sets(propList, "scene.mode", enhanceModeName.c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return AUDIO_CLIENT_SUCCESS;
+}
 void AudioServiceClient::SetStreamInnerCapturerState(bool isInnerCapturer)
 {
     AUDIO_DEBUG_LOG("SetInnerCapturerState: %{public}d", isInnerCapturer);

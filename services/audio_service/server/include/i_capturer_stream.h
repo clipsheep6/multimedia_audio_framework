@@ -33,7 +33,8 @@ public:
     virtual int32_t GetStreamFramesRead(uint64_t &framesRead) = 0;
     virtual int32_t GetCurrentTimeStamp(uint64_t &timestamp) = 0;
     virtual int32_t GetLatency(uint64_t &latency) = 0;
-
+    virtual int32_t SetAudioEnhanceMode(int32_t enhanceMode) = 0;
+    virtual int32_t GetAudioEnhanceMode(int32_t &enhanceMode) = 0;
     virtual void RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback) = 0;
     virtual int32_t GetMinimumBufferSize(size_t &minBufferSize) const = 0;
     virtual void GetByteSizePerFrame(size_t &byteSizePerFrame) const = 0;

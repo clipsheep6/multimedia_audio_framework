@@ -89,6 +89,10 @@ public:
 
     int32_t GetAudioEffectMode(int32_t &effectMode) override; // renderer only
 
+    int32_t SetAudioEnhanceMode(int32_t enhanceMode) override; // renderer only
+
+    int32_t GetAudioEnhanceMode(int32_t &enhanceMode) override; // renderer only
+
     int32_t SetPrivacyType(int32_t privacyType) override; // renderer only
 
     int32_t GetPrivacyType(int32_t &privacyType) override; // renderer only

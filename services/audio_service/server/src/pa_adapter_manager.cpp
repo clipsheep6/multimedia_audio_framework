@@ -467,7 +467,7 @@ void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConf
     pa_proplist_sets(propList, "stream.capturerSource",
         std::to_string(processConfig.capturerInfo.sourceType).c_str());
     pa_proplist_sets(propList, "scene.type", GetEnhanceSceneName(processConfig.capturerInfo.sourceType).c_str());
-    enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
+    enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? ENHANCE_DEFAULT : ENHANCE_NONE;
     pa_proplist_sets(propList, "scene.mode", GetEnhanceModeName(enhanceMode_).c_str());
 }
 
@@ -653,9 +653,10 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEffectMode audioEnhanceMode)
+int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEnhanceMode audioEnhanceMode)
 {
     PaLockGuard lock(mainLoop_);
+    const std::string enhanceModeName = GetEnhanceModeName(audioEnhanceMode);
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed.");
@@ -676,18 +677,21 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEf
     return SUCCESS;
 }
 
-const std::string PaAdapterManager::GetEnhanceModeName(AudioEffectMode audioEnhanceMode)
+const std::string PaAdapterManager::GetEnhanceModeName(AudioEnhanceMode audioEnhanceMode)
 {
     std::string name;
     switch (audioEnhanceMode) {
-        case AudioEffectMode::EFFECT_NONE:
-            name = "EFFECT_NONE";
+        case AudioEnhanceMode::ENHANCE_NONE:
+            name = "ENHANCE_NONE";
             break;
-        case AudioEffectMode::EFFECT_DEFAULT:
-            name = "EFFECT_DEFAULT";
+        case AudioEnhanceMode::ENHANCE_DEFAULT:
+            name = "ENHANCE_DEFAULT";
+            break;
+        case AudioEnhanceMode::ENHANCE_DENOISING:
+            name = "ENHANCE_DENOISING";
             break;
         default:
-            name = "EFFECT_DEFAULT";
+            name = "ENHANCE_DEFAULT";
             break;
     }
     const std::string modeName = name;

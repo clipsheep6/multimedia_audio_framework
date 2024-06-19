@@ -136,7 +136,15 @@ int32_t CapturerInServer::Init()
 
     return SUCCESS;
 }
+int32_t CapturerInServer::SetAudioEnhanceMode(int32_t enhanceMode)
+{
+    return stream_->SetAudioEnhanceMode(enhanceMode);
+}
 
+int32_t CapturerInServer::GetAudioEnhanceMode(int32_t &enhanceMode)
+{
+    return stream_->GetAudioEnhanceMode(enhanceMode);
+}
 void CapturerInServer::OnStatusUpdate(IOperation operation)
 {
     AUDIO_INFO_LOG("CapturerInServer::OnStatusUpdate operation: %{public}d", operation);

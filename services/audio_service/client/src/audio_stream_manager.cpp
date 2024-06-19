@@ -127,6 +127,61 @@ int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneE
     return ret;
 }
 
+static void UpdateEnhanceInfoArray(SupportedEffectConfig &supportedEffectConfig,
+    int32_t i, AudioSceneEnhanceInfo &audioSceneEnhanceInfo)
+{
+    uint32_t j;
+    AudioEnhanceMode audioEnhanceMode;
+    for (j = 0; j < supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size(); j++) {
+        audioEnhanceMode = enhanceModeMap.at(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].mode);
+        audioSceneEnhanceInfo.mode.push_back(audioEnhanceMode);
+    }
+    auto index = std::find(audioSceneEnhanceInfo.mode.begin(), audioSceneEnhanceInfo.mode.end(), 0);
+    if (index == audioSceneEnhanceInfo.mode.end()) {
+        audioEnhanceMode = enhanceModeMap.at("ENHANCE_NONE");
+        audioSceneEnhanceInfo.mode.push_back(audioEnhanceMode);
+    }
+    index = std::find(audioSceneEnhanceInfo.mode.begin(), audioSceneEnhanceInfo.mode.end(), 1);
+    if (index == audioSceneEnhanceInfo.mode.end()) {
+        audioEnhanceMode = enhanceModeMap.at("ENHANCE_DEFAULT");
+        audioSceneEnhanceInfo.mode.push_back(audioEnhanceMode);
+    }
+    index = std::find(audioSceneEnhanceInfo.mode.begin(), audioSceneEnhanceInfo.mode.end(), 2);
+    if (index == audioSceneEnhanceInfo.mode.end()) {
+        audioEnhanceMode = enhanceModeMap.at("ENHANCE_DENOISING");
+        audioSceneEnhanceInfo.mode.push_back(audioEnhanceMode);
+    }
+    std::sort(audioSceneEnhanceInfo.mode.begin(), audioSceneEnhanceInfo.mode.end());
+}
+
+int32_t AudioStreamManager::GetEnhanceInfoArray(AudioSceneEnhanceInfo &audioSceneEnhanceInfo, SourceType sourceType)
+{
+    // µ×²ã½Ó¿ÚÉÐÎ´readyÔÝÊ±Ð´ËÀSCENE_MEETING
+    std::string effectScene = "SCENE_MEETING";//IAudioStream::GetEffectSceneName(streamUsage);
+    SupportedEffectConfig supportedEffectConfig;
+    int32_t ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
+    uint32_t streamNum = supportedEffectConfig.preProcessNew.stream.size();
+    if (streamNum >= 0) {
+        int32_t sceneFlag = 0;
+        for (uint32_t i = 0; i < streamNum; i++) {
+            if (effectScene == supportedEffectConfig.preProcessNew.stream[i].scene) {
+                UpdateEnhanceInfoArray(supportedEffectConfig, i, audioSceneEnhanceInfo);
+                sceneFlag = 1;
+                break;
+            }
+        }
+        if (sceneFlag == 0) {
+            AudioEnhanceMode audioEnhanceMode = enhanceModeMap.at("ENHANCE_NONE");
+            audioSceneEnhanceInfo.mode.push_back(audioEnhanceMode);
+            audioEnhanceMode = enhanceModeMap.at("ENHANCE_DEFAULT");
+            audioSceneEnhanceInfo.mode.push_back(audioEnhanceMode);
+            audioEnhanceMode = enhanceModeMap.at("ENHANCE_DENOISING");
+            audioSceneEnhanceInfo.mode.push_back(audioEnhanceMode);
+        }
+    }
+    return ret;
+}
+
 bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
 {
     switch (volumeType) {

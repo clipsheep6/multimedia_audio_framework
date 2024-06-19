@@ -163,6 +163,35 @@ enum AudioEffectMode {
 struct AudioSceneEffectInfo {
     std::vector<AudioEffectMode> mode;
 };
+const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
+    {EFFECT_NONE, "EFFECT_NONE"},
+    {EFFECT_DEFAULT, "EFFECT_DEFAULT"}
+};
+static const std::map<std::string, AudioEffectMode> effectModeMap = {
+    {"EFFECT_NONE", EFFECT_NONE},
+    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
+};
+/**
+* Enumerates the audio Capture enhance mode.
+*/
+enum AudioEnhanceMode {
+    ENHANCE_NONE = 0,
+    ENHANCE_DEFAULT = 1,
+    ENHANCE_DENOISING = 2
+};
+struct AudioSceneEnhanceInfo {
+    std::vector<AudioEnhanceMode> mode;
+};
+const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_SUPPORTED_ENHANCE_MODES {
+    {ENHANCE_NONE, "ENHANCE_NONE"},
+    {ENHANCE_DEFAULT, "ENHANCE_DEFAULT"},
+    {ENHANCE_DENOISING, "ENHANCE_DENOISING"}
+};
+static const std::map<std::string, AudioEnhanceMode> enhanceModeMap = {
+    {"ENHANCE_NONE", ENHANCE_NONE},
+    {"ENHANCE_DEFAULT", ENHANCE_DEFAULT},
+    {"ENHANCE_DENOISING", ENHANCE_DENOISING}
+};
 
 const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES {
     {SCENE_OTHERS, "SCENE_OTHERS"},
@@ -171,11 +200,6 @@ const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TY
     {SCENE_GAME, "SCENE_GAME"},
     {SCENE_SPEECH, "SCENE_SPEECH"},
     {SCENE_RING, "SCENE_RING"}
-};
-
-const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
-    {EFFECT_NONE, "EFFECT_NONE"},
-    {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
 };
 
 const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {

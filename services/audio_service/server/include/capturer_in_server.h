@@ -44,7 +44,8 @@ public:
     int32_t GetLatency(uint64_t &latency);
 
     int32_t Init();
-
+    int32_t SetAudioEnhanceMode(int32_t enhanceMode);
+    int32_t GetAudioEnhanceMode(int32_t &enhanceMode);
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
     int32_t UpdateReadIndex();

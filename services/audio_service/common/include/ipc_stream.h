@@ -74,6 +74,10 @@ public:
 
     virtual int32_t GetAudioEffectMode(int32_t &effectMode) = 0; // renderer only
 
+    virtual int32_t SetAudioEnhanceMode(int32_t enhanceMode) = 0; // Capturer only
+
+    virtual int32_t GetAudioEnhanceMode(int32_t &enhanceMode) = 0; // Capturer only
+
     virtual int32_t SetPrivacyType(int32_t privacyType) = 0; // renderer only
 
     virtual int32_t GetPrivacyType(int32_t &privacyType) = 0; // renderer only
@@ -114,6 +118,8 @@ public:
         ON_GET_LOWPOWER_VOLUME,
         ON_SET_EFFECT_MODE,
         ON_GET_EFFECT_MODE,
+        ON_SET_ENHANCE_MODE,
+        ON_GET_ENHANCE_MODE,
         ON_SET_PRIVACY_TYPE,
         ON_GET_PRIVACY_TYPE,
         ON_SET_OFFLOAD_MODE,

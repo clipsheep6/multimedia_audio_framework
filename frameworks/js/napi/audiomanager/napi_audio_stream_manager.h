@@ -70,6 +70,7 @@ private:
     static napi_value IsStreamActiveSync(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArray(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArraySync(napi_env env, napi_callback_info info);
+    static napi_value GetSupportedAudioEnhanceMode(napi_env env, napi_callback_info info);
     static napi_value GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);

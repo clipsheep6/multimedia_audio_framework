@@ -1085,6 +1085,15 @@ AudioEffectMode AudioStream::GetAudioEffectMode()
     return GetStreamAudioEffectMode();
 }
 
+int32_t AudioStream::SetAudioEnhanceMode(AudioEnhanceMode enhanceMode)
+{
+    return SetStreamAudioEnhanceMode(enhanceMode);
+}
+AudioEnhanceMode AudioStream::GetAudioEnhanceMode()
+{
+    return GetStreamAudioEnhanceMode();
+}
+
 void AudioStream::SetInnerCapturerState(bool isInnerCapturer)
 {
     SetStreamInnerCapturerState(isInnerCapturer);

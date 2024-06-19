@@ -70,6 +70,7 @@ public:
         uint32_t overFlowCount = 0;
         AudioEffectMode effectMode;
         AudioRenderMode renderMode;
+        AudioEnhanceMode enhanceMode;
         AudioCaptureMode captureMode;
         AudioRendererRate renderRate;
         int32_t clientPid = 0;
@@ -175,6 +176,10 @@ public:
     // for effect
     virtual AudioEffectMode GetAudioEffectMode() = 0;
     virtual int32_t SetAudioEffectMode(AudioEffectMode effectMode) = 0;
+
+    // for enhance
+    virtual AudioEnhanceMode GetAudioEnhanceMode() = 0;
+    virtual int32_t SetAudioEnhanceMode(AudioEnhanceMode enhanceMode) = 0;
 
     virtual int64_t GetFramesWritten() = 0;
     virtual int64_t GetFramesRead() = 0;

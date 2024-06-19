@@ -344,6 +344,38 @@ int32_t IpcStreamProxy::GetAudioEffectMode(int32_t &effectMode)
 
     return ret;
 }
+int32_t IpcStreamProxy::SetAudioEnhanceMode(int32_t enhanceMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteInt32(enhanceMode);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_ENHANCE_MODE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "SetAudioEnhanceMode failed, ipc error: %{public}d",
+        ret);
+
+    return reply.ReadInt32();
+}
+
+int32_t IpcStreamProxy::GetAudioEnhanceMode(int32_t &enhanceMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_GET_ENHANCE_MODE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "GetAudioEnhanceMode failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioEnhanceMode failed, error: %{public}d", ret);
+    enhanceMode = reply.ReadInt32();
+
+    return ret;
+}
 
 int32_t IpcStreamProxy::SetPrivacyType(int32_t privacyType)
 {
