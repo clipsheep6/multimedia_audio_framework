@@ -86,10 +86,12 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
 
     for (auto &devInfo : deviceList) {
         if ((devInfo.deviceType == devDesc->deviceType_) &&
-            ((devRole == devDesc->deviceRole_) && ((devInfo.deviceRole & devRole) != 0)) &&
-            ((devInfo.deviceUsage & devUsage) != 0) &&
+            ((devRole == devDesc->deviceRole_) &&
+            ((static_cast<uint32_t>(devInfo.deviceRole) & static_cast<uint32_t>(devRole)) != 0)) &&
+            ((static_cast<uint32_t>(devInfo.deviceUsage) & static_cast<uint32_t>(devUsage)) != 0) &&
             ((devInfo.deviceCategory == devDesc->deviceCategory_) ||
-            ((devInfo.deviceCategory & devDesc->deviceCategory_) != 0))) {
+            ((static_cast<uint32_t>(devInfo.deviceCategory) &
+            static_cast<uint32_t>(devDesc->deviceCategory_)) != 0))) {
             return true;
         }
     }

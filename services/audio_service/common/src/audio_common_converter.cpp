@@ -143,8 +143,9 @@ void AudioCommonConverter::ConvertBufferToFloat(const uint8_t *buffer, uint32_t 
             floatBuffer[i] = sampleValue * volume * (1.0f / AUDIO_SAMPLE_32BIT_VALUE);
             continue;
         }
+        uint32_t sampleTempValue = 0;
         for (uint32_t j = 0; j < samplePerFrame; j++) {
-            sampleValue |= (buffer[i * samplePerFrame + j] & 0xff) << (j * BYTES_ALIGNMENT_SIZE);
+            sampleTempValue |= (buffer[i * samplePerFrame + j] & 0xff) << (j * BYTES_ALIGNMENT_SIZE);
         }
         floatBuffer[i] = sampleValue * volume * (1.0f / (1U << convertValue));
     }
@@ -155,7 +156,7 @@ void AudioCommonConverter::ConvertFloatToAudioBuffer(const std::vector<float> &f
 {
     uint32_t convertValue = samplePerFrame * BYTES_ALIGNMENT_SIZE - 1;
     for (uint32_t i = 0; i < floatBuffer.size(); i++) {
-        int32_t sampleValue = static_cast<int32_t>(floatBuffer[i] * std::pow(AUDIO_NUMBER_2, convertValue));
+        uint32_t sampleValue = static_cast<uint32_t>(floatBuffer[i] * std::pow(AUDIO_NUMBER_2, convertValue));
         for (uint32_t j = 0; j < samplePerFrame; j++) {
             uint8_t tempValue = (sampleValue >> (BYTES_ALIGNMENT_SIZE * j)) & 0xff;
             buffer[samplePerFrame * i + j] = tempValue;

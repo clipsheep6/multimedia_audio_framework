@@ -785,7 +785,8 @@ void AudioProcessInClientInner::CopyWithVolume(const BufferDesc &srcDesc, const 
     for (size_t pos = 0; len > 0; len--) {
         int32_t sum = 0;
         int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer) + pos;
-        sum += (*srcPtr * static_cast<int64_t>(processVolume_ * duckVolumeInFloat_)) >> VOLUME_SHIFT_NUMBER; // 1/65536
+        sum += static_cast<uint64_t>(*srcPtr * static_cast<int64_t>(processVolume_ * duckVolumeInFloat_)) >>
+            VOLUME_SHIFT_NUMBER; // 1/65536
         pos++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
@@ -799,7 +800,8 @@ void AudioProcessInClientInner::ProcessVolume(const AudioStreamData &targetData)
     int16_t *dstPtr = reinterpret_cast<int16_t *>(targetData.bufferDesc.buffer);
     for (; len > 0; len--) {
         int32_t sum = 0;
-        sum += (*dstPtr * static_cast<int64_t>(processVolume_ * duckVolumeInFloat_)) >> VOLUME_SHIFT_NUMBER;
+        sum += static_cast<uint64_t>(*dstPtr * static_cast<int64_t>(processVolume_ * duckVolumeInFloat_)) >>
+            VOLUME_SHIFT_NUMBER;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
 }

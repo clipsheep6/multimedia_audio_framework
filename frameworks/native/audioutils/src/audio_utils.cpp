@@ -466,7 +466,7 @@ void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
-        Write24Bit(b, (static_cast<int32_t>(v)) >> BIT_8);
+        Write24Bit(b, (static_cast<uint32_t>(v)) >> BIT_8);
         b += OFFSET_BIT_24;
     }
 }
@@ -692,8 +692,8 @@ static void MemcpyToI32FromI24(uint8_t *src, int32_t *dst, size_t count)
 {
     for (size_t i = 0; i < count; i++) {
         uint8_t *tmp = src + 3 * i; // 3 is byte size of SAMPLE_S24LE;
-        *(dst + i) = static_cast<int32_t>(tmp[2] << (2 * sizeof(uint8_t))) |
-            static_cast<int32_t>(tmp[1] << sizeof(uint8_t)) | static_cast<int32_t>(tmp[0]);
+        *(dst + i) = static_cast<uint32_t>(tmp[2] << (2 * sizeof(uint8_t))) |
+            static_cast<uint32_t>(tmp[1] << sizeof(uint8_t)) | static_cast<uint32_t>(tmp[0]);
     }
 }
 
