@@ -719,10 +719,10 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
 
             // max_rewind is 0 by default, need change to at least u->buffer_size for InnerCapSinkInputsRewind.
             if (pa_memblockq_get_maxrewind(sinkIn->thread_info.render_memblockq) == 0) {
-                AUTO_CTRACE("hdi_sink::pa_sink_input_update_max_rewind:%u len:%zu", sinkIn->index, *length);
+                AUTO_CTRACE("hdi_sink::pa_sink_input_update_max_rewind:%d len:%zu", sinkIn->index, *length);
                 pa_sink_input_update_max_rewind(sinkIn, *length);
             }
-            AUTO_CTRACE("hdi_sink::ClusterCap::pa_sink_input_peek:%u len:%zu", sinkIn->index, *length);
+            AUTO_CTRACE("hdi_sink::ClusterCap::pa_sink_input_peek:%d len:%zu", sinkIn->index, *length);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
 
             if (mixlength == 0 || infoIn->chunk.length < mixlength)
@@ -2241,7 +2241,7 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
     for (ii = 0; ii < nInputs; ++ii) {
         pa_sink_input *i = infoInputs[ii].userdata;
         pa_sink_input_assert_ref(i);
-        AUTO_CTRACE("hdi_sink::Offload:pa_sink_input_peek:%u len:%zu", i->index, length);
+        AUTO_CTRACE("hdi_sink::Offload:pa_sink_input_peek:%d len:%zu", i->index, length);
         pa_cvolume soft_volume = i->thread_info.soft_volume;
         uint32_t volume = pa_sw_volume_from_linear(1.0f); // 1.0f reset volume, avoid volume of peek
         pa_cvolume_set(&i->thread_info.soft_volume, i->thread_info.soft_volume.channels, volume);
