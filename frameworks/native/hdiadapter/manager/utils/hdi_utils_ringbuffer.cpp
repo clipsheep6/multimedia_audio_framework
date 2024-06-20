@@ -187,7 +187,7 @@ int32_t HdiRingBuffer::EnqueueInputBuffer(RingBuffer &item)
                         item.data, sizeof(uint8_t) * perFrameLength_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_BUFFER, "write ringbuffer from writeIndex fail");
     } eles {
-        
+        AUDIO_ERR_LOG("error: Not enough data to write.");
     }
     AddWriteIndex(perFrameLength_);
     return ret;
