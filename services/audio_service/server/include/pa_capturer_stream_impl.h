@@ -70,7 +70,7 @@ private:
     State state_ = INVALID;
     uint32_t underFlowCount_;
     pa_threaded_mainloop *mainloop_;
-    AudioEnhanceMode enhanceMode_;
+    int32_t enhanceMode_;
     size_t byteSizePerFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
     size_t minBufferSize_ = 0;

@@ -321,7 +321,35 @@ napi_status NapiParamUtils::GetRendererOptions(const napi_env &env, AudioRendere
 
     return napi_ok;
 }
+napi_status NapiParamUtils::SetSystemEnhanceMode(const napi_env &env, const SystemEnhanceMode &systemEnhanceMode,
+    napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetRendererInfo napi_create_object failed");
+    SetValueInt32(env, "EnhanceModeRecord", static_cast<int32_t>(systemEnhanceMode.recordMode), result);
+    SetValueInt32(env, "EnhanceModeVoiceCall", static_cast<int32_t>(systemEnhanceMode.voiceMode), result);
+    return napi_ok;
+}
+napi_status NapiParamUtils::GetSystemEnhanceMode(const napi_env &env, SystemEnhanceMode *mode, napi_value in)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, in, &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, napi_invalid_arg,
+        "GetRendererInfo failed, vauleType is not object");
 
+    int32_t intValue = {0};
+    napi_status status = GetValueInt32(env, "EnhanceModeRecord", intValue, in);
+    if (status == napi_ok) {
+        mode->recordMode = static_cast<ContentType>(intValue);
+    }
+
+    status = GetValueInt32(env, "EnhanceModeVoiceCall", intValue, in);
+    if (status == napi_ok) {
+         mode->voiceMode = static_cast<ContentType>(intValue);
+    }
+
+    return napi_ok;
+}
 napi_status NapiParamUtils::GetRendererInfo(const napi_env &env, AudioRendererInfo *rendererInfo, napi_value in)
 {
     napi_valuetype valueType = napi_undefined;

@@ -156,7 +156,7 @@ static void UpdateEnhanceInfoArray(SupportedEffectConfig &supportedEffectConfig,
 
 int32_t AudioStreamManager::GetEnhanceInfoArray(AudioSceneEnhanceInfo &audioSceneEnhanceInfo, SourceType sourceType)
 {
-    // µ×²ã½Ó¿ÚÉÐÎ´readyÔÝÊ±Ð´ËÀSCENE_MEETING
+    // fill SCENE_MEETING temporarily. 
     std::string effectScene = "SCENE_MEETING";//IAudioStream::GetEffectSceneName(streamUsage);
     SupportedEffectConfig supportedEffectConfig;
     int32_t ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);

@@ -96,6 +96,9 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArraySync", GetEffectInfoArraySync),
         DECLARE_NAPI_FUNCTION("getSupportedAudioEnhanceMode", GetSupportedAudioEnhanceMode),
         DECLARE_NAPI_FUNCTION("getHardwareOutputSamplingRate", GetHardwareOutputSamplingRate),
+        DECLARE_NAPI_FUNCTION("setSystemEnhanceMode", SetSystemEnhanceMode),
+        DECLARE_NAPI_FUNCTION("getSystemEnhanceModeList", GetSystemEnhanceModeList),
+        DECLARE_NAPI_FUNCTION("getCurrentSystemEnhanceMode", GetCurrentSystemEnhanceMode),
     };
 
     status = napi_define_class(env, AUDIO_STREAM_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -675,6 +678,57 @@ napi_value NapiAudioStreamMgr::GetSupportedAudioEnhanceMode(napi_env env, napi_c
         static_cast<SourceType>(sourceType));
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, result, "GetEnhanceInfoArray failure!");
     NapiParamUtils::SetEnhanceInfo(env, audioSceneEnhanceInfo, result);
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::GetSystemEnhanceModeList(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of usage must be number"), "invalid valueType");
+
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr, result, "napiStreamMgr is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,
+        "audioStreamMngr_ is nullptr");
+    
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::GetCurrentSystemEnhanceMode(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr, result, "napiStreamMgr is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,
+        "audioStreamMngr_ is nullptr");
+
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::SetSystemEnhanceMode(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of usage must be number"), "invalid valueType");
+    
     return result;
 }
 }  // namespace AudioStandard

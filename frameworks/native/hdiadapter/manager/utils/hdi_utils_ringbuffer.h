@@ -19,46 +19,61 @@
 #include <mutex>
 #include <string>
 #include "audio_info.h"
+#include "audio_types.h"
 
-namespace OHOS {
-namespace AudioStandard {
+namespace OHOS
+{
+   namespace AudioStandard
+   {
 
-enum RINGBUFFER_STATE {
-    RINGBUFFER_EMPTY,
-    RINGBUFFER_FULL,
-    RINGBUFFER_HALFFULL
-};
+      enum RINGBUFFER_STATE
+      {
+         RINGBUFFER_EMPTY,
+         RINGBUFFER_FULL,
+         RINGBUFFER_HALFFULL
+      };
 
-typedef struct RingBuffer{
- float* data;
- int length;
-} RingBuffer;
+      typedef struct RingBuffer
+      {
+         uint8_t *data; // BYTE
+         int length;
+      } RingBuffer;
 
-class HdiRingBuffer{
- public:
-    HdiRingBuffer();
-    ~HdiRingBuffer();
+      class HdiRingBuffer
+      {
+      public:
+         HdiRingBuffer();
+         ~HdiRingBuffer();
 
-    void Init(const int32_t& channelNum, const int32_t& frameLen, const int32_t& frameNum = 5); //default 5 frames
-    int32_t Dequeue(RingBuffer& item);
-    int32_t Enqueue(RingBuffer& item);
-    RingBuffer GetItem(const int32_t &length);
- private:
-    enum RINGBUFFER_STATE GetRingBufferStatus();
-    int32_t GetRingBufferDateLen();
-    void AddWriteIndex(const int32_t& length);
-    void AddReadIndex(const int32_t& length);
+         void Init(const AudioSampleAttributes &attr,
+                   const int32_t &onceFrameNum = 2, const int32_t &maxFrameNum = 5);
+         // read
+         RingBuffer AcquireOutputBuffer();
+         int32_t ReleaseOutputBuffer(RingBuffer &item);
 
- private:
-    RingBuffer ringBuffer_;
-    int32_t readIndex_;
-    bool readFull_;
-    int32_t writeIndex_;
-    bool writeFull_;
-    int32_t maxBufferSize_;
-    std::mutex mtx_;
-}
+         // write
+         RingBuffer DequeueInputBuffer();
+         int32_t EnqueueInputBuffer(RingBuffer &item);
 
-} // namespace AudioStandard
-} // namespace OHOS
-#endif //HDI_UTILS_RINGBUFFER_H
+      private:
+         enum RINGBUFFER_STATE GetRingBufferStatus();
+         int32_t GetRingBufferDataLen();
+         void AddWriteIndex(const int32_t &length);
+         void AddReadIndex(const int32_t &length);
+
+      private:
+         RingBuffer ringBuffer_;
+         RingBuffer outputBuffer;
+         RingBuffer InputBuffer;
+         int32_t readIndex_;
+         bool readFull_;
+         int32_t writeIndex_;
+         bool writeFull_;
+         int32_t maxBufferSize_;
+         int32_t perFrameLength_;
+         std::mutex mtx_;
+      };
+
+   }; // namespace AudioStandard
+}; // namespace OHOS
+#endif // HDI_UTILS_RINGBUFFER_H

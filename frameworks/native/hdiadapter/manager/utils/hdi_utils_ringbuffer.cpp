@@ -24,11 +24,16 @@ HdiRingBuffer::HdiRingBuffer()
 {
     ringBuffer_.data = nullptr;
     ringBuffer_.length = 0;
+    outputBuffer_.data = nullptr;
+    outputBuffer_.length = 0;
+    inputBuffer_.data = nullptr;
+    inputBuffer_.length = 0;
     readIndex_ = 0;
     readFull_ = false;
-    writeIndex_ = 0;;
+    writeIndex_ = 0;
     writeFull_ = false;
-    maxBufferSize_ 0;
+    maxBufferSize_ = 0;
+    perFrameLength_ = 0;
 }
 HdiRingBuffer::~HdiRingBuffer()
 {
@@ -37,13 +42,42 @@ HdiRingBuffer::~HdiRingBuffer()
         delete[] ringBuffer_.data;
         ringBuffer_.data = nullptr;
     }
+    if(outputBuffer_.data != nullptr){
+        delete[] outputBuffer_.data;
+        outputBuffer_.data = nullptr;
+    }
+    if(inputBuffer_.data != nullptr){
+        delete[] inputBuffer_.data;
+        inputBuffer_.data = nullptr;
+    }
 }
-HdiRingBuffer::Init(const int& channelNum, const int& frameLen, const int& frameNum)
-{
-    maxBufferSize_ = channelNum * frameLen * frameNum;
-    ringBuffer_.data = new (std::nothrow)float[maxBufferSize_];
-    if (ringBuffer_.data == nullptr){
-          AUDIO_ERR_LOG("error: new ringBuffer_ data failed.");
+
+void HdiRingBuffer::Init(const AudioSampleAttributes &attr,
+                         const int32_t &onceFrameNum, const int32_t &maxFrameNum)
+{ 
+    perFrameLength_ = attr.channelCount * ((attr.samplingRate * onceFrameNum) / 100) * \
+                      ConvertToHdiFormat(attr.format);
+    maxBufferSize_ = perFrameLength_ * maxFrameNum;
+    ringBuffer_.data = new (std::nothrow) float[maxBufferSize_];
+    if (ringBuffer_.data != nullptr) {
+        memset_s(static_cast<void *>(ringBuffer_.data), sizeof(uint8_t) * maxBufferSize_,
+                 0, sizeof(uint8_t) * maxBufferSize_);
+    } else {
+        AUDIO_ERR_LOG("error: new ringBuffer_ data failed.");
+    }
+    outputBuffer_.data = new (std::nothrow) float[perFrameLength_];
+    if (outputBuffer_.data != nullptr) {
+        memset_s(static_cast<void *>(outputBuffer_.data), sizeof(uint8_t) * perFrameLength_,
+                 0, sizeof(uint8_t) * perFrameLength_);
+    } else {
+        AUDIO_ERR_LOG("error: new outputBuffer_ data failed.");
+    }
+    inputBuffer_.data = new (std::nothrow) float[perFrameLength_];
+    if (inputBuffer_.data != nullptr) {
+        memset_s(static_cast<void *>(inputBuffer_.data), sizeof(uint8_t) * perFrameLength_,
+                 0, sizeof(uint8_t) * perFrameLength_);
+    } else {
+        AUDIO_ERR_LOG("error: new inputBuffer_ data failed.");
     }
 }
 enum RINGBUFFER_STATE HdiRingBuffer::GetRingBufferStatus()
@@ -56,9 +90,9 @@ enum RINGBUFFER_STATE HdiRingBuffer::GetRingBufferStatus()
         return RINGBUFFER_HALFFULL;
     }
 }
-int32_t HdiRingBuffer::GetRingBufferDateLen()
+int32_t HdiRingBuffer::GetRingBufferDataLen()
 {
-    switch (expression) {
+    switch (GetRingBufferStatus()) {
     case RINGBUFFER_EMPTY: {
             return 0;
         }
@@ -96,81 +130,68 @@ void HdiRingBuffer::AddReadIndex(const int32_t &length)
         readFull_ = false;
     }
 }
-RingBuffer HdiRingBuffer::GetItem(const int32_t &length)
+RingBuffer HdiRingBuffer::DequeueInputBuffer()
 {
-    RingBuffer item = {0};
-    item.length = length;
-    item.data = new float[length];
-    if (item.data == nullptr) {
-        AUDIO_ERR_LOG("error: new item data failed.");
+    std::lock_guard<std::mutex> lock(mtx_);
+    InputBuffer.length = perFrameLength_;
+    if (InputBuffer.data != nullptr) {
+         memset_s(static_cast<void *>(inputBuffer_.data), sizeof(uint8_t) * perFrameLength_,
+                 0, sizeof(uint8_t) * perFrameLength_);
+    } else {
+       AUDIO_ERR_LOG("error: Dequeue InputBuffer failed.");
     }
-    return item;
+    return InputBuffer;
 }
 
-int32_t HdiRingBuffer::Dequeue(RingBuffer& item)
+RingBuffer HdiRingBuffer::AcquireOutputBuffer()
 {
-   int32_t ret = 0;
-   std::lock_guard<std::mutex> lock(mtx_);
-   int32_t dataSize = GetRingBufferDateLen();
-   int32_t readLength = (dataSize < item.length)? dataSize : item.length;
-   if (readLength <= 0){
-    return 0;
-   }
-   if ((maxBufferSize_ - readIndex_) > readLength) {
-       ret = memmove_s(item.data, sizeof(float) * readLength, 
-                       ringBuffer_.data + readIndex, sizeof(float) * readLength);
-       CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_READ_BUFFER, "copy ringbuffer fail");
-   } else {
-       int32_t tailDataLength = maxBufferSize_ - readIndex_;
-       ret = memmove_s(item.data, sizeof(float) * tailDataLength,
-                       ringBuffer_.data + readIndex, sizeof(float) * tailDataLength);
-       CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_READ_BUFFER, "copy ringbuffer tail fail");
-       int32_t headDataLength = readLength - tailDataLength;
-       ret = memmove_s(item.data + tailDataLength, sizeof(float) * headDataLength, 
-                       ringBuffer_.data, sizeof(float) * headDataLength);
-       CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_READ_BUFFER, "copy ringbuffer head fail");
-       readLength = headDataLength;
-   }
-   AddReadIndex(readLength);
-   return ret;
+    std::lock_guard<std::mutex> lock(mtx_);
+    outputBuffer.length = perFrameLength_;
+    if (outputBuffer.data != nullptr) {
+         memset_s(static_cast<void *>(outputBuffer.data), sizeof(uint8_t) * perFrameLength_,
+                 0, sizeof(uint8_t) * perFrameLength_);
+    } else {
+       AUDIO_ERR_LOG("error: Acquire outpurtBuffer failed.");
+    }
+    return outputBuffer;
 }
 
-int32_t HdiRingBuffer::Enqueue(RingBuffer &item)
+int32_t HdiRingBuffer::ReleaseOutputBuffer(RingBuffer &item)
 {
     int32_t ret = 0;
     std::lock_guard<std::mutex> lock(mtx_);
-    int32_t leftSize = maxBufferSize_ - GeRingBufferDataLen();
-    int32_t writeLength = (maxBufferSize_ < item.Length) ? maxBufferSize_ : item.Length;
-    if (leftSize == 0) {
-        ret = memmove_s(ringBuffer_.data, sizeof(float) * writeLength,
-                        item.data, sizeof(float) * writeLength);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_BUFFER, "write ringbuffer from begin fail");
-    } else if (leftSize >= writeLength) {
-        ret = memmove_s(ringBuffer_.data + writeIndex_, sizeof(float) * writeLength,
-                        item.data, sizeof(float) * writeLength);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_BUFFER, "write ringbuffer from writeIndex fail");
-    } else if (maxBufferSize == writeLength) {
-        ret = memmove_s(ringBuffer_.data + readIndex_, sizeof(float) * leftSize,
-                        item.data, sizeof(float) * leftSize);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_BUFFER, "copy ringbuffer from readIndex fail");
-        int32_t headLength = writeLength - leftSize;
-        ret = memmove_s(ringBuffer_.data, sizeof(float) * headLength,
-                        item.data + leftSize, sizeof(float) * headLength);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_BUFFER, "write ringbuffer from head fail");
-        writeLength = headLength;
-    } eles {
-        ret = memmove_s(ringBuffer_.data + writeIndex_, sizeof(float) * leftSize,
-                        item.data, sizeof(float) * leftSize);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_BUFFER, "write ringbuffer from writeIndex fail");
-        int32_t headLength = writeLength - leftSize;
-        ret = memmove_s(ringBuffer_.data, sizeof(float) * headLength,
-                        item.data + leftSize, sizeof(float) * headLength);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_BUFFER, "write ringbuffer from head fail");
-        writeLength = headLength;
+    // Onlyfixed-length(perFrameLength_) data is processed。
+    if ((maxBufferSize_ - readIndex_) >= perFrameLength_ 
+         && GetRingBufferStatus() != RINGBUFFER_EMPTY) {
+        ret = memmove_s(item.data, sizeof(uint8_t) * perFrameLength_,
+                        ringBuffer_.data + readIndex, sizeof(uint8_t) * perFrameLength_);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_READ_BUFFER, "copy ringbuffer fail");
+    } else {
+        AUDIO_ERR_LOG("error: Not enough data to return.");
     }
-    AddWriteIndex(writeLength);
+    AddReadIndex(perFrameLength_);
     return ret;
 }
 
-} // namespace AudioStandard
-} // namespace OHOS
+int32_t HdiRingBuffer::EnqueueInputBuffer(RingBuffer &item)
+{
+    int32_t ret = 0;
+    std::lock_guard<std::mutex> lock(mtx_);
+    int32_t leftSize = maxBufferSize_ - GetRingBufferDataLen();
+    if (leftSize == 0) {
+        ret = memmove_s(ringBuffer_.data, sizeof(uint8_t) * perFrameLength_,
+                        item.data, sizeof(uint8_t) * perFrameLength_);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_BUFFER, "write ringbuffer from begin fail");
+    } else if (leftSize >= perFrameLength_) {
+        ret = memmove_s(ringBuffer_.data + writeIndex_, sizeof(uint8_t) * perFrameLength_,
+                        item.data, sizeof(uint8_t) * perFrameLength_);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_BUFFER, "write ringbuffer from writeIndex fail");
+    } eles {
+        
+    }
+    AddWriteIndex(perFrameLength_);
+    return ret;
+};
+
+}; // namespace AudioStandard
+}; // namespace OHOS

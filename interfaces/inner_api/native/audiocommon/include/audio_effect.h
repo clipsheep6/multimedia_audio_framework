@@ -139,7 +139,21 @@ struct SupportedEffectConfig {
     std::vector<SceneMappingItem> postProcessSceneMap;
 };
 
-
+enum EnhanceModeRecord {
+    RECORD_DENOISING
+};
+enum EnhanceModeVoiceCall {
+    PERSONAL_DENOISING = 0,
+    MULTIPERSON_DENOISING = 1
+};
+struct SystemEnhanceMode {
+    EnhanceModeRecord recordMode;
+    EnhanceModeVoiceCall voiceMode;
+};
+struct SystemEnhanceModeList {
+    std::vector<EnhanceModeRecord> recordModeArray;
+    std::vector<EnhanceModeVoiceCall> voiceModeArray;
+};
 /**
 * Enumerates the audio scene effect type.
 */
