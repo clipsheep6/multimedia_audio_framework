@@ -423,7 +423,7 @@ void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
 
     dumpString += "Playback Streams\n";
 
-    AppendFormat(dumpString, "- %d Playback stream (s) available:\n", audioData_.streamData.sinkInputs.size());
+    AppendFormat(dumpString, "- %u Playback stream (s) available:\n", audioData_.streamData.sinkInputs.size());
 
     for (auto it = audioData_.streamData.sinkInputs.begin(); it != audioData_.streamData.sinkInputs.end(); it++) {
         InputOutputInfo sinkInputInfo = *it;
