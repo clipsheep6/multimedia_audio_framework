@@ -315,7 +315,7 @@ void RendererInServer::DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t byteLe
     }
 
     uint32_t numChannels = processConfig_.streamInfo.channels;
-    size_t step = byteLen * numChannels;
+    size_t step = byteLen * static_cast<size_t>(numChannels);
     size_t lastPos = 0;
     for (size_t i = 0; i < length;) {
         if ((i + step) < length) {
