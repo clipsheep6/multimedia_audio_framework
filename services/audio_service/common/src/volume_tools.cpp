@@ -147,23 +147,23 @@ void ProcessOneFrame(uint8_t *ptr, AudioSampleFormat format, int32_t vol)
     switch (format) {
         case SAMPLE_U8:
             temp = *ptr - UINT8_SHIFT;
-            temp = (temp * vol) >> VOLUME_SHIFT;
+            temp = static_cast<uint64_t>(temp * vol) >> VOLUME_SHIFT;
             temp = temp < INT8_MIN ? INT8_MIN : (temp > INT8_MAX ? INT8_MAX : temp);
             *ptr = static_cast<uint8_t>(temp + UINT8_SHIFT);
             break;
         case SAMPLE_S16LE:
             raw16 = reinterpret_cast<int16_t *>(ptr);
-            temp = (*raw16 * static_cast<int64_t>(vol)) >> VOLUME_SHIFT;
+            temp = static_cast<uint64_t>(*raw16 * static_cast<int64_t>(vol)) >> VOLUME_SHIFT;
             *raw16 = temp > INT16_MAX ? INT16_MAX : (temp < INT16_MIN ? INT16_MIN : temp);
             break;
         case SAMPLE_S24LE:
-            temp = static_cast<int32_t>(ReadInt24LE(ptr) << INT24_SHIFT) * static_cast<int64_t>(vol) >> VOLUME_SHIFT;
+            temp = static_cast<int32_t>(ReadInt24LE(ptr) << INT24_SHIFT) * static_cast<uint64_t>(vol) >> VOLUME_SHIFT;
             WriteInt24LE(ptr, (static_cast<uint32_t>(temp) >> INT24_SHIFT));
             break;
         case SAMPLE_S32LE:
             raw32 = reinterpret_cast<int32_t *>(ptr);
             // int32_t * int16_t, max result is int48_t
-            temp = (*raw32 * static_cast<int64_t>(vol)) >> VOLUME_SHIFT;
+            temp = static_cast<uint64_t>(*raw32 * static_cast<int64_t>(vol)) >> VOLUME_SHIFT;
             *raw32 = temp > INT32_MAX ? INT32_MAX : (temp < INT32_MIN ? INT32_MIN : temp);
             break;
         case SAMPLE_F32LE:
