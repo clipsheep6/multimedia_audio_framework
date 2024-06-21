@@ -49,8 +49,8 @@ uint32_t Convert2Uint32(const uint8_t *ptr)
 AudioPolicyServer* GetServerPtr()
 {
     static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    if (!IS_SERVER_INITED) {
-        IS_SERVER_INITED = true;
+    if (!g_isServerInited) {
+        g_isServerInited = true;
         server.OnStart();
     }
     return &server;
