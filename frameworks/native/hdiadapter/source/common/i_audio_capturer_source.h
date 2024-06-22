@@ -62,7 +62,7 @@ public:
     virtual ~IAudioCapturerSource() = default;
 
     virtual int32_t Init(const IAudioSourceAttr &attr) = 0;
-    virtual int32_t InitWithoutAttr() = 0;
+    virtual int32_t InitWithoutAttr() { return 0; }
     virtual bool IsInited(void) = 0;
     virtual void DeInit(void) = 0;
 

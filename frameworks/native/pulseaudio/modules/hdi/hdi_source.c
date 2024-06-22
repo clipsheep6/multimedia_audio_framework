@@ -254,16 +254,16 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
     requestBytesEc = requestBytes;
     requestBytesRef = requestBytes;
 
-    if (u->attrs.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION || u->ecType == NONE) {
+    if (u->attrs.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION || u->ecType == EC_NONE) {
         u->sourceAdapter->CapturerSourceFrame(
             u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
     } else {
-        if (u->ecType == SAME_ADAPTER) {
+        if (u->ecType == EC_SAME_ADAPTER) {
             u->sourceAdapter->CapturerSourceFrameWithEc(
                 u->sourceAdapter->wapper,
                 (char *)p, (uint64_t)requestBytes, &replyBytes,
                 (char *)pEc, (uint64_t)requestBytesEc, &replyBytesEc);
-        } else if (u->ecType == DIFFERENT_ADAPTER) {
+        } else if (u->ecType == EC_DIFFERENT_ADAPTER) {
             u->sourceAdapter->CapturerSourceFrame(
                 u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
 
@@ -276,8 +276,8 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
             AUDIO_WARNING_LOG("should not be here");
         }
 
-        if (u->auxiliaryRef == ON) {
-            u->captureHandleRef->CapturerSourceFrame(
+        if (u->auxiliaryRef == REF_ON) {
+            u->captureHandleRef->CaptureFrame(
                 u->captureHandleRef->capture,
                 (char *)pRef, (uint64_t)requestBytesRef, &replyBytesRef);
         }
@@ -623,9 +623,9 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
     // decide whether to create ec or mic ref source here
     // TODO: decide by policy, change these for test
-    u->ecType = DIFFERENT_ADAPTER; 
-    u->auxiliaryRef = ON;
-    if (u->attrs.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && u->ecType == DIFFERENT_ADAPTER) {
+    u->ecType = EC_DIFFERENT_ADAPTER; 
+    u->auxiliaryRef = REF_ON;
+    if (u->attrs.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && u->ecType == EC_DIFFERENT_ADAPTER) {
         CaptureAttr *attr = (struct CaptureAttr *)calloc(1, sizeof(CaptureAttr));
         // TODO: set target ec attr
         int32_t res = CreateCaptureHandle(&u->captureHandleEc, attr);
@@ -635,7 +635,7 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
     } else {
         u->captureHandleEc = NULL;
     }
-    if (u->auxiliaryRef == ON) {
+    if (u->auxiliaryRef == REF_ON) {
         CaptureAttr *attr = (struct CaptureAttr *)calloc(1, sizeof(CaptureAttr));
         // TODO: set target mic ref attr
         int32_t res = CreateCaptureHandle(&u->captureHandleRef, attr);

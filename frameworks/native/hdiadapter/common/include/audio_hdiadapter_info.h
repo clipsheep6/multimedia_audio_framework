@@ -17,6 +17,7 @@
 #define AUDIO_HDIADAPTER_INFO_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define MAX_MIX_CHANNELS 128
 #define PA_MAX_OUTPUTS_PER_SOURCE 256
@@ -39,18 +40,22 @@ enum RenderCallbackType {
     CB_ERROR_OCCUR = 4,
 };
 
-enum EcType {
-    NONE = 0,
-    SAME_ADAPTER,
-    DIFFERENT_ADAPTER
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-enum AuxiliaryRefSwitch {
-    OFF = 0,
-    ON
-};
+typedef enum EcType {
+    EC_NONE = 0,
+    EC_SAME_ADAPTER,
+    EC_DIFFERENT_ADAPTER
+} EcType;
 
-struct CaptureAttr {
+typedef enum AuxiliaryRefSwitch {
+    REF_OFF = 0,
+    REF_ON
+} AuxiliaryRefSwitch;
+
+typedef struct CaptureAttr {
     // usage attrs
     int32_t sourceType;
     // device attrs
@@ -62,6 +67,10 @@ struct CaptureAttr {
     uint64_t channelLayout;
     enum HdiAdapterFormat format;
     bool isBigEndian;
-};
+} CaptureAttr;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

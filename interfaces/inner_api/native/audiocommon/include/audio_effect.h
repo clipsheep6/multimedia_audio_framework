@@ -325,12 +325,6 @@ struct AudioRendererInfoForSpatialization {
     StreamUsage streamUsage;
 };
 
-enum EcType {
-    NONE = 0,
-    SAME_ADAPTER,
-    DIFFERENT_ADAPTER
-};
-
 } // namespace AudioStandard
 } // namespace OHOS
 

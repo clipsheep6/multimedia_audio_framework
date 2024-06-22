@@ -36,7 +36,7 @@ ohos_shared_library("audio_capturer_source") {
   ]
 
   deps = [
-    "../manager:hdiadapter_manager",
+    "../manager:hdiadapter_utils",
     "../../audioutils:audio_utils",
   ]
 

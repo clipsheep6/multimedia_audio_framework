@@ -15,6 +15,8 @@
 
 #ifndef LOG_TAG
 #define LOG_TAG "HdiAdapterManager"
+#endif
+
 
 #include "hdi_adapter_manager.h"
 
@@ -22,6 +24,8 @@
 #include "audio_errors.h"
 
 #include "include/hdi_adapter_manager_api.h"
+
+using namespace OHOS:AudioStandard;
 
 // Capture handle funcs impl
 int32_t CaptureHandleInit(void *capture)
@@ -37,7 +41,9 @@ int32_t CaptureHandleDeinit(void *capture)
     IAudioCapturerSource *captureSource = static_cast<IAudioCapturerSource *>(capture);
     CHECK_AND_RETURN_RET_LOG(captureSource != nullptr, ERR_INVALID_HANDLE, "wrong capture");
 
-    return captureSource->DeInit();
+    captureSource->DeInit();
+
+    return SUCCESS
 }
 
 int32_t CaptureHandleStart(void *capture)
@@ -62,7 +68,7 @@ int32_t CaptureHandleCaptureFrame(void *capture,
     IAudioCapturerSource *captureSource = static_cast<IAudioCapturerSource *>(capture);
     CHECK_AND_RETURN_RET_LOG(captureSource != nullptr, ERR_INVALID_HANDLE, "wrong capture");
 
-    return captureSource->CaptureFrame();
+    return captureSource->CaptureFrame(frame, requestBytes, *replyBytes);
 }
 
 int32_t CaptureHandleCaptureFrameWithEc(void *capture,
@@ -78,7 +84,7 @@ int32_t CaptureHandleCaptureFrameWithEc(void *capture,
 }
 
 // public api impl
-int32_t CreateCaptureHandle(HdiCaptureHandle **handle, const CaptureAttr *attr)
+int32_t CreateCaptureHandle(HdiCaptureHandle **handle, CaptureAttr *attr)
 {
     OHOS::AudioStandard::HdiAdapterManager *manager = OHOS::AudioStandard::HdiAdapterManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(manager != nullptr, ERR_INVALID_HANDLE, "hdi adapter manager is null");
@@ -141,6 +147,7 @@ int32_t HdiAdapterManager::ReleaseCapture(IAudioCapturerSource *capture)
     if (capture != nullptr) {
         delete capture;
     }
+    return SUCCESS;
 }
 
 HdiAdapterManager *HdiAdapterManager::GetInstance()

@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-struct HdiCaptureHandle {
+typedef struct HdiCaptureHandle {
     void *capture;
     int32_t (*Init)(void *capture);
     int32_t (*Deinit)(void *capture);
@@ -34,9 +34,9 @@ struct HdiCaptureHandle {
     int32_t (*CaptureFrameWithEc)(void *capture,
         char *frame, uint64_t requestBytes, uint64_t *replyBytes,
         char *frameEc, uint64_t requestBytesEc, uint64_t *replyBytesEc);
-};
+} HdiCaptureHandle;
 
-int32_t CreateCaptureHandle(HdiCaptureHandle **handle, const CaptureAttr *attr);
+int32_t CreateCaptureHandle(HdiCaptureHandle **handle, CaptureAttr *attr);
 
 int32_t ReleaseCaptureHandle(HdiCaptureHandle *handle);
 

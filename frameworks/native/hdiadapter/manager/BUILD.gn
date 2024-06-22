@@ -28,6 +28,8 @@ ohos_shared_library("hdiadapter_manager") {
 
   include_dirs = [
     "include",
+    "../common/include",
+    "../source/common",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
@@ -36,7 +38,9 @@ ohos_shared_library("hdiadapter_manager") {
   ]
 
   deps = [
+    ":hdiadapter_utils"
     "../source:audio_capturer_source",
+    "../source:capturer_source_adapter",
   ]
 
   external_deps = [
@@ -62,6 +66,7 @@ ohos_shared_library("hdiadapter_utils") {
 
   include_dirs = [
     "include",
+    "../../../../interfaces/inner_api/audiocommon/include",
   ]
 
   sources = [
@@ -70,6 +75,7 @@ ohos_shared_library("hdiadapter_utils") {
 
   external_deps = [
     "c_utils:utils",
+    "hilog:libhilog",
   ]
 
   part_name = "audio_framework"
