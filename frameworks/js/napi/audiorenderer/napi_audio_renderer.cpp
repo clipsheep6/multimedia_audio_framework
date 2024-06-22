@@ -54,7 +54,7 @@ void NapiAudioRenderer::Destructor(napi_env env, void *nativeObject, void *final
 
 napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &constructor)
 {
-    napi_property_descriptor audio_renderer_properties[] = {
+    napi_property_descriptor renderer_properties[] = {
         DECLARE_NAPI_FUNCTION("setRenderRate", SetRenderRate),
         DECLARE_NAPI_FUNCTION("getRenderRate", GetRenderRate),
         DECLARE_NAPI_FUNCTION("getRenderRateSync", GetRenderRateSync),
@@ -102,10 +102,8 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("getSilentModeAndMixWithOthers", GetSilentModeAndMixWithOthers),
     };
 
-    napi_status status = napi_define_class(env, NAPI_AUDIO_RENDERER_CLASS_NAME.c_str(),
-        NAPI_AUTO_LENGTH, Construct, nullptr,
-        sizeof(audio_renderer_properties) / sizeof(audio_renderer_properties[PARAM0]),
-        audio_renderer_properties, &constructor);
+    napi_status status = napi_define_class(env, NAPI_AUDIO_RENDERER_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
+        nullptr, sizeof(renderer_properties) / sizeof(renderer_properties[PARAM0]), renderer_properties, &constructor);
     return status;
 }
 
