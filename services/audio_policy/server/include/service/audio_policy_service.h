@@ -589,6 +589,9 @@ private:
 
     int32_t SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
+    void HandleDeviceInfoCategoryUpdate(AudioDeviceDescriptor &desc, AudioStreamDeviceChangeReason &reason,
+        vector<unique_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap);
+
     int32_t HandleActiveDevice(DeviceType deviceType);
 
     int32_t HandleA2dpDevice(DeviceType deviceType);

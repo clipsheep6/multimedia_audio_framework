@@ -6852,37 +6852,43 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectCallCaptureDevice));
     userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectRecordCaptureDevice));
     if (updateCommand == CATEGORY_UPDATE) {
-        if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
-            reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-            UpdateAllUserSelectDevice(userSelectDeviceMap, new(std::nothrow) AudioDeviceDescriptor());
-#ifdef BLUETOOTH_ENABLE
-            if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-                desc.macAddress_ == currentActiveDevice_.macAddress_) {
-                Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
-            }
-#endif
-        } else {
-            reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-            if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-                audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
-                audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
-            } else {
-                audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
-                audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
-                ClearScoDeviceSuspendState(desc.macAddress_);
-#ifdef BLUETOOTH_ENABLE
-            if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && !audioDeviceManager_.GetScoState()) {
-                Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc.macAddress_);
-            }
-#endif
-            }
-        }
+        HandleDeviceInfoCategoryUpdate(desc, reason, userSelectDeviceMap);
     } else if (updateCommand == ENABLE_UPDATE) {
         UpdateAllUserSelectDevice(userSelectDeviceMap, new(std::nothrow) AudioDeviceDescriptor(desc));
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
     FetchDevice(true, reason);
+}
+
+void AudioPolicyService::HandleDeviceInfoCategoryUpdate(AudioDeviceDescriptor &desc,
+    AudioStreamDeviceChangeReason &reason, vector<unique_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap)
+{
+    if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
+        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+        UpdateAllUserSelectDevice(userSelectDeviceMap, new(std::nothrow) AudioDeviceDescriptor());
+#ifdef BLUETOOTH_ENABLE
+        if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+            desc.macAddress_ == currentActiveDevice_.macAddress_) {
+            Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
+        }
+#endif
+    } else {
+        reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+        if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+            audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+        } else {
+            audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+            audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+            ClearScoDeviceSuspendState(desc.macAddress_);
+#ifdef BLUETOOTH_ENABLE
+        if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && !audioDeviceManager_.GetScoState()) {
+            Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc.macAddress_);
+        }
+#endif
+        }
+    }
 }
 
 void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)

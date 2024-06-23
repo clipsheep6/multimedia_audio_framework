@@ -339,7 +339,7 @@ static void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
-        Write24Bit(b, ((int32_t) v) >> BIT_8);
+        Write24Bit(b, ((uint32_t) v) >> BIT_8);
         b += OFFSET_BIT_24;
     }
 }

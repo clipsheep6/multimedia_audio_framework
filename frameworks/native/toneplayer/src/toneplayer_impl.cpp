@@ -292,8 +292,8 @@ int32_t TonePlayerImpl::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t req
         data = reinterpret_cast<uint8_t*>(buffer);
         double factor = freqVal * 2 * pi / samplingRate_; // 2 is a parameter in the sine wave formula
         for (uint32_t idx = 0; idx < reqSamples; idx++) {
-            int16_t sample = AMPLITUDE * sin(factor * index);
-            uint32_t result;
+            uint16_t sample = static_cast<uint16_t>(AMPLITUDE * sin(factor * index));
+            uint32_t result = 0;
             if (i == 0) {
                 result = (sample & 0xFF);
                 *data = result & 0xFF;
@@ -301,7 +301,7 @@ int32_t TonePlayerImpl::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t req
                 *data = ((sample & 0xFF00) >> BIT8);
                 data++;
             } else {
-                result = *data + (static_cast<uint16_t>(sample) & 0xFF);
+                result = *data + (sample & 0xFF);
                 *data = result & 0xFF;
                 data++;
                 *data += (result >> BIT8) + ((sample & 0xFF00) >> BIT8);
