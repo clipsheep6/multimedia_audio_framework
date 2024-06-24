@@ -84,7 +84,10 @@ ohos_shared_library("audio_effect") {
   }
 
   if (window_manager_enable == true) {
-    external_deps += [ "window_manager:libdm" ]
+    external_deps += [
+      "image_framework:image_native",
+      "window_manager:libdm",
+    ]
   }
 
   version_script = "../../../audio_framework.versionscript"
