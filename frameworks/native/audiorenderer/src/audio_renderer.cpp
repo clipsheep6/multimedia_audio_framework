@@ -21,6 +21,7 @@
 #include "audio_renderer.h"
 #include "audio_renderer_private.h"
 
+#include "safe_map.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
@@ -31,6 +32,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
+static SafeMap<const AudioRenderer *, bool> rendererInstanceMap_;
 static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -314,6 +316,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.mode = SHARE_MODE;
     audioInterrupt_.parallelPlayFlag = false;
+    rendererInstanceMap_.Insert(this, true);
 }
 
 int32_t AudioRendererPrivate::InitAudioInterruptCallback()
@@ -794,6 +797,8 @@ bool AudioRendererPrivate::Release() const
 {
     AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
 
+    rendererInstanceMap_.Erase(this);
+
     bool result = audioStream_->ReleaseAudioStream();
 
     // If Stop call was skipped, Release to take care of Deactivation
@@ -1235,6 +1240,11 @@ int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) cons
 
 int32_t AudioRendererPrivate::UnsetOffloadMode() const
 {
+    bool rendererReleased = false;
+    if (rendererInstanceMap_.Find(this, rendererReleased) == false) {
+        AUDIO_ERR_LOG("AudioRenderer already released");
+        return ERR_OPERATION_FAILED;
+    }
     AUDIO_INFO_LOG("session %{public}u session unset offload", sessionID_);
     int32_t ret = audioStream_->UnsetOffloadMode();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "unset offload failed");
