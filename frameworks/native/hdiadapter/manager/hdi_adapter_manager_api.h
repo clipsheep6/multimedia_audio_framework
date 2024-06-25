@@ -22,15 +22,23 @@
 extern "C" {
 #endif
 
-typedef struct AudioBuffer {
-    float *bufIn;
-    float *bufOut;
-    int numChanIn;
-    int numChanOut;
-} AudioBuffer;
+struct HdiCaptureHandle {
+    int32_t halType;
+    int32_t deviceType;
+
+    int32_t (*Init)(const CaptureAttr *attr);
+    void (*Deinit)();
+    int32_t (*Start)();
+    int32_t (*Stop)();
+    int32_t (*CaptureFrame)(
+        char *frame, uint64_t requestBytes, uint64_t *replyBytes);
+    int32_t (*CaptureFrameWithEc)(
+        char *frame, uint64_t requestBytes, uint64_t *replyBytes,
+        char *frameEc, uint64_t requestBytesEc, uint64_t *replyBytesEc);
+};
 
 int32_t GetEcCaptureInstance();
-int32_t GetMicCaptureInstance();
+int32_t GetRefCaptureInstance();
 
 
 #ifdef __cplusplus

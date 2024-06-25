@@ -33,13 +33,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "audio_hdiadapter_info.h"
+#include "v3_0/audio_types.h"
+#include "v3_0/iaudio_manager.h"
 #include "audio_log.h"
 #include "audio_source_type.h"
 #include "audio_utils_c.h"
+#include "audio_hdiadapter_info.h"
+#include "hdi_adapter_manager_api.h"
 #include "capturer_source_adapter.h"
-#include "v3_0/audio_types.h"
-#include "v3_0/iaudio_manager.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"
@@ -197,33 +198,61 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
 
 static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
 {
+    int32_t ecType = NONE; // TODO: can change this for debugging currently
+    int32_t auxiliaryRef = OFF; // TODO: can change this for debugging currently
+
     uint64_t requestBytes;
     uint64_t replyBytes = 0;
     uint64_t requestBytesEc;
     uint64_t replyBytesEc = 0;
+    uint64_t requestBytesRef;
+    uint64_t replyBytesRef = 0;
+    
     void *p = NULL;
     void *pEc = NULL;
+    void *pRef = NULL;
 
     chunk->length = u->buffer_size;
     AUDIO_DEBUG_LOG("HDI Source: chunk.length = u->buffer_size: %{public}zu", chunk->length);
+
     chunk->memblock = pa_memblock_new(u->core->mempool, chunk->length);
     pa_assert(chunk->memblock);
+
     p = pa_memblock_acquire(chunk->memblock);
     pa_assert(p);
 
     requestBytes = pa_memblock_get_length(chunk->memblock);
 
-    // need allocat buffer for pEc and decide requestBytesEc here
-    requestBytesEc = requestBytes
+    // need allocate buffer for pEc & pRef and decide requestBytesEc & requestBytesRef here
+    requestBytesEc = requestBytes;
+    requestBytesRef = requestBytes;
 
-    if (u->attrs.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
+    if (u->attrs.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION || ecType == NONE) {
         u->sourceAdapter->CapturerSourceFrame(
             u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
     } else {
-        u->sourceAdapter->CapturerSourceFrameWithEc(
-            u->sourceAdapter->wapper,
-            (char *)p, (uint64_t)requestBytes, &replyBytes,
-            (char *)pEc, (uint64_t)requestBytesEc, &replyBytesEc);
+        if (ecType == SAME_ADAPTER) {
+            u->sourceAdapter->CapturerSourceFrameWithEc(
+                u->sourceAdapter->wapper,
+                (char *)p, (uint64_t)requestBytes, &replyBytes,
+                (char *)pEc, (uint64_t)requestBytesEc, &replyBytesEc);
+        } else if (ecType == DIFFERENT_ADAPTER) {
+            u->sourceAdapter->CapturerSourceFrame(
+                u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
+
+            // for ec source only pEc has data
+            u->ecSourceAadpter->CapturerSourceFrameWithEc(
+                u->ecSourceAadpter->wapper,
+                NULL, 0, NULL,
+                (char *)pEc, (uint64_t)requestBytesEc, &replyBytesEc);
+        } else {
+            AUDIO_WARNING_LOG("should not be here");
+        }
+
+        if (auxiliaryRef == ON) {
+            u->auxiliaryRefSourceAadpter->CapturerSourceFrame(
+                u->auxiliaryRefSourceAadpter->wapper, (char *)pRef, (uint64_t)requestBytesRef, &replyBytesRef);
+        }
     }
 
     pa_memblock_release(chunk->memblock);
