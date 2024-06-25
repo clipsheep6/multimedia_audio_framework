@@ -64,7 +64,6 @@ typedef struct CaptureAttr {
     // common audio attrs
     uint32_t sampleRate;
     uint32_t channelCount;
-    uint64_t channelLayout;
     enum HdiAdapterFormat format;
     bool isBigEndian;
 } CaptureAttr;

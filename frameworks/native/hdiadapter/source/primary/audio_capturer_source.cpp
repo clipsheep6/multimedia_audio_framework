@@ -61,7 +61,6 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_PLAYBACK_CAPTURE:
         case SOURCE_TYPE_ULTRASONIC:
-        case SOURCE_TYPE_MIC_REF:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
             break;
         case SOURCE_TYPE_WAKEUP:
@@ -78,6 +77,9 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
             break;
         case SOURCE_TYPE_EC:
             hdiAudioInputType = AUDIO_INPUT_EC_TYPE;
+            break;
+        case SOURCE_TYPE_MIC_REF:
+            hdiAudioInputType = AUDIO_INPUT_NOISE_REDUCTION_TYPE;
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
@@ -329,6 +331,7 @@ private:
     std::unique_ptr<std::thread> captureThread_ = nullptr;
     bool threadRunning_ = false;
     std::shared_ptr<HdiRingBuffer> ringBuffer_ = nullptr;
+    int8_t *fakeSourceFrame_ = nullptr;
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
@@ -556,7 +559,6 @@ AudioCapturerSourceInner::AudioCapturerSourceInner(CaptureAttr *attr)
       leftVolume_(MAX_VOLUME_LEVEL), rightVolume_(MAX_VOLUME_LEVEL), openMic_(0),
       audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr)
 {
-    // TODO: get hal name from adapterName in attr
     halName_ = "primary";
     hdiAttr_ = attr;
     attr_ = {};
@@ -586,21 +588,23 @@ int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 
 int32_t AudioCapturerSourceInner::InitWithoutAttr()
 {
+    // TODO: use this when testing usb
+    // halName_ = "usb";
+
     // build attr
     IAudioSourceAttr attr = {};
     attr.adapterName = hdiAttr_->adapterName;
-    // attr.openMicSpeaker = true;
+    attr.openMicSpeaker = true;
     attr.format = hdiAttr_->format;
     attr.sampleRate = hdiAttr_->sampleRate;
     attr.channel = hdiAttr_->channelCount;
     // attr.volume = 1.0;
     attr.bufferSize = USB_DEFAULT_BUFFERSIZE;
     attr.isBigEndian = hdiAttr_->isBigEndian;
-    // attr.filePath = hdiAttr_->filePath;
-    // attr.deviceNetworkId = hdiAttr_->deviceNetworkId;
-    attr.deviceType = hdiAttr_->deviceType;
+    attr.filePath = "";
+    attr.deviceNetworkId = "LocalDevice";
+    attr.deviceType = DEVICE_TYPE_MIC;
     attr.sourceType = hdiAttr_->sourceType;
-    attr.channelLayout = hdiAttr_->channelLayout;
 
     Init(attr);
 
@@ -691,6 +695,8 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
         param.channelLayout = CH_LAYOUT_STEREO;
     } else if (param.channelCount == CHANNEL_4) {
         param.channelLayout = CH_LAYOUT_QUAD;
+    }  else if (param.channelCount == CHANNEL_8) {
+        param.channelLayout = CH_LAYOUT_7POINT1;
     }
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
@@ -699,9 +705,11 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
 
     // for ec stream
     if (attr_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        // Need compile with hdi
         param.ecSampleAttributes.ecInterleaved = true;
         param.ecSampleAttributes.ecFormat = param.format;
         param.ecSampleAttributes.ecSampleRate = param.sampleRate;
+        param.ecSampleAttributes.ecChannelLayout = param.channelLayout;
         param.ecSampleAttributes.ecChannelCount = param.channelCount;
         param.ecSampleAttributes.ecPeriod = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
         param.ecSampleAttributes.ecFrameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
@@ -787,6 +795,7 @@ int32_t AudioCapturerSourceInner::Start(void)
 
             // start self capture frame thread
             threadRunning_ = true;
+            fakeSourceFrame_ = new int8_t[attr_.bufferSize];
             captureThread_ = std::make_unique<std::thread>(&AudioCapturerSourceInner::CaptureThreadLoop, this);
             std::string threadName = "OS_Capture";
             threadName += (attr_.sourceType == SOURCE_TYPE_EC) ? "Ec" : "MicRef";
@@ -854,6 +863,7 @@ int32_t AudioCapturerSourceInner::Stop(void)
         if (captureThread_ && captureThread_->joinable()) {
             captureThread_->join();
         }
+        delete [] fakeSourceFrame_;
 
         if (started_ && audioCapture_ != nullptr) {
             int32_t ret = audioCapture_->Stop(audioCapture_);
@@ -979,13 +989,15 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
 
+    // Need compile with hdi
+    struct AudioFrameLen frameLen;
+    frameLen.frameLen = requestBytes;
+    frameLen.frameEcLen = requestBytesEc;
     struct AudioCaptureFrameInfo frameInfo;
     frameInfo.frame = reinterpret_cast<int8_t*>(frame);
-    frameInfo.frameSize = requestBytes;
     frameInfo.frameEc = reinterpret_cast<int8_t*>(frame);
-    frameInfo.frameEcSize = requestBytesEc;
 
-    int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameInfo);
+    int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
 
     replyBytes = frameInfo.replyBytes;
@@ -1003,8 +1015,23 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
             RingBuffer buffer = ringBuffer_->DequeueInputBuffer();
             uint64_t replyBytes;
             uint32_t requestBytes = buffer.length;
-            int32_t ret = audioCapture_->CaptureFrame(
-                audioCapture_, reinterpret_cast<int8_t*>(buffer.data), &requestBytes, &replyBytes);
+            int32_t ret = 0;
+            if (attr_.sourceType == SOURCE_TYPE_MIC_REF) {
+                ret = audioCapture_->CaptureFrame(
+                    audioCapture_, reinterpret_cast<int8_t*>(buffer.data), &requestBytes, &replyBytes);
+            } else {
+                // Need compile with hdi
+                // mic frame just used for check, ec frame must be right
+                struct AudioFrameLen frameLen;
+                frameLen.frameLen = buffer.length;
+                frameLen.frameEcLen = buffer.length;
+                struct AudioCaptureFrameInfo frameInfo;
+                frameInfo.frame = fakeSourceFrame_;
+                frameInfo.frameEc = reinterpret_cast<int8_t *>(buffer.data);
+                ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
+                replyBytes = frameInfo.replyBytes;
+                // replyBytesEc = frameInfo.replyBytesEc;
+            }
             if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("Capture frame failed");
             }

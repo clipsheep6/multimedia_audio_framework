@@ -25,7 +25,7 @@
 
 #include "include/hdi_adapter_manager_api.h"
 
-using namespace OHOS:AudioStandard;
+using namespace OHOS::AudioStandard;
 
 // Capture handle funcs impl
 int32_t CaptureHandleInit(void *capture)
@@ -43,7 +43,7 @@ int32_t CaptureHandleDeinit(void *capture)
 
     captureSource->DeInit();
 
-    return SUCCESS
+    return SUCCESS;
 }
 
 int32_t CaptureHandleStart(void *capture)

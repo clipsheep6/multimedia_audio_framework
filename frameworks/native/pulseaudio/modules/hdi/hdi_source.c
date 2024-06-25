@@ -585,6 +585,34 @@ static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sampl
     u->attrs.openMicSpeaker = u->open_mic_speaker;
 }
 
+static void InitEcAttr(struct Userdata *u, CaptureAttr *attr)
+{
+    // set attr for different adapter ec
+    attr->sourceType = SOURCE_TYPE_EC;
+    // device attrs
+    attr->adapterName = "dp";
+    attr->deviceType = DEVICE_TYPE_MIC; // not needed, updateAudioRoute later
+    // common audio attrs
+    attr->sampleRate = u->attrs.sampleRate;
+    attr->channelCount = 8; // TODO: change according to output, 2 : 2; > 4 : 8
+    attr->format = u->attrs.format;
+    attr->isBigEndian = u->attrs.isBigEndian;
+}
+
+static void InitAuxiliaryRefAttr(struct Userdata *u, CaptureAttr *attr)
+{
+    // set attr for mic ref
+    attr->sourceType = SOURCE_TYPE_MIC_REF;
+    // device attrs
+    attr->adapterName = "primary";
+    attr->deviceType = DEVICE_TYPE_MIC;
+    // common audio attrs
+    attr->sampleRate = u->attrs.sampleRate;
+    attr->channelCount = 4; // TODO: change according to device config
+    attr->format = u->attrs.format;
+    attr->isBigEndian = u->attrs.isBigEndian;
+}
+
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
     int ret;
@@ -627,7 +655,7 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
     u->auxiliaryRef = REF_ON;
     if (u->attrs.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && u->ecType == EC_DIFFERENT_ADAPTER) {
         CaptureAttr *attr = (struct CaptureAttr *)calloc(1, sizeof(CaptureAttr));
-        // TODO: set target ec attr
+        InitEcAttr(u, attr);
         int32_t res = CreateCaptureHandle(&u->captureHandleEc, attr);
         if (res) {
             AUDIO_ERR_LOG("create ec handle failed");
@@ -637,7 +665,7 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
     if (u->auxiliaryRef == REF_ON) {
         CaptureAttr *attr = (struct CaptureAttr *)calloc(1, sizeof(CaptureAttr));
-        // TODO: set target mic ref attr
+        InitAuxiliaryRefAttr(u, attr);
         int32_t res = CreateCaptureHandle(&u->captureHandleRef, attr);
         if (res) {
             AUDIO_ERR_LOG("create ec handle failed");
