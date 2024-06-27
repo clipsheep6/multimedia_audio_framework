@@ -267,6 +267,8 @@ private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
     static constexpr float MAX_VOLUME_LEVEL = 15.0f;
     static constexpr uint32_t PRIMARY_INPUT_STREAM_ID = 14; // 14 + 0 * 8
+    static constexpr uint32_t MICREF_INPUT_STREAM_ID = 46; // 14 + 0 * 8
+    static constexpr uint32_t EC_INPUT_STREAM_ID = 54; // 14 + 0 * 8
     static constexpr uint32_t USB_DEFAULT_BUFFERSIZE = 3840;
     static constexpr uint32_t STEREO_CHANNEL_COUNT = 2;
 
@@ -702,6 +704,11 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     param.frameSize = param.format * param.channelCount;
     param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
+    if (attr_.sourceType == SOURCE_TYPE_EC) {
+        param.streamId = EC_INPUT_STREAM_ID;
+    } else if (attr_.sourceType == SOURCE_TYPE_MIC_REF) {
+        param.streamId = MICREF_INPUT_STREAM_ID;
+    }
 
     // only for ec same adapter stream
     if (attr_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
@@ -800,7 +807,6 @@ int32_t AudioCapturerSourceInner::Start(void)
             std::string threadName = "OS_Capture";
             threadName += (attr_.sourceType == SOURCE_TYPE_EC) ? "Ec" : "MicRef";
             pthread_setname_np(captureThread_->native_handle(), threadName.c_str());
-            
         }
         return SUCCESS;
     }
@@ -990,10 +996,10 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
 
     // Need compile with hdi
-    struct AudioFrameLen frameLen;
+    struct AudioFrameLen frameLen = {};
     frameLen.frameLen = requestBytes;
     frameLen.frameEcLen = requestBytesEc;
-    struct AudioCaptureFrameInfo frameInfo;
+    struct AudioCaptureFrameInfo frameInfo = {};
     frameInfo.frame = reinterpret_cast<int8_t*>(frame);
     frameInfo.frameEc = reinterpret_cast<int8_t*>(frame);
 
@@ -1149,7 +1155,13 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = PRIMARY_INPUT_STREAM_ID;
+    if (attr_.sourceType == SOURCE_TYPE_EC) {
+        sink.ext.mix.streamId = EC_INPUT_STREAM_ID;
+    } else if (attr_.sourceType == SOURCE_TYPE_MIC_REF) {
+        sink.ext.mix.streamId = MICREF_INPUT_STREAM_ID;
+    } else {
+        sink.ext.mix.streamId = PRIMARY_INPUT_STREAM_ID;
+    }
     sink.ext.device.desc = (char *)"";
 
     AudioRoute route = {
