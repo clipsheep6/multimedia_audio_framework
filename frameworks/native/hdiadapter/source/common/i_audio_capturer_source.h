@@ -57,10 +57,12 @@ class IAudioCapturerSource {
 public:
     static IAudioCapturerSource *GetInstance(const char *deviceClass, const char *deviceNetworkId,
            const SourceType sourceType = SourceType::SOURCE_TYPE_MIC, const char *sourceName = "Built_in_wakeup");
+    static IAudioCapturerSource *Create(CaptureAttr *attr);
     static void GetAllInstance(std::vector<IAudioCapturerSource *> &allInstance);
     virtual ~IAudioCapturerSource() = default;
 
     virtual int32_t Init(const IAudioSourceAttr &attr) = 0;
+    virtual int32_t InitWithoutAttr() = 0;
     virtual bool IsInited(void) = 0;
     virtual void DeInit(void) = 0;
 

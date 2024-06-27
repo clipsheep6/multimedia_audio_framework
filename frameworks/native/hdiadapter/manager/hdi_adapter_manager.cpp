@@ -21,17 +21,132 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 
+#include "include/hdi_adapter_manager_api.h"
+
+// Capture handle funcs impl
+int32_t CaptureHandleInit(void *capture)
+{
+    IAudioCapturerSource *captureSource = static_cast<IAudioCapturerSource *>(capture);
+    CHECK_AND_RETURN_RET_LOG(captureSource != nullptr, ERR_INVALID_HANDLE, "wrong capture");
+
+    return captureSource->InitWithoutAttr();
+}
+
+int32_t CaptureHandleDeinit(void *capture)
+{
+    IAudioCapturerSource *captureSource = static_cast<IAudioCapturerSource *>(capture);
+    CHECK_AND_RETURN_RET_LOG(captureSource != nullptr, ERR_INVALID_HANDLE, "wrong capture");
+
+    return captureSource->DeInit();
+}
+
+int32_t CaptureHandleStart(void *capture)
+{
+    IAudioCapturerSource *captureSource = static_cast<IAudioCapturerSource *>(capture);
+    CHECK_AND_RETURN_RET_LOG(captureSource != nullptr, ERR_INVALID_HANDLE, "wrong capture");
+
+    return captureSource->Start();
+}
+
+int32_t CaptureHandleStop(void *capture)
+{
+    IAudioCapturerSource *captureSource = static_cast<IAudioCapturerSource *>(capture);
+    CHECK_AND_RETURN_RET_LOG(captureSource != nullptr, ERR_INVALID_HANDLE, "wrong capture");
+
+    return captureSource->Stop();
+}
+
+int32_t CaptureHandleCaptureFrame(void *capture,
+    char *frame, uint64_t requestBytes, uint64_t *replyBytes)
+{
+    IAudioCapturerSource *captureSource = static_cast<IAudioCapturerSource *>(capture);
+    CHECK_AND_RETURN_RET_LOG(captureSource != nullptr, ERR_INVALID_HANDLE, "wrong capture");
+
+    return captureSource->CaptureFrame();
+}
+
+int32_t CaptureHandleCaptureFrameWithEc(void *capture,
+    char *frame, uint64_t requestBytes, uint64_t *replyBytes,
+    char *frameEc, uint64_t requestBytesEc, uint64_t *replyBytesEc)
+{
+    IAudioCapturerSource *captureSource = static_cast<IAudioCapturerSource *>(capture);
+    CHECK_AND_RETURN_RET_LOG(captureSource != nullptr, ERR_INVALID_HANDLE, "wrong capture");
+
+    return captureSource->CaptureFrameWithEc(
+        frame, requestBytes, *replyBytes,
+        frameEc, requestBytesEc, *replyBytesEc);
+}
+
+// public api impl
+int32_t CreateCaptureHandle(HdiCaptureHandle **handle, const CaptureAttr *attr)
+{
+    OHOS::AudioStandard::HdiAdapterManager *manager = OHOS::AudioStandard::HdiAdapterManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(manager != nullptr, ERR_INVALID_HANDLE, "hdi adapter manager is null");
+
+    struct HdiCaptureHandle *captureHandle = (struct HdiCaptureHandle *)calloc(1, sizeof(*captureHandle));
+    if (captureHandle == nullptr) {
+        AUDIO_ERR_LOG("allocate handle failed");
+        return ERR_INVALID_HANDLE;
+    }
+
+    IAudioCapturerSource *capture = manager->CreateCapture(attr);
+    captureHandle->capture = reinterpret_cast<void *>(capture);
+
+    captureHandle->Init = CaptureHandleInit;
+    captureHandle->Deinit = CaptureHandleDeinit;
+    captureHandle->Start = CaptureHandleStart;
+    captureHandle->Stop = CaptureHandleStop;
+    captureHandle->CaptureFrame = CaptureHandleCaptureFrame;
+    captureHandle->CaptureFrameWithEc = CaptureHandleCaptureFrameWithEc;
+
+    *handle = captureHandle;
+
+    return SUCCESS;
+}
+
+int32_t ReleaseCaptureHandle(HdiCaptureHandle *handle)
+{
+    if (handle != nullptr) {
+        // delete instance saved in handle
+        IAudioCapturerSource *capture = reinterpret_cast<IAudioCapturerSource *>(handle->capture);
+        delete capture;
+
+        free(handle);
+    }
+
+    return SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
 HdiAdapterManager::HdiAdapterManager()
 {
-
+    // nothing to do now
 }
 
 HdiAdapterManager::~HdiAdapterManager()
 {
-    
+    // nothing to do now
+}
+
+IAudioCapturerSource *HdiAdapterManager::CreateCapture(CaptureAttr *attr)
+{
+    IAudioCapturerSource *capture = IAudioCapturerSource::Create(attr);
+    return capture;
+}
+
+int32_t HdiAdapterManager::ReleaseCapture(IAudioCapturerSource *capture)
+{
+    if (capture != nullptr) {
+        delete capture;
+    }
+}
+
+HdiAdapterManager *HdiAdapterManager::GetInstance()
+{
+    static HdiAdapterManager manager;
+    return &manager;
 }
 
 } // namespace AudioStandard

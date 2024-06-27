@@ -30,11 +30,15 @@ ohos_shared_library("audio_capturer_source") {
   include_dirs = [
     "common",
     "../common/include",
+    "../manager/include",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  deps = [ "../../audioutils:audio_utils" ]
+  deps = [
+    "../manager:hdiadapter_manager",
+    "../../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "c_utils:utils",

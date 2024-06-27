@@ -78,6 +78,11 @@ void IAudioCapturerSource::GetAllInstance(std::vector<IAudioCapturerSource *> &a
     allInstance.push_back(AudioCapturerSource::GetInstance());
 }
 
+IAudioCapturerSource *IAudioCapturerSource::Create(CaptureAttr *attr)
+{
+    return AudioCapturerSource::Create(attr);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 

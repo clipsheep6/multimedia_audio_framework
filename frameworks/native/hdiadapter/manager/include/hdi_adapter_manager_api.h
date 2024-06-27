@@ -17,29 +17,28 @@
 #define HDI_ADAPTER_MANAGER_API_H
 
 #include <stdint.h>
+#include "audio_hdiadapter_info.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct HdiCaptureHandle {
-    int32_t halType;
-    int32_t deviceType;
-
-    int32_t (*Init)(const CaptureAttr *attr);
-    void (*Deinit)();
-    int32_t (*Start)();
-    int32_t (*Stop)();
-    int32_t (*CaptureFrame)(
+    void *capture;
+    int32_t (*Init)(void *capture);
+    int32_t (*Deinit)(void *capture);
+    int32_t (*Start)(void *capture);
+    int32_t (*Stop)(void *capture);
+    int32_t (*CaptureFrame)(void *capture,
         char *frame, uint64_t requestBytes, uint64_t *replyBytes);
-    int32_t (*CaptureFrameWithEc)(
+    int32_t (*CaptureFrameWithEc)(void *capture,
         char *frame, uint64_t requestBytes, uint64_t *replyBytes,
         char *frameEc, uint64_t requestBytesEc, uint64_t *replyBytesEc);
 };
 
-int32_t GetEcCaptureInstance();
-int32_t GetRefCaptureInstance();
+int32_t CreateCaptureHandle(HdiCaptureHandle **handle, const CaptureAttr *attr);
 
+int32_t ReleaseCaptureHandle(HdiCaptureHandle *handle);
 
 #ifdef __cplusplus
 }

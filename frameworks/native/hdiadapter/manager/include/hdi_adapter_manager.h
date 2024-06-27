@@ -13,19 +13,31 @@
  * limitations under the License.
  */
 
-#ifndef RING_BUFFER_H
-#define RING_BUFFER_H
+#ifndef HDI_ADAPTER_MANAGER_H
+#define HDI_ADAPTER_MANAGER_H
+
+#include <cinttypes>
+#include <string>
+
+#include "i_audio_capturer_source.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class RingBuffer {
+class HdiAdapterManager {
 public:
+    static HdiAdapterManager *GetInstance();
+
+    IAudioCapturerSource *CreateCapture(CaptureAttr *attr);
+
+    int32_t ReleaseCapture(IAudioCapturerSource *capture);
 
 private:
+    HdiAdapterManager();
+    virtual ~HdiAdapterManager();
+
 };
 
-}
-}
-
-#endif // RING_BUFFER_H
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // HDI_ADAPTER_MANAGER_H

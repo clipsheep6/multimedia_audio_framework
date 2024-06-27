@@ -72,8 +72,12 @@ struct Userdata {
     pa_usec_t timestamp;
     SourceAttr attrs;
     bool IsCapturerStarted;
+    EcType ecType;
+    AuxiliaryRefSwitch auxiliaryRef;
     struct CapturerSourceAdapter *sourceAdapter;
     pa_usec_t delayTime;
+    HdiCaptureHandle *captureHandleEc;
+    HdiCaptureHandle *captureHandleRef;
 };
 
 static int PaHdiCapturerInit(struct Userdata *u);
@@ -124,6 +128,14 @@ static void UserdataFree(struct Userdata *u)
     if (u->sourceAdapter) {
         u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
         u->sourceAdapter->CapturerSourceDeInit(u->sourceAdapter->wapper);
+        if (u->captureHandleEc != NULL) {
+            u->captureHandleEc->Stop(u->captureHandleEc->capture);
+            u->captureHandleEc->Deinit(u->captureHandleEc->capture);
+        }
+        if (u->captureHandleRef != NULL) {
+            u->captureHandleRef->Stop(u->captureHandleRef->capture);
+            u->captureHandleRef->Deinit(u->captureHandleRef->capture);
+        }
         UnLoadSourceAdapter(u->sourceAdapter);
     }
 
@@ -172,6 +184,12 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
                 AUDIO_ERR_LOG("HDI capturer start failed");
                 return -PA_ERR_IO;
             }
+            if (u->captureHandleEc != NULL) {
+                u->captureHandleEc->Start(u->captureHandleEc->capture);
+            }
+            if (u->captureHandleRef != NULL) {
+                u->captureHandleRef->Start(u->captureHandleRef->capture);
+            }
             u->IsCapturerStarted = true;
             AUDIO_DEBUG_LOG("Successfully started HDI capturer");
         }
@@ -182,11 +200,23 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
                 u->IsCapturerStarted = false;
                 AUDIO_DEBUG_LOG("Stopped HDI capturer");
             }
+            if (u->captureHandleEc != NULL) {
+                u->captureHandleEc->Stop(u->captureHandleEc->capture);
+            }
+            if (u->captureHandleRef != NULL) {
+                u->captureHandleRef->Stop(u->captureHandleRef->capture);
+            }
         } else if (newState == PA_SOURCE_RUNNING && !u->IsCapturerStarted) {
             AUDIO_DEBUG_LOG("Idle to Running starting HDI capturing device");
             if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("Idle to Running HDI capturer start failed");
                 return -PA_ERR_IO;
+            }
+            if (u->captureHandleEc != NULL) {
+                u->captureHandleEc->Start(u->captureHandleEc->capture);
+            }
+            if (u->captureHandleRef != NULL) {
+                u->captureHandleRef->Start(u->captureHandleRef->capture);
             }
             u->IsCapturerStarted = true;
             AUDIO_DEBUG_LOG("Idle to Running: Successfully reinitialized HDI renderer");
@@ -198,9 +228,6 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
 
 static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
 {
-    int32_t ecType = NONE; // TODO: can change this for debugging currently
-    int32_t auxiliaryRef = OFF; // TODO: can change this for debugging currently
-
     uint64_t requestBytes;
     uint64_t replyBytes = 0;
     uint64_t requestBytesEc;
@@ -227,31 +254,32 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
     requestBytesEc = requestBytes;
     requestBytesRef = requestBytes;
 
-    if (u->attrs.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION || ecType == NONE) {
+    if (u->attrs.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION || u->ecType == NONE) {
         u->sourceAdapter->CapturerSourceFrame(
             u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
     } else {
-        if (ecType == SAME_ADAPTER) {
+        if (u->ecType == SAME_ADAPTER) {
             u->sourceAdapter->CapturerSourceFrameWithEc(
                 u->sourceAdapter->wapper,
                 (char *)p, (uint64_t)requestBytes, &replyBytes,
                 (char *)pEc, (uint64_t)requestBytesEc, &replyBytesEc);
-        } else if (ecType == DIFFERENT_ADAPTER) {
+        } else if (u->ecType == DIFFERENT_ADAPTER) {
             u->sourceAdapter->CapturerSourceFrame(
                 u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
 
             // for ec source only pEc has data
-            u->ecSourceAadpter->CapturerSourceFrameWithEc(
-                u->ecSourceAadpter->wapper,
+            u->captureHandleEc->CaptureFrameWithEc(
+                u->captureHandleEc->capture,
                 NULL, 0, NULL,
                 (char *)pEc, (uint64_t)requestBytesEc, &replyBytesEc);
         } else {
             AUDIO_WARNING_LOG("should not be here");
         }
 
-        if (auxiliaryRef == ON) {
-            u->auxiliaryRefSourceAadpter->CapturerSourceFrame(
-                u->auxiliaryRefSourceAadpter->wapper, (char *)pRef, (uint64_t)requestBytesRef, &replyBytesRef);
+        if (u->auxiliaryRef == ON) {
+            u->captureHandleRef->CapturerSourceFrame(
+                u->captureHandleRef->capture,
+                (char *)pRef, (uint64_t)requestBytesRef, &replyBytesRef);
         }
     }
 
@@ -387,6 +415,12 @@ static int PaHdiCapturerInit(struct Userdata *u)
         AUDIO_ERR_LOG("Audio capturer init failed!");
         return ret;
     }
+    if (u->captureHandleEc != NULL) {
+        u->captureHandleEc->Init(u->captureHandleEc->capture);
+    }
+    if (u->captureHandleRef != NULL) {
+        u->captureHandleRef->Init(u->captureHandleRef->capture);
+    }
 
     // No start test for remote device.
     if (strcmp(GetDeviceClass(u->sourceAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
@@ -409,6 +443,14 @@ static void PaHdiCapturerExit(struct Userdata *u)
 {
     u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
     u->sourceAdapter->CapturerSourceDeInit(u->sourceAdapter->wapper);
+    if (u->captureHandleEc != NULL) {
+        u->captureHandleEc->Stop(u->captureHandleEc->capture);
+        u->captureHandleEc->Deinit(u->captureHandleEc->capture);
+    }
+    if (u->captureHandleRef != NULL) {
+        u->captureHandleRef->Stop(u->captureHandleRef->capture);
+        u->captureHandleRef->Deinit(u->captureHandleRef->capture);
+    }
 }
 
 static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_spec *ss, const pa_channel_map *map,
@@ -578,6 +620,30 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
     if (ret) {
         AUDIO_ERR_LOG("Load adapter failed");
         goto fail;
+    }
+    // decide whether to create ec or mic ref source here
+    // TODO: decide by policy, change these for test
+    u->ecType = DIFFERENT_ADAPTER; 
+    u->auxiliaryRef = ON;
+    if (u->attrs.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && u->ecType == DIFFERENT_ADAPTER) {
+        CaptureAttr *attr = (struct CaptureAttr *)calloc(1, sizeof(CaptureAttr));
+        // TODO: set target ec attr
+        int32_t res = CreateCaptureHandle(&u->captureHandleEc, attr);
+        if (res) {
+            AUDIO_ERR_LOG("create ec handle failed");
+        }
+    } else {
+        u->captureHandleEc = NULL;
+    }
+    if (u->auxiliaryRef == ON) {
+        CaptureAttr *attr = (struct CaptureAttr *)calloc(1, sizeof(CaptureAttr));
+        // TODO: set target mic ref attr
+        int32_t res = CreateCaptureHandle(&u->captureHandleRef, attr);
+        if (res) {
+            AUDIO_ERR_LOG("create ec handle failed");
+        }
+    } else {
+        u->captureHandleRef = NULL;
     }
 
     if (PaSetSourceProperties(m, ma, &ss, &map, u) != 0) {
