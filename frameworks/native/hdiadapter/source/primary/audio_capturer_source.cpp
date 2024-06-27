@@ -703,7 +703,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
 
-    // for ec stream
+    // only for ec same adapter stream
     if (attr_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         // Need compile with hdi
         param.ecSampleAttributes.ecInterleaved = true;
