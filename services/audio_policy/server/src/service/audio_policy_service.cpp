@@ -6518,8 +6518,15 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
                 RectifyModuleInfo(moduleInfo, moduleInfoList, targetInfo);
                 break;
             }
+
+            // for ec or builtin-mic ref
+            if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+                UpdateModuleInfoForRecording(moduleInfo);
+            }
+
             AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s",
                 moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str());
+
             auto ioHandle = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
             audioPolicyManager_.SetDeviceActive(ioHandle, currentActiveInputDevice_.deviceType_,
                 moduleInfo.name, true, INPUT_DEVICES_FLAG);
@@ -6533,6 +6540,19 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
     }
     AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " OnCapturerSessionAdded end", sessionID);
     return SUCCESS;
+}
+
+void AudioPolicyService::UpdateModuleInfoForRecording(AudioModuleInfo &moduleInfo)
+{
+    // get voip input and output device, check if need to open ec input in output hal (input/output in different hal)
+    unique_ptr<AudioDeviceDescriptor> outputDesc = audioRouterCenter_.FetchOutputDevice(STREAM_USAGE_VOICE_COMMUNICATION, -1);
+    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
+    EcType ecType = GetEcStrategy();
+    moduleInfo.ecType = ""; // same_adapter/diff_adapter/none
+    moduleInfo.ecAdapter = GetHalNameForDevice(outputDesc);
+
+    // get voip input device, if is headset and pnr feature open, open builtin mic input
+    moduleInfo.openBuiltinMic = "";
 }
 
 void AudioPolicyService::RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,

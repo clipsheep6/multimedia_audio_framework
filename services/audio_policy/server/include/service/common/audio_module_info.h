@@ -106,6 +106,9 @@ public:
     std::string sceneName;
     std::string sourceType;
     std::string offloadEnable;
+    std::string openEc;
+    std::string ecAdapter;
+    std::string openBuiltinMic;
     std::list<AudioModuleInfo> ports;
 };
 

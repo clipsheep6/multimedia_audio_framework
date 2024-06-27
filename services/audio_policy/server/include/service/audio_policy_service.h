@@ -931,6 +931,8 @@ private:
 
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
 
+    void UpdateModuleInfoForRecording();
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
