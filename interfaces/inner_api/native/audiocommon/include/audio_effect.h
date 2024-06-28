@@ -149,7 +149,8 @@ enum AudioEffectScene {
     SCENE_MOVIE = 2,
     SCENE_GAME = 3,
     SCENE_SPEECH = 4,
-    SCENE_RING = 5
+    SCENE_RING = 5,
+    SCENE_VOIP = 6
 };
 
 /**
@@ -170,7 +171,8 @@ const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TY
     {SCENE_MOVIE, "SCENE_MOVIE"},
     {SCENE_GAME, "SCENE_GAME"},
     {SCENE_SPEECH, "SCENE_SPEECH"},
-    {SCENE_RING, "SCENE_RING"}
+    {SCENE_RING, "SCENE_RING"},
+    {SCENE_VOIP, "SCENE_VOIP"}
 };
 
 const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
@@ -316,7 +318,8 @@ const std::unordered_map<std::string, uint8_t> EFFECT_CHAIN_TYPE_MAP {
     {"SCENE_GAME", 4},
     {"SCENE_SPEECH", 5},
     {"SCENE_RING", 6},
-    {"SCENE_OTHERS", 7}
+    {"SCENE_VOIP", 7},
+    {"SCENE_OTHERS", 8}
 } ;
 
 struct AudioRendererInfoForSpatialization {
