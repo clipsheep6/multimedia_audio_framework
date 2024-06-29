@@ -19,7 +19,7 @@
         <library name="hvs" path="libaudio_integration_hvs.z.so"/>
         <library name="pure" path="libvoip_process_pure.so"/>
 		<library name="hd" path="libvoip_process_hd.so"/>
-		<library name="voip_down" path="libvoip+down_process.so"/>
+		<library name="voip_down" path="libvoip_down_process.so"/>
     </libraries>
 
     <effects>
