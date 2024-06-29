@@ -752,7 +752,7 @@ int32_t RendererInServer::DrainAudioBuffer()
     return SUCCESS;
 }
 
-int32_t RendererInServer::Drain()
+int32_t RendererInServer::Drain(bool stopFlag)
 {
     {
         std::unique_lock<std::mutex> lock(statusLock_);
@@ -763,7 +763,7 @@ int32_t RendererInServer::Drain()
         status_ = I_STATUS_DRAINING;
     }
     AUDIO_INFO_LOG("Start drain");
-    {
+    if (stopFlag) {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
         AUDIO_INFO_LOG("fadeoutFlag_ = DO_FADINGOUT");
         fadeoutFlag_ = DO_FADINGOUT;
