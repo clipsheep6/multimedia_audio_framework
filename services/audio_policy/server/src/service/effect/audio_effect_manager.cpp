@@ -130,7 +130,7 @@ static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &p
 {
     bool isDuplicate = false;
     int32_t isSupported = 0;
-    for (auto it = AUDIO_SUPPORTED_ENHANCE_TYPES.begin(); it != AUDIO_SUPPORTED_ENHANCE_TYPES; ++it) {
+    for (auto it = AUDIO_SUPPORTED_ENHANCE_TYPES.begin(); it != AUDIO_SUPPORTED_ENHANCE_TYPES.end(); ++it) {
         if (pp.stream == it->second) {
             isSupported = 1;
             break;
@@ -157,7 +157,7 @@ static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, EffectScene
 {
     bool isDuplicate = false;
     int32_t isSupported = 0;
-    for (auto it = AUDIO_SUPPORTED_SCENE_TYPES.begin(); it != AUDIO_SUPPORTED_SCENE_TYPES; ++it) {
+    for (auto it = AUDIO_SUPPORTED_SCENE_TYPES.begin(); it != AUDIO_SUPPORTED_SCENE_TYPES.end(); ++it) {
         if (ess.stream == it->second) {
             isSupported = 1;
             break;
