@@ -139,7 +139,6 @@ struct SupportedEffectConfig {
     std::vector<SceneMappingItem> postProcessSceneMap;
 };
 
-
 /**
 * Enumerates the audio scene effect type.
 */
@@ -154,6 +153,14 @@ enum AudioEffectScene {
 };
 
 /**
+* Enumerates the audio scene enhance type.
+*/
+enum AudioEnhanceScene {
+    SCENE_RECORD = 1,
+    SCENE_VOIP_3A = 2
+};
+
+/**
 * Enumerates the audio scene effct mode.
 */
 enum AudioEffectMode {
@@ -165,7 +172,7 @@ struct AudioSceneEffectInfo {
     std::vector<AudioEffectMode> mode;
 };
 
-const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES {
+const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES{
     {SCENE_OTHERS, "SCENE_OTHERS"},
     {SCENE_MUSIC, "SCENE_MUSIC"},
     {SCENE_MOVIE, "SCENE_MOVIE"},
@@ -173,6 +180,11 @@ const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TY
     {SCENE_SPEECH, "SCENE_SPEECH"},
     {SCENE_RING, "SCENE_RING"},
     {SCENE_VOIP, "SCENE_VOIP"}
+};
+
+const std::unordered_map<AudioEnhanceScene, std::string> AUDIO_SUPPORTED_ENHANCE_TYPES{
+    {SCENE_RECORD, "SCENE_RECORD"},
+    {SCENE_VOIP_3A, "SCENE_VOIP_3A"}
 };
 
 const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
