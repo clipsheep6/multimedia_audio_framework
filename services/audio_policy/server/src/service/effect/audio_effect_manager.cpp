@@ -130,7 +130,7 @@ static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &p
 {
     bool isDuplicate = false;
     int32_t isSupported = 0;
-    for (auto it = AUDIO_SUPPORT_ENHANCE_TYPES.begin(); it != AUDIO_SUPPORT_ENHANCE_TYPES; ++it) {
+    for (auto it = AUDIO_SUPPORTED_ENHANCE_TYPES.begin(); it != AUDIO_SUPPORTED_ENHANCE_TYPES; ++it) {
         if (pp.stream == it->second) {
             isSupported = 1;
             break;
