@@ -172,7 +172,7 @@ struct AudioSceneEffectInfo {
     std::vector<AudioEffectMode> mode;
 };
 
-const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES{
+const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES {
     {SCENE_OTHERS, "SCENE_OTHERS"},
     {SCENE_MUSIC, "SCENE_MUSIC"},
     {SCENE_MOVIE, "SCENE_MOVIE"},
@@ -182,7 +182,7 @@ const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TY
     {SCENE_VOIP, "SCENE_VOIP"}
 };
 
-const std::unordered_map<AudioEnhanceScene, std::string> AUDIO_SUPPORTED_ENHANCE_TYPES{
+const std::unordered_map<AudioEnhanceScene, std::string> AUDIO_SUPPORTED_ENHANCE_TYPES {
     {SCENE_RECORD, "SCENE_RECORD"},
     {SCENE_VOIP_3A, "SCENE_VOIP_3A"}
 };
