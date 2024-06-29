@@ -325,13 +325,13 @@ const std::unordered_map<DeviceType, std::vector<std::string>> HDI_EFFECT_LIB_MA
 const std::unordered_map<std::string, uint8_t> EFFECT_CHAIN_TYPE_MAP {
     {"UNKNOWN", 0},
     {"NONE", 1},
-    {"SCENE_MUSIC", 2},
-    {"SCENE_MOVIE", 3},
-    {"SCENE_GAME", 4},
-    {"SCENE_SPEECH", 5},
-    {"SCENE_RING", 6},
-    {"SCENE_VOIP", 7},
-    {"SCENE_OTHERS", 8}
+    {"SCENE_OTHERS", 2}
+    {"SCENE_MUSIC", 3},
+    {"SCENE_MOVIE", 4},
+    {"SCENE_GAME", 5},
+    {"SCENE_SPEECH", 6},
+    {"SCENE_RING", 7},
+    {"SCENE_VOIP", 8}
 } ;
 
 struct AudioRendererInfoForSpatialization {
