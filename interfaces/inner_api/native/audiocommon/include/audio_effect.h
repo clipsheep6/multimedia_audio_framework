@@ -325,7 +325,7 @@ const std::unordered_map<DeviceType, std::vector<std::string>> HDI_EFFECT_LIB_MA
 const std::unordered_map<std::string, uint8_t> EFFECT_CHAIN_TYPE_MAP {
     {"UNKNOWN", 0},
     {"NONE", 1},
-    {"SCENE_OTHERS", 2}
+    {"SCENE_OTHERS", 2},
     {"SCENE_MUSIC", 3},
     {"SCENE_MOVIE", 4},
     {"SCENE_GAME", 5},
