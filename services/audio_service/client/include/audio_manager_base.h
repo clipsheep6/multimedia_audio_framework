@@ -420,6 +420,7 @@ private:
     int HandleGetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply);
+    int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -469,6 +470,7 @@ private:
         &AudioManagerStub::HandleGetAsrNoiseSuppressionMode,
         &AudioManagerStub::HandleIsWhispering,
         &AudioManagerStub::HandleGetEffectOffloadEnabled,
+        &AudioManagerStub::HandleLoadHdiEffectModel,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),

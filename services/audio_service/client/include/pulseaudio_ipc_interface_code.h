@@ -68,7 +68,8 @@ namespace AudioStandard {
         GET_ASR_NOISE_SUPPRESSION_MODE,
         IS_WHISPERING,
         GET_EFFECT_OFFLOAD_ENABLED,
-        AUDIO_SERVER_CODE_MAX = GET_EFFECT_OFFLOAD_ENABLED,
+        LOAD_HDI_EFFECT_MODEL,
+        AUDIO_SERVER_CODE_MAX = LOAD_HDI_EFFECT_MODEL,
     };
 } // namespace AudioStandard
 } // namespace OHOS

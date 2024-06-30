@@ -1644,5 +1644,16 @@ bool AudioServer::GetEffectOffloadEnabled()
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
     return audioEffectChainManager->GetOffloadEnabled();
 }
+
+void AudioServer::LoadHdiEffectModel()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        ERR_NOT_SUPPORTED, "load hdi effect model refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->InitHdiState();
+}
 } // namespace AudioStandard
 } // namespace OHOS

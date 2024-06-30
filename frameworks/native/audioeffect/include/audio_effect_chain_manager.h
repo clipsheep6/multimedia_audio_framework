@@ -72,9 +72,7 @@ const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_7POINT1,
     CH_LAYOUT_5POINT1POINT4,
     CH_LAYOUT_7POINT1POINT2,
-    CH_LAYOUT_7POINT1POINT4,
-    CH_LAYOUT_9POINT1POINT4,
-    CH_LAYOUT_9POINT1POINT6
+    CH_LAYOUT_7POINT1POINT4
 };
 
 struct EffectBufferAttr {
@@ -127,6 +125,7 @@ public:
     void ResetInfo();  // Use for testing temporarily.
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
+    void InitHdiState();
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
@@ -138,7 +137,6 @@ private:
     AudioEffectScene GetSceneTypeFromSpatializationSceneType(AudioEffectScene sceneType);
     void UpdateEffectChainParams(AudioEffectScene sceneType);
     void SetSpkOffloadState();
-    void InitHdiState();
     int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
     bool CheckIfSpkDsp();
 #ifdef WINDOW_MANAGER_ENABLE

@@ -892,6 +892,7 @@ private:
     int32_t UnloadMchModule();
 
     int32_t MoveToNewPipeInner(const uint32_t sessionId, const AudioPipeType pipeType);
+    void LoadHdiEffectModel();
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

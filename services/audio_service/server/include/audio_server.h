@@ -139,6 +139,8 @@ public:
     bool GetEffectOffloadEnabled() override;
 
     void OnCapturerState(bool isActive, int32_t num);
+
+    void LoadHdiEffectModel() override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
