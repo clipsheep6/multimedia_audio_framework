@@ -400,7 +400,6 @@ private:
     static sptr<AudioPolicyClientStubImpl> audioStaticPolicyClientStubCB_;
     static std::vector<std::shared_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
 
-    bool isAudioRendererEventListenerRegistered = false;
     bool isAudioCapturerEventListenerRegistered = false;
 };
 } // namespce AudioStandard
