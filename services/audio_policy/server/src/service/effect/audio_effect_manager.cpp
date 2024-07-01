@@ -63,6 +63,25 @@ void AudioEffectManager::GetSupportedEffectConfig(SupportedEffectConfig &support
     supportedEffectConfig = supportedEffectConfig_;
 }
 
+static int32_t UpdateUnsupportedScene(std::string& scene)
+{
+    int32_t isSupported = 0;
+    if ((scene != "SCENE_MUSIC") &&
+        (scene != "SCENE_MOVIE") &&
+        (scene != "SCENE_GAME") &&
+        (scene != "SCENE_SPEECH") &&
+        (scene != "SCENE_RING") &&
+        (scene != "SCENE_VOIP_3A") &&
+        (scene != "SCENE_RECORD") &&
+        (scene != "SCENE_MEETING") &&
+        (scene != "SCENE_OTHERS")) {
+        AUDIO_INFO_LOG("[supportedEffectConfig LOG9]:stream-> The scene of %{public}s is unsupported, \
+            and this scene is deleted!", scene.c_str());
+        isSupported = -1;
+    }
+    return isSupported;
+}
+
 static void UpdateUnsupportedDevicePre(Preprocess &pp, Stream &stream, const std::string &mode, int32_t i, int32_t j)
 {
     StreamEffectMode streamEffectMode;
@@ -129,13 +148,7 @@ static void UpdateUnsupportedModePost(EffectSceneStream &ess, Stream &stream, st
 static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &pp)
 {
     bool isDuplicate = false;
-    int32_t isSupported = 0;
-    for (auto it = AUDIO_SUPPORTED_ENHANCE_TYPES.begin(); it != AUDIO_SUPPORTED_ENHANCE_TYPES.end(); ++it) {
-        if (pp.stream == it->second) {
-            isSupported = 1;
-            break;
-        }
-    }
+    int32_t isSupported = UpdateUnsupportedScene(pp.stream);
     auto it = std::find_if(preProcessNew.stream.begin(), preProcessNew.stream.end(), [&pp](const Stream& x) {
         return x.scene == pp.stream;
     });
@@ -156,7 +169,7 @@ static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &p
 static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, EffectSceneStream &ess)
 {
     bool isDuplicate = false;
-    int32_t isSupported = 0;
+    bool isSupported = 0;
     for (auto it = AUDIO_SUPPORTED_SCENE_TYPES.begin(); it != AUDIO_SUPPORTED_SCENE_TYPES.end(); ++it) {
         if (ess.stream == it->second) {
             isSupported = 1;
@@ -166,7 +179,7 @@ static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, EffectScene
     auto it = std::find_if(postProcessNew.stream.begin(), postProcessNew.stream.end(), [&ess](const Stream& x) {
         return x.scene == ess.stream;
     });
-    if ((it == postProcessNew.stream.end()) && (isSupported == 0)) {
+    if ((it == postProcessNew.stream.end()) && (isSupported == 1)) {
         Stream stream;
         stream.scene = ess.stream;
         int32_t i = 0;
