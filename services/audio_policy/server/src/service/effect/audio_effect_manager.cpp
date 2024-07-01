@@ -179,7 +179,7 @@ static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, EffectScene
     auto it = std::find_if(postProcessNew.stream.begin(), postProcessNew.stream.end(), [&ess](const Stream& x) {
         return x.scene == ess.stream;
     });
-    if ((it == postProcessNew.stream.end()) && (isSupported == 1)) {
+    if ((it == postProcessNew.stream.end()) && isSupported) {
         Stream stream;
         stream.scene = ess.stream;
         int32_t i = 0;
