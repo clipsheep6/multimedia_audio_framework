@@ -2253,5 +2253,142 @@ int32_t AudioPolicyProxy::ResetRingerModeMute()
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate concurrency failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
+
+int32_t AudioPolicyProxy::GetSupportedAudioEnhanceParam(const SourceType &sourceType,
+                                                        AudioEnhanceParamArray &audioEnhanceParamArray)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool res = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(res, ERROR, "WriteInterfaceToken failed");
+
+    data.WriteString(sourceType);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_ENHANCEPARAM_ARRAY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetAudioEnhanceParam, error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        // write and read must keep same order
+        AudioEnhanceParam param = {};
+        audioEnhanceParamArray.push_back(param.Unmarshalling(reply));
+    }
+    return ret;
+}
+
+int32_t AudioPolicyProxy::GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
+                                                       AudioEffectParamArray &audioEffectParamArray)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool res = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(res, ERROR, "WriteInterfaceToken failed");
+
+    data.WriteString(streamUsage);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_EFFECTPARAM_ARRAY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetAudioEffectParam, error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        AudioEffectParam param = {};
+        // write and read must keep same order
+        audioEffectParamArray.push_back(param.Unmarshalling(reply));
+    }
+    return ret;
+}
+int32_t AudioPolicyProxy::GetAudioEnhanceParam(const SourceType &sourceType,
+                                               AudioEnhanceParamArray &audioEnhanceParamArray)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool res = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(res, ERROR, "WriteInterfaceToken failed");
+
+    data.WriteString(sourceType);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_ENHANCEPARAM_ARRAY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetAudioEnhanceParam, error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        // write and read must keep same order
+        AudioEnhanceParam param = {};
+        audioEnhanceParamArray.push_back(param.Unmarshalling(reply));
+    }
+    return ret;
+}
+
+int32_t AudioPolicyProxy::GetAudioEffectParam(const StreamUsage &streamUsage,
+                                              AudioEffectParamArray &audioEffectParamArray)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool res = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(res, ERROR, "WriteInterfaceToken failed");
+
+    data.WriteString(streamUsage);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_EFFECTPARAM_ARRAY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetAudioEffectParam, error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        AudioEffectParam param = {};
+        // write and read must keep same order
+        audioEffectParamArray.push_back(param.Unmarshalling(reply));
+    }
+    return ret;
+}
+int32_t AudioPolicyProxy::SetAudioEnhanceParam(const SourceType &sourceType,
+                                               const AudioEnhanceParamArray &audioEnhanceParamArray)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(sourceType));
+    int32_t size = static_cast<int32_t>(audioEnhanceParamArray.size());
+    data.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        // write and read must keep same order
+        audioEnhanceParamArray[i].Marshalling(data);
+        ;
+    }
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_ENHANCEPARAM_ARRAY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+int32_t AudioPolicyProxy::SetAudioEffectParam(const StreamUsage &streamUsage,
+                                              const AudioEffectParamArray &audioEffectParamArray)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(sourceType));
+    int32_t size = static_cast<int32_t>(audioEffectParamArray.size());
+    data.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        audioEffectParamArray[i].Marshalling(data);
+    }
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_ENHANCEPARAM_ARRAY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

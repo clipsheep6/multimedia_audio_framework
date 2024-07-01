@@ -379,6 +379,19 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 
     int32_t ResetRingerModeMute();
+
+    int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
+                                         AudioEffectParamArray &audioEffectParamArray);
+    int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
+                                          AudioEnhanceParamArray &audioEnhanceParamArray);
+    int32_t SetAudioEffectParam(const StreamUsage &streamUsage,
+                                const AudioEffectParamArray &audioEffectParamArray);
+    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
+                                AudioEffectParamArray &audioEffectParamArray);
+    int32_t SetAudioEnhanceParam(const SourceType &sourceType,
+                                 const AudioEnhanceParamArray &audioEnhanceParamArray);
+    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

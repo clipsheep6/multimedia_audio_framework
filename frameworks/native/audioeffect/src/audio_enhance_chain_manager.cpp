@@ -273,6 +273,15 @@ std::string AudioEnhanceChainManager::GetUpAndDownDevice()
 {
     return upAndDownDevice_;
 }
-
+int32_t AudioEnhanceChainManager::SetAudioEnhanceParam(SourceType &sourceType,
+                                                       AudioEnhanceParamArray &audioEnhanceParamArray)
+{
+    return AUDIO_OK;
+}
+int32_t AudioEnhanceChainManager::GetAudioEnhanceParam(const SourceType &sourceType,
+                                                       AudioEnhanceParamArray &audioEnhanceParamArray)
+{
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

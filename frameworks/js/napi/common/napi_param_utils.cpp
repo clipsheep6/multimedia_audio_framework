@@ -922,6 +922,40 @@ napi_status NapiParamUtils::SetCapturerChangeInfos(const napi_env &env,
     return napi_ok;
 }
 
+napi_status NapiParamUtils::SetEffectParam(const napi_env &env,
+    const AudioEffectParamArray &audioEffectParamArray, napi_value &result)
+{
+    int32_t position = 0;
+    napi_value jsEffectInofObj = nullptr;
+    napi_create_array_with_length(env, audioEffectParamArray.effectParamArray.size(), &result);
+    napi_create_object(env, &jsEffectInofObj);
+    for (const auto &effectParamArray : audioEffectParamArray.effectParamArray) {
+        SetValueUInt32(env, effectParamArray.deviceType, jsEffectInofObj);
+        SetValueString(env, effectParamArray.effectClass, jsEffectInofObj);
+        SetValueString(env, effectParamArray.effectParam, jsEffectInofObj);
+        napi_set_element(env, result, position, jsEffectInofObj);
+        position++;
+    }
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetEnhanceParam(const napi_env &env,
+    const AudioEnhanceParamArray &audioEnhanceParamArray, napi_value &result)
+{
+    int32_t position = 0;
+    napi_value jsEffectInofObj = nullptr;
+    napi_create_array_with_length(env, audioEnhanceParamArray.enhanceParamArray.size(), &result);
+    napi_create_object(env, &jsEffectInofObj);
+    for (const auto &enhanceParamArray : audioEnhanceParamArray.enhanceParamArray) {
+        SetValueUInt32(env, effectParamArray.deviceType, jsEffectInofObj);
+        SetValueString(env, enhanceParamArray.enhanceClass, jsEffectInofObj);
+        SetValueString(env, enhanceParamArray.enhanceParam, jsEffectInofObj);
+        napi_set_element(env, result, position, jsEffectInofObj);
+        position++;
+    }
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::SetEffectInfo(const napi_env &env,
     const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result)
 {
@@ -1048,6 +1082,46 @@ napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
     }
 
     return status;
+}
+
+napi_status NapiParamUtils::GetAudioEffectParamArray(napi_env env, AudioEffectParamArray &effectArray, napi_value in)
+{
+    uint32_t arrayLen = 0;
+    napi_get_array_length(env, in, &arrayLen);
+    if (arrayLen == 0) {
+        effectArray = {};
+        AUDIO_INFO_LOG("Error: GetAudioEffectParamArray vector is NULL!");
+    }
+
+    for (size_t i = 0; i < arrayLen; i++) {
+        AudioEffectParam element;
+        napi_get_element(env, in, i, &element);
+        SetValueInt32(env, "deviceType", element.deviceType, in);
+        SetValueString(env, "effectClass", element.effectClass, in);
+        SetValueString(env, "effectParam", element.effectParam, in);
+        effectArray.push_back(element);
+    }
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetAudioEnhanceParamArray(napi_env env, AudioEnhanceParamArray &enhanceArray, napi_value in)
+{
+    uint32_t arrayLen = 0;
+    napi_get_array_length(env, in, &arrayLen);
+    if (arrayLen == 0) {
+        enhanceArray = {};
+        AUDIO_INFO_LOG("Error: GetAudioEnhanceParamArray vector is NULL!");
+    }
+
+    for (size_t i = 0; i < arrayLen; i++) {
+        AudioEnhanceParam element;
+        napi_get_element(env, in, i, &element);
+        SetValueInt32(env, "deviceType", element.deviceType, in);
+        SetValueString(env, "enhanceClass", element.enhanceClass, in);
+        SetValueString(env, "enhanceParam", element.enhanceParam, in);
+        enhanceArray.push_back(element);
+    }
+    return napi_ok;
 }
 } // namespace AudioStandard
 } // namespace OHOS

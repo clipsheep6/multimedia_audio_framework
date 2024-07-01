@@ -648,5 +648,58 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
     AUDIO_ERR_LOG("default case, need check AudioManagerStub");
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
+
+int AudioManagerStub::HandleSetAudioEffectParam(MessageParcel &data, MessageParcel &reply)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    int32_t size = data.ReadInt32();
+    AudioEffectParamArray paramArray = {};
+    for (int i = 0; i < size; i++) {
+        AudioEffectParam param = {};
+        paramArray.push_back(param.unmarshelling(data));
+    }
+    int32_t result = SetAudioEffectParam(streamUsage, paramArray);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleGetAudioEffectParam(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectParamArray paramArray = {};
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    int32_t result = GetAudioEffectParam(streamUsage, paramArray);
+    int32_t size = paramArray.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++)    {
+        paramArray[i]->Marshalling(reply);
+    }
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleSetAudioEnhanceParam(MessageParcel &data, MessageParcel &reply)
+{
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    int32_t size = data.ReadInt32();
+    AudioEnhanceParamArray paramArray = {};
+    for (int i = 0; i < size; i++) {
+        AudioEnhanceParam param = {};
+        paramArray.push_back(param.unmarshelling(data));
+    }
+    int32_t result = SetAudioEnhanceParam(sourceType,paramArray);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleGetAudioEnhanceParam(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEnhanceParamArray paramArray = {};
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    int32_t result = GetAudioEnhanceParam(sourceType, paramArray);
+    int32_t size = paramArray.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        paramArray[i]->Marshalling(reply);
+    }
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

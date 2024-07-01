@@ -93,6 +93,17 @@ public:
     int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
 
+    // for effect
+    int32_t SetAudioEffectParam(StreamUsage &streamUsage,
+                                AudioEffectParamArray &audioEffectParamArray) override;
+    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
+                                AudioEffectParamArray &audioEffectParamArray) override;
+    // for enhance
+    int32_t SetAudioEnhanceParam(SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray) override;
+    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray) override;
+
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
 
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;

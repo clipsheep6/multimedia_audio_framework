@@ -478,6 +478,10 @@ private:
     int HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioEffectParam(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAudioEffectParam(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioEnhanceParam(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAudioEnhanceParam(MessageParcel &data, MessageParcel &reply);
     int HandleSuspendRenderSink(MessageParcel &data, MessageParcel &reply);
     int HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply);
 
@@ -535,6 +539,10 @@ private:
         &AudioManagerStub::HandleSetAsrVoiceMuteMode,
         &AudioManagerStub::HandleIsWhispering,
         &AudioManagerStub::HandleGetEffectOffloadEnabled,
+        &AudioManagerStub::HandleGetAudioEnhanceParam,
+        &AudioManagerStub::HandleGetAudioEffectParam,
+        &AudioManagerStub::HandleSetAudioEnhanceParam,
+        &AudioManagerStub::HandleSetAudioEffectParam,
         &AudioManagerStub::HandleSuspendRenderSink,
         &AudioManagerStub::HandleRestoreRenderSink,
     };

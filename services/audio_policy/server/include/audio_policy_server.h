@@ -243,6 +243,19 @@ public:
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
+    int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
+                                         AudioEffectParamArray &audioEffectParamArray) override;
+    int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
+                                          AudioEnhanceParamArray &audioEnhanceParamArray) override;
+    int32_t SetAudioEffectParam(const StreamUsage &streamUsage,
+                                const AudioEffectParamArray &audioEffectParamArray) override;
+    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
+                                AudioEffectParamArray &audioEffectParamArray) override;
+    int32_t SetAudioEnhanceParam(const SourceType &sourceType,
+                                 const AudioEnhanceParamArray &audioEnhanceParamArray) override;
+    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray) override;
+
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
