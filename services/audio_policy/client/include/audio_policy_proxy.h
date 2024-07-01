@@ -288,6 +288,25 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
 
     int32_t ResetRingerModeMute() override;
+
+    int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
+                                         AudioEffectParamArray &audioEffectParamArray) override;
+
+    int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
+                                          AudioEnhanceParamArray &audioEnhanceParamArray) override;
+
+    int32_t SetAudioEffectParam(const StreamUsage &streamUsage,
+                                const AudioEffectParamArray &audioEffectParamArray) override;
+
+    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
+                                AudioEffectParamArray &audioEffectParamArray) override;
+
+    int32_t SetAudioEnhanceParam(const SourceType &sourceType,
+                                 const AudioEnhanceParamArray &audioEnhanceParamArray) override;
+
+    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

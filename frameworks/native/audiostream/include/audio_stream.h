@@ -88,6 +88,17 @@ public:
     float GetSingleStreamVolume() override;
     AudioEffectMode GetAudioEffectMode() override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
+    // for effect
+    int32_t SetAudioEffectParam(StreamUsage &streamUsage,
+                                AudioEffectParamArray &audioEffectParamArray) override;
+    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
+                                AudioEffectParamArray &audioEffectParamArray) override;
+
+    // for enhance
+    int32_t SetAudioEnhanceParam(SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray) override;
+    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray) override;
     int64_t GetFramesWritten() override;
     int64_t GetFramesRead() override;
 
@@ -147,11 +158,11 @@ private:
 
     int32_t NotifyCapturerAdded(uint32_t sessionID) override;
 
-    AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
+    AudioStreamType eStreamType_;
     AudioMode eMode_;
-    State state_ = State::INVALID;
-    bool resetTime_ = false;
-    uint64_t resetTimestamp_ = 0;
+    State state_;
+    bool resetTime_;
+    uint64_t resetTimestamp_;
     struct timespec baseTimestamp_ = {0};
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
@@ -161,33 +172,33 @@ private:
     std::array<std::unique_ptr<uint8_t[]>, MAX_READCB_NUM_BUFFERS> readBufferPool_ = {};
     std::unique_ptr<std::thread> writeThread_ = nullptr;
     std::unique_ptr<std::thread> readThread_ = nullptr;
-    bool isReadyToWrite_ = false;
-    bool isReadyToRead_ = false;
+    bool isReadyToWrite_;
+    bool isReadyToRead_;
     void WriteCbTheadLoop();
     void ReadCbThreadLoop();
-    std::unique_ptr<AudioStreamTracker> audioStreamTracker_ = nullptr;
-    AudioRendererInfo rendererInfo_ = {};
-    AudioCapturerInfo capturerInfo_ = {};
+    std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
+    AudioRendererInfo rendererInfo_;
+    AudioCapturerInfo capturerInfo_;
     uint32_t sessionId_ = 0;
 
-    bool isFirstRead_ = false;
-    bool isFirstWrite_ = false;
-    bool isPausing_ = false;
+    bool isFirstRead_;
+    bool isFirstWrite_;
+    bool isPausing_;
 
     std::mutex bufferQueueLock_;
     std::condition_variable bufferQueueCV_;
-    AudioStreamParams streamParams_ = {};
-    AudioStreamParams streamOriginParams_ = {};
+    AudioStreamParams streamParams_;
+    AudioStreamParams streamOriginParams_;
     AudioBlend audioBlend_;
     VolumeRamp volumeRamp_;
-    FILE *pfd_ = nullptr;
+    FILE *pfd_;
     bool streamTrackerRegistered_ = false;
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
 
     float speed_ = 1.0;
 #ifdef SONIC_ENABLE
-    size_t bufferSize_ = 0;
+    size_t bufferSize_;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 #endif
     std::unique_ptr<AudioSpatialChannelConverter> converter_;

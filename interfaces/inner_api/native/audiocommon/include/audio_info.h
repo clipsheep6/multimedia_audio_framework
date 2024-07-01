@@ -406,6 +406,50 @@ public:
     }
 };
 
+/**
+* Enumerates the audio Capture enhance mode.
+*/
+struct AudioEnhanceParam {
+    std::string enhanceClass;
+    std::string enhanceParam;
+    DeviceType deviceType; 
+     bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteString(enhanceClass)&&
+            parcel.WriteString(enhanceParam)&&
+            parcel.WriteInt32(static_cast<int32_t>(deviceType));
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        enhanceClass = parcel.ReadString();
+        enhanceParam = parcel.ReadString();
+        deviceType = parcel.ReadInt32();
+    }
+};
+struct AudioEnhanceParamArray {
+    std::vector<AudioEnhanceParam> enhanceParamArray;
+};
+struct AudioEffectParam {
+    std::string effectClass;
+    std::string effectParam;
+    DeviceType deviceType;
+     bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteString(effectClass)&&
+            parcel.WriteString(effectParam)&&
+            parcel.WriteInt32(static_cast<int32_t>(deviceType));
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        effectClass = parcel.ReadString();
+        effectParam = parcel.ReadString();
+        deviceType = parcel.ReadInt32();
+    }
+};
+struct AudioEffectParamArray {
+    std::vector<AudioEffectParam> effectParamArray;
+};
+
 struct AudioRendererDesc {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;

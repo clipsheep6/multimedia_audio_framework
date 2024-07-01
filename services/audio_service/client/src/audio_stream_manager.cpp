@@ -167,5 +167,42 @@ int32_t AudioStreamManager::GetHardwareOutputSamplingRate(sptr<AudioDeviceDescri
     result = AudioPolicyManager::GetInstance().GetHardwareOutputSamplingRate(desc);
     return result;
 }
+
+int32_t AudioStreamManager::GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
+                                                         AudioEffectParamArray &audioEffectParamArray)
+{
+    return AudioPolicyManager::GetInstance()->GetSupportedAudioEffectParam(streamUsage,
+                                                                           audioEffectParamArray);
+}
+int32_t AudioStreamManager::GetSupportedAudioEnhanceParam(const SourceType &sourceType,
+                                                          AudioEnhanceParamArray &audioEnhanceParamArray)
+{
+    return AudioPolicyManager::GetInstance()->GetSupportedAudioEnhanceParam(sourceType,
+                                                                            audioEnhanceParamArray);
+}
+int32_t AudioStreamManager::SetAudioEffectParam(const StreamUsage &streamUsage,
+                                                const AudioEffectParamArray &audioEffectParamArray)
+{
+    return AudioPolicyManager::GetInstance()->SetAudioEffectParam(streamUsage,
+                                                                  audioEffectParamArray);
+}
+int32_t AudioStreamManager::GetAudioEffectParam(const StreamUsage &streamUsage,
+                                                AudioEffectParamArray &audioEffectParamArray)
+{
+    return AudioPolicyManager::GetInstance()->GetAudioEffectParam(streamUsage,
+                                                                  audioEffectParamArray);
+}
+int32_t AudioStreamManager::SetAudioEnhanceParam(const SourceType &sourceType,
+                                                 const AudioEnhanceParamArray &audioEnhanceParamArray)
+{
+    return AudioPolicyManager::GetInstance()->SetAudioEnhanceParam(sourceType,
+                                                                   audioEnhanceParamArray);
+}
+int32_t AudioStreamManager::GetAudioEnhanceParam(const SourceType &sourceType,
+                                                 AudioEnhanceParamArray &audioEnhanceParamArray)
+{
+    return AudioPolicyManager::GetInstance()->GetAudioEnhanceParam(sourceType,
+                                                                   audioEnhanceParamArray);
+}
 } // namespace AudioStandard
 } // namespace OHOS
