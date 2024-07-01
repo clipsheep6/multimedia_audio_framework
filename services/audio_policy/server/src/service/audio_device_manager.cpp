@@ -650,8 +650,9 @@ void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usag
             audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(speaker_));
         }
         for (const auto &desc : connectedDevices_) {
-            if (desc->deviceType_ == DEVICE_TYPE_SPEAKER && desc->networkId_ != LOCAL_NETWORK_ID) {
-                audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+            if ((desc->deviceType_ == DEVICE_TYPE_SPEAKER && desc->networkId_ != LOCAL_NETWORK_ID)
+                || (desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST)) {
+                    audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
             }
         }
     }
