@@ -292,25 +292,27 @@ void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const std::vector<
     }
 }
 
-int32_t AudioPolicyClientStubImpl::AddRendererStateChangeCallback(
+int32_t AudioPolicyClientStubImpl::AddRendererStateChangeCallback(int32_t pid,
     const std::shared_ptr<AudioRendererStateChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
-    rendererStateChangeCallbackList_.push_back(cb);
+    rendererStateChangeCallbackMap_[pid] = cb;
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemoveRendererStateChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemoveRendererStateChangeCallback(int32_t pid)
 {
     std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
-    rendererStateChangeCallbackList_.clear();
+    if (rendererStateChangeCallbackMap_.count(pid)) {
+        rendererStateChangeCallbackMap_.erase(pid);
+    }
     return SUCCESS;
 }
 
 size_t AudioPolicyClientStubImpl::GetRendererStateChangeCallbackSize() const
 {
     std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
-    return rendererStateChangeCallbackList_.size();
+    return rendererStateChangeCallbackMap_.size();
 }
 
 int32_t AudioPolicyClientStubImpl::AddDeviceChangeWithInfoCallback(
@@ -352,9 +354,9 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
 {
     std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
     Trace trace("AudioPolicyClientStubImpl::OnRendererStateChange");
-    for (auto it = rendererStateChangeCallbackList_.begin(); it != rendererStateChangeCallbackList_.end(); ++it) {
-        Trace traceCallback("OnRendererStateChange");
-        (*it)->OnRendererStateChange(audioRendererChangeInfos);
+    for (auto it = rendererStateChangeCallbackMap_.begin(); it != rendererStateChangeCallbackMap_.end(); ++it) {
+        Trace traceCallback("OnRendererStateChange for:" + std::to_string(it->first));
+        it->second->OnRendererStateChange(audioRendererChangeInfos);
     }
 }
 

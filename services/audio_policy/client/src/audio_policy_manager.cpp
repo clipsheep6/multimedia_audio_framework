@@ -785,7 +785,7 @@ int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(
 int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::RegisterAudioRendererEventListener");
+    AUDIO_INFO_LOG("for clientPid:%{public}d", clientPid);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "RendererEvent Listener callback is nullptr");
@@ -798,25 +798,23 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
     }
 
     std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
-    audioPolicyClientStubCB_->AddRendererStateChangeCallback(callback);
+    audioPolicyClientStubCB_->AddRendererStateChangeCallback(clientPid, callback);
     size_t callbackSize = audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize();
     if (callbackSize == 1) {
         SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, true);
     }
-    isAudioRendererEventListenerRegistered = true;
     return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioRendererEventListener");
+    AUDIO_INFO_LOG("for clientPid:%{public}d", clientPid);
     std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
-    if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
-        audioPolicyClientStubCB_->RemoveRendererStateChangeCallback();
+    if ((audioPolicyClientStubCB_ != nullptr)) {
+        audioPolicyClientStubCB_->RemoveRendererStateChangeCallback(clientPid);
         if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
             SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
         }
-        isAudioRendererEventListenerRegistered = false;
     }
     return SUCCESS;
 }
