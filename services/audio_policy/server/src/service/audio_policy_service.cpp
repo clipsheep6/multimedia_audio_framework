@@ -75,6 +75,7 @@ static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const int64_t ARM_USB_DEVICE_MUTE_MS = 40000; // 40ms
 static const int64_t DEVICE_TYPE_REMOTE_CAST_MS = 40000; // 40ms
 static const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
+static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -1986,7 +1987,8 @@ void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<Internal
             activeDevices[i].first = DEVICE_TYPE_USB_ARM_HEADSET;
         }
         deviceTypesInfo = deviceTypesInfo + " " + std::to_string(activeDevices[i].first);
-        AUDIO_DEBUG_LOG("Active route with type[%{public}d]", activeDevices[i].first);
+        AUDIO_INFO_LOG("update active devices, device type info:[%{public}s]",
+            std::to_string(activeDevices[i].first).c_str());
     }
 
     Trace trace("AudioPolicyService::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
@@ -2000,6 +2002,10 @@ void AudioPolicyService::UpdateDualToneState(const bool &enable, const int32_t &
 {
     CHECK_AND_RETURN_LOG(g_adProxy != nullptr, "Audio Server Proxy is null");
     AUDIO_INFO_LOG("update dual tone state, enable:%{public}d, sessionId:%{public}d", enable, sessionId);
+    enableDualHalToneState_ = enable;
+    if (enableDualHalToneState_) {
+        enableDualHalToneSessionId_ = sessionId;
+    }
     auto ret = SUCCESS;
     Trace trace("AudioPolicyService::UpdateDualToneState sessionId:" + std::to_string(sessionId));
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -2203,6 +2209,9 @@ void AudioPolicyService::MuteSinkPort(DeviceType oldDevice, DeviceType newDevice
         if (oldDevice == DEVICE_TYPE_REMOTE_CAST) {
             usleep(DEVICE_TYPE_REMOTE_CAST_MS); // remote cast -> spk or other device 40 ms fix pop
         }
+    } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN && oldDevice == DEVICE_TYPE_REMOTE_CAST) {
+        // remote cast -> earpiece 300ms fix sound leak
+        MuteSinkPort(newDevice, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
     }
 }
 
@@ -6970,10 +6979,29 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     }
     sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(desc);
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
+    CheckForA2dpSuspend(desc);
 
     OnPreferredStateUpdated(desc, command);
     FetchDevice(false);
     UpdateA2dpOffloadFlagForAllStream();
+}
+
+void AudioPolicyService::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        return;
+    }
+
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    if (audioDeviceManager_.GetScoState()) {
+        gsp->SuspendRenderSink("a2dp");
+    } else {
+        gsp->RestoreRenderSink("a2dp");
+    }
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 
 void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
@@ -7794,7 +7822,7 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
     AUDIO_INFO_LOG("update route, streamUsage:%{public}d, 1st devicetype:%{public}d", streamUsage, deviceType);
     if (IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType)) {
         if (!SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo)) {
-            UpdateActiveDeviceRoute(outputDevices.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+            UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
 
         AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
@@ -7806,11 +7834,12 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
             ringerModeMute_ = true;
         }
     } else {
-        // try to disable dual hal tone.
-        AUDIO_INFO_LOG("try to disable dual hal tone.");
-        UpdateDualToneState(false, rendererChangeInfo->sessionId);
+        if (enableDualHalToneState_) {
+            AUDIO_INFO_LOG("disable dual hal tone for not ringer/alarm.");
+            UpdateDualToneState(false, enableDualHalToneSessionId_);
+        }
         ringerModeMute_ = true;
-        UpdateActiveDeviceRoute(outputDevices.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
 }
 
@@ -7869,9 +7898,13 @@ bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr
     std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
     for (size_t i = 0; i < descs.size(); i++) {
         if (IsRingerOrAlarmerDualDevicesRange(descs[i]->deviceType_)) {
-            if (descs[i]->deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
-                AUDIO_INFO_LOG("usb headset is arm device, set it to arm.");
+            if (descs.front()->deviceType_ == DEVICE_TYPE_USB_HEADSET &&
+                descs[i]->deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
                 descs[i]->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+                AUDIO_INFO_LOG("usb headset is arm device, set it to arm, and just only add it, "
+                    "devicetype[%{public}zu]:%{public}d", i, descs[i]->deviceType_);
+                activeDevices.push_back(make_pair(descs[i]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
+                break;
             }
 
             activeDevices.push_back(make_pair(descs[i]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
@@ -7882,13 +7915,18 @@ bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr
         }
     }
 
+    AUDIO_INFO_LOG("select ringer/alarm sessionId:%{public}d, streamUsage:%{public}d", sessionId, streamUsage);
     if (!descs.empty() && allDevicesInDualDevicesRange) {
-        // try to disable dual hal tone.
         if (IsA2dpOrArmUsbDevice(descs.front()->deviceType_)) {
+            AUDIO_INFO_LOG("set dual hal tone, reset primary sink to default before.");
             UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
+            if (enableDualHalToneState_ && enableDualHalToneSessionId_ != sessionId) {
+                AUDIO_INFO_LOG("sesion changed, disable old dual hal tone.");
+                UpdateDualToneState(false, enableDualHalToneSessionId_);
+            }
+
             if ((GetRingerMode() != RINGER_MODE_NORMAL) && (streamUsage != STREAM_USAGE_ALARM)) {
                 AUDIO_INFO_LOG("no normal ringer mode and no alarm, dont dual hal tone.");
-                UpdateDualToneState(false, sessionId);
                 return false;
             }
             UpdateDualToneState(true, sessionId);

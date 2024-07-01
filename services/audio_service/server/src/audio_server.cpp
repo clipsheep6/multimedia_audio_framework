@@ -232,7 +232,7 @@ void *AudioServer::paDaemonThread(void *arg)
     char *argv[] = {
         (char*)"pulseaudio",
     };
-    paDaemonTid_ = gettid();
+    paDaemonTid_ = static_cast<uint32_t>(gettid());
     AUDIO_INFO_LOG("Calling ohos_pa_main\n");
     ohos_pa_main(PA_ARG_COUNT, argv);
     AUDIO_INFO_LOG("Exiting ohos_pa_main\n");
@@ -417,7 +417,7 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     } else if (key == "perf_info") {
         parmKey = AudioParamKey::PERF_INFO;
     } else {
-        AUDIO_ERR_LOG("key %{publbic}s is invalid for hdi interface", key.c_str());
+        AUDIO_ERR_LOG("key %{public}s is invalid for hdi interface", key.c_str());
         return;
     }
     audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
@@ -481,6 +481,28 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
         return ERR_INVALID_PARAM;
     }
     return 0;
+}
+
+int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
+{
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return ERR_OPERATION_FAILED;
+    }
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName.c_str(), "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    return audioRendererSinkInstance->SuspendRenderSink();
+}
+
+int32_t AudioServer::RestoreRenderSink(const std::string &sinkName)
+{
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return ERR_OPERATION_FAILED;
+    }
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName.c_str(), "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    return audioRendererSinkInstance->RestoreRenderSink();
 }
 
 int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode)
@@ -1008,6 +1030,7 @@ int32_t  AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>>
 
     std::vector<DeviceType> deviceTypes;
     for (auto activeDevice : activeDevices) {
+        AUDIO_INFO_LOG("SetIORoutes device type:%{public}d", activeDevice.first);
         deviceTypes.push_back(activeDevice.first);
     }
     AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, flag: %{public}d", type, flag);

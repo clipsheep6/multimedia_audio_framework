@@ -444,6 +444,8 @@ public:
 
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
+    void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
+
     void UpdateA2dpOffloadFlagBySpatialService(
         const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap);
 
@@ -960,6 +962,8 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     bool isOffloadAvailable_ = false;
     bool enableFastVoip_ = false;
+    bool enableDualHalToneState_ = false;
+    int32_t enableDualHalToneSessionId_ = -1;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 

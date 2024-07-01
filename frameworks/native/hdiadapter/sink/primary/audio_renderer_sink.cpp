@@ -149,6 +149,8 @@ public:
     int32_t Resume(void) override;
     int32_t Start(void) override;
     int32_t Stop(void) override;
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
 
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
@@ -1020,6 +1022,7 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
     Trace trace("AudioRendererSinkInner::SetOutputRoutes pin " + std::to_string(outputPortPin) + " device " +
         std::to_string(outputDevice));
     currentActiveDevice_ = outputDevice;
+    currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
 
     AudioRouteNode source = {};
     source.portId = static_cast<int32_t>(0);
@@ -1240,6 +1243,16 @@ int32_t AudioRendererSinkInner::Flush(void)
     }
 
     return ERR_OPERATION_FAILED;
+}
+
+int32_t AudioRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInner::RestoreRenderSink(void)
+{
+    return SUCCESS;
 }
 
 int32_t AudioRendererSinkInner::Preload(const std::string &usbInfoStr)

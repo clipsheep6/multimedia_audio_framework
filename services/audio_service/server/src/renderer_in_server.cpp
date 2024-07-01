@@ -144,8 +144,12 @@ int32_t RendererInServer::Init()
     }
 
     if (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
-        AUDIO_INFO_LOG("current stream marked as VoIP direct stream");
-        managerType_ = VOIP_PLAYBACK;
+        if (IStreamManager::GetPlaybackManager(VOIP_PLAYBACK).GetStreamCount() <= 0) {
+            AUDIO_INFO_LOG("current stream marked as VoIP direct stream");
+            managerType_ = VOIP_PLAYBACK;
+        } else {
+            AUDIO_WARNING_LOG("One VoIP direct stream has been created! Use normal mode.");
+        }
     }
 
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
@@ -752,7 +756,7 @@ int32_t RendererInServer::DrainAudioBuffer()
     return SUCCESS;
 }
 
-int32_t RendererInServer::Drain()
+int32_t RendererInServer::Drain(bool stopFlag)
 {
     {
         std::unique_lock<std::mutex> lock(statusLock_);
@@ -762,8 +766,8 @@ int32_t RendererInServer::Drain()
         }
         status_ = I_STATUS_DRAINING;
     }
-    AUDIO_INFO_LOG("Start drain");
-    {
+    AUDIO_INFO_LOG("Start drain. stopFlag:%{public}d", stopFlag);
+    if (stopFlag) {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
         AUDIO_INFO_LOG("fadeoutFlag_ = DO_FADINGOUT");
         fadeoutFlag_ = DO_FADINGOUT;

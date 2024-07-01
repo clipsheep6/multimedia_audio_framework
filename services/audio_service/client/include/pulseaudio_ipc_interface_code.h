@@ -79,7 +79,9 @@ namespace AudioStandard {
         GET_AUDIO_EFFECT_PARAM,
         SET_AUDIO_ENHANCE_PARAM,
         SET_AUDIO_EFFECT_PARAM,
-        AUDIO_SERVER_CODE_MAX = GET_EFFECT_OFFLOAD_ENABLED,
+        SUSPEND_RENDERSINK,
+        RESTORE_RENDERSINK,
+        AUDIO_SERVER_CODE_MAX = RESTORE_RENDERSINK,
     };
 } // namespace AudioStandard
 } // namespace OHOS
