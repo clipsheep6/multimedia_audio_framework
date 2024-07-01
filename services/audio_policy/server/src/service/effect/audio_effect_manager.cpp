@@ -129,17 +129,17 @@ static void UpdateUnsupportedModePost(EffectSceneStream &ess, Stream &stream, st
 static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &pp)
 {
     bool isDuplicate = false;
-    bool isSupported = 0;
-    for (auto it : AUDIO_SUPPORTED_ENHANCE_TYPES) {
-        if (pp.stream == it->second) {
-            isSupported = 1;
+    bool isSupported = false;
+    for (auto& [scene, stream] : AUDIO_SUPPORTED_ENHANCE_TYPES) {
+        if (pp.stream == stream) {
+            isSupported = true;
             break;
         }
     }
     auto it = std::find_if(preProcessNew.stream.begin(), preProcessNew.stream.end(), [&pp](const Stream& x) {
         return x.scene == pp.stream;
     });
-    if ((it == preProcessNew.stream.end()) && (isSupported == 1)) {
+    if ((it == preProcessNew.stream.end()) && isSupported) {
         Stream stream;
         stream.scene = pp.stream;
         int32_t i = 0;
@@ -156,10 +156,10 @@ static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &p
 static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, EffectSceneStream &ess)
 {
     bool isDuplicate = false;
-    bool isSupported = 0;
-    for (auto it : AUDIO_SUPPORTED_SCENE_TYPES) {
-        if (ess.stream == it->second) {
-            isSupported = 1;
+    bool isSupported = false;
+    for (auto& [scene, stream] : AUDIO_SUPPORTED_SCENE_TYPES) {
+        if (ess.stream == stream) {
+            isSupported = true;
             break;
         }
     }
