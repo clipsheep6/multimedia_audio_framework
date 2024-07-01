@@ -95,7 +95,7 @@
             <stream scene="SCENE_SPEECH">
                 <streamEffectMode mode="EFFECT_DEFAULT">
                     <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-                   <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
+                    <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
                 </streamEffectMode>
             </stream>
             <stream scene="SCENE_VOIP">
