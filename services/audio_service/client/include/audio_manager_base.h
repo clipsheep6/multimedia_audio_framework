@@ -476,7 +476,10 @@ private:
     int HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply);
-
+    int HandleSetAudioEffectParam(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAudioEffectParam(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioEnhanceParam(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAudioEnhanceParam(MessageParcel &data, MessageParcel &reply);
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
         &AudioManagerStub::HandleGetAudioParameter,
@@ -531,6 +534,10 @@ private:
         &AudioManagerStub::HandleSetAsrVoiceMuteMode,
         &AudioManagerStub::HandleIsWhispering,
         &AudioManagerStub::HandleGetEffectOffloadEnabled,
+        &AudioManagerStub::HandleGetAudioEnhanceParam,
+        &AudioManagerStub::HandleGetAudioEffectParam,
+        &AudioManagerStub::HandleSetAudioEnhanceParam,
+        &AudioManagerStub::HandleSetAudioEffectParam,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),

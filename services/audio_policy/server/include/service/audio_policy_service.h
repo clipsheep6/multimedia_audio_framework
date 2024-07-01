@@ -514,6 +514,20 @@ public:
     bool IsRingerModeMute();
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
+    // for effect
+    int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
+                                         AudioEffectParamArray &audioEffectParamArray);
+    int32_t SetAudioEffectParam(StreamUsage &streamUsage,
+                                AudioEffectParamArray &audioEffectParamArray);
+    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
+                                AudioEffectParamArray &audioEffectParamArray);
+    // for enhance
+    int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
+                                          AudioEnhanceParamArray &audioEnhanceParamArray);
+    int32_t SetAudioEnhanceParam(SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray);
+    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

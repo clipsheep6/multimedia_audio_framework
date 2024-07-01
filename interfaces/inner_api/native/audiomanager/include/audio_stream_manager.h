@@ -201,7 +201,67 @@ public:
      * @since 9
      */
     int32_t GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo, StreamUsage streamUsage);
+    /**
+     * @brief Get Audio render Effect param.
+     *
+     * @param AudioSceneEffectInfo  AudioSceneEffectInfo
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
+    int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
+                                         AudioEffectParamArray &audioEffectParamArray);
+    /**
+     * @brief Get Audio Capture Effect param.
+     *
+     * @param AudioSceneEffectInfo  AudioSceneEffectInfo
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
+    int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
+                                          AudioEnhanceParamArray &audioEnhanceParamArray);
 
+    /**
+     * @brief Sets the audio effect Param.
+     *
+     * * @param effectParam The audio effect Param at which the stream needs to be rendered.
+     * @return  Returns {@link SUCCESS} if audio effect Param is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    int32_t SetAudioEffectParam(const StreamUsage &streamUsage,
+                                const AudioEffectParamArray &audioEffectParamArray);
+    /**
+     * @brief Gets the audio effect Param.
+     *
+     * * @param effectParam The audio effect moParamde at which the stream needs to be rendered.
+     * @return  Returns {@link SUCCESS} if audio effect Param is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
+                                AudioEffectParamArray &audioEffectParamArray);
+    /**
+     * @brief Sets the audio effect Param.
+     *
+     * * @param effectParam The audio effect Param at which the stream needs to be rendered.
+     * @return  Returns {@link SUCCESS} if audio effect Param is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    int32_t SetAudioEnhanceParam(const SourceType &sourceType,
+                                 const AudioEnhanceParamArray &audioEnhanceParamArray);
+    /**
+     * @brief Gets the audio effect Param.
+     *
+     * * @param effectParam The audio effect moParamde at which the stream needs to be rendered.
+     * @return  Returns {@link SUCCESS} if audio effect Param is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray);
     /**
      * @brief Is stream active.
      *
@@ -221,10 +281,6 @@ public:
     int32_t GetHardwareOutputSamplingRate(sptr<AudioDeviceDescriptor> &desc);
 };
 
-static const std::map<std::string, AudioEffectMode> effectModeMap = {
-    {"EFFECT_NONE", EFFECT_NONE},
-    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
-};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_STREAM_MANAGER_H

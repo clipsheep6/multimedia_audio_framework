@@ -43,11 +43,14 @@ public:
     int32_t ApplyAudioEnhanceChain(const std::string &sceneType, EnhanceBufferAttr *enhanceBufferAttr);
     bool ExistAudioEnhanceChain(const std::string &sceneType);
     std::string GetUpAndDownDevice();
-
+    // for enhance
+    int32_t SetAudioEnhanceParam(SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray);
+    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
+                                 AudioEnhanceParamArray &audioEnhanceParamArray);
 private:
     int32_t SetAudioEnhanceChainDynamic(const std::string &sceneType, const std::string &enhanceMode,
-        const std::string &upAndDownDevice);
-    
+                                        const std::string &upAndDownDevice);
     std::map<std::string, std::shared_ptr<AudioEnhanceChain>> sceneTypeToEnhanceChainMap_;
     std::map<std::string, int32_t> sceneTypeToEnhanceChainCountMap_;
     std::map<std::string, std::string> sceneTypeAndModeToEnhanceChainNameMap_;

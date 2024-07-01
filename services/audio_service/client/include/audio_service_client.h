@@ -550,7 +550,7 @@ public:
     int32_t SetStreamAudioEffectMode(AudioEffectMode effectMode);
 
     void SetStreamUsage(StreamUsage usage);
-	
+
     int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);
     AudioCaptureMode GetAudioCaptureMode();
     /**
@@ -669,6 +669,8 @@ private:
     uint32_t readTimeoutCount_ = 0;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
+    AudioEffectParamArray audioEffectParamArray_;
+    AudioEnhanceParamArray audioEnhanceParamArray_;
 
     std::unique_ptr<uint8_t[]> preBuf_ {nullptr};
     uint32_t sinkLatencyInMsec_ {0};

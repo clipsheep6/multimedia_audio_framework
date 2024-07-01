@@ -21,7 +21,8 @@
 /* SAID: 3001 */
 namespace OHOS {
 namespace AudioStandard {
-    enum class AudioServerInterfaceCode {
+    enum class AudioServerInterfaceCode
+    {
         GET_AUDIO_PARAMETER,
         SET_AUDIO_PARAMETER,
         GET_EXTRA_AUDIO_PARAMETERS,
@@ -74,6 +75,10 @@ namespace AudioStandard {
         SET_ASR_VOICE_MUTE_MODE,
         IS_WHISPERING,
         GET_EFFECT_OFFLOAD_ENABLED,
+        GET_AUDIO_ENHANCE_PARAM,
+        GET_AUDIO_EFFECT_PARAM,
+        SET_AUDIO_ENHANCE_PARAM,
+        SET_AUDIO_EFFECT_PARAM,
         AUDIO_SERVER_CODE_MAX = GET_EFFECT_OFFLOAD_ENABLED,
     };
 } // namespace AudioStandard

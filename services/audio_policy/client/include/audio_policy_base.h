@@ -301,6 +301,25 @@ public:
     virtual int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) = 0;
 
     virtual int32_t ResetRingerModeMute() = 0;
+
+    virtual int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
+                                                 AudioEffectParamArray &audioEffectParamArray) = 0;
+
+    virtual int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
+                                                  AudioEnhanceParamArray &audioEnhanceParamArray) = 0;
+
+    virtual int32_t SetAudioEffectParam(const StreamUsage &streamUsage,
+                                        const AudioEffectParamArray &audioEffectParamArray) = 0;
+
+    virtual int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
+                                        AudioEffectParamArray &audioEffectParamArray) = 0;
+
+    virtual int32_t SetAudioEnhanceParam(const SourceType &sourceType,
+                                         const AudioEnhanceParamArray &audioEnhanceParamArray) = 0;
+
+    virtual int32_t GetAudioEnhanceParam(const SourceType &sourceType,
+                                         AudioEnhanceParamArray &audioEnhanceParamArray) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

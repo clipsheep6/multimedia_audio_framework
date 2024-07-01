@@ -178,6 +178,10 @@ const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MOD
     {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
 };
 
+static const std::map<std::string, AudioEffectMode> effectModeMap = {
+    {"EFFECT_NONE", EFFECT_NONE},
+    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
+};
 const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
     {DEVICE_TYPE_NONE, "DEVICE_TYPE_NONE"},
     {DEVICE_TYPE_INVALID, "DEVICE_TYPE_INVALID"},

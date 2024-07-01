@@ -1300,5 +1300,15 @@ bool AudioEffectChainManager::CheckIfSpkDsp()
     }
     return true;
 }
+int32_t AudioEffectChainManager::SetAudioEffectParam(StreamUsage &streamUsage,
+                                                     AudioEffectParamArray &audioEffectParamArray)
+{
+    return AUIOD_OK;
+}
+int32_t AudioEffectChainManager::GetAudioEffectParam(const StreamUsage &streamUsage,
+                                                     AudioEffectParamArray &audioEffectParamArray)
+{
+    return AUIOD_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS
