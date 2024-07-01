@@ -63,7 +63,7 @@ void AudioEffectManager::GetSupportedEffectConfig(SupportedEffectConfig &support
     supportedEffectConfig = supportedEffectConfig_;
 }
 
-static int32_t UpdateUnsupportedScene(std::string& scene)
+static int32_t UpdateUnsupportedScene(std::string &scene)
 {
     int32_t isSupported = 0;
     if ((scene != "SCENE_MUSIC") &&
