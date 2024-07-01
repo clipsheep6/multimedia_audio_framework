@@ -324,6 +324,7 @@ struct AudioRendererInfoForSpatialization {
     std::string deviceMacAddress;
     StreamUsage streamUsage;
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
 
