@@ -139,7 +139,6 @@ struct SupportedEffectConfig {
     std::vector<SceneMappingItem> postProcessSceneMap;
 };
 
-
 /**
 * Enumerates the audio scene effect type.
 */
@@ -149,7 +148,16 @@ enum AudioEffectScene {
     SCENE_MOVIE = 2,
     SCENE_GAME = 3,
     SCENE_SPEECH = 4,
-    SCENE_RING = 5
+    SCENE_RING = 5,
+    SCENE_VOIP = 6
+};
+
+/**
+* Enumerates the audio scene enhance type.
+*/
+enum AudioEnhanceScene {
+    SCENE_RECORD = 1,
+    SCENE_VOIP_3A = 2
 };
 
 /**
@@ -170,7 +178,13 @@ const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TY
     {SCENE_MOVIE, "SCENE_MOVIE"},
     {SCENE_GAME, "SCENE_GAME"},
     {SCENE_SPEECH, "SCENE_SPEECH"},
-    {SCENE_RING, "SCENE_RING"}
+    {SCENE_RING, "SCENE_RING"},
+    {SCENE_VOIP, "SCENE_VOIP"}
+};
+
+const std::unordered_map<AudioEnhanceScene, std::string> AUDIO_SUPPORTED_ENHANCE_TYPES {
+    {SCENE_RECORD, "SCENE_RECORD"},
+    {SCENE_VOIP_3A, "SCENE_VOIP_3A"}
 };
 
 const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
@@ -311,12 +325,13 @@ const std::unordered_map<DeviceType, std::vector<std::string>> HDI_EFFECT_LIB_MA
 const std::unordered_map<std::string, uint8_t> EFFECT_CHAIN_TYPE_MAP {
     {"UNKNOWN", 0},
     {"NONE", 1},
-    {"SCENE_MUSIC", 2},
-    {"SCENE_MOVIE", 3},
-    {"SCENE_GAME", 4},
-    {"SCENE_SPEECH", 5},
-    {"SCENE_RING", 6},
-    {"SCENE_OTHERS", 7}
+    {"SCENE_OTHERS", 2},
+    {"SCENE_MUSIC", 3},
+    {"SCENE_MOVIE", 4},
+    {"SCENE_GAME", 5},
+    {"SCENE_SPEECH", 6},
+    {"SCENE_RING", 7},
+    {"SCENE_VOIP", 8}
 } ;
 
 struct AudioRendererInfoForSpatialization {
