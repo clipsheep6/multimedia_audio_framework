@@ -153,11 +153,11 @@ private:
     void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedAudioEnhanceParamInternal(MessageParcel &data, MessageParcel &reply);
-    void GetSupportedAudioEffectParamInternal(MessageParcel &data, MessageParcel &reply);
-    void SetAudioEffectParamInternal(MessageParcel &data, MessageParcel &reply);
-    void GetAudioEffectParamInternal(MessageParcel &data, MessageParcel &reply);
-    void SetAudioEnhanceParamInternal(MessageParcel &data, MessageParcel &reply);
-    void GetAudioEnhanceParamInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSupportedAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -284,12 +284,12 @@ private:
         &AudioPolicyManagerStub::SetRingerStreamMuteInternal,
         &AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal,
         &AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal,
-        &AudioPolicyManagerStub::GetSupportedAudioEnhanceParamInternal,
-        &AudioPolicyManagerStub::GetSupportedAudioEffectParamInternal,
-        &AudioPolicyManagerStub::GetAudioEnhanceParamInternal,
-        &AudioPolicyManagerStub::GetAudioEffectParamInternal,
-        &AudioPolicyManagerStub::SetAudioEnhanceParamInternal,
-        &AudioPolicyManagerStub::SetAudioEffectParamInternal,
+        &AudioPolicyManagerStub::GetSupportedAudioEnhancePropertyInternal,
+        &AudioPolicyManagerStub::GetSupportedAudioEffectPropertyInternal,
+        &AudioPolicyManagerStub::GetAudioEnhancePropertyInternal,
+        &AudioPolicyManagerStub::GetAudioEffectPropertyInternal,
+        &AudioPolicyManagerStub::SetAudioEnhancePropertyInternal,
+        &AudioPolicyManagerStub::SetAudioEffectPropertyInternal,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),

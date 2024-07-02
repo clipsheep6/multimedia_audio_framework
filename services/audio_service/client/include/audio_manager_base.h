@@ -415,6 +415,12 @@ public:
 
     // Check if the multi-channel sound effect is working on the DSP
     virtual bool GetEffectOffloadEnabled() = 0;
+   // for effect		
+    virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) = 0;
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
+    // for enhance
+    virtual int32_t SetAudioEnhanceProperty(const AudioEnhanceParamArray &propertyArray) = 0;
+    virtual int32_t GetAudioEnhanceProperty( AudioEnhancePropertyArray &propertyArray) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
@@ -478,10 +484,10 @@ private:
     int HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply);
-    int HandleSetAudioEffectParam(MessageParcel &data, MessageParcel &reply);
-    int HandleGetAudioEffectParam(MessageParcel &data, MessageParcel &reply);
-    int HandleSetAudioEnhanceParam(MessageParcel &data, MessageParcel &reply);
-    int HandleGetAudioEnhanceParam(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioEffectProperty(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAudioEffectProperty(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply);
     int HandleSuspendRenderSink(MessageParcel &data, MessageParcel &reply);
     int HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply);
 
@@ -539,10 +545,10 @@ private:
         &AudioManagerStub::HandleSetAsrVoiceMuteMode,
         &AudioManagerStub::HandleIsWhispering,
         &AudioManagerStub::HandleGetEffectOffloadEnabled,
-        &AudioManagerStub::HandleGetAudioEnhanceParam,
-        &AudioManagerStub::HandleGetAudioEffectParam,
-        &AudioManagerStub::HandleSetAudioEnhanceParam,
-        &AudioManagerStub::HandleSetAudioEffectParam,
+        &AudioManagerStub::HandleGetAudioEnhanceProperty,
+        &AudioManagerStub::HandleGetAudioEffectProperty,
+        &AudioManagerStub::HandleSetAudioEnhanceProperty,
+        &AudioManagerStub::HandleSetAudioEffectProperty,
         &AudioManagerStub::HandleSuspendRenderSink,
         &AudioManagerStub::HandleRestoreRenderSink,
     };

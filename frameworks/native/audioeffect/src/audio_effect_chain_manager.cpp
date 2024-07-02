@@ -1300,15 +1300,13 @@ bool AudioEffectChainManager::CheckIfSpkDsp()
     }
     return true;
 }
-int32_t AudioEffectChainManager::SetAudioEffectParam(StreamUsage &streamUsage,
-                                                     AudioEffectParamArray &audioEffectParamArray)
+int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
-    return AUIOD_OK;
+    return AUDIO_OK;
 }
-int32_t AudioEffectChainManager::GetAudioEffectParam(const StreamUsage &streamUsage,
-                                                     AudioEffectParamArray &audioEffectParamArray)
+int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    return AUIOD_OK;
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -209,8 +209,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
-                                         AudioEffectParamArray &audioEffectParamArray);
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     /**
      * @brief Get Audio Capture Effect param.
      *
@@ -219,8 +218,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
-                                          AudioEnhanceParamArray &audioEnhanceParamArray);
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
 
     /**
      * @brief Sets the audio effect Param.
@@ -230,8 +228,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
      */
-    int32_t SetAudioEffectParam(const StreamUsage &streamUsage,
-                                const AudioEffectParamArray &audioEffectParamArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     /**
      * @brief Gets the audio effect Param.
      *
@@ -240,8 +237,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
      */
-    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
-                                AudioEffectParamArray &audioEffectParamArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     /**
      * @brief Sets the audio effect Param.
      *
@@ -250,8 +246,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
      */
-    int32_t SetAudioEnhanceParam(const SourceType &sourceType,
-                                 const AudioEnhanceParamArray &audioEnhanceParamArray);
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     /**
      * @brief Gets the audio effect Param.
      *
@@ -260,8 +255,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
      */
-    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
-                                 AudioEnhanceParamArray &audioEnhanceParamArray);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     /**
      * @brief Is stream active.
      *

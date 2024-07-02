@@ -669,8 +669,6 @@ private:
     uint32_t readTimeoutCount_ = 0;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
-    AudioEffectParamArray audioEffectParamArray_;
-    AudioEnhanceParamArray audioEnhanceParamArray_;
 
     std::unique_ptr<uint8_t[]> preBuf_ {nullptr};
     uint32_t sinkLatencyInMsec_ {0};

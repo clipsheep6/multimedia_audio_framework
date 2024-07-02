@@ -533,33 +533,11 @@ void AudioEffectManager::ConstructSceneTypeToEnhanceChainNameMap(std::unordered_
     AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEnhanceChainNameMap at policy, size is %{public}d",
         (int32_t)map.size());
 }
-int32_t AudioEffectManager::GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
-                                                         AudioEffectParamArray &audioEffectParamArray)
+int32_t AudioEffectManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    /*std::string effectScene = IAudioStream::GetEffectSceneName(streamUsage);
-    SupportedEffectConfig supportedEffectConfig;
-    int32_t ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
-    uint32_t streamNum = supportedEffectConfig.postProcessNew.stream.size();
-    if (streamNum >= 0) {
-        int32_t sceneFlag = 0;
-        for (uint32_t i = 0; i < streamNum; i++) {
-            if (effectScene == supportedEffectConfig.postProcessNew.stream[i].scene) {
-                UpdateEffectInfoArray(supportedEffectConfig, i, audioSceneEffectInfo);
-                sceneFlag = 1;
-                break;
-            }
-        }
-        if (sceneFlag == 0) {
-            AudioEffectMode audioEffectMode = effectModeMap.at("EFFECT_NONE");
-            audioSceneEffectInfo.mode.push_back(audioEffectMode);
-            audioEffectMode = effectModeMap.at("EFFECT_DEFAULT");
-            audioSceneEffectInfo.mode.push_back(audioEffectMode);
-        }
-    }*/
     return AUDIO_OK;
 }
-int32_t AudioEffectManager::GetSupportedAudioEnhanceParam(const SourceType &sourceType,
-                                                          AudioEnhanceParamArray &audioEnhanceParamArray)
+int32_t AudioEffectManager::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
 {
     return AUDIO_OK;
 }

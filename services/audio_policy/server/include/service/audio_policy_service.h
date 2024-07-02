@@ -517,19 +517,13 @@ public:
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     // for effect
-    int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
-                                         AudioEffectParamArray &audioEffectParamArray);
-    int32_t SetAudioEffectParam(StreamUsage &streamUsage,
-                                AudioEffectParamArray &audioEffectParamArray);
-    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
-                                AudioEffectParamArray &audioEffectParamArray);
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     // for enhance
-    int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
-                                          AudioEnhanceParamArray &audioEnhanceParamArray);
-    int32_t SetAudioEnhanceParam(SourceType &sourceType,
-                                 AudioEnhanceParamArray &audioEnhanceParamArray);
-    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
-                                 AudioEnhanceParamArray &audioEnhanceParamArray);
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

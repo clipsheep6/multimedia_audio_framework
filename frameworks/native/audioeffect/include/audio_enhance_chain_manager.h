@@ -44,8 +44,8 @@ public:
     bool ExistAudioEnhanceChain(const std::string &sceneType);
     std::string GetUpAndDownDevice();
     // for enhance
-    int32_t SetAudioEnhanceParam(SourceType &sourceType,
-                                 AudioEnhanceParamArray &audioEnhanceParamArray);
+    int32_t SetAudioEnhanceParam(const SourceType &sourceType,
+                                 const AudioEnhanceParamArray &audioEnhanceParamArray);
     int32_t GetAudioEnhanceParam(const SourceType &sourceType,
                                  AudioEnhanceParamArray &audioEnhanceParamArray);
 private:

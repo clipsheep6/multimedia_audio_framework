@@ -409,45 +409,39 @@ public:
 /**
 * Enumerates the audio Capture enhance mode.
 */
-struct AudioEnhanceParam {
+struct AudioEnhanceProperty {
     std::string enhanceClass;
-    std::string enhanceParam;
-    DeviceType deviceType; 
+    std::string enhanceProp;
      bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteString(enhanceClass)&&
-            parcel.WriteString(enhanceParam)&&
-            parcel.WriteInt32(static_cast<int32_t>(deviceType));
+            parcel.WriteString(enhanceProp);
     }
     void Unmarshalling(Parcel &parcel)
     {
         enhanceClass = parcel.ReadString();
-        enhanceParam = parcel.ReadString();
-        deviceType = parcel.ReadInt32();
+        enhanceProp = parcel.ReadString();
     }
 };
-struct AudioEnhanceParamArray {
-    std::vector<AudioEnhanceParam> enhanceParamArray;
+struct AudioEnhancePropertyArray {
+    std::vector<AudioEnhanceProperty> property;
 };
-struct AudioEffectParam {
+struct AudioEffectProperty {
     std::string effectClass;
-    std::string effectParam;
-    DeviceType deviceType;
+    std::string effectProp;
      bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteString(effectClass)&&
-            parcel.WriteString(effectParam)&&
-            parcel.WriteInt32(static_cast<int32_t>(deviceType));
+            parcel.WriteString(effectProp);
     }
     void Unmarshalling(Parcel &parcel)
     {
         effectClass = parcel.ReadString();
-        effectParam = parcel.ReadString();
-        deviceType = parcel.ReadInt32();
+        effectProp = parcel.ReadString();
     }
 };
-struct AudioEffectParamArray {
-    std::vector<AudioEffectParam> effectParamArray;
+struct AudioEffectPropertyArray {
+    std::vector<AudioEffectProperty> property;
 };
 
 struct AudioRendererDesc {

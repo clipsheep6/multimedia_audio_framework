@@ -88,17 +88,6 @@ public:
     float GetSingleStreamVolume() override;
     AudioEffectMode GetAudioEffectMode() override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
-    // for effect
-    int32_t SetAudioEffectParam(StreamUsage &streamUsage,
-                                AudioEffectParamArray &audioEffectParamArray) override;
-    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
-                                AudioEffectParamArray &audioEffectParamArray) override;
-
-    // for enhance
-    int32_t SetAudioEnhanceParam(SourceType &sourceType,
-                                 AudioEnhanceParamArray &audioEnhanceParamArray) override;
-    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
-                                 AudioEnhanceParamArray &audioEnhanceParamArray) override;
     int64_t GetFramesWritten() override;
     int64_t GetFramesRead() override;
 
