@@ -683,7 +683,7 @@ int AudioManagerStub::HandleSetAudioEnhanceProperty(MessageParcel &data, Message
         prop.Unmarshalling(data);
         propertyArray.property.push_back(prop);
     }
-    int32_t result = SetAudioEnhanceProperty(paramArray);
+    int32_t result = SetAudioEnhanceProperty(propertyArray);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }

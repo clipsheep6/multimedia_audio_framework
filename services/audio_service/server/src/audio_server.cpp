@@ -1916,7 +1916,7 @@ int32_t AudioServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &pr
     return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray);
 }
 
-int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &[propertyArray)
+int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,

@@ -1063,7 +1063,7 @@ napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env, AudioEffectProp
         AudioEffectProperty prop;
         napi_get_element(env, in, i, &element);
         SetValueString(env, "effectClass", prop.effectClass, in);
-        SetValueString(env, "effectProp", prop.effectParam, in);
+        SetValueString(env, "effectProp", prop.effectProp, in);
         effectArray.property.push_back(prop);
     }
     return napi_ok;
@@ -1099,7 +1099,7 @@ napi_status NapiParamUtils::SetEnhanceProperty(const napi_env &env, const AudioE
     napi_create_object(env, &jsEffectInofObj);
     for (const auto &property : enhanceArray.property) {
         SetValueString(env, property.enhanceClass, jsEffectInofObj);
-        SetValueString(env, property.enhanceParam, jsEffectInofObj);
+        SetValueString(env, property.enhanceProp, jsEffectInofObj);
         napi_set_element(env, result, position, jsEffectInofObj);
         position++;
     }
@@ -1115,7 +1115,7 @@ napi_status NapiParamUtils::SetEffectProperty(const napi_env &env, const AudioEf
     napi_create_object(env, &jsEffectInofObj);
     for (const auto &property : effectArray.property) {
         SetValueString(env, property.effectClass, jsEffectInofObj);
-        SetValueString(env, property.effectParam, jsEffectInofObj);
+        SetValueString(env, property.effectProp, jsEffectInofObj);
         napi_set_element(env, result, position, jsEffectInofObj);
         position++;
     }

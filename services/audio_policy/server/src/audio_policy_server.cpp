@@ -2796,7 +2796,7 @@ int32_t AudioPolicyServer::GetSupportedAudioEnhanceProperty(AudioEnhanceProperty
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
     return audioPolicyService_.GetSupportedAudioEnhanceProperty(propertyArray);
 }
-int32_t AudioPolicyServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &audioEnhanceParamArray)
+int32_t AudioPolicyServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");

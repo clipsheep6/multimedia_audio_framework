@@ -419,7 +419,7 @@ public:
     virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) = 0;
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
     // for enhance
-    virtual int32_t SetAudioEnhanceProperty(const AudioEnhanceParamArray &propertyArray) = 0;
+    virtual int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) = 0;
     virtual int32_t GetAudioEnhanceProperty( AudioEnhancePropertyArray &propertyArray) = 0;
 
 public:
