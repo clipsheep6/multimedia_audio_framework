@@ -23,6 +23,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t OFFSET = 4;
+bool g_isServerInited = false;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
@@ -45,6 +46,15 @@ uint32_t Convert2Uint32(const uint8_t *ptr)
     return (ptr[0] << SHIFT_LEFT_24) | (ptr[1] << SHIFT_LEFT_16) | (ptr[2] << SHIFT_LEFT_8) | (ptr[3]);
 }
 
+AudioPolicyServer* GetServerPtr()
+{
+    static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (!g_isServerInited) {
+        g_isServerInited = true;
+        server.OnStart();
+    }
+    return &server;
+}
 void AudioPolicyFuzzFirstLimitTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -62,10 +72,8 @@ void AudioPolicyFuzzFirstLimitTest(const uint8_t *rawData, size_t size)
 
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
-        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
         
-    AudioPolicyServerPtr->OnRemoteRequest(code, data, reply, option);
+    GetServerPtr()->OnRemoteRequest(code, data, reply, option);
 }
 
 void AudioPolicyFuzzSecondLimitTest(const uint8_t *rawData, size_t size)
@@ -85,10 +93,8 @@ void AudioPolicyFuzzSecondLimitTest(const uint8_t *rawData, size_t size)
 
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
-        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
         
-    AudioPolicyServerPtr->OnRemoteRequest(code, data, reply, option);
+    GetServerPtr()->OnRemoteRequest(code, data, reply, option);
 }
 
 void AudioPolicyFuzzThirdLimitTest(const uint8_t *rawData, size_t size)
@@ -108,10 +114,8 @@ void AudioPolicyFuzzThirdLimitTest(const uint8_t *rawData, size_t size)
 
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
-        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
         
-    AudioPolicyServerPtr->OnRemoteRequest(code, data, reply, option);
+    GetServerPtr()->OnRemoteRequest(code, data, reply, option);
 }
 } // namespace AudioStandard
 } // namesapce OHOS
