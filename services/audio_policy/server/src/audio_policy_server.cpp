@@ -2784,50 +2784,6 @@ void AudioPolicyServer::UnregisterCommonEventReceiver()
         AUDIO_INFO_LOG("unregister bluetooth device name commonevent");
     }
 }
-<<<<<<< HEAD
-int32_t AudioPolicyServer::GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
-                                                        AudioEffectParamArray &audioEffectParamArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
-    return audioPolicyService_.GetSupportedAudioEffectParam(streamUsage, audioEffectParamArray);
-}
-int32_t AudioPolicyServer::GetSupportedAudioEnhanceParam(const SourceType &sourceType,
-                                                         AudioEnhanceParamArray &audioEnhanceParamArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
-    return audioPolicyService_.GetSupportedAudioEnhanceParam(sourceType, audioEnhanceParamArray);
-}
-int32_t AudioPolicyServer::GetAudioEnhanceParam(const SourceType &sourceType,
-                                                AudioEnhanceParamArray &audioEnhanceParamArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
-    return audioPolicyService_.GetAudioEnhanceParam(sourceType, audioEnhanceParamArray);
-}
-
-int32_t AudioPolicyServer::SetAudioEnhanceParam(const SourceType &sourceType,
-                                                AudioEnhanceParamArray &audioEnhanceParamArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
-    return audioPolicyService_.SetAudioEnhanceParam(sourceType, audioEnhanceParamArray);
-}
-int32_t AudioPolicyServer::SetAudioEffectParam(const StreamUsage &streamUsage,
-                                                AudioEffectParamArray &audioEffectParamArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
-    return audioPolicyService_.SetAudioEffectParam(sourceType, audioEffectParamArray);
-}
-int32_t AudioPolicyServer::GetAudioEffectParam(const StreamUsage &streamUsage,
-                                                AudioEffectParamArray &audioEffectParamArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
-    return audioPolicyService_.GetAudioEffectParam(sourceType, audioEffectParamArray);
-=======
 int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     bool ret = PermissionUtil::VerifySystemPermission();
@@ -2864,7 +2820,6 @@ int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArray &prop
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
     return audioPolicyService_.GetAudioEffectProperty(propertyArray);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 }
 } // namespace AudioStandard
 } // namespace OHOS

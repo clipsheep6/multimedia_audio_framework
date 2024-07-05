@@ -533,41 +533,11 @@ void AudioEffectManager::ConstructSceneTypeToEnhanceChainNameMap(std::unordered_
     AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEnhanceChainNameMap at policy, size is %{public}d",
         (int32_t)map.size());
 }
-<<<<<<< HEAD
-int32_t AudioEffectManager::GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
-                                                         AudioEffectParamArray &audioEffectParamArray)
-{
-    /*std::string effectScene = IAudioStream::GetEffectSceneName(streamUsage);
-    SupportedEffectConfig supportedEffectConfig;
-    int32_t ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
-    uint32_t streamNum = supportedEffectConfig.postProcessNew.stream.size();
-    if (streamNum >= 0) {
-        int32_t sceneFlag = 0;
-        for (uint32_t i = 0; i < streamNum; i++) {
-            if (effectScene == supportedEffectConfig.postProcessNew.stream[i].scene) {
-                UpdateEffectInfoArray(supportedEffectConfig, i, audioSceneEffectInfo);
-                sceneFlag = 1;
-                break;
-            }
-        }
-        if (sceneFlag == 0) {
-            AudioEffectMode audioEffectMode = effectModeMap.at("EFFECT_NONE");
-            audioSceneEffectInfo.mode.push_back(audioEffectMode);
-            audioEffectMode = effectModeMap.at("EFFECT_DEFAULT");
-            audioSceneEffectInfo.mode.push_back(audioEffectMode);
-        }
-    }*/
-    return AUDIO_OK;
-}
-int32_t AudioEffectManager::GetSupportedAudioEnhanceParam(const SourceType &sourceType,
-                                                          AudioEnhanceParamArray &audioEnhanceParamArray)
-=======
 int32_t AudioEffectManager::GetSupportedAudioEffectProperty(const DeviceType& deviceType, AudioEffectPropertyArray &propertyArray)
 {
     return AUDIO_OK;
 }
 int32_t AudioEffectManager::GetSupportedAudioEnhanceProperty(const DeviceType& deviceType, AudioEnhancePropertyArray &propertyArray)
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 {
     return AUDIO_OK;
 }

@@ -1711,49 +1711,6 @@ AudioPolicyManager& AudioPolicyManager::GetInstance()
     return policyManager;
 }
 
-<<<<<<< HEAD
-int32_t AudioPolicyManager::GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
-                                                         AudioEffectParamArray &audioEffectParamArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->GetSupportedAudioEffectParam(streamUsage, audioEffectParamArray);
-}
-int32_t AudioPolicyManager::GetSupportedAudioEnhanceParam(const SourceType &sourceType,
-                                                          AudioEnhanceParamArray &audioEnhanceParamArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->GetSupportedAudioEnhanceParam(sourceType, audioEnhanceParamArray);
-}
-int32_t AudioPolicyManager::SetAudioEffectParam(const StreamUsage &streamUsage,
-                                                const AudioEffectParamArray &audioEffectParamArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetAudioEffectParam(streamUsage, audioEffectParamArray);
-}
-int32_t AudioPolicyManager::GetAudioEffectParam(const StreamUsage &streamUsage,
-                                                AudioEffectParamArray &audioEffectParamArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->GetAudioEffectParam(streamUsage, audioEffectParamArray);
-}
-int32_t AudioPolicyManager::SetAudioEnhanceParam(const SourceType &sourceType,
-                                                 const AudioEnhanceParamArray &audioEnhanceParamArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetAudioEnhanceParam(sourceType, audioEnhanceParamArray);
-}
-int32_t AudioPolicyManager::GetAudioEnhanceParam(const SourceType &sourceType,
-                                                 AudioEnhanceParamArray &audioEnhanceParamArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->GetAudioEnhanceParam(sourceType, audioEnhanceParamArray);
-=======
 int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -1789,7 +1746,6 @@ int32_t AudioPolicyManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->GetAudioEnhanceProperty(propertyArray);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 }
 
 } // namespace AudioStandard

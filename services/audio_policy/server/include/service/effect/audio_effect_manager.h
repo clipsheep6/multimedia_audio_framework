@@ -43,15 +43,8 @@ public:
     void ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map);
     void ConstructSceneTypeToEnhanceChainNameMap(std::unordered_map<std::string, std::string> &map);
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
-<<<<<<< HEAD
-    int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
-                                         AudioEffectParamArray &audioEffectParamArray);
-    int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
-                                          AudioEnhanceParamArray &audioEnhanceParamArray);
-=======
     int32_t GetSupportedAudioEffectProperty(const DeviceType& deviceType, AudioEffectPropertyArray &propertyArray);
     int32_t GetSupportedAudioEnhanceProperty(const DeviceType& deviceType, AudioEnhancePropertyArray &propertyArray);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 private:
     OriginalEffectConfig oriEffectConfig_;
     std::vector<Effect> availableEffects_;

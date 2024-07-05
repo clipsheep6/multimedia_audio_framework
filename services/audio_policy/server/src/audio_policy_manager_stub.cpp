@@ -1215,17 +1215,6 @@ void AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal(MessageParcel &
     bool result = GetPersistentMicMuteState();
     reply.WriteBool(result);
 }
-<<<<<<< HEAD
-void AudioPolicyManagerStub::GetSupportedAudioEnhanceParamInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioEnhanceParamArray paramArray = {};
-    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
-    int32_t result = GetSupportedAudioEnhanceParam(sourceType, paramArray);
-    int32_t size = paramArray.size();
-    reply.WriteInt32(size);
-    for (int i = 0; i < size; i++) {
-        paramArray[i]->Marshalling(reply);
-=======
 void AudioPolicyManagerStub::GetSupportedAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioEnhancePropertyArray propertyArray = {};
@@ -1234,22 +1223,10 @@ void AudioPolicyManagerStub::GetSupportedAudioEnhancePropertyInternal(MessagePar
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     }
     reply.WriteInt32(result);
     return;
 }
-<<<<<<< HEAD
-void AudioPolicyManagerStub::GetSupportedAudioEffectParamInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioEffectParamArray paramArray = {};
-    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-    int32_t result = GetSupportedAudioEffectParam(streamUsage, paramArray);
-    int32_t size = paramArray.size();
-    reply.WriteInt32(size);
-    for (int i = 0; i < size; i++)    {
-        paramArray[i]->Marshalling(reply);
-=======
 void AudioPolicyManagerStub::GetSupportedAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioEffectPropertyArray propertyArray = {};
@@ -1282,59 +1259,10 @@ void AudioPolicyManagerStub::GetAudioEffectPropertyInternal(MessageParcel &data,
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++)    {
         propertyArray.property[i].Marshalling(reply);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     }
     reply.WriteInt32(result);
     return;
 }
-<<<<<<< HEAD
-void AudioPolicyManagerStub::SetAudioEffectParamInternal(MessageParcel &data, MessageParcel &reply)
-{
-    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-    int32_t size = data.ReadInt32();
-    AudioEffectParamArray paramArray = {};
-    for (int i = 0; i < size; i++) {
-        AudioEffectParam param = {};
-        paramArray.push_back(param.unmarshelling(data));
-    }
-    int32_t result = SetAudioEffectParam(streamUsage,paramArray);
-    reply.WriteInt32(result);
-}
-void AudioPolicyManagerStub::GetAudioEffectParamInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioEffectParamArray paramArray = {};
-    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-    int32_t result = GetAudioEffectParam(streamUsage, paramArray);
-    int32_t size = paramArray.size();
-    reply.WriteInt32(size);
-    for (int i = 0; i < size; i++)    {
-        paramArray[i]->Marshalling(reply);
-    }
-    reply.WriteInt32(result);
-    return;
-}
-void AudioPolicyManagerStub::SetAudioEnhanceParamInternal(MessageParcel &data, MessageParcel &reply)
-{
-    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
-    int32_t size = data.ReadInt32();
-    AudioEnhanceParamArray paramArray = {};
-    for (int i = 0; i < size; i++) {
-        AudioEnhanceParam param = {};
-        paramArray.push_back(param.unmarshelling(data));
-    }
-    int32_t result = SetAudioEnhanceParam(sourceType,paramArray);
-    reply.WriteInt32(result);
-}
-void AudioPolicyManagerStub::GetAudioEnhanceParamInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioEnhanceParamArray paramArray = {};
-    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
-    int32_t result = GetAudioEnhanceParam(sourceType, paramArray);
-    int32_t size = paramArray.size();
-    reply.WriteInt32(size);
-    for (int i = 0; i < size; i++) {
-        paramArray[i]->Marshalling(reply);
-=======
 void AudioPolicyManagerStub::SetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t size = data.ReadInt32();
@@ -1355,7 +1283,6 @@ void AudioPolicyManagerStub::GetAudioEnhancePropertyInternal(MessageParcel &data
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     }
     reply.WriteInt32(result);
     return;

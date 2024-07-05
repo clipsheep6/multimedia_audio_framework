@@ -94,23 +94,11 @@ public:
     int32_t IsWhispering() override;
 
     // for effect
-<<<<<<< HEAD
-    int32_t SetAudioEffectParam(StreamUsage &streamUsage,
-                                AudioEffectParamArray &audioEffectParamArray) override;
-    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
-                                AudioEffectParamArray &audioEffectParamArray) override;
-    // for enhance
-    int32_t SetAudioEnhanceParam(SourceType &sourceType,
-                                 AudioEnhanceParamArray &audioEnhanceParamArray) override;
-    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
-                                 AudioEnhanceParamArray &audioEnhanceParamArray) override;
-=======
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     // for enhance
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
 

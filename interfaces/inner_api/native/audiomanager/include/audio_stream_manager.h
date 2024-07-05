@@ -209,12 +209,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-<<<<<<< HEAD
-    int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
-                                         AudioEffectParamArray &audioEffectParamArray);
-=======
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     /**
      * @brief Get Audio Capture Effect param.
      *
@@ -223,12 +218,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-<<<<<<< HEAD
-    int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
-                                          AudioEnhanceParamArray &audioEnhanceParamArray);
-=======
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 
     /**
      * @brief Sets the audio effect Param.
@@ -238,12 +228,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
      */
-<<<<<<< HEAD
-    int32_t SetAudioEffectParam(const StreamUsage &streamUsage,
-                                const AudioEffectParamArray &audioEffectParamArray);
-=======
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     /**
      * @brief Gets the audio effect Param.
      *
@@ -252,12 +237,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
      */
-<<<<<<< HEAD
-    int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
-                                AudioEffectParamArray &audioEffectParamArray);
-=======
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     /**
      * @brief Sets the audio effect Param.
      *
@@ -266,12 +246,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
      */
-<<<<<<< HEAD
-    int32_t SetAudioEnhanceParam(const SourceType &sourceType,
-                                 const AudioEnhanceParamArray &audioEnhanceParamArray);
-=======
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     /**
      * @brief Gets the audio effect Param.
      *
@@ -280,12 +255,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
      */
-<<<<<<< HEAD
-    int32_t GetAudioEnhanceParam(const SourceType &sourceType,
-                                 AudioEnhanceParamArray &audioEnhanceParamArray);
-=======
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     /**
      * @brief Is stream active.
      *

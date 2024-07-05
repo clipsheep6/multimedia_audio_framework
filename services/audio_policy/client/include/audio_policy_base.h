@@ -302,25 +302,6 @@ public:
 
     virtual int32_t ResetRingerModeMute() = 0;
 
-<<<<<<< HEAD
-    virtual int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
-                                                 AudioEffectParamArray &audioEffectParamArray) = 0;
-
-    virtual int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
-                                                  AudioEnhanceParamArray &audioEnhanceParamArray) = 0;
-
-    virtual int32_t SetAudioEffectParam(const StreamUsage &streamUsage,
-                                        const AudioEffectParamArray &audioEffectParamArray) = 0;
-
-    virtual int32_t GetAudioEffectParam(const StreamUsage &streamUsage,
-                                        AudioEffectParamArray &audioEffectParamArray) = 0;
-
-    virtual int32_t SetAudioEnhanceParam(const SourceType &sourceType,
-                                         const AudioEnhanceParamArray &audioEnhanceParamArray) = 0;
-
-    virtual int32_t GetAudioEnhanceParam(const SourceType &sourceType,
-                                         AudioEnhanceParamArray &audioEnhanceParamArray) = 0;
-=======
     virtual int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
 
     virtual int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
@@ -332,7 +313,6 @@ public:
     virtual int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) = 0;
 
     virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");

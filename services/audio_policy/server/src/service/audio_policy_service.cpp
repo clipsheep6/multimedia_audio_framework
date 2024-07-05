@@ -8007,55 +8007,6 @@ void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, c
         }
     }
 }
-<<<<<<< HEAD
-int32_t AudioPolicyService::GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
-                                     AudioEffectParamArray &audioEffectParamArray)
-{
-    return audioEffectManager_.GetSupportedAudioEffectParam(streamUsage, audioEffectParamArray);
-}
-int32_t AudioPolicyService::GetSupportedAudioEnhanceParam(const SourceType &sourceType,
-                                      AudioEnhanceParamArray &audioEnhanceParamArray)
-{
-   return audioEffectManager_.GetSupportedAudioEnhanceParam(sourceType, audioEnhanceParamArray);
-}
-int32_t AudioPolicyService::SetAudioEffectParam(StreamUsage &streamUsage,
-                                                AudioEffectParamArray &audioEffectParamArray)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "SetAudioEffectParam: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetAudioEnhanceParam(streamUsage, audioEffectParamArray);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
-}
-int32_t AudioPolicyService::GetAudioEffectParam(const StreamUsage &streamUsage,
-                                                AudioEffectParamArray &audioEffectParamArray)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "GetAudioEffectParam: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetAudioEnhanceParam(streamUsage, audioEffectParamArray);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
-}
-int32_t AudioPolicyService::SetAudioEnhanceParam(SourceType &sourceType,
-                                                 AudioEnhanceParamArray &audioEnhanceParamArray)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "SetAudioEnhanceParam: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetAudioEnhanceParam(sourceType, audioEnhanceParamArray);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
-}
-int32_t AudioPolicyService::GetAudioEnhanceParam(const SourceType &sourceType,
-                                                 AudioEnhanceParamArray &audioEnhanceParamArray)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "GetAudioEnhanceParam: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEnhanceParam(sourceType, audioEnhanceParamArray);
-=======
 int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     std::vector<sptr<AudioDeviceDescriptor>> descriptor = GetDevices(OUTPUT_DEVICES_FLAG);
@@ -8105,7 +8056,6 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "Get Audio Enhance Property: gsp null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t ret = gsp->GetAudioEnhanceProperty(propertyArray);
->>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }
