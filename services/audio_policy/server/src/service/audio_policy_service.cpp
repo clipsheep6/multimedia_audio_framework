@@ -8009,11 +8009,19 @@ void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, c
 }
 int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    return audioEffectManager_.GetSupportedAudioEffectProperty(propertyArray);
+    std::vector<sptr<AudioDeviceDescriptor>> descriptor = GetDevices(OUTPUT_DEVICES_FLAG);
+    for (auto &item : descriptor) {
+        audioEffectManager_.GetSupportedAudioEffectProperty(item->GetType(), propertyArray);
+    }
+    return AUDIO_OK;
 }
 int32_t AudioPolicyService::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
 {
-   return audioEffectManager_.GetSupportedAudioEnhanceProperty(propertyArray);
+   std::vector<sptr<AudioDeviceDescriptor>> descriptor = GetDevices(INPUT_DEVICES_FLAG);
+    for (auto &item : descriptor) {
+        audioEffectManager_.GetSupportedAudioEnhanceProperty(item->GetType(), propertyArray);
+    }
+    return AUDIO_OK;
 }
 int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
