@@ -92,6 +92,13 @@ public:
     int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
     bool GetEffectOffloadEnabled() override;
+    // for effect
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+    // for enhance
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

@@ -380,6 +380,7 @@ public:
 
     int32_t ResetRingerModeMute();
 
+<<<<<<< HEAD
     int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
                                          AudioEffectParamArray &audioEffectParamArray);
     int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
@@ -392,6 +393,14 @@ public:
                                  const AudioEnhanceParamArray &audioEnhanceParamArray);
     int32_t GetAudioEnhanceParam(const SourceType &sourceType,
                                  AudioEnhanceParamArray &audioEnhanceParamArray);
+=======
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

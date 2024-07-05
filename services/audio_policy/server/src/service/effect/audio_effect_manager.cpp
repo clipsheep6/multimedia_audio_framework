@@ -533,6 +533,7 @@ void AudioEffectManager::ConstructSceneTypeToEnhanceChainNameMap(std::unordered_
     AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEnhanceChainNameMap at policy, size is %{public}d",
         (int32_t)map.size());
 }
+<<<<<<< HEAD
 int32_t AudioEffectManager::GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
                                                          AudioEffectParamArray &audioEffectParamArray)
 {
@@ -560,6 +561,13 @@ int32_t AudioEffectManager::GetSupportedAudioEffectParam(const StreamUsage &stre
 }
 int32_t AudioEffectManager::GetSupportedAudioEnhanceParam(const SourceType &sourceType,
                                                           AudioEnhanceParamArray &audioEnhanceParamArray)
+=======
+int32_t AudioEffectManager::GetSupportedAudioEffectProperty(const DeviceType& deviceType, AudioEffectPropertyArray &propertyArray)
+{
+    return AUDIO_OK;
+}
+int32_t AudioEffectManager::GetSupportedAudioEnhanceProperty(const DeviceType& deviceType, AudioEnhancePropertyArray &propertyArray)
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 {
     return AUDIO_OK;
 }

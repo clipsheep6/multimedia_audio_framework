@@ -409,6 +409,7 @@ public:
 /**
 * Enumerates the audio Capture enhance mode.
 */
+<<<<<<< HEAD
 struct AudioEnhanceParam {
     std::string enhanceClass;
     std::string enhanceParam;
@@ -418,10 +419,20 @@ struct AudioEnhanceParam {
         return parcel.WriteString(enhanceClass)&&
             parcel.WriteString(enhanceParam)&&
             parcel.WriteInt32(static_cast<int32_t>(deviceType));
+=======
+struct AudioEnhanceProperty {
+    std::string enhanceClass;
+    std::string enhanceProp;
+     bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteString(enhanceClass)&&
+            parcel.WriteString(enhanceProp);
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     }
     void Unmarshalling(Parcel &parcel)
     {
         enhanceClass = parcel.ReadString();
+<<<<<<< HEAD
         enhanceParam = parcel.ReadString();
         deviceType = parcel.ReadInt32();
     }
@@ -438,16 +449,39 @@ struct AudioEffectParam {
         return parcel.WriteString(effectClass)&&
             parcel.WriteString(effectParam)&&
             parcel.WriteInt32(static_cast<int32_t>(deviceType));
+=======
+        enhanceProp = parcel.ReadString();
+    }
+};
+struct AudioEnhancePropertyArray {
+    std::vector<AudioEnhanceProperty> property;
+};
+struct AudioEffectProperty {
+    std::string effectClass;
+    std::string effectProp;
+     bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteString(effectClass)&&
+            parcel.WriteString(effectProp);
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     }
     void Unmarshalling(Parcel &parcel)
     {
         effectClass = parcel.ReadString();
+<<<<<<< HEAD
         effectParam = parcel.ReadString();
         deviceType = parcel.ReadInt32();
     }
 };
 struct AudioEffectParamArray {
     std::vector<AudioEffectParam> effectParamArray;
+=======
+        effectProp = parcel.ReadString();
+    }
+};
+struct AudioEffectPropertyArray {
+    std::vector<AudioEffectProperty> property;
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 };
 
 struct AudioRendererDesc {

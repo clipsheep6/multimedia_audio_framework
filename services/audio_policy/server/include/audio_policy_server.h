@@ -243,6 +243,7 @@ public:
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
+<<<<<<< HEAD
     int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
                                          AudioEffectParamArray &audioEffectParamArray) override;
     int32_t GetSupportedAudioEnhanceParam(const SourceType &sourceType,
@@ -255,6 +256,14 @@ public:
                                  const AudioEnhanceParamArray &audioEnhanceParamArray) override;
     int32_t GetAudioEnhanceParam(const SourceType &sourceType,
                                  AudioEnhanceParamArray &audioEnhanceParamArray) override;
+=======
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 

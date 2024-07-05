@@ -649,6 +649,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
 
+<<<<<<< HEAD
 int AudioManagerStub::HandleSetAudioEffectParam(MessageParcel &data, MessageParcel &reply)
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
@@ -671,10 +672,34 @@ int AudioManagerStub::HandleGetAudioEffectParam(MessageParcel &data, MessageParc
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++)    {
         paramArray[i]->Marshalling(reply);
+=======
+int AudioManagerStub::HandleSetAudioEffectProperty(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    AudioEffectPropertyArray propertyArray = {};
+    for (int i = 0; i < size; i++) {
+        AudioEffectProperty prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    int32_t result = SetAudioEffectProperty(propertyArray);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleGetAudioEffectProperty(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectPropertyArray propertyArray = {};
+    int32_t result = GetAudioEffectProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++)    {
+        propertyArray.property[i].Marshalling(reply);
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     }
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
+<<<<<<< HEAD
 int AudioManagerStub::HandleSetAudioEnhanceParam(MessageParcel &data, MessageParcel &reply)
 {
     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
@@ -697,6 +722,29 @@ int AudioManagerStub::HandleGetAudioEnhanceParam(MessageParcel &data, MessagePar
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         paramArray[i]->Marshalling(reply);
+=======
+int AudioManagerStub::HandleSetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    AudioEnhancePropertyArray propertyArray = {};
+    for (int i = 0; i < size; i++) {
+        AudioEnhanceProperty prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    int32_t result = SetAudioEnhanceProperty(propertyArray);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+int AudioManagerStub::HandleGetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEnhancePropertyArray propertyArray = {};
+    int32_t result = GetAudioEnhanceProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     }
     reply.WriteInt32(result);
     return AUDIO_OK;

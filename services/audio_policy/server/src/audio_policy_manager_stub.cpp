@@ -1215,6 +1215,7 @@ void AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal(MessageParcel &
     bool result = GetPersistentMicMuteState();
     reply.WriteBool(result);
 }
+<<<<<<< HEAD
 void AudioPolicyManagerStub::GetSupportedAudioEnhanceParamInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioEnhanceParamArray paramArray = {};
@@ -1224,10 +1225,21 @@ void AudioPolicyManagerStub::GetSupportedAudioEnhanceParamInternal(MessageParcel
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         paramArray[i]->Marshalling(reply);
+=======
+void AudioPolicyManagerStub::GetSupportedAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEnhancePropertyArray propertyArray = {};
+    int32_t result = GetSupportedAudioEnhanceProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     }
     reply.WriteInt32(result);
     return;
 }
+<<<<<<< HEAD
 void AudioPolicyManagerStub::GetSupportedAudioEffectParamInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioEffectParamArray paramArray = {};
@@ -1237,10 +1249,45 @@ void AudioPolicyManagerStub::GetSupportedAudioEffectParamInternal(MessageParcel 
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++)    {
         paramArray[i]->Marshalling(reply);
+=======
+void AudioPolicyManagerStub::GetSupportedAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectPropertyArray propertyArray = {};
+    int32_t result = GetSupportedAudioEffectProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
     }
     reply.WriteInt32(result);
     return;
 }
+void AudioPolicyManagerStub::SetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    AudioEffectPropertyArray propertyArray = {};
+    for (int i = 0; i < size; i++) {
+        AudioEffectProperty prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    int32_t result = SetAudioEffectProperty(propertyArray);
+    reply.WriteInt32(result);
+}
+void AudioPolicyManagerStub::GetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectPropertyArray propertyArray = {};
+    int32_t result = GetAudioEffectProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++)    {
+        propertyArray.property[i].Marshalling(reply);
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
+    }
+    reply.WriteInt32(result);
+    return;
+}
+<<<<<<< HEAD
 void AudioPolicyManagerStub::SetAudioEffectParamInternal(MessageParcel &data, MessageParcel &reply)
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
@@ -1287,6 +1334,28 @@ void AudioPolicyManagerStub::GetAudioEnhanceParamInternal(MessageParcel &data, M
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         paramArray[i]->Marshalling(reply);
+=======
+void AudioPolicyManagerStub::SetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    AudioEnhancePropertyArray propertyArray = {};
+    for (int i = 0; i < size; i++) {
+        AudioEnhanceProperty prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    int32_t result = SetAudioEnhanceProperty(propertyArray);
+    reply.WriteInt32(result);
+}
+void AudioPolicyManagerStub::GetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEnhancePropertyArray propertyArray = {};
+    int32_t result = GetAudioEnhanceProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     }
     reply.WriteInt32(result);
     return;

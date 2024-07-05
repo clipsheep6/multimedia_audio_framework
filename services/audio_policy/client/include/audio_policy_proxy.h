@@ -289,6 +289,7 @@ public:
 
     int32_t ResetRingerModeMute() override;
 
+<<<<<<< HEAD
     int32_t GetSupportedAudioEffectParam(const StreamUsage &streamUsage,
                                          AudioEffectParamArray &audioEffectParamArray) override;
 
@@ -306,6 +307,19 @@ public:
 
     int32_t GetAudioEnhanceParam(const SourceType &sourceType,
                                  AudioEnhanceParamArray &audioEnhanceParamArray) override;
+=======
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
+
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
+
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;

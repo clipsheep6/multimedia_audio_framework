@@ -273,6 +273,7 @@ std::string AudioEnhanceChainManager::GetUpAndDownDevice()
 {
     return upAndDownDevice_;
 }
+<<<<<<< HEAD
 int32_t AudioEnhanceChainManager::SetAudioEnhanceParam(SourceType &sourceType,
                                                        AudioEnhanceParamArray &audioEnhanceParamArray)
 {
@@ -280,6 +281,13 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceParam(SourceType &sourceType,
 }
 int32_t AudioEnhanceChainManager::GetAudioEnhanceParam(const SourceType &sourceType,
                                                        AudioEnhanceParamArray &audioEnhanceParamArray)
+=======
+int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
+{
+    return AUDIO_OK;
+}
+int32_t AudioEnhanceChainManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
 {
     return AUDIO_OK;
 }

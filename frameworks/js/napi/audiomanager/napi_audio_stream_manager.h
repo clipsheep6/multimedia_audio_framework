@@ -70,12 +70,21 @@ private:
     static napi_value IsStreamActiveSync(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArray(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArraySync(napi_env env, napi_callback_info info);
+<<<<<<< HEAD
     static napi_value GetSupportedAudioEffectParam(napi_env env, napi_callback_info info);
     static napi_value GetSupportedAudioEnhanceParam(napi_env env, napi_callback_info info);
 	static napi_value SetAudioEnhanceParem(napi_env env, napi_callback_info info);
     static napi_value GetAudioEnhanceParem(napi_env env, napi_callback_info info);
 	static napi_value GetAudioEffectParam(napi_env env, napi_callback_info info);
     static napi_value SetAudioEffectParam(napi_env env, napi_callback_info info);
+=======
+    static napi_value GetSupportedAudioEffectProperty(napi_env env, napi_callback_info info);
+    static napi_value GetSupportedAudioEnhanceProperty(napi_env env, napi_callback_info info);
+	static napi_value SetAudioEnhanceProperty(napi_env env, napi_callback_info info);
+    static napi_value GetAudioEnhanceProperty(napi_env env, napi_callback_info info);
+	static napi_value GetAudioEffectProperty(napi_env env, napi_callback_info info);
+    static napi_value SetAudioEffectProperty(napi_env env, napi_callback_info info);
+>>>>>>> fc02a66ff145333e09d2b9f4d8d0bcad6edcbce6
     static napi_value GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);

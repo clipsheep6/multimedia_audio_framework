@@ -922,55 +922,6 @@ napi_status NapiParamUtils::SetCapturerChangeInfos(const napi_env &env,
     return napi_ok;
 }
 
-napi_status NapiParamUtils::SetEffectParam(const napi_env &env,
-    const AudioEffectParamArray &audioEffectParamArray, napi_value &result)
-{
-    int32_t position = 0;
-    napi_value jsEffectInofObj = nullptr;
-    napi_create_array_with_length(env, audioEffectParamArray.effectParamArray.size(), &result);
-    napi_create_object(env, &jsEffectInofObj);
-    for (const auto &effectParamArray : audioEffectParamArray.effectParamArray) {
-        SetValueUInt32(env, effectParamArray.deviceType, jsEffectInofObj);
-        SetValueString(env, effectParamArray.effectClass, jsEffectInofObj);
-        SetValueString(env, effectParamArray.effectParam, jsEffectInofObj);
-        napi_set_element(env, result, position, jsEffectInofObj);
-        position++;
-    }
-    return napi_ok;
-}
-
-napi_status NapiParamUtils::SetEnhanceParam(const napi_env &env,
-    const AudioEnhanceParamArray &audioEnhanceParamArray, napi_value &result)
-{
-    int32_t position = 0;
-    napi_value jsEffectInofObj = nullptr;
-    napi_create_array_with_length(env, audioEnhanceParamArray.enhanceParamArray.size(), &result);
-    napi_create_object(env, &jsEffectInofObj);
-    for (const auto &enhanceParamArray : audioEnhanceParamArray.enhanceParamArray) {
-        SetValueUInt32(env, effectParamArray.deviceType, jsEffectInofObj);
-        SetValueString(env, enhanceParamArray.enhanceClass, jsEffectInofObj);
-        SetValueString(env, enhanceParamArray.enhanceParam, jsEffectInofObj);
-        napi_set_element(env, result, position, jsEffectInofObj);
-        position++;
-    }
-    return napi_ok;
-}
-
-napi_status NapiParamUtils::SetEffectInfo(const napi_env &env,
-    const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result)
-{
-    int32_t position = 0;
-    napi_value jsEffectInofObj = nullptr;
-    napi_create_array_with_length(env, audioSceneEffectInfo.mode.size(), &result);
-    napi_create_object(env, &jsEffectInofObj);
-    for (const auto &mode : audioSceneEffectInfo.mode) {
-        SetValueUInt32(env, mode, jsEffectInofObj);
-        napi_set_element(env, result, position, jsEffectInofObj);
-        position++;
-    }
-    return napi_ok;
-}
-
 napi_status NapiParamUtils::GetAudioInterrupt(const napi_env &env, AudioInterrupt &audioInterrupt,
     napi_value in)
 {
@@ -1000,7 +951,20 @@ napi_status NapiParamUtils::SetValueInterruptAction(const napi_env &env, const I
     SetValueBoolean(env, "activated", interruptAction.activated, result);
     return napi_ok;
 }
-
+napi_status NapiParamUtils::SetEffectInfo(const napi_env &env,
+    const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result)
+{
+    int32_t position = 0;
+    napi_value jsEffectInofObj = nullptr;
+    napi_create_array_with_length(env, audioSceneEffectInfo.mode.size(), &result);
+    napi_create_object(env, &jsEffectInofObj);
+    for (const auto &mode : audioSceneEffectInfo.mode) {
+        SetValueUInt32(env, mode, jsEffectInofObj);
+        napi_set_element(env, result, position, jsEffectInofObj);
+        position++;
+    }
+    return napi_ok;
+}
 napi_status NapiParamUtils::GetSpatialDeviceState(napi_env env, AudioSpatialDeviceState *spatialDeviceState,
     napi_value in)
 {
@@ -1084,44 +1048,80 @@ napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
     return status;
 }
 
-napi_status NapiParamUtils::GetAudioEffectParamArray(napi_env env, AudioEffectParamArray &effectArray, napi_value in)
+napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env, AudioEffectPropertyArray &effectArray,
+                                                   napi_value in)
 {
     uint32_t arrayLen = 0;
     napi_get_array_length(env, in, &arrayLen);
     if (arrayLen == 0) {
         effectArray = {};
-        AUDIO_INFO_LOG("Error: GetAudioEffectParamArray vector is NULL!");
+        AUDIO_INFO_LOG("Error: Get Audio Effect Property vector is NULL!");
     }
 
     for (size_t i = 0; i < arrayLen; i++) {
-        AudioEffectParam element;
+        napi_value element;
+        AudioEffectProperty prop;
         napi_get_element(env, in, i, &element);
-        SetValueInt32(env, "deviceType", element.deviceType, in);
-        SetValueString(env, "effectClass", element.effectClass, in);
-        SetValueString(env, "effectParam", element.effectParam, in);
-        effectArray.push_back(element);
+        SetValueString(env, "effectClass", prop.effectClass, in);
+        SetValueString(env, "effectProp", prop.effectProp, in);
+        effectArray.property.push_back(prop);
     }
     return napi_ok;
 }
 
-napi_status NapiParamUtils::GetAudioEnhanceParamArray(napi_env env, AudioEnhanceParamArray &enhanceArray, napi_value in)
+napi_status NapiParamUtils::GetEnhancePropertyArray(napi_env env, AudioEnhancePropertyArray &enhanceArray,
+                                                    napi_value in)
 {
     uint32_t arrayLen = 0;
     napi_get_array_length(env, in, &arrayLen);
     if (arrayLen == 0) {
         enhanceArray = {};
-        AUDIO_INFO_LOG("Error: GetAudioEnhanceParamArray vector is NULL!");
+        AUDIO_INFO_LOG("Error: Get Audio Enhance Property vector is NULL!");
     }
 
     for (size_t i = 0; i < arrayLen; i++) {
-        AudioEnhanceParam element;
+        napi_value element;
+        AudioEnhanceProperty prop;
         napi_get_element(env, in, i, &element);
-        SetValueInt32(env, "deviceType", element.deviceType, in);
-        SetValueString(env, "enhanceClass", element.enhanceClass, in);
-        SetValueString(env, "enhanceParam", element.enhanceParam, in);
-        enhanceArray.push_back(element);
+        SetValueString(env, "enhanceClass", prop.enhanceClass, in);
+        SetValueString(env, "enhanceProp", prop.enhanceProp, in);
+        enhanceArray.property.push_back(prop);
     }
     return napi_ok;
 }
+
+napi_status NapiParamUtils::SetEnhanceProperty(const napi_env &env, const AudioEnhancePropertyArray &enhanceArray,
+                                               napi_value &result)
+{
+    int32_t position = 0;
+    napi_value jsEffectInofObj = nullptr;
+    napi_create_array_with_length(env, enhanceArray.property.size(), &result);
+    napi_create_object(env, &jsEffectInofObj);
+    for (const auto &property : enhanceArray.property) {
+        SetValueString(env, property.enhanceClass, jsEffectInofObj);
+        SetValueString(env, property.enhanceProp, jsEffectInofObj);
+        napi_set_element(env, result, position, jsEffectInofObj);
+        position++;
+    }
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetEffectProperty(const napi_env &env, const AudioEffectPropertyArray &effectArray,
+                                              napi_value &result)
+{
+    int32_t position = 0;
+    napi_value jsEffectInofObj = nullptr;
+    napi_create_array_with_length(env, effectArray.property.size(), &result);
+    napi_create_object(env, &jsEffectInofObj);
+    for (const auto &property : effectArray.property) {
+        SetValueString(env, property.effectClass, jsEffectInofObj);
+        SetValueString(env, property.effectProp, jsEffectInofObj);
+        napi_set_element(env, result, position, jsEffectInofObj);
+        position++;
+    }
+    return napi_ok;
+}
+
+
 } // namespace AudioStandard
 } // namespace OHOS
