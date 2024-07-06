@@ -57,6 +57,9 @@ const int32_t DECIMAL_EXPONENT = 10;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
 const uint32_t STRING_BUFFER_SIZE = 4096;
+const uint32_t RESET_FRAME_COUNT = 1000000;
+const uint32_t LOG_INTERVAL = 100;
+const uint32_t CLIENT_LOG_INTERVAL = 200;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
@@ -386,6 +389,24 @@ bool CasWithCompare(std::atomic<T> &atomicVar, T newValue, Compare compare)
 
     return true;
 }
+
+class AudioFrameChecker {
+public:
+    AudioFrameChecker(std::string tag, uint32_t logInterval)
+        : tag_(tag), logInterval_(logInterval), emptyFrameCount_(0), totalFrameCount_(0) {}
+
+    void ProcessFrame(const char* buffer, uint32_t length);
+
+private:
+    std::string tag_;
+    uint32_t logInterval_;
+    uint64_t emptyFrameCount_;
+    uint64_t totalFrameCount_;
+
+    bool IsFrameEmpty(const char* buffer, uint32_t length);
+    void EmptyFrameStatistics();
+    void ResetCounters();
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

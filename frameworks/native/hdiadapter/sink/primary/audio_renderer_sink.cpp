@@ -230,6 +230,7 @@ private:
     std::mutex switchMutex_;
     std::condition_variable switchCV_;
     std::string audioAttrInfo_ = "";
+    std::shared_ptr<AudioFrameChecker> frameChecker = nullptr;
 
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -735,6 +736,9 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     Trace::CountVolume("AudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
 
+    if (frameChecker) {
+        frameChecker->ProcessFrame(&data, 1); // 1 for one buffer
+    }
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
@@ -810,6 +814,7 @@ int32_t AudioRendererSinkInner::Start(void)
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, fileName, &dumpFile_);
     int32_t ret;
     InitLatencyMeasurement();
+    frameChecker = std::make_shared<AudioFrameChecker>("primary hdidata0", LOG_INTERVAL);
     if (!started_) {
         ret = audioRender_->Start(audioRender_);
         if (!ret) {

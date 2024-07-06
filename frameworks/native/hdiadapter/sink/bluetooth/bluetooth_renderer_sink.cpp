@@ -181,6 +181,7 @@ private:
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
     FILE *dumpFile_ = nullptr;
+    std::shared_ptr<AudioFrameChecker> frameChecker = nullptr;
 };
 
 BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatency)
@@ -502,6 +503,9 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         return ret;
     }
 
+    if (frameChecker) {
+        frameChecker->ProcessFrame(&data, 1); // 1 for one buffer
+    }
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
     while (true) {
         Trace::CountVolume("BluetoothRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
@@ -610,6 +614,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
 #endif
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_BLUETOOTH_RENDER_SINK_FILENAME, &dumpFile_);
 
+    frameChecker = std::make_shared<AudioFrameChecker>("bluetooth hdidata0", LOG_INTERVAL);
     int32_t ret;
 
     InitLatencyMeasurement();

@@ -142,6 +142,7 @@ public:
     std::string cachePath_;
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
+    std::string bundleName_ = "";
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -195,6 +196,7 @@ private:
     bool isOffloadAllowed_ = true;
 
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
+    std::shared_ptr<AudioFrameChecker> frameChecker = nullptr;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

@@ -149,6 +149,7 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
+    std::shared_ptr<AudioFrameChecker> frameChecker = nullptr;
 };
 
 RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string &deviceNetworkId)
@@ -355,6 +356,9 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
         return ERR_OPERATION_FAILED;
     }
 
+    if (frameChecker) {
+        frameChecker->ProcessFrame(&data, 1); // 1 for one buffer
+    }
     Trace::CountVolume("RemoteAudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     ret = audioRender_->RenderFrame(frameHal, writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "Render frame fail, ret %{public}x.", ret);
@@ -413,6 +417,8 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
     int32_t ret = audioRender_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Start fail, ret %{public}d.", ret);
     started_.store(true);
+
+    frameChecker = std::make_shared<AudioFrameChecker>("remote hdidata0", LOG_INTERVAL);
     return SUCCESS;
 }
 

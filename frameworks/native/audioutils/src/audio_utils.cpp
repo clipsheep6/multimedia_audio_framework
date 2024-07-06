@@ -1167,6 +1167,46 @@ std::string GetEncryptStr(const std::string &src)
 
     return dst;
 }
+
+void AudioFrameChecker::ProcessFrame(const char* buffer, uint32_t length)
+{
+    totalFrameCount_++;
+
+    if (IsFrameEmpty(buffer, length)) {
+        emptyFrameCount_++;
+    }
+
+    if (totalFrameCount_ % logInterval_ == 0) {
+        EmptyFrameStatistics();
+    }
+
+    if (totalFrameCount_ >= RESET_FRAME_COUNT) {
+        ResetCounters();
+    }
+}
+
+bool AudioFrameChecker::IsFrameEmpty(const char* buffer, uint32_t length)
+{
+    for (int i = 0; i < length; ++i) {
+        if (buffer[i] != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void AudioFrameChecker::EmptyFrameStatistics()
+{
+    AUDIO_INFO_LOG("%{public}s : %{public}zu/%{public}u total frame count %{public}zu", tag_.c_str(), emptyFrameCount_,
+        logInterval_, totalFrameCount_);
+    emptyFrameCount_ = 0;
+}
+
+void AudioFrameChecker::ResetCounters()
+{
+    totalFrameCount_ = 0;
+    emptyFrameCount_ = 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -1206,7 +1246,6 @@ void CallEndAndClear(CTrace **cTrace)
         *cTrace = nullptr;
     }
 }
-
 #ifdef __cplusplus
 }
 #endif
