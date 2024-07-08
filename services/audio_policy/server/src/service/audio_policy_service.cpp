@@ -3157,6 +3157,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
 bool AudioPolicyService::IsDeviceActive(InternalDeviceType deviceType) const
 {
     AUDIO_INFO_LOG("type [%{public}d]", deviceType);
+    CHECK_AND_RETURN_RET(currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID, false);
     return currentActiveDevice_.deviceType_ == deviceType;
 }
 
