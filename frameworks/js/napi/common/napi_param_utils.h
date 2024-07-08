@@ -197,14 +197,20 @@ public:
         const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result);
     static napi_status GetAudioInterrupt(const napi_env &env, AudioInterrupt &audioInterrupt, napi_value in);
     static napi_status SetValueInterruptAction(const napi_env &env, const InterruptAction &interruptAction,
-        napi_value &result);
+                                               napi_value &result);
     static napi_status GetSpatialDeviceState(napi_env env, AudioSpatialDeviceState *spatialDeviceState,
-        napi_value in);
+                                             napi_value in);
     static napi_status GetExtraParametersSubKV(napi_env env, std::vector<std::pair<std::string, std::string>> &subKV,
-        napi_value in);
+                                               napi_value in);
+    static napi_status SetEffectProperty(const napi_env &env,
+                                         const AudioEffectPropertyArray &effectArray, napi_value &result);
+    static napi_status SetEnhanceProperty(const napi_env &env,
+                                          const AudioEnhancePropertyArray &enhanceArray, napi_value &result);
+    static napi_status GetEffectPropertyArray(napi_env env, AudioEffectPropertyArray &effectArray, napi_value in);
+    static napi_status GetEnhancePropertyArray(napi_env env, AudioEnhancePropertyArray &enhanceArray, napi_value in);
     static napi_status GetExtraParametersVector(const napi_env &env, std::vector<std::string> &subKeys, napi_value in);
     static napi_status SetExtraAudioParametersInfo(const napi_env &env,
-        const std::vector<std::pair<std::string, std::string>> &extraParameters, napi_value &result);
+           const std::vector<std::pair<std::string, std::string>> &extraParameters, napi_value &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS

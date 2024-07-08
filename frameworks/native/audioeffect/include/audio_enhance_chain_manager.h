@@ -46,6 +46,8 @@ public:
         const std::string &downDevice);
     bool IsEmptyEnhanceChain();
     int32_t InitEnhanceBuffer();
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
 
 private:
     int32_t SetAudioEnhanceChainDynamic(const std::string &sceneType, const std::string &sceneMode,
