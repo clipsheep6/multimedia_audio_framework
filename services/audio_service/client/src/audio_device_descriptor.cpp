@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "AudioDeviceDescriptor"
+#endif
 
 #include "audio_log.h"
 #include "audio_system_manager.h"
