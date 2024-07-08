@@ -21,7 +21,8 @@
 /* SAID: 3001 */
 namespace OHOS {
 namespace AudioStandard {
-    enum class AudioServerInterfaceCode {
+    enum class AudioServerInterfaceCode
+    {
         GET_AUDIO_PARAMETER,
         SET_AUDIO_PARAMETER,
         GET_EXTRA_AUDIO_PARAMETERS,
@@ -74,10 +75,15 @@ namespace AudioStandard {
         SET_ASR_VOICE_MUTE_MODE,
         IS_WHISPERING,
         GET_EFFECT_OFFLOAD_ENABLED,
+        GET_AUDIO_ENHANCE_PROPERTY,
+        GET_AUDIO_EFFECT_PROPERTY,
+        SET_AUDIO_ENHANCE_PROPERTY,
+        SET_AUDIO_EFFECT_PROPERTY,
         SUSPEND_RENDERSINK,
         RESTORE_RENDERSINK,
         LOAD_HDI_EFFECT_MODEL,
-        AUDIO_SERVER_CODE_MAX = LOAD_HDI_EFFECT_MODEL,
+        UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED,
+        AUDIO_SERVER_CODE_MAX = UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED,
     };
 } // namespace AudioStandard
 } // namespace OHOS

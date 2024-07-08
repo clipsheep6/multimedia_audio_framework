@@ -99,7 +99,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_ULTRASONIC,
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_VOICE_MESSAGE,
-    SOURCE_TYPE_REMOTE_CAST
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION
 };
 
 
@@ -329,6 +330,20 @@ void AudioServer::OnStop()
     AUDIO_DEBUG_LOG("OnStop");
 }
 
+void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
+    const std::string &extraSceneType)
+{
+    if (mainkey == "audio_effect" && subkey == "update_audio_effect_type") {
+        AUDIO_DEBUG_LOG("mainkey is %{public}s, subkey is %{public}s, extraSceneType is %{public}s",
+            mainkey.c_str(), subkey.c_str(), extraSceneType.c_str());
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+        }
+        audioEffectChainManager->UpdateExtraSceneType(extraSceneType);
+    }
+}
+
 int32_t AudioServer::SetExtraParameters(const std::string& key,
     const std::vector<std::pair<std::string, std::string>>& kvpairs)
 {
@@ -354,6 +369,7 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
             value += it->first + "=" + it->second + ";";
+            RecognizeAudioEffectType(key, it->first, it->second);
         } else {
             match = false;
             break;
@@ -1895,6 +1911,55 @@ void AudioServer::LoadHdiEffectModel()
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->InitHdiState();
+}
+
+void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID, "refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->UpdateEffectBtOffloadSupported(isSupported);
+}
+int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+                             ERR_PERMISSION_DENIED, "SetA udio Effect Property refused for %{public}d", callingUid);
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    return audioEffectChainManager->SetAudioEffectProperty(propertyArray);
+}
+
+int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+                             ERR_PERMISSION_DENIED, "Get Audio Effect Property refused for %{public}d", callingUid);
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    return audioEffectChainManager->GetAudioEffectProperty(propertyArray);
+}
+
+int32_t AudioServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+                             ERR_PERMISSION_DENIED, "Set Audio Enhance Property refused for %{public}d", callingUid);
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+    return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray);
+}
+
+int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+                             ERR_PERMISSION_DENIED, "Get Audio Enhance Property refused for %{public}d", callingUid);
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+    return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray);
 }
 } // namespace AudioStandard
 } // namespace OHOS

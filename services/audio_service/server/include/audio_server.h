@@ -93,6 +93,13 @@ public:
     int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
 
+    // for effect
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+    // for enhance
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
 
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
@@ -154,6 +161,8 @@ public:
     int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
 
     void LoadHdiEffectModel() override;
+
+    void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -179,6 +188,8 @@ private:
     const std::string GetUsbParameter();
     void WriteServiceStartupError();
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
+    void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
+        const std::string &extraSceneType);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

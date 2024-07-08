@@ -183,8 +183,8 @@ ohos_shared_library("audio_policy_service") {
     "ability_runtime:extension_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libprivacy_sdk",
-    "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
@@ -316,12 +316,14 @@ ohos_prebuilt_etc("audio_converter_config") {
 
 ohos_prebuilt_etc("audio_config.para") {
   source = "etc/audio_config.para"
+  subsystem_name = "multimedia"
   part_name = "audio_framework"
   module_install_dir = "etc/param"
 }
 
 ohos_prebuilt_etc("audio_config.para.dac") {
   source = "etc/audio_config.para.dac"
+  subsystem_name = "multimedia"
   part_name = "audio_framework"
   module_install_dir = "etc/param"
 }

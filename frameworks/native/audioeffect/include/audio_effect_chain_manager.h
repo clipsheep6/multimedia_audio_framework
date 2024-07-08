@@ -129,8 +129,12 @@ public:
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
+    void UpdateExtraSceneType(const std::string &extraSceneType);
     void InitHdiState();
+    void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -170,6 +174,7 @@ private:
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     std::string deviceClass_ = "";
+    std::string extraSceneType_ = "0";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
     bool spatializationEnabled_ = false;
@@ -177,6 +182,7 @@ private:
     bool btOffloadEnabled_ = false;
     bool spkOffloadEnabled_ = false;
     bool initializedLogFlag_ = true;
+    bool btOffloadSupported_ = false;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     int32_t hdiSceneType_ = 0;
     int32_t hdiEffectMode_ = 0;

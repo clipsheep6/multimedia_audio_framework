@@ -415,8 +415,6 @@ public:
 
     void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    void OffloadStartPlayingIfOffloadMode(uint64_t sessionId);
-
     int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
 
     int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
@@ -516,6 +514,14 @@ public:
     bool IsRingerModeMute();
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
+    // for effect
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    // for enhance
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -594,8 +600,6 @@ private:
     int32_t SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     int32_t HandleActiveDevice(DeviceType deviceType);
-
-    int32_t HandleA2dpDevice(DeviceType deviceType);
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
@@ -937,6 +941,8 @@ private:
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
 
     void LoadHdiEffectModel();
+
+    void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

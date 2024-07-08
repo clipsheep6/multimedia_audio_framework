@@ -58,9 +58,9 @@ private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
     static bool CheckContextStatus(std::shared_ptr<AudioStreamMgrAsyncContext> context);
     static bool CheckAudioStreamManagerStatus(NapiAudioStreamMgr *napi,
-        std::shared_ptr<AudioStreamMgrAsyncContext> context);
-    static NapiAudioStreamMgr* GetParamWithSync(const napi_env &env, napi_callback_info info,
-    size_t &argc, napi_value *args);
+                                              std::shared_ptr<AudioStreamMgrAsyncContext> context);
+    static NapiAudioStreamMgr *GetParamWithSync(const napi_env &env, napi_callback_info info,
+                                                size_t &argc, napi_value *args);
     static napi_value GetCurrentAudioRendererInfos(napi_env env, napi_callback_info info);
     static napi_value GetCurrentAudioRendererInfosSync(napi_env env, napi_callback_info info);
     static napi_value GetCurrentAudioCapturerInfos(napi_env env, napi_callback_info info);
@@ -70,16 +70,22 @@ private:
     static napi_value IsStreamActiveSync(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArray(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArraySync(napi_env env, napi_callback_info info);
+    static napi_value GetSupportedAudioEffectProperty(napi_env env, napi_callback_info info);
+    static napi_value GetSupportedAudioEnhanceProperty(napi_env env, napi_callback_info info);
+    static napi_value SetAudioEnhanceProperty(napi_env env, napi_callback_info info);
+    static napi_value GetAudioEnhanceProperty(napi_env env, napi_callback_info info);
+    static napi_value GetAudioEffectProperty(napi_env env, napi_callback_info info);
+    static napi_value SetAudioEffectProperty(napi_env env, napi_callback_info info);
     static napi_value GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis,
-        napi_value *args, const std::string &cbName);
+                                 napi_value *args, const std::string &cbName);
     static void RegisterCapturerStateChangeCallback(napi_env env, napi_value *args,
-        const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
+                                                    const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
     static void RegisterRendererStateChangeCallback(napi_env env, napi_value *args,
-        const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
-    static void  UnregisterCallback(napi_env env, napi_value jsThis, const std::string &cbName);
+                                                    const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
+    static void UnregisterCallback(napi_env env, napi_value jsThis, const std::string &cbName);
 
     napi_env env_;
     AudioStreamManager *audioStreamMngr_;

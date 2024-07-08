@@ -199,6 +199,11 @@ const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MOD
     {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
 };
 
+const std::map<std::string, AudioEffectMode> effectModeMap = {
+    {"EFFECT_NONE", EFFECT_NONE},
+    {"EFFECT_DEFAULT", EFFECT_DEFAULT},
+};
+
 const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_SCENE_MODES {
     {ENHANCE_NONE, "ENHANCE_NONE"},
     {ENHANCE_DEFAULT, "ENHANCE_DEFAULT"},
