@@ -33,7 +33,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioPolicyParser : public Parser {
 public:
-    static constexpr char CHIP_PROD_CONFIG_FILE[] = "/chip_prod/etc/audio/audio_policy_config_new.xml";
+    static constexpr char CHIP_PROD_CONFIG_FILE[] = "/chip_prod/etc/audio/audio_policy_config.xml";
     static constexpr char CONFIG_FILE[] = "vendor/etc/audio/audio_policy_config.xml";
 
     bool LoadConfiguration() final;
@@ -81,7 +81,6 @@ private:
     void HandleUpdateRouteSupportParsed(std::string &value);
     PAConfigType GetPaConfigType(std::string &name);
 
-    void SplitStringToSet(std::string &str, std::set<uint32_t> &result);
     void SplitStringToList(std::string &str, std::list<std::string> &result);
     void SplitChannelStringToSet(std::string &str, std::set<uint32_t> &result);
 

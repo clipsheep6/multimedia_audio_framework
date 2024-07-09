@@ -134,9 +134,9 @@ private:
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
     IAudioSourceCallback *paramCb_ = nullptr;
     sptr<IAudioCapture> audioCapture_ = nullptr;
-    struct AudioPort audioPort_;
+    struct AudioPort audioPort_ = {};
     IAudioSourceAttr attr_ = {};
-    std::string deviceNetworkId_;
+    std::string deviceNetworkId_ = "";
     uint32_t captureId_ = 0;
 
 #ifdef DEBUG_DIRECT_USE_HDI
@@ -319,7 +319,7 @@ int32_t RemoteFastAudioCapturerSourceInner::InitAshmem(const struct AudioSampleA
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "InitAshmem: Audio capture is null.");
 
     int32_t totalBufferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
-    int32_t reqSize = totalBufferInMs * (attr_.sampleRate / 1000);
+    int32_t reqSize = totalBufferInMs * static_cast<int32_t>(attr_.sampleRate / 1000);
 
     struct AudioMmapBufferDescriptor desc;
     int32_t ret = audioCapture_->ReqMmapBuffer(reqSize, desc);

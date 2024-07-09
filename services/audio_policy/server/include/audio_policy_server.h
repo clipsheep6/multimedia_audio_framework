@@ -29,6 +29,8 @@
 #include "perm_state_change_callback_customize.h"
 #include "power_state_callback_stub.h"
 #include "power_state_listener.h"
+#include "common_event_subscriber.h"
+#include "common_event_support.h"
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
@@ -40,7 +42,6 @@
 #include "audio_policy_manager_stub.h"
 #include "audio_policy_client_proxy.h"
 #include "audio_server_death_recipient.h"
-#include "audio_service_dump.h"
 #include "session_processor.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
@@ -56,6 +57,7 @@ constexpr uint32_t LOCAL_USER_ID = 100;
 class AudioPolicyService;
 class AudioInterruptService;
 class AudioPolicyServerHandler;
+class BluetoothEventSubscriber;
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
@@ -356,7 +358,8 @@ public:
 
     int32_t UnsetAudioDeviceRefinerCallback() override;
 
-    int32_t TriggerFetchDevice() override;
+    int32_t TriggerFetchDevice(
+        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN) override;
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) override;
 
@@ -404,6 +407,7 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
+    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     // for hidump
     void AudioDevicesDump(std::string &dumpString);
     void AudioModeDump(std::string &dumpString);
@@ -453,12 +457,10 @@ private:
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
 
     // offload session
-    void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
-        int64_t deactivateSessionId);
+    void OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
 
-    void CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
-        int64_t deactivateSessionId);
+    void CheckStreamMode(const int64_t activateSessionId);
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
@@ -507,7 +509,10 @@ private:
     void RegisterDataObserver();
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
-
+    void RegisterSyncHibernateListener();
+    void UnRegisterSyncHibernateListener();
+    void RegisterCommonEventReceiver();
+    void UnregisterCommonEventReceiver();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
     void InitPolicyDumpMap();
@@ -527,6 +532,7 @@ private:
 #endif
     std::vector<pid_t> clientDiedListenerState_;
     sptr<PowerStateListener> powerStateListener_;
+    sptr<SyncHibernateListener> syncHibernateListener_;
     bool powerStateCallbackRegister_;
 
     std::mutex keyEventMutex_;
@@ -541,6 +547,7 @@ private:
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+    std::shared_ptr<BluetoothEventSubscriber> bluetoothEventSubscriberOb_ = nullptr;
     bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
 
@@ -578,6 +585,19 @@ public:
     }
 private:
     AudioPolicyServer *audioPolicyServer_;
+};
+
+class BluetoothEventSubscriber : public EventFwk::CommonEventSubscriber,
+                                 public std::enable_shared_from_this<BluetoothEventSubscriber> {
+public:
+    explicit BluetoothEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
+        sptr<AudioPolicyServer> audioPolicyServer) : EventFwk::CommonEventSubscriber(subscribeInfo),
+        audioPolicyServer_(audioPolicyServer) {}
+    ~BluetoothEventSubscriber() {}
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
+private:
+    BluetoothEventSubscriber() = default;
+    sptr<AudioPolicyServer> audioPolicyServer_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

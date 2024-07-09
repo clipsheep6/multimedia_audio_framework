@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Copyright (c) 2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,20 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
-import("//build/ohos/ace/ace.gni")
 import("//build/test.gni")
-import("../../../../../../config.gni")
-import("../../../../../../multimedia_aafwk.gni")
 
-module_output_path = "multimedia_audio_framework/audio_stream"
+module_output_path = "multimedia_audio_framework/plaback_capturer"
 
-ohos_unittest("audio_stream_unit_test") {
+ohos_unittest("playback_capturer_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
-    "./include",
-    "../../../include",
-    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../include",
+    "../../../audioutils/include",
+    "./../../../../../interfaces/inner_api/native/audiocommon/include",
+    "./../../../../../interfaces/inner_api/native/audiorenderer/include",
   ]
 
   cflags = [
@@ -32,13 +29,7 @@ ohos_unittest("audio_stream_unit_test") {
     "-Werror",
   ]
 
-  external_deps = [
-    "hilog:libhilog",
-    "ipc:ipc_single",
-    "pulseaudio:pulse",
-  ]
+  sources = [ "playback_capturer_manager_unit_test.cpp" ]
 
-  sources = [ "src/audio_stream_unit_test.cpp" ]
-
-  deps = [ "../../../../../../services/audio_service:audio_client" ]
+  deps = [ "../../../playbackcapturer:playback_capturer" ]
 }

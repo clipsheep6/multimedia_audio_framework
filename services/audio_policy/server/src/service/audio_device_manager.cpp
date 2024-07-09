@@ -86,7 +86,7 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
 
     for (auto &devInfo : deviceList) {
         if ((devInfo.deviceType == devDesc->deviceType_) &&
-            ((devRole == devDesc->deviceRole_) && ((devInfo.deviceRole & devRole) != 0)) &&
+            (devRole == devDesc->deviceRole_) &&
             ((devInfo.deviceUsage & devUsage) != 0) &&
             ((devInfo.deviceCategory == devDesc->deviceCategory_) ||
             ((devInfo.deviceCategory & devDesc->deviceCategory_) != 0))) {
@@ -722,6 +722,16 @@ void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isCo
     }
 }
 
+bool AudioDeviceManager::GetScoState()
+{
+    for (const auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == CONNECTED) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor> &d,
     const DeviceInfoUpdateCommand updateCommand)
 {
@@ -956,6 +966,15 @@ DeviceUsage AudioDeviceManager::GetDeviceUsage(const AudioDeviceDescriptor &desc
     }
 
     return usage;
+}
+
+void AudioDeviceManager::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+{
+    for (auto device : connectedDevices_) {
+        if (device->macAddress_ == macAddress) {
+            device->deviceName_ = deviceName;
+        }
+    }
 }
 }
 }

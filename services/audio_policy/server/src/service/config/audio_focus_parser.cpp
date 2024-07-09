@@ -84,7 +84,9 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
     {"SOURCE_TYPE_VOICE_MESSAGE",
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_MESSAGE, false}},
     {"SOURCE_TYPE_REMOTE_CAST",
-        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_REMOTE_CAST, false}}
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_REMOTE_CAST, false}},
+    {"SOURCE_TYPE_VOICE_TRANSCRIPTION",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION, false}}
 };
 
 // Initialize action map with string vs InterruptActionType
@@ -183,6 +185,22 @@ void AudioFocusParser::WriteConfigErrorEvent()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+void AudioFocusParser::ParseFocusChildrenMap(xmlNode *node, const std::string &curStream,
+    std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
+{
+    xmlNode *sNode = node;
+    while (sNode) {
+        if (sNode->type == XML_ELEMENT_NODE) {
+            if (!xmlStrcmp(sNode->name, reinterpret_cast<const xmlChar*>("deny"))) {
+                ParseRejectedStreams(sNode->children, curStream, focusMap);
+            } else {
+                ParseAllowedStreams(sNode->children, curStream, focusMap);
+            }
+        }
+        sNode = sNode->next;
+    }
+}
+
 void AudioFocusParser::ParseFocusMap(xmlNode *node, const std::string &curStream,
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
@@ -191,17 +209,7 @@ void AudioFocusParser::ParseFocusMap(xmlNode *node, const std::string &curStream
         if (currNode->type == XML_ELEMENT_NODE) {
             if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_table"))) {
                 AUDIO_DEBUG_LOG("node type: Element, name: %s", currNode->name);
-                xmlNode *sNode = currNode->children;
-                while (sNode) {
-                    if (sNode->type == XML_ELEMENT_NODE) {
-                        if (!xmlStrcmp(sNode->name, reinterpret_cast<const xmlChar*>("deny"))) {
-                            ParseRejectedStreams(sNode->children, curStream, focusMap);
-                        } else {
-                            ParseAllowedStreams(sNode->children, curStream, focusMap);
-                        }
-                    }
-                    sNode = sNode->next;
-                }
+                ParseFocusChildrenMap(currNode->children, curStream, focusMap);
             }
         }
         currNode = currNode->next;

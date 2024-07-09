@@ -44,6 +44,10 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
 {
     Trace trace("ProAudioStreamManager::CreateRender");
     AUDIO_DEBUG_LOG("Create renderer start,manager type:%{public}d", managerType_);
+    if (playbackEngine_ != nullptr) {
+        AUDIO_ERR_LOG("playbackEngine_ is not nullptr! Only one direct stream is supported");
+        return ERR_NOT_SUPPORTED;
+    }
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
 
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig);
@@ -169,8 +173,8 @@ int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRende
     if (!playbackEngine_) {
         DeviceInfo deviceInfo;
         AudioProcessConfig config = stream->GetAudioProcessConfig();
-        bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
+        bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+        CHECK_AND_RETURN_RET_LOG(result, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
         playbackEngine_ = std::make_unique<NoneMixEngine>(deviceInfo, managerType_ == VOIP_PLAYBACK);
         ret = playbackEngine_->AddRenderer(stream);
     } else {
@@ -184,7 +188,7 @@ std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(Aud
 {
     Trace trace("ProAudioStreamManager::CreateRendererStream");
     std::lock_guard<std::mutex> lock(paElementsMutex_);
-    bool isDirectStream = managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK;
+    bool isDirectStream = managerType_ == DIRECT_PLAYBACK; // direct stream (high resolution) or direct VoIP stream
     std::shared_ptr<ProRendererStreamImpl> rendererStream =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirectStream);
     if (rendererStream->InitParams() != SUCCESS) {

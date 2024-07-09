@@ -50,6 +50,7 @@
 #include "audio_stream_tracker.h"
 #include "audio_system_manager.h"
 #include "audio_utils.h"
+#include "futex_tool.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "volume_ramp.h"
@@ -123,6 +124,8 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
+    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_, operation,
+        result);
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
@@ -132,28 +135,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
     }
-    // read/write operation may print many log, use debug.
-    if (operation == UPDATE_STREAM) {
-        AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
-        // notify write if blocked
-        writeDataCV_.notify_all();
-        return SUCCESS;
-    }
 
-    bool logFlag = true;
-    if (operation == UNDERFLOW_COUNT_ADD) {
-        logFlag = false;
-        if (!offloadEnable_) {
-            underrunCount_++;
-        }
-        AUDIO_DEBUG_LOG("recv underrun %{public}d", underrunCount_);
-        // in plan next: do more to reduce underrun
-        writeDataCV_.notify_all();
-        return SUCCESS;
-    }
-    if (logFlag) {
-        AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
-    }
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
     notifiedResult_ = result;
@@ -528,6 +510,7 @@ int32_t RendererInClientInner::InitIpcStream()
 
     ret = ipcStream_->GetAudioSessionID(sessionId_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed:%{public}d", ret);
+    traceTag_ = "RendererInClient::sessionId:" + std::to_string(sessionId_);
     InitCallbackHandler();
     return SUCCESS;
 }
@@ -690,9 +673,8 @@ int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
 
 int32_t RendererInClientInner::GetLatency(uint64_t &latency)
 {
-    // in plan: 150000 for debug
-    latency = 150000; // unit is us, 150000 is 150ms
-    return SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    return ipcStream_->GetLatency(latency);
 }
 
 int32_t RendererInClientInner::SetAudioStreamType(AudioStreamType audioStreamType)
@@ -705,6 +687,13 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetStreamVolume(volume);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetClientVolume();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Set Client Volume failed:%{public}u", ret);
+        return -1;
+    }
+    AUDIO_INFO_LOG("SetClientVolume success, volume: %{public}f", volume);
     return SUCCESS;
 }
 
@@ -976,7 +965,10 @@ void RendererInClientInner::WriteCallbackFunc()
         if (!WaitForRunning()) {
             continue;
         }
-        if (!cbBufferQueue_.IsEmpty()) {
+        if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
+            AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
+        }
+        while (!cbBufferQueue_.IsEmpty()) {
             Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
             // If client didn't call Enqueue in OnWriteData, pop will block here.
             BufferDesc temp = cbBufferQueue_.Pop();
@@ -984,7 +976,7 @@ void RendererInClientInner::WriteCallbackFunc()
                 AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
                 break;
             }
-            if (state_ != RUNNING) { continue; }
+            if (state_ != RUNNING) { break; }
             traceQueuePop.End();
             // call write here.
             ProcessWriteInner(temp);
@@ -1281,7 +1273,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
         std::lock_guard<std::mutex> lock(writeDataMutex_);
         state_ = PAUSED;
     }
-    writeDataCV_.notify_all();
+    FutexTool::FutexWake(clientBuffer_->GetFutex());
     statusLock.unlock();
 
     // in plan: call HiSysEventWrite
@@ -1301,7 +1293,7 @@ bool RendererInClientInner::StopAudioStream()
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     ResetRingerModeMute();
     if (!offloadEnable_) {
-        DrainAudioStream();
+        DrainAudioStream(true);
     }
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == STOPPED) {
@@ -1342,7 +1334,7 @@ bool RendererInClientInner::StopAudioStream()
         std::lock_guard<std::mutex> lock(writeDataMutex_);
         state_ = STOPPED;
     }
-    writeDataCV_.notify_all();
+    FutexTool::FutexWake(clientBuffer_->GetFutex());
     statusLock.unlock();
 
     // in plan: call HiSysEventWrite
@@ -1355,6 +1347,7 @@ bool RendererInClientInner::StopAudioStream()
 
 bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
+    AUDIO_INFO_LOG("Enter");
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already released, do nothing");
@@ -1372,15 +1365,14 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     }
 
     // no lock, call release in any case, include blocked case.
-    {
-        std::lock_guard<std::mutex> runnerlock(runnerMutex_);
-        if (releaseRunner && callbackHandler_ != nullptr) {
-            AUDIO_INFO_LOG("runner remove");
-            callbackHandler_->ReleaseEventRunner();
-            runnerReleased_ = true;
-            callbackHandler_ = nullptr;
-        }
+    std::unique_lock<std::mutex> runnerlock(runnerMutex_);
+    if (releaseRunner && callbackHandler_ != nullptr) {
+        AUDIO_INFO_LOG("runner remove");
+        callbackHandler_->ReleaseEventRunner();
+        runnerReleased_ = true;
+        callbackHandler_ = nullptr;
     }
+    runnerlock.unlock();
 
     // clear write callback
     if (renderMode_ == RENDER_MODE_CALLBACK) {
@@ -1390,7 +1382,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
             cbBufferQueue_.PushNoWait({nullptr, 0, 0});
         }
         cbThreadCv_.notify_all();
-        writeDataCV_.notify_all();
+        FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
         if (callbackLoop_.joinable()) {
             callbackLoop_.join();
         }
@@ -1484,7 +1476,7 @@ int32_t RendererInClientInner::DrainRingCache()
     return SUCCESS;
 }
 
-bool RendererInClientInner::DrainAudioStream()
+bool RendererInClientInner::DrainAudioStream(bool stopFlag)
 {
     Trace trace("RendererInClientInner::DrainAudioStream " + std::to_string(sessionId_));
     std::lock_guard<std::mutex> statusLock(statusMutex_);
@@ -1496,7 +1488,8 @@ bool RendererInClientInner::DrainAudioStream()
     CHECK_AND_RETURN_RET_LOG(WriteCacheData(true) == SUCCESS, false, "Drain cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->Drain();
+    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
+    int32_t ret = ipcStream_->Drain(stopFlag);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Drain call server failed:%{public}u", ret);
         return false;
@@ -1541,7 +1534,7 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
     int32_t ret = WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
-    return ret <= 0 ? ret : pcmBufferSize;
+    return ret <= 0 ? ret : static_cast<int32_t>(pcmBufferSize);
 }
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
@@ -1556,6 +1549,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
     speedCached = false;
 #ifdef SONIC_ENABLE
     if (!isEqual(speed_, 1.0f)) {
+        Trace trace(traceTag_ + " ProcessSpeed");
         if (audioSpeed_ == nullptr) {
             AUDIO_ERR_LOG("audioSpeed_ is nullptr, use speed default 1.0");
             return true;
@@ -1571,7 +1565,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
             return false;
         }
         buffer = speedBuffer_.get();
-        bufferSize = outBufferSize;
+        bufferSize = static_cast<size_t>(outBufferSize);
         speedCached = true;
     }
 #endif
@@ -1656,9 +1650,11 @@ int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize
 
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 {
-    Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
+    // eg: RendererInClient::sessionId:100001 WriteSize:3840
+    Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
+    Trace::CountVolume(traceTag_, *buffer);
     CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
     std::lock_guard<std::mutex> lock(writeMutex_);
 
@@ -1739,39 +1735,45 @@ void RendererInClientInner::ReportDataToResSched()
 
 int32_t RendererInClientInner::WriteCacheData(bool isDrain)
 {
-    std::string str = isDrain ? "RendererInClientInner::WriteCacheData" : "RendererInClientInner::DrainCacheData";
-    Trace traceCache(str);
+    Trace traceCache(isDrain ? "RendererInClientInner::DrainCacheData" : "RendererInClientInner::WriteCacheData");
 
     OptResult result = ringCache_->GetReadableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_OPERATION_FAILED, "ring cache unreadable");
-    size_t readableSize = result.size;
-    if (readableSize == 0) {
+    if (result.size == 0) {
         AUDIO_WARNING_LOG("Readable size is already zero");
         return SUCCESS;
     }
-    size_t targetSize = isDrain ? std::min(readableSize, clientSpanSizeInByte_) : clientSpanSizeInByte_;
+    size_t targetSize = isDrain ? std::min(result.size, clientSpanSizeInByte_) : clientSpanSizeInByte_;
 
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
 
-    int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
-    std::unique_lock<std::mutex> lock(writeDataMutex_);
-    bool stopWaiting = writeDataCV_.wait_for(lock, std::chrono::milliseconds(timeout), [this, &sizeInFrame] {
+    int32_t tryCount = 3; // try futex wait for 3 times.
+    FutexCode futexRes = FUTEX_OPERATION_FAILED;
+    while (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_ && tryCount > 0) {
+        tryCount--;
+        int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
+        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) *
+            AUDIO_US_PER_SECOND);
+        CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
+        if (futexRes == FUTEX_TIMEOUT) {
+            AUDIO_WARNING_LOG("write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
+            return ERROR;
+        }
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
-        return (state_ != RUNNING) || (sizeInFrame >= 0 && static_cast<uint32_t>(sizeInFrame) >= spanSizeInFrame_);
-    });
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write while state is not running");
-    CHECK_AND_RETURN_RET_LOG(stopWaiting == true, ERROR, "write data time out, mode is %{public}s",
-        (offloadEnable_ ? "offload" : "normal"));
+        if (futexRes == FUTEX_SUCCESS) { break; }
+    }
 
+    if (sizeInFrame < 0 || static_cast<uint32_t>(clientBuffer_->GetAvailableDataFrames()) < spanSizeInFrame_) {
+        AUDIO_ERR_LOG("failed: sizeInFrame is:%{public}d, futexRes:%{public}d", sizeInFrame, futexRes);
+        return ERROR;
+    }
     BufferDesc desc = {};
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
     int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
     result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
-    AUDIO_DEBUG_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_ "
-        "%{public}u", curWriteIndex, spanSizeInFrame_);
 
     // volume process in client
     if (volumeRamp_.IsActive()) {
@@ -1910,7 +1912,9 @@ int32_t RendererInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
 
 uint32_t RendererInClientInner::GetUnderflowCount()
 {
-    return underrunCount_;
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, 0, "buffer is not inited");
+
+    return clientBuffer_->GetUnderrunCount();
 }
 
 uint32_t RendererInClientInner::GetOverflowCount()
@@ -1921,7 +1925,8 @@ uint32_t RendererInClientInner::GetOverflowCount()
 
 void RendererInClientInner::SetUnderflowCount(uint32_t underflowCount)
 {
-    underrunCount_ = underflowCount;
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "buffer is not inited");
+    clientBuffer_->SetUnderrunCount(underflowCount);
 }
 
 void RendererInClientInner::SetOverflowCount(uint32_t overflowCount)
@@ -2001,7 +2006,7 @@ void RendererInClientInner::UnsetCapturerPeriodPositionCallback()
 
 int32_t RendererInClientInner::SetRendererSamplingRate(uint32_t sampleRate)
 {
-    AUDIO_ERR_LOG("SetRendererSamplingRate to %{publid}d is not supported", sampleRate);
+    AUDIO_ERR_LOG("SetRendererSamplingRate to %{public}d is not supported", sampleRate);
     return ERROR;
 }
 
@@ -2075,17 +2080,17 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 {
     info.cachePath = cachePath_;
-    info.underFlowCount = underrunCount_;
+    info.underFlowCount = GetUnderflowCount();
     info.effectMode = effectMode_;
     info.renderRate = rendererRate_;
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;
     info.volume = clientVolume_;
 
-    info.frameMarkPosition = rendererMarkPosition_;
+    info.frameMarkPosition = static_cast<uint64_t>(rendererMarkPosition_);
     info.renderPositionCb = rendererPositionCallback_;
 
-    info.framePeriodNumber = rendererPeriodSize_;
+    info.framePeriodNumber = static_cast<uint64_t>(rendererPeriodSize_);
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
 
     info.rendererWriteCallback = writeCb_;
@@ -2259,7 +2264,9 @@ bool RendererInClientInner::RestoreAudioStream()
     if (ret != SUCCESS) {
         goto error;
     }
-
+    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    }
     switch (oldState) {
         case RUNNING:
             result = StartAudioStream();

@@ -69,6 +69,8 @@ public:
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
+    int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
+
     float GetSystemVolumeDb(AudioStreamType streamType);
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute);
@@ -106,7 +108,7 @@ public:
 
     int32_t SuspendAudioDevice(std::string &name, bool isSuspend);
 
-    bool SetSinkMute(const std::string &sinkName, bool isMute);
+    bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false);
 
     float CalculateVolumeDb(int32_t volumeLevel);
 
@@ -171,6 +173,10 @@ public:
     int32_t GetPersistMicMuteState(bool &isMute) const;
 
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
+
+    void HandleStreamMuteStatus(AudioStreamType streamType, bool mute);
+
+    void HandleRingerMode(AudioRingerMode ringerMode);
 private:
     friend class PolicyCallbackImpl;
 
@@ -304,16 +310,15 @@ public:
     {
         AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(streamType);
         int32_t volumeLevel = audioAdapterManager_->GetStreamVolume(streamForVolumeMap);
+        bool muteStatus = audioAdapterManager_->GetStreamMute(streamForVolumeMap);
+        if (muteStatus) {
+            return {0.0f, 0};
+        }
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
         if (streamForVolumeMap == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
             return {1.0f, volumeLevel};
-        }
-
-        bool muteStatus = audioAdapterManager_->GetStreamMute(streamForVolumeMap);
-        if (muteStatus) {
-            return {0.0f, 0};
         }
 
         float volumeDb = 1.0f;
