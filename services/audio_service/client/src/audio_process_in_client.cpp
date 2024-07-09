@@ -149,6 +149,7 @@ private:
     void CopyWithVolume(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     void ProcessVolume(const AudioStreamData &targetData) const;
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
+    void CheckIfWakeUpTooLate(int64_t curTime, int64_t &wakeUpTime);
 
     void DoFadeInOut(uint64_t &curWritePos);
 
@@ -164,6 +165,7 @@ private:
     static constexpr size_t MAX_TIMES = 4; // 4 times spanSizeInFrame_
     static constexpr size_t DIV = 2; // halt of span
     static constexpr int64_t MAX_STOP_FADING_DURATION_NANO = 10000000; // 10ms
+    static constexpr int64_t WAKE_UP_LATE_COUNT = 20; // late for 20 times
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -208,6 +210,9 @@ private:
 
     std::atomic<uint32_t> underflowCount_ = 0;
     std::atomic<uint32_t> overflowCount_ = 0;
+    bool clientWakeUpTooLate_ = false;
+    int64_t clientLateTime_ = 0;
+    int64_t clientLateCount_ = 0;
 
     std::string cachePath_;
     FILE *dumpFile_ = nullptr;
@@ -454,8 +459,8 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
     size_t originalSpanSizeInFrame = static_cast<size_t>(spanSizeInFrame_);
     size_t tmp = static_cast<size_t>(frameSize);
-    size_t count = static_cast<size_t>(frameSize / spanSizeInFrame_);
-    size_t rest = frameSize % spanSizeInFrame_;
+    size_t count = static_cast<size_t>(frameSize) / spanSizeInFrame_;
+    size_t rest = static_cast<size_t>(frameSize) % spanSizeInFrame_;
     if (tmp <= originalSpanSizeInFrame) {
         clientSpanSizeInFrame_ = originalSpanSizeInFrame;
     } else if (tmp >= MAX_TIMES * originalSpanSizeInFrame) {
@@ -891,7 +896,7 @@ int32_t AudioProcessInClientInner::SetVolume(int32_t vol)
 
 int32_t AudioProcessInClientInner::Start()
 {
-    Trace traceWithLog("AudioProcessInClient::Start", true);
+    Trace traceStart("AudioProcessInClient::Start");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_PROCESS_IN_CLIENT_FILENAME, &dumpFile_);
@@ -926,7 +931,7 @@ int32_t AudioProcessInClientInner::Start()
 
 int32_t AudioProcessInClientInner::Pause(bool isFlush)
 {
-    Trace traceWithLog("AudioProcessInClient::Pause", true);
+    Trace tracePause("AudioProcessInClient::Pause");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
@@ -960,7 +965,7 @@ int32_t AudioProcessInClientInner::Pause(bool isFlush)
 
 int32_t AudioProcessInClientInner::Resume()
 {
-    Trace traceWithLog("AudioProcessInClient::Resume", true);
+    Trace traceResume("AudioProcessInClient::Resume");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
 
@@ -1002,7 +1007,7 @@ int32_t AudioProcessInClientInner::Resume()
 
 int32_t AudioProcessInClientInner::Stop()
 {
-    Trace traceWithLog("AudioProcessInClient::Stop", true);
+    Trace traceStop("AudioProcessInClient::Stop");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
     if (streamStatus_->load() == StreamStatus::STREAM_STOPPED) {
@@ -1038,7 +1043,7 @@ int32_t AudioProcessInClientInner::Stop()
 
 int32_t AudioProcessInClientInner::Release()
 {
-    Trace traceWithLog("AudioProcessInClient::Release", true);
+    Trace traceRelease("AudioProcessInClient::Release");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     AUDIO_INFO_LOG("AudioProcessInClientInner::Release()");
     // not lock as status is already released
@@ -1309,7 +1314,8 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
 
         threadStatus_ = SLEEPING;
         curTime = ClockTime::GetCurNano();
-        if (wakeUpTime > curTime && wakeUpTime - curTime < spanSizeInMs_ * ONE_MILLISECOND_DURATION + clientReadCost) {
+        if (wakeUpTime > curTime && wakeUpTime - curTime < static_cast<int64_t>(spanSizeInMs_) *
+            ONE_MILLISECOND_DURATION + clientReadCost) {
             ClockTime::AbsoluteSleep(wakeUpTime);
         } else {
             Trace trace("RecordBigWakeUpTime");
@@ -1363,6 +1369,10 @@ int32_t AudioProcessInClientInner::RecordPrepareCurrent(uint64_t curReadPos)
         && tryCount > 0) {
         AUDIO_WARNING_LOG("%{public}s unready, curReadSpan %{public}" PRIu64", curSpanStatus %{public}d, wait 2ms.",
             __func__, curReadPos, curReadSpan->spanStatus.load());
+        if (curReadSpan->spanStatus.load() == SpanStatus::SPAN_READING) {
+            AUDIO_WARNING_LOG("Change status to reading while status is already reading!");
+            return SUCCESS;
+        }
         targetStatus = SpanStatus::SPAN_WRITE_DONE;
         tryCount--;
         ClockTime::RelativeSleep(RECORD_RESYNC_SLEEP_NANO);
@@ -1526,11 +1536,7 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         threadStatus_ = INRUNNING;
         Trace traceLoop("AudioProcessInClient::InRunning");
         curTime = ClockTime::GetCurNano();
-        int64_t wakeupCost = curTime - wakeUpTime;
-        if (wakeupCost > ONE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
-            wakeUpTime = curTime;
-        }
+        CheckIfWakeUpTooLate(curTime, wakeUpTime);
         curWritePos = audioBuffer_->GetCurWriteFrame();
         bool prepared = true;
         prepared = PrepareCurrentLoop(curWritePos);
@@ -1556,7 +1562,7 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         // start safe sleep
         threadStatus_ = SLEEPING;
         curTime = ClockTime::GetCurNano();
-        if (wakeUpTime - curTime > spanSizeInMs_ * ONE_MILLISECOND_DURATION + clientWriteCost) {
+        if (wakeUpTime - curTime > static_cast<int64_t>(spanSizeInMs_) * ONE_MILLISECOND_DURATION + clientWriteCost) {
             Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
                 "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
             AUDIO_WARNING_LOG("wakeUpTime is too late...");
@@ -1641,7 +1647,7 @@ bool AudioProcessInClientInner::PrepareNextIndependent(uint64_t curWritePos, int
     Trace prepareTrace("AudioEndpoint::PrepareNextLoop " + std::to_string(nextHandlePos));
     int64_t nextHdiReadTime = GetPredictNextHandleTime(nextHandlePos, true);
     uint64_t aheadTime = spanSizeInFrame_ * AUDIO_NS_PER_SECOND / processConfig_.streamInfo.samplingRate;
-    int64_t nextServerHandleTime = nextHdiReadTime - aheadTime;
+    int64_t nextServerHandleTime = nextHdiReadTime - static_cast<int64_t>(aheadTime);
     if (nextServerHandleTime < ClockTime::GetCurNano()) {
         wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION; // make sure less than duration
     } else {
@@ -1661,6 +1667,29 @@ bool AudioProcessInClientInner::PrepareNextIndependent(uint64_t curWritePos, int
         return false;
     }
     return true;
+}
+
+void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t curTime, int64_t &wakeUpTime)
+{
+    int64_t wakeUpCost = curTime - wakeUpTime;
+    if (wakeUpCost > ONE_MILLISECOND_DURATION) {
+        if (!clientWakeUpTooLate_) {
+            AUDIO_WARNING_LOG("loop wake up late once");
+            clientWakeUpTooLate_ = true;
+        }
+        clientLateCount_++;
+        clientLateTime_ += wakeUpCost;
+        if (clientLateCount_ >= WAKE_UP_LATE_COUNT && (clientLateCount_ % WAKE_UP_LATE_COUNT == 0)) {
+            AUDIO_WARNING_LOG("loop wake up late for 20 times,"
+                " average cost %{public}" PRId64"us", clientLateTime_ / WAKE_UP_LATE_COUNT / AUDIO_MS_PER_SECOND);
+            clientLateTime_ = 0;
+        }
+        if (clientLateCount_ >= INT32_MAX) {
+            AUDIO_WARNING_LOG("loop wake up late for %{public}" PRId64"", clientLateCount_);
+            clientLateCount_ = 0;
+        }
+        wakeUpTime = curTime;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

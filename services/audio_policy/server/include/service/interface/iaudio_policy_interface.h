@@ -47,6 +47,8 @@ public:
 
     virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
 
+    virtual int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType) = 0;
+
     virtual float GetSystemVolumeDb(AudioStreamType streamType) = 0;
 
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute) = 0;
@@ -85,7 +87,7 @@ public:
 
     virtual void SetVolumeForSwitchDevice(InternalDeviceType deviceType) = 0;
 
-    virtual bool SetSinkMute(const std::string &sinkName, bool isMute) = 0;
+    virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
     virtual float CalculateVolumeDb(int32_t volumeLevel) = 0;
 
@@ -144,6 +146,10 @@ public:
     virtual int32_t GetPersistMicMuteState(bool &isMute) const = 0;
 
     virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel) = 0;
+
+    virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute) = 0;
+
+    virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -72,6 +72,9 @@ public:
     int32_t Pause(void) override;
     int32_t Resume(void) override;
 
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
+
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -119,18 +122,18 @@ private:
     int32_t InitAudioManager();
 
 private:
-    IAudioSinkAttr attr_;
-    bool rendererInited_;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
+    IAudioSinkAttr attr_ = {};
+    bool rendererInited_ = false;
+    bool started_ = false;
+    bool paused_ = false;
+    float leftVolume_ = 0.0f;
+    float rightVolume_ = 0.0f;
     int32_t routeHandle_ = -1;
-    std::string adapterNameCase_;
-    struct IAudioManager *audioManager_;
-    struct IAudioAdapter *audioAdapter_;
-    struct IAudioRender *audioRender_;
-    struct AudioAdapterDescriptor adapterDesc_;
+    std::string adapterNameCase_ = "";
+    struct IAudioManager *audioManager_ = nullptr;
+    struct IAudioAdapter *audioAdapter_ = nullptr;
+    struct IAudioRender *audioRender_ = nullptr;
+    struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
     uint32_t renderId_ = 0;
 
@@ -241,19 +244,19 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
     if (descs == nullptr) {
         return ERROR;
     }
-
     for (int32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
-        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
-            for (uint32_t port = 0; port < desc->portsLen; port++) {
-                // Only find out the port of out in the sound card
-                if (desc->ports[port].dir == portFlag) {
-                    renderPort = desc->ports[port];
-                    return index;
-                }
+        if (strcmp(desc->adapterName, adapterNameCase.c_str())) {
+            continue;
+        }
+        for (uint32_t port = 0; port < desc->portsLen; port++) {
+            // Only find out the port of out in the sound card
+            if (desc->ports[port].dir == portFlag) {
+                renderPort = desc->ports[port];
+                return index;
             }
         }
     }
@@ -371,7 +374,7 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
         desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
         "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
         desc.totalBufferFrames, desc.transferFrameSize);
-    bufferTotalFrameSize_ = desc.totalBufferFrames; // 1440 ~ 3840
+    bufferTotalFrameSize_ = static_cast<uint32_t>(desc.totalBufferFrames); // 1440 ~ 3840
     eachReadFrameSize_ = desc.transferFrameSize; // 240
 
     CHECK_AND_RETURN_RET_LOG(frameSizeInByte_ <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
@@ -771,6 +774,7 @@ int32_t FastAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t FastAudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
+    Trace trace("FastAudioRendererSinkInner::GetLatency");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetLatency failed audio render null");
 
@@ -845,6 +849,16 @@ int32_t FastAudioRendererSinkInner::Resume(void)
     }
     paused_ = false;
 
+    return SUCCESS;
+}
+
+int32_t FastAudioRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t FastAudioRendererSinkInner::RestoreRenderSink(void)
+{
     return SUCCESS;
 }
 

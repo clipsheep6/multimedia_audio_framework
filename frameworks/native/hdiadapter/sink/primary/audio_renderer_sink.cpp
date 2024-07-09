@@ -81,8 +81,7 @@ const uint32_t DEVICE_PARAM_MAX_LEN = 40;
 const std::string VOIP_HAL_NAME = "voip";
 const std::string DIRECT_HAL_NAME = "direct";
 #ifdef FEATURE_POWER_MANAGER
-const std::string PRIMARY_LOCK_NAME = "AudioPrimaryBackgroundPlay";
-const std::string DIRECT_LOCK_NAME = "AudioDirectBackgroundPlay";
+const std::string PRIMARY_LOCK_NAME_BASE = "AudioBackgroundPlay";
 #endif
 }
 
@@ -150,6 +149,8 @@ public:
     int32_t Resume(void) override;
     int32_t Start(void) override;
     int32_t Stop(void) override;
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
 
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
@@ -180,29 +181,31 @@ public:
         const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
+    int32_t SetRenderEmpty(int32_t durationUs) final;
+
     std::string GetDPDeviceAttrInfo(const std::string &condition);
 
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
 private:
-    IAudioSinkAttr attr_;
-    bool sinkInited_;
-    bool adapterInited_;
-    bool renderInited_;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
+    IAudioSinkAttr attr_ = {};
+    bool sinkInited_ = false;
+    bool adapterInited_ = false;
+    bool renderInited_ = false;
+    bool started_ = false;
+    bool paused_ = false;
+    float leftVolume_ = 0.0f;
+    float rightVolume_ = 0.0f;
     int32_t routeHandle_ = -1;
     int32_t logMode_ = 0;
-    uint32_t openSpeaker_;
+    uint32_t openSpeaker_ = 0;
     uint32_t renderId_ = 0;
-    std::string adapterNameCase_;
-    struct IAudioManager *audioManager_;
-    struct IAudioAdapter *audioAdapter_;
-    struct IAudioRender *audioRender_;
-    std::string halName_;
-    struct AudioAdapterDescriptor adapterDesc_;
+    std::string adapterNameCase_ = "";
+    struct IAudioManager *audioManager_ = nullptr;
+    struct IAudioAdapter *audioAdapter_ = nullptr;
+    struct IAudioRender *audioRender_ = nullptr;
+    const std::string halName_ = "";
+    struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
     bool audioMonoState_ = false;
     bool audioBalanceState_ = false;
@@ -542,12 +545,14 @@ void AudioRendererSinkInner::DeInit()
     sinkInited_ = false;
 
     if (audioAdapter_ != nullptr) {
+        AUDIO_INFO_LOG("DestroyRender rendererid: %{public}u", renderId_);
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
     renderInited_ = false;
 
     if (audioManager_ != nullptr) {
+        AUDIO_INFO_LOG("UnloadAdapter");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
     }
     audioAdapter_ = nullptr;
@@ -668,6 +673,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
         adapterInited_ = false;
         return ERR_NOT_STARTED;
     }
+    AUDIO_INFO_LOG("Create success rendererid: %{public}u", renderId_);
 
     return 0;
 }
@@ -726,11 +732,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
             switchCV_.notify_all();
         }
     }
-    if (*reinterpret_cast<int8_t*>(&data) == 0) {
-        Trace::Count("AudioRendererSinkInner::RenderFrame", PCM_MAYBE_SILENT);
-    } else {
-        Trace::Count("AudioRendererSinkInner::RenderFrame", PCM_MAYBE_NOT_SILENT);
-    }
+    Trace::CountVolume("AudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
 
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
@@ -739,7 +741,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrame failed ret: %{public}x", ret);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    int64_t stampThreshold = 20; // 20ms
+    int64_t stampThreshold = 50; // 50ms
     if (logMode_ || stamp >= stampThreshold) {
         AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     }
@@ -783,13 +785,10 @@ int32_t AudioRendererSinkInner::Start(void)
     AUDIO_INFO_LOG("Start. sinkName %{public}s", halName_.c_str());
     Trace trace("AudioRendererSinkInner::Start");
 #ifdef FEATURE_POWER_MANAGER
-    std::string lockName = PRIMARY_LOCK_NAME;
-    if (halName_ == DIRECT_HAL_NAME) {
-        lockName = DIRECT_LOCK_NAME;
-    }
     AudioXCollie audioXCollie("AudioRendererSinkInner::CreateRunningLock", TIME_OUT_SECONDS);
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (runningLockManager_ == nullptr) {
+        std::string lockName = PRIMARY_LOCK_NAME_BASE + halName_;
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock(
             lockName, PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
         if (keepRunningLock) {
@@ -868,6 +867,7 @@ int32_t AudioRendererSinkInner::SetVoiceVolume(float volume)
 
 int32_t AudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
+    Trace trace("AudioRendererSinkInner::GetLatency");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetLatency failed audio render null");
 
@@ -972,7 +972,7 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 
 int32_t AudioRendererSinkInner::SetAudioRoute(DeviceType outputDevice, AudioRoute route)
 {
-    renderEmptyFrameCount_ = 3; // preRender 3 frames
+    CasWithCompare(renderEmptyFrameCount_, 3, std::less<int32_t>()); // preRender 3 frames
     std::unique_lock<std::mutex> lock(switchMutex_);
     switchCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_RENDER_EMPTY), [this] {
         if (renderEmptyFrameCount_ == 0) {
@@ -989,7 +989,7 @@ int32_t AudioRendererSinkInner::SetAudioRoute(DeviceType outputDevice, AudioRout
     inSwitch_.store(false);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
-    renderEmptyFrameCount_ = 3; // render 3 empty frame
+    CasWithCompare(renderEmptyFrameCount_, 3, std::less<int32_t>()); // render 3 empty frame
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     return SUCCESS;
@@ -1001,7 +1001,7 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputD
         ERR_INVALID_PARAM, "Invalid audio devices.");
     DeviceType outputDevice = outputDevices.front();
     if (outputDevice == currentActiveDevice_ &&
-        outputDevices.size() == currentDevicesSize_) {
+        outputDevices.size() == static_cast<uint32_t>(currentDevicesSize_)) {
         AUDIO_INFO_LOG("SetOutputRoutes output device not change");
         return SUCCESS;
     }
@@ -1022,22 +1022,26 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
     Trace trace("AudioRendererSinkInner::SetOutputRoutes pin " + std::to_string(outputPortPin) + " device " +
         std::to_string(outputDevice));
     currentActiveDevice_ = outputDevice;
+    currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
 
-    AudioRouteNode source = {
-        .portId = static_cast<int32_t>(0),
-        .role = AUDIO_PORT_SOURCE_ROLE,
-        .type = AUDIO_PORT_MIX_TYPE,
-        .ext.mix.moduleId = static_cast<int32_t>(0),
-        .ext.mix.streamId = PRIMARY_OUTPUT_STREAM_ID,
-        .ext.device.desc = (char *)"",
-    };
+    AudioRouteNode source = {};
+    source.portId = static_cast<int32_t>(0);
+    source.role = AUDIO_PORT_SOURCE_ROLE;
+    source.type = AUDIO_PORT_MIX_TYPE;
+    source.ext.mix.moduleId = static_cast<int32_t>(0);
+    source.ext.mix.streamId = PRIMARY_OUTPUT_STREAM_ID;
+    source.ext.device.desc = (char *)"";
 
     int32_t sinksSize = static_cast<int32_t>(outputDevices.size());
     AudioRouteNode* sinks = new AudioRouteNode[sinksSize];
 
     for (size_t i = 0; i < outputDevices.size(); i++) {
         int32_t ret = SetOutputPortPin(outputDevices[i].first, sinks[i]);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetOutputRoutes FAILED: %{public}d", ret);
+        if (ret != SUCCESS) {
+            delete [] sinks;
+            AUDIO_ERR_LOG("SetOutputRoutes FAILED: %{public}d", ret);
+            return ret;
+        }
         outputDevices[i].second = sinks[i].ext.device.type;
         AUDIO_INFO_LOG("Output[%{public}zu] PIN is: 0x%{public}X DeviceType is %{public}d", i, outputDevices[i].second,
             outputDevices[i].first);
@@ -1048,12 +1052,11 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
         sinks[i].ext.device.desc = (char *)"";
     }
 
-    AudioRoute route = {
-        .sources = &source,
-        .sourcesLen = 1,
-        .sinks = sinks,
-        .sinksLen = sinksSize,
-    };
+    AudioRoute route = {};
+    route.sources = &source;
+    route.sourcesLen = 1;
+    route.sinks = sinks;
+    route.sinksLen = static_cast<uint32_t>(sinksSize);
 
     return SetAudioRoute(outputDevice, route);
 }
@@ -1093,7 +1096,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
             currentAudioScene_ = audioScene;
             isAudioSceneUpdate = true;
         }
-        if (activeDevices.size() != currentDevicesSize_ || activeDevice != currentActiveDevice_ ||
+        if (activeDevices.size() != static_cast<size_t>(currentDevicesSize_) || activeDevice != currentActiveDevice_ ||
             (isAudioSceneUpdate &&
             (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
             std::vector<std::pair<DeviceType, AudioPortPin>> activeDevicesPortPin = {};
@@ -1104,7 +1107,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
             if (ret < 0) {
                 AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
             }
-            currentDevicesSize_ = activeDevices.size();
+            currentDevicesSize_ = static_cast<int32_t>(activeDevices.size());
         }
     }
     return SUCCESS;
@@ -1242,6 +1245,16 @@ int32_t AudioRendererSinkInner::Flush(void)
     return ERR_OPERATION_FAILED;
 }
 
+int32_t AudioRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInner::RestoreRenderSink(void)
+{
+    return SUCCESS;
+}
+
 int32_t AudioRendererSinkInner::Preload(const std::string &usbInfoStr)
 {
     CHECK_AND_RETURN_RET_LOG(halName_ == "usb", ERR_INVALID_OPERATION, "Preload only supported for usb");
@@ -1302,7 +1315,7 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
         sinkChannel_end - sinkChannel_begin - std::strlen("channels="));
 
     attr_.sampleRate = stoi(sampleRateStr);
-    attr_.channel = stoi(channeltStr);
+    attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
@@ -1435,7 +1448,7 @@ void AudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
         return;
     }
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    uint32_t byteSize = GetFormatByteSize(attr_.format);
+    uint32_t byteSize = static_cast<uint32_t>(GetFormatByteSize(attr_.format));
     size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
         (byteSize * sizeof(uint8_t) * attr_.channel);
     detectedTime_ += newlyCheckedTime;
@@ -1504,7 +1517,7 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len
 
 int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
 {
-    Trace trace("AudioRendererSinkInner::SetPaPower flag:%d", flag);
+    Trace trace("AudioRendererSinkInner::SetPaPower flag:" + std::to_string(flag));
     int32_t ret = ERROR;
     char keyValueList[DEVICE_PARAM_MAX_LEN] = {0};
     const char keyValueList1[] = "zero_volume=false";
@@ -1524,9 +1537,9 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         return SUCCESS;
     }
 
-    AUDIO_DEBUG_LOG("keyValueList %{public}s befor get.", keyValueList);
+    AUDIO_INFO_LOG("Get keyValueList %{public}s before get.", keyValueList);
     GetCurDeviceParam(keyValueList, DEVICE_PARAM_MAX_LEN);
-    AUDIO_DEBUG_LOG("Get keyValueList for openpa: %{public}s", keyValueList);
+    AUDIO_INFO_LOG("Get keyValueList for openpa: %{public}s", keyValueList);
 
     if (flag == 1 && g_paStatus == 0) {
         ret = audioRender_->SetExtraParams(audioRender_, keyValueList);
@@ -1539,7 +1552,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         return SUCCESS;
     }
 
-    AUDIO_DEBUG_LOG("receive invalid flag");
+    AUDIO_INFO_LOG("receive invalid flag");
     return ret;
 }
 
@@ -1568,6 +1581,14 @@ int32_t AudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUi
     runningLockManager_->UpdateAppsUidToPowerMgr();
 #endif
 
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInner::SetRenderEmpty(int32_t durationUs)
+{
+    int32_t emptyCount = durationUs / 1000 / BUFFER_CALC_20MS; // 1000 us->ms
+    AUDIO_INFO_LOG("render %{public}d empty", emptyCount);
+    CasWithCompare(renderEmptyFrameCount_, emptyCount, std::less<int32_t>());
     return SUCCESS;
 }
 } // namespace AudioStandard

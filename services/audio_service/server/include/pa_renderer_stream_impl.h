@@ -68,6 +68,7 @@ public:
     int32_t Peek(std::vector<char> *audioBuffer, int32_t &index) override;
     int32_t ReturnIndex(int32_t index) override;
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
+    int32_t SetClientVolume(float clientVolume) override;
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
@@ -81,6 +82,7 @@ private:
     static void PAStreamDrainInStopCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamUnderFlowCountAddCb(pa_stream *stream, void *userdata);
+    static void PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     const std::string GetEffectModeName(int32_t effectMode);
     // offload
@@ -112,7 +114,6 @@ private:
     size_t minBufferSize_ = 0;
 
     size_t totalBytesWritten_ = 0;
-    uint32_t sinkLatencyInMsec_ {0};
     int32_t renderRate_ = 0;
     int32_t effectMode_ = -1;
     std::string effectSceneName_ = "";
