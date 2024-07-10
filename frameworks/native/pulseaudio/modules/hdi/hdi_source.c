@@ -29,15 +29,22 @@
 #include <pulsecore/rtpoll.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
+#include <pulsecore/mix.h>
+#include <pulsecore/memblockq.c>
+#include <pulsecore/source.h>
+#include <pulsecore/source-output.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#include "userdata.h"
+#include "securec.h"
 #include "audio_hdiadapter_info.h"
 #include "audio_log.h"
 #include "audio_source_type.h"
 #include "audio_utils_c.h"
 #include "capturer_source_adapter.h"
+#include "audio_enhance_chain_adapter.h"
 #include "v3_0/audio_types.h"
 #include "v3_0/iaudio_manager.h"
 
@@ -58,22 +65,34 @@
 
 const char *DEVICE_CLASS_REMOTE = "remote";
 
-struct Userdata {
-    pa_core *core;
-    pa_module *module;
-    pa_source *source;
-    pa_thread *thread;
-    pa_thread_mq thread_mq;
-    pa_rtpoll *rtpoll;
-    uint32_t buffer_size;
-    uint32_t open_mic_speaker;
-    pa_usec_t block_usec;
-    pa_usec_t timestamp;
-    SourceAttr attrs;
-    bool IsCapturerStarted;
-    struct CapturerSourceAdapter *sourceAdapter;
-    pa_usec_t delayTime;
-};
+void IncreScenekeyCount(pa_hashmap *sceneMap, const char *key)
+{
+    char *sceneKey;
+    uint32_t *num = NULL;
+    if ((num = (uint32_t *)pa_hashmap_get(sceneMap, key)) != NULL) {
+        (*num)++;
+    } else {
+        sceneKey = strdup(key);
+        num = pa_xnew0(uint32_t, 1);
+        *num = 1;
+        pa_hashmap_put(sceneMap, sceneKey, num);
+    }
+}
+
+
+bool DecreScenekeyCount(pa_hashmap *sceneMap, const char *key)
+{
+    uint32_t *num = NULL;
+    if ((num = (uint32_t *)pa_hashmap_get(sceneMap, key)) != NULL) {
+        (*num)--;
+        if (*num == 0) {
+            pa_hashmap_remove_and_free(sceneMap, key);
+        }
+        return true;
+    }
+    return false;
+}
+
 
 static int PaHdiCapturerInit(struct Userdata *u);
 static void PaHdiCapturerExit(struct Userdata *u);
@@ -124,6 +143,10 @@ static void UserdataFree(struct Userdata *u)
         u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
         u->sourceAdapter->CapturerSourceDeInit(u->sourceAdapter->wapper);
         UnLoadSourceAdapter(u->sourceAdapter);
+    }
+
+    if (u->sceneToCountMap) {
+        pa_hashmap_free(u->sceneToCountMap);
     }
 
     pa_xfree(u);
@@ -195,15 +218,116 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
     return 0;
 }
 
+static void PushData(pa_source_output *sourceOutput, pa_memchunk *chunk)
+{
+    pa_source_output_assert_ref(sourceOutput);
+    pa_source_output_assert_io_context(sourceOutput);
+    pa_assert(chunk);
+    AUDIO_DEBUG_LOG("chunk length: %{public}zu", chunk->length);
+
+    if (!sourceOutput->thread_info.direct_on_input) {
+        pa_source_output_push(sourceOutput, chunk);
+    }
+}
+
+static void PostSourceData(pa_source *source, pa_source_output *sourceOutput, pa_memchunk *chunk)
+{
+    pa_source_assert_ref(source);
+    pa_source_assert_io_context(source);
+    pa_assert(PA_SOURCE_IS_LINKED(source->thread_info.state));
+    pa_assert(chunk);
+
+    if (source->thread_info.state == PA_SOURCE_SUSPENDED) {
+        return;
+    }
+
+    if (source->thread_info.soft_muted || !pa_cvolume_is_norm(&source->thread_info.soft_volume)) {
+        pa_memchunk vchunk = *chunk;
+        pa_memblock_ref(vchunk.memblock);
+        pa_memchunk_make_writable(&vchunk, 0);
+        if (source->thread_info.soft_muted || pa_cvolume_is_muted(&source->thread_info.soft_volume)) {
+            pa_silence_memchunk(&vchunk, &source->sample_spec);
+        } else {
+            pa_volume_memchunk(&vchunk, &source->sample_spec, &source->thread_info.soft_volume);
+        }
+        PushData(sourceOutput, &vchunk);
+        pa_memblock_unref(vchunk.memblock);
+    } else {
+        PushData(sourceOutput, chunk);
+    }
+}
+
+static void EnhanceProcess(const char *sceneKey, pa_memchunk *chunk)
+{
+    pa_assert(sceneKey);
+    pa_assert(chunk);
+    void *src = pa_memblock_acquire_chunk(chunk);
+    AUDIO_DEBUG_LOG("chunk length: %{public}zu scene: %{public}s", chunk->length, sceneKey);
+    pa_memblock_release(chunk->memblock);
+
+    if (CopyToEnhanceBufferAdapter(src, chunk->length) != 0) {
+        return;
+    }
+    if (EnhanceChainManagerProcess(sceneKey, chunk->length) != 0) {
+        return;
+    }
+    void *dst = pa_memblock_acquire_chunk(chunk);
+    CopyFromEnhanceBufferAdapter(dst, chunk->length);
+    pa_memblock_release(chunk->memblock);
+}
+
+static void EnhanceProcessAndPost(pa_source *source, const char *scene, pa_memchunk *enhanceChunk)
+{
+    pa_source_assert_ref(source);
+    pa_assert(scene);
+    pa_assert(enhanceChunk);
+    
+    void *state = NULL;
+    pa_source_output *sourceOutput;
+    char sceneKey[MAX_SCENE_NAME_LEN];
+    EnhanceProcess(scene, enhanceChunk);
+
+    while ((sourceOutput = pa_hashmap_iterate(source->thread_info.outputs, &state, NULL))) {
+        pa_source_output_assert_ref(sourceOutput);
+        const char *sourceOutputSceneType = pa_proplist_gets(sourceOutput->proplist, "scene.type");
+        const char *sourceOutputUpDevice = pa_proplist_gets(sourceOutput->proplist, "device.up");
+        const char *sourceOutputDownDevice = pa_proplist_gets(sourceOutput->proplist, "device.down");
+        if (ConcatStr(sourceOutputSceneType, sourceOutputUpDevice, sourceOutputDownDevice, sceneKey,
+            MAX_SCENE_NAME_LEN) != 0) {
+            continue;
+        }
+        if (strcmp(scene, sceneKey) != 0) {
+            continue;
+        }
+        PostSourceData(source, sourceOutput, enhanceChunk);
+    }
+}
+
+static void PostDataBypass(pa_source *source, pa_memchunk *chunk)
+{
+    pa_source_assert_ref(source);
+    pa_assert(chunk);
+    void *state = NULL;
+    pa_source_output *sourceOutput;
+    while ((sourceOutput = pa_hashmap_iterate(source->thread_info.outputs, &state, NULL))) {
+        pa_source_output_assert_ref(sourceOutput);
+        const char *sourceOutputSceneBypass = pa_proplist_gets(sourceOutput->proplist, "scene.bypass");
+        if (sourceOutputSceneBypass == NULL) {
+            continue;
+        }
+        if (strcmp(sourceOutputSceneBypass, DEFAULT_SCENE_BYPASS) == 0) {
+            AUDIO_DEBUG_LOG("bypass: post data directly");
+            PostSourceData(source, sourceOutput, chunk);
+        }
+    }
+}
+
 static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
 {
     uint64_t requestBytes;
     uint64_t replyBytes = 0;
     void *p = NULL;
 
-    chunk->length = u->buffer_size;
-    AUDIO_DEBUG_LOG("HDI Source: chunk.length = u->buffer_size: %{public}zu", chunk->length);
-    chunk->memblock = pa_memblock_new(u->core->mempool, chunk->length);
     pa_assert(chunk->memblock);
     p = pa_memblock_acquire(chunk->memblock);
     pa_assert(p);
@@ -218,21 +342,59 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
         AUDIO_ERR_LOG("HDI Source: Error replyBytes > requestBytes. Requested data Length: "
                 "%{public}" PRIu64 ", Read: %{public}" PRIu64 " bytes", requestBytes, replyBytes);
         pa_memblock_unref(chunk->memblock);
-        return 0;
+        return -1;
     }
 
     if (replyBytes == 0) {
         AUDIO_ERR_LOG("HDI Source: Failed to read, Requested data Length: %{public}" PRIu64 " bytes,"
                 " Read: %{public}" PRIu64 " bytes", requestBytes, replyBytes);
         pa_memblock_unref(chunk->memblock);
-        return 0;
+        return -1;
     }
 
     chunk->index = 0;
     chunk->length = replyBytes;
-    pa_source_post(u->source, chunk);
-    pa_memblock_unref(chunk->memblock);
 
+    return 0;
+}
+
+static int32_t GetCapturerFrameFromHdiAndProcess(pa_memchunk *chunk, struct Userdata *u)
+{
+    // new chunks
+    chunk->length = u->buffer_size;
+    AUDIO_DEBUG_LOG("HDI Source: chunk.length = u->buffer_size: %{public}zu", chunk->length);
+    chunk->memblock = pa_memblock_new(u->core->mempool, chunk->length);
+
+    if (GetCapturerFrameFromHdi(chunk, u) != 0) {
+        return -1;
+    }
+
+    bool ret = EnhanceChainManagerIsEmptyEnhanceChain();
+    if (ret) {
+        // if none enhance chain exist, post data as the original method
+        pa_source_post(u->source, chunk);
+        pa_memblock_unref(chunk->memblock);
+        return 0;
+    }
+
+    PostDataBypass(u->source, chunk);
+
+    void *state = NULL;
+    uint32_t *sceneKeyNum;
+    const void *scene;
+    while ((sceneKeyNum = pa_hashmap_iterate(u->sceneToCountMap, &state, &scene))) {
+        char *sceneKey = (char *)scene;
+        AUDIO_DEBUG_LOG("Now sceneKey is : %{public}s", sceneKey);
+
+        pa_memchunk enhanceChunk;
+        enhanceChunk.length = chunk->length;
+        enhanceChunk.memblock = pa_memblock_new(u->core->mempool, enhanceChunk.length);
+        pa_memchunk_memcpy(&enhanceChunk, chunk);
+        EnhanceProcessAndPost(u->source, sceneKey, &enhanceChunk);
+        pa_memblock_unref(enhanceChunk.memblock);
+    }
+    pa_memblock_unref(chunk->memblock);
+    
     return 0;
 }
 
@@ -255,7 +417,7 @@ static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
     if (timerElapsed) {
         chunk.length = pa_usec_to_bytes(now - u->timestamp, &u->source->sample_spec);
         if (chunk.length > 0) {
-            int ret = GetCapturerFrameFromHdi(&chunk, u);
+            int ret = GetCapturerFrameFromHdiAndProcess(&chunk, u);
             if (ret != 0) {
                 return false;
             }
@@ -376,7 +538,7 @@ static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_s
     data.driver = __FILE__;
     data.module = m;
 
-    //if sourcetype is wakeup, source suspend after init
+    // if sourcetype is wakeup, source suspend after init
     if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
         data.suspend_cause = PA_SUSPEND_IDLE;
     }
@@ -497,6 +659,9 @@ static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sampl
         "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
 
     u->attrs.openMicSpeaker = u->open_mic_speaker;
+
+    u->sceneToCountMap = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
+        pa_xfree, pa_xfree);
 }
 
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
