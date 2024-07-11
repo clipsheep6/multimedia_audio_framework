@@ -49,6 +49,7 @@ constexpr int32_t UID_CAAS_SA = 5527;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
+constexpr int32_t UID_TELEPHONY_SA = 1001;
 
 constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
@@ -64,7 +65,8 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
     UID_FOUNDATION_SA,
-    UID_DISTRIBUTED_CALL_SA
+    UID_DISTRIBUTED_CALL_SA,
+    UID_TELEPHONY_SA // used in distributed communication call
 };
 
 const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
@@ -268,25 +270,32 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     return ret;
 }
 
-void PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
+bool PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
 {
     if (state == AUDIO_PERMISSION_START) {
         Trace trace("PrivacyKit::StartUsingPermission");
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         if (res != 0) {
-            AUDIO_WARNING_LOG("notice start using perm error: %{public}d", res);
+            AUDIO_ERR_LOG("StartUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
+                targetTokenId, res);
+            return false;
         }
         res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
         if (res != 0) {
-            AUDIO_WARNING_LOG("add mic record error: %{public}d", res);
+            AUDIO_ERR_LOG("AddPermissionUsedRecord for tokenId %{public}u! The PrivacyKit error code is "
+                "%{public}d", targetTokenId, res);
+            return false;
         }
     } else if (state == AUDIO_PERMISSION_STOP) {
         Trace trace("PrivacyKit::StopUsingPermission");
         int res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         if (res != 0) {
-            AUDIO_WARNING_LOG("notice stop using perm error: %{public}d", res);
+            AUDIO_ERR_LOG("StopUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
+                targetTokenId, res);
+            return false;
         }
     }
+    return true;
 }
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)

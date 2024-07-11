@@ -99,7 +99,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_ULTRASONIC,
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_VOICE_MESSAGE,
-    SOURCE_TYPE_REMOTE_CAST
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION
 };
 
 
@@ -140,33 +141,33 @@ static const std::map<AsrWhisperDetectionMode, std::string> WHISPER_DETECTION_MO
 };
 
 static const std::map<std::string, AsrVoiceControlMode> VC_MODE_MAP = {
-    {"a2v", AsrVoiceControlMode::AUDIO_2_VOICETX},
-    {"am2v", AsrVoiceControlMode::AUDIO_MIX_2_VOICETX},
-    {"a2vt", AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX},
-    {"am2te", AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX},
+    {"audio2voicetx", AsrVoiceControlMode::AUDIO_2_VOICETX},
+    {"audiomix2voicetx", AsrVoiceControlMode::AUDIO_MIX_2_VOICETX},
+    {"audio2voicetxex", AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX},
+    {"audiomix2voicetxex", AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX},
 };
 
 static const std::map<AsrVoiceControlMode, std::string> VC_MODE_MAP_VERSE = {
-    {AsrVoiceControlMode::AUDIO_2_VOICETX, "a2v"},
-    {AsrVoiceControlMode::AUDIO_MIX_2_VOICETX, "am2v"},
-    {AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX, "a2vt"},
-    {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "am2te"},
+    {AsrVoiceControlMode::AUDIO_2_VOICETX, "audio2voicetx"},
+    {AsrVoiceControlMode::AUDIO_MIX_2_VOICETX, "audiomix2voicetx"},
+    {AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX, "audio2voicetxex"},
+    {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "audiomix2voicetxex"},
 };
 
 static const std::map<std::string, AsrVoiceMuteMode> VM_MODE_MAP = {
-    {"om", AsrVoiceMuteMode::OUTPUT_MUTE},
-    {"im", AsrVoiceMuteMode::INPUT_MUTE},
-    {"tm", AsrVoiceMuteMode::TTS_MUTE},
-    {"cm", AsrVoiceMuteMode::CALL_MUTE},
-    {"ome", AsrVoiceMuteMode::OUTPUT_MUTE_EX},
+    {"output_mute", AsrVoiceMuteMode::OUTPUT_MUTE},
+    {"input_mute", AsrVoiceMuteMode::INPUT_MUTE},
+    {"mute_tts", AsrVoiceMuteMode::TTS_MUTE},
+    {"mute_call", AsrVoiceMuteMode::CALL_MUTE},
+    {"ouput_mute_ex", AsrVoiceMuteMode::OUTPUT_MUTE_EX},
 };
 
 static const std::map<AsrVoiceMuteMode, std::string> VM_MODE_MAP_VERSE = {
-    {AsrVoiceMuteMode::OUTPUT_MUTE, "om"},
-    {AsrVoiceMuteMode::INPUT_MUTE, "im"},
-    {AsrVoiceMuteMode::TTS_MUTE, "tm"},
-    {AsrVoiceMuteMode::CALL_MUTE, "cm"},
-    {AsrVoiceMuteMode::OUTPUT_MUTE_EX, "ome"},
+    {AsrVoiceMuteMode::OUTPUT_MUTE, "output_mute"},
+    {AsrVoiceMuteMode::INPUT_MUTE, "input_mute"},
+    {AsrVoiceMuteMode::TTS_MUTE, "mute_tts"},
+    {AsrVoiceMuteMode::CALL_MUTE, "mute_call"},
+    {AsrVoiceMuteMode::OUTPUT_MUTE_EX, "ouput_mute_ex"},
 };
 
 static const std::map<std::string, bool> RES_MAP = {
@@ -318,6 +319,7 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
         case RES_SCHED_SYS_ABILITY_ID:
             AUDIO_INFO_LOG("ressched service start");
             ScheduleReportData(getpid(), paDaemonTid_, "audio_server");
+            break;
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
@@ -327,6 +329,20 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
 void AudioServer::OnStop()
 {
     AUDIO_DEBUG_LOG("OnStop");
+}
+
+void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
+    const std::string &extraSceneType)
+{
+    if (mainkey == "audio_effect" && subkey == "update_audio_effect_type") {
+        AUDIO_DEBUG_LOG("mainkey is %{public}s, subkey is %{public}s, extraSceneType is %{public}s",
+            mainkey.c_str(), subkey.c_str(), extraSceneType.c_str());
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+        }
+        audioEffectChainManager->UpdateExtraSceneType(extraSceneType);
+    }
 }
 
 int32_t AudioServer::SetExtraParameters(const std::string& key,
@@ -354,6 +370,7 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
             value += it->first + "=" + it->second + ";";
+            RecognizeAudioEffectType(key, it->first, it->second);
         } else {
             match = false;
             break;
@@ -636,7 +653,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
     auto it = VC_MODE_MAP_VERSE.find(asrVoiceControlMode);
     auto res = RES_MAP_VERSE.find(on);
     if ((it != VC_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
-        value = key + "_" + it->second + "=" + res->second;
+        value = it->second + "=" + res->second;
     } else {
         AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
@@ -660,7 +677,7 @@ int32_t AudioServer::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool
     auto it = VM_MODE_MAP_VERSE.find(asrVoiceMuteMode);
     auto res = RES_MAP_VERSE.find(on);
     if ((it != VM_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
-        value = key + "_" + it->second + "=" + res->second;
+        value = it->second + "=" + res->second;
     } else {
         AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
@@ -1895,6 +1912,16 @@ void AudioServer::LoadHdiEffectModel()
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->InitHdiState();
+}
+
+void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID, "refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->UpdateEffectBtOffloadSupported(isSupported);
 }
 } // namespace AudioStandard
 } // namespace OHOS

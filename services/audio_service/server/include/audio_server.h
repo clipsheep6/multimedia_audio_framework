@@ -154,6 +154,8 @@ public:
     int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
 
     void LoadHdiEffectModel() override;
+
+    void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -179,6 +181,8 @@ private:
     const std::string GetUsbParameter();
     void WriteServiceStartupError();
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
+    void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
+        const std::string &extraSceneType);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

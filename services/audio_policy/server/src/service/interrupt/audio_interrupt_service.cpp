@@ -472,7 +472,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
         }
         AudioInterrupt audioInterrupt = iter->first;
         streamInFocus = audioInterrupt.audioFocusType.streamType;
-        if (streamInFocus != STREAM_ULTRASONIC) {
+        if (streamInFocus != STREAM_ACCESSIBILITY && streamInFocus != STREAM_ULTRASONIC) {
             break;
         }
     }
@@ -735,13 +735,14 @@ void AudioInterruptService::HandleIncomingState(const int32_t zoneId, AudioFocuS
 {
     if (incomingState == STOP) {
         interruptEvent.hintType = INTERRUPT_HINT_STOP;
-    } else if (incomingState == PAUSE) {
-        interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
-    } else if (incomingState == DUCK) {
-        interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-        interruptEvent.duckVolume = DUCK_FACTOR;
     } else {
-        // ACTIVE
+        if (incomingState == PAUSE) {
+            interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+        } else if (incomingState == DUCK) {
+            interruptEvent.hintType = INTERRUPT_HINT_DUCK;
+            interruptEvent.duckVolume = DUCK_FACTOR;
+        }
+        // Handle existing focus state
         ProcessActiveInterrupt(zoneId, incomingInterrupt);
     }
 }

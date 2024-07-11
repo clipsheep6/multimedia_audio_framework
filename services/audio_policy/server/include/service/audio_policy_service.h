@@ -98,7 +98,8 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) const;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute);
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute,
+        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
@@ -415,8 +416,6 @@ public:
 
     void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    void OffloadStartPlayingIfOffloadMode(uint64_t sessionId);
-
     int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
 
     int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
@@ -594,8 +593,6 @@ private:
     int32_t SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     int32_t HandleActiveDevice(DeviceType deviceType);
-
-    int32_t HandleA2dpDevice(DeviceType deviceType);
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
@@ -919,8 +916,6 @@ private:
     void UpdateRoute(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
 
-    bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
-
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 
     bool SelectRingerOrAlarmDevices(const vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
@@ -937,6 +932,8 @@ private:
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
 
     void LoadHdiEffectModel();
+
+    void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

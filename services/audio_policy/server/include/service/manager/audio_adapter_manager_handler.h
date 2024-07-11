@@ -36,6 +36,8 @@ public:
     enum EventAdapterManagerServerCmd  {
         DATABASE_UPDATE,
         VOLUME_DATABASE_SAVE,
+        STREAM_MUTE_STATUS_UPDATE,
+        RINGER_MODE_UPDATE,
     };
 
     struct VolumeDataEvent {
@@ -48,8 +50,29 @@ public:
         int32_t volumeLevel_;
     };
 
+    struct StreamMuteStatusEvent {
+        StreamMuteStatusEvent() = delete;
+        StreamMuteStatusEvent(const AudioStreamType &streamType, const bool &mute, const StreamUsage &streamUsage)
+            : streamType_(streamType), mute_(mute), streamUsage_(streamUsage)
+        {}
+        AudioStreamType streamType_;
+        bool mute_;
+        StreamUsage streamUsage_;
+    };
+
+    struct RingerModeEvent {
+        RingerModeEvent() = delete;
+        RingerModeEvent(const AudioRingerMode &ringerMode)
+            : ringerMode_(ringerMode)
+        {}
+        AudioRingerMode ringerMode_;
+    };
+
     bool SendKvDataUpdate(const bool &isFirstBoot);
     bool SendSaveVolume(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel);
+    bool SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
+        const StreamUsage &streamUsage);
+    bool SendRingerModeUpdate(const AudioRingerMode &ringerMode);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -58,6 +81,8 @@ private:
     /* Handle Event*/
     void HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleVolumeDataBaseSave(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleUpdateStreamMuteStatus(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleUpdateRingerMode(const AppExecFwk::InnerEvent::Pointer &event);
 
     std::mutex runnerMutex_;
 };

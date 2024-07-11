@@ -122,6 +122,7 @@ int32_t PaRendererStreamImpl::InitParams()
         int32_t count = ++bufferNullCount_;
         AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr count is %{public}d", count);
         if (count >= 5) { // bufferAttr is nullptr 5 times, reboot audioserver
+            sleep(3); // sleep 3 seconds to dump stacktrace
             AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
             sleep(2); // sleep 2 seconds to dump stacktrace
         }
@@ -361,6 +362,13 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     return SUCCESS;
 }
 
+void PaRendererStreamImpl::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    PaRendererStreamImpl *rendererStreamImpl = (PaRendererStreamImpl *)userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)rendererStreamImpl->mainloop_;
+    pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     PaLockGuard lock(mainloop_);
@@ -371,36 +379,28 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     pa_usec_t cacheLatency {0};
     int32_t negative {0};
 
-    // Get PA latency
-    while (true) {
-        pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
-        if (operation != nullptr) {
-            pa_operation_unref(operation);
-        } else {
-            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+    pa_operation *operation = pa_stream_update_timing_info(paStream_, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
+    if (operation != nullptr) {
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mainloop_);
         }
-        if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
-            if (negative) {
-                latency = 0;
-                return ERR_OPERATION_FAILED;
-            }
-            break;
-        }
-        AUDIO_INFO_LOG("waiting for audio latency information");
-        pa_threaded_mainloop_wait(mainloop_);
+        pa_operation_unref(operation);
+    } else {
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
-    lock.Unlock();
-    cacheLatency = 0;
+
+    if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
+        if (negative) {
+            AUDIO_WARNING_LOG("pa_stream_get_latency failed");
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
     // In plan: Total latency will be sum of audio write cache latency plus PA latency
     uint64_t fwLatency = paLatency + cacheLatency;
-    uint64_t sinkLatency = sinkLatencyInMsec_ * PA_USEC_PER_MSEC;
-    if (fwLatency > sinkLatency) {
-        latency = fwLatency - sinkLatency;
-    } else {
-        latency = fwLatency;
-    }
-    AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
-        PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
+    latency = fwLatency;
+    AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", cache latency: %{public}"
+        PRIu64, latency, paLatency, cacheLatency);
 
     return SUCCESS;
 }
@@ -973,16 +973,16 @@ void PaRendererStreamImpl::ResetOffload()
 
 int32_t PaRendererStreamImpl::OffloadUpdatePolicy(AudioOffloadType statePolicy, bool force)
 {
-    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
-        AUDIO_ERR_LOG("Set offload mode: invalid stream state, quit SetStreamOffloadMode due err");
-        return ERR_ILLEGAL_STATE;
-    }
     // if possible turn on the buffer immediately(long buffer -> short buffer), turn it at once.
     if (statePolicy < offloadStatePolicy_ || offloadStatePolicy_ == OFFLOAD_DEFAULT || force) {
         AUDIO_DEBUG_LOG("Update statePolicy immediately: %{public}d -> %{public}d, force(%d)",
             offloadStatePolicy_, statePolicy, force);
         lastOffloadUpdateFinishTime_ = 0;
         PaLockGuard lock(mainloop_);
+        if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+            AUDIO_ERR_LOG("Set offload mode: invalid stream state, quit SetStreamOffloadMode due err");
+            return ERR_ILLEGAL_STATE;
+        }
         pa_proplist *propList = pa_proplist_new();
         CHECK_AND_RETURN_RET_LOG(propList != nullptr, ERR_OPERATION_FAILED, "pa_proplist_new failed");
         if (offloadEnable_) {
@@ -1116,6 +1116,7 @@ int32_t PaRendererStreamImpl::ReturnIndex(int32_t index)
 
 int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
 {
+    PaLockGuard lock(mainloop_);
     if (clientVolume < MIN_VOLUME || clientVolume > MAX_VOLUME) {
         AUDIO_ERR_LOG("SetClientVolume with invalid clientVolume %{public}f", clientVolume);
         return ERR_INVALID_PARAM;

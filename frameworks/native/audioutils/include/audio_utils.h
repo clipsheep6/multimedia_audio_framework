@@ -62,12 +62,19 @@ const uint32_t STRING_BUFFER_SIZE = 4096;
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
 class Util {
 public:
-    static bool IsDualToneStreamType(AudioStreamType streamType)
+    static bool IsDualToneStreamType(const AudioStreamType streamType)
     {
-        if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM) {
-            return true;
-        }
-        return false;
+        return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
+    }
+
+    static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
+    {
+        return usage == STREAM_USAGE_ALARM || usage == STREAM_USAGE_VOICE_RINGTONE || usage == STREAM_USAGE_RINGTONE;
+    }
+
+    static bool IsRingerAudioScene(const AudioScene &audioScene)
+    {
+        return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
     }
 };
 
@@ -111,7 +118,7 @@ public:
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
-    static void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
+    static bool NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);

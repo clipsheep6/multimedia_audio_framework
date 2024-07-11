@@ -28,18 +28,23 @@ ohos_shared_library("pulse_audio_service_adapter") {
 
   include_dirs = [
     "include",
+    "../audioutils/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
   ]
+
+  deps = [ "../audioutils:audio_utils" ]
 
   public_configs = [ ":audio_external_library_config" ]
 
   external_deps = [
+    "c_utils:utils",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
+    "samgr:samgr_proxy",
   ]
   part_name = "audio_framework"
   subsystem_name = "multimedia"
