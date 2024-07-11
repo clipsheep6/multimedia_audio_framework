@@ -66,7 +66,8 @@ HWTEST_F(AudioManagerUnitTest, SetDeviceActive_001, TestSize.Level0)
 {
     ActiveDeviceType deviceType = ActiveDeviceType::EARPIECE;
     bool flag = true;
-    EXPECT_EQ(AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag), audioSystemManager->SetDeviceActive(deviceType, flag));
+    EXPECT_EQ(AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag),
+        audioSystemManager->SetDeviceActive(deviceType, flag));
 }
 
 /**
@@ -78,7 +79,8 @@ HWTEST_F(AudioManagerUnitTest, SetDeviceActive_002, TestSize.Level0)
 {
     ActiveDeviceType deviceType = ActiveDeviceType::SPEAKER;
     bool flag = true;
-    EXPECT_EQ(AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag), audioSystemManager->SetDeviceActive(deviceType, flag));
+    EXPECT_EQ(AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag),
+        audioSystemManager->SetDeviceActive(deviceType, flag));
 }
 
 /**
@@ -90,7 +92,8 @@ HWTEST_F(AudioManagerUnitTest, SetDeviceActive_003, TestSize.Level0)
 {
     ActiveDeviceType deviceType = ActiveDeviceType::BLUETOOTH_SCO;
     bool flag = true;
-    EXPECT_EQ(AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag), audioSystemManager->SetDeviceActive(deviceType, flag));
+    EXPECT_EQ(AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag),
+        audioSystemManager->SetDeviceActive(deviceType, flag));
 }
 
 /**
@@ -102,7 +105,8 @@ HWTEST_F(AudioManagerUnitTest, SetDeviceActive_004, TestSize.Level0)
 {
     ActiveDeviceType deviceType = ActiveDeviceType::USB_HEADSET;
     bool flag = true;
-    EXPECT_EQ(AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag), audioSystemManager->SetDeviceActive(deviceType, flag));
+    EXPECT_EQ(AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag),
+        audioSystemManager->SetDeviceActive(deviceType, flag));
 }
 
 /**
@@ -114,7 +118,8 @@ HWTEST_F(AudioManagerUnitTest, SetDeviceActive_005, TestSize.Level0)
 {
     ActiveDeviceType deviceType = ActiveDeviceType::FILE_SINK_DEVICE;
     bool flag = true;
-    EXPECT_EQ(AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag), audioSystemManager->SetDeviceActive(deviceType, flag));
+    EXPECT_EQ(AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag),
+        audioSystemManager->SetDeviceActive(deviceType, flag));
 }
 
 /**
