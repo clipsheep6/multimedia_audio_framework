@@ -99,7 +99,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateOutputMix_002, TestSize
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateOutputMix_003, TestSize.Level0)
 {
     SLresult result = (*engineEngine_)->CreateOutputMix(engineEngine_, nullptr, 0, nullptr, nullptr);
-    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
+    EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
 }
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Realize_001, TestSize.Level1)
@@ -1308,7 +1308,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Destroy_004, TestSize.Level0)
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Player_Destroy_001, TestSize.Level0)
 {
     SLresult result = AudioPlayerDestroy(nullptr);
-    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
+    EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

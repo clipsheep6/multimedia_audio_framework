@@ -499,7 +499,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetTimestamp_001, TestSize.Level
     int64_t framePosition;
     int64_t timestamp;
     result = OH_AudioCapturer_GetTimestamp(audioCapturer, CLOCK_REALTIME, &framePosition, &timestamp);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
+    EXPECT_NE(result, AUDIOSTREAM_SUCCESS);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -515,7 +515,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetTimestamp_002, TestSize.Level
     int64_t timestamp;
     OH_AudioStream_Result result = OH_AudioCapturer_GetTimestamp(audioCapturer, CLOCK_MONOTONIC,
         &framePosition, &timestamp);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -316,7 +316,7 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_002, TestSi
 HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_003, TestSize.Level0)
 {
     SLresult result = AudioRecorderDestroy(nullptr);
-    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
+    EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
 }
 
 HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_CreateEngine_001, TestSize.Level0)
