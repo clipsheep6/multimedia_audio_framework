@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#define private public
+#define PRIVATE public
 #include "audio_stream_manager.h"
-#undef private
+#undef PRIVATE
 
 #include "audio_info.h"
 #include "audio_device_info.h"
-#include "audio_untils.h"
+#include "audio_utils.h"
 #include "audio_errors.h"
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
