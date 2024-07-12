@@ -1054,9 +1054,6 @@ void AudioPolicyService::NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor
         currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         Bluetooth::SendUserSelectionEvent(currentActiveDevice_.deviceType_,
             currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
-        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            Bluetooth::AudioHfpManager::DisconnectSco();
-        }
     }
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -2237,6 +2234,10 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             continue;
         }
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
+        if (rendererChangeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_SCO &&
+            !rendererChangeInfo->outputDeviceInfo.macAddress.empty()) {
+            Bluetooth::AudioHfpManager::DisconnectSco();
+        }
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(rendererChangeInfo)) { continue; }
             int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos, reason);
@@ -3099,7 +3100,6 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
             deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
-            Bluetooth::AudioHfpManager::DisconnectSco();
         }
 #endif
     } else {
@@ -3109,7 +3109,6 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
             deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
-            Bluetooth::AudioHfpManager::DisconnectSco();
         }
         if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
             deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -7043,7 +7042,6 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
             deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
-            Bluetooth::AudioHfpManager::DisconnectSco();
         }
         if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
             deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -7058,7 +7056,6 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
             deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
-            Bluetooth::AudioHfpManager::DisconnectSco();
         }
 #endif
     }
