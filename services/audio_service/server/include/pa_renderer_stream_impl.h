@@ -94,6 +94,7 @@ private:
     int32_t OffloadUpdatePolicyInWrite();
     // offload end
 
+    int32_t UpdateEffectSessionInfo();
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
     pa_stream *paStream_ = nullptr;
@@ -134,7 +135,7 @@ private:
     // offload end
     std::mutex fadingMutex_;
     std::condition_variable fadingCondition_;
-
+    float clientVolume_ = 1.0f;
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
 };
 } // namespace AudioStandard

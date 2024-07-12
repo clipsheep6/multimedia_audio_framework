@@ -34,11 +34,14 @@ public:
     float GetDspVolume();
     void SetSystemVolume(float systemVolume);
     float GetSystemVolume();
-    std::map<std::string,float> SessionIDToVolumeMap;
+    void SetStreamVolume(const std::string sessionID, float systemVolume);
+    float GetStremVolume(const std::string sessionID);
+    int32_t StremVolumeDelete(const std::string sessionID);
 private:
     float dspVolume_;
     float systemVolume_;
-    std::map<std::string, float>SceneTypeToVolumeMap_;
+    std::map<std::string, float> SceneTypeToVolumeMap_;
+    std::map<std::string, float> SessionIDToVolumeMap_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

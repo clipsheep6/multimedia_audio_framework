@@ -58,8 +58,8 @@ public:
     uint32_t GetLatency();
     int32_t UpdateEffectParam();
     void ResetIoBufferConfig();
-    void SetEndVolume(float volume);
-    float GetEndVolume();
+    void SetFinalVolume(float volume);
+    float GetFinalVolume();
 
 private:
     AudioEffectConfig GetIoBufferConfig();
@@ -79,7 +79,7 @@ private:
     AudioBuffer audioBufOut_ = {};
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
-    float endVolume_ = 0.0f;
+    float finalVolume_ = 1;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

@@ -174,8 +174,8 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
 #endif
     AUDIO_DEBUG_LOG("set ap integration rotation: %{public}u", *(data - 1));
     AUDIO_DEBUG_LOG("set ap integration sceneType_ is: %{public}s", sceneType_.c_str());
-    *data++ = static_cast<int32_t>(endVolume_ * MAX_UINT_VOLUME);
-    AUDIO_DEBUG_LOG("set ap integration endVolume_ is: %{public}f", endVolume_);
+    *data++ = static_cast<int32_t>(finalVolume_ * MAX_UINT_VOLUME);
+    AUDIO_DEBUG_LOG("set ap integration finalVolume_ is: %{public}f", finalVolume_);
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
     *data++ = extraEffectChainType_;
     AUDIO_DEBUG_LOG("set scene type: %{public}d", extraEffectChainType_);
@@ -388,6 +388,15 @@ void AudioEffectChain::InitEffectChain()
         CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
             sceneType_.c_str(), effectMode_.c_str());
     }
+}
+
+void AudioEffectChain::SetFinalVolume(float volume)
+{
+    finalVolume_ = volume;
+}
+float AudioEffectChain::GetFinalVolume()
+{
+    return finalVolume_;
 }
 } // namespace AudioStandard
 } // namespace OHOS
