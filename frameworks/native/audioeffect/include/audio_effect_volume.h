@@ -22,18 +22,23 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+const uint32_t MAX_UINT_VOLUME = 65535;
+
 class AudioEffectVolume {
 public:
     AudioEffectVolume();
     ~AudioEffectVolume();
     static std::shared_ptr<AudioEffectVolume> GetInstance();
-    void SetApVolume(std::string sceneType, uint32_t volume);
-    uint32_t GetApVolume(std::string sceneType);
-    void SetDspVolume(uint32_t volume);
-    uint32_t GetDspVolume();
+    void SetDspVolume(float volume);
+    float GetDspVolume();
+    void SetSystemVolume(float systemVolume);
+    float GetSystemVolume();
+    std::map<std::string,float> SessionIDToVolumeMap;
 private:
-    uint32_t dspVolume_;
-    std::map<std::string, uint32_t>SceneTypeToVolumeMap_;
+    float dspVolume_;
+    float systemVolume_;
+    std::map<std::string, float>SceneTypeToVolumeMap_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

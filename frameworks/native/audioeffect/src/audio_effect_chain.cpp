@@ -173,12 +173,9 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     *data++ = 0;
 #endif
     AUDIO_DEBUG_LOG("set ap integration rotation: %{public}u", *(data - 1));
-    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-    if (audioEffectVolume == nullptr) {
-        *data++ = 0;
-    } else {
-        *data++ = audioEffectVolume->GetApVolume(sceneType_);
-    }
+    AUDIO_DEBUG_LOG("set ap integration sceneType_ is: %{public}s", sceneType_.c_str());
+    *data++ = static_cast<int32_t>(endVolume_ * MAX_UINT_VOLUME);
+    AUDIO_DEBUG_LOG("set ap integration endVolume_ is: %{public}f", endVolume_);
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
     *data++ = extraEffectChainType_;
     AUDIO_DEBUG_LOG("set scene type: %{public}d", extraEffectChainType_);

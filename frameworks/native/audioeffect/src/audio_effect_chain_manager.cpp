@@ -545,14 +545,15 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
     // update dsp volume
     AUDIO_DEBUG_LOG("send volume to dsp.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
-    uint32_t volumeMax = 0;
+    float systemVolume = audioEffectVolume->GetSystemVolume();
+    float volumeMax = 0;
     for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
         std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
-            SessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
-            volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
+            float streamVolumeTemp = audioEffectVolume->SessionIDToVolumeMap[*s];
+            volumeMax = (streamVolumeTemp * systemVolume) >volumeMax ?
+               (streamVolumeTemp * systemVolume) : volumeMax; 
         }
-    }
     // send volume to dsp
     if (audioEffectVolume->GetDspVolume() != volumeMax) {
         audioEffectVolume->SetDspVolume(volumeMax);
@@ -571,12 +572,14 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
     // send to ap
     AUDIO_DEBUG_LOG("send volume to ap.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
+    float systemVolume = audioEffectVolume->GetSystemVolume();
     for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
-        uint32_t volumeMax = 0;
+        float volumeMax = 0;
         std::set<std::string> sessions = it->second;
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
-            SessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
-            volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
+            float streamVolumeTemp = audioEffectVolume->SessionIDToVolumeMap[*s];
+            volumeMax = (streamVolumeTemp * systemVolume) >volumeMax ?
+               (streamVolumeTemp * systemVolume) : volumeMax; 
         }
         if (audioEffectVolume->GetApVolume(it->first) != volumeMax) {
             audioEffectVolume->SetApVolume(it->first, volumeMax);
@@ -598,21 +601,15 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
             audioEffectChain->SetEffectCurrSceneType(currSceneType);
             int32_t ret = audioEffectChain->UpdateEffectParam();
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
-            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, volume changed to %{public}u",
+            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, endVolume changed to %{public}u",
                 it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
         }
     }
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDString, const uint32_t volume)
+int32_t AudioEffectChainManager::EffectVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
-    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    // update session info
-    if (SessionIDToEffectInfoMap_.count(sessionIDString)) {
-        SessionIDToEffectInfoMap_[sessionIDString].volume = volume;
-    }
-    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     int32_t ret;
     if (((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) ||
         ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_))) {
@@ -620,6 +617,21 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
     } else {
         ret = EffectApVolumeUpdate(audioEffectVolume);
     }
+    return ret;
+}
+
+
+int32_t AudioEffectChainManager::StreamVolumeUpdate(const std::string sessionIDString, const uint32_t streamVolume)
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    // update session info
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    if (audioEffectVolume->SessionIDToVolumeMap.count(sessionIDString)) {
+        audioEffectVolume->SessionIDToVolumeMap[sessionIDString] = streamVolume;
+    }
+    int32_t ret;
+    ret = EffectVolumeUpdate(audioEffectVolume);
+    AUDIO_INFO_LOG("")
     return ret;
 }
 
