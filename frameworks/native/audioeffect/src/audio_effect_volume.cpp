@@ -38,7 +38,7 @@ std::shared_ptr<AudioEffectVolume> AudioEffectVolume::GetInstance()
     return effectVolume;
 }
 
-void AudioEffectVolume::SetSystemVolume(float systemVolume)
+void AudioEffectVolume::SetSystemVolume(const float systemVolume)
 {
     AUDIO_DEBUG_LOG("systemVolume: %{public}f", systemVolume);
     systemVolume_ = systemVolume;

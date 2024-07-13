@@ -37,7 +37,7 @@ public:
     float GetSystemVolume();
     void SetStreamVolume(const std::string sessionID, float systemVolume);
     float GetStreamVolume(const std::string sessionID);
-    int32_t StremVolumeDelete(const std::string sessionID);
+    int32_t StreamVolumeDelete(const std::string sessionID);
 private:
     float dspVolume_;
     float systemVolume_;
