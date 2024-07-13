@@ -390,7 +390,7 @@ void AudioEffectChain::InitEffectChain()
     }
 }
 
-void AudioEffectChain::SetFinalVolume(float volume)
+void AudioEffectChain::SetFinalVolume(const float volume)
 {
     finalVolume_ = volume;
 }

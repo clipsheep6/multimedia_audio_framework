@@ -550,7 +550,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
     for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
         std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
-            float streamVolumeTemp = audioEffectVolume->SessionIDToVolumeMap[*s];
+            float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
             volumeMax = (streamVolumeTemp * systemVolume) > volumeMax ?
                (streamVolumeTemp * systemVolume) : volumeMax; 
         }
@@ -578,7 +578,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
         float volumeMax = 0;
         std::set<std::string> sessions = it->second;
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
-            float streamVolumeTemp = audioEffectVolume->SessionIDToVolumeMap[*s];
+            float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
             volumeMax = (streamVolumeTemp * systemVolume) >volumeMax ?
                (streamVolumeTemp * systemVolume) : volumeMax; 
         }
@@ -628,11 +628,9 @@ int32_t AudioEffectChainManager::StreamVolumeUpdate(const std::string sessionIDS
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     // update session info
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-    if (audioEffectVolume->SessionIDToVolumeMap.count(sessionIDString)) {
-        audioEffectVolume->SessionIDToVolumeMap[sessionIDString] = streamVolume;
-    }
+    audioEffectVolume->SetStreamVolume(sessionIDString, streamVolume);
     int32_t ret;
-    AUDIO_INFO_LOG("streamVolume is %{public}f", audioEffectVolume->SessionIDToVolumeMap[sessionIDString]);
+    AUDIO_INFO_LOG("streamVolume is %{public}f", audioEffectVolume->GetStreamVolume(sessionIDString));
     ret = EffectVolumeUpdate(audioEffectVolume);
     return ret;
 }
@@ -644,7 +642,7 @@ int32_t AudioEffectChainManager::SystemVolumeUpdate(const float systemVolume)
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     audioEffectVolume->SetSystemVolume(systemVolume);
     int32_t ret;
-    AUDIO_INFO_LOG("streamVolume is %{public}f",audioEffectVolume->SessionIDToVolumeMap[sessionIDString]);
+    AUDIO_INFO_LOG("systemVolume is %{public}f",audioEffectVolume->GetSystemVolume());
     ret = EffectVolumeUpdate(audioEffectVolume);
     return ret;
 }

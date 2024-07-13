@@ -24,6 +24,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const uint32_t MAX_UINT_VOLUME = 65535;
+const int32_t SUCCESSVOLUME = 0;
 
 class AudioEffectVolume {
 public:
@@ -35,7 +36,7 @@ public:
     void SetSystemVolume(float systemVolume);
     float GetSystemVolume();
     void SetStreamVolume(const std::string sessionID, float systemVolume);
-    float GetStremVolume(const std::string sessionID);
+    float GetStreamVolume(const std::string sessionID);
     int32_t StremVolumeDelete(const std::string sessionID);
 private:
     float dspVolume_;
