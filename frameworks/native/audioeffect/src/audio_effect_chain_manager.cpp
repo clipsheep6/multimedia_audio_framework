@@ -579,7 +579,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
         std::set<std::string> sessions = it->second;
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
             float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
-            volumeMax = (streamVolumeTemp * systemVolume) >volumeMax ?
+            volumeMax = (streamVolumeTemp * systemVolume) > volumeMax ?
                (streamVolumeTemp * systemVolume) : volumeMax; 
         }
         
