@@ -63,18 +63,18 @@ float AudioEffectVolume::GetStreamVolume(const std::string sessionID)
     } else {
         return SessionIDToVolumeMap_[sessionID];
     }
-    return SUCCESS;
+    return SUCCESSVOLUME;
 }
 
 int32_t AudioEffectVolume::StreamVolumeDelete(const std::string sessionID)
 {
     if (!SessionIDToVolumeMap_.count(sessionID))
     {
-        return SUCCESS;
+        return SUCCESSVOLUME;
     } else {
         SessionIDToVolumeMap_.erase(sessionID); 
     }
-    return SUCCESS;
+    return SUCCESSVOLUME;
 }
 
 void AudioEffectVolume::SetDspVolume(const float volume)
