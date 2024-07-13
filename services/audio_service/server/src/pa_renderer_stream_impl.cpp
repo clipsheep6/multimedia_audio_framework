@@ -208,7 +208,7 @@ int32_t PaRendererStreamImpl::Pause()
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     std::string sessionIDTemp = std::to_string(streamIndex_);
-    audioEffectVolume->StremVolumeDelete(sessionIDTemp);
+    audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
 
     return SUCCESS;
 }
@@ -278,7 +278,7 @@ int32_t PaRendererStreamImpl::Stop()
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     std::string sessionIDTemp = std::to_string(streamIndex_);
-    audioEffectVolume->StremVolumeDelete(sessionIDTemp);
+    audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
 
     return SUCCESS;
 }
