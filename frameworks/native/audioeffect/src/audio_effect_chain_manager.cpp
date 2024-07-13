@@ -551,7 +551,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
         std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
             float streamVolumeTemp = audioEffectVolume->SessionIDToVolumeMap[*s];
-            volumeMax = (streamVolumeTemp * systemVolume) >volumeMax ?
+            volumeMax = (streamVolumeTemp * systemVolume) > volumeMax ?
                (streamVolumeTemp * systemVolume) : volumeMax; 
         }
     // send volume to dsp
@@ -584,7 +584,8 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
         
         std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
         auto audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-        if (audioEffectChain->GetFinalVolume() != volumeMax) {
+        if (static_cast<int32_t>(audioEffectChain->GetFinalVolume() * 10000) != 
+            static_cast<int32_t>(volumeMax * 10000)) {
             audioEffectChain->SetFinalVolume(volumeMax);
             if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
                 return ERROR;
@@ -602,7 +603,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
             audioEffectChain->SetEffectCurrSceneType(currSceneType);
             int32_t ret = audioEffectChain->UpdateEffectParam();
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
-            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, finalVolume changed to %{public}u",
+            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, finalVolume changed to %{public}f",
                 it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
         }
     }

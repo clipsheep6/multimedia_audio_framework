@@ -139,7 +139,7 @@ int32_t PaRendererStreamImpl::InitParams()
     // In plan: Get data from xml
     effectSceneName_ = processConfig_.rendererInfo.sceneType;
 
-    clientVolume_ = 1;
+    clientVolume_ = 1.0f;
     ResetOffload();
 
     return SUCCESS;

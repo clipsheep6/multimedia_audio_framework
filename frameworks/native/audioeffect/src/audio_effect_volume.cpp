@@ -40,7 +40,7 @@ std::shared_ptr<AudioEffectVolume> AudioEffectVolume::GetInstance()
 
 void SetSystemVolume(float systemVolume)
 {
-    AUDIO_DEBUG_LOG("systemVolume: %{public}f", streamVolume);
+    AUDIO_DEBUG_LOG("systemVolume: %{public}f", systemVolume);
     systemVolume_ = systemVolume;
 }
 
@@ -49,7 +49,7 @@ float GetSystemVolume()
     return systemVolume_;
 }
 
-void SetStreamVolume(const std::string sessionID, float streamVolume)
+void SetStreamVolume(const std::string sessionID,const float streamVolume)
 {
     AUDIO_DEBUG_LOG("SetStreamVolume: %{public}f", streamVolume);
     SessionIDToVolumeMap_[sessionID] = streamVolume;
@@ -58,24 +58,24 @@ void SetStreamVolume(const std::string sessionID, float streamVolume)
 float GetStreamVolume(const std::string sessionID)
 {
     if(!SessionIDToVolumeMap_.count(sessionID)){
-        return 1;
-    }else{
+        return 1.0;
+    } else {
         return SessionIDToVolumeMap_[sessionID];
     }
-    return;
+    return SUCCESS;
 }
 
 int32_t StremVolumeDelete(const std::string sessionID)
 {
     if(!SessionIDToVolumeMap_.count(sessionID)){
         return SUCCESS;
-    }else{
-        SessionIDToVolumeMap_erase(sessionID); 
+    } else {
+        SessionIDToVolumeMap_.erase(sessionID); 
     }
     return SUCCESS;
 }
 
-void AudioEffectVolume::SetDspVolume(float volume)
+void AudioEffectVolume::SetDspVolume(const float volume)
 {
     AUDIO_DEBUG_LOG("setDspVolume: %{public}f", volume);
     dspVolume_ = volume;
