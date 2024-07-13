@@ -174,7 +174,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
 #endif
     AUDIO_DEBUG_LOG("set ap integration rotation: %{public}u", *(data - 1));
     AUDIO_DEBUG_LOG("set ap integration sceneType_ : %{public}s finalVolume_ : %{publix}f",
-         sceneType_.c_str(), finalVolume_);
+        sceneType_.c_str(), finalVolume_);
     *data++ = static_cast<int32_t>(finalVolume_ * MAX_UINT_VOLUME);
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
     *data++ = extraEffectChainType_;

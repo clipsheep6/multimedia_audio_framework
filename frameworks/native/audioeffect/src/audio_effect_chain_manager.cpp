@@ -552,7 +552,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
             float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
             volumeMax = (streamVolumeTemp * systemVolume) > volumeMax ?
-               (streamVolumeTemp * systemVolume) : volumeMax; 
+               (streamVolumeTemp * systemVolume) : volumeMax;
         }
     }
     // send volume to dsp
@@ -580,12 +580,12 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
             float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
             volumeMax = (streamVolumeTemp * systemVolume) > volumeMax ?
-               (streamVolumeTemp * systemVolume) : volumeMax; 
+               (streamVolumeTemp * systemVolume) : volumeMax;
         }
         
         std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
         auto audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-        if (static_cast<int32_t>(audioEffectChain->GetFinalVolume() * MAX_UINT_VOLUME_NUM) != 
+        if (static_cast<int32_t>(audioEffectChain->GetFinalVolume() * MAX_UINT_VOLUME_NUM) !=
             static_cast<int32_t>(volumeMax * MAX_UINT_VOLUME_NUM)) {
             audioEffectChain->SetFinalVolume(volumeMax);
             if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
@@ -642,7 +642,7 @@ int32_t AudioEffectChainManager::SystemVolumeUpdate(const float systemVolume)
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     audioEffectVolume->SetSystemVolume(systemVolume);
     int32_t ret;
-    AUDIO_INFO_LOG("systemVolume is %{public}f",audioEffectVolume->GetSystemVolume());
+    AUDIO_INFO_LOG("systemVolume is %{public}f", audioEffectVolume->GetSystemVolume());
     ret = EffectVolumeUpdate(audioEffectVolume);
     return ret;
 }
