@@ -49,7 +49,7 @@ float GetSystemVolume()
     return systemVolume_;
 }
 
-void SetStreamVolume(const std::string sessionID,const float streamVolume)
+void SetStreamVolume(const std::string sessionID, const float streamVolume)
 {
     AUDIO_DEBUG_LOG("SetStreamVolume: %{public}f", streamVolume);
     SessionIDToVolumeMap_[sessionID] = streamVolume;
@@ -57,7 +57,8 @@ void SetStreamVolume(const std::string sessionID,const float streamVolume)
 
 float GetStreamVolume(const std::string sessionID)
 {
-    if(!SessionIDToVolumeMap_.count(sessionID)){
+    if (!SessionIDToVolumeMap_.count(sessionID))
+    {
         return 1.0;
     } else {
         return SessionIDToVolumeMap_[sessionID];
@@ -67,7 +68,8 @@ float GetStreamVolume(const std::string sessionID)
 
 int32_t StremVolumeDelete(const std::string sessionID)
 {
-    if(!SessionIDToVolumeMap_.count(sessionID)){
+    if (!SessionIDToVolumeMap_.count(sessionID))
+    {
         return SUCCESS;
     } else {
         SessionIDToVolumeMap_.erase(sessionID); 
