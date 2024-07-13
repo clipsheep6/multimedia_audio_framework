@@ -172,6 +172,7 @@ private:
 #endif
 
     FILE *dumpFile_ = nullptr;
+    std::shared_ptr<AudioFrameChecker> frameChecker = nullptr;
 };
     
 OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
@@ -598,6 +599,10 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AdjustAudioBalance(&data, len);
     }
 
+    if (frameChecker) {
+        frameChecker->ProcessFrame(&data, 1); // 1 for one buffer
+    }
+
     Trace::CountVolume("OffloadAudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     Trace trace("OffloadSink::RenderFrame");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
@@ -670,6 +675,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
         return ERR_NOT_STARTED;
     }
 
+    frameChecker = std::make_shared<AudioFrameChecker>("offload hdidata0", LOG_INTERVAL);
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_OFFLOAD_RENDER_SINK_FILENAME, &dumpFile_);
 
     started_ = true;

@@ -164,6 +164,7 @@ private:
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AudioScene::AUDIO_SCENE_INVALID;
+    std::shared_ptr<AudioFrameChecker> frameChecker = nullptr;
 };
 
 MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &halName)
@@ -535,6 +536,11 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
             switchCV_.notify_all();
         }
     }
+
+    if (frameChecker) {
+        frameChecker->ProcessFrame(&data, 1); // 1 for one buffer
+    }
+
     Trace trace("MchSinkInner::RenderFrame");
 
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
@@ -623,6 +629,7 @@ int32_t MultiChannelRendererSinkInner::Start(void)
         }
     }
 
+    frameChecker = std::make_shared<AudioFrameChecker>("multichannel hdidata0", LOG_INTERVAL);
     return SUCCESS;
 }
 

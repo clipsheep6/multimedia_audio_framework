@@ -214,10 +214,6 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     }
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
-        "flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
-        rendererOptions.rendererInfo.streamUsage, rendererFlags, appInfo.appUid);
-
     audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
@@ -230,6 +226,10 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
         AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
             ERR_OPERATION_FAILED);
     }
+
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "
+        "flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
+        rendererOptions.rendererInfo.streamUsage, rendererFlags, appInfo.appUid);
 
     return audioRenderer;
 }
@@ -294,6 +294,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     if (appInfo_.appUid < 0) {
         appInfo_.appUid = static_cast<int32_t>(getuid());
     }
+    bundleName_ = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
 
     if (createStream) {
         AudioStreamParams tempParams = {};
@@ -315,6 +316,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.mode = SHARE_MODE;
     audioInterrupt_.parallelPlayFlag = false;
+    frameChecker = std::make_shared<AudioFrameChecker>("clientdata0", CLIENT_LOG_INTERVAL);
 }
 
 int32_t AudioRendererPrivate::InitAudioInterruptCallback()
@@ -646,7 +648,7 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Start");
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Start. sessionId: %{public}u, streamType: %{public}d, "\
         "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
 
     RendererState state = GetStatus();
@@ -722,19 +724,21 @@ bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Tim
 bool AudioRendererPrivate::Drain() const
 {
     Trace trace("AudioRenderer::Drain");
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Drain. sessionId: %{public}u", sessionID_);
     return audioStream_->DrainAudioStream();
 }
 
 bool AudioRendererPrivate::Flush() const
 {
     Trace trace("AudioRenderer::Flush");
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Flush. sessionId: %{public}u", sessionID_);
     return audioStream_->FlushAudioStream();
 }
 
 bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::PauseTransitent");
-    AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. sessionId: %{public}u", sessionID_);
     if (isSwitching_) {
         AUDIO_ERR_LOG("failed. Switching state: %{public}d", isSwitching_);
         return false;
@@ -758,7 +762,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Pause");
 
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. sessionId: %{public}u", sessionID_);
 
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Pause failed. Switching state: %{public}d", isSwitching_);
 
@@ -786,7 +790,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 
 bool AudioRendererPrivate::Stop() const
 {
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. sessionId: %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
         "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
     if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
@@ -809,7 +813,7 @@ bool AudioRendererPrivate::Stop() const
 
 bool AudioRendererPrivate::Release() const
 {
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Release. sessionId: %{public}u", sessionID_);
 
     bool result = audioStream_->ReleaseAudioStream();
 
@@ -1138,6 +1142,9 @@ int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
     if (!switchStreamMutex_.try_lock()) {
         AUDIO_ERR_LOG("In switch stream process, return");
         return ERR_ILLEGAL_STATE;
+    }
+    if (frameChecker) {
+        frameChecker->ProcessFrame(reinterpret_cast<const char*>(bufDesc.buffer), 1); // 1 for one buffer
     }
     int32_t ret = audioStream_->Enqueue(bufDesc);
     switchStreamMutex_.unlock();
@@ -1704,11 +1711,10 @@ void AudioRendererPrivate::InitLatencyMeasurement(const AudioStreamParams &audio
     if (!latencyMeasEnabled_) {
         return;
     }
-    std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
     uint32_t sessionId = 0;
     audioStream_->GetAudioSessionID(sessionId);
     latencyMeasurement_ = std::make_shared<AudioLatencyMeasurement>(audioStreamParams.samplingRate,
-        audioStreamParams.channels, audioStreamParams.format, bundleName, sessionId);
+        audioStreamParams.channels, audioStreamParams.format, bundleName_, sessionId);
 }
 
 void AudioRendererPrivate::MockPcmData(uint8_t *buffer, size_t bufferSize) const
