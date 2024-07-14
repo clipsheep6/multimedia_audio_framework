@@ -22,13 +22,18 @@ ohos_shared_library("audio_capturer_source") {
     debug = false
   }
   install_enable = true
-  sources = [ "primary/audio_capturer_source.cpp" ]
+  sources = [
+    "primary/audio_capturer_source.cpp",
+    "primary/audio_capturer_source_normal.cpp",
+    "primary/audio_capturer_source_wakeup.cpp",
+  ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
 
   include_dirs = [
     "common",
+    "primary",
     "../common/include",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
