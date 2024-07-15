@@ -1359,8 +1359,8 @@ void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData
         AudioStreamData dataAfterProcess = srcData;
         dataAfterProcess.bufferDesc = convertedBuffer;
         ProcessSingleData(dataAfterProcess, dstData);
-        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), sizeof(convertedBuffer.buffer), 0,
-            sizeof(convertedBuffer.buffer));
+        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+            convertedBuffer.bufLength);
         CHECK_AND_RETURN_LOG(ret == EOK, "memset converted buffer to 0 failed");
     }
 }
@@ -1800,8 +1800,8 @@ int32_t AudioEndpointInner::HandleCapturerDataParams(const BufferDesc &writeBuf,
         ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
             static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy_s failed");
-        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), sizeof(convertedBuffer.buffer), 0,
-            sizeof(convertedBuffer.buffer));
+        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+            convertedBuffer.bufLength);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
         return EOK;
     }

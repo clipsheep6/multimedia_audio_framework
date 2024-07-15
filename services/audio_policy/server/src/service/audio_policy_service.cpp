@@ -2799,7 +2799,7 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo, DeviceRole deviceRo
             moduleInfo.name.c_str(), deviceRole, configRole);
         if (configRole != deviceRole) {continue;}
         GetUsbModuleInfo(deviceInfo, moduleInfo);
-        int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        auto ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
             "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
     }
@@ -2846,7 +2846,7 @@ int32_t AudioPolicyService::LoadDefaultUsbModule(DeviceRole deviceRole)
         AUDIO_INFO_LOG("[module_load]::load default module[%{public}s], load role[%{public}d] config role[%{public}d]",
             moduleInfo.name.c_str(), deviceRole, configRole);
         if (configRole != deviceRole) {continue;}
-        int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        auto ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
             "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
     }
