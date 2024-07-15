@@ -53,6 +53,17 @@ void NapiCapturerPeriodPositionCallback::SaveCallbackReference(const std::string
     }
 }
 
+void NapiCapturerPeriodPositionCallback::RemoveCallbackReference(const std::string &callbackName)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (callbackName == PERIOD_REACH_CALLBACK_NAME) {
+        capturerPeriodPositionCallback_ = nullptr;
+    } else {
+        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
+    }
+}
+
 void NapiCapturerPeriodPositionCallback::OnPeriodReached(const int64_t &frameNumber)
 {
     std::lock_guard<std::mutex> lock(mutex_);

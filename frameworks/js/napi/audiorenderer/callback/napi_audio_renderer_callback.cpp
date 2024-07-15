@@ -87,7 +87,7 @@ void NapiAudioRendererCallback::RemoveCallbackReference(const std::string &callb
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    if (callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
+    if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
         interruptCallback_ = nullptr;
     } else if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
         stateChangeCallback_ = nullptr;

@@ -53,6 +53,17 @@ void NapiRendererDataRequestCallback::SaveCallbackReference(const std::string &c
     }
 }
 
+void NapiRendererDataRequestCallback::RemoveCallbackReference(const std::string &callbackName)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (callbackName == DATA_REQUEST_CALLBACK_NAME) {
+        rendererDataRequestCallback_ = nullptr;
+    } else {
+        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
+    }
+}
+
 void NapiRendererDataRequestCallback::OnWriteData(size_t length)
 {
     std::lock_guard<std::mutex> lock(mutex_);

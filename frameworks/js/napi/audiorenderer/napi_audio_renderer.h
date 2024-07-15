@@ -138,6 +138,8 @@ private:
         const std::string &cbName, NapiAudioRenderer *napiRenderer);
     static napi_value RegisterDataRequestCallback(napi_env env, napi_value *argv,
         const std::string &cbName, NapiAudioRenderer *napiRenderer);
+    static void UnregisterDataRequestCallback(napi_env env,
+        const std::string &cbName, NapiAudioRenderer *napiRenderer);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *argv,
         const std::string &cbName);
     static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value *argv, NapiAudioRenderer *napiRenderer);

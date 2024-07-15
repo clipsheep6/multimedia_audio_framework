@@ -49,6 +49,17 @@ void NapiCapturerPositionCallback::SaveCallbackReference(const std::string &call
     }
 }
 
+void NapiCapturerPositionCallback::RemoveCallbackReference(const std::string &callbackName)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (callbackName == MARK_REACH_CALLBACK_NAME) {
+        capturerPositionCallback_ = nullptr;
+    } else {
+        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
+    }
+}
+
 void NapiCapturerPositionCallback::OnMarkReached(const int64_t &framePosition)
 {
     std::lock_guard<std::mutex> lock(mutex_);

@@ -28,6 +28,7 @@ public:
     explicit NapiCapturerPeriodPositionCallback(napi_env env);
     virtual ~NapiCapturerPeriodPositionCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
+    void RemoveCallbackReference(const std::string &callbackName);
     void OnPeriodReached(const int64_t &frameNumber) override;
 
 private:

@@ -28,6 +28,7 @@ public:
     explicit NapiCapturerPositionCallback(napi_env env);
     virtual ~NapiCapturerPositionCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
+    void RemoveCallbackReference(const std::string &callbackName);
     void OnMarkReached(const int64_t &framePosition) override;
 
 private:

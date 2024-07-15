@@ -877,8 +877,9 @@ napi_value NapiAudioCapturer::RegisterCallback(napi_env env, napi_value jsThis,
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
 
-    if (!cbName.compare(STATE_CHANGE_CALLBACK_NAME) ||
-        !cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME)) {
+    if  (!cbName.compare(STATE_CHANGE_CALLBACK_NAME) ||
+        !cbName.compare(INTERRUPT_CALLBACK_NAME) ||
+        !cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME))  {
         result = RegisterCapturerCallback(env, argv, cbName, napiCapturer);
     } else if (!cbName.compare(MARK_REACH_CALLBACK_NAME)) {
         result = RegisterPositionCallback(env, argv, cbName, napiCapturer);
@@ -1104,10 +1105,18 @@ napi_value NapiAudioCapturer::UnregisterCallback(napi_env env, napi_value jsThis
     if (!cbName.compare(MARK_REACH_CALLBACK_NAME)) {
         napiCapturer->audioCapturer_->UnsetCapturerPositionCallback();
         napiCapturer->positionCbNapi_ = nullptr;
+        std::shared_ptr<NapiCapturerPositionCallback> cb =
+            std::static_pointer_cast<NapiCapturerPositionCallback>(napiCapturer->positionCbNapi_);
+        cb->RemoveCallbackReference(cbName);
     } else if (!cbName.compare(PERIOD_REACH_CALLBACK_NAME)) {
         napiCapturer->audioCapturer_->UnsetCapturerPeriodPositionCallback();
         napiCapturer->periodPositionCbNapi_ = nullptr;
-    } else if (!cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME)) {
+        std::shared_ptr<NapiCapturerPeriodPositionCallback> cb =
+            std::static_pointer_cast<NapiCapturerPeriodPositionCallback>(napiCapturer->periodPositionCbNapi_);
+        cb->RemoveCallbackReference(cbName);
+    } else if (!cbName.compare(STATE_CHANGE_CALLBACK_NAME) ||
+        !cbName.compare(INTERRUPT_CALLBACK_NAME) ||
+        !cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME)) {
         UnregisterCapturerCallback(env, cbName, napiCapturer);
     } else if (!cbName.compare(INPUTDEVICE_CHANGE_CALLBACK_NAME)) {
         UnregisterAudioCapturerDeviceChangeCallback(env, argc, argv, napiCapturer);
@@ -1153,6 +1162,8 @@ void NapiAudioCapturer::UnregisterAudioCapturerDeviceChangeCallback(napi_env env
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unset of capturer device change callback failed");
 
         napiCapturer->deviceChangeCallbacks_.remove(cb);
+        std::string callbackName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
+        cb->RemoveCallbackReference(callbackName);
         return;
     }
 

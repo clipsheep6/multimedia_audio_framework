@@ -29,6 +29,7 @@ public:
     explicit NapiAudioCapturerDeviceChangeCallback(napi_env env);
     virtual ~NapiAudioCapturerDeviceChangeCallback();
     void SaveCallbackReference(napi_value args);
+    void RemoveCallbackReference(const std::string &callbackName);
     void OnStateChange(const DeviceInfo &deviceInfo) override;
     bool ContainSameJsCallback(napi_value args);
 

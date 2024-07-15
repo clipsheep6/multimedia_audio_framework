@@ -108,6 +108,8 @@ private:
         const std::string &cbName);
     static void UnregisterCapturerCallback(napi_env env, const std::string &cbName,
         NapiAudioCapturer *napiCapturer);
+    static void UnregisterDataRequestCallback(napi_env env, const std::string &cbName,
+        NapiAudioCapturer *napiCapturer);
     static void UnregisterAudioCapturerDeviceChangeCallback(napi_env env, size_t argc,
         napi_value *argv, NapiAudioCapturer *napiCapturer);
     static void UnregisterAudioCapturerInfoChangeCallback(napi_env env, size_t argc,
