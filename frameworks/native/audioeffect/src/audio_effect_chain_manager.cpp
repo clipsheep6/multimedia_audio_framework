@@ -1371,6 +1371,13 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
     btOffloadSupported_ = isSupported;
     UpdateSpatializationState(oldState);
     return;
+int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
+{
+    return AUDIO_OK;
+}
+int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
+{
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS
