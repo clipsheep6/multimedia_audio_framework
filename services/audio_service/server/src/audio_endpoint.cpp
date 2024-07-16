@@ -1361,11 +1361,11 @@ void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData
         BufferDesc &convertedBuffer = processList_[0]->GetConvertedBuffer();
         int32_t ret = FormatConverter::S16MonoToS16Stereo(srcData.bufferDesc, convertedBuffer);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from mono to stereo failed");
+        size_t bufferSize = sizeof(convertedBuffer.buffer) / sizeof(convertedBuffer.buffer[0]);
         AudioStreamData dataAfterProcess = srcData;
         dataAfterProcess.bufferDesc = convertedBuffer;
         ProcessSingleData(dataAfterProcess, dstData);
-        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), sizeof(convertedBuffer.buffer), 0,
-            sizeof(convertedBuffer.buffer));
+        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), bufferSize, 0, bufferSize);
         CHECK_AND_RETURN_LOG(ret == EOK, "memset converted buffer to 0 failed");
     }
 }
@@ -1805,8 +1805,8 @@ int32_t AudioEndpointInner::HandleCapturerDataParams(const BufferDesc &writeBuf,
         ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
             static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy_s failed");
-        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), sizeof(convertedBuffer.buffer), 0,
-            sizeof(convertedBuffer.buffer));
+        size_t bufferSize = sizeof(convertedBuffer.buffer) / sizeof(convertedBuffer.buffer[0]);
+        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), bufferSize, 0, bufferSize);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
         return EOK;
     }
