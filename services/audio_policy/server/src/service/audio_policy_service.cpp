@@ -795,6 +795,18 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
     return;
 }
 
+void AudioPolicyService::RemoteOffloadStreamRelease(uint32_t sessionId)
+{
+    if (((*offloadSessionID_) == sessionId) && offloadSessionID_.has_value()) {
+        AUDIO_DEBUG_LOG("Doing unset offload mode!");
+        streamCollector_.UnsetOffloadMode(*offloadSessionID_);
+        MoveToNewPipe(sessionId, PIPE_TYPE_UNKNOWN);
+        streamCollector_.UpdateRendererPipeInfo(sessionId, PIPE_TYPE_UNKNOWN);
+        offloadSessionID_.reset();
+        AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
+    }
+}
+
 bool AudioPolicyService::CheckActiveOutputDeviceSupportOffload()
 {
     DeviceType dev = currentActiveDevice_.deviceType_;
@@ -2031,6 +2043,9 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
+    if (outputDevices.front()->networkId_ != LOCAL_NETWORK_ID || outputDevices.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
+        RemoteOffloadStreamRelease(rendererChangeInfo->sessionId);
+    }
 }
 
 void AudioPolicyService::MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
