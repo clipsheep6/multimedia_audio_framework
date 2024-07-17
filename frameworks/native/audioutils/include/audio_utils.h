@@ -21,6 +21,7 @@
 #include <mutex>
 #include <ctime>
 #include <sys/time.h>
+#include <atomic>
 
 #include <cstdio>
 #include <queue>
@@ -61,25 +62,32 @@ const uint32_t STRING_BUFFER_SIZE = 4096;
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
 class Util {
 public:
-    static bool IsDualToneStreamType(AudioStreamType streamType)
+    static bool IsDualToneStreamType(const AudioStreamType streamType)
     {
-        if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM) {
-            return true;
-        }
-        return false;
+        return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
+    }
+
+    static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
+    {
+        return usage == STREAM_USAGE_ALARM || usage == STREAM_USAGE_VOICE_RINGTONE || usage == STREAM_USAGE_RINGTONE;
+    }
+
+    static bool IsRingerAudioScene(const AudioScene &audioScene)
+    {
+        return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
     }
 };
 
 class Trace {
 public:
-    static void Count(const std::string &value, int64_t count, bool isEnable = true);
-    Trace(const std::string &value, bool isShowLog = false, bool isEnable = true);
+    static void Count(const std::string &value, int64_t count);
+    // Show if data is silent.
+    static void CountVolume(const std::string &value, uint8_t data);
+    Trace(const std::string &value);
     void End();
     ~Trace();
 private:
     std::string value_;
-    bool isShowLog_;
-    bool isEnable_;
     bool isFinished_;
 };
 
@@ -110,7 +118,7 @@ public:
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
-    static void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
+    static bool NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
@@ -148,6 +156,13 @@ template <typename T>
 bool isEqual(T a, T b, double precision = 0.01)
 {
     return std::abs(a - b) < precision;
+}
+
+// return true if value is not in the array.
+template <typename V>
+inline bool NotContain(const std::vector<V> &array, const V &value)
+{
+    return std::find(array.begin(), array.end(), value) == array.end();
 }
 
 template <typename T>
@@ -344,11 +359,7 @@ private:
 
 class LatencyMonitor {
 public:
-    static LatencyMonitor& GetInstance()
-    {
-        static LatencyMonitor latencyMonitor_;
-        return latencyMonitor_;
-    }
+    static LatencyMonitor& GetInstance();
     void ShowTimestamp(bool isRenderer);
     void ShowBluetoothTimestamp();
     void UpdateClientTime(bool isRenderer, std::string &timestamp);
@@ -375,6 +386,19 @@ int32_t GetKeyFromValue(const std::unordered_map<EnumType, V> &map, const V &val
         }
     }
     return -1;
+}
+
+template <typename T, typename Compare>
+bool CasWithCompare(std::atomic<T> &atomicVar, T newValue, Compare compare)
+{
+    T old = atomicVar;
+    do {
+        if (!compare(old, newValue)) {
+            return false;
+        }
+    } while (!atomicVar.compare_exchange_weak(old, newValue));
+
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

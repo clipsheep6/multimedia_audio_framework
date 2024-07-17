@@ -55,6 +55,8 @@ public:
     virtual int32_t OffloadDrain() = 0;
     virtual int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
     virtual int32_t OffloadSetBufferSize(uint32_t sizeMs) = 0;
+    virtual int32_t SuspendRenderSink(const std::string &sinkName) = 0;
+    virtual int32_t RestoreRenderSink(const std::string &sinkName) = 0;
 
     /**
      * Sets Audio modes.
@@ -91,7 +93,7 @@ public:
      * @param value associated with the key for the audio parameter to be set
      * @return none.
      */
-    virtual int32_t GetAsrAecMode(AsrAecMode& asrAecMode) = 0;
+    virtual int32_t GetAsrAecMode(AsrAecMode &asrAecMode) = 0;
 
     /**
      * Set Asr Aec Mode.
@@ -109,7 +111,43 @@ public:
      * @param value associated with the key for the audio parameter to be set
      * @return none.
      */
-    virtual int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode) = 0;
+    virtual int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) = 0;
+
+    /**
+     * Set Asr WhisperDetection Mode.
+     *
+     * @param key for the audio parameter to be set
+     * @param value associated with the key for the audio parameter to be set
+     * @return none.
+     */
+    virtual int32_t SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode) = 0;
+
+    /**
+     * Get Asr WhisperDetection Mode.
+     *
+     * @param key for the audio parameter to be set
+     * @param value associated with the key for the audio parameter to be set
+     * @return none.
+     */
+    virtual int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode) = 0;
+
+    /**
+     * Set Voice Control Mode.
+     *
+     * @param key for the audio parameter to be set
+     * @param value associated with the key for the audio parameter to be set
+     * @return none.
+     */
+    virtual int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) = 0;
+
+    /**
+     * Set Voice Mute Mode.
+     *
+     * @param key for the audio parameter to be set
+     * @param value associated with the key for the audio parameter to be set
+     * @return none.
+     */
+    virtual int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) = 0;
 
     /**
      * Set Asr Aec Mode.
@@ -177,14 +215,16 @@ public:
      *
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) = 0;
+    virtual int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag,
+        BluetoothOffloadState a2dpOffloadFlag) = 0;
 
     /**
      * Update the audio route after devices is detected and route is decided
      *
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices) = 0;
+    virtual int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+        BluetoothOffloadState a2dpOffloadFlag) = 0;
 
     /**
      * Update the audio dual tone state after devices is detected and route is decided
@@ -378,6 +418,15 @@ public:
     // Check if the multi-channel sound effect is working on the DSP
     virtual bool GetEffectOffloadEnabled() = 0;
 
+    /**
+     * Load effect hdi model when audio_host online.
+     */
+    virtual void LoadHdiEffectModel() = 0;
+
+    /**
+     * Update Effect BtOffload Supported state.
+     */
+    virtual void UpdateEffectBtOffloadSupported(const bool &isSupported) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -434,8 +483,16 @@ private:
     int HandleGetAsrAecMode(MessageParcel &data, MessageParcel &reply);
     int HandleSetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleGetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAsrVoiceControlMode(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply);
+    int HandleSuspendRenderSink(MessageParcel &data, MessageParcel &reply);
+    int HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply);
+    int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -485,8 +542,16 @@ private:
         &AudioManagerStub::HandleGetAsrAecMode,
         &AudioManagerStub::HandleSetAsrNoiseSuppressionMode,
         &AudioManagerStub::HandleGetAsrNoiseSuppressionMode,
+        &AudioManagerStub::HandleSetAsrWhisperDetectionMode,
+        &AudioManagerStub::HandleGetAsrWhisperDetectionMode,
+        &AudioManagerStub::HandleSetAsrVoiceControlMode,
+        &AudioManagerStub::HandleSetAsrVoiceMuteMode,
         &AudioManagerStub::HandleIsWhispering,
         &AudioManagerStub::HandleGetEffectOffloadEnabled,
+        &AudioManagerStub::HandleSuspendRenderSink,
+        &AudioManagerStub::HandleRestoreRenderSink,
+        &AudioManagerStub::HandleLoadHdiEffectModel,
+        &AudioManagerStub::HandleUpdateEffectBtOffloadSupported,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),

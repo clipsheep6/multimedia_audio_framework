@@ -187,6 +187,15 @@ inline bool IsInputDevice(DeviceType deviceType)
     return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
 }
 
+inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole)
+{
+    if (deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        return deviceRole == INPUT_DEVICE || deviceRole == DEVICE_ROLE_MAX;
+    } else {
+        return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
+    }
+}
+
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_EARPIECE,
     DeviceType::DEVICE_TYPE_SPEAKER,
@@ -204,6 +213,15 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
 inline bool IsOutputDevice(DeviceType deviceType)
 {
     return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
+}
+
+inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole)
+{
+    if (deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        return deviceRole == OUTPUT_DEVICE || deviceRole == DEVICE_ROLE_MAX;
+    } else {
+        return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
+    }
 }
 
 enum DeviceChangeType {
@@ -320,7 +338,7 @@ template<typename T> std::set<T> UnmarshallingSetInt32(Parcel &parcel,
 
 struct DeviceStreamInfo {
     AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
-    AudioSampleFormat format;
+    AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     std::set<AudioSamplingRate> samplingRate;
     std::set<AudioChannel> channels;
@@ -484,7 +502,7 @@ public:
         OLD_DEVICE_UNAVALIABLE = 2,
         OVERRODE = 3,
         MIN = 1000,
-        OLD_DEVICE_UNAVALIABLE_EXT = 1000
+        OLD_DEVICE_UNAVALIABLE_EXT = 1000,
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -509,6 +527,11 @@ public:
     bool IsOldDeviceUnavaliable() const
     {
         return ((reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE) || (reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT));
+    }
+
+    bool isOverride() const
+    {
+        return reason_ == ExtEnum::OVERRODE;
     }
 
 private:

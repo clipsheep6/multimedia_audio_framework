@@ -260,6 +260,7 @@ void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamC
     rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
+    rendererChangeInfo->prerunningState = streamChangeInfo.audioRendererChangeInfo.prerunningState;
 }
 
 void AudioStreamCollector::SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
@@ -292,12 +293,37 @@ bool AudioStreamCollector::CheckRendererStateInfoChanged(AudioStreamChangeInfo &
     return true;
 }
 
+bool AudioStreamCollector::CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo)
+{
+    int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+    const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+            return changeInfo->sessionId == sessionId;
+        });
+    if (it == audioRendererChangeInfos_.end()) {
+        return true;
+    }
+
+    bool changed = false;
+    bool isOffloadAllowed = (*it)->rendererInfo.isOffloadAllowed;
+    if (isOffloadAllowed != streamChangeInfo.audioRendererChangeInfo.rendererInfo.isOffloadAllowed) {
+        changed = true;
+    }
+    AudioPipeType pipeType = (*it)->rendererInfo.pipeType;
+    if (pipeType != streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType) {
+        changed = true;
+    }
+    return changed;
+}
+
 int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo)
 {
     AUDIO_INFO_LOG("UpdateRendererStream client %{public}d state %{public}d session %{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.rendererState,
         streamChangeInfo.audioRendererChangeInfo.sessionId);
-    if (!CheckRendererStateInfoChanged(streamChangeInfo)) {
+    bool stateChanged = CheckRendererStateInfoChanged(streamChangeInfo);
+    bool infoChanged = CheckRendererInfoChanged(streamChangeInfo);
+    if (!stateChanged && !infoChanged) {
         return SUCCESS;
     }
 
@@ -322,7 +348,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             }
             *it = move(rendererChangeInfo);
 
-            if (audioPolicyServerHandler_ != nullptr) {
+            if (audioPolicyServerHandler_ != nullptr && stateChanged) {
                 audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
             }
             AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
@@ -340,6 +366,25 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
     AUDIO_INFO_LOG("UpdateRendererStream: Not found clientUid:%{public}d sessionId:%{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.clientUID);
     return SUCCESS;
+}
+
+
+int32_t AudioStreamCollector::UpdateRendererStreamInternal(AudioStreamChangeInfo &streamChangeInfo)
+{
+    // Update the renderer internal info in audioRendererChangeInfos_
+    for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
+        AudioRendererChangeInfo audioRendererChangeInfo = **it;
+        if ((*it)->clientUID == streamChangeInfo.audioRendererChangeInfo.clientUID &&
+            (*it)->sessionId == streamChangeInfo.audioRendererChangeInfo.sessionId) {
+            AUDIO_DEBUG_LOG("update client %{public}d session %{public}d", (*it)->clientUID, (*it)->sessionId);
+            (*it)->prerunningState = streamChangeInfo.audioRendererChangeInfo.prerunningState;
+            return SUCCESS;
+        }
+    }
+
+    AUDIO_ERR_LOG("Not found clientUid:%{public}d sessionId:%{public}d",
+        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.clientUID);
+    return ERROR;
 }
 
 int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
@@ -463,7 +508,7 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::UpdateRendererPipeInfo(int32_t sessionId, AudioPipeType &pipeType)
+int32_t AudioStreamCollector::UpdateRendererPipeInfo(const int32_t sessionId, const AudioPipeType pipeType)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     bool pipeTypeUpdated = false;
@@ -534,6 +579,16 @@ int32_t AudioStreamCollector::UpdateTracker(AudioMode &mode, AudioStreamChangeIn
     return SUCCESS;
 }
 
+int32_t AudioStreamCollector::UpdateTrackerInternal(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    // update the stream change internal info
+    if (mode == AUDIO_MODE_PLAYBACK) {
+        return UpdateRendererStreamInternal(streamChangeInfo);
+    }
+    return SUCCESS;
+}
+
 AudioStreamType AudioStreamCollector::GetStreamType(ContentType contentType, StreamUsage streamUsage)
 {
     AudioStreamType streamType = STREAM_MUSIC;
@@ -559,6 +614,20 @@ AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
         }
     }
     return streamType;
+}
+
+bool AudioStreamCollector::IsOffloadAllowed(const int32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+            return changeInfo->sessionId == sessionId;
+        });
+    if (it == audioRendererChangeInfos_.end()) {
+        AUDIO_WARNING_LOG("invalid session id: %{public}d", sessionId);
+        return false;
+    }
+    return (*it)->rendererInfo.isOffloadAllowed;
 }
 
 int32_t AudioStreamCollector::GetChannelCount(int32_t sessionId)
@@ -698,8 +767,7 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->clientUID == clientUid &&
-            streamSetStateEventInternal.streamUsage == changeInfo->rendererInfo.streamUsage &&
-            GetAndCompareStreamType(streamSetStateEventInternal.streamUsage, changeInfo->rendererInfo)) {
+            streamSetStateEventInternal.streamUsage == changeInfo->rendererInfo.streamUsage) {
             AUDIO_INFO_LOG("UpdateStreamState Found matching uid=%{public}d and usage=%{public}d",
                 clientUid, streamSetStateEventInternal.streamUsage);
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];

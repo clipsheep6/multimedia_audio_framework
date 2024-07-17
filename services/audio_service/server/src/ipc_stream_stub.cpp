@@ -19,6 +19,7 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_process_config.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,6 +39,7 @@ int IpcStreamStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessagePa
     if (!CheckInterfaceToken(data)) {
         return AUDIO_ERR;
     }
+    Trace trace("IpcStream::Handle::" + std::to_string(code));
     if (code >= IpcStreamMsg::IPC_STREAM_MAX_MSG) {
         AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -126,8 +128,9 @@ int32_t IpcStreamStub::HandleFlush(MessageParcel &data, MessageParcel &reply)
 
 int32_t IpcStreamStub::HandleDrain(MessageParcel &data, MessageParcel &reply)
 {
-    (void)data;
-    reply.WriteInt32(Drain());
+    bool stopFlag = data.ReadBool();
+    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
+    reply.WriteInt32(Drain(stopFlag));
     return AUDIO_OK;
 }
 
@@ -305,6 +308,13 @@ int32_t IpcStreamStub::HandleSetSilentModeAndMixWithOthers(MessageParcel &data, 
     bool on = data.ReadBool();
     reply.WriteInt32(SetSilentModeAndMixWithOthers(on));
 
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleSetClientVolume(MessageParcel &data, MessageParcel &reply)
+{
+    (void)data;
+    reply.WriteInt32(SetClientVolume());
     return AUDIO_OK;
 }
 } // namespace AudioStandard

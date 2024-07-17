@@ -45,13 +45,16 @@ public:
         const std::string& condition) override;
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
+    int32_t SuspendRenderSink(const std::string &sinkName) override;
+    int32_t RestoreRenderSink(const std::string &sinkName) override;
     void SetAudioParameter(const std::string &key, const std::string &value) override;
     void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
     int32_t SetExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs) override;
-    int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
-    int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices) override;
+    int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
+    int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+        BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
@@ -84,8 +87,14 @@ public:
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
     int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
     int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
+    int32_t SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode) override;
+    int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode) override;
+    int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) override;
+    int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
     bool GetEffectOffloadEnabled() override;
+    void LoadHdiEffectModel() override;
+    void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

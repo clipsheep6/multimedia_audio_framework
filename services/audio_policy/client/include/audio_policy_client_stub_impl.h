@@ -34,7 +34,7 @@ public:
     int32_t RemoveFocusInfoChangeCallback();
     int32_t AddDeviceChangeCallback(const DeviceFlag &flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback> &cb);
-    int32_t RemoveDeviceChangeCallback();
+    int32_t RemoveDeviceChangeCallback(DeviceFlag flag, std::shared_ptr<AudioManagerDeviceChangeCallback> &cb);
     int32_t AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
     int32_t RemoveRingerModeCallback();
     int32_t RemoveRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
@@ -48,7 +48,10 @@ public:
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb);
     int32_t RemovePreferredInputDeviceChangeCallback();
     int32_t AddRendererStateChangeCallback(const std::shared_ptr<AudioRendererStateChangeCallback> &cb);
-    int32_t RemoveRendererStateChangeCallback();
+    int32_t RemoveRendererStateChangeCallback(
+        const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks);
+    int32_t RemoveRendererStateChangeCallback(
+        const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
     size_t GetRendererStateChangeCallbackSize() const;
     int32_t AddCapturerStateChangeCallback(const std::shared_ptr<AudioCapturerStateChangeCallback> &cb);
     int32_t RemoveCapturerStateChangeCallback();
@@ -93,7 +96,7 @@ private:
 
     std::vector<std::weak_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
-    std::list<std::pair<DeviceFlag, std::shared_ptr<AudioManagerDeviceChangeCallback>>> deviceChangeCallbackList_;
+    std::vector<std::pair<DeviceFlag, std::shared_ptr<AudioManagerDeviceChangeCallback>>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCallbackList_;
     std::vector<std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>> preferredOutputDeviceCallbackList_;

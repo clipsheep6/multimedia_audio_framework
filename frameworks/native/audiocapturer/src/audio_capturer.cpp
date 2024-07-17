@@ -266,6 +266,11 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
 
     RegisterCapturerPolicyServiceDiedCallback();
+
+    if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
+        AUDIO_ERR_LOG("GetAudioSessionID failed!");
+        return ERR_INVALID_INDEX;
+    }
     // eg: 100009_44100_2_1_cap_client_out.pcm
     std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.samplingRate) + "_" +
         std::to_string(params.audioChannel) + "_" + std::to_string(params.audioSampleFormat) + "_cap_client_out.pcm";
@@ -1205,6 +1210,7 @@ AudioCapturerStateChangeCallbackImpl::~AudioCapturerStateChangeCallbackImpl()
 void AudioCapturerStateChangeCallbackImpl::SaveCapturerInfoChangeCallback(
     const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback)
 {
+    std::lock_guard<std::mutex> lock(capturerMutex_);
     auto iter = find(capturerInfoChangeCallbacklist_.begin(), capturerInfoChangeCallbacklist_.end(), callback);
     if (iter == capturerInfoChangeCallbacklist_.end()) {
         capturerInfoChangeCallbacklist_.emplace_back(callback);
@@ -1214,6 +1220,7 @@ void AudioCapturerStateChangeCallbackImpl::SaveCapturerInfoChangeCallback(
 void AudioCapturerStateChangeCallbackImpl::RemoveCapturerInfoChangeCallback(
     const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback)
 {
+    std::lock_guard<std::mutex> lock(capturerMutex_);
     if (callback == nullptr) {
         capturerInfoChangeCallbacklist_.clear();
         return;
@@ -1227,6 +1234,7 @@ void AudioCapturerStateChangeCallbackImpl::RemoveCapturerInfoChangeCallback(
 
 int32_t AudioCapturerStateChangeCallbackImpl::GetCapturerInfoChangeCallbackArraySize()
 {
+    std::lock_guard<std::mutex> lock(capturerMutex_);
     return capturerInfoChangeCallbacklist_.size();
 }
 
@@ -1270,6 +1278,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
     uint32_t sessionId = static_cast<uint32_t>(-1);
     bool found = false;
     AudioCapturerChangeInfo capturerChangeInfo;
+    std::vector<std::shared_ptr<AudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacklist;
 
     {
         std::lock_guard<std::mutex> lock(capturerMutex_);
@@ -1285,8 +1294,12 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
         }
     }
 
+    {
+        std::lock_guard<std::mutex> lock(capturerMutex_);
+        capturerInfoChangeCallbacklist = capturerInfoChangeCallbacklist_;
+    }
     if (found) {
-        for (auto it = capturerInfoChangeCallbacklist_.begin(); it != capturerInfoChangeCallbacklist_.end(); ++it) {
+        for (auto it = capturerInfoChangeCallbacklist.begin(); it != capturerInfoChangeCallbacklist.end(); ++it) {
             if (*it != nullptr) {
                 (*it)->OnStateChange(capturerChangeInfo);
             }

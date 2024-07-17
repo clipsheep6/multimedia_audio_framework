@@ -23,9 +23,7 @@
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
-#include "audio_stream.h"
 #include "audio_renderer_private.h"
-
 
 using namespace std;
 using namespace std::chrono;
@@ -5336,70 +5334,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_SamplingRate_001, Test
 }
 
 /**
- * @tc.name  : Test set renderer Interrupt.
- * @tc.number: Audio_Renderer_Set_Renderer_Interrupt_002
- * @tc.desc  : Test AudioRendererInterruptCallbackImpl SaveCallback and OnInterrupt.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Interrupt_002, TestSize.Level1)
-{
-    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
-    uint32_t invalidSessionID = static_cast<uint32_t>(-1);
-    AudioInterrupt audioInterrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
-        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
-    AppInfo appInfo_;
-    if (!(appInfo_.appPid)) {
-        appInfo_.appPid = getpid();
-    }
-
-    if (appInfo_.appUid < 0) {
-        appInfo_.appUid = static_cast<int32_t>(getuid());
-    }
-    const std::shared_ptr<AudioStream> audioStream_ = std::make_shared<AudioStream>(AudioStreamType::STREAM_MEDIA,
-        AUDIO_MODE_PLAYBACK, appInfo_.appUid);
-    ASSERT_NE(nullptr, audioStream_);
-
-    shared_ptr<AudioRendererInterruptCallbackImpl> interruptCallbackImpl =
-        make_shared<AudioRendererInterruptCallbackImpl>(audioStream_, audioInterrupt);
-    EXPECT_NE(nullptr, interruptCallbackImpl);
-
-    interruptCallbackImpl->SaveCallback(audioRendererCB);
-
-    InterruptEventInternal interruptEvent = {};
-    interruptEvent.eventType = INTERRUPT_TYPE_END;
-    interruptEvent.forceType = INTERRUPT_SHARE;
-    interruptEvent.hintType = INTERRUPT_HINT_NONE;
-    interruptEvent.duckVolume = 0;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.forceType = INTERRUPT_FORCE;
-    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_STOP;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.duckVolume = 5;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.duckVolume = 15;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_UNDUCK;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_NONE;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    EXPECT_EQ(interruptEvent.hintType, INTERRUPT_HINT_NONE);
-}
-
-/**
  * @tc.name  : Test set renderer instance.
  * @tc.number: Audio_Renderer_Set_Renderer_Instance_001
  * @tc.desc  : Test renderer instance GetMinStreamVolume,GetMaxStreamVolume,GetCurrentOutputDevices,GetUnderflowCount
@@ -5430,54 +5364,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_001, TestSize
     float count = audioRenderer->GetUnderflowCount();
     EXPECT_GE(count, 0);
 
-    AppInfo appInfo = {};
-    std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-
-    bool isDeviceChanged = audioRendererPrivate->IsDeviceChanged(deviceInfo);
-    EXPECT_EQ(false, isDeviceChanged);
-
-    deviceInfo.deviceType = DEVICE_TYPE_EARPIECE;
-    isDeviceChanged = audioRendererPrivate->IsDeviceChanged(deviceInfo);
-    EXPECT_EQ(false, isDeviceChanged);
-
-    audioRenderer->Release();
-}
-
-/**
- * @tc.name  : Test set renderer instance.
- * @tc.number: Audio_Renderer_Set_Renderer_Instance_002
- * @tc.desc  : Test renderer instance RegisterAudioRendererEventListener,DestroyAudioRendererStateCallback
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_002, TestSize.Level1)
-{
-    int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
-    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
-    rendererOptions.streamInfo.channels = AudioChannel::MONO;
-    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
-
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    int32_t clientPid = getpid();
-    const std::shared_ptr<AudioRendererDeviceChangeCallback> callback =
-        std::make_shared<AudioRendererDeviceChangeCallbackTest>();
-    ret = audioRenderer->RegisterAudioRendererEventListener(clientPid, nullptr);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-    ret = audioRenderer->RegisterAudioRendererEventListener(clientPid, callback);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioRenderer->UnregisterAudioRendererEventListener(clientPid);
-    EXPECT_EQ(SUCCESS, ret);
-
-    clientPid = -1;
-    ret = audioRenderer->UnregisterAudioRendererEventListener(clientPid);
-    EXPECT_EQ(SUCCESS, ret);
     audioRenderer->Release();
 }
 
@@ -5513,45 +5399,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_003, TestSize
     ret = audioRenderer->UnregisterAudioPolicyServerDiedCb(clientPid);
     EXPECT_EQ(SUCCESS, ret);
 
-    audioRenderer->Release();
-}
-
-/**
- * @tc.name  : Test set renderer instance.
- * @tc.number: Audio_Renderer_Set_Renderer_Instance_004
- * @tc.desc  : Test SaveCallback and setAudioRendererObj on audioRendererStateChangeCallbackImpl
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_004, TestSize.Level1)
-{
-    int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
-    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
-    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
-
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    unique_ptr<AudioRendererStateChangeCallbackImpl> audioRendererStateChangeCallbackImpl =
-        std::make_unique<AudioRendererStateChangeCallbackImpl>();
-    std::weak_ptr<AudioRendererDeviceChangeCallback> callback =
-        std::make_shared<AudioRendererDeviceChangeCallbackTest>();
-    audioRendererStateChangeCallbackImpl->SaveCallback(callback);
-
-    AppInfo appInfo = {};
-    std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-
-    audioRendererStateChangeCallbackImpl->setAudioRendererObj(audioRendererPrivate.get());
-
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    EXPECT_EQ(SUCCESS, ret);
-    audioRendererStateChangeCallbackImpl->OnRendererStateChange(audioRendererChangeInfos);
     audioRenderer->Release();
 }
 
@@ -6058,138 +5905,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererSamplingRate_Stability_0
     }
 
     audioRenderer->Release();
-}
-
-/**
-* @tc.name  : Test RegisterAudioRendererEventListener via legal state
-* @tc.number: Audio_Renderer_RegisterAudioRendererEventListener_001
-* @tc.desc  : Test registerAudioRendererEventListener interface. Returns success.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioRendererEventListener_001, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptions;
-
-    int32_t clientId = getpid();
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    shared_ptr<AudioRendererDeviceChangeCallbackTest> callback =
-        make_shared<AudioRendererDeviceChangeCallbackTest>();
-    int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, callback);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioRenderer->UnregisterAudioRendererEventListener(clientId);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test RegisterAudioRendererEventListener via legal state
-* @tc.number: Audio_Renderer_RegisterAudioRendererEventListener_002
-* @tc.desc  : Test registerAudioRendererEventListener interface. Returns ERR_INVALID_PARAM.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioRendererEventListener_002, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptions;
-
-    int32_t clientId = getpid();
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, nullptr);
-    EXPECT_EQ(VALUE_ERROR, ret);
-}
-
-/**
-* @tc.name  : Test RegisterAudioRendererEventListener via legal state
-* @tc.number: Audio_Renderer_RegisterAudioRendererEventListener_Stability_001
-* @tc.desc  : Test registerAudioRendererEventListener interface valid callback 1000 times.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioRendererEventListener_Stability_001, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptions;
-
-    int32_t clientId = getpid();
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
-        shared_ptr<AudioRendererDeviceChangeCallbackTest> callback =
-            make_shared<AudioRendererDeviceChangeCallbackTest>();
-        int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, callback);
-        EXPECT_EQ(SUCCESS, ret);
-
-        ret = audioRenderer->UnregisterAudioRendererEventListener(clientId);
-        EXPECT_EQ(SUCCESS, ret);
-    }
-}
-
-/**
-* @tc.name  : Test RegisterAudioRendererEventListener via legal state
-* @tc.number: Audio_Renderer_RegisterAudioRendererEventListener_Stability_002
-* @tc.desc  : Test registerAudioRendererEventListener interface valid callback 1000 times.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioRendererEventListener_Stability_002, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptions;
-
-    int32_t clientId = getpid();
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
-        int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, nullptr);
-        EXPECT_EQ(VALUE_ERROR, ret);
-    }
-}
-
-/**
-* @tc.name  : Test UnregisterAudioRendererEventListener via legal state
-* @tc.number: Audio_Renderer_UnregisterAudioRendererEventListener_001
-* @tc.desc  : Test UnregisterAudioRendererEventListener interface. Returns success.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_UnregisterAudioRendererEventListener_001, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptions;
-
-    int32_t clientId = getpid();
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    shared_ptr<AudioRendererDeviceChangeCallbackTest> callback =
-        make_shared<AudioRendererDeviceChangeCallbackTest>();
-    int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, callback);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioRenderer->UnregisterAudioRendererEventListener(clientId);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-
-/**
-* @tc.name  : Test UnregisterAudioRendererEventListener via legal state
-* @tc.number: Audio_Renderer_UnregisterAudioRendererEventListener_Stability_00
-* @tc.desc  : Test UnregisterAudioRendererEventListener interface valid callback 1000 times.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_UnregisterAudioRendererEventListener_Stability_001, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptions;
-
-    int32_t clientId = getpid();
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
-        shared_ptr<AudioRendererDeviceChangeCallbackTest> callback =
-            make_shared<AudioRendererDeviceChangeCallbackTest>();
-        int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, callback);
-        EXPECT_EQ(SUCCESS, ret);
-
-        ret = audioRenderer->UnregisterAudioRendererEventListener(clientId);
-        EXPECT_EQ(SUCCESS, ret);
-    }
 }
 
 /**

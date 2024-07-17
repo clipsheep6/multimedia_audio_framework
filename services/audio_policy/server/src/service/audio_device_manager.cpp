@@ -29,6 +29,22 @@ namespace AudioStandard {
 using namespace std;
 constexpr int32_t MS_PER_S = 1000;
 constexpr int32_t NS_PER_MS = 1000000;
+const int32_t ADDRESS_STR_LEN = 17;
+const int32_t START_POS = 6;
+const int32_t END_POS = 13;
+
+std::string GetEncryptAddr(const std::string &addr)
+{
+    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
+        return std::string("");
+    }
+    std::string tmp = "**:**:**:**:**:**";
+    std::string out = addr;
+    for (int i = START_POS; i <= END_POS; i++) {
+        out[i] = tmp[i];
+    }
+    return out;
+}
 
 AudioDeviceManager::AudioDeviceManager()
 {
@@ -86,7 +102,7 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
 
     for (auto &devInfo : deviceList) {
         if ((devInfo.deviceType == devDesc->deviceType_) &&
-            ((devRole == devDesc->deviceRole_) && ((devInfo.deviceRole & devRole) != 0)) &&
+            (devRole == devDesc->deviceRole_) &&
             ((devInfo.deviceUsage & devUsage) != 0) &&
             ((devInfo.deviceCategory == devDesc->deviceCategory_) ||
             ((devInfo.deviceCategory & devDesc->deviceCategory_) != 0))) {
@@ -722,6 +738,16 @@ void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isCo
     }
 }
 
+bool AudioDeviceManager::GetScoState()
+{
+    for (const auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == CONNECTED) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor> &d,
     const DeviceInfoUpdateCommand updateCommand)
 {
@@ -818,8 +844,7 @@ bool AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescripto
         if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             if (desc->deviceType_ == devDesc->deviceType_ &&
-                desc->macAddress_ == devDesc->macAddress_ &&
-                desc->isEnable_ != devDesc->isEnable_) {
+                desc->macAddress_ == devDesc->macAddress_) {
                 desc->isEnable_ = devDesc->isEnable_;
                 updateFlag = true;
             }
@@ -840,8 +865,7 @@ bool AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescrip
         if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             if (desc->deviceType_ == deviceDescriptor->deviceType_ &&
-                desc->macAddress_ == deviceDescriptor->macAddress_ &&
-                desc->exceptionFlag_ != deviceDescriptor->exceptionFlag_) {
+                desc->macAddress_ == deviceDescriptor->macAddress_) {
                 desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
                 updateFlag = true;
             }
@@ -956,6 +980,34 @@ DeviceUsage AudioDeviceManager::GetDeviceUsage(const AudioDeviceDescriptor &desc
     }
 
     return usage;
+}
+
+void AudioDeviceManager::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+{
+    for (auto device : connectedDevices_) {
+        if (device->macAddress_ == macAddress) {
+            device->deviceName_ = deviceName;
+        }
+    }
+}
+
+bool AudioDeviceManager::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors)
+{
+    size_t connectedDevicesNum = connectedDevices_.size();
+    for (size_t i = 0; i < connectedDevicesNum; i++) {
+        if (connectedDevices_[i] != nullptr) {
+            if (connectedDevices_[i]->deviceRole_ == audioDeviceDescriptors->deviceRole_
+                && connectedDevices_[i]->deviceType_ == audioDeviceDescriptors->deviceType_
+                && connectedDevices_[i]->networkId_ == audioDeviceDescriptors->networkId_
+                && connectedDevices_[i]->macAddress_ == audioDeviceDescriptors->macAddress_) {
+                return true;
+            }
+        }
+    }
+    AUDIO_WARNING_LOG("Role:%{public}d networkId:%{public}s Type:%{public}d macAddress:%{public}s device not found",
+        audioDeviceDescriptors->deviceRole_, GetEncryptStr(audioDeviceDescriptors->networkId_).c_str(),
+        audioDeviceDescriptors->deviceType_, GetEncryptAddr(audioDeviceDescriptors->macAddress_).c_str());
+    return false;
 }
 }
 }

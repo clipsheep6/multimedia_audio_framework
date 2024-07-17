@@ -42,9 +42,10 @@ public:
         const sptr<IRemoteObject> &object);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo);
+    int32_t UpdateTrackerInternal(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &outputDeviceInfo);
-    int32_t UpdateRendererPipeInfo(int32_t sessionId, AudioPipeType &pipeType);
+    int32_t UpdateRendererPipeInfo(const int32_t sessionId, const AudioPipeType pipeType);
     int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
@@ -56,6 +57,7 @@ public:
     float GetLowPowerVolume(int32_t streamId);
     int32_t SetOffloadMode(int32_t streamId, int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode(int32_t streamId);
+    bool IsOffloadAllowed(const int32_t sessionId);
     float GetSingleStreamVolume(int32_t streamId);
     bool GetAndCompareStreamType(StreamUsage targetUsage, AudioRendererInfo rendererInfo);
     int32_t UpdateCapturerInfoMuteStatus(int32_t uid, bool muteStatus);
@@ -86,6 +88,7 @@ private:
     int32_t UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateRendererDeviceInfo(DeviceInfo &outputDeviceInfo);
     int32_t UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceInfo);
+    int32_t UpdateRendererStreamInternal(AudioStreamChangeInfo &streamChangeInfo);
     AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
     AudioStreamType GetStreamTypeFromSourceType(SourceType sourceType);
     void WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
@@ -100,6 +103,7 @@ private:
     void RegisteredRendererTrackerClientDied(const int32_t uid);
     void RegisteredCapturerTrackerClientDied(const int32_t uid);
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
+    bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     AudioSystemManager *audioSystemMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;

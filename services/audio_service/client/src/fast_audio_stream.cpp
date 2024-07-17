@@ -477,7 +477,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
         audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, RUNNING, clientPid_, capturerInfo_);
     }
     int32_t ret = ERROR;
-    if (state_ == PAUSED) {
+    if (state_ == PAUSED || state_ == STOPPED) {
         ret = processClient_->Resume();
     } else {
         ret = processClient_->Start();
@@ -548,7 +548,7 @@ bool FastAudioStream::FlushAudioStream()
     return true;
 }
 
-bool FastAudioStream::DrainAudioStream()
+bool FastAudioStream::DrainAudioStream(bool stopFlag)
 {
     AUDIO_INFO_LOG("Drain stream SUCCESS");
     return true;

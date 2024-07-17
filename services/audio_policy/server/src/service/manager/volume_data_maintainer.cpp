@@ -37,8 +37,6 @@ const int32_t SETTINGS_CLONED_STATUS = 0;
 
 static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> VOLUME_MUTE_STREAM_TYPE = {
     // all volume types except STREAM_ALL
-    VolumeDataMaintainer::VT_STREAM_RING,
-    VolumeDataMaintainer::VT_STREAM_MUSIC,
     VolumeDataMaintainer::VT_STREAM_ALARM,
     VolumeDataMaintainer::VT_STREAM_DTMF,
     VolumeDataMaintainer::VT_STREAM_TTS,
@@ -55,8 +53,6 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
 };
 
 static std::map<VolumeDataMaintainer::VolumeDataMaintainerStreamType, AudioStreamType> AUDIO_STREAMTYPE_MAP = {
-    {VolumeDataMaintainer::VT_STREAM_RING, STREAM_RING},
-    {VolumeDataMaintainer::VT_STREAM_MUSIC, STREAM_MUSIC},
     {VolumeDataMaintainer::VT_STREAM_ALARM, STREAM_ALARM},
     {VolumeDataMaintainer::VT_STREAM_DTMF, STREAM_DTMF},
     {VolumeDataMaintainer::VT_STREAM_TTS, STREAM_VOICE_ASSISTANT},
@@ -207,6 +203,19 @@ bool VolumeDataMaintainer::SaveMuteStatus(DeviceType deviceType, AudioStreamType
     bool muteStatus)
 {
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    if (streamType == STREAM_RING) {
+        AUDIO_INFO_LOG("set ring stream mute status to all device.");
+        bool saveMuteResult = false;
+        for (auto &device : DEVICE_TYPE_LIST) {
+            // set ring stream mute status to device
+            saveMuteResult = SaveMuteStatusInternal(device, streamType, muteStatus);
+            if (!saveMuteResult) {
+                AUDIO_INFO_LOG("save mute failed.");
+                break;
+            }
+        }
+        return saveMuteResult;
+    }
     return SaveMuteStatusInternal(deviceType, streamType, muteStatus);
 }
 
@@ -230,6 +239,14 @@ bool VolumeDataMaintainer::SaveMuteStatusInternal(DeviceType deviceType, AudioSt
         AUDIO_DEBUG_LOG("muteKey:%{public}s, muteStatus:%{public}d", muteKey.c_str(), muteStatus);
     }
 
+    return true;
+}
+
+bool VolumeDataMaintainer::SetStreamMuteStatus(AudioStreamType streamType, bool muteStatus)
+{
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    muteStatusMap_[streamForVolumeMap] = muteStatus;
     return true;
 }
 

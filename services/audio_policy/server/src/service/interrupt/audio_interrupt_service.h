@@ -24,7 +24,6 @@
 #include "audio_interrupt_info.h"
 #include "audio_policy_server_handler.h"
 #include "audio_policy_server.h"
-#include "audio_service_dump.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,13 +80,13 @@ public:
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
     void AudioInterruptZoneDump(std::string &dumpString);
+    AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
     static constexpr float DUCK_FACTOR = 0.2f;
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
-    static constexpr uid_t UID_ROOT = 0;
     static constexpr uid_t UID_AUDIO = 1041;
 
     // Inner class for death handler
@@ -146,7 +145,6 @@ private:
     void SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
-    AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     void UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void SendFocusChangeEvent(const int32_t zoneId, int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
     void RemoveClient(const int32_t zoneId, uint32_t sessionId);

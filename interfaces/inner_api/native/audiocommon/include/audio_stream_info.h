@@ -18,6 +18,8 @@
 #include <map>
 #include <unordered_map>
 
+#include "audio_source_type.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -505,6 +507,31 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_RINGTONE,
 };
 
+const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
+    SOURCE_TYPE_INVALID,
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+};
+
+const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+};
+
 // Supported audio parameters for fast audio stream
 const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_48000,
@@ -578,7 +605,7 @@ class AudioStreamInfo {
 public:
     AudioSamplingRate samplingRate;
     AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
-    AudioSampleFormat format;
+    AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     AudioChannel channels;
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     constexpr AudioStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,

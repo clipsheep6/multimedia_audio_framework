@@ -28,8 +28,10 @@ public:
 private:
     void GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSystemVolumeLevelLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void SetStreamMuteLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply);
@@ -37,14 +39,14 @@ private:
     void IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetRingerModeLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeInternal(MessageParcel &data, MessageParcel &reply);
     void GetRingerModeInternal(MessageParcel &data, MessageParcel &reply);
     void SetAudioSceneInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioSceneInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply);
-    void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
-    void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
+    void IsMicrophoneMuteLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
@@ -152,13 +154,17 @@ private:
     void UnsetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateAudioConcurrencyInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
+    void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
         &AudioPolicyManagerStub::GetMaxVolumeLevelInternal,
         &AudioPolicyManagerStub::GetMinVolumeLevelInternal,
+        &AudioPolicyManagerStub::SetSystemVolumeLevelLegacyInternal,
         &AudioPolicyManagerStub::SetSystemVolumeLevelInternal,
         &AudioPolicyManagerStub::GetSystemVolumeLevelInternal,
+        &AudioPolicyManagerStub::SetStreamMuteLegacyInternal,
         &AudioPolicyManagerStub::SetStreamMuteInternal,
         &AudioPolicyManagerStub::GetStreamMuteInternal,
         &AudioPolicyManagerStub::IsStreamActiveInternal,
@@ -166,14 +172,14 @@ private:
         &AudioPolicyManagerStub::IsDeviceActiveInternal,
         &AudioPolicyManagerStub::GetActiveOutputDeviceInternal,
         &AudioPolicyManagerStub::GetActiveInputDeviceInternal,
+        &AudioPolicyManagerStub::SetRingerModeLegacyInternal,
         &AudioPolicyManagerStub::SetRingerModeInternal,
         &AudioPolicyManagerStub::GetRingerModeInternal,
         &AudioPolicyManagerStub::SetAudioSceneInternal,
         &AudioPolicyManagerStub::GetAudioSceneInternal,
         &AudioPolicyManagerStub::SetMicrophoneMuteInternal,
         &AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal,
-        &AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal,
-        &AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal,
+        &AudioPolicyManagerStub::IsMicrophoneMuteLegacyInternal,
         &AudioPolicyManagerStub::IsMicrophoneMuteInternal,
         &AudioPolicyManagerStub::SetInterruptCallbackInternal,
         &AudioPolicyManagerStub::UnsetInterruptCallbackInternal,
@@ -278,6 +284,8 @@ private:
         &AudioPolicyManagerStub::UnsetConcurrencyCallbackInternal,
         &AudioPolicyManagerStub::ActivateAudioConcurrencyInternal,
         &AudioPolicyManagerStub::SetRingerStreamMuteInternal,
+        &AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal,
+        &AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),

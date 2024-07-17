@@ -49,7 +49,7 @@ constexpr int32_t UID_CAAS_SA = 5527;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
-constexpr int32_t UID_CAMERA = 1047;
+constexpr int32_t UID_TELEPHONY_SA = 1001;
 
 constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
@@ -66,7 +66,7 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_DISTRIBUTED_AUDIO_SA,
     UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
-    UID_CAMERA
+    UID_TELEPHONY_SA // used in distributed communication call
 };
 
 const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
@@ -124,25 +124,30 @@ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
     return ret;
 }
 
-void Trace::Count(const std::string &value, int64_t count, bool isEnable)
+void Trace::Count(const std::string &value, int64_t count)
 {
 #ifdef FEATURE_HITRACE_METER
-    CountTraceDebug(isEnable, HITRACE_TAG_ZAUDIO, value, count);
+    CountTrace(HITRACE_TAG_ZAUDIO, value, count);
 #endif
 }
 
-Trace::Trace(const std::string &value, bool isShowLog, bool isEnable)
+void Trace::CountVolume(const std::string &value, uint8_t data)
+{
+#ifdef FEATURE_HITRACE_METER
+    if (data == 0) {
+        CountTrace(HITRACE_TAG_ZAUDIO, value, PCM_MAYBE_SILENT);
+    } else {
+        CountTrace(HITRACE_TAG_ZAUDIO, value, PCM_MAYBE_NOT_SILENT);
+    }
+#endif
+}
+
+Trace::Trace(const std::string &value)
 {
     value_ = value;
-    isShowLog_ = isShowLog;
-    isEnable_ = isEnable;
     isFinished_ = false;
 #ifdef FEATURE_HITRACE_METER
-    if (isShowLog) {
-        isShowLog_ = true;
-        AUDIO_INFO_LOG("%{public}s start.", value_.c_str());
-    }
-    StartTraceDebug(isEnable_, HITRACE_TAG_ZAUDIO, value);
+    StartTrace(HITRACE_TAG_ZAUDIO, value_);
 #endif
 }
 
@@ -150,11 +155,8 @@ void Trace::End()
 {
 #ifdef FEATURE_HITRACE_METER
     if (!isFinished_) {
-        FinishTraceDebug(isEnable_, HITRACE_TAG_ZAUDIO);
+        FinishTrace(HITRACE_TAG_ZAUDIO);
         isFinished_ = true;
-        if (isShowLog_) {
-            AUDIO_INFO_LOG("%{public}s end.", value_.c_str());
-        }
     }
 #endif
 }
@@ -268,25 +270,32 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     return ret;
 }
 
-void PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
+bool PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
 {
     if (state == AUDIO_PERMISSION_START) {
         Trace trace("PrivacyKit::StartUsingPermission");
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         if (res != 0) {
-            AUDIO_WARNING_LOG("notice start using perm error: %{public}d", res);
+            AUDIO_ERR_LOG("StartUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
+                targetTokenId, res);
+            return false;
         }
         res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
         if (res != 0) {
-            AUDIO_WARNING_LOG("add mic record error: %{public}d", res);
+            AUDIO_ERR_LOG("AddPermissionUsedRecord for tokenId %{public}u! The PrivacyKit error code is "
+                "%{public}d", targetTokenId, res);
+            return false;
         }
     } else if (state == AUDIO_PERMISSION_STOP) {
         Trace trace("PrivacyKit::StopUsingPermission");
         int res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         if (res != 0) {
-            AUDIO_WARNING_LOG("notice stop using perm error: %{public}d", res);
+            AUDIO_ERR_LOG("StopUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
+                targetTokenId, res);
+            return false;
         }
     }
+    return true;
 }
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
@@ -779,12 +788,12 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
     int32_t currentPeakIndex = -1;
     int32_t currentPeakSignal = SHRT_MIN;
     bool hasNoneZero = false;
-    size_t frameCount = bufferLen / channels_;
+    size_t frameCount = bufferLen / static_cast<size_t>(channels_);
     for (size_t index = 0; index < frameCount; index++) {
         int32_t tempMax = SHRT_MIN;
         int32_t tempMin = SHRT_MAX;
-        for (int channel = 0; channel < channels_; channel++) {
-            int16_t temp = buffer[index * static_cast<uint32_t>(channels_) + channel];
+        for (uint32_t channel = 0; channel < static_cast<uint32_t>(channels_); channel++) {
+            int32_t temp = buffer[index * static_cast<uint32_t>(channels_) + channel];
             tempMax = temp > tempMax ? temp : tempMax;
             tempMin = temp < tempMin ? temp : tempMin;
         }
@@ -900,6 +909,12 @@ bool AudioLatencyMeasurement::CheckIfEnabled()
     int32_t latencyMeasure = -1;
     GetSysPara("persist.multimedia.audiolatency", latencyMeasure);
     return (latencyMeasure == 1);
+}
+
+LatencyMonitor& LatencyMonitor::GetInstance()
+{
+    static LatencyMonitor latencyMonitor_;
+    return latencyMonitor_;
 }
 
 void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)

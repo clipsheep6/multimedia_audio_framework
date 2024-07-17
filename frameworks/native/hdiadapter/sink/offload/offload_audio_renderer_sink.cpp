@@ -29,7 +29,7 @@
 #include "running_lock.h"
 #include "audio_running_lock_manager.h"
 #endif
-#include "v3_0/iaudio_manager.h"
+#include "v4_0/iaudio_manager.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -59,6 +59,7 @@ constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 const uint64_t SECOND_TO_NANOSECOND = 1000000000;
 const uint64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t SECOND_TO_MILLISECOND = 1000;
+const uint64_t MICROSECOND_TO_MILLISECOND = 1000;
 const uint32_t BIT_IN_BYTE = 8;
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 const unsigned int TIME_OUT_SECONDS = 10;
@@ -84,6 +85,8 @@ public:
     int32_t Resume(void) override;
     int32_t Start(void) override;
     int32_t Stop(void) override;
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
     int32_t Drain(AudioDrainType type) override;
     int32_t SetBufferSize(uint32_t sizeMs) override;
 
@@ -122,19 +125,19 @@ public:
     ~OffloadAudioRendererSinkInner();
 private:
     IAudioSinkAttr attr_ = {};
-    bool rendererInited_;
-    bool started_;
-    bool isFlushing_;
-    bool startDuringFlush_;
-    uint64_t renderPos_;
-    float leftVolume_;
-    float rightVolume_;
+    bool rendererInited_ = false;
+    bool started_ = false;
+    bool isFlushing_ = false;
+    bool startDuringFlush_ = false;
+    uint64_t renderPos_ = 0;
+    float leftVolume_ = 0.0f;
+    float rightVolume_ = 0.0f;
     uint32_t renderId_ = 0;
-    std::string adapterNameCase_;
-    struct IAudioManager *audioManager_;
-    struct IAudioAdapter *audioAdapter_;
-    struct IAudioRender *audioRender_;
-    struct AudioAdapterDescriptor adapterDesc_;
+    std::string adapterNameCase_ = "";
+    struct IAudioManager *audioManager_ = nullptr;
+    struct IAudioAdapter *audioAdapter_ = nullptr;
+    struct IAudioRender *audioRender_ = nullptr;
+    struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
     struct AudioCallbackService callbackServ = {};
     bool audioMonoState_ = false;
@@ -390,10 +393,11 @@ void OffloadAudioRendererSinkInner::DeInit()
 {
     Trace trace("OffloadSink::DeInit");
     std::lock_guard<std::mutex> lock(renderMutex_);
-    AUDIO_DEBUG_LOG("DeInit.");
+    AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
     if (audioAdapter_ != nullptr) {
+        AUDIO_INFO_LOG("DestroyRender rendererid: %{public}u", renderId_);
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
@@ -524,12 +528,16 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
     deviceDesc.desc = const_cast<char *>("");
     deviceDesc.pins = PIN_OUT_SPEAKER;
     AudioXCollie audioXCollie("audioAdapter_->CreateRender", TIME_OUT_SECONDS);
+
+    AUDIO_INFO_LOG("Create offload render format: %{public}d, sampleRate:%{public}u channel%{public}u",
+        param.format, param.sampleRate, param.channelCount);
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("not started failed.");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
         return ERR_NOT_STARTED;
     }
+    AUDIO_INFO_LOG("Create success rendererid: %{public}u", renderId_);
 
     return 0;
 }
@@ -590,6 +598,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AdjustAudioBalance(&data, len);
     }
 
+    Trace::CountVolume("OffloadAudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     Trace trace("OffloadSink::RenderFrame");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
@@ -607,7 +616,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     renderPos_ += writeLen;
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    int64_t stampThreshold = 20;  // 20ms
+    int64_t stampThreshold = 50;  // 50ms
     if (stamp >= stampThreshold) {
         AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     }
@@ -722,13 +731,16 @@ int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
     CHECK_AND_RETURN_RET_LOG(latency, ERR_INVALID_PARAM,
         "GetLatency failed latency null");
 
-    uint32_t hdiLatency;
-    if (audioRender_->GetLatency(audioRender_, &hdiLatency) == 0) {
-        *latency = hdiLatency;
-        return SUCCESS;
-    } else {
-        return ERR_OPERATION_FAILED;
-    }
+    // bytewidth is 4
+    uint64_t hdiLatency = renderPos_ * SECOND_TO_MICROSECOND / (AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT);
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    CHECK_AND_RETURN_RET_LOG(GetPresentationPosition(frames, timeSec, timeNanoSec) == SUCCESS, ERR_OPERATION_FAILED,
+        "get latency failed!");
+
+    *latency = hdiLatency > frames ? (hdiLatency - frames) / MICROSECOND_TO_MILLISECOND : 0;
+    return SUCCESS;
 }
 
 int32_t OffloadAudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
@@ -860,6 +872,17 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
             Start();
         }
     }).detach();
+    renderPos_ = 0;
+    return SUCCESS;
+}
+
+int32_t OffloadAudioRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t OffloadAudioRendererSinkInner::RestoreRenderSink(void)
+{
     return SUCCESS;
 }
 
@@ -963,7 +986,7 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
         return;
     }
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    int32_t byteSize = GetFormatByteSize(attr_.format);
+    size_t byteSize = static_cast<size_t>(GetFormatByteSize(attr_.format));
     size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
         (byteSize * sizeof(uint8_t) * attr_.channel);
     detectedTime_ += newlyCheckedTime;

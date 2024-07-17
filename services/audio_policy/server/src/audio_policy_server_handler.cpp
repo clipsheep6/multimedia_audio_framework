@@ -41,9 +41,16 @@ void AudioPolicyServerHandler::Init(std::shared_ptr<IAudioInterruptEventDispatch
 void AudioPolicyServerHandler::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
-    audioPolicyClientProxyAPSCbsMap_.emplace(clientPid, cb);
-    AUDIO_INFO_LOG("AddAudioPolicyClientProxyMap, group data num [%{public}zu]",
-        audioPolicyClientProxyAPSCbsMap_.size());
+    auto [it, res] = audioPolicyClientProxyAPSCbsMap_.try_emplace(clientPid, cb);
+    if (!res) {
+        if (cb == it->second) {
+            AUDIO_WARNING_LOG("Duplicate registration");
+        } else {
+            AUDIO_ERR_LOG("client registers multiple callbacks, the callback may be lost.");
+        }
+    }
+    AUDIO_INFO_LOG("group data num [%{public}zu] pid [%{public}d]",
+        audioPolicyClientProxyAPSCbsMap_.size(), clientPid);
 }
 
 void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
@@ -712,7 +719,9 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(runnerMutex_);
+    Trace trace("AudioPolicyServerHandler::HandleRendererInfoEvent");
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        Trace traceFor("for pid:" + std::to_string(it->first));
         sptr<IAudioPolicyClient> rendererStateChangeCb = it->second;
         if (rendererStateChangeCb == nullptr) {
             AUDIO_ERR_LOG("rendererStateChangeCb : nullptr for client : %{public}d", it->first);
@@ -721,6 +730,7 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_RENDERER_STATE_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_RENDERER_STATE_CHANGE]) {
+                Trace traceCallback("rendererStateChangeCb->OnRendererStateChange");
             rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
         }
     }
@@ -750,6 +760,7 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = event->GetSharedObject<RendererDeviceChangeEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     const auto &[pid, sessionId, outputDeviceInfo, reason] = *eventContextObj;
+    Trace trace("AudioPolicyServerHandler::HandleRendererDeviceChangeEvent pid:" + std::to_string(pid));
     std::lock_guard<std::mutex> lock(runnerMutex_);
     if (audioPolicyClientProxyAPSCbsMap_.count(pid) == 0) {
         return;
@@ -759,6 +770,7 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
         AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}" PRId32 "", pid);
         return;
     }
+    Trace traceCallback("capturerStateChangeCb->OnRendererDeviceChange sessionId:" + std::to_string(sessionId));
     capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
 }
 

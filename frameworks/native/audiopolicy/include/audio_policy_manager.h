@@ -49,7 +49,7 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v = API_9,
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0);
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
@@ -60,7 +60,7 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId);
 
-    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, API_VERSION api_v = API_9);
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false);
 
     bool GetStreamMute(AudioVolumeType volumeType);
 
@@ -86,7 +86,9 @@ public:
 
     DeviceType GetActiveInputDevice();
 
-    int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9);
+    int32_t SetRingerModeLegacy(AudioRingerMode ringMode);
+
+    int32_t SetRingerMode(AudioRingerMode ringMode);
 
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
@@ -105,15 +107,18 @@ public:
     int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type);
 
     bool GetPersistentMicMuteState();
+
+    bool IsMicrophoneMuteLegacy();
     
-    bool IsMicrophoneMute(API_VERSION api_v = API_9);
+    bool IsMicrophoneMute();
 
     AudioScene GetAudioScene();
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag);
+    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag,
+        std::shared_ptr<AudioManagerDeviceChangeCallback> &cb);
 
     int32_t SetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback, API_VERSION api_v = API_9);
@@ -171,10 +176,13 @@ public:
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
-    int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
-        const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
+    int32_t RegisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
-    int32_t UnregisterAudioRendererEventListener(const int32_t clientPid);
+    int32_t UnregisterAudioRendererEventListener(
+        const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks);
+
+    int32_t UnregisterAudioRendererEventListener(
+        const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
     int32_t RegisterAudioCapturerEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
@@ -367,7 +375,7 @@ public:
 
     int32_t UnsetAudioDeviceRefinerCallback();
 
-    int32_t TriggerFetchDevice();
+    int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
 

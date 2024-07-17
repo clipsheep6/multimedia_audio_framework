@@ -327,6 +327,32 @@ int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &
     return 0;
 }
 
+int32_t AudioSystemManager::SetAsrWhisperDetectionMode(const AsrWhisperDetectionMode asrWhisperDetectionMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    return gasp->SetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+}
+
+int32_t AudioSystemManager::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    int32_t ret = gasp->GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrWhisperDetection Mode audio parameters failed");
+    return 0;
+}
+
+int32_t AudioSystemManager::SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool on)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    return gasp->SetAsrVoiceControlMode(asrVoiceControlMode, on);
+}
+
+int32_t AudioSystemManager::SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    return gasp->SetAsrVoiceMuteMode(asrVoiceMuteMode, on);
+}
+
 int32_t AudioSystemManager::IsWhispering()
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
@@ -397,7 +423,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, API_7);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, true);
 }
 
 int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
@@ -502,7 +528,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
     }
 
     /* Call Audio Policy SetStreamMute */
-    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, API_7);
+    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, true);
 }
 
 bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
@@ -544,11 +570,12 @@ int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,
     return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, flag, callback);
 }
 
-int32_t AudioSystemManager::UnsetDeviceChangeCallback(DeviceFlag flag)
+int32_t AudioSystemManager::UnsetDeviceChangeCallback(DeviceFlag flag,
+    std::shared_ptr<AudioManagerDeviceChangeCallback> cb)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     int32_t clientId = GetCallingPid();
-    return AudioPolicyManager::GetInstance().UnsetDeviceChangeCallback(clientId, flag);
+    return AudioPolicyManager::GetInstance().UnsetDeviceChangeCallback(clientId, flag, cb);
 }
 
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
@@ -577,11 +604,11 @@ int32_t AudioSystemManager::SetMicrophoneMute(bool isMute)
     return AudioPolicyManager::GetInstance().SetMicrophoneMute(isMute);
 }
 
-bool AudioSystemManager::IsMicrophoneMute(API_VERSION api_v)
+bool AudioSystemManager::IsMicrophoneMute()
 {
     std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
     CHECK_AND_RETURN_RET_LOG(groupManager != nullptr, false, "failed, groupManager is null");
-    return groupManager->IsMicrophoneMute(api_v);
+    return groupManager->IsMicrophoneMuteLegacy();
 }
 
 int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const

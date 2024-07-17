@@ -534,7 +534,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
      * @since 9
      */
-    bool IsMicrophoneMute(API_VERSION api_v = API_7);
+    bool IsMicrophoneMute();
 
     /**
      * @brief Select output device.
@@ -643,7 +643,7 @@ public:
      * @param value The value of the set audio parameter.
      * @since 12
      */
-    int32_t GetAsrAecMode(AsrAecMode& asrAecMode);
+    int32_t GetAsrAecMode(AsrAecMode &asrAecMode);
     /**
      * @brief set audio parameter.
      *
@@ -659,7 +659,39 @@ public:
      * @param value The value of the set audio parameter.
      * @since 12
      */
-    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode);
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t SetAsrWhisperDetectionMode(const AsrWhisperDetectionMode asrWhisperDetectionMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool on);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on);
     /**
      * @brief set audio parameter.
      *
@@ -800,7 +832,8 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t UnsetDeviceChangeCallback(DeviceFlag flag = DeviceFlag::ALL_DEVICES_FLAG);
+    int32_t UnsetDeviceChangeCallback(DeviceFlag flag = DeviceFlag::ALL_DEVICES_FLAG,
+        std::shared_ptr<AudioManagerDeviceChangeCallback> callback = nullptr);
 
     /**
      * @brief Registers the ringerMode callback listener.

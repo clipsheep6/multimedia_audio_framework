@@ -62,7 +62,8 @@ public:
     };
 
     static std::shared_ptr<AudioEndpoint> CreateEndpoint(EndpointType type, uint64_t id,
-         AudioStreamType streamType, const DeviceInfo &deviceInfo);
+        const AudioProcessConfig &clientConfig, const DeviceInfo &deviceInfo);
+    static std::string GenerateEndpointKey(DeviceInfo &deviceInfo, int32_t endpointFlag);
 
     virtual std::string GetEndpointName() = 0;
 
@@ -87,6 +88,7 @@ public:
     virtual void Dump(std::string &dumpString) = 0;
 
     virtual DeviceRole GetDeviceRole() = 0;
+    virtual DeviceInfo &GetDeviceInfo() = 0;
     virtual float GetMaxAmplitude() = 0;
 
     virtual ~AudioEndpoint() = default;
@@ -136,6 +138,11 @@ public:
     EndpointStatus GetStatus() override;
 
     void Release() override;
+
+    DeviceInfo &GetDeviceInfo() override
+    {
+        return deviceInfo_;
+    }
 
     DeviceRole GetDeviceRole() override
     {

@@ -29,6 +29,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_server_dump.h"
 #include "audio_system_manager.h"
+#include "audio_inner_call.h"
 #include "i_audio_renderer_sink.h"
 #include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
@@ -36,7 +37,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback {
+class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback,
+    public IAudioServerInnerCall {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);
@@ -73,16 +75,23 @@ public:
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
-    int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
-    int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices) override;
+    int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
+    int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+        BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
+    int32_t SuspendRenderSink(const std::string &sinkName) override;
+    int32_t RestoreRenderSink(const std::string &sinkName) override;
 
     int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
     int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
     int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
+    int32_t SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode) override;
+    int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode) override;
+    int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) override;
+    int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
 
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
@@ -141,6 +150,13 @@ public:
     bool GetEffectOffloadEnabled() override;
 
     void OnCapturerState(bool isActive, int32_t num);
+
+    // IAudioServerInnerCall
+    int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
+
+    void LoadHdiEffectModel() override;
+
+    void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -154,23 +170,32 @@ private:
 
     void ResetRecordConfig(AudioProcessConfig &config);
     AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);
+    bool CheckStreamInfoFormat(const AudioProcessConfig &config);
+    bool CheckRendererFormat(const AudioProcessConfig &config);
+    bool CheckRecorderFormat(const AudioProcessConfig &config);
+    bool CheckConfigFormat(const AudioProcessConfig &config);
     int32_t GetHapBuildApiVersion(int32_t callerUid);
 
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
-    int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices);
-    int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes);
+    int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+        BluetoothOffloadState a2dpOffloadFlag);
+    int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
+        BluetoothOffloadState a2dpOffloadFlag);
     bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();
     void WriteServiceStartupError();
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
+    void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
+        const std::string &extraSceneType);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
+    static uint32_t paDaemonTid_;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;
     static std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys;

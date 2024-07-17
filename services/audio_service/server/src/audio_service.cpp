@@ -29,6 +29,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 static uint64_t g_id = 1;
+static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10ms
+static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3ms
 
 AudioService *AudioService::GetInstance()
 {
@@ -79,7 +81,8 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
         AUDIO_INFO_LOG("find endpoint unlink, call delay release.");
         std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
         releasingEndpointSet_.insert(endpointName);
-        int32_t delayTime = 10000;
+        int32_t delayTime = (*paired).second->GetDeviceInfo().deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ?
+            A2DP_ENDPOINT_RELEASE_DELAY_TIME : NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
         std::thread releaseEndpointThread(&AudioService::DelayCallReleaseEndpoint, this, endpointName, delayTime);
         releaseEndpointThread.detach();
     }
@@ -215,8 +218,8 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
         "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
     if (deviceInfo.deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceInfo.deviceType == DEVICE_TYPE_WIRED_HEADPHONES ||
-        deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        deviceInfo.deviceType == DEVICE_TYPE_USB_HEADSET || deviceInfo.deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceInfo.deviceType == DEVICE_TYPE_USB_HEADSET ||
+        deviceInfo.deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
         switch (config.rendererInfo.streamUsage) {
             case STREAM_USAGE_ALARM:
             case STREAM_USAGE_VOICE_RINGTONE:
@@ -269,6 +272,7 @@ int32_t AudioService::OnInitInnerCapList()
             filteredRendererMap_.push_back(renderer);
         }
     }
+    lock.unlock();
     return SUCCESS;
 }
 
@@ -403,20 +407,22 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
     std::lock_guard<std::mutex> lock(processListMutex_);
-    std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType,
+    std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
         IsEndpointTypeVoip(config, deviceInfo));
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
 
     uint32_t totalSizeInframe = 0;
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
+    CHECK_AND_RETURN_RET_LOG(*deviceInfo.audioStreamInfo.samplingRate.rbegin() > 0, nullptr,
+        "Sample rate in server is invalid.");
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
 
     std::shared_ptr<OHAudioBuffer> buffer = audioEndpoint->GetEndpointType()
          == AudioEndpoint::TYPE_INDEPENDENT ? audioEndpoint->GetBuffer() : nullptr;
-    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, buffer);
+    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, deviceInfo.audioStreamInfo, buffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
@@ -446,7 +452,7 @@ void AudioService::ResetAudioEndpoint()
             }
 
             DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
-            std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType,
+            std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
                 IsEndpointTypeVoip(config, deviceInfo));
             CHECK_AND_RETURN_LOG(audioEndpoint != nullptr, "Get new endpoint failed");
 
@@ -478,7 +484,6 @@ void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, s
 int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
     int32_t ret = SUCCESS;
-    std::lock_guard<std::mutex> lockEndpoint(processListMutex_);
     for (auto item : endpointList_) {
         std::string endpointName = item.second->GetEndpointName();
         if (endpointName == item.first) {
@@ -520,11 +525,9 @@ int32_t AudioService::UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process
 
 void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs)
 {
-    std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
     AUDIO_INFO_LOG("Delay release endpoint [%{public}s] start.", endpointName.c_str());
     CHECK_AND_RETURN_LOG(endpointList_.count(endpointName),
         "Find no such endpoint: %{public}s", endpointName.c_str());
-    lockEndpoint.unlock();
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
     releaseEndpointCV_.wait_for(lock, std::chrono::milliseconds(delayInMs), [this, endpointName] {
         if (releasingEndpointSet_.count(endpointName)) {
@@ -542,7 +545,6 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
     releasingEndpointSet_.erase(endpointName);
 
     std::shared_ptr<AudioEndpoint> temp = nullptr;
-    std::unique_lock<std::mutex> lockEndptr(processListMutex_);
     CHECK_AND_RETURN_LOG(endpointList_.find(endpointName) != endpointList_.end() &&
         endpointList_[endpointName] != nullptr, "Endpoint %{public}s not available, stop call release",
         endpointName.c_str());
@@ -589,7 +591,7 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 }
 
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInfo &deviceInfo,
-    AudioStreamType streamType, bool isVoipStream)
+    const AudioProcessConfig &clientConfig, bool isVoipStream)
 {
     int32_t endpointSeparateFlag = -1;
     GetSysPara("persist.multimedia.audioflag.fast.disableseparate", endpointSeparateFlag);
@@ -600,14 +602,13 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
         if (isVoipStream) {
             endpointFlag = AUDIO_FLAG_VOIP_FAST;
         }
-        std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceType) + "_" +
-            std::to_string(deviceInfo.deviceId) + "_" + std::to_string(endpointFlag);
+        std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
         if (endpointList_.find(deviceKey) != endpointList_.end()) {
             AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
             return endpointList_[deviceKey];
         } else {
             std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ?
-                AudioEndpoint::TYPE_VOIP_MMAP : AudioEndpoint::TYPE_MMAP, endpointFlag, streamType, deviceInfo);
+                AudioEndpoint::TYPE_VOIP_MMAP : AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo);
             CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
             endpointList_[deviceKey] = endpoint;
             return endpoint;
@@ -616,7 +617,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
         // Create Independent stream.
         std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId) + "_" + std::to_string(g_id);
         std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_INDEPENDENT,
-            g_id, streamType, deviceInfo);
+            g_id, clientConfig, deviceInfo);
         CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create independent AudioEndpoint failed.");
         g_id++;
         endpointList_[deviceKey] = endpoint;
@@ -636,12 +637,10 @@ void AudioService::Dump(std::string &dumpString)
         paired.first->Dump(dumpString);
     }
     // dump endpoint
-    std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
     for (auto item : endpointList_) {
         AppendFormat(dumpString, "  - Endpoint device id: %s\n", item.first.c_str());
         item.second->Dump(dumpString);
     }
-    lockEndpoint.unlock();
     PolicyHandler::GetInstance().Dump(dumpString);
 }
 

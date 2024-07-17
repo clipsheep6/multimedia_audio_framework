@@ -131,7 +131,7 @@ bool AudioAdapterManager::Init()
     }
 
     char safeVolumeTimeout[6] = {0};
-    ret = GetParameter("persist.multimedia.audio.safevolume.timeout", "1200",
+    ret = GetParameter("persist.multimedia.audio.safevolume.timeout", "1140",
         safeVolumeTimeout, sizeof(safeVolumeTimeout));
     if (ret > 0) {
         safeVolumeTimeout_ = atoi(safeVolumeTimeout);
@@ -327,6 +327,18 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
     volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel);
 }
 
+void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
+{
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
+}
+
+void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
+{
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    SetRingerModeInternal(ringerMode);
+}
+
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
@@ -385,20 +397,26 @@ int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)
     return volumeDataMaintainer_.GetStreamVolume(streamType);
 }
 
+int32_t AudioAdapterManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
+{
+    return volumeDataMaintainer_.GetStreamVolume(streamType);
+}
+
 float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 {
     int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(streamType);
     return CalculateVolumeDb(volumeLevel);
 }
 
-int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
 {
-    return SetStreamMuteInternal(streamType, mute);
+    return SetStreamMuteInternal(streamType, mute, streamUsage);
 }
 
-int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute)
+int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute,
+    StreamUsage streamUsage)
 {
-    AUDIO_INFO_LOG("SetStreamMute: stream type %{public}d, mute %{public}d", streamType, mute);
+    AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
     if (mute &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
@@ -407,12 +425,23 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         AUDIO_ERR_LOG("SetStreamMute: this type can not set mute");
         return SUCCESS;
     }
+    if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_SPEAKER &&
+        GetRingerMode() != RINGER_MODE_NORMAL && mute && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+        AUDIO_INFO_LOG("Dual tone stream type %{public}d, current active device:[%{public}d] is no speaker, dont mute",
+            streamType, mute);
+        return SUCCESS;
+    }
 
-    if (Util::IsDualToneStreamType(streamType)) {
-        AUDIO_INFO_LOG("Dual tone stream type %{public}d, mute %{public}d", streamType, mute);
-        volumeDataMaintainer_.SaveMuteStatus(DEVICE_TYPE_SPEAKER, streamType, mute);
-    } else {
-        volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
+    if (streamType == STREAM_RING) {
+        mute = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
+    }
+
+    // set stream mute status to mem.
+    volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendStreamMuteStatusUpdate(streamType, mute, streamUsage);
     }
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
@@ -498,11 +527,11 @@ int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSu
     return audioServiceAdapter_->SuspendAudioDevice(portName, isSuspend);
 }
 
-bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute)
+bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "SetSinkMute audio adapter null");
 
-    return audioServiceAdapter_->SetSinkMute(sinkName, isMute);
+    return audioServiceAdapter_->SetSinkMute(sinkName, isMute, isSync);
 }
 
 int32_t AudioAdapterManager::SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name)
@@ -568,6 +597,13 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
+    if (!isLoaded_) {
+        AUDIO_ERR_LOG("The data base is not loaded. Can not load new volume for new device!");
+        // The ring volume is also saved in audio_config.para.
+        // So the boot animation can still play with right volume.
+        return;
+    }
+
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
         SetVolumeDb(STREAM_MUSIC);
@@ -612,13 +648,22 @@ int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutput
 
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
-    return SetRingerModeInternal(ringerMode);
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    ringerMode_ = ringerMode;
+    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendRingerModeUpdate(ringerMode);
+        return SUCCESS;
+    }
+    return ERROR;
 }
 
 int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
 {
     AUDIO_INFO_LOG("SetRingerMode: %{public}d", ringerMode);
-    ringerMode_ = ringerMode;
+    if (ringerMode_ != ringerMode) {
+        ringerMode_ = ringerMode;
+    }
 
     // In case if KvStore didnot connect during bootup
     if (!isLoaded_) {
@@ -1104,12 +1149,12 @@ void AudioAdapterManager::ResetRemoteCastDeviceVolume()
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
 {
     if (isFirstBoot) {
-        AUDIO_INFO_LOG("InitRingerMode Wrote default ringer mode to KvStore");
         ringerMode_ = RINGER_MODE_NORMAL;
         isLoaded_ = true;
         if (!volumeDataMaintainer_.GetRingerMode(ringerMode_)) {
             isLoaded_ = volumeDataMaintainer_.SaveRingerMode(RINGER_MODE_NORMAL);
         }
+        AUDIO_INFO_LOG("InitRingerMode first boot ringermode:%{public}d", ringerMode_);
     } else {
         // read ringerMode from private kvStore
         if (isNeedCopyRingerModeData_ && audioPolicyKvStore_ != nullptr) {
@@ -1159,8 +1204,13 @@ bool AudioAdapterManager::LoadVolumeMap(void)
         CloneVolumeMap();
     }
 
+    bool result = false;
     for (auto &streamType: VOLUME_TYPE_LIST) {
-        bool result = volumeDataMaintainer_.GetVolume(currentActiveDevice_, streamType);
+        if (Util::IsDualToneStreamType(streamType)) {
+            result = volumeDataMaintainer_.GetVolume(DEVICE_TYPE_SPEAKER, streamType);
+        } else {
+            result = volumeDataMaintainer_.GetVolume(currentActiveDevice_, streamType);
+        }
         if (!result) {
             AUDIO_ERR_LOG("LoadVolumeMap: Could not load volume for streamType[%{public}d] from kvStore", streamType);
         }
@@ -1186,15 +1236,26 @@ void AudioAdapterManager::TransferMuteStatus(void)
 void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 {
     if (isFirstBoot) {
-        AUDIO_INFO_LOG("Wrote default mute status to KvStore");
         for (auto &deviceType : DEVICE_TYPE_LIST) {
             for (auto &streamType : VOLUME_TYPE_LIST) {
-                volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, false);
+                CheckAndDealMuteStatus(deviceType, streamType);
             }
         }
         TransferMuteStatus();
     } else {
         LoadMuteStatusMap();
+    }
+}
+
+void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType)
+{
+    if (streamType == STREAM_RING) {
+        bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
+        AUDIO_INFO_LOG("fist boot ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
+            muteStateForStreamRing);
+        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, muteStateForStreamRing);
+    } else if (!volumeDataMaintainer_.GetMuteStatus(deviceType, streamType)) {
+        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, false);
     }
 }
 
@@ -1233,7 +1294,16 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
     for (auto &streamType: VOLUME_TYPE_LIST) {
         bool result = volumeDataMaintainer_.GetMuteStatus(currentActiveDevice_, streamType);
         if (!result) {
-            AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from kvStore", streamType);
+            AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from database.", streamType);
+        }
+        if (streamType == STREAM_RING) {
+            bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
+            AUDIO_INFO_LOG("ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
+                muteStateForStreamRing);
+            if (muteStateForStreamRing == GetStreamMute(streamType)) {
+                continue;
+            }
+            volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, muteStateForStreamRing);
         }
     }
     return true;
@@ -1705,8 +1775,8 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
     AppendFormat(dumpString, "  - SafeVolume: %d\n", safeVolume_);
     AppendFormat(dumpString, "  - BtSafeStatus: %s\n", statusBt.c_str());
     AppendFormat(dumpString, "  - SafeStatus: %s\n", status.c_str());
-    AppendFormat(dumpString, "  - ActiveBtSafeTime: %llu\n", safeActiveBtTime_);
-    AppendFormat(dumpString, "  - ActiveSafeTime: %llu\n", safeActiveTime_);
+    AppendFormat(dumpString, "  - ActiveBtSafeTime: %lld\n", safeActiveBtTime_);
+    AppendFormat(dumpString, "  - ActiveSafeTime: %lld\n", safeActiveTime_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

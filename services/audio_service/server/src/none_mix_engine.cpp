@@ -35,10 +35,20 @@ const std::string VOIP_SINK_NAME = "voip";
 const std::string DIRECT_SINK_NAME = "direct";
 const char *SINK_ADAPTER_NAME = "primary";
 
-NoneMixEngine::NoneMixEngine(DeviceInfo type, bool isVoip)
-    : isVoip_(isVoip), isStart_(false), isPause_(false), device_(type), failedCount_(0), writeCount_(0),
-      fwkSyncTime_(0), stream_(nullptr), startFadein_(false), startFadeout_(false), uChannel_(0),
-      uFormat_(sizeof(int32_t)), uSampleRate_(0)
+NoneMixEngine::NoneMixEngine()
+    : isVoip_(false),
+      isStart_(false),
+      isPause_(false),
+      isInit_(false),
+      failedCount_(0),
+      writeCount_(0),
+      fwkSyncTime_(0),
+      stream_(nullptr),
+      startFadein_(false),
+      startFadeout_(false),
+      uChannel_(0),
+      uFormat_(sizeof(int32_t)),
+      uSampleRate_(0)
 {
     AUDIO_INFO_LOG("Constructor");
 }
@@ -61,10 +71,31 @@ NoneMixEngine::~NoneMixEngine()
     startFadeout_ = false;
 }
 
+int32_t NoneMixEngine::Init(const DeviceInfo &type, bool isVoip)
+{
+    if (!isInit_) {
+        isVoip_ = isVoip;
+        device_ = type;
+        return SUCCESS;
+    }
+    if (type.deviceType != device_.deviceType || isVoip_ != isVoip) {
+        isVoip_ = isVoip;
+        device_ = type;
+        if (renderSink_ && renderSink_->IsInited()) {
+            renderSink_->Stop();
+            renderSink_->DeInit();
+        }
+        renderSink_ = nullptr;
+    }
+    return SUCCESS;
+}
+
 int32_t NoneMixEngine::Start()
 {
     AUDIO_INFO_LOG("Enter in");
     int32_t ret = SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(renderSink_ != nullptr, ERR_INVALID_HANDLE, "null sink");
+    CHECK_AND_RETURN_RET_LOG(renderSink_->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first");
     fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
     writeCount_ = 0;
     failedCount_ = 0;
@@ -89,6 +120,10 @@ int32_t NoneMixEngine::Stop()
 {
     AUDIO_INFO_LOG("Enter");
     int32_t ret = SUCCESS;
+    if (!isStart_) {
+        AUDIO_INFO_LOG("already stopped");
+        return ret;
+    }
     writeCount_ = 0;
     failedCount_ = 0;
     if (playbackThread_) {
@@ -110,16 +145,11 @@ int32_t NoneMixEngine::Stop()
 
 void NoneMixEngine::PauseAsync()
 {
-    if (playbackThread_) {
-        // wait until fadeout complete
-        startFadein_ = false;
-        startFadeout_ = true;
-        std::unique_lock fadingLock(fadingMutex_);
-        cvFading_.wait_for(
-            fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
+    // stop thread when failed 5 times,do not add logic inside.
+    if (playbackThread_ && playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->PauseAsync();
+        isPause_ = true;
     }
-    isPause_ = true;
 }
 
 int32_t NoneMixEngine::Pause()
@@ -151,7 +181,7 @@ void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize
 {
     CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0 && uChannel_ > 0, "buffer is null.");
     int32_t *dstPtr = reinterpret_cast<int32_t *>(pBuffer);
-    size_t dataLength = bufferSize / (uFormat_ * uChannel_);
+    size_t dataLength = bufferSize / (static_cast<uint32_t>(uFormat_) * uChannel_);
     float fadeStep = 1.0f / dataLength;
     for (size_t i = 0; i < dataLength; i++) {
         float fadeFactor;
@@ -177,7 +207,6 @@ void NoneMixEngine::MixStreams()
         StandbySleep();
         return;
     }
-
     if (failedCount_ >= MAX_ERROR_COUNT) {
         AUDIO_WARNING_LOG("failed count is overflow.");
         PauseAsync();
@@ -192,6 +221,11 @@ void NoneMixEngine::MixStreams()
         AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
         stream_->ReturnIndex(index);
         failedCount_++;
+        if (startFadeout_) {
+            startFadeout_.store(false);
+            cvFading_.notify_all();
+            return;
+        }
         StandbySleep();
         return;
     }
@@ -202,7 +236,6 @@ void NoneMixEngine::MixStreams()
         DoFadeinOut(startFadeout_, audioBuffer.data(), audioBuffer.size());
         cvFading_.notify_all();
     }
-
     renderSink_->RenderFrame(*audioBuffer.data(), audioBuffer.size(), written);
     stream_->ReturnIndex(index);
     renderSink_->UpdateAppsUid({appUid});
@@ -213,9 +246,13 @@ int32_t NoneMixEngine::AddRenderer(const std::shared_ptr<IRendererStream> &strea
 {
     AUDIO_INFO_LOG("Enter add");
     if (!stream_) {
-        stream_ = stream;
         AudioProcessConfig config = stream->GetAudioProcessConfig();
-        return InitSink(config.streamInfo);
+        int32_t result = InitSink(config.streamInfo);
+        if (result == SUCCESS) {
+            stream_ = stream;
+            isInit_ = true;
+        }
+        return result;
     } else if (stream->GetStreamIndex() != stream_->GetStreamIndex()) {
         return ERROR_UNSUPPORTED;
     }
@@ -227,7 +264,6 @@ void NoneMixEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &strea
     AUDIO_INFO_LOG("step in remove");
     if (stream->GetStreamIndex() == stream_->GetStreamIndex()) {
         Stop();
-        renderSink_->DeInit();
         stream_ = nullptr;
     }
 }
@@ -239,7 +275,7 @@ bool NoneMixEngine::IsPlaybackEngineRunning() const noexcept
 
 void NoneMixEngine::StandbySleep()
 {
-    int64_t writeTime = static_cast<int64_t>(fwkSyncTime_ + writeCount_ * PERIOD_NS + DELTA_TIME);
+    int64_t writeTime = static_cast<int64_t>(fwkSyncTime_) + static_cast<int64_t>(writeCount_) * PERIOD_NS + DELTA_TIME;
     ClockTime::AbsoluteSleep(writeTime);
 }
 
@@ -306,6 +342,26 @@ int32_t NoneMixEngine::GetDirectFormatByteSize(HdiAdapterFormat format)
 
 int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
 {
+    uint32_t targetChannel = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
+    HdiAdapterFormat format = GetDirectDeviceFormate(streamInfo.format);
+    uint32_t sampleRate =
+        isVoip_ ? GetDirectVoipSampleRate(streamInfo.samplingRate) : GetDirectSampleRate(streamInfo.samplingRate);
+    if (isInit_ && renderSink_) {
+        if (uChannel_ != targetChannel || uFormat_ != format || sampleRate != uSampleRate_) {
+            if (renderSink_ && renderSink_->IsInited()) {
+                renderSink_->Stop();
+                renderSink_->DeInit();
+            }
+            renderSink_ = nullptr;
+        } else {
+            return SUCCESS;
+        }
+    }
+    return InitSink(targetChannel, format, sampleRate);
+}
+
+int32_t NoneMixEngine::InitSink(uint32_t channel, HdiAdapterFormat format, uint32_t rate)
+{
     std::string sinkName = DIRECT_SINK_NAME;
     if (isVoip_) {
         sinkName = VOIP_SINK_NAME;
@@ -313,17 +369,15 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
     renderSink_ = AudioRendererSink::GetInstance(sinkName);
     IAudioSinkAttr attr = {};
     attr.adapterName = SINK_ADAPTER_NAME;
-    attr.sampleRate = isVoip_ ?
-        GetDirectVoipSampleRate(streamInfo.samplingRate) : GetDirectSampleRate(streamInfo.samplingRate);
-    attr.channel = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
-    attr.format = GetDirectDeviceFormate(streamInfo.format);
-    attr.channelLayout = streamInfo.channels >= STEREO_CHANNEL_COUNT ?
-        HDI_STEREO_CHANNEL_LAYOUT : HDI_MONO_CHANNEL_LAYOUT;
+    attr.sampleRate = rate;
+    attr.channel = channel;
+    attr.format = format;
+    attr.channelLayout = channel >= STEREO_CHANNEL_COUNT ? HDI_STEREO_CHANNEL_LAYOUT : HDI_MONO_CHANNEL_LAYOUT;
     attr.deviceType = device_.deviceType;
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
-    AUDIO_INFO_LOG("sink name:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d", sinkName.c_str(),
-        attr.deviceType, attr.sampleRate, attr.format);
+    AUDIO_INFO_LOG("sinkName:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d,channel:%{public}d",
+        sinkName.c_str(), attr.deviceType, attr.sampleRate, attr.format, attr.channel);
     int32_t ret = renderSink_->Init(attr);
     if (ret != SUCCESS) {
         return ret;

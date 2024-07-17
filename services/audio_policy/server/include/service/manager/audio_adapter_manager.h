@@ -69,9 +69,11 @@ public:
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
+    int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
+
     float GetSystemVolumeDb(AudioStreamType streamType);
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute);
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute);
 
@@ -106,7 +108,7 @@ public:
 
     int32_t SuspendAudioDevice(std::string &name, bool isSuspend);
 
-    bool SetSinkMute(const std::string &sinkName, bool isMute);
+    bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false);
 
     float CalculateVolumeDb(int32_t volumeLevel);
 
@@ -171,6 +173,10 @@ public:
     int32_t GetPersistMicMuteState(bool &isMute) const;
 
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
+
+    void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
+
+    void HandleRingerMode(AudioRingerMode ringerMode);
 private:
     friend class PolicyCallbackImpl;
 
@@ -178,7 +184,7 @@ private:
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t DEFAULT_VOLUME_LEVEL = 7;
     static constexpr int32_t CONST_FACTOR = 100;
-    static constexpr int32_t DEFAULT_SAFE_VOLUME_TIMEOUT = 1200;
+    static constexpr int32_t DEFAULT_SAFE_VOLUME_TIMEOUT = 1140;
     static constexpr int32_t CONVERT_FROM_MS_TO_SECONDS = 1000;
     static constexpr float MIN_STREAM_VOLUME = 0.0f;
     static constexpr float MAX_STREAM_VOLUME = 1.0f;
@@ -222,7 +228,7 @@ private:
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
-    int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute);
+    int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     void InitKVStoreInternal(void);
     void DeleteAudioPolicyKvStore();
     void TransferMuteStatus(void);
@@ -233,6 +239,7 @@ private:
     void InitSafeTime(bool isFirstBoot);
     void ConvertSafeTime(void);
     void UpdateSafeVolume();
+    void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -304,16 +311,15 @@ public:
     {
         AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(streamType);
         int32_t volumeLevel = audioAdapterManager_->GetStreamVolume(streamForVolumeMap);
+        bool muteStatus = audioAdapterManager_->GetStreamMute(streamForVolumeMap);
+        if (muteStatus) {
+            return {0.0f, 0};
+        }
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
         if (streamForVolumeMap == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
             return {1.0f, volumeLevel};
-        }
-
-        bool muteStatus = audioAdapterManager_->GetStreamMute(streamForVolumeMap);
-        if (muteStatus) {
-            return {0.0f, 0};
         }
 
         float volumeDb = 1.0f;

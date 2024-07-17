@@ -29,6 +29,8 @@
 #include "perm_state_change_callback_customize.h"
 #include "power_state_callback_stub.h"
 #include "power_state_listener.h"
+#include "common_event_subscriber.h"
+#include "common_event_support.h"
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
@@ -40,7 +42,6 @@
 #include "audio_policy_manager_stub.h"
 #include "audio_policy_client_proxy.h"
 #include "audio_server_death_recipient.h"
-#include "audio_service_dump.h"
 #include "session_processor.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
@@ -51,11 +52,12 @@ namespace AudioStandard {
 
 constexpr uint64_t DSTATUS_SESSION_ID = 4294967296;
 constexpr uint32_t DSTATUS_DEFAULT_RATE = 48000;
-constexpr uint32_t LOCAL_USER_ID = 100;
+constexpr int32_t LOCAL_USER_ID = 100;
 
 class AudioPolicyService;
 class AudioInterruptService;
 class AudioPolicyServerHandler;
+class BluetoothEventSubscriber;
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
@@ -95,8 +97,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9,
-        int32_t volumeFlag = 0) override;
+    int32_t SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel) override;
+
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
 
@@ -106,7 +109,9 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v = API_9) override;
+    int32_t SetStreamMuteLegacy(AudioStreamType streamType, bool mute) override;
+
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
 
     bool GetStreamMute(AudioStreamType streamType) override;
 
@@ -143,7 +148,9 @@ public:
 
     InternalDeviceType GetActiveInputDevice() override;
 
-    int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9) override;
+    int32_t SetRingerModeLegacy(AudioRingerMode ringMode) override;
+
+    int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones() override;
@@ -155,7 +162,7 @@ public:
 
     int32_t SetAudioScene(AudioScene audioScene) override;
 
-    int32_t SetMicrophoneMuteCommon(bool isMute, API_VERSION api_v);
+    int32_t SetMicrophoneMuteCommon(bool isMute, bool isLegacy);
 
     int32_t SetMicrophoneMute(bool isMute) override;
 
@@ -165,7 +172,9 @@ public:
 
     bool GetPersistentMicMuteState() override;
 
-    bool IsMicrophoneMute(API_VERSION api_v) override;
+    bool IsMicrophoneMuteLegacy() override;
+
+    bool IsMicrophoneMute() override;
 
     AudioScene GetAudioScene() override;
 
@@ -356,7 +365,8 @@ public:
 
     int32_t UnsetAudioDeviceRefinerCallback() override;
 
-    int32_t TriggerFetchDevice() override;
+    int32_t TriggerFetchDevice(
+        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN) override;
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) override;
 
@@ -404,6 +414,7 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
+    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     // for hidump
     void AudioDevicesDump(std::string &dumpString);
     void AudioModeDump(std::string &dumpString);
@@ -453,12 +464,10 @@ private:
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
 
     // offload session
-    void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
-        int64_t deactivateSessionId);
+    void OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
 
-    void CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
-        int64_t deactivateSessionId);
+    void CheckStreamMode(const int64_t activateSessionId);
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
@@ -475,12 +484,6 @@ private:
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
-    bool CheckAppBackgroundPermission(uid_t callingUid, uint64_t targetFullTokenId, uint32_t targetTokenId);
-    Security::AccessToken::AccessTokenID GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
-        uint32_t appTokenId);
-    uint64_t GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId, uint64_t appFullTokenId);
-    bool CheckRootCalling(uid_t callingUid, int32_t appUid);
-    void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
 
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);
@@ -498,6 +501,9 @@ private:
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();
     void SubscribePowerStateChangeEvents();
+    void SubscribeCommonEvent(const std::string event);
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
+    void HandleKvDataShareEvent();
     void InitMicrophoneMute();
     void InitKVStore();
     void ConnectServiceAdapter();
@@ -507,7 +513,10 @@ private:
     void RegisterDataObserver();
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
-
+    void RegisterSyncHibernateListener();
+    void UnRegisterSyncHibernateListener();
+    void RegisterCommonEventReceiver();
+    void UnregisterCommonEventReceiver();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
     void InitPolicyDumpMap();
@@ -515,18 +524,20 @@ private:
     void ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue);
     void InfoDumpHelp(std::string &dumpString);
 
+    int32_t SetRingerModeInner(AudioRingerMode ringMode);
+
     AudioPolicyService& audioPolicyService_;
     std::shared_ptr<AudioInterruptService> interruptService_;
 
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
-    std::atomic<bool> isFirstKvDataServiceServiceStart_ = false;
     std::atomic<bool> isInitMuteState_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif
     std::vector<pid_t> clientDiedListenerState_;
     sptr<PowerStateListener> powerStateListener_;
+    sptr<SyncHibernateListener> syncHibernateListener_;
     bool powerStateCallbackRegister_;
 
     std::mutex keyEventMutex_;
@@ -541,6 +552,7 @@ private:
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+    std::shared_ptr<BluetoothEventSubscriber> bluetoothEventSubscriberOb_ = nullptr;
     bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
 
@@ -578,6 +590,31 @@ public:
     }
 private:
     AudioPolicyServer *audioPolicyServer_;
+};
+
+class BluetoothEventSubscriber : public EventFwk::CommonEventSubscriber,
+                                 public std::enable_shared_from_this<BluetoothEventSubscriber> {
+public:
+    explicit BluetoothEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
+        sptr<AudioPolicyServer> audioPolicyServer) : EventFwk::CommonEventSubscriber(subscribeInfo),
+        audioPolicyServer_(audioPolicyServer) {}
+    ~BluetoothEventSubscriber() {}
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
+private:
+    BluetoothEventSubscriber() = default;
+    sptr<AudioPolicyServer> audioPolicyServer_;
+};
+
+class AudioCommonEventSubscriber : public EventFwk::CommonEventSubscriber {
+public:
+    explicit AudioCommonEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
+        std::function<void(const EventFwk::CommonEventData&)> receiver)
+        : EventFwk::CommonEventSubscriber(subscribeInfo), eventReceiver_(receiver) {}
+    ~AudioCommonEventSubscriber() {}
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
+private:
+    AudioCommonEventSubscriber() = default;
+    std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

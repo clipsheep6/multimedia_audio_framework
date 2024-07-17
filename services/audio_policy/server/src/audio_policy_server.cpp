@@ -35,6 +35,8 @@
 #include "permission_state_change_info.h"
 #include "token_setproc.h"
 #include "tokenid_kit.h"
+#include "want.h"
+#include "common_event_manager.h"
 
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -65,44 +67,15 @@ constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 60;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
-constexpr uid_t UID_ROOT = 0;
-constexpr uid_t UID_MSDP_SA = 6699;
-constexpr uid_t UID_INTELLIGENT_VOICE_SA = 1042;
+constexpr int32_t API_VERSION_14 = 14; // for deprecated since 9
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
-constexpr uid_t UID_CAAS_SA = 5527;
-constexpr uid_t UID_DISTRIBUTED_AUDIO_SA = 3055;
-constexpr uid_t UID_MEDIA_SA = 1013;
-constexpr uid_t UID_VM_MANAGER = 7700;
 constexpr uid_t UID_AUDIO = 1041;
-constexpr uid_t UID_CAMERA = 1047;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
-constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
-
-const std::list<uid_t> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
-    UID_ROOT,
-    UID_MSDP_SA,
-    UID_INTELLIGENT_VOICE_SA,
-    UID_CAAS_SA,
-    UID_DISTRIBUTED_AUDIO_SA,
-    UID_AUDIO,
-    UID_FOUNDATION_SA,
-    UID_DISTRIBUTED_CALL_SA,
-    UID_CAMERA
-};
-
-const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
-    UID_MEDIA_SA,
-    UID_CAST_ENGINE_SA
-};
-
-const std::set<uid_t> RECORD_CHECK_FORWARD_LIST = {
-    UID_VM_MANAGER
-};
 
 std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
     {PolicyType::EDM_POLICY_TYPE, 0},
@@ -156,6 +129,7 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
     AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
+    AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
 #ifdef SUPPORT_USER_ACCOUNT
     AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
 #endif
@@ -178,7 +152,7 @@ void AudioPolicyServer::OnStart()
     if (iRes < 0) {
         AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
     }
-
+    
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
@@ -189,6 +163,8 @@ void AudioPolicyServer::OnStop()
 {
     audioPolicyService_.Deinit();
     UnRegisterPowerStateListener();
+    UnRegisterSyncHibernateListener();
+    UnregisterCommonEventReceiver();
     return;
 }
 
@@ -204,11 +180,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #endif
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
-            isFirstKvDataServiceServiceStart_ = true;
-            InitMicrophoneMute();
-            InitKVStore();
-            RegisterDataObserver();
+            HandleKvDataShareEvent();
             break;
         case AUDIO_DISTRIBUTED_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
@@ -228,10 +200,15 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
             SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
+            RegisterSyncHibernateListener();
             break;
         case SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN:
             AUDIO_INFO_LOG("OnAddSystemAbility os_account service start");
             SubscribeOsAccountChangeEvents();
+            break;
+        case COMMON_EVENT_SERVICE_ID:
+            AUDIO_INFO_LOG("OnAddSystemAbility common event service start");
+            SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
             break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -240,6 +217,17 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
     // eg. done systemAbilityId: [3001] cost 780ms
     AUDIO_INFO_LOG("done systemAbilityId: [%{public}d] cost %{public}" PRId64 " ms", systemAbilityId,
         (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
+}
+
+void AudioPolicyServer::HandleKvDataShareEvent()
+{
+    AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
+    if (isInitMuteState_ == false && audioPolicyService_.IsDataShareReady()) {
+        AUDIO_INFO_LOG("datashare is ready and need init mic mute state");
+        InitMicrophoneMute();
+    }
+    InitKVStore();
+    RegisterDataObserver();
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -462,7 +450,6 @@ void AudioPolicyServer::AddAudioServiceOnStart()
         sessionProcessor_.Start();
         RegisterParamCallback();
         LoadEffectLibrary();
-        InitMicrophoneMute();
         isFirstAudioServiceStart_ = true;
     } else {
         AUDIO_WARNING_LOG("OnAddSystemAbility audio service is not first start");
@@ -491,6 +478,41 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
     }
 }
 
+void AudioCommonEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
+{
+    if (eventReceiver_ == nullptr) {
+        AUDIO_ERR_LOG("eventReceiver_ is nullptr");
+        return;
+    }
+    AUDIO_INFO_LOG("receive DATA_SHARE_READY action success");
+    eventReceiver_(eventData);
+}
+
+void AudioPolicyServer::SubscribeCommonEvent(const std::string event)
+{
+    EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(event);
+    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    auto commonSubscribePtr = std::make_shared<AudioCommonEventSubscriber>(subscribeInfo,
+        std::bind(&AudioPolicyServer::OnReceiveEvent, this, std::placeholders::_1));
+    if (commonSubscribePtr == nullptr) {
+        AUDIO_ERR_LOG("commonSubscribePtr is nullptr");
+        return;
+    }
+    AUDIO_INFO_LOG("subscribe event: %s action", event.c_str());
+    EventFwk::CommonEventManager::SubscribeCommonEvent(commonSubscribePtr);
+}
+
+void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
+{
+    const AAFwk::Want& want = eventData.GetWant();
+    std::string action = want.GetAction();
+    if (isInitMuteState_ == false && action == "usual.event.DATA_SHARE_READY") {
+        AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
+        InitMicrophoneMute();
+    }
+}
+
 void AudioPolicyServer::CheckSubscribePowerStateChange()
 {
     if (powerStateCallbackRegister_) {
@@ -506,21 +528,14 @@ void AudioPolicyServer::CheckSubscribePowerStateChange()
     }
 }
 
-void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
-    int64_t deactivateSessionId)
+void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId)
 {
     CheckSubscribePowerStateChange();
     if (deactivateSessionId != OFFLOAD_NO_SESSION_ID) {
         audioPolicyService_.OffloadStreamReleaseCheck(deactivateSessionId);
     }
     if (activateSessionId != OFFLOAD_NO_SESSION_ID) {
-        if (activateStreamType == AudioStreamType::STREAM_MUSIC ||
-            activateStreamType == AudioStreamType::STREAM_SPEECH) {
-            audioPolicyService_.OffloadStreamSetCheck(activateSessionId);
-        } else {
-            AUDIO_DEBUG_LOG("session:%{public}d not get offload stream, type is %{public}d",
-                (int32_t)activateSessionId, (int32_t)activateStreamType);
-        }
+        audioPolicyService_.OffloadStreamSetCheck(activateSessionId);
     }
 }
 
@@ -528,11 +543,9 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
     AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
 
-void AudioPolicyServer::CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
-    int64_t deactivateSessionId)
+void AudioPolicyServer::CheckStreamMode(const int64_t activateSessionId)
 {
-    OffloadStreamCheck(activateSessionId, activateStreamType, deactivateSessionId);
-    audioPolicyService_.CheckStreamMode(activateSessionId, activateStreamType);
+    audioPolicyService_.CheckStreamMode(activateSessionId);
 }
 
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
@@ -568,10 +581,27 @@ int32_t AudioPolicyServer::GetMinVolumeLevel(AudioVolumeType volumeType)
     return audioPolicyService_.GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v,
-    int32_t volumeFlag)
+int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(AudioStreamType streamType, int32_t volumeLevel)
 {
-    if (api_v == API_9 && !PermissionUtil::VerifySystemPermission()) {
+    int32_t buildApi = GetApiTargerVersion();
+    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission for legacy call");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    if (!IsVolumeTypeValid(streamType)) {
+        return ERR_NOT_SUPPORTED;
+    }
+    if (!IsVolumeLevelValid(streamType, volumeLevel)) {
+        return ERR_NOT_SUPPORTED;
+    }
+
+    return SetSystemVolumeLevelInternal(streamType, volumeLevel, false);
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t volumeFlag)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("SetSystemVolumeLevel: No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -603,8 +633,7 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamTy
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid != UID_FOUNDATION_SA &&
-        callerUid != UID_ROOT) {
+    if (callerUid != UID_FOUNDATION_SA) {
         AUDIO_ERR_LOG("SetLowPowerVolume callerUid Error: not foundation or component_schedule_service");
         return ERROR;
     }
@@ -686,10 +715,21 @@ float AudioPolicyServer::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t
     return audioPolicyService_.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
 
-int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v)
+int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool mute)
 {
-    if (api_v == API_9 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("SetStreamMute: No system permission");
+    int32_t buildApi = GetApiTargerVersion();
+    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    return SetStreamMuteInternal(streamType, mute, false);
+}
+
+int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
 
@@ -1001,10 +1041,32 @@ InternalDeviceType AudioPolicyServer::GetActiveInputDevice()
     return audioPolicyService_.GetActiveInputDevice();
 }
 
-int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v)
+// deprecated since 9.
+int32_t AudioPolicyServer::SetRingerModeLegacy(AudioRingerMode ringMode)
 {
-    CHECK_AND_RETURN_RET_LOG(api_v != API_9 || PermissionUtil::VerifySystemPermission(),
-        ERR_PERMISSION_DENIED, "No system permission");
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d in legacy", ringMode);
+    int32_t buildApi = GetApiTargerVersion();
+    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    return SetRingerModeInner(ringMode);
+}
+
+int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
+{
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d", ringMode);
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    return SetRingerModeInner(ringMode);
+}
+
+int32_t AudioPolicyServer::SetRingerModeInner(AudioRingerMode ringMode)
+{
     bool isPermissionRequired = false;
 
     if (ringMode == AudioRingerMode::RINGER_MODE_SILENT) {
@@ -1016,6 +1078,7 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
         }
     }
 
+    // only switch to silent need check NOTIFICATION.
     if (isPermissionRequired) {
         bool result = VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(result, ERR_PERMISSION_DENIED,
@@ -1034,8 +1097,9 @@ int32_t AudioPolicyServer::SetRingerModeInternal(AudioRingerMode ringerMode, boo
     if (!hasUpdatedVolume) {
         // need to set volume according to ringermode
         bool muteState = (ringerMode == RINGER_MODE_NORMAL) ? false : true;
-        audioPolicyService_.SetStreamMute(STREAM_RING, muteState);
-    
+        AudioInterrupt audioInterrupt;
+        GetSessionInfoInFocus(audioInterrupt);
+        audioPolicyService_.SetStreamMute(STREAM_RING, muteState, audioInterrupt.streamUsage);
         if (!muteState && GetSystemVolumeLevelInternal(STREAM_RING) == 0) {
             // if mute state is false but volume is 0, set volume to 1. Send volumeChange callback.
             SetSystemVolumeLevelInternal(STREAM_RING, 1, false);
@@ -1063,15 +1127,18 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
 void AudioPolicyServer::InitMicrophoneMute()
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    if (!isFirstKvDataServiceServiceStart_ || isInitMuteState_) {
-        AUDIO_ERR_LOG("kv data service is not start or the state has already been initialized.");
+    if (isInitMuteState_) {
+        AUDIO_ERR_LOG("mic mutestate has already been initialized");
         return;
     }
-    isInitMuteState_ = true;
     bool isMute = false;
     int32_t ret = audioPolicyService_.InitPersistentMicrophoneMuteState(isMute);
     AUDIO_INFO_LOG("Get persistent mic ismute: %{public}d  state from setting db", isMute);
-    CHECK_AND_RETURN_LOG(ret != SUCCESS, "InitMicrophoneMute InitPersistentMicrophoneMuteState result %{public}d", ret);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("InitMicrophoneMute InitPersistentMicrophoneMuteState result %{public}d", ret);
+        return;
+    }
+    isInitMuteState_ = true;
     if (audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
         micStateChangeEvent.mute = isMute;
@@ -1079,15 +1146,14 @@ void AudioPolicyServer::InitMicrophoneMute()
     }
 }
 
-int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_v)
+int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, bool isLegacy)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
-    bool isMicrophoneMute = IsMicrophoneMute(api_v);
+    bool isMicrophoneMute = isLegacy ? IsMicrophoneMuteLegacy() : IsMicrophoneMute();
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute && audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
-        micStateChangeEvent.mute = isMute;
+        micStateChangeEvent.mute = audioPolicyService_.IsMicrophoneMute();
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
     }
     return ret;
@@ -1095,22 +1161,22 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_
 
 int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    AUDIO_INFO_LOG("[%{public}d] set to %{public}s", IPCSkeleton::GetCallingPid(), (isMute ? "true" : "false"));
     bool ret = VerifyPermission(MICROPHONE_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
         "MICROPHONE permission denied");
-    return SetMicrophoneMuteCommon(isMute, API_7);
+    return SetMicrophoneMuteCommon(isMute, true);
 }
 
 int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    AUDIO_INFO_LOG("[%{public}d] set to %{public}s", IPCSkeleton::GetCallingPid(), (isMute ? "true" : "false"));
     bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
         "MANAGE_AUDIO_CONFIG permission denied");
     lastMicMuteSettingPid_ = IPCSkeleton::GetCallingPid();
     PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[TEMPORARY_POLCIY_TYPE], MICPHONE_CALLER, isMute);
-    return SetMicrophoneMuteCommon(isMute, API_9);
+    return SetMicrophoneMuteCommon(isMute, false);
 }
 
 int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
@@ -1127,7 +1193,7 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const 
     ret = audioPolicyService_.SetMicrophoneMutePersistent(isMute);
     if (ret == SUCCESS && audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
-        micStateChangeEvent.mute = isMute;
+        micStateChangeEvent.mute = audioPolicyService_.IsMicrophoneMute();
         AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set mic mute state persistent.");
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
     }
@@ -1143,12 +1209,20 @@ bool AudioPolicyServer::GetPersistentMicMuteState()
     return audioPolicyService_.GetPersistentMicMuteState();
 }
 
-bool AudioPolicyServer::IsMicrophoneMute(API_VERSION api_v)
+// deprecated since 9.
+bool AudioPolicyServer::IsMicrophoneMuteLegacy()
 {
-    bool ret = VerifyPermission(MICROPHONE_PERMISSION);
-    CHECK_AND_RETURN_RET_LOG(api_v != API_7 || ret, ERR_PERMISSION_DENIED,
-        "MICROPHONE permission denied");
+    // AudioManager.IsMicrophoneMute check micphone right.
+    if (!VerifyPermission(MICROPHONE_PERMISSION)) {
+        AUDIO_ERR_LOG("MICROPHONE permission denied");
+        return false;
+    }
+    return audioPolicyService_.IsMicrophoneMute();
+}
 
+bool AudioPolicyServer::IsMicrophoneMute()
+{
+    // AudioVolumeGroupManager.IsMicrophoneMute didn't check micphone right.
     return audioPolicyService_.IsMicrophoneMute();
 }
 
@@ -1167,9 +1241,10 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         return SUCCESS;
     }
     if (audioScene == AUDIO_SCENE_CALL_END) {
-        AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_END means voip end, need set AUDIO_SCENE_DEFAULT.");
+        AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_END means voip end, need reset audio scene.");
         isAvSessionSetVoipStart = false;
-        return audioPolicyService_.SetAudioScene(AUDIO_SCENE_DEFAULT);
+        AudioScene audioScene = interruptService_->GetHighestPriorityAudioScene(0);
+        return audioPolicyService_.SetAudioScene(audioScene);
     }
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
@@ -1299,56 +1374,10 @@ int32_t AudioPolicyServer::GetAudioFocusInfoList(std::list<std::pair<AudioInterr
     return ERR_UNKNOWN;
 }
 
-bool AudioPolicyServer::CheckRootCalling(uid_t callingUid, int32_t appUid)
-{
-    if (callingUid == UID_ROOT) {
-        return true;
-    }
-
-    // check original caller if it pass
-    if (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) {
-        if (appUid == UID_ROOT) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     SourceType sourceType)
 {
-    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
-    if (callingUid != UID_AUDIO) {
-        AUDIO_ERR_LOG("Not supported operation");
-        return false;
-    }
-    uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
-    uint64_t callingFullTokenId = IPCSkeleton::GetCallingFullTokenID();
-
-    if (CheckRootCalling(callingUid, appUid)) {
-        AUDIO_INFO_LOG("root user recording");
-        return true;
-    }
-
-    Security::AccessToken::AccessTokenID targetTokenId = GetTargetTokenId(callingUid, callingTokenId, appTokenId);
-    uint64_t targetFullTokenId = GetTargetFullTokenId(callingUid, callingFullTokenId, appFullTokenId);
-    if (sourceType == SOURCE_TYPE_VOICE_CALL) {
-        if (VerifyVoiceCallPermission(targetFullTokenId, targetTokenId) != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    if (!VerifyPermission(MICROPHONE_PERMISSION, targetTokenId, true)) {
-        return false;
-    }
-
-    if (!CheckAppBackgroundPermission(callingUid, targetFullTokenId, targetTokenId)) {
-        return false;
-    }
-
-    return true;
+    return false;
 }
 
 bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint32_t tokenId, bool isRecording)
@@ -1356,12 +1385,13 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
     AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
 
     if (!isRecording) {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
         // root user case for auto test
         uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
-        if (callingUid == UID_ROOT) {
+        if (callingUid == ROOT_UID) {
             return true;
         }
-
+#endif
         tokenId = IPCSkeleton::GetCallingTokenID();
     }
 
@@ -1375,84 +1405,12 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
-    if (callingUid != UID_AUDIO) {
-        AUDIO_ERR_LOG("Not supported operation");
-        return false;
-    }
-    uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
-    uint64_t callingFullTokenId = IPCSkeleton::GetCallingFullTokenID();
-    Security::AccessToken::AccessTokenID targetTokenId = GetTargetTokenId(callingUid, callingTokenId, appTokenId);
-    uint64_t targetFullTokenId = GetTargetFullTokenId(callingUid, callingFullTokenId, appFullTokenId);
-
-    // start recording need to check app state
-    if (state == AUDIO_PERMISSION_START && !CheckRootCalling(callingUid, appUid)) {
-        if (!CheckAppBackgroundPermission(callingUid, targetFullTokenId, targetTokenId)) {
-            return false;
-        }
-    }
-
-    NotifyPrivacy(targetTokenId, state);
-    return true;
-}
-
-void AudioPolicyServer::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
-{
-    if (state == AUDIO_PERMISSION_START) {
-        int res = PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        if (res != 0) {
-            AUDIO_WARNING_LOG("notice start using perm error");
-        }
-        res = PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
-        if (res != 0) {
-            AUDIO_WARNING_LOG("add mic record error");
-        }
-    } else {
-        int res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        if (res != 0) {
-            AUDIO_WARNING_LOG("notice stop using perm error");
-        }
-    }
-}
-
-bool AudioPolicyServer::CheckAppBackgroundPermission(uid_t callingUid, uint64_t targetFullTokenId,
-    uint32_t targetTokenId)
-{
-    if (TokenIdKit::IsSystemAppByFullTokenID(targetFullTokenId)) {
-        AUDIO_INFO_LOG("system app recording");
-        return true;
-    }
-    if (std::count(RECORD_ALLOW_BACKGROUND_LIST.begin(), RECORD_ALLOW_BACKGROUND_LIST.end(), callingUid) > 0) {
-        AUDIO_INFO_LOG("internal sa user directly recording");
-        return true;
-    }
-    return PrivacyKit::IsAllowedUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-}
-
-Security::AccessToken::AccessTokenID AudioPolicyServer::GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
-    uint32_t appTokenId)
-{
-    if (RECORD_CHECK_FORWARD_LIST.count(callingUid)) {
-        AUDIO_INFO_LOG("check forward TokenId with callingUid:%{public}d", callingUid);
-        return IPCSkeleton::GetFirstTokenID();
-    }
-    return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
-        appTokenId : callingTokenId;
-}
-
-uint64_t AudioPolicyServer::GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId,
-    uint64_t appFullTokenId)
-{
-    if (RECORD_CHECK_FORWARD_LIST.count(callingUid)) {
-        AUDIO_INFO_LOG("check forward FullTokenId with callingUid:%{public}d", callingUid);
-        return IPCSkeleton::GetFirstFullTokenID();
-    }
-    return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
-        appFullTokenId : callingFullTokenId;
+    return false;
 }
 
 int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
     // Only root users should have access to this api
     if (ROOT_UID != IPCSkeleton::GetCallingUid()) {
         AUDIO_INFO_LOG("Unautorized user. Cannot modify channel");
@@ -1460,6 +1418,10 @@ int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, Device
     }
 
     return audioPolicyService_.ReconfigureAudioChannel(count, deviceType);
+#else
+    // this api is not supported
+    return ERR_NOT_SUPPORTED;
+#endif
 }
 
 void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos)
@@ -1665,9 +1627,13 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
     if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
         streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
         streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
-        OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, streamChangeInfo.audioRendererChangeInfo.sessionId);
+        OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, streamChangeInfo.audioRendererChangeInfo.sessionId);
     }
-    return audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
+    int32_t ret = audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
+        OffloadStreamCheck(streamChangeInfo.audioRendererChangeInfo.sessionId, OFFLOAD_NO_SESSION_ID);
+    }
+    return ret;
 }
 
 void AudioPolicyServer::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
@@ -2005,6 +1971,7 @@ void AudioPolicyServer::RegisterBluetoothListener()
 {
     AUDIO_INFO_LOG("RegisterBluetoothListener");
     audioPolicyService_.RegisterBluetoothListener();
+    RegisterCommonEventReceiver();
 }
 
 void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
@@ -2145,11 +2112,6 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     }
 
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-    if (volumeApplyToAll_) {
-        streamInFocus = AudioStreamType::STREAM_ALL;
-    } else {
-        streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
-    }
 
     if (!IsVolumeLevelValid(streamInFocus, volume)) {
         return ERR_NOT_SUPPORTED;
@@ -2332,6 +2294,44 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
     } else {
         powerStateListener_ = nullptr;
         AUDIO_INFO_LOG("unregister sync sleep callback success");
+    }
+}
+
+void AudioPolicyServer::RegisterSyncHibernateListener()
+{
+    if (syncHibernateListener_ == nullptr) {
+        syncHibernateListener_ = new (std::nothrow) SyncHibernateListener(this);
+    }
+
+    if (syncHibernateListener_ == nullptr) {
+        AUDIO_ERR_LOG("create sync hibernate listener failed");
+        return;
+    }
+
+    auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
+    bool ret = powerMgrClient.RegisterSyncHibernateCallback(syncHibernateListener_);
+    if (!ret) {
+        AUDIO_ERR_LOG("register sync hibernate callback failed");
+    } else {
+        AUDIO_INFO_LOG("register sync hibernate callback success");
+    }
+}
+
+void AudioPolicyServer::UnRegisterSyncHibernateListener()
+{
+    if (syncHibernateListener_ == nullptr) {
+        AUDIO_ERR_LOG("sync hibernate listener is null");
+        return;
+    }
+
+    auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
+    bool ret = powerMgrClient.UnRegisterSyncHibernateCallback(syncHibernateListener_);
+    if (!ret) {
+        AUDIO_WARNING_LOG("unregister sync hibernate callback failed");
+    } else {
+        delete syncHibernateListener_;
+        syncHibernateListener_ = nullptr;
+        AUDIO_INFO_LOG("unregister sync hibernate callback success");
     }
 }
 
@@ -2586,7 +2586,7 @@ AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, bundleInfo, "systemAbilityManager is nullptr");
 
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleInfo, "remoteObject is nullptr");
 
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
@@ -2665,13 +2665,13 @@ int32_t AudioPolicyServer::UnsetAudioDeviceRefinerCallback()
     return audioRouterCenter_.UnsetAudioDeviceRefinerCallback();
 }
 
-int32_t AudioPolicyServer::TriggerFetchDevice()
+int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_AUDIO) {
         return ERROR;
     }
-    return audioPolicyService_.TriggerFetchDevice();
+    return audioPolicyService_.TriggerFetchDevice(reason);
 }
 
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)
@@ -2704,6 +2704,46 @@ int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeTyp
 int32_t AudioPolicyServer::ResetRingerModeMute()
 {
     return audioPolicyService_.ResetRingerModeMute();
+}
+
+void AudioPolicyServer::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+{
+    audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
+}
+
+void BluetoothEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
+{
+    const AAFwk::Want& want = eventData.GetWant();
+    std::string action = want.GetAction();
+    std::string deviceName  = want.GetStringParam("remoteName");
+    std::string macAddress = want.GetStringParam("deviceAddr");
+    AUDIO_INFO_LOG("receive action %{public}s", deviceName.c_str());
+    if (action == EventFwk::CommonEventSupport::COMMON_EVENT_BLUETOOTH_REMOTEDEVICE_NAME_UPDATE) {
+        audioPolicyServer_->OnReceiveBluetoothEvent(macAddress, deviceName);
+    }
+}
+
+void AudioPolicyServer::RegisterCommonEventReceiver()
+{
+    if (bluetoothEventSubscriberOb_ != nullptr) {
+        AUDIO_WARNING_LOG("bluetoothEvent is already registed");
+        return;
+    }
+    AUDIO_INFO_LOG("register bluetooth remote device name receiver");
+    EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BLUETOOTH_REMOTEDEVICE_NAME_UPDATE);
+    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    bluetoothEventSubscriberOb_ =
+        std::make_shared<BluetoothEventSubscriber>(subscribeInfo, this);
+    EventFwk::CommonEventManager::NewSubscribeCommonEvent(bluetoothEventSubscriberOb_);
+}
+
+void AudioPolicyServer::UnregisterCommonEventReceiver()
+{
+    if (bluetoothEventSubscriberOb_ != nullptr) {
+        EventFwk::CommonEventManager::NewUnSubscribeCommonEvent(bluetoothEventSubscriberOb_);
+        AUDIO_INFO_LOG("unregister bluetooth device name commonevent");
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
