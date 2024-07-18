@@ -26,6 +26,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+bool g_hasServerInit = false;
 constexpr int32_t OFFSET = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IStandardAudioService";
 const int32_t SYSTEM_ABILITY_ID = 3001;
