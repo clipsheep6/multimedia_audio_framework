@@ -3248,7 +3248,7 @@ void AudioPolicyService::AddEarpiece()
     if (itr != connectedDevices_.end()) {
         audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
     }
-    audioDescriptor->deviceId_ = startDeviceId++;
+    audioDescriptor->audioDeviceId_ = startDeviceId++;
     UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
@@ -3333,7 +3333,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
     }
 
-    audioDescriptor->deviceId_ = startDeviceId++;
+    audioDescriptor->audioDeviceId_ = startDeviceId++;
     descForCb.push_back(audioDescriptor);
     UpdateDisplayName(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
@@ -3366,7 +3366,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForInputDevice(
         audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
     }
 
-    audioDescriptor->deviceId_ = startDeviceId++;
+    audioDescriptor->audioDeviceId_ = startDeviceId++;
     descForCb.push_back(audioDescriptor);
     UpdateDisplayName(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
@@ -3404,16 +3404,16 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
     for (auto it = connectedDevices_.begin(); it != connectedDevices_.end();) {
         it = find_if(it, connectedDevices_.end(), isPresent);
         if (it != connectedDevices_.end()) {
-            if ((*it)->deviceId_ == audioStateManager_.GetPreferredMediaRenderDevice()->deviceId_) {
+            if ((*it)->audioDeviceId_ == audioStateManager_.GetPreferredMediaRenderDevice()->audioDeviceId_) {
                 audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
             }
-            if ((*it)->deviceId_ == audioStateManager_.GetPreferredCallRenderDevice()->deviceId_) {
+            if ((*it)->audioDeviceId_ == audioStateManager_.GetPreferredCallRenderDevice()->audioDeviceId_) {
                 audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
             }
-            if ((*it)->deviceId_ == audioStateManager_.GetPerferredCallCaptureDevice()->deviceId_) {
+            if ((*it)->audioDeviceId_ == audioStateManager_.GetPerferredCallCaptureDevice()->audioDeviceId_) {
                 audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
             }
-            if ((*it)->deviceId_ == audioStateManager_.GetPerferredRecordCaptureDevice()->deviceId_) {
+            if ((*it)->audioDeviceId_ == audioStateManager_.GetPerferredRecordCaptureDevice()->audioDeviceId_) {
                 audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
             }
             descForCb.push_back(*it);
@@ -4476,7 +4476,7 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
         audioDescriptor->SetDeviceCapability(streamInfo, 0);
     }
 
-    audioDescriptor->deviceId_ = startDeviceId++;
+    audioDescriptor->audioDeviceId_ = startDeviceId++;
     UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
@@ -4657,7 +4657,7 @@ void AudioPolicyService::UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<Aud
 {
     deviceInfo.deviceType = desc->deviceType_;
     deviceInfo.deviceRole = desc->deviceRole_;
-    deviceInfo.deviceId = desc->deviceId_;
+    deviceInfo.deviceId = desc->audioDeviceId_;
     deviceInfo.channelMasks = desc->channelMasks_;
     deviceInfo.channelIndexMasks = desc->channelIndexMasks_;
     deviceInfo.displayName = desc->displayName_;
@@ -5797,7 +5797,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
             config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
             return GetVoipPlaybackDeviceInfo(config, deviceInfo);
         }
-        deviceInfo.deviceId = currentActiveDevice_.deviceId_;
+        deviceInfo.deviceId = currentActiveDevice_.audioDeviceId_;
         deviceInfo.networkId = LOCAL_NETWORK_ID;
         deviceInfo.deviceType = currentActiveDevice_.deviceType_;
         deviceInfo.deviceRole = OUTPUT_DEVICE;
@@ -5805,7 +5805,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             return GetVoipRecordDeviceInfo(config, deviceInfo);
         }
-        deviceInfo.deviceId = currentActiveInputDevice_.deviceId_;
+        deviceInfo.deviceId = currentActiveInputDevice_.audioDeviceId_;
         deviceInfo.networkId = LOCAL_NETWORK_ID;
         deviceInfo.deviceRole = INPUT_DEVICE;
         deviceInfo.deviceType = currentActiveInputDevice_.deviceType_;
@@ -5855,7 +5855,7 @@ int32_t AudioPolicyService::GetVoipDeviceInfo(const AudioProcessConfig &config, 
         AUDIO_WARNING_LOG("Current device %{public}d not support", type);
         return ERROR;
     }
-    deviceInfo.deviceId = preferredDeviceList[0]->deviceId_;
+    deviceInfo.deviceId = preferredDeviceList[0]->audioDeviceId_;
     deviceInfo.networkId = preferredDeviceList[0]->networkId_;
     deviceInfo.deviceType = preferredDeviceList[0]->deviceType_;
     deviceInfo.deviceName = preferredDeviceList[0]->deviceName_;
@@ -7204,14 +7204,14 @@ float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
 
-    if (deviceId == currentActiveDevice_.deviceId_) {
+    if (deviceId == currentActiveDevice_.audioDeviceId_) {
         std::string identity = IPCSkeleton::ResetCallingIdentity();
         float outputMaxAmplitude = gsp->GetMaxAmplitude(true, currentActiveDevice_.deviceType_);
         IPCSkeleton::SetCallingIdentity(identity);
         return outputMaxAmplitude;
     }
 
-    if (deviceId == currentActiveInputDevice_.deviceId_) {
+    if (deviceId == currentActiveInputDevice_.audioDeviceId_) {
         std::string identity = IPCSkeleton::ResetCallingIdentity();
         float inputMaxAmplitude = gsp->GetMaxAmplitude(false, currentActiveInputDevice_.deviceType_);
         IPCSkeleton::SetCallingIdentity(identity);
@@ -7390,7 +7390,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDumpDeviceInfo(s
         AppendFormat(dumpString, "  - device name:%s\n",
             AudioInfoDumpUtils::GetDeviceTypeName(devDesc->deviceType_).c_str());
         AppendFormat(dumpString, "  - device type:%d\n", devDesc->deviceType_);
-        AppendFormat(dumpString, "  - device id:%d\n", devDesc->deviceId_);
+        AppendFormat(dumpString, "  - device id:%d\n", devDesc->audioDeviceId_);
         if (deviceFlag == DeviceFlag::INPUT_DEVICES_FLAG || deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
             conneceType_  = CONNECT_TYPE_LOCAL;
         } else if (deviceFlag == DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG ||
@@ -8069,7 +8069,7 @@ void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, c
         if (device->macAddress_ == macAddress) {
             device->deviceName_ = deviceName;
             AUDIO_INFO_LOG("bluetooth device %{public}d alias name changing to %{public}s",
-                device->deviceId_, device->deviceName_.c_str());
+                device->audioDeviceId_, device->deviceName_.c_str());
         }
     }
 }

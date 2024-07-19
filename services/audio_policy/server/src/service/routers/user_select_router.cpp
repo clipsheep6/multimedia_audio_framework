@@ -32,11 +32,11 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
         AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice();
     vector<unique_ptr<AudioDeviceDescriptor>> mediaDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES);
-    if (perDev_->deviceId_ == 0) {
+    if (perDev_->audioDeviceId_ == 0) {
         AUDIO_DEBUG_LOG(" PerferredMediaRenderDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
-        AUDIO_INFO_LOG(" PerferredMediaRenderDevice deviceId is %{public}d", perDev_->deviceId_);
+        AUDIO_INFO_LOG(" PerferredMediaRenderDevice deviceId is %{public}d", perDev_->audioDeviceId_);
         return RouterBase::GetPairCaptureDevice(perDev_, mediaDevices);
     }
 }
@@ -47,11 +47,11 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUs
         AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
     vector<unique_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
-    if (perDev_->deviceId_ == 0) {
+    if (perDev_->audioDeviceId_ == 0) {
         AUDIO_DEBUG_LOG(" PerferredCallRenderDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
-        AUDIO_INFO_LOG(" PerferredCallRenderDevice deviceId is %{public}d", perDev_->deviceId_);
+        AUDIO_INFO_LOG(" PerferredCallRenderDevice deviceId is %{public}d", perDev_->audioDeviceId_);
         return RouterBase::GetPairCaptureDevice(perDev_, callDevices);
     }
 }
@@ -62,11 +62,11 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
         AudioStateManager::GetAudioStateManager().GetPerferredCallCaptureDevice();
     vector<unique_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_INPUT_DEVICES);
-    if (perDev_->deviceId_ == 0) {
+    if (perDev_->audioDeviceId_ == 0) {
         AUDIO_DEBUG_LOG(" PerferredCallCaptureDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
-        AUDIO_INFO_LOG(" PerferredCallCaptureDevice deviceId is %{public}d", perDev_->deviceId_);
+        AUDIO_INFO_LOG(" PerferredCallCaptureDevice deviceId is %{public}d", perDev_->audioDeviceId_);
         return RouterBase::GetPairCaptureDevice(perDev_, callDevices);
     }
 }
@@ -84,11 +84,11 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
         AudioStateManager::GetAudioStateManager().GetPerferredRecordCaptureDevice();
     vector<unique_ptr<AudioDeviceDescriptor>> recordDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_INPUT_DEVICES);
-    if (perDev_->deviceId_ == 0) {
+    if (perDev_->audioDeviceId_ == 0) {
         AUDIO_DEBUG_LOG(" PerferredRecordCaptureDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
-        AUDIO_INFO_LOG(" PerferredRecordCaptureDevice deviceId is %{public}d", perDev_->deviceId_);
+        AUDIO_INFO_LOG(" PerferredRecordCaptureDevice deviceId is %{public}d", perDev_->audioDeviceId_);
         return RouterBase::GetPairCaptureDevice(perDev_, recordDevices);
     }
 }

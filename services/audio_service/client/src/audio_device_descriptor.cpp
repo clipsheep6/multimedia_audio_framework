@@ -27,7 +27,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     : deviceType_(type), deviceRole_(role), interruptGroupId_(interruptGroupId), volumeGroupId_(volumeGroupId),
     networkId_(networkId)
 {
-    deviceId_ = 0;
+    audioDeviceId_ = 0;
     audioStreamInfo_ = {};
     channelMasks_ = 0;
     channelIndexMasks_ = 0;
@@ -45,7 +45,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) : deviceType_(type), deviceRole_(role)
 {
-    deviceId_ = 0;
+    audioDeviceId_ = 0;
     audioStreamInfo_ = {};
     channelMasks_ = 0;
     channelIndexMasks_ = 0;
@@ -71,7 +71,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor()
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
 {
-    deviceId_ = deviceDescriptor.deviceId_;
+    audioDeviceId_ = deviceDescriptor.audioDeviceId_;
     deviceName_ = deviceDescriptor.deviceName_;
     macAddress_ = deviceDescriptor.macAddress_;
     deviceType_ = deviceDescriptor.deviceType_;
@@ -98,7 +98,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
 AudioDeviceDescriptor::AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "Error input parameter");
-    deviceId_ = deviceDescriptor->deviceId_;
+    audioDeviceId_ = deviceDescriptor->audioDeviceId_;
     deviceName_ = deviceDescriptor->deviceName_;
     macAddress_ = deviceDescriptor->macAddress_;
     deviceType_ = deviceDescriptor->deviceType_;
@@ -141,7 +141,7 @@ bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
     parcel.WriteInt32(deviceType_);
     parcel.WriteInt32(deviceRole_);
-    parcel.WriteInt32(deviceId_);
+    parcel.WriteInt32(audioDeviceId_);
 
     audioStreamInfo_.Marshalling(parcel);
 
@@ -169,7 +169,7 @@ sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::Unmarshalling(Parcel &in)
 
     audioDeviceDescriptor->deviceType_ = static_cast<DeviceType>(in.ReadInt32());
     audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(in.ReadInt32());
-    audioDeviceDescriptor->deviceId_ = in.ReadInt32();
+    audioDeviceDescriptor->audioDeviceId_ = in.ReadInt32();
 
     audioDeviceDescriptor->audioStreamInfo_.Unmarshalling(in);
 

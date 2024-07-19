@@ -284,7 +284,7 @@ void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(sptr<AudioDeviceDe
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
     audioDeviceDescriptor->deviceRole_ = deviceInfo.deviceRole;
     audioDeviceDescriptor->deviceType_ = deviceInfo.deviceType;
-    audioDeviceDescriptor->deviceId_ = deviceInfo.deviceId;
+    audioDeviceDescriptor->audioDeviceId_ = deviceInfo.deviceId;
     audioDeviceDescriptor->channelMasks_ = deviceInfo.channelMasks;
     audioDeviceDescriptor->channelIndexMasks_ = deviceInfo.channelIndexMasks;
     audioDeviceDescriptor->deviceName_ = deviceInfo.deviceName;
@@ -437,7 +437,7 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
     (void)napi_create_object(env, &result);
     SetValueInt32(env, "deviceRole", static_cast<int32_t>(deviceInfo.deviceRole_), result);
     SetValueInt32(env, "deviceType", static_cast<int32_t>(deviceInfo.deviceType_), result);
-    SetValueInt32(env, "id", static_cast<int32_t>(deviceInfo.deviceId_), result);
+    SetValueInt32(env, "id", static_cast<int32_t>(deviceInfo.audioDeviceId_), result);
     SetValueString(env, "name", deviceInfo.deviceName_, result);
     SetValueString(env, "address", deviceInfo.macAddress_, result);
     SetValueString(env, "networkId", deviceInfo.networkId_, result);
@@ -774,7 +774,7 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
 
     status = GetValueInt32(env, "id", intValue, in);
     if (status == napi_ok) {
-        selectedAudioDevice->deviceId_ = intValue;
+        selectedAudioDevice->audioDeviceId_ = intValue;
     }
 
     return napi_ok;
