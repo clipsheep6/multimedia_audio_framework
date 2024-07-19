@@ -771,7 +771,8 @@ void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor>
     }
     if (!ret) {
         AUDIO_ERR_LOG("cant find type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
-            d->deviceType_, d->audioDeviceId_, GetEncryptStr(d->macAddress_).c_str(), GetEncryptStr(d->networkId_).c_str());
+            d->deviceType_, d->audioDeviceId_, GetEncryptStr(d->macAddress_).c_str(),
+                GetEncryptStr(d->networkId_).c_str());
     }
 }
 
