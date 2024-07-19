@@ -140,7 +140,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     }
     AUDIO_INFO_LOG("usage:%{public}d uid:%{public}d device size:[%{public}zu],"
         " 1st device type:[%{public}d], id:[%{public}d], router:%{public}d ", streamUsage, clientUID, descs.size(),
-        descs[0]->deviceType_, descs[0]->deviceId_, routerType);
+        descs[0]->deviceType_, descs[0]->audioDeviceId_, routerType);
     return descs;
 }
 
@@ -212,7 +212,7 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
         audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUID, PIPE_TYPE_NORMAL_IN);
     }
     AUDIO_INFO_LOG("source:%{public}d uid:%{public}d fetch device type:id %{public}d:%{public}d router:%{public}d",
-        sourceType, clientUID, descs[0]->deviceType_, descs[0]->deviceId_, routerType);
+        sourceType, clientUID, descs[0]->deviceType_, descs[0]->audioDeviceId_, routerType);
     return move(descs[0]);
 }
 

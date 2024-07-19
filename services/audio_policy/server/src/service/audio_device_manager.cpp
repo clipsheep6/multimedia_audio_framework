@@ -349,7 +349,7 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Memory allocation failed");
 
-    AUDIO_INFO_LOG("add type:id %{public}d:%{public}d", deviceDescriptor->getType(), deviceDescriptor->deviceId_);
+    AUDIO_INFO_LOG("add type:id %{public}d:%{public}d", deviceDescriptor->getType(), deviceDescriptor->audioDeviceId_);
 
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
         AUDIO_INFO_LOG("The device has been added and will not be added again.");
@@ -381,7 +381,7 @@ std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioD
     devices.append("device type:id ");
     for (auto iter : descs) {
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
-        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
+        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->audioDeviceId_)));
         devices.append(" ");
     }
     return devices;
@@ -406,7 +406,7 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
 
 void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devDesc)
 {
-    AUDIO_INFO_LOG("remove type:id %{public}d:%{public}d ", devDesc->getType(), devDesc->deviceId_);
+    AUDIO_INFO_LOG("remove type:id %{public}d:%{public}d ", devDesc->getType(), devDesc->audioDeviceId_);
 
     RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(devDesc));
     RemoveRemoteDevices(devDesc);
@@ -771,7 +771,8 @@ void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor>
     }
     if (!ret) {
         AUDIO_ERR_LOG("cant find type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
-            d->deviceType_, d->deviceId_, GetEncryptStr(d->macAddress_).c_str(), GetEncryptStr(d->networkId_).c_str());
+            d->deviceType_, d->audioDeviceId_, GetEncryptStr(d->macAddress_).c_str(),
+                GetEncryptStr(d->networkId_).c_str());
     }
 }
 

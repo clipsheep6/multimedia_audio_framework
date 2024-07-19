@@ -69,7 +69,7 @@ public:
         std::vector<std::unique_ptr<AudioDeviceDescriptor>> &captureDescs)
     {
         for (auto &captureDesc : captureDescs) {
-            if (captureDesc->deviceId_ != desc->deviceId_) {
+            if (captureDesc->audioDeviceId_ != desc->audioDeviceId_) {
                 continue;
             }
             if (!captureDesc->exceptionFlag_ && captureDesc->isEnable_ &&

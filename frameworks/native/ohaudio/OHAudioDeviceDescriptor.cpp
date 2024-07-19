@@ -175,7 +175,7 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceId(uint32_t *id)
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
-    *id = (uint32_t)audioDeviceDescriptor_->deviceId_;
+    *id = (uint32_t)audioDeviceDescriptor_->audioDeviceId_;
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 

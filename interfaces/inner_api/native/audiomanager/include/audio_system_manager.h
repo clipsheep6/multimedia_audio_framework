@@ -40,7 +40,7 @@ public:
     DeviceRole getRole() const;
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
-    int32_t deviceId_ = 0;
+    int32_t audioDeviceId_ = 0;
     int32_t channelMasks_ = 0;
     int32_t channelIndexMasks_ = 0;
     std::string deviceName_;
