@@ -204,13 +204,10 @@ bool PermissionUtil::VerifyIsSystemApp()
 bool PermissionUtil::VerifySelfPermission()
 {
     Security::AccessToken::FullTokenID selfToken = IPCSkeleton::GetSelfTokenID();
-
+#ifdef AUDIO_BUILD_VARIANT_ROOT
     auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(selfToken));
-
-    CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_NATIVE, true);
-
     CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_SHELL, true);
-
+#endif
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(selfToken);
     CHECK_AND_RETURN_RET(!tmp, true);
 
@@ -218,15 +215,27 @@ bool PermissionUtil::VerifySelfPermission()
     return false;
 }
 
-bool PermissionUtil::VerifySystemPermission()
+bool PermissionUtil::VerifySAPermission(const std::string &permissionName)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+    CHECK_AND_RETURN_RET_LOG(tokenType == Security::AccessToken::TOKEN_NATIVE, false, "tokenId:%{public}d is not SA",
+        tokenId);
+
+    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
+    CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
+        false, "denied [%{public}s] tokenId:%{public}d", permissionName.c_str(), tokenId);
+
+    return true;
+}
+
+bool PermissionUtil::VerifySystemApi()
+{
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
-
-    CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_NATIVE, true);
-
     CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_SHELL, true);
-
+#endif
     bool tmp = VerifyIsSystemApp();
     CHECK_AND_RETURN_RET(!tmp, true);
 

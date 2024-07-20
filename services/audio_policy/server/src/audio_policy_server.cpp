@@ -585,7 +585,7 @@ int32_t AudioPolicyServer::GetMinVolumeLevel(AudioVolumeType volumeType)
 int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(AudioStreamType streamType, int32_t volumeLevel)
 {
     int32_t buildApi = GetApiTargerVersion();
-    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
+    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("No system permission for legacy call");
         return ERR_PERMISSION_DENIED;
     }
@@ -602,7 +602,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(AudioStreamType streamType
 
 int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t volumeFlag)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("SetSystemVolumeLevel: No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -658,7 +658,7 @@ bool AudioPolicyServer::IsVolumeUnadjustable()
 
 int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("AdjustVolumeByStep: No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -684,7 +684,7 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 
 int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("AdjustSystemVolumeByStep: No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -719,7 +719,7 @@ float AudioPolicyServer::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t
 int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool mute)
 {
     int32_t buildApi = GetApiTargerVersion();
-    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
+    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -729,7 +729,7 @@ int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool 
 
 int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -897,8 +897,8 @@ bool AudioPolicyServer::GetStreamMuteInternal(AudioStreamType streamType)
 int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
-        "SelectOutputDevice: No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi() ||
+        PermissionUtil::VerifySAPermission(MODIFY_AUDIO_SETTINGS_PERMISSION), ERR_PERMISSION_DENIED, "No permission");
 
     return audioPolicyService_.SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
@@ -911,15 +911,15 @@ std::string AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, A
 int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
-        "SelectInputDevice: No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi() ||
+        PermissionUtil::VerifySAPermission(MODIFY_AUDIO_SETTINGS_PERMISSION), ERR_PERMISSION_DENIED, "No permission");
     int32_t ret = audioPolicyService_.SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
     return ret;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     switch (deviceFlag) {
         case NONE_DEVICES_FLAG:
         case DISTRIBUTED_OUTPUT_DEVICES_FLAG:
@@ -1047,7 +1047,7 @@ int32_t AudioPolicyServer::SetRingerModeLegacy(AudioRingerMode ringMode)
 {
     AUDIO_INFO_LOG("Set ringer mode to %{public}d in legacy", ringMode);
     int32_t buildApi = GetApiTargerVersion();
-    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
+    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -1058,7 +1058,7 @@ int32_t AudioPolicyServer::SetRingerModeLegacy(AudioRingerMode ringMode)
 int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
 {
     AUDIO_INFO_LOG("Set ringer mode to %{public}d", ringMode);
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -1247,7 +1247,7 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         AudioScene audioScene = interruptService_->GetHighestPriorityAudioScene(0);
         return audioPolicyService_.SetAudioScene(audioScene);
     }
-    bool ret = PermissionUtil::VerifySystemPermission();
+    bool ret = PermissionUtil::VerifySystemApi() || PermissionUtil::VerifySAPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
     return audioPolicyService_.SetAudioScene(audioScene);
 }
@@ -1259,7 +1259,7 @@ int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene)
 
 AudioScene AudioPolicyServer::GetAudioScene()
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     return audioPolicyService_.GetAudioScene(hasSystemPermission);
 }
 
@@ -1676,7 +1676,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
 {
     bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: BT use permission: %{public}d", hasBTPermission);
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: System use permission: %{public}d", hasSystemPermission);
 
     return audioPolicyService_.GetCurrentRendererChangeInfos(audioRendererChangeInfos,
@@ -1688,7 +1688,7 @@ int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
 {
     bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: BT use permission: %{public}d", hasBTPermission);
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: System use permission: %{public}d", hasSystemPermission);
 
     return audioPolicyService_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos,
@@ -1784,7 +1784,7 @@ int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
 
 int32_t AudioPolicyServer::GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
-    bool ret = PermissionUtil::VerifySystemPermission();
+    bool ret = PermissionUtil::VerifySystemApi();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
         "No system permission");
 
@@ -1989,7 +1989,7 @@ bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo
 
 int32_t AudioPolicyServer::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("GetVolumeGroupInfos: No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -1999,7 +1999,7 @@ int32_t AudioPolicyServer::SetSystemSoundUri(const std::string &key, const std::
 
 std::string AudioPolicyServer::GetSystemSoundUri(const std::string &key)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("GetVolumeGroupInfos: No system permission");
         return "";
     }
@@ -2135,7 +2135,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
 std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvailableDevices(AudioDeviceUsage usage)
 {
     std::vector<unique_ptr<AudioDeviceDescriptor>> deviceDescs = {};
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     switch (usage) {
         case MEDIA_OUTPUT_DEVICES:
         case MEDIA_INPUT_DEVICES:
@@ -2184,7 +2184,7 @@ int32_t AudioPolicyServer::SetAvailableDeviceChangeCallback(const int32_t /*clie
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "SetAvailableDeviceChangeCallback set listener object is nullptr");
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     switch (usage) {
         case MEDIA_OUTPUT_DEVICES:
         case MEDIA_INPUT_DEVICES:
@@ -2219,7 +2219,7 @@ int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterru
 
 int32_t AudioPolicyServer::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -2338,7 +2338,7 @@ void AudioPolicyServer::UnRegisterSyncHibernateListener()
 
 bool AudioPolicyServer::IsSpatializationEnabled()
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return false;
     }
@@ -2351,7 +2351,7 @@ int32_t AudioPolicyServer::SetSpatializationEnabled(const bool enable)
         AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
         return ERR_PERMISSION_DENIED;
     }
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
     }
@@ -2360,7 +2360,7 @@ int32_t AudioPolicyServer::SetSpatializationEnabled(const bool enable)
 
 bool AudioPolicyServer::IsHeadTrackingEnabled()
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return false;
     }
@@ -2373,7 +2373,7 @@ int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
         AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
         return ERR_PERMISSION_DENIED;
     }
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
     }
@@ -2387,7 +2387,7 @@ AudioSpatializationState AudioPolicyServer::GetSpatializationState(const StreamU
 
 bool AudioPolicyServer::IsSpatializationSupported()
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return false;
     }
@@ -2396,7 +2396,7 @@ bool AudioPolicyServer::IsSpatializationSupported()
 
 bool AudioPolicyServer::IsSpatializationSupportedForDevice(const std::string address)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return false;
     }
@@ -2405,7 +2405,7 @@ bool AudioPolicyServer::IsSpatializationSupportedForDevice(const std::string add
 
 bool AudioPolicyServer::IsHeadTrackingSupported()
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return false;
     }
@@ -2414,7 +2414,7 @@ bool AudioPolicyServer::IsHeadTrackingSupported()
 
 bool AudioPolicyServer::IsHeadTrackingSupportedForDevice(const std::string address)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return false;
     }
@@ -2427,7 +2427,7 @@ int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceStat
         AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
         return ERR_PERMISSION_DENIED;
     }
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
     }
@@ -2458,7 +2458,7 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     AUDIO_DEBUG_LOG("register clientPid: %{public}d", clientPid);
 
     bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
-    bool hasSysPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSysPermission = PermissionUtil::VerifySystemApi();
     callback->hasBTPermission_ = hasBTPermission;
     callback->hasSystemPermission_ = hasSysPermission;
     callback->apiVersion_ = GetApiTargerVersion();
@@ -2502,7 +2502,7 @@ int32_t AudioPolicyServer::ReleaseAudioInterruptZone(const int32_t zoneID)
 
 int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_SYSTEM_PERMISSION_DENIED;
@@ -2521,7 +2521,7 @@ int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bo
 
 std::unique_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevice()
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         AUDIO_ERR_LOG("No system permission");
         return make_unique<AudioDeviceDescriptor>();
@@ -2545,7 +2545,7 @@ ConverterConfig AudioPolicyServer::GetConverterConfig()
 
 AudioSpatializationSceneType AudioPolicyServer::GetSpatializationSceneType()
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return SPATIALIZATION_SCENE_TYPE_DEFAULT;
     }
@@ -2558,7 +2558,7 @@ int32_t AudioPolicyServer::SetSpatializationSceneType(const AudioSpatializationS
         AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
         return ERR_PERMISSION_DENIED;
     }
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
     }
@@ -2571,7 +2571,7 @@ int32_t AudioPolicyServer::DisableSafeMediaVolume()
         AUDIO_ERR_LOG("MODIFY_AUDIO_SETTINGS_PERMISSION permission check failed");
         return ERR_PERMISSION_DENIED;
     }
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         return ERR_SYSTEM_PERMISSION_DENIED;
     }
@@ -2618,7 +2618,7 @@ int32_t AudioPolicyServer::GetApiTargerVersion()
 
 bool AudioPolicyServer::IsHighResolutionExist()
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         AUDIO_ERR_LOG("No system permission");
         return false;
@@ -2628,7 +2628,7 @@ bool AudioPolicyServer::IsHighResolutionExist()
 
 int32_t AudioPolicyServer::SetHighResolutionExist(bool highResExist)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     if (!hasSystemPermission) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;

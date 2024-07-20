@@ -512,7 +512,7 @@ int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
     const std::shared_ptr<AudioRingerModeCallback> &callback, API_VERSION api_v)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::SetRingerModeCallback");
-    if (api_v == API_8 && !PermissionUtil::VerifySystemPermission()) {
+    if (api_v == API_8 && !PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("SetRingerModeCallback: No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -554,7 +554,7 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
     const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::SetDeviceChangeCallback");
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     switch (flag) {
         case NONE_DEVICES_FLAG:
         case DISTRIBUTED_OUTPUT_DEVICES_FLAG:
@@ -777,7 +777,7 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
     const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v)
 {
     AUDIO_INFO_LOG("SetVolumeKeyEventCallback: client: %{public}d", clientPid);
-    if (api_v == API_8 && !PermissionUtil::VerifySystemPermission()) {
+    if (api_v == API_8 && !PermissionUtil::VerifySystemApi()) {
         AUDIO_ERR_LOG("SetVolumeKeyEventCallback: No system permission");
         return ERR_PERMISSION_DENIED;
     }

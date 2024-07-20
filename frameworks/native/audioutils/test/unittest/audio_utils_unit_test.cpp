@@ -100,7 +100,7 @@ HWTEST(AudioUtilsUnitTest, PermissionUtil_001, TestSize.Level1)
     EXPECT_EQ(false, ret1);
     bool ret2 = PermissionUtil::VerifySelfPermission();
     EXPECT_EQ(true, ret2);
-    bool ret3 = PermissionUtil::VerifySystemPermission();
+    bool ret3 = PermissionUtil::VerifySystemApi();
     EXPECT_EQ(true, ret3);
 }
 

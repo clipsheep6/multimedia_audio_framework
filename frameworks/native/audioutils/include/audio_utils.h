@@ -114,7 +114,8 @@ class PermissionUtil {
 public:
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
-    static bool VerifySystemPermission();
+    static bool VerifySAPermission(const std::string &permissionName);
+    static bool VerifySystemApi();
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);

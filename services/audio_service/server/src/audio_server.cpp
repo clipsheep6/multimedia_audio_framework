@@ -357,7 +357,7 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
 int32_t AudioServer::SetExtraParameters(const std::string& key,
     const std::vector<std::pair<std::string, std::string>>& kvpairs)
 {
-    bool ret = PermissionUtil::VerifySystemPermission();
+    bool ret = PermissionUtil::VerifySystemApi();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "set extra parameters failed: not system app.");
     ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
@@ -451,7 +451,7 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
 
 int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_aec_mode";
@@ -474,7 +474,7 @@ int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
 
 int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_aec_mode";
@@ -533,7 +533,7 @@ int32_t AudioServer::RestoreRenderSink(const std::string &sinkName)
 
 int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_ns_mode";
@@ -556,7 +556,7 @@ int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoise
 
 int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_ns_mode";
@@ -593,7 +593,7 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNois
 
 int32_t AudioServer::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_wd_mode";
@@ -616,7 +616,7 @@ int32_t AudioServer::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisp
 
 int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhisperDetectionMode)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_wd_mode";
@@ -653,7 +653,7 @@ int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhis
 
 int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "avcm";
@@ -677,7 +677,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
 
 int32_t AudioServer::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "avmm";
@@ -701,7 +701,7 @@ int32_t AudioServer::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool
 
 int32_t AudioServer::IsWhispering()
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_is_whisper";
@@ -1650,7 +1650,7 @@ bool AudioServer::CheckPlaybackPermission(const AudioProcessConfig &config)
     if (needVerifyPermission == false) {
         return true;
     }
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemApi(), false,
         "Check playback permission failed, no system permission");
     return true;
 }
@@ -1672,7 +1672,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
 
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {
-        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        bool hasSystemPermission = PermissionUtil::VerifySystemApi();
         CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false, "VOICE_CALL failed: no system permission.");
 
         bool res = CheckVoiceCallRecorderPermission(tokenId);
@@ -1680,7 +1680,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     }
 
     if (sourceType == SOURCE_TYPE_REMOTE_CAST) {
-        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        bool hasSystemPermission = PermissionUtil::VerifySystemApi();
         CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false,
             "Create source remote cast failed: no system permission.");
 
@@ -1699,7 +1699,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
 
     if (sourceType == SOURCE_TYPE_WAKEUP) {
-        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        bool hasSystemPermission = PermissionUtil::VerifySystemApi();
         bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION, tokenId);
         CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, false,
             "Create wakeup record stream failed: no permission.");
