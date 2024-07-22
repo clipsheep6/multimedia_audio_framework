@@ -33,6 +33,13 @@
 #include "datashare_helper.h"
 #include "ipc_skeleton.h"
 #include "power_mgr_client.h"
+
+#include "notification_content.h"
+#include "notification_helper.h"
+#include "notification_request.h"
+#include "notification_constant.h"
+#include "notification_slot.h"
+
 #ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
 #endif
@@ -63,6 +70,15 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+class NotificationSubscriber : public OHOS::Notification::NotificationLocalLiveViewSubscriber {
+public:
+    void OnConnected() override;
+    void OnDisconnected() override;
+    void OnResponse(int32_t notificationId,
+        OHOS::sptr<OHOS::Notification::NotificationButtonOption> buttonOption) override;
+    void OnDied() override;
+};
 
 class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
     public IAudioAccessibilityConfigObserver, public IPolicyProvider {
@@ -866,6 +882,8 @@ private:
 
     int32_t ShowDialog();
 
+    int32_t StartNotification();
+
     int32_t GetVoipPlaybackDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
 
     int32_t GetVoipRecordDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
@@ -1135,6 +1153,10 @@ private:
     bool ringerModeMute_ = true;
 
     std::atomic<bool> isPolicyConfigParsered_ = false;
+    // int32_t density_ = 0;
+    // int32_t capsuleVpSize_ = 18;
+    // int32_t capsulePxSize_ = 0;
+
 };
 } // namespace AudioStandard
 } // namespace OHOS

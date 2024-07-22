@@ -217,6 +217,7 @@ ohos_shared_library("audio_policy_service") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "distributed_notification_service:ans_innerkits",
   ]
 
   public_external_deps = [ "libxml2:libxml2" ]
