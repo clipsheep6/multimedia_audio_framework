@@ -2278,7 +2278,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             isUpdateActiveDevice = UpdateDevice(descs.front(), reason, rendererChangeInfo);
             needUpdateActiveDevice = false;
         }
-        if (!hasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo, reason)) {
+        if (!hasDirectChangeDevice && NotifyRecreateDirectStream(descs.front(), rendererChangeInfo, reason)) {
             hasDirectChangeDevice = true;
             continue;
         }
@@ -2347,13 +2347,18 @@ bool AudioPolicyService::NotifyRecreateRendererStream(std::unique_ptr<AudioDevic
     return false;
 }
 
-bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    const AudioStreamDeviceChangeReasonExt reason)
+bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
+    const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_DEBUG_LOG("current pipe type is:%{public}d", rendererChangeInfo->rendererInfo.pipeType);
+    CHECK_AND_RETURN_RET_LOG(rendererChangeInfo->outputDeviceInfo.deviceType != DEVICE_TYPE_INVALID &&
+        desc->deviceType_ != DEVICE_TYPE_INVALID, false, "device is invalid");
+    if (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo)) {
+        AUDIO_INFO_LOG("device not changed.");
+        return false;
+    }
     if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType)
         && rendererChangeInfo->rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
-        AUDIO_DEBUG_LOG("direct stream changed to normal.");
+        AUDIO_INFO_LOG("direct stream changed to normal.");
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
             AUDIO_FLAG_DIRECT, reason);
         return true;
@@ -2361,7 +2366,7 @@ bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendere
         AudioRendererInfo info = rendererChangeInfo->rendererInfo;
         if (info.streamUsage == STREAM_USAGE_MUSIC && info.rendererFlags == AUDIO_FLAG_NORMAL &&
             info.samplingRate >= SAMPLE_RATE_48000 && info.format >= SAMPLE_S24LE) {
-            AUDIO_DEBUG_LOG("stream change to direct.");
+            AUDIO_INFO_LOG("stream change to direct.");
             TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
                 AUDIO_FLAG_DIRECT, reason);
             return true;
