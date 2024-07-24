@@ -38,9 +38,9 @@ struct AudioEffectProcInfo {
 class AudioEffectChain {
 public:
 #ifdef SENSOR_ENABLE
-    AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker);
+    AudioEffectChain(std::string scene, AudioSpatialDeviceType spatialDevice, std::shared_ptr<HeadTracker> headTracker);
 #else
-    AudioEffectChain(std::string scene);
+    AudioEffectChain(std::string scene, AudioSpatialDeviceType spatialDevice);
 #endif
     ~AudioEffectChain();
     std::string GetEffectMode();
@@ -58,6 +58,7 @@ public:
     uint32_t GetLatency();
     int32_t UpdateEffectParam();
     void ResetIoBufferConfig();
+    int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
 
 private:
     AudioEffectConfig GetIoBufferConfig();
@@ -80,6 +81,7 @@ private:
     FILE *dumpFileOutput_ = nullptr;
     std::string dumpNameIn_ = "";
     std::string dumpNameOut_ = "";
+    AudioSpatialDeviceType spatialDeviceType_{  EARPHONE_TYPE_NONE };
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
