@@ -73,6 +73,7 @@ const char *g_audioServerCodeStrs[] = {
     "GET_EFFECT_LATENCY",
     "UPDATE_LATENCY_TIMESTAMP",
     "SET_ASR_AEC_MODE",
+    
     "GET_ASR_AEC_MODE",
     "SET_ASR_NOISE_SUPPRESSION_MODE",
     "GET_ASR_NOISE_SUPPRESSION_MODE",
@@ -86,6 +87,7 @@ const char *g_audioServerCodeStrs[] = {
     "RESTORE_RENDERSINK",
     "LOAD_HDI_EFFECT_MODEL",
     "UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED",
+    "UPDATE_SESSION_CONNECTION_STATE",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -722,6 +724,14 @@ int AudioManagerStub::HandleLoadHdiEffectModel(MessageParcel &data, MessageParce
 int AudioManagerStub::HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply)
 {
     UpdateEffectBtOffloadSupported(data.ReadBool());
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUpdateSessionConnectionState(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t sessionID = data.ReadInt32();
+    int32_t state = data.ReadInt32();
+    UpdateSessionConnectionState(sessionID, state);
     return AUDIO_OK;
 }
 } // namespace AudioStandard
