@@ -90,6 +90,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     SceneTypeToEffectChainCountBackupMap_.clear();
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
+    spatialDeviceType_ = EARPHONE_TYPE_NONE;
     isInitialized_ = false;
 
 #ifdef SENSOR_ENABLE
@@ -757,6 +758,42 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
     return SUCCESS;
 }
 
+int32_t AudioEffectChainManager::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
+{
+    spatialDeviceType_ = spatialDeviceType;
+
+    effectHdiInput_[0] = HDI_ROOM_MODE;
+    if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+        effectHdiInput_[1] = hdiSceneType_;
+    } else {
+        effectHdiInput_[1] =
+            static_cast<int32_t>(GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(hdiSceneType_)));
+    }
+    effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO] = hdiEffectMode_;
+    effectHdiInput_[3] = spatialDeviceType_; // 3:index
+    AUDIO_INFO_LOG("set hdi room mode sceneType: %{public}d, effectMode: %{public}d, spatialDeviceType: %{public}d",
+        effectHdiInput_[1], effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO], effectHdiInput_[3]); // 3:index
+    int32_t  ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set hdi room mode failed");
+        return ret;
+    }
+
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    for (auto& sceneType2EffectChain : SceneTypeToEffectChainMap_) {
+        auto audioEffectChain = sceneType2EffectChain.second;
+        if (audioEffectChain != nullptr) {
+            ret = audioEffectChain->UpdateSpatialDeviceType(spatialDeviceType_);
+            if (ret != 0) {
+                AUDIO_ERR_LOG("audioEffectChain->UpdateSpatialDeviceType failed.");
+                return ERROR;
+            }
+        }
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &sceneType, uint32_t &channels,
     uint64_t &channelLayout)
 {
@@ -869,8 +906,9 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
     }
     hdiEffectMode_ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
     effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO] = hdiEffectMode_;
-    AUDIO_INFO_LOG("set hdi room mode sceneType: %{public}d, effectMode: %{public}d", effectHdiInput_[1],
-        effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO]);
+    effectHdiInput_[3] = spatialDeviceType_; // 3:index
+    AUDIO_INFO_LOG("set hdi room mode sceneType: %{public}d, effectMode: %{public}d, spatialDeviceType: %{public}d",
+        effectHdiInput_[1], effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO], effectHdiInput_[3]); // 3:index
     ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
@@ -1023,10 +1061,12 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     AudioEffectScene sceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(hdiSceneType_));
     effectHdiInput_[1] = static_cast<int32_t>(sceneType);
     effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO] = hdiEffectMode_;
+    effectHdiInput_[3] = spatialDeviceType_; // 3:index
     if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
     }
-    AUDIO_DEBUG_LOG("set spatialization scene type to hdi: %{public}d", effectHdiInput_[1]);
+    AUDIO_DEBUG_LOG("set spatialization scene type:%{public}d spatial device type:%{public}d to hdi",
+        effectHdiInput_[1], effectHdiInput_[3]); // 3:index
 
     UpdateEffectChainParams(sceneType);
 
@@ -1229,16 +1269,16 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
     if ((DEFAULT_NUM_EFFECT_INSTANCES - SceneTypeToSpecialEffectSet_.size()) > 1 && sceneType != COMMON_SCENE_TYPE) {
         SceneTypeToSpecialEffectSet_.insert(sceneType);
 #ifdef SENSOR_ENABLE
-        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
+        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, spatialDeviceType_, headTracker_);
 #else
-        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, spatialDeviceType_);
 #endif
     } else {
         if (!isCommonEffectChainExisted_) {
 #ifdef SENSOR_ENABLE
-            audioEffectChain = std::make_shared<AudioEffectChain>(COMMON_SCENE_TYPE, headTracker_);
+            audioEffectChain = std::make_shared<AudioEffectChain>(COMMON_SCENE_TYPE, spatialDeviceType_, headTracker_);
 #else
-            audioEffectChain = std::make_shared<AudioEffectChain>(COMMON_SCENE_TYPE);
+            audioEffectChain = std::make_shared<AudioEffectChain>(COMMON_SCENE_TYPE, spatialDeviceType_);
 #endif
             if (sceneType != COMMON_SCENE_TYPE) {
                 SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] = audioEffectChain;

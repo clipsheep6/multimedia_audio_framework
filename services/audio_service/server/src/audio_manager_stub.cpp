@@ -59,6 +59,7 @@ const char *g_audioServerCodeStrs[] = {
     "SET_WAKEUP_CLOSE_CALLBACK",
     "SET_CAPTURE_SILENT_STATE",
     "UPDATE_SPATIALIZATION_STATE",
+    "UPDATE_SPATIAL_DEVICE_TYPE",
     "OFFLOAD_SET_VOLUME",
     "OFFLOAD_DRAIN",
     "OFFLOAD_GET_PRESENTATION_POSITION",
@@ -558,6 +559,14 @@ int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, Messa
     spatializationState.spatializationEnabled = data.ReadBool();
     spatializationState.headTrackingEnabled = data.ReadBool();
     int32_t ret = UpdateSpatializationState(spatializationState);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUpdateSpatialDeviceType(MessageParcel& data, MessageParcel& reply)
+{
+    AudioSpatialDeviceType spatialDeviceType = static_cast<AudioSpatialDeviceType>(data.ReadInt32());
+    int32_t ret = UpdateSpatialDeviceType(spatialDeviceType);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }
