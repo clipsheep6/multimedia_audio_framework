@@ -273,10 +273,19 @@ ErrCode AudioSettingProvider::PutStringValue(const std::string &key, const std::
     DataShare::DataSharePredicates predicates;
     predicates.EqualTo(SETTING_COLUMN_KEYWORD, key);
     Uri uri(AssembleUri(key, tableType));
-    if (helper->Update(uri, predicates, bucket) <= 0) {
-        AUDIO_DEBUG_LOG("no data exist, insert one row");
-        helper->Insert(uri, bucket);
+    auto [errCode, status] = helper->Update(uri, predicates, bucket);
+    if (errCode == 0) {
+        AUDIO_DEBUG_LOG("data exist, helper updata success, status = %{public}d", status);
+    } else {
+        AUDIO_WARNING_LOG("helper updata fail, errcode = %{public}d, no data exist, insert one row", errCode);
+        auto [errRet, result] = helper->Insert(uri, bucket);
+        if (errRet == 0) {
+            AUDIO_DEBUG_LOG("helper insert success, status = %{public}d", result);
+        } else {
+            AUDIO_ERR_LOG("helper insert fail, errcode = %{public}d", errRet);
+        }
     }
+
     if (needNotify) {
         helper->NotifyChange(AssembleUri(key, tableType));
     }
