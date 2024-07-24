@@ -513,13 +513,28 @@ void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_m
     std::string sceneType;
     std::string sceneMode;
     std::string key;
+    std::string defaultChain;
+    bool defaultFlag = false;
     for (auto &scene: supportedEffectConfig_.postProcessNew.stream) {
         sceneType = scene.scene;
         for (auto &mode: scene.streamEffectMode) {
             sceneMode = mode.mode;
+            defaultFlag = false;
             for (auto &device: mode.devicePort) {
-                key = sceneType + "_&_" + sceneMode + "_&_" + device.type;
-                AddKeyValueIntoMap(map, key, device.chain);
+                // hanjun commit
+                if (device.type == "DEVICE_TYPE_DEFAULT") { // DEVICE_TYPE_DEFAULT
+                    defaultFlag = true;
+                    defaultChain = device.chain;
+                } else { // DEVICE_TYPE_XXX
+                    key = sceneType + "_&_" + sceneMode + "_&_" + device.type;
+                    AddKeyValueIntoMap(map, key, device.chain);
+                }
+            }
+            if (defaultFlag) {
+                for (auto &deviceType : SUPPORTED_DEVICE_TYPE) {
+                    key = sceneType + "_&_" + sceneMode + "_&_" + deviceType.second;
+                    AddKeyValueIntoMap(map, key, defaultChain);
+                }
             }
         }
     }
