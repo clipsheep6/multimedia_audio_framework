@@ -57,6 +57,7 @@
             "hitrace",
             "hiview",
             "hilog",
+            "image_framework",
             "init",
             "input",
             "ipc",
