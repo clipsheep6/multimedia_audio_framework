@@ -147,23 +147,10 @@ int32_t AudioEnhanceChainManager::InitEnhanceBuffer()
     uint32_t len = 0;
     uint32_t lenEc = 0;
     uint32_t lenMicRef = 0;
-    uint32_t tempLen = 0;
-    uint32_t tempLenEc = 0;
-    uint32_t tempLenMicRef = 0;
-    // get max buffer length of ecBuffer and micBufferIn
     for (auto &item : sceneTypeToEnhanceChainMap_) {
-        tempLen = item.second->GetAlgoBufferSize();
-        tempLenEc = item.second->GetAlgoBufferSizeEc();
-        tempLenMicRef = item.second->GetAlgoBufferSizeMicRef();
-        if (tempLen > len) {
-            len = tempLen;
-        }
-        if (tempLenEc > lenEc) {
-            lenEc = tempLenEc;
-        }
-        if (tempLenMicRef > lenMicRef) {
-            lenMicRef = tempLenMicRef;
-        }
+        len = std::max(len, item.second->GetAlgoBufferSize());
+        lenEc = std::max(lenEc, item.second->GetAlgoBufferSizeEc());
+        lenMicRef = std::max(lenMicRef, item.second->GetAlgoBufferSizeMicRef());
     }
     if (enhanceBuffer_ == nullptr) {
         enhanceBuffer_ = std::make_unique<EnhanceBuffer>();

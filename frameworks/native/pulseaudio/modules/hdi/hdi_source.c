@@ -417,7 +417,6 @@ static int32_t HandleCaptureFrame(const struct Userdata *u,
         if (CheckSameAdapterEcLength(requestBytes, *replyBytes, u->requestBytesEc, replyBytesEc) == 0) {
             CopyEcdataToEnhanceBufferAdapter(u->bufferEc, u->requestBytesEc);
         } else {
-            AUDIO_ERR_LOG("check same ec adapter length wrong");
             return -1;
         }
     } else if (u->ecType == EC_DIFFERENT_ADAPTER) {
@@ -433,7 +432,6 @@ static int32_t HandleCaptureFrame(const struct Userdata *u,
             if (CheckDiffAdapterEcLength(requestBytes, *replyBytes, u->requestBytesEc, replyBytesEc) == 0) {
                 CopyEcdataToEnhanceBufferAdapter(u->bufferEc, u->requestBytesEc);
             } else {
-                AUDIO_ERR_LOG("check different ec adapter length wrong");
                 return -1;
             }
         }
@@ -445,7 +443,6 @@ static int32_t HandleCaptureFrame(const struct Userdata *u,
         u->captureHandleMicRef->CaptureFrame(u->captureHandleMicRef->capture,
             (char *)(u->bufferMicRef), u->requestBytesMicRef, &replyBytesMicRef);
         if ((replyBytesMicRef == 0) || (u->requestBytesMicRef != replyBytesMicRef)) {
-            AUDIO_ERR_LOG("check mic ref length wrong");
             return -1;
         }
         CopyMicRefdataToEnhanceBufferAdapter(u->bufferMicRef, replyBytesMicRef);
@@ -467,6 +464,7 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
     requestBytes = pa_memblock_get_length(chunk->memblock);
 
     if (HandleCaptureFrame(u, (char *)p, requestBytes, &replyBytes) != 0) {
+        AUDIO_ERR_LOG("get capture frame failed.");
         return -1;
     }
 
