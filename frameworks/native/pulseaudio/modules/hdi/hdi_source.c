@@ -399,8 +399,7 @@ static int32_t CheckDiffAdapterEcLength(uint64_t request, uint64_t reply, uint64
     return 0;
 }
 
-static int32_t HandleCaptureFrame(const struct Userdata *u,
-    char *buffer, uint64_t requestBytes, uint64_t *replyBytes)
+static int32_t HandleCaptureFrame(const struct Userdata *u, char *buffer, uint64_t requestBytes, uint64_t *replyBytes)
 {
     uint64_t replyBytesEc = 0;
     if (u->ecType == EC_NONE) {
@@ -450,46 +449,36 @@ static int32_t HandleCaptureFrame(const struct Userdata *u,
     return 0;
 }
 
-static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
+static int32_t GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
 {
     uint64_t requestBytes = 0;
     uint64_t replyBytes = 0;
-
     void *p = NULL;
-
     pa_assert(chunk->memblock);
     p = pa_memblock_acquire(chunk->memblock);
     pa_assert(p);
-
     requestBytes = pa_memblock_get_length(chunk->memblock);
-
     if (HandleCaptureFrame(u, (char *)p, requestBytes, &replyBytes) != 0) {
         AUDIO_ERR_LOG("get capture frame failed.");
         return -1;
     }
-
     pa_memblock_release(chunk->memblock);
-
     AUDIO_DEBUG_LOG("HDI Source: request bytes: %{public}" PRIu64 ", replyBytes: %{public}" PRIu64,
             requestBytes, replyBytes);
-
     if (replyBytes > requestBytes) {
         AUDIO_ERR_LOG("HDI Source: Error replyBytes > requestBytes. Requested data Length: "
                 "%{public}" PRIu64 ", Read: %{public}" PRIu64 " bytes", requestBytes, replyBytes);
         pa_memblock_unref(chunk->memblock);
         return -1;
     }
-
     if (replyBytes == 0) {
         AUDIO_ERR_LOG("HDI Source: Failed to read, Requested data Length: %{public}" PRIu64 " bytes,"
                 " Read: %{public}" PRIu64 " bytes", requestBytes, replyBytes);
         pa_memblock_unref(chunk->memblock);
         return -1;
     }
-
     chunk->index = 0;
     chunk->length = replyBytes;
-
     return 0;
 }
 
