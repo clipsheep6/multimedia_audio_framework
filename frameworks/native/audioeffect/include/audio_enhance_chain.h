@@ -31,11 +31,13 @@ const std::vector<std::string> NEED_EC_SCENE = {
 };
 
 struct EnhanceBuffer {
-    std::vector<uint8_t> ecBuffer;  // voip: ref data = mic data * 2
-    std::vector<uint8_t> micBufferIn; // mic data input
-    std::vector<uint8_t> micBufferOut; // mic data output
-    uint32_t length;  // mic length
-    uint32_t lengthEc;  // EC length
+    std::vector<uint8_t> micBufferIn;
+    std::vector<uint8_t> micBufferOut;
+    std::vector<uint8_t> ecBuffer;
+    std::vector<uint8_t> micRefBuffer;
+    uint32_t length;
+    uint32_t lengthEc;
+    uint32_t lengthMicRef;
 };
 
 struct AlgoAttr {
@@ -44,18 +46,23 @@ struct AlgoAttr {
     uint32_t byteLenPerFrame;
 };
 
-struct AlgoConfig {
-    uint32_t frameLength;
-    uint32_t sampleRate;
-    uint32_t dataFormat;
-    uint32_t micNum;
-    uint32_t refNum;
-    uint32_t outNum;
-};
-
 struct AlgoCache {
     std::vector<uint8_t> input;
     std::vector<uint8_t> output;
+};
+
+struct AudioEnhanceDeviceAttr {
+    uint32_t micRate;
+    uint32_t micChannels;
+    uint32_t micFormat;
+    bool needEc;
+    uint32_t ecRate;
+    uint32_t ecChannels;
+    uint32_t ecFormat;
+    bool needMicRef;
+    uint32_t micRefRate;
+    uint32_t micRefChannels;
+    uint32_t micRefFormat;
 };
 
 class AudioEnhanceChain {
@@ -65,9 +72,11 @@ public:
     void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle, const std::string &enhance,
         const std::string &property);
     bool IsEmptyEnhanceHandles();
+    int32_t SetDeviceAttr(const AudioEnhanceDeviceAttr &deviceAttr);
     void GetAlgoConfig(AudioBufferConfig &algoConfig);
     uint32_t GetAlgoBufferSize();
     uint32_t GetAlgoBufferSizeEc();
+    uint32_t GetAlgoBufferSizeMicRef();
     int32_t ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length);
     int32_t SetEnhanceProperty(const std::string &effect, const std::string &property);
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
@@ -78,6 +87,7 @@ private:
     void ReleaseEnhanceChain();
     int32_t GetOneFrameInputData(std::unique_ptr<EnhanceBuffer> &enhanceBuffer);
     int32_t SetPropertyToHandle(AudioEffectHandle handle, const std::string &property);
+    int32_t UpdateAlgoConfig();
 
     bool setConfigFlag_;
     std::mutex chainMutex_;
@@ -86,7 +96,10 @@ private:
     AlgoConfig algoSupportedConfig_;
     AlgoCache algoCache_;
     AudioEnhanceParam algoParam_;
+    AudioEnhanceDeviceAttr deviceAttr_;
     FILE *dumpFileIn_ = nullptr;
+    FILE *dumpFileEc_ = nullptr;
+    FILE *dumpFileMicRef_ = nullptr;
     FILE *dumpFileOut_ = nullptr;
     bool needEcFlag_;
     std::vector<AudioEffectHandle> standByEnhanceHandles_;

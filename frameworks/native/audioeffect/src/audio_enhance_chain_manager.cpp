@@ -146,27 +146,36 @@ int32_t AudioEnhanceChainManager::InitEnhanceBuffer()
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     uint32_t len = 0;
     uint32_t lenEc = 0;
+    uint32_t lenMicRef = 0;
     uint32_t tempLen = 0;
     uint32_t tempLenEc = 0;
+    uint32_t tempLenMicRef = 0;
     // get max buffer length of ecBuffer and micBufferIn
     for (auto &item : sceneTypeToEnhanceChainMap_) {
         tempLen = item.second->GetAlgoBufferSize();
         tempLenEc = item.second->GetAlgoBufferSizeEc();
+        tempLenMicRef = item.second->GetAlgoBufferSizeMicRef();
         if (tempLen > len) {
             len = tempLen;
         }
         if (tempLenEc > lenEc) {
             lenEc = tempLenEc;
         }
+        if (tempLenMicRef > lenMicRef) {
+            lenMicRef = tempLenMicRef;
+        }
     }
     if (enhanceBuffer_ == nullptr) {
         enhanceBuffer_ = std::make_unique<EnhanceBuffer>();
-        enhanceBuffer_->ecBuffer.resize(lenEc);
         enhanceBuffer_->micBufferIn.resize(len);
         enhanceBuffer_->micBufferOut.resize(len);
+        enhanceBuffer_->ecBuffer.resize(lenEc);
+        enhanceBuffer_->micRefBuffer.resize(lenMicRef);
         enhanceBuffer_->length = len;
         enhanceBuffer_->lengthEc = lenEc;
-        AUDIO_INFO_LOG("enhanceBuffer_ init len:%{public}u lenEc:%{public}u", len, lenEc);
+        enhanceBuffer_->lengthMicRef = lenMicRef;
+        AUDIO_INFO_LOG("enhanceBuffer_ init len:%{public}u lenEc:%{public}u lenMicRef:%{public}u",
+            len, lenEc, lenMicRef);
         return SUCCESS;
     }
     if ((len > enhanceBuffer_->length)) {
@@ -178,7 +187,12 @@ int32_t AudioEnhanceChainManager::InitEnhanceBuffer()
         enhanceBuffer_->ecBuffer.resize(lenEc);
         enhanceBuffer_->lengthEc = len;
     }
-    AUDIO_INFO_LOG("enhanceBuffer_ update len:%{public}u lenEc:%{public}u", len, lenEc);
+    if (lenMicRef > enhanceBuffer_->lengthMicRef) {
+        enhanceBuffer_->micRefBuffer.resize(lenMicRef);
+        enhanceBuffer_->lengthMicRef = lenMicRef;
+    }
+    AUDIO_INFO_LOG("enhanceBuffer_ update len:%{public}u lenEc:%{public}u lenMicRef:%{public}u",
+        len, lenEc, lenMicRef);
     return SUCCESS;
 }
 
@@ -411,10 +425,33 @@ int32_t AudioEnhanceChainManager::CopyToEnhanceBuffer(void *data, uint32_t lengt
     if (enhanceBuffer_ == nullptr) {
         return ERROR;
     }
-    AUDIO_DEBUG_LOG("length: %{public}u chunk length: %{public}u", length, enhanceBuffer_->length);
+    AUDIO_DEBUG_LOG("length: %{public}u chunk length: %{public}u", enhanceBuffer_->length, length);
     CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBuffer_->micBufferIn.data(), enhanceBuffer_->length, data, length) == 0,
         ERROR, "memcpy error in data to enhanceBuffer->micBufferIn");
-    memset_s(enhanceBuffer_->ecBuffer.data(), enhanceBuffer_->lengthEc, 0, enhanceBuffer_->lengthEc);
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChainManager::CopyEcToEnhanceBuffer(void *data, uint32_t length)
+{
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    if (enhanceBuffer_ == nullptr) {
+        return ERROR;
+    }
+    AUDIO_DEBUG_LOG("lengthEc: %{public}u chunkEc length: %{public}u", enhanceBuffer_->lengthEc, length);
+    CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBuffer_->ecBuffer.data(), enhanceBuffer_->lengthEc, data, length) == 0,
+        ERROR, "memcpy error in data to enhanceBuffer->ecBuffer");
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChainManager::CopyMicRefToEnhanceBuffer(void *data, uint32_t length)
+{
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    if (enhanceBuffer_ == nullptr) {
+        return ERROR;
+    }
+    AUDIO_DEBUG_LOG("lengthMicRef: %{public}u chunkMicRef length: %{public}u", enhanceBuffer_->lengthMicRef, length);
+    CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBuffer_->micRefBuffer.data(), enhanceBuffer_->lengthMicRef,
+        data, length) == 0, ERROR, "memcpy error in data to enhanceBuffer->micBufferIn");
     return SUCCESS;
 }
 
@@ -435,7 +472,8 @@ int32_t AudioEnhanceChainManager::CopyFromEnhanceBuffer(void *data, uint32_t len
 int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChain(const uint32_t sceneKeyCode, uint32_t length)
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
-    if (!sceneTypeToEnhanceChainMap_.count(sceneKeyCode)) {
+    auto item = sceneTypeToEnhanceChainMap_.find(sceneKeyCode);
+    if (item == sceneTypeToEnhanceChainMap_.end() || item->second == nullptr) {
         CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBuffer_->micBufferOut.data(), enhanceBuffer_->length,
             enhanceBuffer_->micBufferIn.data(), length) == 0, ERROR, "memcpy error in apply enhance");
         AUDIO_ERR_LOG("Can not find %{public}u in sceneTypeToEnhanceChainMap_", sceneKeyCode);
@@ -517,6 +555,23 @@ int32_t AudioEnhanceChainManager::GetAudioEnhanceProperty(AudioEnhancePropertyAr
         }
     }
     return AUDIO_OK;
+}
+
+int32_t AudioEnhanceChainManager::AudioEnhanceChainSetDeviceAttr(const uint32_t sceneKeyCode,
+    const AudioEnhanceDeviceAttr &deviceAttr)
+{
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    if (!sceneTypeToEnhanceChainMap_.count(sceneKeyCode)) {
+        AUDIO_ERR_LOG("Can not find %{public}u in sceneTypeToEnhanceChainMap_", sceneKeyCode);
+        return ERROR;
+    }
+    auto audioEnhanceChain = sceneTypeToEnhanceChainMap_[sceneKeyCode];
+    if (audioEnhanceChain->SetDeviceAttr(deviceAttr) != SUCCESS) {
+        AUDIO_ERR_LOG("chain:%{public}u set device attr failed.", sceneKeyCode);
+        return ERROR;
+    }
+    AUDIO_DEBUG_LOG("chain:%{public}u set device attr success", sceneKeyCode);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
