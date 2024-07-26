@@ -5457,7 +5457,6 @@ void AudioPolicyService::CreateSafeVolumeDialogThread()
     if (safeVolumeDialogThrd_ != nullptr && safeVolumeDialogThrd_->joinable()) {
         AUDIO_INFO_LOG("safeVolumeDialogThread exit begin");
         safeVolumeDialogThrd_->join();
-        safeVolumeDialogThrd_.reset();
         safeVolumeDialogThrd_ = nullptr;
         AUDIO_INFO_LOG("safeVolumeDialogThread exit end");
     }
