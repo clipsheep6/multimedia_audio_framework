@@ -440,6 +440,16 @@ struct AudioEnhanceParam {
     const char *preDevice;
     const char *postDevice;
 };
+
+struct AlgoConfig {
+    uint32_t frameLength;
+    uint32_t sampleRate;
+    uint32_t dataFormat;
+    uint32_t micNum;
+    uint32_t ecNum;
+    uint32_t micRefNum;
+    uint32_t outNum;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 

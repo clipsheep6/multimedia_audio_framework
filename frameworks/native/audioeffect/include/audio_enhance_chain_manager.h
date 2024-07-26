@@ -42,8 +42,11 @@ public:
     bool ExistAudioEnhanceChain(const uint32_t sceneKeyCode);
     int32_t AudioEnhanceChainGetAlgoConfig(const uint32_t sceneKeyCode, AudioBufferConfig &config);
     bool IsEmptyEnhanceChain();
+    int32_t AudioEnhanceChainSetDeviceAttr(const uint32_t sceneKeyCode, const AudioEnhanceDeviceAttr &deviceAttr);
     int32_t InitEnhanceBuffer();
     int32_t CopyToEnhanceBuffer(void *data, uint32_t length);
+    int32_t CopyEcToEnhanceBuffer(void *data, uint32_t length);
+    int32_t CopyMicRefToEnhanceBuffer(void *data, uint32_t length);
     int32_t CopyFromEnhanceBuffer(void *data, uint32_t length);
     int32_t ApplyAudioEnhanceChain(const uint32_t sceneKeyCode, uint32_t length);
     int32_t SetInputDevice(const uint32_t &captureId, const DeviceType &inputDevice);

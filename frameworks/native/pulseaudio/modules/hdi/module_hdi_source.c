@@ -29,8 +29,14 @@
 
 #include "securec.h"
 #include "audio_log.h"
+#include "audio_hdiadapter_info.h"
 #include "audio_enhance_chain_adapter.h"
 #include "userdata.h"
+
+const uint32_t BYTE_SIZE_SAMPLE_U8 = 1;
+const uint32_t BYTE_SIZE_SAMPLE_S16 = 2;
+const uint32_t BYTE_SIZE_SAMPLE_S24 = 3;
+const uint32_t BYTE_SIZE_SAMPLE_S32 = 4;
 
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSourceFree(pa_source *s);
@@ -134,6 +140,58 @@ static void SetResampler(pa_source_output *so, const pa_sample_spec *algoConfig,
     }
 }
 
+static uint32_t GetByteSizeByFormat(enum HdiAdapterFormat format)
+{
+    uint32_t byteSize = 0;
+    switch (format) {
+        case SAMPLE_U8:
+            byteSize = BYTE_SIZE_SAMPLE_U8;
+            break;
+        case SAMPLE_S16:
+            byteSize = BYTE_SIZE_SAMPLE_S16;
+            break;
+        case SAMPLE_S24:
+            byteSize = BYTE_SIZE_SAMPLE_S24;
+            break;
+        case SAMPLE_S32:
+            byteSize = BYTE_SIZE_SAMPLE_S32;
+            break;
+        default:
+            byteSize = BYTE_SIZE_SAMPLE_S16;
+            break;
+    }
+    return byteSize;
+}
+
+static void InitDeviceAttrAdapter(struct DeviceAttrAdapter *deviceAttrAdapter, struct Userdata *u)
+{
+    deviceAttrAdapter->micRate = u->attrs.sampleRate;
+    deviceAttrAdapter->micChannels = u->attrs.channel;
+    deviceAttrAdapter->micFormat = GetByteSizeByFormat(u->attrs.format);
+    deviceAttrAdapter->needEc = false;
+    deviceAttrAdapter->needMicRef = false;
+    if (u->ecType != EC_NONE) {
+        deviceAttrAdapter->needEc = true;
+        deviceAttrAdapter->ecRate = u->ecSamplingRate;
+        deviceAttrAdapter->ecChannels = u->ecChannels;
+        deviceAttrAdapter->ecFormat = (uint32_t)u->ecFormat;
+    } else {
+        deviceAttrAdapter->ecRate = 0;
+        deviceAttrAdapter->ecChannels = 0;
+        deviceAttrAdapter->ecFormat = 0;
+    }
+    if (u->micRef == REF_ON) {
+        deviceAttrAdapter->needMicRef = true;
+        deviceAttrAdapter->micRefRate = u->micRefRate;
+        deviceAttrAdapter->micRefChannels = u->micRefChannels;
+        deviceAttrAdapter->micRefFormat = (uint32_t)u->micRefFormat;
+    } else {
+        deviceAttrAdapter->micRefRate = 0;
+        deviceAttrAdapter->micRefChannels = 0;
+        deviceAttrAdapter->micRefFormat = 0;
+    }
+}
+
 static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so)
 {
     struct Userdata *u = (struct Userdata *)so->source->userdata;
@@ -158,6 +216,9 @@ static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so)
         pa_proplist_sets(so->proplist, "scene.bypass", DEFAULT_SCENE_BYPASS);
         return PA_HOOK_OK;
     }
+    struct DeviceAttrAdapter deviceAttrAdapter;
+    InitDeviceAttrAdapter(&deviceAttrAdapter, u);
+    EnhanceChainManagerSetDeviceAttr(sceneKeyCode, deviceAttrAdapter);
     EnhanceChainManagerInitEnhanceBuffer();
     char sceneKey[MAX_SCENE_NAME_LEN];
     if (sprintf_s(sceneKey, sizeof(sceneKey), "%u", sceneKeyCode) < 0) {

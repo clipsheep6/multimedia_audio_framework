@@ -126,6 +126,32 @@ int32_t CopyToEnhanceBufferAdapter(void *data, uint32_t length)
     return SUCCESS;
 }
 
+int32_t CopyEcdataToEnhanceBufferAdapter(void *data, uint32_t length)
+{
+    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
+        ERROR, "null audioEnhanceChainManager");
+    CHECK_AND_RETURN_RET_LOG(data != nullptr, ERROR, "data null");
+    uint32_t ret = audioEnhanceChainMananger->CopyEcToEnhanceBuffer(data, length);
+    if (ret != 0) {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t CopyMicRefdataToEnhanceBufferAdapter(void *data, uint32_t length)
+{
+    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
+        ERROR, "null audioEnhanceChainManager");
+    CHECK_AND_RETURN_RET_LOG(data != nullptr, ERROR, "data null");
+    uint32_t ret = audioEnhanceChainMananger->CopyMicRefToEnhanceBuffer(data, length);
+    if (ret != 0) {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
 int32_t CopyFromEnhanceBufferAdapter(void *data, uint32_t length)
 {
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
@@ -165,4 +191,24 @@ int32_t GetSceneTypeCode(const char *sceneType, uint32_t *sceneTypeCode)
         }
     }
     return ERROR;
+}
+
+int32_t EnhanceChainManagerSetDeviceAttr(const uint32_t sceneKeyCode, struct DeviceAttrAdapter adapter)
+{
+    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
+        ERROR, "null audioEnhanceChainManager");
+    AudioEnhanceDeviceAttr deviceAttr;
+    deviceAttr.micRate = adapter.micRate;
+    deviceAttr.micChannels = adapter.micChannels;
+    deviceAttr.micFormat = adapter.micFormat;
+    deviceAttr.needEc = adapter.needEc;
+    deviceAttr.ecRate = adapter.ecRate;
+    deviceAttr.ecChannels = adapter.ecChannels;
+    deviceAttr.ecFormat = adapter.ecFormat;
+    deviceAttr.needMicRef = adapter.needMicRef;
+    deviceAttr.micRefRate = adapter.micRefRate;
+    deviceAttr.micRefChannels = adapter.micRefChannels;
+    deviceAttr.micRefFormat = adapter.micRefFormat;
+    return audioEnhanceChainMananger->AudioEnhanceChainSetDeviceAttr(sceneKeyCode, deviceAttr);
 }

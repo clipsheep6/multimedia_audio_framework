@@ -66,6 +66,8 @@
 #define HDI_WAKEUP_BUFFER_TIME (PA_USEC_PER_SEC * 2)
 #define DEVICE_TYPE_MIC 15
 #define BASE_TEN 10
+#define FRAMELENGTH 20
+#define MILLISECOND 1000
 
 const char *DEVICE_CLASS_REMOTE = "remote";
 const int32_t SUCCESS = 0;
@@ -185,6 +187,16 @@ static void UserdataFree(struct Userdata *u)
         ReleaseCaptureHandle(u->captureHandleMicRef);
         u->captureHandleMicRef = NULL;
         UnLoadSourceAdapter(u->sourceAdapter);
+    }
+
+    if (u->bufferEc) {
+        free(u->bufferEc);
+        u->bufferEc = NULL;
+    }
+
+    if (u->bufferMicRef) {
+        free(u->bufferMicRef);
+        u->bufferMicRef = NULL;
     }
 
     if (u->sceneToCountMap) {
@@ -371,88 +383,102 @@ static void PostDataBypass(pa_source *source, pa_memchunk *chunk)
     }
 }
 
-static int32_t HandleCaptureFrame(const struct Userdata *u,
-    char *buffer, uint64_t requestBytes, uint64_t *replyBytes)
+static int32_t CheckSameAdapterEcLength(uint64_t request, uint64_t reply, uint64_t requestEc, uint64_t replyEc)
 {
-    uint64_t replyBytesEc = 0;
-    if (u->ecType == EC_NONE) {
-        u->sourceAdapter->CapturerSourceFrame(
-            u->sourceAdapter->wapper, buffer, requestBytes, replyBytes);
-    } else {
-        if (u->ecType == EC_SAME_ADAPTER) {
-            FrameDesc *fdesc = AllocateFrameDesc(buffer, requestBytes);
-            FrameDesc *fdescEc = AllocateFrameDesc((char *)(u->bufferEc), u->requestBytesEc);
-            u->sourceAdapter->CapturerSourceFrameWithEc(u->sourceAdapter->wapper,
-                fdesc, replyBytes, fdescEc, &replyBytesEc);
-            FreeFrameDesc(fdesc);
-            FreeFrameDesc(fdescEc);
-        } else if (u->ecType == EC_DIFFERENT_ADAPTER) {
-            u->sourceAdapter->CapturerSourceFrame(
-                u->sourceAdapter->wapper, buffer, requestBytes, replyBytes);
-
-            if (u->captureHandleEc != NULL) {
-                FrameDesc *fdesc = AllocateFrameDesc(NULL, 0);
-                FrameDesc *fdescEc = AllocateFrameDesc((char *)(u->bufferEc), u->requestBytesEc);
-                uint64_t replyBytesUnused = 0;
-                u->captureHandleEc->CaptureFrameWithEc(u->captureHandleEc->capture,
-                    fdesc, &replyBytesUnused, fdescEc, &replyBytesEc);
-                FreeFrameDesc(fdesc);
-                FreeFrameDesc(fdescEc);
-            }
-        } else {
-            AUDIO_WARNING_LOG("should not be here");
-        }
+    if ((reply == 0) || (replyEc == 0) || ((request + requestEc) != replyEc) || (reply != replyEc)) {
+        return -1;
     }
-
-    uint64_t replyBytesMicRef = 0;
-    if (u->micRef == REF_ON) {
-        u->captureHandleMicRef->CaptureFrame(
-            u->captureHandleMicRef->capture,
-            (char *)(u->bufferMicRef), u->requestBytesMicRef, &replyBytesMicRef);
-    }
-
-    // handle ec & mic ref buffer and reply here
-
     return 0;
 }
 
-static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
+static int32_t CheckDiffAdapterEcLength(uint64_t request, uint64_t reply, uint64_t requestEc, uint64_t replyEc)
+{
+    if ((reply == 0) || (replyEc == 0) || (request != reply) || (requestEc != replyEc)) {
+        return -1;
+    }
+    return 0;
+}
+
+static int32_t HandleCaptureFrame(const struct Userdata *u, char *buffer, uint64_t requestBytes, uint64_t *replyBytes)
+{
+    uint64_t replyBytesEc = 0;
+    if (u->ecType == EC_NONE) {
+        u->sourceAdapter->CapturerSourceFrame(u->sourceAdapter->wapper, buffer, requestBytes, replyBytes);
+        return 0;
+    }
+    if (u->ecType == EC_SAME_ADAPTER) {
+        FrameDesc *fdesc = AllocateFrameDesc(buffer, requestBytes);
+        FrameDesc *fdescEc = AllocateFrameDesc((char *)(u->bufferEc), u->requestBytesEc);
+        u->sourceAdapter->CapturerSourceFrameWithEc(u->sourceAdapter->wapper,
+            fdesc, replyBytes, fdescEc, &replyBytesEc);
+        FreeFrameDesc(fdesc);
+        FreeFrameDesc(fdescEc);
+        if (CheckSameAdapterEcLength(requestBytes, *replyBytes, u->requestBytesEc, replyBytesEc) == 0) {
+            CopyEcdataToEnhanceBufferAdapter(u->bufferEc, u->requestBytesEc);
+        } else {
+            return -1;
+        }
+    } else if (u->ecType == EC_DIFFERENT_ADAPTER) {
+        u->sourceAdapter->CapturerSourceFrame(u->sourceAdapter->wapper, buffer, requestBytes, replyBytes);
+        if (u->captureHandleEc != NULL) {
+            FrameDesc *fdesc = AllocateFrameDesc(NULL, 0);
+            FrameDesc *fdescEc = AllocateFrameDesc((char *)(u->bufferEc), u->requestBytesEc);
+            uint64_t replyBytesUnused = 0;
+            u->captureHandleEc->CaptureFrameWithEc(u->captureHandleEc->capture,
+                fdesc, &replyBytesUnused, fdescEc, &replyBytesEc);
+            FreeFrameDesc(fdesc);
+            FreeFrameDesc(fdescEc);
+            if (CheckDiffAdapterEcLength(requestBytes, *replyBytes, u->requestBytesEc, replyBytesEc) == 0) {
+                CopyEcdataToEnhanceBufferAdapter(u->bufferEc, u->requestBytesEc);
+            } else {
+                return -1;
+            }
+        }
+    } else {
+        AUDIO_WARNING_LOG("should not be here");
+    }
+    uint64_t replyBytesMicRef = 0;
+    if (u->micRef == REF_ON) {
+        u->captureHandleMicRef->CaptureFrame(u->captureHandleMicRef->capture,
+            (char *)(u->bufferMicRef), u->requestBytesMicRef, &replyBytesMicRef);
+        if ((replyBytesMicRef == 0) || (u->requestBytesMicRef != replyBytesMicRef)) {
+            return -1;
+        }
+        CopyMicRefdataToEnhanceBufferAdapter(u->bufferMicRef, replyBytesMicRef);
+    }
+    return 0;
+}
+
+static int32_t GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
 {
     uint64_t requestBytes = 0;
     uint64_t replyBytes = 0;
-
     void *p = NULL;
-
     pa_assert(chunk->memblock);
     p = pa_memblock_acquire(chunk->memblock);
     pa_assert(p);
-
     requestBytes = pa_memblock_get_length(chunk->memblock);
-
-    HandleCaptureFrame(u, (char *)p, requestBytes, &replyBytes);
-
+    if (HandleCaptureFrame(u, (char *)p, requestBytes, &replyBytes) != 0) {
+        AUDIO_ERR_LOG("get capture frame failed.");
+        return -1;
+    }
     pa_memblock_release(chunk->memblock);
-
     AUDIO_DEBUG_LOG("HDI Source: request bytes: %{public}" PRIu64 ", replyBytes: %{public}" PRIu64,
             requestBytes, replyBytes);
-
     if (replyBytes > requestBytes) {
         AUDIO_ERR_LOG("HDI Source: Error replyBytes > requestBytes. Requested data Length: "
                 "%{public}" PRIu64 ", Read: %{public}" PRIu64 " bytes", requestBytes, replyBytes);
         pa_memblock_unref(chunk->memblock);
         return -1;
     }
-
     if (replyBytes == 0) {
         AUDIO_ERR_LOG("HDI Source: Failed to read, Requested data Length: %{public}" PRIu64 " bytes,"
                 " Read: %{public}" PRIu64 " bytes", requestBytes, replyBytes);
         pa_memblock_unref(chunk->memblock);
         return -1;
     }
-
     chunk->index = 0;
     chunk->length = replyBytes;
-
     return 0;
 }
 
@@ -837,7 +863,7 @@ static void InitEcAndMicRefAttrs(pa_modargs *ma, struct Userdata *u)
         u->ecSamplingRate = 0;
     }
     const char *ecFormatStr = pa_modargs_get_value(ma, "ec_format", "");
-    u->ecFormat = pa_parse_sample_format(ecFormatStr);
+    u->ecFormat = (int32_t)pa_sample_size_of_format(pa_parse_sample_format(ecFormatStr));
     if (pa_modargs_get_value_u32(ma, "ec_channels", &u->ecChannels) < 0) {
         u->ecChannels = 0;
     }
@@ -848,7 +874,7 @@ static void InitEcAndMicRefAttrs(pa_modargs *ma, struct Userdata *u)
         u->micRefRate = 0;
     }
     const char *micRefFormatStr = pa_modargs_get_value(ma, "mic_ref_format", "");
-    u->micRefFormat = pa_parse_sample_format(micRefFormatStr);
+    u->micRefFormat = (int32_t)pa_sample_size_of_format(pa_parse_sample_format(micRefFormatStr));
     if (pa_modargs_get_value_u32(ma, "mic_ref_channels", &u->micRefChannels) < 0) {
         u->micRefChannels = 0;
     }
@@ -864,8 +890,10 @@ static void CreateEcCapture(struct Userdata *u)
     }
 
     // allocate ec buffer and decide request length, both same and different adapter needed
-    u->bufferEc = NULL;
-    u->requestBytesEc = 0;
+    u->requestBytesEc = FRAMELENGTH * (u->ecSamplingRate / MILLISECOND) * u->ecChannels * u->ecFormat;
+    pa_assert_se(u->bufferEc = (char *)malloc(u->requestBytesEc));
+
+    AUDIO_INFO_LOG("requestBytesEc:%{public}llu ", u->requestBytesEc);
 
     // only ec different adapter need create aux capture
     if (u->ecType == EC_DIFFERENT_ADAPTER) {
@@ -894,8 +922,10 @@ static void CreateMicRefCapture(struct Userdata *u)
     }
 
     // allocate mic ref buffer and decide request length
-    u->bufferMicRef = NULL;
-    u->requestBytesMicRef = 0;
+    u->requestBytesMicRef = FRAMELENGTH * (u->micRefRate / MILLISECOND) * u->micRefChannels * u->micRefFormat;
+    pa_assert_se(u->bufferMicRef = (char *)malloc(u->requestBytesMicRef));
+
+    AUDIO_INFO_LOG("requestBytesMicRef:%{public}llu ", u->requestBytesMicRef);
 
     CaptureAttr *attr = (struct CaptureAttr *)calloc(1, sizeof(CaptureAttr));
     if (attr == NULL) {
