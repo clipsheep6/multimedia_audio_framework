@@ -81,6 +81,7 @@ static const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
 static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const unsigned int BUFFER_CALC_20MS = 20;
 static const unsigned int BUFFER_CALC_1000MS = 1000;
+static const auto NOTIFICATION_SUBSCRIBER = NotificationSubscriber();
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -140,6 +141,9 @@ static const std::string PREDICATES_STRING = "settings.general.device_name";
 static const std::string EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
 static const std::string FLAG_MMAP_STRING = "AUDIO_FLAG_MMAP";
 static const std::string USAGE_VOIP_STRING = "AUDIO_USAGE_VOIP";
+static const std::string BUTTON_NAME_RESTORE_VOLUME = "RESTORE_VOLUME";
+static const std::string BUTTON_NAME_INCREASE_VOLUME = "INCREASE_VOLUME";
+static const std::string BUTTON_NAME_KEEP_SAFE_VOLUME = "KEEP_SAFE_VOLUME";
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
@@ -332,6 +336,41 @@ static uint32_t PcmFormatToBits(AudioSampleFormat format)
         default:
             return 2; // 2 byte
     }
+}
+
+void NotificationSubscriber::OnConnected()
+{
+    AUDIO_INFO_LOG("NotificationSubscriber OnConnected");
+}
+
+void NotificationSubscriber::OnDisconnected()
+{
+    AUDIO_INFO_LOG("NotificationSubscriber OnDisconnected");
+}
+
+void NotificationSubscriber::OnResponse(int32_t notificationId,
+                                        OHOS::sptr<OHOS::Notification::NotificationButtonOption> buttonOption)
+{
+    AUDIO_INFO_LOG("NotificationSubscriber OnResponse notificationId : %{public}d, ButtonName : %{public}s ",
+        notificationId, (buttonOption->GetButtonName()).c_str());
+
+    if (BUTTON_NAME_RESTORE_VOLUME.compare(buttonOption->GetButtonName()) == 0) {
+        //to do restore volume
+        return;
+    }
+    if (BUTTON_NAME_INCREASE_VOLUME.compare(buttonOption->GetButtonName()) == 0) {
+        //to do add one level volume
+        return;
+    }
+    if (BUTTON_NAME_KEEP_SAFE_VOLUME.compare(buttonOption->GetButtonName()) == 0) {
+        //to do keep volume level to 8
+        return;
+    }
+}
+
+void NotificationSubscriber::OnDied()
+{
+    AUDIO_INFO_LOG("NotificationSubscriber OnDied");
 }
 
 AudioPolicyService::~AudioPolicyService()
@@ -5559,6 +5598,60 @@ int32_t AudioPolicyService::ShowDialog()
         }
         isDialogSelectDestroy_.store(false);
     }
+    return result;
+}
+
+int32_t AudioPolicyService::StartFirstNotification()
+{
+    int32_t result = Notification::NotificationHelper::SubscribeLocalLiveViewNotification(NOTIFICATION_SUBSCRIBER);
+    Notification::NotificationRequest request;
+    std::shared_ptr<Notification::NotificationLocalLiveViewContent> localLiveViewContent =
+        std::make_shared<Notification::NotificationLocalLiveViewContent>();
+    localLiveViewContent->SetType(2);
+    localLiveViewContent->SetTitle("长时间聆听音量可能损害听力");
+    localLiveViewContent->SetText("已为您降低耳机音量，如需要提高音量到安全级别以上，请点击通知并选择提高音量");
+
+    auto basicButton = NotificationLocalLiveViewButton();
+    basicButton.addSingleButtonName(BUTTON_NAME_RESTORE_VOLUME);
+    basicButton.addSingleButtonName(BUTTON_NAME_KEEP_SAFE_VOLUME);
+    localLiveViewContent_->SetButton(basicButton);
+
+    std::shared_ptr<Notification::NotificationContent> content =
+        std::make_shared<Notification::NotificationContent>(localLiveViewContent);
+    request.SetSlotType(Notification::NotificationConstant::SlotType::LIVE_VIEW);
+    request.SetNotificationId(0);
+    request.SetContent(content);
+    request.SetCreatorUid(getuid());
+    result = Notification::NotificationHelper::PublishNotification(request);
+
+    AUDIO_ERR_LOG("andy, AudioPolicyService service PublishNotification uid %{public}d, result %{public}d", getuid(), result);
+    return result;
+}
+
+int32_t AudioPolicyService::StartSecondNotification()
+{
+    int32_t result = Notification::NotificationHelper::SubscribeLocalLiveViewNotification(NOTIFICATION_SUBSCRIBER);
+    Notification::NotificationRequest request;
+    std::shared_ptr<Notification::NotificationLocalLiveViewContent> localLiveViewContent =
+        std::make_shared<Notification::NotificationLocalLiveViewContent>();
+    localLiveViewContent->SetType(2);
+    localLiveViewContent->SetTitle("长时间聆听音量可能损害听力");
+    localLiveViewContent->SetText("已为您降低耳机音量，如需要提高音量到安全级别以上，请点击通知并选择提高音量");
+
+    auto basicButton = NotificationLocalLiveViewButton();
+    basicButton.addSingleButtonName(BUTTON_NAME_INCREASE_VOLUME);
+    basicButton.addSingleButtonName(BUTTON_NAME_KEEP_SAFE_VOLUME);
+    localLiveViewContent_->SetButton(basicButton);
+
+    std::shared_ptr<Notification::NotificationContent> content =
+        std::make_shared<Notification::NotificationContent>(localLiveViewContent);
+    request.SetSlotType(Notification::NotificationConstant::SlotType::LIVE_VIEW);
+    request.SetNotificationId(0);
+    request.SetContent(content);
+    request.SetCreatorUid(getuid());
+    result = Notification::NotificationHelper::PublishNotification(request);
+
+    AUDIO_ERR_LOG("andy, AudioPolicyService service PublishNotification uid %{public}d, result %{public}d", getuid(), result);
     return result;
 }
 

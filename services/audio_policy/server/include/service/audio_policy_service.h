@@ -33,6 +33,11 @@
 #include "datashare_helper.h"
 #include "ipc_skeleton.h"
 #include "power_mgr_client.h"
+#include "notification_content.h"
+#include "notification_helper.h"
+#include "notification_request.h"
+#include "notification_constant.h"
+#include "notification_slot.h"
 #ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
 #endif
@@ -63,6 +68,15 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+class NotificationSubscriber : public OHOS::Notification::NotificationLocalLiveViewSubscriber {
+public:
+    void OnConnected() override;
+    void OnDisconnected() override;
+    void OnResponse(int32_t notificationId,
+        OHOS::sptr<OHOS::Notification::NotificationButtonOption> buttonOption) override;
+    void OnDied() override;
+};
 
 class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
     public IAudioAccessibilityConfigObserver, public IPolicyProvider {
@@ -865,6 +879,10 @@ private:
     int32_t CheckActiveMusicTime();
 
     int32_t ShowDialog();
+
+    int32_t StartFirstNotification();
+
+    int32_t StartSecondNotification();
 
     int32_t GetVoipPlaybackDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
 
