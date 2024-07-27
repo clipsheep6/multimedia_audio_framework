@@ -7576,7 +7576,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDumpDeviceInfo(s
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDumpDevices(DeviceFlag deviceFlag)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     switch (deviceFlag) {
         case NONE_DEVICES_FLAG:
         case DISTRIBUTED_OUTPUT_DEVICES_FLAG:
@@ -7614,7 +7614,7 @@ void AudioPolicyService::AudioModeDump(std::string &dumpString)
 void AudioPolicyService::GetCallStatusDump(std::string &dumpString)
 {
     dumpString += "\nAudio Scene:";
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasSystemPermission = PermissionUtil::VerifySystemApi();
     AudioScene callStatus = GetAudioScene(hasSystemPermission);
     switch (callStatus) {
         case AUDIO_SCENE_DEFAULT:
