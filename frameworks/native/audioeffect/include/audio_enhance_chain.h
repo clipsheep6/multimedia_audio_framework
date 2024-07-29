@@ -60,7 +60,7 @@ struct AlgoCache {
 
 class AudioEnhanceChain {
 public:
-    AudioEnhanceChain(const std::string &scene, const AudioEnhanceParam &algoParam);
+    AudioEnhanceChain(const std::string &scene, const AudioEnhanceParam &algoParam, const bool defaultFlag);
     ~AudioEnhanceChain();
     void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle, const std::string &enhance,
         const std::string &property);
@@ -71,6 +71,7 @@ public:
     int32_t ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length);
     int32_t SetEnhanceProperty(const std::string &effect, const std::string &property);
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
+    bool IsDefaultChain();
 
 private:
     void InitAudioEnhanceChain();
@@ -89,6 +90,7 @@ private:
     FILE *dumpFileIn_ = nullptr;
     FILE *dumpFileOut_ = nullptr;
     bool needEcFlag_;
+    bool defaultFlag_;
     std::vector<AudioEffectHandle> standByEnhanceHandles_;
     std::vector<std::string> enhanceNames_;
     std::vector<AudioEffectLibrary*> enhanceLibHandles_;

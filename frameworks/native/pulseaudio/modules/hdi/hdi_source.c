@@ -192,6 +192,10 @@ static void UserdataFree(struct Userdata *u)
     if (u->sceneToResamplerMap) {
         pa_hashmap_free(u->sceneToResamplerMap);
     }
+
+    if (u->defaultSceneResampler) {
+        pa_resampler_free(u->defaultSceneResampler);
+    }
     pa_xfree(u);
 }
 
@@ -321,6 +325,24 @@ static void EnhanceProcess(const uint32_t sceneKeyCode, pa_memchunk *chunk)
     pa_memblock_release(chunk->memblock);
 }
 
+static void EnhanceProcessDefault(const uint32_t captureId, pa_memchunk *chunk)
+{
+    pa_assert(chunk);
+    void *src = pa_memblock_acquire_chunk(chunk);
+    AUDIO_DEBUG_LOG("chunk length: %{public}zu captureId: %{public}u", chunk->length, captureId);
+    pa_memblock_release(chunk->memblock);
+
+    if (CopyToEnhanceBufferAdapter(src, chunk->length) != 0) {
+        return;
+    }
+    if (EnhanceChainManagerProcessDefault(captureId, chunk->length) != 0) {
+        return;
+    }
+    void *dst = pa_memblock_acquire_chunk(chunk);
+    CopyFromEnhanceBufferAdapter(dst, chunk->length);
+    pa_memblock_release(chunk->memblock);
+}
+
 static void EnhanceProcessAndPost(struct Userdata *u, const uint32_t sceneKeyCode, pa_memchunk *enhanceChunk)
 {
     pa_assert(u);
@@ -337,7 +359,11 @@ static void EnhanceProcessAndPost(struct Userdata *u, const uint32_t sceneKeyCod
     while ((sourceOutput = pa_hashmap_iterate(source->thread_info.outputs, &state, NULL))) {
         pa_source_output_assert_ref(sourceOutput);
         const char *sourceOutputSceneType = pa_proplist_gets(sourceOutput->proplist, "scene.type");
-        
+        const char *defaultFlag = pa_proplist_gets(sourceOutput->proplist, "scene.default");
+        // do not process sceneDefault
+        if (pa_safe_streq(defaultFlag, "1")) {
+            continue;
+        }
         uint32_t sceneTypeCode = 0;
         if (GetSceneTypeCode(sourceOutputSceneType, &sceneTypeCode) != 0) {
             AUDIO_ERR_LOG("GetSceneTypeCode failed");
@@ -471,6 +497,55 @@ static int32_t SampleAlignment(const char *sceneKey, pa_memchunk *enhanceChunk, 
     return SUCCESS;
 }
 
+static void PostDataDefault(pa_source *source, pa_memchunk *chunk, struct Userdata *u)
+{
+    pa_source_assert_ref(source);
+    pa_assert(chunk);
+    
+    bool hasDefaultStream = false;
+    pa_source_output *sourceOutput;
+    void *state = NULL;
+    while ((sourceOutput = pa_hashmap_iterate(source->thread_info.outputs, &state, NULL))) {
+        pa_source_output_assert_ref(sourceOutput);
+        const char *defaultFlag = pa_proplist_gets(sourceOutput->proplist, "scene.default");
+        // process only sceneDefault
+        if (!pa_safe_streq(defaultFlag, "1")) {
+            continue;
+        }
+        hasDefaultStream = true;
+    }
+    if (!hasDefaultStream) { return; }
+
+    pa_memchunk enhanceChunk, rChunk;
+    enhanceChunk.length = chunk->length;
+    enhanceChunk.memblock = pa_memblock_new(u->core->mempool, enhanceChunk.length);
+    pa_memchunk_memcpy(&enhanceChunk, chunk);
+
+    pa_resampler *resampler = u->defaultSceneResampler;
+    if (resampler) {
+        pa_resampler_run(resampler, &enhanceChunk, &rChunk);
+    } else {
+        rChunk = enhanceChunk;
+        pa_memblock_ref(rChunk.memblock);
+    }
+    EnhanceProcessDefault(u->captureId, &enhanceChunk);
+
+    while ((sourceOutput = pa_hashmap_iterate(source->thread_info.outputs, &state, NULL))) {
+        pa_source_output_assert_ref(sourceOutput);
+        const char *defaultFlag = pa_proplist_gets(sourceOutput->proplist, "scene.default");
+        // process only sceneDefault
+        if (!pa_safe_streq(defaultFlag, "1")) {
+            continue;
+        }
+        PostSourceData(source, sourceOutput, &enhanceChunk);
+    }
+
+    pa_memblock_unref(enhanceChunk.memblock);
+    if (rChunk.memblock) {
+        pa_memblock_unref(rChunk.memblock);
+    }
+}
+
 static int32_t GetCapturerFrameFromHdiAndProcess(pa_memchunk *chunk, struct Userdata *u)
 {
     // new chunks
@@ -491,7 +566,7 @@ static int32_t GetCapturerFrameFromHdiAndProcess(pa_memchunk *chunk, struct User
     }
 
     PostDataBypass(u->source, chunk);
-
+    PostDataDefault(u->source, chunk, u);
     void *state = NULL;
     uint32_t *sceneKeyNum;
     const void *sceneKey;

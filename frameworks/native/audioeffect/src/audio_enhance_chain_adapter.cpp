@@ -45,10 +45,7 @@ int32_t EnhanceChainManagerCreateCb(const uint32_t sceneKeyCode)
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
         ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
-    if (audioEnhanceChainMananger->CreateAudioEnhanceChainDynamic(sceneKeyCode) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
+    return audioEnhanceChainMananger->CreateAudioEnhanceChainDynamic(sceneKeyCode);
 }
 
 int32_t EnhanceChainManagerReleaseCb(const uint32_t sceneKeyCode)
@@ -149,6 +146,19 @@ int32_t EnhanceChainManagerProcess(const uint32_t sceneKeyCode, uint32_t length)
         return ERROR;
     }
     AUDIO_DEBUG_LOG("%{public}u process success", sceneKeyCode);
+    return SUCCESS;
+}
+
+int32_t EnhanceChainManagerProcessDefault(const uint32_t captureId, uint32_t length)
+{
+    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
+        ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
+    if (audioEnhanceChainMananger->ApplyAudioEnhanceChainDefault(captureId, length) != SUCCESS) {
+        AUDIO_ERR_LOG("%{public}u default process failed", captureId);
+        return ERROR;
+    }
+    AUDIO_DEBUG_LOG("%{public}u default process success", captureId);
     return SUCCESS;
 }
 

@@ -67,6 +67,7 @@ struct Userdata {
     void *bufferMicRef;
     uint32_t captureId;
     uint32_t renderId;
+    pa_resampler *defaultSceneResampler;
 };
 
 #endif // USERDATA_H
