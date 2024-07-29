@@ -691,8 +691,7 @@ int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationSta
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
-    int32_t ret;
-    ret = EffectDspRotationUpdate(audioEffectRotation, rotationState);
+    int32_t ret = EffectDspRotationUpdate(audioEffectRotation, rotationState);
     ret = EffectApRotationUpdate(audioEffectRotation, rotationState);
     AUDIO_INFO_LOG("EffectDspRotationUpdate and effectApRotationUpdate is success");
     
