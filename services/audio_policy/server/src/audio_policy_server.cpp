@@ -513,7 +513,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
         InitMicrophoneMute();
     } else if (action == "custom.enevt.display_rotation_changed") {
-        uint32_t rotate = static_cast<uint32_t>(want.GetInParam("rotation", 0));
+        uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
         audioPolicyService_.SetRotationToEffect(rotate);
     }
