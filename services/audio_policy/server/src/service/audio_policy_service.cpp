@@ -2296,9 +2296,9 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     int32_t runningStreamCount = 0;
     bool hasDirectChangeDevice = false;
     for (auto &rendererChangeInfo : rendererChangeInfos) {
+        AUDIO_INFO_LOG("stream %{public}d not running, no need fetch device", rendererChangeInfo->sessionId);
         if (!IsRendererStreamRunning(rendererChangeInfo) || (audioScene_ == AUDIO_SCENE_DEFAULT &&
             audioRouterCenter_.isCallRenderRouter(rendererChangeInfo->rendererInfo.streamUsage))) {
-            AUDIO_INFO_LOG("stream %{public}d not running, no need fetch device", rendererChangeInfo->sessionId);
             continue;
         }
         runningStreamCount++;
