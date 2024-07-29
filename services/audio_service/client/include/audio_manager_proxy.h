@@ -95,6 +95,7 @@ public:
     bool GetEffectOffloadEnabled() override;
     void LoadHdiEffectModel() override;
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
+    void SetRotationToEffect(const uint32_t rotate) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };
