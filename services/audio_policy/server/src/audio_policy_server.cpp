@@ -514,6 +514,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         InitMicrophoneMute();
     } else if (action == "custom.enevt.display_rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetInParam("rotation", 0));
+        AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
         audioPolicyService_.SetRotationToEffect(rotate);
     }
 }
