@@ -694,8 +694,9 @@ int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationSta
     int32_t ret;
     ret = EffectDspRotationUpdate(audioEffectRotation, rotationState);
     ret = EffectApRotationUpdate(audioEffectRotation, rotationState);
+    AUDIO_INFO_LOG("EffectDspRotationUpdate and effectApRotationUpdate is success");
     
-    return SUCCESS;
+    return ret;
 }
 #endif
 
