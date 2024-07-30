@@ -293,6 +293,14 @@ enum CallbackChange : int32_t {
     CALLBACK_MAX,
 };
 
+constexpr std::array<CallbackChange, CALLBACK_MAX> CALLBACK_ENUMS = {
+    CALLBACK_UNKNOWN,
+    CALLBACK_FOCUS_INFO_CHANGE,
+    CALLBACK_RENDERER_STATE_CHANGE,
+    CALLBACK_CAPTURER_STATE_CHANGE,
+    CALLBACK_MICMUTE_STATE_CHANGE,
+};
+
 struct VolumeEvent {
     AudioVolumeType volumeType;
     int32_t volume;
@@ -1143,20 +1151,15 @@ enum RenderMode {
 
 enum WriteDataCallbackType {
     /**
-     * Use OH_AudioRenderer_Callbacks.
+     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnWriteData
      * @since 12
      */
-    CALLBACKS_ON_WRITE_DATA = 0,
+    WRITE_DATA_CALLBACK_WITHOUT_RESULT = 0,
     /**
      * Use OH_AudioRenderer_OnWriteDataCallback.
      * @since 12
      */
-    ON_WRITE_DATA_CALLBACK = 1,
-    /**
-     * Use OH_AudioRenderer_WriteDataWithMetadataCallback.
-     * @since 12
-     */
-    WRITE_DATA_WITH_METADATA_CALLBACK = 2
+    WRITE_DATA_CALLBACK_WITH_RESULT = 1
 };
 
 enum PolicyType {

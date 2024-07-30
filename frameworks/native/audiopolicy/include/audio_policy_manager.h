@@ -40,6 +40,11 @@ namespace AudioStandard {
 using InternalDeviceType = DeviceType;
 using InternalAudioCapturerOptions = AudioCapturerOptions;
 
+struct CallbackChangeInfo {
+    std::mutex mutex;
+    bool isEnable = false;
+};
+
 class AudioPolicyManager {
 public:
     static AudioPolicyManager& GetInstance();
@@ -271,7 +276,7 @@ public:
 
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc);
 
-    static void RecoverAudioPolicyCallbackClient();
+    void RecoverAudioPolicyCallbackClient();
 
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionID);
 
@@ -387,6 +392,8 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 
     int32_t ResetRingerModeMute();
+
+    int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
@@ -398,9 +405,6 @@ private:
     std::mutex registerCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
-    std::mutex focusInfoMutex_;
-    std::mutex rendererStateMutex_;
-    std::mutex capturerStateMutex_;
     sptr<AudioPolicyClientStubImpl> audioPolicyClientStubCB_;
     std::atomic<bool> isAudioPolicyClientRegisted_ = false;
 
@@ -410,6 +414,8 @@ private:
 
     bool isAudioRendererEventListenerRegistered = false;
     bool isAudioCapturerEventListenerRegistered = false;
+
+    std::array<CallbackChangeInfo, CALLBACK_MAX> callbackChangeInfos_ = {};
 };
 } // namespce AudioStandard
 } // namespace OHOS

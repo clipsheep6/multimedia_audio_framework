@@ -66,7 +66,7 @@ public:
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
     virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-        DeviceType activeInputDevice) = 0;
+        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) = 0;
 
     /**
      * Set Audio Parameter.
@@ -427,6 +427,11 @@ public:
      * Update Effect BtOffload Supported state.
      */
     virtual void UpdateEffectBtOffloadSupported(const bool &isSupported) = 0;
+
+    /**
+     * Set Sink Mute For Switch Device.
+     */
+    virtual int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -493,6 +498,7 @@ private:
     int HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply);
     int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
+    int HandleSetSinkMuteForSwitchDevice(MessageParcel &data, MessageParcel &reply);
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

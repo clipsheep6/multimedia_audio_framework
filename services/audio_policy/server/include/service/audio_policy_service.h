@@ -264,7 +264,7 @@ public:
 
     void LoadEffectLibrary();
 
-    int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
+    int32_t SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback);
 
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
 
@@ -443,7 +443,7 @@ public:
 
     void ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
 
-    DistributedRoutingInfo GetDistributedRoutingRoleInfo();
+    DistributedRoutingInfo& GetDistributedRoutingRoleInfo();
 
     void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
 
@@ -664,8 +664,8 @@ private:
     void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
-    void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> desc,
-        vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos, SourceType sourceType);
+    void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
 
     void BluetoothScoDisconectForRecongnition();
 
@@ -717,7 +717,7 @@ private:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
-    void SetVolumeForSwitchDevice(DeviceType deviceType);
+    void SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName = PORT_NONE);
 
     void UpdateVolumeForLowLatency();
 
@@ -784,7 +784,8 @@ private:
 
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
 
-    int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, SourceInfo &targetInfo);
+    int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, StreamPropInfo &targetInfo,
+        SourceType &targetSourceType);
 
     void StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
 
@@ -824,7 +825,10 @@ private:
 
     void MuteSinkPort(DeviceType deviceType, int32_t duration, bool isSync = false);
 
-    void MuteSinkPort(DeviceType oldDevice, DeviceType newDevice, AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
+
+    void MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
+        AudioStreamDeviceChangeReasonExt reason);
 
     void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
         SourceInfo &targetInfo);
@@ -1071,6 +1075,7 @@ private:
     std::mutex offloadMutex_;
 
     AudioModuleInfo primaryMicModuleInfo_ = {};
+    std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
@@ -1131,6 +1136,8 @@ private:
     std::condition_variable offloadCloseCondition_;
 
     bool ringerModeMute_ = true;
+
+    std::atomic<bool> isPolicyConfigParsered_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

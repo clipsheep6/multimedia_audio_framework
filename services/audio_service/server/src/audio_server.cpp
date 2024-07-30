@@ -1021,7 +1021,7 @@ int32_t AudioServer::OffloadSetVolume(float volume)
 }
 
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-    DeviceType activeInputDevice)
+    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag)
 {
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
 
@@ -1051,8 +1051,9 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
-        std::vector<DeviceType> deviceTypes;
-        deviceTypes.push_back(activeOutputDevice);
+        if (activeOutputDevice == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
+            activeOutputDevices[0] = DEVICE_TYPE_NONE;
+        }
         audioRendererSinkInstance->SetAudioScene(audioScene, activeOutputDevices);
     }
 
@@ -1094,7 +1095,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         }
         if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD &&
             deviceTypes.size() == 1 && deviceTypes[0] == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            deviceTypes[0] = DEVICE_TYPE_SPEAKER;
+            deviceTypes[0] = DEVICE_TYPE_NONE;
         }
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSourceInstance != nullptr && audioRendererSinkInstance != nullptr,
@@ -2071,6 +2072,25 @@ int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t d
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
 
     return audioRendererSinkInstance->SetRenderEmpty(durationUs);
+}
+
+int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_PERMISSION_DENIED, "refused for %{public}d", callingUid);
+    if (devceClass == "primary") {
+        if (durationUs <= 0) {
+            return SUCCESS;
+        }
+        IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+        CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+        return audioRendererSinkInstance->SetRenderEmpty(durationUs);
+    } else if (devceClass == "offload") {
+        IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
+        CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+        return audioRendererSinkInstance->SetSinkMuteForSwitchDevice(mute);
+    }
+    return SUCCESS;
 }
 
 void AudioServer::LoadHdiEffectModel()

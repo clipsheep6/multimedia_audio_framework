@@ -209,7 +209,7 @@ int32_t AudioManagerProxy::OffloadSetBufferSize(uint32_t sizeMs)
 }
 
 int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-    DeviceType activeInputDevice)
+    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag)
 {
     CHECK_AND_RETURN_RET_LOG(!activeOutputDevices.empty() &&
         activeOutputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
@@ -228,6 +228,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, std::vector<Devi
         data.WriteInt32(static_cast<int32_t>(activeOutputDevice));
     }
     data.WriteInt32(static_cast<int32_t>(activeInputDevice));
+    data.WriteInt32(static_cast<int32_t>(a2dpOffloadFlag));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE), data, reply, option);
@@ -1161,6 +1162,24 @@ void AudioManagerProxy::UpdateEffectBtOffloadSupported(const bool &isSupported)
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
+}
+
+int32_t AudioManagerProxy::SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteString(devceClass);
+    data.WriteInt32(durationUs);
+    data.WriteInt32(mute);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "failed, error:%{public}d", error);
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS
