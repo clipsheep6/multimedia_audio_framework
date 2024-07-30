@@ -51,6 +51,28 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+void NotificationSubscriber::OnConnected()
+{
+    AUDIO_INFO_LOG("andy, NotificationSubscriber OnConnected");
+}
+
+void NotificationSubscriber::OnDisconnected()
+{
+    AUDIO_INFO_LOG("andy, NotificationSubscriber OnDisconnected");
+}
+
+void NotificationSubscriber::OnResponse(int32_t notificationId,
+                                        OHOS::sptr<OHOS::Notification::NotificationButtonOption> buttonOption)
+{
+    AUDIO_INFO_LOG("andy, NotificationSubscriber OnResponse notificationId : %{public}d, ButtonName : %{public}s ",
+        notificationId, (buttonOption->GetButtonName()).c_str());
+}
+
+void NotificationSubscriber::OnDied()
+{
+    AUDIO_INFO_LOG("andy, NotificationSubscriber OnDied");
+}
+
 static const std::string INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
 static const std::string PIPE_PRIMARY_OUTPUT = "primary_output";
 static const std::string PIPE_FAST_OUTPUT = "fast_output";
@@ -81,6 +103,10 @@ static const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
 static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const unsigned int BUFFER_CALC_20MS = 20;
 static const unsigned int BUFFER_CALC_1000MS = 1000;
+static const auto NOTIFICATION_SUBSCRIBER = NotificationSubscriber();
+static const std::string BACK_GROUND_COLOR = "#E84026";
+static const std::string ICON_PATH_CAPSULE = "/etc/screencapture/capsule.svg";
+static const std::string ICON_PATH_NOTIFICATION = "/etc/screencapture/notification.png";
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -593,23 +619,28 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
 #endif
     }
     int32_t sVolumeLevel = volumeLevel;
-    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() &&
+    AUDIO_ERR_LOG("andy, set system volume=%{public}d, safe volume=%{public}d", volumeLevel, audioPolicyManager_.GetSafeVolumeLevel());
+
+    if (sVolumeLevel > 10 &&
         GetStreamForVolumeMap(streamType) == STREAM_MUSIC) {
-        switch (currentActiveDevice_.deviceType_) {
-            case DEVICE_TYPE_BLUETOOTH_A2DP:
-            case DEVICE_TYPE_BLUETOOTH_SCO:
-                sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
-                break;
-            case DEVICE_TYPE_WIRED_HEADSET:
-            case DEVICE_TYPE_WIRED_HEADPHONES:
-            case DEVICE_TYPE_USB_HEADSET:
-            case DEVICE_TYPE_USB_ARM_HEADSET:
-                sVolumeLevel = DealWithSafeVolume(volumeLevel, false);
-                break;
-            default:
-                AUDIO_INFO_LOG("unsupport safe volume:%{public}d", currentActiveDevice_.deviceType_);
-                break;
-        }
+        // switch (currentActiveDevice_.deviceType_) {
+        //     case DEVICE_TYPE_BLUETOOTH_A2DP:
+        //     case DEVICE_TYPE_BLUETOOTH_SCO:
+        //         sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+        //         AUDIO_ERR_LOG("andy, connected to the bluetooth");
+        //         break;
+        //     case DEVICE_TYPE_WIRED_HEADSET:
+        //     case DEVICE_TYPE_WIRED_HEADPHONES:
+        //     case DEVICE_TYPE_USB_HEADSET:
+        //     case DEVICE_TYPE_USB_ARM_HEADSET:
+        //         sVolumeLevel = DealWithSafeVolume(volumeLevel, false);
+        //         AUDIO_ERR_LOG("andy, connected to the headset");
+        //         break;
+        //     default:
+        //         AUDIO_INFO_LOG("andy, unsupport safe volume:%{public}d", currentActiveDevice_.deviceType_);
+        //         break;
+        // }
+        DealWithSafeVolume(volumeLevel, false);
     }
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERROR, "safevolume did not deal");
     result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
@@ -5527,14 +5558,14 @@ void AudioPolicyService::CreateSafeVolumeDialogThread()
 {
     AUDIO_INFO_LOG("enter");
     if (safeVolumeDialogThrd_ != nullptr && safeVolumeDialogThrd_->joinable()) {
-        AUDIO_INFO_LOG("safeVolumeDialogThread exit begin");
+        AUDIO_ERR_LOG("andy, safeVolumeDialogThread exit");
         safeVolumeDialogThrd_->join();
         safeVolumeDialogThrd_.reset();
         safeVolumeDialogThrd_ = nullptr;
         AUDIO_INFO_LOG("safeVolumeDialogThread exit end");
     }
 
-    AUDIO_INFO_LOG("create thread begin");
+    AUDIO_ERR_LOG("andy, create safeVolumeDialogThread");
     safeVolumeDialogThrd_ = std::make_unique<std::thread>(&AudioPolicyService::ShowDialog, this);
     pthread_setname_np(safeVolumeDialogThrd_->native_handle(), "OS_AudioSafeDialog");
     isSafeVolumeDialogShowing_.store(true);
@@ -5543,73 +5574,108 @@ void AudioPolicyService::CreateSafeVolumeDialogThread()
 
 int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice)
 {
+    AUDIO_ERR_LOG("andy, DealWithSafeVolume 111111111111111111");
     if (isA2dpDevice) {
         AUDIO_INFO_LOG("bluetooth Category:%{public}d", currentActiveDevice_.deviceCategory_);
+        AUDIO_ERR_LOG("andy, DealWithSafeVolume 222222222222222");
         if (currentActiveDevice_.deviceCategory_ != BT_HEADPHONE) {
+            AUDIO_ERR_LOG("andy, DealWithSafeVolume 3333333333333333");
             return volumeLevel;
         }
     }
 
+    AUDIO_ERR_LOG("andy, DealWithSafeVolume 444444444444444444");
     int32_t sVolumeLevel = volumeLevel;
     safeStatusBt_ = audioPolicyManager_.GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
     safeStatus_ = audioPolicyManager_.GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
     if ((safeStatusBt_ == SAFE_INACTIVE && isA2dpDevice) ||
         (safeStatus_ == SAFE_INACTIVE && !isA2dpDevice)) {
+        AUDIO_ERR_LOG("andy, DealWithSafeVolume 5555555555555");
         CreateCheckMusicActiveThread();
         return sVolumeLevel;
     }
+    AUDIO_ERR_LOG("andy, DealWithSafeVolume 6666666666666");
 
     if ((isA2dpDevice && safeStatusBt_ == SAFE_ACTIVE) ||
         (!isA2dpDevice && safeStatus_ == SAFE_ACTIVE)) {
-        sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
+        sVolumeLevel = 10;
         if (!isSafeVolumeDialogShowing_.load()) {
+            AUDIO_ERR_LOG("andy, DealWithSafeVolume 77777777777777");
             CreateSafeVolumeDialogThread();
         } else {
             AUDIO_INFO_LOG("Safe volume dialog is showing");
         }
+        AUDIO_ERR_LOG("andy, DealWithSafeVolume 88888888888888");
         return sVolumeLevel;
     }
+    AUDIO_ERR_LOG("andy, DealWithSafeVolume 9999999999999999");
     return sVolumeLevel;
 }
 
 int32_t AudioPolicyService::ShowDialog()
 {
-    auto abilityMgrClient = AAFwk::AbilityManagerClient::GetInstance();
-    if (abilityMgrClient == nullptr) {
-        isSafeVolumeDialogShowing_.store(false);
-        AUDIO_INFO_LOG("abilityMgrClient malloc failed");
-        return ERROR;
-    }
-    sptr<OHOS::AAFwk::IAbilityConnection> dialogConnectionCallback = new (std::nothrow)AudioDialogAbilityConnection();
-    if (dialogConnectionCallback == nullptr) {
-        isSafeVolumeDialogShowing_.store(false);
-        AUDIO_INFO_LOG("dialogConnectionCallback malloc failed");
-        return ERROR;
-    }
+    AUDIO_ERR_LOG("andy, ShowDialog 11111111111111");
+    // auto abilityMgrClient = AAFwk::AbilityManagerClient::GetInstance();
+    // if (abilityMgrClient == nullptr) {
+    //     isSafeVolumeDialogShowing_.store(false);
+    //     AUDIO_INFO_LOG("abilityMgrClient malloc failed");
+    //     return ERROR;
+    // }
+    // sptr<OHOS::AAFwk::IAbilityConnection> dialogConnectionCallback = new (std::nothrow)AudioDialogAbilityConnection();
+    // if (dialogConnectionCallback == nullptr) {
+    //     isSafeVolumeDialogShowing_.store(false);
+    //     AUDIO_INFO_LOG("dialogConnectionCallback malloc failed");
+    //     return ERROR;
+    // }
 
-    AAFwk::Want want;
-    std::string bundleName = "com.ohos.sceneboard";
-    std::string abilityName = "com.ohos.sceneboard.systemdialog";
-    want.SetElementName(bundleName, abilityName);
-    ErrCode result = abilityMgrClient->ConnectAbility(want, dialogConnectionCallback,
-        AppExecFwk::Constants::INVALID_USERID);
-    if (result != SUCCESS) {
-        isSafeVolumeDialogShowing_.store(false);
-        AUDIO_INFO_LOG("ConnectAbility failed");
-        return result;
-    }
+    // AAFwk::Want want;
+    // std::string bundleName = "com.ohos.sceneboard";
+    // std::string abilityName = "com.ohos.sceneboard.systemdialog";
+    // want.SetElementName(bundleName, abilityName);
+    // ErrCode result = abilityMgrClient->ConnectAbility(want, dialogConnectionCallback,
+    //     AppExecFwk::Constants::INVALID_USERID);
+    // if (result != SUCCESS) {
+    //     isSafeVolumeDialogShowing_.store(false);
+    //     AUDIO_INFO_LOG("ConnectAbility failed");
+    //     return result;
+    // }
 
-    AUDIO_INFO_LOG("show safe Volume Dialog");
-    std::unique_lock<std::mutex> lock(dialogMutex_);
-    isSafeVolumeDialogShowing_.store(true);
-    if (!isDialogSelectDestroy_.load()) {
-        auto status = dialogSelectCondition_.wait_for(lock, std::chrono::seconds(WAIT_DIALOG_CLOSE_TIME_S),
-            [this] () { return isDialogSelectDestroy_.load(); });
-        if (!status) {
-            AUDIO_ERR_LOG("user cancel or not select");
-        }
-        isDialogSelectDestroy_.store(false);
-    }
+    // AUDIO_INFO_LOG("show safe Volume Dialog");
+    // std::unique_lock<std::mutex> lock(dialogMutex_);
+    // isSafeVolumeDialogShowing_.store(true);
+    // if (!isDialogSelectDestroy_.load()) {
+    //     auto status = dialogSelectCondition_.wait_for(lock, std::chrono::seconds(WAIT_DIALOG_CLOSE_TIME_S),
+    //         [this] () { return isDialogSelectDestroy_.load(); });
+    //     if (!status) {
+    //         AUDIO_ERR_LOG("user cancel or not select");
+    //     }
+    //     isDialogSelectDestroy_.store(false);
+    // }
+
+    auto result = StartNotification();
+    return result;
+}
+
+int32_t AudioPolicyService::StartNotification()
+{
+    int32_t result = Notification::NotificationHelper::SubscribeLocalLiveViewNotification(NOTIFICATION_SUBSCRIBER);
+    Notification::NotificationRequest request;
+    std::shared_ptr<Notification::NotificationLocalLiveViewContent> localLiveViewContent =
+        std::make_shared<Notification::NotificationLocalLiveViewContent>();
+    localLiveViewContent->SetType(2);
+    localLiveViewContent->SetTitle("长时间聆听损害听力");
+    localLiveViewContent->SetText("以为您降低音量到以为您降低音量到以为您降低音量到以为您降低音量到");
+    std::shared_ptr<Notification::NotificationContent> content =
+        std::make_shared<Notification::NotificationContent>(localLiveViewContent);
+    request.SetSlotType(Notification::NotificationConstant::SlotType::LIVE_VIEW);
+    request.SetNotificationId(0);
+    request.SetContent(content);
+    request.SetCreatorUid(getuid());
+    // request.SetUnremovable(true);
+    // request.SetInProgress(true);
+    result = Notification::NotificationHelper::PublishNotification(request);
+
+    AUDIO_ERR_LOG("andy, AudioPolicyService service PublishNotification uid %{public}d, result %{public}d", getuid(), result);
     return result;
 }
 
