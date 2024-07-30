@@ -278,7 +278,7 @@ void RendererInServer::StandByCheck()
     // call enable stand by
     std::unique_lock<std::mutex> lock(statusLock_);
     standByEnable_ = true;
-    IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
+    stream_->Pause();
 }
 
 bool RendererInServer::ShouldEnableStandBy()
@@ -556,7 +556,7 @@ int32_t RendererInServer::Start()
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
-        return IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
+        return stream_->Start();
     }
     needForceWrite_ = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
