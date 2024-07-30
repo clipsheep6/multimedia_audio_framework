@@ -180,6 +180,8 @@ int32_t ProRendererStreamImpl::Start()
     }
     status_ = I_STATUS_STARTED;
     isFirstFrame_ = true;
+    int ret = IStreamManager::GetPlaybackManager(GetManagerType()).StartRender();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start failed, reason: %{public}d", ret);
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STARTED);
@@ -198,6 +200,8 @@ int32_t ProRendererStreamImpl::Pause()
     if (isFirstFrame_) {
         firstFrameSync_.notify_all();
     }
+    int32_t ret = IStreamManager::GetPlaybackManager(GetManagerType()).PauseRender();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause failed, reason: %{public}d", ret);
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_PAUSED);
@@ -258,6 +262,8 @@ int32_t ProRendererStreamImpl::Stop()
     if (isFirstFrame_) {
         firstFrameSync_.notify_all();
     }
+    int32_t ret = IStreamManager::GetPlaybackManager(GetManagerType()).StopRender();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop failed, reason: %{public}d", ret);
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
@@ -689,6 +695,11 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
     spanSizeInFrame_ = (streamInfo.samplingRate * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
+}
+
+ManagerType ProRendererStreamImpl::GetManagerType() const noexcept
+{
+    return isDirect_ ? DIRECT_PLAYBACK : VOIP_PLAYBACK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

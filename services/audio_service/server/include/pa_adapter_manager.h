@@ -62,9 +62,9 @@ public:
 
     int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) override;
     int32_t ReleaseRender(uint32_t streamIndex_) override;
-    int32_t StartRender(uint32_t streamIndex) override;
-    int32_t StopRender(uint32_t streamIndex) override;
-    int32_t PauseRender(uint32_t streamIndex) override;
+    int32_t StartRender() override;
+    int32_t StopRender() override;
+    int32_t PauseRender() override;
     int32_t GetStreamCount() const noexcept override;
     int32_t TriggerStartIfNecessary() override;
     int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) override;

@@ -23,6 +23,7 @@
 #include "audio_resample.h"
 #include "linear_pos_time_model.h"
 #include "audio_down_mix_stereo.h"
+#include "i_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -87,6 +88,7 @@ private:
     int32_t PopWriteBufferIndex();
     void SetOffloadDisable();
     void InitBasicInfo(const AudioStreamInfo &streamInfo);
+    ManagerType GetManagerType() const noexcept;
 
 private:
     bool isDirect_;
