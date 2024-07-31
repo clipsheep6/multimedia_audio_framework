@@ -29,6 +29,7 @@
 #include <audio_source_type.h>
 #include <audio_device_info.h>
 #include <audio_interrupt_info.h>
+#include <audio_session_info.h>
 #include <audio_stream_info.h>
 #include <audio_asr.h>
 
