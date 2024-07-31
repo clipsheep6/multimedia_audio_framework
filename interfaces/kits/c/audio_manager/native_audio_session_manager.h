@@ -194,7 +194,7 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
  * @param audioSessionManager the {@link OH_AudioSessionManager}
  * returned by the {@link OH_AudioManager_GetAudioSessionManager}
  * @param callback the {@link OH_AudioSessionDeactivatedCallback} which is used
- * to received the deactivated event
+ * to receive the deactivated event
  * @return {@link AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}
  * @since 12 
  */
@@ -208,7 +208,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_RegisterSessionDeactivatedCallback(
  * @param audioSessionManager the {@link OH_AudioSessionManager}
  * returned by the {@link OH_AudioManager_GetAudioSessionManager}
  * @param callback the {@link OH_AudioSessionDeactivatedCallback} which is used
- * to received the deactivated event
+ * to receive the deactivated event
  * @return {@link AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}
  * @since 12 
  */
