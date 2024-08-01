@@ -113,8 +113,11 @@ int32_t AudioEnhanceChain::SetEnhanceParamToHandle(AudioEffectHandle handle)
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
 
-    cmdInfo.data = static_cast<void *>(&algoParam_);
-    cmdInfo.size = sizeof(algoParam_);
+    AudioEnhanceParam setParam = {algoParam_.muteInfo, algoParam_.volumeInfo, algoParam_.preDevice.c_str(),
+        algoParam_.postDevice.c_str(), algoParam_.sceneType.c_str()};
+
+    cmdInfo.data = static_cast<void *>(&setParam);
+    cmdInfo.size = sizeof(setParam);
 
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     if (ret != 0) {
