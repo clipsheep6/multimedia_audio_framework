@@ -1128,11 +1128,12 @@ HWTEST(AudioEffectChainManagerUnitTest, ResetEffectBuffer_001, TestSize.Level1)
  */
 HWTEST(AudioEffectChainManagerUnitTest, GetAudioEffectProperty_001, TestSize.Level1)
 {
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    audioEffectChainManager->ResetInfo();
+    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectPropertyArray properties;
-    auto ret = AudioEffectChainManager::GetInstance()->GetAudioEffectProperty(properties);
+    auto ret = audioEffectChainManager->GetAudioEffectProperty(properties);
     EXPECT_EQ(SUCCESS, ret);
     for (auto &[effect, property] : DEFAULT_EFFECT_CHAIN_MANAGER_PARAM.effectDefaultProperty) {
         auto it = std::find(properties.property.begin(), properties.property.end(),

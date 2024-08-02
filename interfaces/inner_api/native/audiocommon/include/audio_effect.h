@@ -439,6 +439,7 @@ struct AudioEnhanceParam {
     uint32_t volumeInfo;
     const char *preDevice;
     const char *postDevice;
+    const char *sceneType;
 };
 } // namespace AudioStandard
 } // namespace OHOS

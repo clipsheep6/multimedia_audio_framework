@@ -38,10 +38,12 @@ const uint32_t DEFAULT_VOIP_REF_NUM = 8;
 const uint32_t DEFAULT_MIC_NUM = 4;
 const uint32_t DEFAULT_OUT_NUM = 4;
 
-AudioEnhanceChain::AudioEnhanceChain(const std::string &scene, const AudioEnhanceParam &algoParam)
+AudioEnhanceChain::AudioEnhanceChain(const std::string &scene, const AudioEnhanceParamAdapter &algoParam,
+    const bool defaultFlag)
 {
     sceneType_ = scene;
     algoParam_ = algoParam;
+    defaultFlag_ = defaultFlag;
     
     InitAudioEnhanceChain();
     InitDump();
@@ -111,8 +113,11 @@ int32_t AudioEnhanceChain::SetEnhanceParamToHandle(AudioEffectHandle handle)
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
 
-    cmdInfo.data = static_cast<void *>(&algoParam_);
-    cmdInfo.size = sizeof(algoParam_);
+    AudioEnhanceParam setParam = {algoParam_.muteInfo, algoParam_.volumeInfo, algoParam_.preDevice.c_str(),
+        algoParam_.postDevice.c_str(), algoParam_.sceneType.c_str()};
+
+    cmdInfo.data = static_cast<void *>(&setParam);
+    cmdInfo.size = sizeof(setParam);
 
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     if (ret != 0) {
@@ -251,21 +256,25 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enh
 
 int32_t AudioEnhanceChain::SetEnhanceProperty(const std::string &enhance, const std::string &property)
 {
+    if (property.empty()) { return SUCCESS; }
     std::lock_guard<std::mutex> lock(chainMutex_);
-    int32_t ret = 0;
     int32_t size = standByEnhanceHandles_.size();
+    AudioEffectTransInfo cmdInfo{};
+    AudioEffectTransInfo replyInfo{};
     for (int32_t index = 0; index < size; index++) {
         auto &handle = standByEnhanceHandles_[index];
         auto const &enhanceName = enhanceNames_[index];
         if (enhance == enhanceName) {
-            if (SetPropertyToHandle(handle, property) != SUCCESS) {
-                AUDIO_INFO_LOG("[%{public}s] %{public}s effect EFFECT_CMD_SET_PROPERTY fail",
-                    sceneType_.c_str(), enhance.c_str());
-                ret = ERROR;
-            }
+            CHECK_AND_RETURN_RET_LOG(SetPropertyToHandle(handle, property) == SUCCESS, ERROR,
+                "[%{public}s] %{public}s effect EFFECT_CMD_SET_PROPERTY fail",
+                sceneType_.c_str(), enhance.c_str());
+            CHECK_AND_RETURN_RET_LOG(
+                (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo) == SUCCESS, ERROR,
+                "[%{public}s] %{public}s effect EFFECT_CMD_INIT fail",
+                sceneType_.c_str(), enhance.c_str());
         }
     }
-    return ret;
+    return SUCCESS;
 }
 
 int32_t AudioEnhanceChain::SetPropertyToHandle(AudioEffectHandle handle, const std::string &property)
@@ -276,6 +285,11 @@ int32_t AudioEnhanceChain::SetPropertyToHandle(AudioEffectHandle handle, const s
     AudioEffectTransInfo cmdInfo = {sizeof(const char *), reinterpret_cast<void*>(&propCstr)};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     return (*handle)->command(handle, EFFECT_CMD_SET_PROPERTY, &cmdInfo, &replyInfo);
+}
+
+bool AudioEnhanceChain::IsDefaultChain()
+{
+    return defaultFlag_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

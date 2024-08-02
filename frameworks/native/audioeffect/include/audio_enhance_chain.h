@@ -58,9 +58,17 @@ struct AlgoCache {
     std::vector<uint8_t> output;
 };
 
+struct AudioEnhanceParamAdapter {
+    uint32_t muteInfo;
+    uint32_t volumeInfo;
+    std::string preDevice;
+    std::string postDevice;
+    std::string sceneType;
+}
+
 class AudioEnhanceChain {
 public:
-    AudioEnhanceChain(const std::string &scene, const AudioEnhanceParam &algoParam);
+    AudioEnhanceChain(const std::string &scene, const AudioEnhanceParamAdapter &algoParam, const bool defaultFlag);
     ~AudioEnhanceChain();
     void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle, const std::string &enhance,
         const std::string &property);
@@ -71,6 +79,7 @@ public:
     int32_t ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length);
     int32_t SetEnhanceProperty(const std::string &effect, const std::string &property);
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
+    bool IsDefaultChain();
 
 private:
     void InitAudioEnhanceChain();
@@ -85,10 +94,11 @@ private:
     AlgoAttr algoAttr_;
     AlgoConfig algoSupportedConfig_;
     AlgoCache algoCache_;
-    AudioEnhanceParam algoParam_;
+    AudioEnhanceParamAdapter algoParam_;
     FILE *dumpFileIn_ = nullptr;
     FILE *dumpFileOut_ = nullptr;
     bool needEcFlag_;
+    bool defaultFlag_;
     std::vector<AudioEffectHandle> standByEnhanceHandles_;
     std::vector<std::string> enhanceNames_;
     std::vector<AudioEffectLibrary*> enhanceLibHandles_;

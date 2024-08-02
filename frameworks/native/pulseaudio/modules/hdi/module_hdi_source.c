@@ -133,6 +133,22 @@ static void SetResampler(pa_source_output *so, const pa_sample_spec *algoConfig,
         pa_resampler_set_input_rate(so->thread_info.resampler, algoConfig->rate);
     }
 }
+ 
+static void SetDefaultResampler(pa_source_output *so, const pa_sample_spec *algoConfig, struct Userdata *u)
+{
+    if (!pa_sample_spec_equal(&so->source->sample_spec, algoConfig)) {
+        if (u->defaultSceneResampler) {
+            pa_resampler_free(u->defaultSceneResampler);
+        }
+        u->defaultSceneResampler = pa_resampler_new(so->source->core->mempool,
+            &so->source->sample_spec, &so->source->channel_map,
+            algoConfig, &so->source->channel_map,
+            so->source->core->lfe_crossover_freq,
+            PA_RESAMPLER_AUTO,
+            PA_RESAMPLER_VARIABLE_RATE);
+        pa_resampler_set_input_rate(so->thread_info.resampler, algoConfig->rate);
+    }
+}
 
 static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userdata *u)
 {
@@ -146,25 +162,32 @@ static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userd
     }
     uint32_t sceneKeyCode = 0;
     sceneKeyCode = (sceneTypeCode << SCENE_TYPE_OFFSET) + (captureId << CAPTURER_ID_OFFSET) + renderId;
-    if (EnhanceChainManagerCreateCb(sceneKeyCode) != 0) {
+    int32_t ret = EnhanceChainManagerCreateCb(sceneKeyCode);
+    if (ret < 0) {
         AUDIO_INFO_LOG("Create EnhanceChain failed, set to bypass");
         pa_proplist_sets(so->proplist, "scene.bypass", DEFAULT_SCENE_BYPASS);
         return PA_HOOK_OK;
     }
-    EnhanceChainManagerInitEnhanceBuffer();
-    char sceneKey[MAX_SCENE_NAME_LEN];
-    if (sprintf_s(sceneKey, sizeof(sceneKey), "%u", sceneKeyCode) < 0) {
-        AUDIO_ERR_LOG("sprintf from sceneKeyCode to sceneKey failed");
-        return PA_HOOK_OK;
-    }
-    IncreaseScenekeyCount(u->sceneToCountMap, sceneKey);
     pa_sample_spec algoConfig;
     pa_sample_spec_init(&algoConfig);
     if (EnhanceChainManagerGetAlgoConfig(sceneKeyCode, &algoConfig) != 0) {
         AUDIO_ERR_LOG("Get algo config failed");
         return PA_HOOK_OK;
     }
-    SetResampler(so, &algoConfig, sceneKey, u->sceneToResamplerMap);
+    // default chain
+    if (ret > 0) {
+        SetDefaultResampler(so, &algoConfig, u);
+        pa_proplist_sets(so->proplist, "scene.default", "1");
+    } else {
+        char sceneKey[MAX_SCENE_NAME_LEN];
+        if (sprintf_s(sceneKey, sizeof(sceneKey), "%u", sceneKeyCode) < 0) {
+            AUDIO_ERR_LOG("sprintf from sceneKeyCode to sceneKey failed");
+            return PA_HOOK_OK;
+        }
+        IncreaseScenekeyCount(u->sceneToCountMap, sceneKey);
+        SetResampler(so, &algoConfig, sceneKey, u->sceneToResamplerMap);
+    }
+    EnhanceChainManagerInitEnhanceBuffer();
     return PA_HOOK_OK;
 }
 
@@ -187,7 +210,8 @@ static pa_hook_result_t HandleSourceOutputUnlink(pa_source_output *so, struct Us
         AUDIO_ERR_LOG("sprintf from sceneKeyCode to sceneKey failed");
         return PA_HOOK_OK;
     }
-    if (DecreaseScenekeyCount(u->sceneToCountMap, sceneKey)) {
+    if (!pa_safe_streq(pa_proplist_gets(so->proplist, "scene.default"), "1") &&
+        DecreaseScenekeyCount(u->sceneToCountMap, sceneKey)) {
         pa_hashmap_remove_and_free(u->sceneToResamplerMap, sceneKey);
     }
     return PA_HOOK_OK;

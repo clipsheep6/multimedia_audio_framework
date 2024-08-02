@@ -58,8 +58,6 @@ private:
     std::vector<std::string> postSceneTypeSet_;
     std::unordered_map<std::string, std::set<std::pair<std::string, std::string>>> device2EffectPropertySet_;
     std::unordered_map<std::string, std::set<std::pair<std::string, std::string>>> device2EnhancePropertySet_;
-    std::unordered_map<std::string, std::string> effectDefaultProperty_;
-    std::unordered_map<std::string, std::string> enhanceDefaultProperty_;
 
     void ConstructEffectChainMode(StreamEffectMode &mode, std::string sceneType,
                                   EffectChainManagerParam &effectChainMgrParam);
