@@ -199,7 +199,7 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
  * @since 12 
  */
 OH_AudioCommon_Result OH_AudioSessionManager_RegisterSessionDeactivatedCallback(
-    OH_AudioSessionManager *OH_AudioSessionManager,
+    OH_AudioSessionManager *audioSessionManager,
     OH_AudioSessionDeactivatedCallback callback);
 
 /**
@@ -213,7 +213,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_RegisterSessionDeactivatedCallback(
  * @since 12 
  */
 OH_AudioCommon_Result OH_AudioSessionManager_UnregisterSessionDeactivatedCallback(
-    OH_AudioSessionManager *OH_AudioSessionManager,
+    OH_AudioSessionManager *audioSessionManager,
     OH_AudioSessionDeactivatedCallback callback);
 #ifdef __cplusplus
 }
