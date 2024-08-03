@@ -127,7 +127,7 @@ typedef struct OH_AudioSessionDeactivatedEvent {
 /**
  * @brief This function pointer will point to the callback function that
  * is used to return the audio session deactivated event.
- * 
+ *
  * @param event the {@link OH_AudioSession_Deactivated_Event} deactivated triggering event.
  * @since 12
  */
@@ -137,7 +137,7 @@ typedef int32_t (*OH_AudioSessionDeactivatedCallback) (
 /**
  * @brief Fetch the audio session manager handle.
  * The audio session manager handle should be the first parameter in audio session related functions
- * 
+ *
  * @param audioSessionManager the {@link OH_AudioSessionManager}
  * which will be returned as the output parameter
  * @return {@link #AUDIOCOMMON_RESULT_SUCCESS}
@@ -148,20 +148,21 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(
 
 /**
  * @brief Activate the audio session for the current pid application.
+ *
  * @param audioSessionManager the {@link OH_AudioSessionManager}
  * returned by the {@link OH_AudioManager_GetAudioSessionManager}
- * @param strategy the {@link OH_AudioSession_Strategy} 
+ * @param strategy the {@link OH_AudioSession_Strategy}
  * which is used for setting audio session strategy
  * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_REULT_INVALID_PARAM}
  * or {@link AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE}
- * @since 12 
+ * @since 12
  */
 OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession(
     OH_AudioSessionManager *audioSessionManager, OH_AudioSession_Strategy strategy);
 
 /**
  * @brief Deactivate the audio session for the current pid application.
- * 
+ *
  * @param audioSessionManager the {@link OH_AudioSessionManager}
  * returned by the {@link OH_AudioManager_GetAudioSessionManager}
  * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_REULT_INVALID_PARAM}
@@ -173,7 +174,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_DeactivateAudioSession(
 
 /**
  * @brief Querying whether the current pid application has an activated audio session.
- * 
+ *
  * @param audioSessionManager the {@link OH_AudioSessionManager}
  * returned by the {@link OH_AudioManager_GetAudioSessionManager}
  * @return True when the current pid application has an activated audio session
@@ -185,7 +186,7 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
 
 /**
  * @brief Register the audio session deactivated event callback.
- * 
+ *
  * @param audioSessionManager the {@link OH_AudioSessionManager}
  * returned by the {@link OH_AudioManager_GetAudioSessionManager}
  * @param callback the {@link OH_AudioSessionDeactivatedCallback} which is used
@@ -198,7 +199,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_RegisterSessionDeactivatedCallback(
 
 /**
  * @brief Unregister the audio session deactivated event callback.
- * 
+ *
  * @param audioSessionManager the {@link OH_AudioSessionManager}
  * returned by the {@link OH_AudioManager_GetAudioSessionManager}
  * @param callback the {@link OH_AudioSessionDeactivatedCallback} which is used
