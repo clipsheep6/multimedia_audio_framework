@@ -98,7 +98,6 @@ typedef enum {
      * @brief deactivated because of timing out
      */
     DEACTIVATED_TIME_OUT = 1,
-
 } OH_AUDIO_SESSION_DEACTIVATED_REASON;
 
 /**
@@ -111,7 +110,6 @@ typedef struct OH_AudioSessionStrategy {
      * @brief audio session concurrency mode
      */
     OH_AUDIO_SESSION_CONCURRENCY_MODE concurrencyMode;
-
 } OH_AudioSession_Strategy;
 
 /**
@@ -124,7 +122,6 @@ typedef struct OH_AudioSessionDeactivatedEvent {
      * @brief audio session deactivated reason
      */
     OH_AUDIO_SESSION_DEACTIVATED_REASON reason;
-
 } OH_AudioSession_Deactivated_Event;
 
 /**
@@ -135,7 +132,7 @@ typedef struct OH_AudioSessionDeactivatedEvent {
  * @since 12
  */
 typedef int32_t (*OH_AudioSessionDeactivatedCallback) (
-  OH_AudioSession_Deactivated_Event event);
+    OH_AudioSession_Deactivated_Event event);
 
 /**
  * @brief Fetch the audio session manager handle.
@@ -146,12 +143,11 @@ typedef int32_t (*OH_AudioSessionDeactivatedCallback) (
  * @return {@link #AUDIOCOMMON_RESULT_SUCCESS}
  * @since 12 
  */
-OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager (
+OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(
     OH_AudioSessionManager **audioSessionManager);
 
 /**
  * @brief Activate the audio session for the current pid application.
- * 
  * @param audioSessionManager the {@link OH_AudioSessionManager}
  * returned by the {@link OH_AudioManager_GetAudioSessionManager}
  * @param strategy the {@link OH_AudioSession_Strategy} 
@@ -160,9 +156,8 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager (
  * or {@link AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE}
  * @since 12 
  */
-OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession (
-    OH_AudioSessionManager *audioSessionManager, 
-    OH_AudioSession_Strategy strategy);
+OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession(
+    OH_AudioSessionManager *audioSessionManager, OH_AudioSession_Strategy strategy);
 
 /**
  * @brief Deactivate the audio session for the current pid application.
@@ -173,7 +168,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession (
  * or {@link AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE}
  * @since 12 
  */
-OH_AudioCommon_Result OH_AudioSessionManager_DeactivateAudioSession (
+OH_AudioCommon_Result OH_AudioSessionManager_DeactivateAudioSession(
     OH_AudioSessionManager *audioSessionManager);
 
 /**
@@ -199,8 +194,7 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
  * @since 12 
  */
 OH_AudioCommon_Result OH_AudioSessionManager_RegisterSessionDeactivatedCallback(
-    OH_AudioSessionManager *audioSessionManager,
-    OH_AudioSessionDeactivatedCallback callback);
+    OH_AudioSessionManager *audioSessionManager, OH_AudioSessionDeactivatedCallback callback);
 
 /**
  * @brief Unregister the audio session deactivated event callback.
@@ -213,8 +207,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_RegisterSessionDeactivatedCallback(
  * @since 12 
  */
 OH_AudioCommon_Result OH_AudioSessionManager_UnregisterSessionDeactivatedCallback(
-    OH_AudioSessionManager *audioSessionManager,
-    OH_AudioSessionDeactivatedCallback callback);
+    OH_AudioSessionManager *audioSessionManager, OH_AudioSessionDeactivatedCallback callback);
 #ifdef __cplusplus
 }
 #endif
