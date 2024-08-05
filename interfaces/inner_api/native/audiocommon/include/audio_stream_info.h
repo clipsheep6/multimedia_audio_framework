@@ -19,6 +19,7 @@
 #include <unordered_map>
 
 #include "audio_source_type.h"
+#include "parcel.h"
 
 namespace OHOS {
 namespace AudioStandard {
