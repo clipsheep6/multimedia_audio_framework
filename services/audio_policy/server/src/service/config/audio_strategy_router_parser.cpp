@@ -137,7 +137,9 @@ void AudioStrategyRouterParser::AddRouters(std::vector<std::unique_ptr<RouterBas
 {
     vector<string> buf = split(routeName, ",");
     for (const auto &name : buf) {
-        if (name == "UserSelectRouter") {
+        if (name == "AppSelectRouter") {
+            routers.push_back(make_unique<AppSelectRouter>());
+        } else if (name == "UserSelectRouter") {
             routers.push_back(make_unique<UserSelectRouter>());
         } else if (name == "PrivacyPriorityRouter") {
             routers.push_back(make_unique<PrivacyPriorityRouter>());

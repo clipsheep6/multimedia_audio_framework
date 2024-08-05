@@ -333,6 +333,7 @@ bool AudioPolicyService::Init(void)
     audioPolicyManager_.Init();
     audioEffectManager_.EffectManagerInit();
     audioDeviceManager_.ParseDeviceXml();
+    audioDeviceAffinityManager.ParseAffinityDeviceXml();
     audioPnpServer_.init();
 
     bool ret = audioPolicyConfigParser_.LoadConfiguration();

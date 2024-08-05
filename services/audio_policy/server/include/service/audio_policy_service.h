@@ -537,6 +537,7 @@ private:
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
+        audioAffinityDeviceManager_(AudioAffinityDeviceManager::GetAudioAffinityDeviceManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
         audioPnpServer_(AudioPnpServer::GetAudioPnpServer())
@@ -1068,6 +1069,7 @@ private:
     bool isArmUsbDevice_ = false;
 
     AudioDeviceManager &audioDeviceManager_;
+    AudioAffinityDeviceManager &audioAffinityDeviceManager_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     AudioPnpServer &audioPnpServer_;
