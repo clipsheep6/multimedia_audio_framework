@@ -31,7 +31,8 @@ using namespace std;
 static sptr<IAudioPolicy> g_apProxy = nullptr;
 mutex g_apProxyMutex;
 constexpr int64_t SLEEP_TIME = 1;
-constexpr int32_t RETRY_TIMES = 3;
+constexpr int32_t RETRY_TIMES = 3;W
+const unsigned int TIME_OUT_SECONDS = 1;
 std::mutex g_cBMapMutex;
 std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
@@ -73,6 +74,7 @@ inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 
 int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp)
 {
+    AudioXCollie audioXCollie("AudioPolicyManager::RegisterPolicyCallbackClientFunc", TIME_OUT_SECONDS);
     std::unique_lock<std::mutex> lock(registerCallbackMutex_);
     if (audioPolicyClientStubCB_ == nullptr) {
         audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
@@ -196,6 +198,7 @@ int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode, API_VERSION 
 
 AudioRingerMode AudioPolicyManager::GetRingerMode()
 {
+    AudioXCollie audioXCollie("AudioPolicyManager::GetRingerMode", TIME_OUT_SECONDS);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, RINGER_MODE_NORMAL, "audio policy manager proxy is NULL.");
     return gsp->GetRingerMode();
@@ -358,6 +361,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevicesInner(Dev
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
+    AudioXCollie audioXCollie("AudioPolicyManager::GetPreferredOutputDeviceDescriptors", TIME_OUT_SECONDS);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetPreferredOutputDeviceDescriptors: audio policy manager proxy is NULL.");
@@ -1029,6 +1033,7 @@ int32_t AudioPolicyManager::GetVolumeGroupInfos(std::string networkId, std::vect
 
 int32_t AudioPolicyManager::GetNetworkIdByGroupId(int32_t groupId, std::string &networkId)
 {
+    AudioXCollie audioXCollie("AudioPolicyManager::GetNetworkIdByGroupId", TIME_OUT_SECONDS);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "GetNetworkIdByGroupId failed, g_apProxy is nullptr.");
     return gsp->GetNetworkIdByGroupId(groupId, networkId);
