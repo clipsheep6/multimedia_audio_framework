@@ -541,6 +541,10 @@ public:
     void FetchStreamForA2dpOffload(const bool &requireReset);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
 
+    int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
+
+    int32_t UnsetAudioDeviceAnahsCallback();
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
