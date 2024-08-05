@@ -97,7 +97,7 @@ typedef enum {
     /**
      * @brief deactivated because of timing out
      */
-    DEACTIVATED_TIME_OUT = 1,
+    DEACTIVATED_TIMEOUT = 1,
 } OH_AUDIO_SESSION_DEACTIVATED_REASON;
 
 /**
