@@ -29,6 +29,7 @@ public:
     virtual ~NapiRendererDataRequestCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnWriteData(size_t length) override;
+    void RemoveCallbackReference(const std::string &callbackName);
 
 private:
     struct RendererDataRequestJsCallback {

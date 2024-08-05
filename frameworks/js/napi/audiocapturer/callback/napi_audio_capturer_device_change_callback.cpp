@@ -17,6 +17,7 @@
 #endif
 
 #include "napi_audio_capturer_device_change_callback.h"
+#include "napi_audio_capturer_callbacks.h"
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
 #include "napi_param_utils.h"
@@ -47,6 +48,17 @@ void NapiAudioCapturerDeviceChangeCallback::SaveCallbackReference(napi_value arg
         "Creating reference for callback fail");
 
     callback_ = callback;
+}
+
+void NapiAudioCapturerDeviceChangeCallback::RemoveCallbackReference(const std::string &callbackName)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (callbackName == INPUTDEVICE_CHANGE_CALLBACK_NAME) {
+        callback_ = nullptr;
+    } else {
+        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
+    }
 }
 
 bool NapiAudioCapturerDeviceChangeCallback::ContainSameJsCallback(napi_value args)
