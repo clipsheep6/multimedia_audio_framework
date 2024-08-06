@@ -1144,6 +1144,7 @@ private:
     bool ringerModeMute_ = true;
 
     std::atomic<bool> isPolicyConfigParsered_ = false;
+    std::atomic<bool> isAdapterInfoMap_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
