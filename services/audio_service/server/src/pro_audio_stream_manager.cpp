@@ -63,54 +63,30 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
     return SUCCESS;
 }
 
-int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
+int32_t ProAudioStreamManager::StartRender()
 {
     Trace trace("ProAudioStreamManager::StartRender");
     AUDIO_DEBUG_LOG("Start renderer enter");
-    std::shared_ptr<IRendererStream> currentRender;
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    currentRender = rendererStreamMap_[streamIndex];
-    int32_t result = currentRender->Start();
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to start rendererStream");
     if (playbackEngine_) {
         playbackEngine_->Start();
     }
     return SUCCESS;
 }
 
-int32_t ProAudioStreamManager::StopRender(uint32_t streamIndex)
+int32_t ProAudioStreamManager::StopRender()
 {
     Trace trace("ProAudioStreamManager::StopRender");
     AUDIO_DEBUG_LOG("Stop renderer enter");
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    rendererStreamMap_[streamIndex]->Stop();
     if (playbackEngine_) {
         playbackEngine_->Stop();
     }
     return SUCCESS;
 }
 
-int32_t ProAudioStreamManager::PauseRender(uint32_t streamIndex)
+int32_t ProAudioStreamManager::PauseRender()
 {
     Trace trace("ProAudioStreamManager::PauseRender");
     AUDIO_DEBUG_LOG("Pause renderer enter");
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    rendererStreamMap_[streamIndex]->Pause();
     if (playbackEngine_) {
         playbackEngine_->Pause();
     }

@@ -279,7 +279,7 @@ void RendererInServer::StandByCheck()
     // call enable stand by
     std::unique_lock<std::mutex> lock(statusLock_);
     standByEnable_ = true;
-    IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
+    stream_->Pause();
 }
 
 bool RendererInServer::ShouldEnableStandBy()
@@ -557,7 +557,7 @@ int32_t RendererInServer::Start()
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
-        return IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
+        return stream_->Start();
     }
     needForceWrite_ = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
@@ -571,7 +571,7 @@ int32_t RendererInServer::Start()
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
         fadeoutFlag_ = NO_FADING;
     }
-    int ret = IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
+    int ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
 
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -605,7 +605,7 @@ int32_t RendererInServer::Pause()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_PAUSING;
-    int ret = IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
+    int ret = stream_->Pause();
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
@@ -728,7 +728,7 @@ int32_t RendererInServer::Stop()
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
         fadeoutFlag_ = NO_FADING;
     }
-    int ret = IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_);
+    int ret = stream_->Stop();
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
@@ -1037,15 +1037,6 @@ bool RendererInServer::IsHighResolution() const noexcept
         AUDIO_INFO_LOG("normal stream,device type:%{public}d", processConfig_.deviceType);
         return false;
     }
-    if (processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) {
-        DeviceInfo deviceInfo;
-        bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(processConfig_, deviceInfo);
-        CHECK_AND_RETURN_RET_LOG(result, false, "GetProcessDeviceInfo failed.");
-        if (deviceInfo.isArmUsbDevice) {
-            AUDIO_INFO_LOG("normal stream,device is arm usb");
-            return false;
-        }
-    }
     if (processConfig_.streamType != STREAM_MUSIC || processConfig_.streamInfo.samplingRate < SAMPLE_RATE_48000 ||
         processConfig_.streamInfo.format < SAMPLE_S24LE ||
         processConfig_.rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
@@ -1059,6 +1050,15 @@ bool RendererInServer::IsHighResolution() const noexcept
     if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() > 0) {
         AUDIO_INFO_LOG("high resolution exist.");
         return false;
+    }
+    if (processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) {
+        DeviceInfo deviceInfo;
+        bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(processConfig_, deviceInfo);
+        CHECK_AND_RETURN_RET_LOG(result, false, "GetProcessDeviceInfo failed.");
+        if (deviceInfo.isArmUsbDevice) {
+            AUDIO_INFO_LOG("normal stream,device is arm usb");
+            return false;
+        }
     }
     return true;
 }

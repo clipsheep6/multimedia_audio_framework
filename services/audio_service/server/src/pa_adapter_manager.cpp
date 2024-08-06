@@ -144,40 +144,18 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::StartRender(uint32_t streamIndex)
+int32_t PaAdapterManager::StartRender()
 {
-    AUDIO_DEBUG_LOG("Enter StartRender");
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    return rendererStreamMap_[streamIndex]->Start();
+    return SUCCESS;
 }
 
-int32_t PaAdapterManager::StopRender(uint32_t streamIndex)
+int32_t PaAdapterManager::StopRender()
 {
-    AUDIO_DEBUG_LOG("Enter StopRender");
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    return rendererStreamMap_[streamIndex]->Stop();
+    return SUCCESS;
 }
 
-int32_t PaAdapterManager::PauseRender(uint32_t streamIndex)
+int32_t PaAdapterManager::PauseRender()
 {
-    AUDIO_DEBUG_LOG("Enter PauseRender");
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    rendererStreamMap_[streamIndex]->Pause();
     return SUCCESS;
 }
 
