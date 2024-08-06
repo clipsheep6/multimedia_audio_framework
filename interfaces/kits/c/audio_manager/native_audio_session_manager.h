@@ -81,7 +81,7 @@ typedef enum {
      * @brief pause others mode
      */
     CONCURRENCY_PAUSE_OTHERS = 3,
-} OH_AUDIO_SESSION_CONCURRENCY_MODE;
+} OH_AudioSession_ConcurrencyMode;
 
 /**
  * @brief Declare the audio deactivated reasons.
@@ -98,18 +98,18 @@ typedef enum {
      * @brief deactivated because of timing out
      */
     DEACTIVATED_TIMEOUT = 1,
-} OH_AUDIO_SESSION_DEACTIVATED_REASON;
+} OH_AudioSession_DeactivatedReason;
 
 /**
  * @brief declare the audio session strategy
  *
  * @since 12
  */
-typedef struct OH_AudioSessionStrategy {
+typedef struct OH_AudioSession_Strategy {
     /**
      * @brief audio session concurrency mode
      */
-    OH_AUDIO_SESSION_CONCURRENCY_MODE concurrencyMode;
+    OH_AudioSession_ConcurrencyMode concurrencyMode;
 } OH_AudioSession_Strategy;
 
 /**
@@ -117,30 +117,31 @@ typedef struct OH_AudioSessionStrategy {
  *
  * @since 12
  */
-typedef struct OH_AudioSessionDeactivatedEvent {
+typedef struct OH_AudioSession_DeactivatedEvent {
     /**
      * @brief audio session deactivated reason
      */
-    OH_AUDIO_SESSION_DEACTIVATED_REASON reason;
-} OH_AudioSession_Deactivated_Event;
+    OH_AudioSession_DeactivatedReason reason;
+} OH_AudioSession_DeactivatedEvent;
 
 /**
  * @brief This function pointer will point to the callback function that
  * is used to return the audio session deactivated event.
  *
- * @param event the {@link OH_AudioSession_Deactivated_Event} deactivated triggering event.
+ * @param event the {@link #OH_AudioSession_DeactivatedEvent} deactivated triggering event.
  * @since 12
  */
-typedef int32_t (*OH_AudioSessionDeactivatedCallback) (
-    OH_AudioSession_Deactivated_Event event);
+typedef int32_t (*OH_AudioSession_DeactivatedCallback) (
+    OH_AudioSession_DeactivatedEvent event);
 
 /**
  * @brief Fetch the audio session manager handle.
  * The audio session manager handle should be the first parameter in audio session related functions
  *
- * @param audioSessionManager the {@link OH_AudioSessionManager}
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
  * which will be returned as the output parameter
- * @return {@link #AUDIOCOMMON_RESULT_SUCCESS}
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_SYSTEM} if system state error
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(
@@ -149,12 +150,13 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(
 /**
  * @brief Activate the audio session for the current pid application.
  *
- * @param audioSessionManager the {@link OH_AudioSessionManager}
- * returned by the {@link OH_AudioManager_GetAudioSessionManager}
- * @param strategy the {@link OH_AudioSession_Strategy}
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
+ * @param strategy the {@link #OH_AudioSession_Strategy}
  * which is used for setting audio session strategy
- * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_REULT_INVALID_PARAM}
- * or {@link AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE}
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ * or {@link #AUDIOCOMMON_REULT_INVALID_PARAM} if parameter validation fails
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession(
@@ -163,10 +165,11 @@ OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession(
 /**
  * @brief Deactivate the audio session for the current pid application.
  *
- * @param audioSessionManager the {@link OH_AudioSessionManager}
- * returned by the {@link OH_AudioManager_GetAudioSessionManager}
- * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_REULT_INVALID_PARAM}
- * or {@link AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE}
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ * or {@link #AUDIOCOMMON_REULT_INVALID_PARAM} if parameter validation fails
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioSessionManager_DeactivateAudioSession(
@@ -175,10 +178,10 @@ OH_AudioCommon_Result OH_AudioSessionManager_DeactivateAudioSession(
 /**
  * @brief Querying whether the current pid application has an activated audio session.
  *
- * @param audioSessionManager the {@link OH_AudioSessionManager}
- * returned by the {@link OH_AudioManager_GetAudioSessionManager}
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
  * @return True when the current pid application has an activated audio session
- * False when it is not
+ * False when it does not
  * @since 12
  */
 bool OH_AudioSessionManager_IsAudioSessionActivated(
@@ -187,28 +190,30 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
 /**
  * @brief Register the audio session deactivated event callback.
  *
- * @param audioSessionManager the {@link OH_AudioSessionManager}
- * returned by the {@link OH_AudioManager_GetAudioSessionManager}
- * @param callback the {@link OH_AudioSessionDeactivatedCallback} which is used
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
+ * @param callback the {@link #OH_AudioSession_DeactivatedCallback} which is used
  * to receive the deactivated event
- * @return {@link AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if parameter validation fails
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioSessionManager_RegisterSessionDeactivatedCallback(
-    OH_AudioSessionManager *audioSessionManager, OH_AudioSessionDeactivatedCallback callback);
+    OH_AudioSessionManager *audioSessionManager, OH_AudioSession_DeactivatedCallback callback);
 
 /**
  * @brief Unregister the audio session deactivated event callback.
  *
- * @param audioSessionManager the {@link OH_AudioSessionManager}
- * returned by the {@link OH_AudioManager_GetAudioSessionManager}
- * @param callback the {@link OH_AudioSessionDeactivatedCallback} which is used
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
+ * @param callback the {@link #OH_AudioSession_DeactivatedCallback} which is used
  * to receive the deactivated event
- * @return {@link AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if parameter validation fails
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioSessionManager_UnregisterSessionDeactivatedCallback(
-    OH_AudioSessionManager *audioSessionManager, OH_AudioSessionDeactivatedCallback callback);
+    OH_AudioSessionManager *audioSessionManager, OH_AudioSession_DeactivatedCallback callback);
 #ifdef __cplusplus
 }
 #endif
