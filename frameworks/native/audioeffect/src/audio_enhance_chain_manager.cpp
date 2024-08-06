@@ -90,22 +90,24 @@ void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectCh
     std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
-    std::set<std::string> enhanceSet;
-    for (EffectChain enhanceChain : enhanceChains) {
-        for (std::string enhance : enhanceChain.apply) {
-            enhanceSet.insert(enhance);
-        }
-    }
     // Construct enhanceToLibraryEntryMap_ that stores libEntry for each effect name
     std::shared_ptr<AudioEffectLibEntry> libEntry = nullptr;
     std::string libName;
-    for (std::string enhance : enhanceSet) {
-        int32_t ret = FindEnhanceLib(enhance, enhanceLibraryList, libEntry, libName);
-        CHECK_AND_CONTINUE_LOG(ret != ERROR, "Couldn't find libEntry of effect %{public}s", enhance.c_str());
-        ret = CheckValidEnhanceLibEntry(libEntry, enhance, libName);
-        enhanceToLibraryEntryMap_[enhance] = libEntry;
-        enhanceToLibraryNameMap_[enhance] = libName;
+    std::set<std::string> enhanceSet;
+    for (EffectChain enhanceChain : enhanceChains) {
+        for (std::string enhance : enhanceChain.apply) {
+            if (enhanceToLibraryEntryMap_.count(enhance)) {
+                continue;
+            }
+            int32_t ret = FindEnhanceLib(enhance, enhanceLibraryList, libEntry, libName);
+            CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "Couldn't find libEntry of effect %{public}s", enhance.c_str());
+            ret = CheckValidEnhanceLibEntry(libEntry, enhance, libName);
+            CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "Couldn't check libEntry of effect %{public}s", enhance.c_str());
+            enhanceToLibraryEntryMap_[enhance] = libEntry;
+            enhanceToLibraryNameMap_[enhance] = libName;
+        }
     }
+    
     // Construct enhanceChainToEnhancesMap_ that stores all effect names of each effect chain
     for (EffectChain enhanceChain : enhanceChains) {
         std::string key = enhanceChain.name;
@@ -171,7 +173,6 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const std::stri
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     std::string sceneTypeAndDeviceKey = scene + "_&_" + up + "_&_" + down;
-    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
     if (sceneTypeToEnhanceChainMap_.count(sceneTypeAndDeviceKey)) {
         if ((!sceneTypeToEnhanceChainCountMap_.count(sceneTypeAndDeviceKey)) ||
             (sceneTypeToEnhanceChainCountMap_[sceneTypeAndDeviceKey] < 1)) {
@@ -184,7 +185,7 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const std::stri
         sceneTypeToEnhanceChainCountMap_[sceneTypeAndDeviceKey]++;
         return SUCCESS;
     } else {
-        audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, mode);
+        std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>(scene, mode);
         if (audioEnhanceChain == nullptr) {
             AUDIO_ERR_LOG("AudioEnhanceChain construct failed.");
             return ERROR;
