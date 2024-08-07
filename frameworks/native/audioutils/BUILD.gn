@@ -26,6 +26,11 @@ ohos_shared_library("audio_utils") {
     cfi_vcall_icall_only = true
     debug = false
   }
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags"
+  ]
+
   public_configs = [ ":audio_utils_public_config" ]
   install_enable = true
   include_dirs = [

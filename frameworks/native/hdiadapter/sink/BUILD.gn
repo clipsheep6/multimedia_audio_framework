@@ -29,6 +29,10 @@ ohos_shared_library("audio_renderer_sink") {
   cflags += [ "-Wall" ]
   cflags_cc = cflags
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   include_dirs = [
     "common",
     "../common/include",
@@ -70,6 +74,10 @@ ohos_shared_library("fast_audio_renderer_sink") {
     debug = false
   }
   install_enable = true
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   sources = [ "fast/fast_audio_renderer_sink.cpp" ]
 
@@ -115,6 +123,10 @@ ohos_shared_library("bluetooth_renderer_sink") {
   cflags += [ "-Wall" ]
 
   cflags_cc = cflags
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   include_dirs = [
     "common",
@@ -167,6 +179,10 @@ ohos_shared_library("remote_audio_renderer_sink") {
   cflags += [ "-Wall" ]
   cflags_cc = cflags
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   include_dirs = [
     "common",
     "../common/include",
@@ -210,6 +226,10 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   include_dirs = [
     "common",
@@ -258,6 +278,10 @@ ohos_shared_library("audio_renderer_file_sink") {
 
   cflags_cc = cflags
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   include_dirs = [
     "common",
     "../common/include",
@@ -288,6 +312,10 @@ ohos_shared_library("offload_audio_renderer_sink") {
   cflags += [ "-Wall" ]
 
   cflags_cc = cflags
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   include_dirs = [
     "common",
@@ -333,6 +361,10 @@ ohos_shared_library("multichannel_audio_renderer_sink") {
   cflags += [ "-Wall" ]
   cflags_cc = cflags
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   include_dirs = [
     "common",
     "../common/include",
@@ -376,6 +408,10 @@ ohos_shared_library("renderer_sink_adapter") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   include_dirs = [
     "common",

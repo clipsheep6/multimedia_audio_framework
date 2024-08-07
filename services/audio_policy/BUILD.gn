@@ -166,6 +166,10 @@ ohos_shared_library("audio_policy_service") {
     defines += [ "FEATURE_DTMF_TONE" ]
   }
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [
@@ -401,6 +405,10 @@ ohos_shared_library("audio_policy_client") {
   part_name = "audio_framework"
 
   ldflags = [ "-Wl,-Bsymbolic" ]
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 }
 
 group("audio_policy_test_packages") {
