@@ -122,6 +122,8 @@ public:
 
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
 
+    int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
+
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
 
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
@@ -150,6 +152,8 @@ public:
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 
     void SetRotationToEffect(const uint32_t rotate) override;
+
+    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -195,7 +199,6 @@ private:
     static std::map<std::string, std::string> audioParameters;
     static std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys;
 
-    int32_t audioUid_ = 1041;
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
 

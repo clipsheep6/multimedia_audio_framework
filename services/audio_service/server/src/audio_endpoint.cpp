@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -39,6 +39,7 @@
 #include "i_stream_manager.h"
 #include "linear_pos_time_model.h"
 #include "policy_handler.h"
+#include "audio_log_utils.h"
 #ifdef DAUDIO_ENABLE
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
@@ -56,6 +57,7 @@ namespace {
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
+    static const int32_t HALF_FACTOR = 2;
 }
 
 static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
@@ -220,6 +222,7 @@ private:
     void DeinitLatencyMeasurement();
     void CheckPlaySignal(uint8_t *buffer, size_t bufferSize);
     void CheckRecordSignal(uint8_t *buffer, size_t bufferSize);
+    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 
@@ -309,6 +312,8 @@ private:
     bool needReSyncPosition_ = true;
     FILE *dumpDcp_ = nullptr;
     FILE *dumpHdi_ = nullptr;
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
 
     bool isSupportAbsVolume_ = false;
 
@@ -361,6 +366,11 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type, uint64_t id,
     const AudioProcessConfig &clientConfig) : endpointType_(type), id_(id), clientConfig_(clientConfig)
 {
     AUDIO_INFO_LOG("AudioEndpoint type:%{public}d", endpointType_);
+    if (clientConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        logUtilsTag_ = "AudioEndpoint::Play";
+    } else {
+        logUtilsTag_ = "AudioEndpoint::Rec";
+    }
 }
 
 std::string AudioEndpointInner::GetEndpointName()
@@ -634,10 +644,10 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
 
     endpointStatus_ = UNLINKED;
     isInited_.store(true);
-    endpointWorkThread_ = std::thread(&AudioEndpointInner::RecordEndpointWorkLoopFuc, this);
+    endpointWorkThread_ = std::thread([this] { this->RecordEndpointWorkLoopFuc(); });
     pthread_setname_np(endpointWorkThread_.native_handle(), "OS_AudioEpLoop");
 
-    updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
+    updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
     pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
 
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
@@ -718,10 +728,10 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
 
     endpointStatus_ = UNLINKED;
     isInited_.store(true);
-    endpointWorkThread_ = std::thread(&AudioEndpointInner::EndpointWorkLoopFuc, this);
+    endpointWorkThread_ = std::thread([this] { this->EndpointWorkLoopFuc(); });
     pthread_setname_np(endpointWorkThread_.native_handle(), "OS_AudioEpLoop");
 
-    updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
+    updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
     pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
 
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
@@ -1488,11 +1498,23 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
 
     DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
         dstStreamData.bufferDesc.bufLength);
+    DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_.format, dstStreamInfo_.channels);
 
     CheckUpdateState(reinterpret_cast<char *>(dstStreamData.bufferDesc.buffer),
         dstStreamData.bufferDesc.bufLength);
 
     return true;
+}
+
+void AudioEndpointInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void AudioEndpointInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -1604,23 +1626,26 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
         "SetCurWriteFrame or SetCurReadFrame failed, ret1:%{public}d ret2:%{public}d", ret1, ret2);
     // handl each process buffer info
     int64_t curReadDoneTime = ClockTime::GetCurNano();
-    for (size_t i = 0; i < processBufferList_.size(); i++) {
-        uint64_t eachCurReadPos = processBufferList_[i]->GetCurReadFrame();
-        SpanInfo *tempSpan = processBufferList_[i]->GetSpanInfo(eachCurReadPos);
-        CHECK_AND_RETURN_RET_LOG(tempSpan != nullptr, false,
-            "GetSpanInfo failed, can not get process read span");
-        SpanStatus targetStatus = SpanStatus::SPAN_READING;
-        if (tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READ_DONE)) {
-            tempSpan->readDoneTime = curReadDoneTime;
-            BufferDesc bufferReadDone = { nullptr, 0, 0};
-            processBufferList_[i]->GetReadbuffer(eachCurReadPos, bufferReadDone);
-            if (bufferReadDone.buffer != nullptr && bufferReadDone.bufLength != 0) {
-                memset_s(bufferReadDone.buffer, bufferReadDone.bufLength, 0, bufferReadDone.bufLength);
+    {
+        std::lock_guard<std::mutex> lock(listLock_);
+        for (size_t i = 0; i < processBufferList_.size(); i++) {
+            uint64_t eachCurReadPos = processBufferList_[i]->GetCurReadFrame();
+            SpanInfo *tempSpan = processBufferList_[i]->GetSpanInfo(eachCurReadPos);
+            CHECK_AND_RETURN_RET_LOG(tempSpan != nullptr, false,
+                "GetSpanInfo failed, can not get process read span");
+            SpanStatus targetStatus = SpanStatus::SPAN_READING;
+            if (tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READ_DONE)) {
+                tempSpan->readDoneTime = curReadDoneTime;
+                BufferDesc bufferReadDone = { nullptr, 0, 0};
+                processBufferList_[i]->GetReadbuffer(eachCurReadPos, bufferReadDone);
+                if (bufferReadDone.buffer != nullptr && bufferReadDone.bufLength != 0) {
+                    memset_s(bufferReadDone.buffer, bufferReadDone.bufLength, 0, bufferReadDone.bufLength);
+                }
+                processBufferList_[i]->SetCurReadFrame(eachCurReadPos + dstSpanSizeInframe_); // use client span size
+            } else if (processBufferList_[i]->GetStreamStatus() &&
+                processBufferList_[i]->GetStreamStatus()->load() == StreamStatus::STREAM_RUNNING) {
+                AUDIO_DEBUG_LOG("Current %{public}" PRIu64" span not ready:%{public}d", eachCurReadPos, targetStatus);
             }
-            processBufferList_[i]->SetCurReadFrame(eachCurReadPos + dstSpanSizeInframe_); // use client span size
-        } else if (processBufferList_[i]->GetStreamStatus() &&
-            processBufferList_[i]->GetStreamStatus()->load() == StreamStatus::STREAM_RUNNING) {
-            AUDIO_DEBUG_LOG("Current %{public}" PRIu64" span not ready:%{public}d", eachCurReadPos, targetStatus);
         }
     }
     return true;

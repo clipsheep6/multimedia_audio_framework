@@ -405,6 +405,7 @@ public:
 
         void PermStateChangeCallback(Security::AccessToken::PermStateChangeInfo& result);
         int32_t getUidByBundleName(std::string bundle_name, int user_id);
+        void UpdateMicPrivacyByCapturerState(bool targetMuteState, uint32_t targetTokenId, int32_t appUid);
 
         bool ready_;
     private:
@@ -417,7 +418,6 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
-    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     // for hidump
     void AudioDevicesDump(std::string &dumpString);
     void AudioModeDump(std::string &dumpString);
@@ -518,8 +518,6 @@ private:
     void UnRegisterPowerStateListener();
     void RegisterSyncHibernateListener();
     void UnRegisterSyncHibernateListener();
-    void RegisterCommonEventReceiver();
-    void UnregisterCommonEventReceiver();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
     void InitPolicyDumpMap();
@@ -547,15 +545,13 @@ private:
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
 
-    SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
-        this, std::placeholders::_1, std::placeholders::_2),
-        std::bind(&AudioPolicyServer::ProcessSessionAdded,
-            this, std::placeholders::_1),
-        std::bind(&AudioPolicyServer::ProcessorCloseWakeupSource, this, std::placeholders::_1)};
+    SessionProcessor sessionProcessor_{
+        [this] (const uint64_t sessionID, const int32_t zoneID) { this->ProcessSessionRemoved(sessionID, zoneID); },
+        [this] (SessionEvent sessionEvent) { this->ProcessSessionAdded(sessionEvent); },
+        [this] (const uint64_t sessionID) {this->ProcessorCloseWakeupSource(sessionID); }};
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
-    std::shared_ptr<BluetoothEventSubscriber> bluetoothEventSubscriberOb_ = nullptr;
     bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
 
@@ -594,19 +590,6 @@ public:
     }
 private:
     AudioPolicyServer *audioPolicyServer_;
-};
-
-class BluetoothEventSubscriber : public EventFwk::CommonEventSubscriber,
-                                 public std::enable_shared_from_this<BluetoothEventSubscriber> {
-public:
-    explicit BluetoothEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
-        sptr<AudioPolicyServer> audioPolicyServer) : EventFwk::CommonEventSubscriber(subscribeInfo),
-        audioPolicyServer_(audioPolicyServer) {}
-    ~BluetoothEventSubscriber() {}
-    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
-private:
-    BluetoothEventSubscriber() = default;
-    sptr<AudioPolicyServer> audioPolicyServer_;
 };
 
 class AudioCommonEventSubscriber : public EventFwk::CommonEventSubscriber {

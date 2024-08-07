@@ -31,6 +31,7 @@ constexpr int32_t MAX_ERROR_COUNT = 50;
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
 constexpr int16_t HDI_STEREO_CHANNEL_LAYOUT = 3;
 constexpr int16_t HDI_MONO_CHANNEL_LAYOUT = 4;
+constexpr int32_t DIRECT_STOP_TIMEOUT_IN_SEC = 8; // 8S
 const std::string THREAD_NAME = "noneMixThread";
 const std::string VOIP_SINK_NAME = "voip";
 const std::string DIRECT_SINK_NAME = "direct";
@@ -135,9 +136,7 @@ int32_t NoneMixEngine::Stop()
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }
-    if (renderSink_ && renderSink_->IsInited()) {
-        ret = renderSink_->Stop();
-    }
+    ret = SinkStopTimeOut();
     isStart_ = false;
     return ret;
 }
@@ -148,13 +147,25 @@ void NoneMixEngine::PauseAsync()
     if (playbackThread_ && playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->PauseAsync();
     }
-    if (renderSink_ && renderSink_->IsInited()) {
-        int32_t ret = renderSink_->Stop();
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("stop failed.ret:%{public}d", ret);
-        }
+    int32_t ret = SinkStopTimeOut();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("sink stop failed.ret:%{public}d", ret);
     }
     isStart_ = false;
+}
+
+int32_t NoneMixEngine::SinkStopTimeOut()
+{
+    int32_t ret = SUCCESS;
+    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file,flag 2 die when timeout, restart server
+    AudioXCollie audioXCollie(
+        "NoneMixEngine::Stop", DIRECT_STOP_TIMEOUT_IN_SEC,
+        [this](void *) { AUDIO_ERR_LOG("%{public}d renderSink_ stop timeout, trigger signal", isVoip_); }, nullptr,
+        XcollieFlag);
+    if (renderSink_ && renderSink_->IsInited()) {
+        ret = renderSink_->Stop();
+    }
+    return ret;
 }
 
 int32_t NoneMixEngine::Pause()
@@ -172,9 +183,7 @@ int32_t NoneMixEngine::Pause()
             fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Pause();
     }
-    if (renderSink_ && renderSink_->IsInited()) {
-        ret = renderSink_->Stop();
-    }
+    ret = SinkStopTimeOut();
     isStart_ = false;
     return ret;
 }
@@ -185,22 +194,36 @@ int32_t NoneMixEngine::Flush()
     return SUCCESS;
 }
 
-void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize)
+template <typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
+static void DoFadeInOut(T *dest, size_t count, bool isFadeOut, uint32_t channel)
 {
-    CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0 && uChannel_ > 0, "buffer is null.");
-    int32_t *dstPtr = reinterpret_cast<int32_t *>(pBuffer);
-    size_t dataLength = bufferSize / (static_cast<uint32_t>(uFormat_) * uChannel_);
-    float fadeStep = 1.0f / dataLength;
-    for (size_t i = 0; i < dataLength; i++) {
+    if (count <= 0) {
+        return;
+    }
+    float fadeStep = 1.0f / count;
+    for (size_t i = 0; i < count; i++) {
         float fadeFactor;
         if (isFadeOut) {
             fadeFactor = 1.0f - ((i + 1) * fadeStep);
         } else {
             fadeFactor = (i + 1) * fadeStep;
         }
-        for (uint32_t j = 0; j < uChannel_; j++) {
-            dstPtr[i * uChannel_ + j] *= fadeFactor;
+        for (uint32_t j = 0; j < channel; j++) {
+            dest[i * channel + j] *= fadeFactor;
         }
+    }
+}
+
+void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize)
+{
+    CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0 && uChannel_ > 0, "buffer is null.");
+    size_t dataLength = bufferSize / (static_cast<uint32_t>(uFormat_) * uChannel_);
+    if (uFormat_ == sizeof(int16_t)) {
+        AUDIO_INFO_LOG("int16 fading frame length:%{public}zu", dataLength);
+        DoFadeInOut(reinterpret_cast<int16_t *>(pBuffer), dataLength, isFadeOut, uChannel_);
+    } else if (uFormat_ == sizeof(int32_t)) {
+        AUDIO_INFO_LOG("int32 fading frame length:%{public}zu", dataLength);
+        DoFadeInOut(reinterpret_cast<int32_t *>(pBuffer), dataLength, isFadeOut, uChannel_);
     }
     if (isFadeOut) {
         startFadeout_.store(false);
