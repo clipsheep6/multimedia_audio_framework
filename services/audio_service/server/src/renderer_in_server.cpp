@@ -32,6 +32,7 @@
 #include "volume_tools.h"
 #include "policy_handler.h"
 #include "media_monitor_manager.h"
+#include "hisysevent.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -191,6 +192,9 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 standByEnable_ = false;
                 AUDIO_INFO_LOG("%{public}u recv stand by started", streamIndex_);
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
+                HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_STANDBY",
+                    HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+                    "STREAMID", static_cast<int32_t>(streamIndex_), "STANDBY", 0);
                 return;
             }
             status_ = I_STATUS_STARTED;
@@ -201,6 +205,9 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             if (standByEnable_) {
                 AUDIO_INFO_LOG("%{public}s recv stand by paused", traceTag_.c_str());
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_STAND_BY);
+                HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_STANDBY",
+                    HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+                    "STREAMID", static_cast<int32_t>(streamIndex_), "STANDBY", 1);
                 return;
             }
             status_ = I_STATUS_PAUSED;
@@ -213,16 +220,6 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
             stateListener->OnOperationHandled(FLUSH_STREAM, 0);
-            break;
-        case OPERATION_DRAINED:
-            // Client's StopAudioStream will call Drain first and then Stop. If server's drain times out,
-            // Stop will be completed first. After a period of time, when Drain's callback goes here,
-            // state of server should not be changed to STARTED while the client state is Stopped.
-            if (status_ == I_STATUS_DRAINING) {
-                status_ = I_STATUS_STARTED;
-                stateListener->OnOperationHandled(DRAIN_STREAM, 0);
-            }
-            afterDrain = true;
             break;
         default:
             OnStatusUpdateSub(operation);
@@ -260,6 +257,16 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             offloadEnable_ = operation == OPERATION_SET_OFFLOAD_ENABLE ? true : false;
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
+            break;
+        case OPERATION_DRAINED:
+            // Client's StopAudioStream will call Drain first and then Stop. If server's drain times out,
+            // Stop will be completed first. After a period of time, when Drain's callback goes here,
+            // state of server should not be changed to STARTED while the client state is Stopped.
+            if (status_ == I_STATUS_DRAINING) {
+                status_ = I_STATUS_STARTED;
+                stateListener->OnOperationHandled(DRAIN_STREAM, 0);
+            }
+            afterDrain = true;
             break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
