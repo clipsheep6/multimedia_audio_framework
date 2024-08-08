@@ -1152,6 +1152,7 @@ private:
 
     bool ringerModeMute_ = true;
     std::atomic<bool> isPolicyConfigParsered_ = false;
+    std::atomic<bool> isAdapterInfoMap_ = false;
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
 };
 

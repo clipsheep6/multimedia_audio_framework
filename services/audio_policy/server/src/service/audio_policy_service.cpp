@@ -1743,34 +1743,36 @@ bool AudioPolicyService::FillWakeupStreamPropInfo(const AudioStreamInfo &streamI
 bool AudioPolicyService::ConstructWakeupAudioModuleInfo(const AudioStreamInfo &streamInfo,
     AudioModuleInfo &audioModuleInfo)
 {
-    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[std::string(PRIMARY_WAKEUP)]));
-    if (it == adapterInfoMap_.end()) {
-        AUDIO_ERR_LOG("can not find adapter info");
-        return false;
+    if (isAdapterInfoMap_.load()) {
+        auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[std::string(PRIMARY_WAKEUP)]));
+        if (it == adapterInfoMap_.end()) {
+            AUDIO_ERR_LOG("can not find adapter info");
+            return false;
+        }
+
+        auto pipeInfo = it->second.GetPipeByName(PIPE_WAKEUP_INPUT);
+        if (pipeInfo == nullptr) {
+            AUDIO_ERR_LOG("wakeup pipe info is nullptr");
+            return false;
+        }
+
+        if (!FillWakeupStreamPropInfo(streamInfo, pipeInfo, audioModuleInfo)) {
+            AUDIO_ERR_LOG("failed to fill pipe stream prop info");
+            return false;
+        }
+
+        audioModuleInfo.adapterName = it->second.adapterName_;
+        audioModuleInfo.name = pipeInfo->moduleName_;
+        audioModuleInfo.lib = pipeInfo->lib_;
+        audioModuleInfo.networkId = "LocalDevice";
+        audioModuleInfo.className = "primary";
+        audioModuleInfo.fileName = "";
+        audioModuleInfo.OpenMicSpeaker = "1";
+        audioModuleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_WAKEUP);
+
+        AUDIO_INFO_LOG("wakeup auido module info, adapter name:%{public}s, name:%{public}s, lib:%{public}s",
+            audioModuleInfo.adapterName.c_str(), audioModuleInfo.name.c_str(), audioModuleInfo.lib.c_str());
     }
-
-    auto pipeInfo = it->second.GetPipeByName(PIPE_WAKEUP_INPUT);
-    if (pipeInfo == nullptr) {
-        AUDIO_ERR_LOG("wakeup pipe info is nullptr");
-        return false;
-    }
-
-    if (!FillWakeupStreamPropInfo(streamInfo, pipeInfo, audioModuleInfo)) {
-        AUDIO_ERR_LOG("failed to fill pipe stream prop info");
-        return false;
-    }
-
-    audioModuleInfo.adapterName = it->second.adapterName_;
-    audioModuleInfo.name = pipeInfo->moduleName_;
-    audioModuleInfo.lib = pipeInfo->lib_;
-    audioModuleInfo.networkId = "LocalDevice";
-    audioModuleInfo.className = "primary";
-    audioModuleInfo.fileName = "";
-    audioModuleInfo.OpenMicSpeaker = "1";
-    audioModuleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_WAKEUP);
-
-    AUDIO_INFO_LOG("wakeup auido module info, adapter name:%{public}s, name:%{public}s, lib:%{public}s",
-        audioModuleInfo.adapterName.c_str(), audioModuleInfo.name.c_str(), audioModuleInfo.lib.c_str());
     return true;
 }
 
@@ -4682,6 +4684,7 @@ void AudioPolicyService::OnAudioPolicyXmlParsingCompleted(
         }
     }
 
+    isAdapterInfoMap_.store(true);
     audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
 }
 
@@ -5807,31 +5810,33 @@ int32_t AudioPolicyService::GetPreferredOutputStreamTypeInner(StreamUsage stream
             return flag;
         }
     }
-    if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName])) == adapterInfoMap_.end()) {
-        return AUDIO_FLAG_NORMAL;
-    }
-    AudioAdapterInfo adapterInfo;
-    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName]));
-    if (it != adapterInfoMap_.end()) {
-        adapterInfo = it->second;
-    } else {
-        AUDIO_ERR_LOG("Invalid adapter");
-        return AUDIO_FLAG_NORMAL;
-    }
+    if (isAdapterInfoMap_.load()) {
+        if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName])) == adapterInfoMap_.end()) {
+            return AUDIO_FLAG_NORMAL;
+        }
+        AudioAdapterInfo adapterInfo;
+        auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName]));
+        if (it != adapterInfoMap_.end()) {
+            adapterInfo = it->second;
+        } else {
+            AUDIO_ERR_LOG("Invalid adapter");
+            return AUDIO_FLAG_NORMAL;
+        }
 
-    AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_NORMAL, "Device type is not supported");
-    for (auto &supportPipe : deviceInfo->supportPipes_) {
-        PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
-        if (pipeInfo == nullptr) {
-            continue;
-        }
-        if (flags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
-            return AUDIO_FLAG_MMAP;
-        }
-        if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
-            pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
-            return AUDIO_FLAG_VOIP_FAST;
+        AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
+        CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_NORMAL, "Device type is not supported");
+        for (auto &supportPipe : deviceInfo->supportPipes_) {
+            PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
+            if (pipeInfo == nullptr) {
+                continue;
+            }
+            if (flags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+                return AUDIO_FLAG_MMAP;
+            }
+            if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
+                pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+                return AUDIO_FLAG_VOIP_FAST;
+            }
         }
     }
     return AUDIO_FLAG_NORMAL;
@@ -5861,30 +5866,32 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
         }
         return AUDIO_FLAG_NORMAL;
     }
-    if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName])) == adapterInfoMap_.end()) {
-        return AUDIO_FLAG_NORMAL;
-    }
-    AudioAdapterInfo adapterInfo;
-    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName]));
-    if (it != adapterInfoMap_.end()) {
-        adapterInfo = it->second;
-    } else {
-        AUDIO_ERR_LOG("Invalid adapter");
-        return AUDIO_FLAG_NORMAL;
-    }
-    AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_NORMAL, "Device type is not supported");
-    for (auto &supportPipe : deviceInfo->supportPipes_) {
-        PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
-        if (pipeInfo == nullptr) {
-            continue;
+    if (isAdapterInfoMap_.load()) {
+        if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName])) == adapterInfoMap_.end()) {
+            return AUDIO_FLAG_NORMAL;
         }
-        if (flags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
-            return AUDIO_FLAG_MMAP;
+        AudioAdapterInfo adapterInfo;
+        auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName]));
+        if (it != adapterInfoMap_.end()) {
+            adapterInfo = it->second;
+        } else {
+            AUDIO_ERR_LOG("Invalid adapter");
+            return AUDIO_FLAG_NORMAL;
         }
-        if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
-            pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
-            return AUDIO_FLAG_VOIP_FAST;
+        AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
+        CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_NORMAL, "Device type is not supported");
+        for (auto &supportPipe : deviceInfo->supportPipes_) {
+            PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
+            if (pipeInfo == nullptr) {
+                continue;
+            }
+            if (flags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+                return AUDIO_FLAG_MMAP;
+            }
+            if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
+                pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+                return AUDIO_FLAG_VOIP_FAST;
+            }
         }
     }
     return AUDIO_FLAG_NORMAL;
@@ -6772,36 +6779,38 @@ void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
 int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, StreamPropInfo &targetInfo,
     SourceType &targetSourceType)
 {
-    const PipeInfo *pipeInfoPtr = nullptr;
-    if (adapterInfoMap_.count(AdaptersType::TYPE_PRIMARY) > 0) {
-        pipeInfoPtr = adapterInfoMap_.at(AdaptersType::TYPE_PRIMARY).GetPipeByName(PIPE_PRIMARY_INPUT);
-    }
-    CHECK_AND_RETURN_RET_LOG(pipeInfoPtr != nullptr, ERROR, "pipeInfoPtr is null");
-
-    const auto &streamPropInfoList = pipeInfoPtr->streamPropInfos_;
-
-    if (streamPropInfoList.empty()) {
-        AUDIO_ERR_LOG("supportedRate or supportedChannels is empty");
-        return ERROR;
-    }
-    StreamPropInfo targetStreamPropInfo = *streamPropInfoList.begin();
-    if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION
-        || sessionInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
-        targetSourceType = sessionInfo.sourceType;
-        for (const auto &streamPropInfo : streamPropInfoList) {
-            if (sessionInfo.channels == streamPropInfo.channelLayout_
-                && sessionInfo.rate == streamPropInfo.sampleRate_) {
-                targetStreamPropInfo = streamPropInfo;
-                break;
-            }
+    if (isAdapterInfoMap_.load()) {
+        const PipeInfo *pipeInfoPtr = nullptr;
+        if (adapterInfoMap_.count(AdaptersType::TYPE_PRIMARY) > 0) {
+            pipeInfoPtr = adapterInfoMap_.at(AdaptersType::TYPE_PRIMARY).GetPipeByName(PIPE_PRIMARY_INPUT);
         }
-    } else if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_CALL) {
-        targetSourceType = SOURCE_TYPE_VOICE_CALL;
-    } else {
-        // For normal sourcetype, continue to use the default value
-        targetSourceType = SOURCE_TYPE_MIC;
+        CHECK_AND_RETURN_RET_LOG(pipeInfoPtr != nullptr, ERROR, "pipeInfoPtr is null");
+
+        const auto &streamPropInfoList = pipeInfoPtr->streamPropInfos_;
+
+        if (streamPropInfoList.empty()) {
+            AUDIO_ERR_LOG("supportedRate or supportedChannels is empty");
+            return ERROR;
+        }
+        StreamPropInfo targetStreamPropInfo = *streamPropInfoList.begin();
+        if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION
+            || sessionInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+            targetSourceType = sessionInfo.sourceType;
+            for (const auto &streamPropInfo : streamPropInfoList) {
+                if (sessionInfo.channels == streamPropInfo.channelLayout_
+                    && sessionInfo.rate == streamPropInfo.sampleRate_) {
+                    targetStreamPropInfo = streamPropInfo;
+                    break;
+                }
+            }
+        } else if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_CALL) {
+            targetSourceType = SOURCE_TYPE_VOICE_CALL;
+        } else {
+            // For normal sourcetype, continue to use the default value
+            targetSourceType = SOURCE_TYPE_MIC;
+        }
+        targetInfo = targetStreamPropInfo;
     }
-    targetInfo = targetStreamPropInfo;
     return SUCCESS;
 }
 
@@ -7788,52 +7797,54 @@ void AudioPolicyService::GetMicrophoneDescriptorsDump(std::string &dumpString)
 
 void AudioPolicyService::AudioPolicyParserDump(std::string &dumpString)
 {
-    dumpString += "\nAudioPolicyParser:\n";
-    GetAudioAdapterInfos(adapterInfoMap_);
-    GetVolumeGroupData(volumeGroupData_);
-    GetInterruptGroupData(interruptGroupData_);
-    GetGlobalConfigs(globalConfigs_);
-    for (auto &[adapterType, adapterInfo] : adapterInfoMap_) {
-        AppendFormat(dumpString, " - adapter : %s -- adapterType:%u\n", adapterInfo.adapterName_.c_str(), adapterType);
-        for (auto &deviceInfo : adapterInfo.deviceInfos_) {
-            AppendFormat(dumpString, "     - device --  name:%s, pin:%s, type:%s, role:%s\n", deviceInfo.name_.c_str(),
-                deviceInfo.pin_.c_str(), deviceInfo.type_.c_str(), deviceInfo.role_.c_str());
-        }
-        for (auto &pipeInfo : adapterInfo.pipeInfos_) {
-            AppendFormat(dumpString, "     - module : -- name:%s, pipeRole:%s, pipeFlags:%s, lib:%s, paPropRole:%s, "
-                "fixedLatency:%s, renderInIdleState:%s\n", pipeInfo.name_.c_str(),
-                pipeInfo.pipeRole_.c_str(), pipeInfo.pipeFlags_.c_str(), pipeInfo.lib_.c_str(),
-                pipeInfo.paPropRole_.c_str(), pipeInfo.fixedLatency_.c_str(), pipeInfo.renderInIdleState_.c_str());
+    if (isAdapterInfoMap_.load()) {
+        dumpString += "\nAudioPolicyParser:\n";
+        GetAudioAdapterInfos(adapterInfoMap_);
+        GetVolumeGroupData(volumeGroupData_);
+        GetInterruptGroupData(interruptGroupData_);
+        GetGlobalConfigs(globalConfigs_);
+        for (auto &[adapterType, adapterInfo] : adapterInfoMap_) {
+            AppendFormat(dumpString, " - adapter : %s -- adapterType:%u\n", adapterInfo.adapterName_.c_str(), adapterType);
+            for (auto &deviceInfo : adapterInfo.deviceInfos_) {
+                AppendFormat(dumpString, "     - device --  name:%s, pin:%s, type:%s, role:%s\n", deviceInfo.name_.c_str(),
+                    deviceInfo.pin_.c_str(), deviceInfo.type_.c_str(), deviceInfo.role_.c_str());
+            }
+            for (auto &pipeInfo : adapterInfo.pipeInfos_) {
+                AppendFormat(dumpString, "     - module : -- name:%s, pipeRole:%s, pipeFlags:%s, lib:%s, paPropRole:%s, "
+                    "fixedLatency:%s, renderInIdleState:%s\n", pipeInfo.name_.c_str(),
+                    pipeInfo.pipeRole_.c_str(), pipeInfo.pipeFlags_.c_str(), pipeInfo.lib_.c_str(),
+                    pipeInfo.paPropRole_.c_str(), pipeInfo.fixedLatency_.c_str(), pipeInfo.renderInIdleState_.c_str());
 
-            for (auto &configInfo : pipeInfo.configInfos_) {
-                AppendFormat(dumpString, "         - config : -- name:%s, value:%s\n", configInfo.name_.c_str(),
-                    configInfo.value_.c_str());
+                for (auto &configInfo : pipeInfo.configInfos_) {
+                    AppendFormat(dumpString, "         - config : -- name:%s, value:%s\n", configInfo.name_.c_str(),
+                        configInfo.value_.c_str());
+                }
             }
         }
+        for (auto& volume : volumeGroupData_) {
+            AppendFormat(dumpString, " - volumeGroupMap_ first:%s, second:%s\n\n", volume.first.c_str(),
+                volume.second.c_str());
+        }
+        for (auto& interrupt : interruptGroupData_) {
+            AppendFormat(dumpString, " - interruptGroupMap_ first:%s, second:%s\n", interrupt.first.c_str(),
+                interrupt.second.c_str());
+        }
+        AppendFormat(dumpString, " - globalConfig  adapter:%s, pipe:%s, device:%s, updateRouteSupport:%d, "
+            "audioLatency:%s, sinkLatency:%s\n", globalConfigs_.adapter_.c_str(),
+            globalConfigs_.pipe_.c_str(), globalConfigs_.device_.c_str(),
+            globalConfigs_.updateRouteSupport_,
+            globalConfigs_.globalPaConfigs_.audioLatency_.c_str(),
+            globalConfigs_.globalPaConfigs_.sinkLatency_.c_str());
+        for (auto &outputConfig : globalConfigs_.outputConfigInfos_) {
+            AppendFormat(dumpString, " - output config name:%s, type:%s, value:%s\n", outputConfig.name_.c_str(),
+                outputConfig.type_.c_str(), outputConfig.value_.c_str());
+        }
+        for (auto &inputConfig : globalConfigs_.inputConfigInfos_) {
+            AppendFormat(dumpString, " - input config name:%s, type_%s, value:%s\n\n", inputConfig.name_.c_str(),
+                inputConfig.type_.c_str(), inputConfig.value_.c_str());
+        }
+        AppendFormat(dumpString, " - module curActiveCount:%d\n\n", GetCurActivateCount());
     }
-    for (auto& volume : volumeGroupData_) {
-        AppendFormat(dumpString, " - volumeGroupMap_ first:%s, second:%s\n\n", volume.first.c_str(),
-            volume.second.c_str());
-    }
-    for (auto& interrupt : interruptGroupData_) {
-        AppendFormat(dumpString, " - interruptGroupMap_ first:%s, second:%s\n", interrupt.first.c_str(),
-            interrupt.second.c_str());
-    }
-    AppendFormat(dumpString, " - globalConfig  adapter:%s, pipe:%s, device:%s, updateRouteSupport:%d, "
-        "audioLatency:%s, sinkLatency:%s\n", globalConfigs_.adapter_.c_str(),
-        globalConfigs_.pipe_.c_str(), globalConfigs_.device_.c_str(),
-        globalConfigs_.updateRouteSupport_,
-        globalConfigs_.globalPaConfigs_.audioLatency_.c_str(),
-        globalConfigs_.globalPaConfigs_.sinkLatency_.c_str());
-    for (auto &outputConfig : globalConfigs_.outputConfigInfos_) {
-        AppendFormat(dumpString, " - output config name:%s, type:%s, value:%s\n", outputConfig.name_.c_str(),
-            outputConfig.type_.c_str(), outputConfig.value_.c_str());
-    }
-    for (auto &inputConfig : globalConfigs_.inputConfigInfos_) {
-        AppendFormat(dumpString, " - input config name:%s, type_%s, value:%s\n\n", inputConfig.name_.c_str(),
-            inputConfig.type_.c_str(), inputConfig.value_.c_str());
-    }
-    AppendFormat(dumpString, " - module curActiveCount:%d\n\n", GetCurActivateCount());
 }
 
 void AudioPolicyService::XmlParsedDataMapDump(std::string &dumpString)
@@ -7898,7 +7909,9 @@ void AudioPolicyService::EffectManagerInfoDump(string &dumpString)
 {
     int32_t count = 0;
     GetEffectManagerInfo();
-    GetAudioAdapterInfos(adapterInfoMap_);
+    if (isAdapterInfoMap_.load()) {
+        GetAudioAdapterInfos(adapterInfoMap_);
+    }
 
     dumpString += "==== Audio Effect Manager INFO ====\n";
 
