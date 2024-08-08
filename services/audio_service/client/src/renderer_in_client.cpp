@@ -1143,8 +1143,12 @@ int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 int32_t RendererInClientInner::UnsetOffloadMode()
 {
     rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+
+    std::unique_lock<std::mutex> ipcStreamLock(ipcStreamMutex_);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
-    return ipcStream_->UnsetOffloadMode();
+    int32_t ret=ipcStream_->UnsetOffloadMode();
+    ipcStreamMutex_.unlock;
+    return ret;
 }
 
 float RendererInClientInner::GetSingleStreamVolume()
