@@ -53,7 +53,7 @@ public:
     DeviceStreamInfo audioStreamInfo_ = {};
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
     int64_t connectTimeStamp_ = 0;
-    std::shared_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
+    std::weak_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
     ConnectState connectState_ = CONNECTED;
     bool isScoRealConnected_ = false;
     bool isEnable_ = true;
