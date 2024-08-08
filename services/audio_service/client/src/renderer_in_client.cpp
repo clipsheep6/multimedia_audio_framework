@@ -1380,11 +1380,14 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     statusLock.unlock();
 
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
+
+    std::unique_lock<std::mutex> ipcStreamLock(ipcStreamMutex_);
     if (ipcStream_ != nullptr) {
         ipcStream_->Release();
     } else {
         AUDIO_WARNING_LOG("release while ipcStream is null");
     }
+    ipcStreamLock.unlock();
 
     // no lock, call release in any case, include blocked case.
     std::unique_lock<std::mutex> runnerlock(runnerMutex_);
