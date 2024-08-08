@@ -37,7 +37,10 @@ ohos_shared_library("playback_capturer") {
   }
   install_enable = true
 
-  configs = [ ":playback_capturer_config" ]
+  configs = [ 
+    ":playback_capturer_config",
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   sources = [ "src/playback_capturer_manager.cpp" ]
 

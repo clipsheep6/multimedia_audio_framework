@@ -29,7 +29,8 @@
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_opensl_es",
           "audio_framework_feature_support_os_account",
-          "audio_framework_feature_hitrace_enable"
+          "audio_framework_feature_hitrace_enable",
+          "audio_framework_feature_coverage"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",

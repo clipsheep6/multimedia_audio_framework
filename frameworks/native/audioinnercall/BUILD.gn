@@ -33,6 +33,10 @@ ohos_shared_library("audio_inner_call") {
   cflags_cc = cflags
   cflags_cc += [ "-std=c++23" ]
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   sources = [ "./src/audio_inner_call.cpp" ]
 
   subsystem_name = "multimedia"
