@@ -21,6 +21,11 @@ ohos_shared_library("audio_bluetooth_client") {
     cfi_vcall_icall_only = true
     debug = false
   }
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   install_enable = true
   sources = [
     "audio_bluetooth_manager.cpp",

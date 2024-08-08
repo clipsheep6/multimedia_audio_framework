@@ -48,7 +48,10 @@ ohos_shared_library("ohaudio") {
     "../../native/audiopolicy/include/",
   ]
 
-  configs = [ ":audio_config" ]
+  configs = [ 
+    ":audio_config",
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   sources = [
     "./OHAudioCapturer.cpp",

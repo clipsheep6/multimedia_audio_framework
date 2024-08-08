@@ -27,6 +27,10 @@ ohos_shared_library("audio_capturer_source") {
   cflags += [ "-Wall" ]
   cflags_cc = cflags
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   include_dirs = [
     "common",
     "../common/include",
@@ -69,6 +73,10 @@ ohos_shared_library("fast_audio_capturer_source") {
   cflags += [ "-Wall" ]
   cflags_cc = cflags
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   include_dirs = [
     "../common/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
@@ -107,6 +115,10 @@ ohos_shared_library("remote_audio_capturer_source") {
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   include_dirs = [
     "common",
@@ -148,6 +160,10 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   include_dirs = [
     "common",
@@ -193,6 +209,10 @@ ohos_shared_library("audio_capturer_file_source") {
 
   cflags_cc = cflags
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   include_dirs = [
     "common",
     "../common/include",
@@ -224,6 +244,10 @@ ohos_shared_library("capturer_source_adapter") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   include_dirs = [
     "common",
