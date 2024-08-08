@@ -290,7 +290,6 @@ napi_value NapiAudioRenderer::CreateAudioRenderer(napi_env env, napi_callback_in
 
     auto complete = [env, context](napi_value &output) {
         output = CreateAudioRendererWrapper(env, context->rendererOptions);
-        
 
         // IsConstructSuccess_ Used when creating a renderer fails.
         std::lock_guard<std::mutex> lock(NapiAudioRenderer::createMutex_);
