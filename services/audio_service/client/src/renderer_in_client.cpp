@@ -1146,7 +1146,7 @@ int32_t RendererInClientInner::UnsetOffloadMode()
 
     std::unique_lock<std::mutex> ipcStreamLock(ipcStreamMutex_);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
-    int32_t ret=ipcStream_->UnsetOffloadMode();
+    int32_t ret = ipcStream_->UnsetOffloadMode();
     ipcStreamMutex_.unlock;
     return ret;
 }
@@ -1403,8 +1403,8 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     }
     runnerlock.unlock();
 
-    // clear write callback
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
+    
+    if (renderMode_ == RENDER_MODE_CALLBACK) { // clear write callback
         cbThreadReleased_ = true; // stop loop
         if (cbBufferQueue_.IsEmpty()) {
             std::lock_guard<std::mutex> lockWriteCb(writeCbMutex_);
