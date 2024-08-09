@@ -2310,7 +2310,9 @@ bool RendererInClientInner::RestoreAudioStream()
 
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
     if (ret != SUCCESS) {
-        goto error;
+        AUDIO_ERR_LOG("RestoreAudioStream failed");
+        state_ = oldState;
+        return false;
     }
 
     std::unique_lock<std::mutex> pipeTypeLock(g_pipeTypeMutex);
@@ -2334,14 +2336,14 @@ bool RendererInClientInner::RestoreAudioStream()
             break;
     }
     if (!result) {
-        goto error;
+        AUDIO_ERR_LOG("RestoreAudioStream failed");
+        state_ = oldState;
+        return false;
     }
     return result;
 
-error:
-    AUDIO_ERR_LOG("RestoreAudioStream failed");
-    state_ = oldState;
-    return false;
+
+
 }
 
 void RendererInClientInner::ResetRingerModeMute()
