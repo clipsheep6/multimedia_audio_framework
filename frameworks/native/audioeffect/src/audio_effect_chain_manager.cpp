@@ -98,10 +98,6 @@ AudioEffectChainManager::AudioEffectChainManager()
     headTracker_ = std::make_shared<HeadTracker>();
 #endif
 
-#ifdef WINDOW_MANAGER_ENABLE
-    audioRotationListener_ = new AudioRotationListener();
-#endif
-
     audioEffectHdiParam_ = std::make_shared<AudioEffectHdiParam>();
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     GetSysPara("const.build.product", deviceClass_);
@@ -1297,25 +1293,6 @@ void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string
         }
     }
 }
-
-#ifdef WINDOW_MANAGER_ENABLE
-void AudioEffectChainManager::AudioRotationListener::OnCreate(Rosen::DisplayId displayId)
-{
-    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d.", static_cast<int32_t>(displayId));
-}
-
-void AudioEffectChainManager::AudioRotationListener::OnDestroy(Rosen::DisplayId displayId)
-{
-    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d.", static_cast<int32_t>(displayId));
-}
-
-void AudioEffectChainManager::AudioRotationListener::OnChange(Rosen::DisplayId displayId)
-{
-    int32_t newRotationState = 0;
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->EffectRotationUpdate(static_cast<uint32_t>(newRotationState));
-}
-#endif
 
 void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationState spatializationState)
 {
