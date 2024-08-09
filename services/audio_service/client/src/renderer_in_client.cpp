@@ -317,7 +317,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
                 PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
             pipeTypeLock.unlock();
-
         }
     }
 
@@ -592,7 +591,7 @@ void RendererInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
 {
     std::unique_lock<std::mutex> pipeTypeLock(g_pipeTypeMutex);
     pipeType = rendererInfo_.pipeType;
-    pipeTypeLock.unlock;
+    pipeTypeLock.unlock();
 }
 
 State RendererInClientInner::GetState()
