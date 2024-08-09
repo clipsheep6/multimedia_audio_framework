@@ -2341,9 +2341,6 @@ bool RendererInClientInner::RestoreAudioStream()
         return false;
     }
     return result;
-
-
-
 }
 
 void RendererInClientInner::ResetRingerModeMute()
