@@ -312,10 +312,9 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
         int32_t type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
-            std::unique_lock<std::mutex> pipeTypeLock(g_pipeTypeMutex);
+            std::lock_guard<std::mutex> pipeTypeLock(g_pipeTypeMutex);
             rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
                 PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
-            pipeTypeLock.unlock();
         }
     }
     proxyObj_ = proxyObj;
