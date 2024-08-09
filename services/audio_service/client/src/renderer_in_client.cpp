@@ -169,7 +169,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
                 break;
             default :
                 break;
-        } 
+        }
     } else {
         AUDIO_ERR_LOG("operation %{public}d failed, result: %{public}" PRId64 "", operation, result);
     }
