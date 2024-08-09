@@ -156,7 +156,9 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     notifiedResult_ = result;
 
     if (notifiedResult_ == SUCCESS) {
+        
         std::unique_lock<std::mutex> statusLock(statusMutex_);
+
         switch (operation) {
             case START_STREAM :
                 state_ = RUNNING;
@@ -170,7 +172,8 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
             default :
                 break;
         }
-    statusLock.unlock();
+
+        statusLock.unlock();
 
     } else {
         AUDIO_ERR_LOG("operation %{public}d failed, result: %{public}" PRId64 "", operation, result);
