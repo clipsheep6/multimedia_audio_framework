@@ -127,7 +127,7 @@ int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::str
     }
 
     if (deviceSink_ == sinkName) {
-        AUDIO_INFO_LOG("Same DeviceSinkName");
+        AUDIO_PRERELEASE_LOGI("Same DeviceSinkName");
     }
     deviceSink_ = sinkName;
 
@@ -136,7 +136,7 @@ int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::str
         return ERROR;
     }
     // Delete effectChain in AP and store in backup map
-    AUDIO_INFO_LOG("delete all chains when device type change");
+    AUDIO_PRERELEASE_LOGI("delete all chains when device type change");
     DeleteAllChains();
     deviceType_ = (DeviceType)device;
 
@@ -400,7 +400,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
     audioEffectChain->ResetIoBufferConfig();
 
     if (audioEffectChain->IsEmptyEffectHandles()) {
-        AUDIO_ERR_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
+        AUDIO_PRERELEASE_LOGI("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
     }
 
     AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u", sceneType.c_str(),
@@ -870,7 +870,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
         }
         return ERROR;
     }
-    CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
+    CHECK_AND_RETURN_RET(sceneType != "", ERROR);
     hdiSceneType_ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     effectHdiInput_[0] = HDI_BYPASS;
@@ -891,7 +891,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
     }
     hdiEffectMode_ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
     effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO] = hdiEffectMode_;
-    AUDIO_INFO_LOG("set hdi room mode sceneType: %{public}d, effectMode: %{public}d", effectHdiInput_[1],
+    AUDIO_PRERELEASE_LOGI("set hdi room mode sceneType: %{public}d, effectMode: %{public}d", effectHdiInput_[1],
         effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO]);
     ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != SUCCESS) {
@@ -1015,7 +1015,7 @@ uint32_t AudioEffectChainManager::GetLatency(const std::string &sessionId)
         return 0;
     }
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    CHECK_AND_RETURN_RET_LOG(SessionIDToEffectInfoMap_.count(sessionId), 0, "no such sessionId in map");
+    CHECK_AND_RETURN_RET(SessionIDToEffectInfoMap_.count(sessionId), 0);
     if (SessionIDToEffectInfoMap_[sessionId].sceneMode == "" ||
         SessionIDToEffectInfoMap_[sessionId].sceneMode == "None") {
         AUDIO_DEBUG_LOG("seceneMode is None, return 0");
@@ -1026,8 +1026,8 @@ uint32_t AudioEffectChainManager::GetLatency(const std::string &sessionId)
         return 0;
     }
     std::string sceneTypeAndDeviceKey = SessionIDToEffectInfoMap_[sessionId].sceneType + "_&_" + GetDeviceTypeName();
-    CHECK_AND_RETURN_RET_LOG(SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) &&
-        SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, 0, "no such sceneTypeAndDeviceKey in map");
+    CHECK_AND_RETURN_RET(SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) &&
+        SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, 0);
     return SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->GetLatency();
 }
 

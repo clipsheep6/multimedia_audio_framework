@@ -113,7 +113,6 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
 int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput, DeviceType deviceType)
 {
     if (hdiModel_ == nullptr) {
-        AUDIO_WARNING_LOG("hdiModel_ is nullptr.");
         return ERROR;
     }
     IEffectControl *hdiControl = DeviceTypeToHdiControlMap_[deviceType];
