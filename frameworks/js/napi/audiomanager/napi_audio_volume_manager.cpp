@@ -245,7 +245,7 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManager(napi_env env, napi_call
 
     auto complete = [env, context](napi_value &output) {
         output = NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(env, context->groupId);
-        std::unique_lock<mutex> isConstructSucessLock(volumeGroupManagerMutex_);
+        std::unique_lock<std::mutex> isConstructSucessLock(volumeGroupManagerMutex_);
         NapiAudioVolumeGroupManager::isConstructSuccess_ = SUCCESS;
         isConstructSucessLock.unlock();
     };
