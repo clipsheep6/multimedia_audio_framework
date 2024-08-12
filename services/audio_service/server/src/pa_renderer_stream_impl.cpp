@@ -149,7 +149,7 @@ int32_t PaRendererStreamImpl::InitParams()
 
 int32_t PaRendererStreamImpl::Start()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Start");
+    AUDIO_INFO_LOG("Enter");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -169,7 +169,7 @@ int32_t PaRendererStreamImpl::Start()
 
 int32_t PaRendererStreamImpl::Pause()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Pause");
+    AUDIO_INFO_LOG("Enter");
     pa_threaded_mainloop_lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         pa_threaded_mainloop_unlock(mainloop_);
@@ -207,7 +207,7 @@ int32_t PaRendererStreamImpl::Pause()
 
 int32_t PaRendererStreamImpl::Flush()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Flush");
+    AUDIO_INFO_LOG("Enter");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -236,7 +236,7 @@ int32_t PaRendererStreamImpl::Flush()
 
 int32_t PaRendererStreamImpl::Drain()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Drain");
+    AUDIO_INFO_LOG("Enter");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -257,7 +257,7 @@ int32_t PaRendererStreamImpl::Drain()
 
 int32_t PaRendererStreamImpl::Stop()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Stop");
+    AUDIO_INFO_LOG("Enter");
     state_ = STOPPING;
     PaLockGuard lock(mainloop_);
 
@@ -274,6 +274,18 @@ int32_t PaRendererStreamImpl::Stop()
 
 int32_t PaRendererStreamImpl::Release()
 {
+    AUDIO_INFO_LOG("Enter");
+
+    if (state_ == RUNNING) {
+        PaLockGuard lock(mainloop_);
+        if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+            return ERR_ILLEGAL_STATE;
+        }
+        pa_operation *operation = pa_stream_cork(paStream_, 1, nullptr, nullptr);
+        CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
+        pa_operation_unref(operation);
+    }
+
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_RELEASED);
