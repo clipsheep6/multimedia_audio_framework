@@ -1866,5 +1866,38 @@ HWTEST(AudioUtilsUnitTest, testMutilthreadConcurrentGetAndPopInfullqueue001, Tes
         demoDatas[0].Get();
     }
 }
+
+/**
+* @tc.name  : Test NeedVerifyBackgroundCapture API
+* @tc.type  : FUNC
+* @tc.number: NeedVerifyBackgroundCapture_001
+* @tc.desc  : Test UpdateMaxAmplitude interface when SourceType is SOURCE_TYPE_INVALID,
+* SOURCE_TYPE_INVALID, SOURCE_TYPE_REMOTE_CAST.
+*/
+HWTEST(AudioUtilsUnitTest, NeedVerifyBackgroundCapture_001, TestSize.Level1)
+{
+    bool result1 = PermissionUtil::NeedVerifyBackgroundCapture(-1, SOURCE_TYPE_INVALID);
+    EXPECT_EQ(true, result1);
+
+    bool result2 = PermissionUtil::NeedVerifyBackgroundCapture(6699, SOURCE_TYPE_INVALID);
+    EXPECT_EQ(false, result2);
+    
+    bool result3 = PermissionUtil::NeedVerifyBackgroundCapture(6699, SOURCE_TYPE_REMOTE_CAST);
+    EXPECT_EQ(true, result3);
+}
+
+/**
+* @tc.name  : Test NotifyPrivacy API
+* @tc.type  : FUNC
+* @tc.number: NotifyPrivacy_001
+* @tc.desc  : Test UpdateMaxAmplitude interface when AudioPermissionState is AUDIO_PERMISSION_START, AUDIO_PERMISSION_STOP.
+*/
+HWTEST(AudioUtilsUnitTest, NotifyPrivacy_001, TestSize.Level1)
+{
+    bool result1 = PermissionUtil::NotifyPrivacy(-1, AUDIO_PERMISSION_START);
+    bool result2 = PermissionUtil::NotifyPrivacy(-1, AUDIO_PERMISSION_STOP);
+    EXPECT_EQ(false, result1);
+    EXPECT_EQ(false, result2);
+}
 } // namespace AudioStandard
 } // namespace OHOS
