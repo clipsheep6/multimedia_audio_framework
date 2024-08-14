@@ -2820,5 +2820,11 @@ bool AudioPolicyServer::IsAudioSessionActivated()
     AUDIO_INFO_LOG("callerPid %{public}d, isSessionActive: %{public}d.", callerPid, isActive);
     return isActive;
 }
+
+int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const std::string &netWorkId)
+{
+    return audioPolicyService_.LoadSplitModule(splitArgs, netWorkId);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
