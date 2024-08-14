@@ -63,15 +63,31 @@ void AudioA2dpManagerFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
+
+    AudioStreamInfo audioStreamInfo = {};
+    audioStreamInfo.samplingRate = *reinterpret_cast<const AudioSamplingRate *>(rawData);
+    audioStreamInfo.encoding = *reinterpret_cast<const AudioEncodingType *>(rawData);
+    audioStreamInfo.format = *reinterpret_cast<const AudioSampleFormat *>(rawData);
+    audioStreamInfo.channels = *reinterpret_cast<const AudioChannel *>(rawData);
+
     std::string macAddress(reinterpret_cast<const char*>(rawData), size);
     int32_t volume = *reinterpret_cast<const int32_t*>(rawData);
     std::vector<Bluetooth::A2dpStreamInfo> info;
     std::vector<int32_t> sessionsID = {};
 
+    Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
+    Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(macAddress);
+    Bluetooth::AudioA2dpManager::GetActiveA2dpDevice();
+    Bluetooth::AudioA2dpManager::GetA2dpDeviceStreamInfo(macAddress, audioStreamInfo);
+    Bluetooth::AudioA2dpManager::HasA2dpDeviceConnected();
+    Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();
+
     Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, volume);
     Bluetooth::AudioA2dpManager::OffloadStartPlaying(sessionsID);
     Bluetooth::AudioA2dpManager::OffloadStopPlaying(sessionsID);
     Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(info);
+    Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
+    Bluetooth::AudioA2dpManager::UnregisterBluetoothA2dpListener();
 }
 
 void AudioHfpManagerFuzzTest(const uint8_t *rawData, size_t size)
@@ -81,11 +97,17 @@ void AudioHfpManagerFuzzTest(const uint8_t *rawData, size_t size)
     }
     AudioScene scene = *reinterpret_cast<const AudioScene*>(rawData);
     std::string macAddress(reinterpret_cast<const char*>(rawData), size);
+    Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+    Bluetooth::AudioHfpManager::UnregisterBluetoothScoListener();
 
     Bluetooth::AudioHfpManager::SetActiveHfpDevice(macAddress);
+    Bluetooth::AudioHfpManager::GetActiveHfpDevice();
     Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(scene);
     Bluetooth::AudioHfpManager::GetScoCategoryFromScene(scene);
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene);
+    Bluetooth::AudioHfpManager::SetAudioSceneFromPolicy(scene);
+    Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
+    Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
 }
 
 void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t size)
