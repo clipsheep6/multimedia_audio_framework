@@ -158,6 +158,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "ACTIVATE_AUDIO_SESSION",
     "DEACTIVATE_AUDIO_SESSION",
     "IS_AUDIO_SESSION_ACTIVATED",
+    "LOAD_SPLIT_MODULE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1716,6 +1717,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_DEVICE_ACTIVE):
                 IsDeviceActiveInternal(data, reply);
                 break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
+                LoadSplitModuleInternal(data, reply);
+                break;
             default:
                 OnMiddlesRemoteRequest(code, data, reply, option);
                 break;
@@ -1891,5 +1895,14 @@ void AudioPolicyManagerStub::InjectInterruptionInternal(MessageParcel &data, Mes
     int32_t result = InjectInterruption(networkId, event);
     reply.WriteInt32(result);
 }
+
+void AudioPolicyManagerStub::LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string splitArgs = data.ReadString();
+    std::string netWorkId = data.ReadString();
+    int32_t result = LoadSplitModule(splitArgs, netWorkId);
+    reply.WriteInt32(result);
+}
+
 } // namespace audio_policy
 } // namespace OHOS
