@@ -439,7 +439,7 @@ public:
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
-
+    void OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId);
     void RegisterParamCallback();
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

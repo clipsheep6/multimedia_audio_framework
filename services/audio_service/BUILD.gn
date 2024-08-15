@@ -414,6 +414,7 @@ ohos_shared_library("audio_service") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "pulseaudio:pulse",
     "pulseaudio:pulseaudio",
     "safwk:system_ability_fwk",

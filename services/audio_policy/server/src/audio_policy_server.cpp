@@ -22,7 +22,7 @@
 #include "input_manager.h"
 
 #endif
-
+#include <cstdint>
 #include "privacy_kit.h"
 #include "tokenid_kit.h"
 #include "common_event_manager.h"
@@ -31,12 +31,19 @@
 #include "parameters.h"
 #include "media_monitor_manager.h"
 
+#include "mem_mgr_client.h"
+#include "mem_mgr_proxy.h"
+
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr int32_t SYSTEM_STATUS_START = 1;
+constexpr int32_t SYSTEM_STATUS_STOP = 0;
+constexpr int32_t SYSTEM_PROCESS_TYPE = 1;
 
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
@@ -100,6 +107,7 @@ void AudioPolicyServer::OnStart()
 
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
 #endif
@@ -141,6 +149,8 @@ void AudioPolicyServer::OnStop()
     audioPolicyService_.Deinit();
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
+    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(),
+        SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_STOP, OHOS::AUDIO_POLICY_SERVICE_ID);
     return;
 }
 
@@ -189,12 +199,27 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
             break;
         default:
-            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+            OnAddSystemAbilityExtract(systemAbilityId, deviceId);
             break;
     }
     // eg. done systemAbilityId: [3001] cost 780ms
     AUDIO_INFO_LOG("done systemAbilityId: [%{public}d] cost %{public}" PRId64 " ms", systemAbilityId,
         (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
+}
+
+
+void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId)
+{
+    AUDIO_INFO_LOG("SA Id is :%{public}d", systemAbilityId);
+    switch (systemAbilityId) {
+        case MEMORY_MANAGER_SA_ID:
+            Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(),
+                SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_START, OHOS::AUDIO_POLICY_SERVICE_ID);
+            break;
+        default:
+            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+            break;
+    }
 }
 
 void AudioPolicyServer::HandleKvDataShareEvent()

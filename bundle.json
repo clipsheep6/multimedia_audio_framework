@@ -74,7 +74,8 @@
             "libuv",
             "cJSON",
             "opensles",
-            "media_foundation"
+            "media_foundation",
+            "memmgr"
             ],
           "third_party": [
             "glib",
