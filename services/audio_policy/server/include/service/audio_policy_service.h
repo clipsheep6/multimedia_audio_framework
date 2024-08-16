@@ -54,6 +54,7 @@
 #include "audio_state_manager.h"
 #include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
+#include "common_event_manager.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -540,6 +541,9 @@ public:
     void SetRotationToEffect(const uint32_t rotate);
     void FetchStreamForA2dpOffload(const bool &requireReset);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
+
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
+    void SubscribeSafeVolumeEvent();
 
 private:
     AudioPolicyService()
@@ -1142,6 +1146,9 @@ private:
     std::atomic<bool> isSafeVolumeDialogShowing_ = false;
     std::mutex safeVolumeMutex_;
 
+    std::mutex notifyMutex_;
+    int32_t streamMusicVol_;
+
     DeviceType priorityOutputDevice_ = DEVICE_TYPE_INVALID;
     DeviceType priorityInputDevice_ = DEVICE_TYPE_INVALID;
     ConnectType conneceType_ = CONNECT_TYPE_LOCAL;
@@ -1182,6 +1189,18 @@ private:
     std::mutex connectionMutex_;
     std::condition_variable connectionCV_;
     static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
+};
+
+class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {
+public:
+    explicit SafeVolumeEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
+        std::function<void(const EventFwk::CommonEventData&)> receiver)
+        : EventFwk::CommonEventSubscriber(subscribeInfo), eventReceiver_(receiver) {}
+    ~SafeVolumeEventSubscriber() {}
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
+private:
+    SafeVolumeEventSubscriber() = default;
+    std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
