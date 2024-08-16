@@ -4994,6 +4994,15 @@ int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<unique_ptr<Audi
 int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>>
     &audioCapturerChangeInfos, bool hasBTPermission, bool hasSystemPermission)
 {
+    AUDIO_INFO_LOG("GetCurrentCapturerChangeInfos start");
+    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
+    return GetCurrentCapturerChangeInfosInner(audioCapturerChangeInfos, hasBTPermission, hasSystemPermission);
+}
+
+int32_t AudioPolicyService::GetCurrentCapturerChangeInfosInner(vector<unique_ptr<AudioCapturerChangeInfo>>
+    &audioCapturerChangeInfos, bool hasBTPermission, bool hasSystemPermission)
+{
+    AUDIO_INFO_LOG("GetCurrentCapturerChangeInfosInner start");
     int status = streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, status,
         "AudioPolicyServer:: Get capturer change info failed");
