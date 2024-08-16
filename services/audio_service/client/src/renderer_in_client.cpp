@@ -126,6 +126,7 @@ RendererInClientInner::~RendererInClientInner()
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
+std::mutex g_pipeTypeMutex;
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
     Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(operation));
@@ -137,7 +138,11 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
             offloadStartReadPos_ = 0;
         }
         offloadEnable_ = static_cast<bool>(result);
+
+        std::unique_lock<std::mutex> pipeTypeLock(g_pipeTypeMutex);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
+        pipeTypeLock.unlock();
+
         return SUCCESS;
     }
 
@@ -301,17 +306,17 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     // eg: 100005_44100_2_1_client_out.pcm
     dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.samplingRate) + "_" +
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
-
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
     logUtilsTag_ = "IpcClientPlay::" + std::to_string(sessionId_);
+    
     if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
         int32_t type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
+            std::lock_guard<std::mutex> pipeTypeLock(g_pipeTypeMutex);
             rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
                 PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
         }
     }
-
     proxyObj_ = proxyObj;
     RegisterTracker(proxyObj);
     RegisterSpatializationStateEventListener();
@@ -581,7 +586,9 @@ int32_t RendererInClientInner::GetAudioSessionID(uint32_t &sessionID)
 
 void RendererInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
 {
+    std::unique_lock<std::mutex> pipeTypeLock(g_pipeTypeMutex);
     pipeType = rendererInfo_.pipeType;
+    pipeTypeLock.unlock();
 }
 
 State RendererInClientInner::GetState()
@@ -1137,7 +1144,10 @@ int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 
 int32_t RendererInClientInner::UnsetOffloadMode()
 {
+    std::unique_lock<std::mutex> pipeTypeLock(g_pipeTypeMutex);
     rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    pipeTypeLock.unlock();
+
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
     return ipcStream_->UnsetOffloadMode();
 }
@@ -2297,11 +2307,17 @@ bool RendererInClientInner::RestoreAudioStream()
 
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
     if (ret != SUCCESS) {
-        goto error;
+        AUDIO_ERR_LOG("RestoreAudioStream failed");
+        state_ = oldState;
+        return false;
     }
+
+    std::unique_lock<std::mutex> pipeTypeLock(g_pipeTypeMutex);
     if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
         rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     }
+    pipeTypeLock.unlock();
+
     switch (oldState) {
         case RUNNING:
             result = StartAudioStream();
@@ -2317,14 +2333,11 @@ bool RendererInClientInner::RestoreAudioStream()
             break;
     }
     if (!result) {
-        goto error;
+        AUDIO_ERR_LOG("RestoreAudioStream failed");
+        state_ = oldState;
+        return false;
     }
     return result;
-
-error:
-    AUDIO_ERR_LOG("RestoreAudioStream failed");
-    state_ = oldState;
-    return false;
 }
 
 void RendererInClientInner::ResetRingerModeMute()
