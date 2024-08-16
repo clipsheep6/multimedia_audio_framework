@@ -1661,6 +1661,19 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
         hasBTPermission, hasSystemPermission);
 }
 
+int32_t AudioPolicyServer::GetCurrentRendererChangeInfosInner(
+    std::vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("only for audioUid");
+        return {};
+    }
+
+    return audioPolicyService_.GetCurrentRendererChangeInfosInner(audioRendererChangeInfos,
+        true, true);
+}
+
 int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
     std::vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {

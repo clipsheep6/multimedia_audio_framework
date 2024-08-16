@@ -158,6 +158,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "ACTIVATE_AUDIO_SESSION",
     "DEACTIVATE_AUDIO_SESSION",
     "IS_AUDIO_SESSION_ACTIVATED",
+    "GET_RENDERER_CHANGE_INFOS_INNER",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -714,6 +715,28 @@ void AudioPolicyManagerStub::UpdateTrackerInternal(MessageParcel &data, MessageP
     ReadStreamChangeInfo(data, mode, streamChangeInfo);
     int ret = UpdateTracker(mode, streamChangeInfo);
     reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::GetRendererChangeInfosInnerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    size_t size = 0;
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    int ret = GetCurrentRendererChangeInfosInner(audioRendererChangeInfos);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub:GetRendererChangeInfos Error!!");
+        reply.WriteInt32(size);
+        return;
+    }
+
+    size = audioRendererChangeInfos.size();
+    reply.WriteInt32(size);
+    for (const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
+        if (!rendererChangeInfo) {
+            AUDIO_ERR_LOG("AudioPolicyManagerStub:Renderer change info null, something wrong!!");
+            continue;
+        }
+        rendererChangeInfo->Marshalling(reply);
+    }
 }
 
 void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
@@ -1559,6 +1582,9 @@ void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_RENDERER_CHANGE_INFOS):
             GetRendererChangeInfosInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_RENDERER_CHANGE_INFOS_INNER):
+            GetRendererChangeInfosInnerInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_CAPTURER_CHANGE_INFOS):
             GetCapturerChangeInfosInternal(data, reply);

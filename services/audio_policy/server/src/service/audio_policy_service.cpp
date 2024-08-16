@@ -4962,8 +4962,15 @@ void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamC
 int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>>
     &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission)
 {
+    AUDIO_INFO_LOG("GetCurrentRendererChangeInfos start");
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
+    return GetCurrentRendererChangeInfosInner(audioRendererChangeInfos, hasBTPermission, hasSystemPermission);
+}
 
+int32_t AudioPolicyService::GetCurrentRendererChangeInfosInner(vector<unique_ptr<AudioRendererChangeInfo>>
+    &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission)
+{
+    AUDIO_INFO_LOG("GetCurrentRendererChangeInfosInner start");
     int32_t status = streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, status,
         "AudioPolicyServer:: Get renderer change info failed");

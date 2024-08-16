@@ -72,6 +72,7 @@ private:
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
+    void GetRendererChangeInfosInnerInternal(MessageParcel &data, MessageParcel &reply);
     void GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
     void SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
