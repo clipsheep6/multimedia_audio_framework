@@ -1258,7 +1258,6 @@ public:
      */
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
 
-
     /**
     * @brief Load the split module for audio stream separation.
     *
