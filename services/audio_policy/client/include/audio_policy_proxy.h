@@ -159,6 +159,9 @@ public:
 
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) override;
 
+    int32_t GetCurrentRendererChangeInfosInner(
+        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+    
     int32_t GetCurrentRendererChangeInfos(
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
 

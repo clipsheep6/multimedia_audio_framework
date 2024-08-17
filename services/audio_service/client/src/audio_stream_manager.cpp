@@ -104,6 +104,13 @@ int32_t AudioStreamManager::GetCurrentRendererChangeInfos(
     return AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
 }
 
+int32_t AudioStreamManager::GetCurrentRendererChangeInfosInner(
+    vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfosInner");
+    return AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfosInner(audioRendererChangeInfos);
+}
+
 int32_t AudioStreamManager::GetCurrentCapturerChangeInfos(
     vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {

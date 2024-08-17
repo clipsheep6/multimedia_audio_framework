@@ -192,6 +192,17 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
+    int32_t GetCurrentRendererChangeInfosInner(
+        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+
+    /**
+     * @brief Get current renderer change Infos.
+     *
+     * @param audioRendererChangeInfos  audioRendererChangeInfos
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
     int32_t GetCurrentRendererChangeInfos(
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
 

@@ -1241,6 +1241,32 @@ void AudioPolicyProxy::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamCha
     return;
 }
 
+int32_t AudioPolicyProxy::GetCurrentRendererChangeInfosInner(
+    vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_RENDERER_CHANGE_INFOS_INNER), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "Get Renderer change info event failed , error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    while (size > 0) {
+        unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
+        CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED, "No memory!!");
+        rendererChangeInfo->Unmarshalling(reply);
+        audioRendererChangeInfos.push_back(move(rendererChangeInfo));
+        size--;
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
