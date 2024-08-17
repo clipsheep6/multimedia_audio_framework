@@ -657,7 +657,7 @@ float ProRendererStreamImpl::GetStreamVolume()
     float volume = 1.0f;
     Volume vol = {true, 1.0f, 0};
     AudioStreamType streamType = processConfig_.streamType;
-    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(streamType);
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     DeviceInfo deviceInfo;
     bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(processConfig_, deviceInfo);
     if (!ret) {

@@ -27,6 +27,7 @@
 #include "audio_log.h"
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -203,7 +204,6 @@ private:
     }
 
     AudioStreamType GetStreamIDByType(std::string streamType);
-    AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
     int32_t ReInitKVStore();
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
@@ -304,7 +304,7 @@ public:
 
     virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType)
     {
-        AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(streamType);
+        AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = audioAdapterManager_->GetStreamVolume(streamForVolumeMap);
         bool muteStatus = audioAdapterManager_->GetStreamMute(streamForVolumeMap);
         if (muteStatus) {
