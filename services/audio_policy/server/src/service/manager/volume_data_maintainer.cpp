@@ -15,6 +15,7 @@
 #undef LOG_TAG
 #define LOG_TAG "VolumeDataMaintainer"
 
+#include "audio_utils.h"
 #include "volume_data_maintainer.h"
 
 #include <map>
@@ -177,7 +178,7 @@ void VolumeDataMaintainer::SetStreamVolume(AudioStreamType streamType, int32_t v
 
 void VolumeDataMaintainer::SetStreamVolumeInternal(AudioStreamType streamType, int32_t volumeLevel)
 {
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     volumeLevelMap_[streamForVolumeMap] = volumeLevel;
 }
 
@@ -189,7 +190,7 @@ int32_t VolumeDataMaintainer::GetStreamVolume(AudioStreamType streamType)
 
 int32_t VolumeDataMaintainer::GetStreamVolumeInternal(AudioStreamType streamType)
 {
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     return volumeLevelMap_[streamForVolumeMap];
 }
 
@@ -221,7 +222,7 @@ bool VolumeDataMaintainer::SaveMuteStatusInternal(DeviceType deviceType, AudioSt
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to write mutestatus: %{public}d to setting db! Err: %{public}d", muteStatus, ret);
     } else {
-        AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+        AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         muteStatusMap_[streamForVolumeMap] = muteStatus;
         AUDIO_DEBUG_LOG("muteKey:%{public}s, muteStatus:%{public}d", muteKey.c_str(), muteStatus);
     }
@@ -266,7 +267,7 @@ bool VolumeDataMaintainer::GetStreamMute(AudioStreamType streamType)
 
 bool VolumeDataMaintainer::GetStreamMuteInternal(AudioStreamType streamType)
 {
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     return muteStatusMap_[streamForVolumeMap];
 }
 
@@ -593,36 +594,5 @@ std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, 
     return type + deviceTypeName;
 }
 
-AudioStreamType VolumeDataMaintainer::GetStreamForVolumeMap(AudioStreamType streamType)
-{
-    switch (streamType) {
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_MESSAGE:
-            return STREAM_VOICE_CALL;
-        case STREAM_RING:
-        case STREAM_SYSTEM:
-        case STREAM_NOTIFICATION:
-        case STREAM_SYSTEM_ENFORCED:
-        case STREAM_DTMF:
-            return STREAM_RING;
-        case STREAM_MUSIC:
-        case STREAM_MEDIA:
-        case STREAM_MOVIE:
-        case STREAM_GAME:
-        case STREAM_SPEECH:
-        case STREAM_NAVIGATION:
-            return STREAM_MUSIC;
-        case STREAM_VOICE_ASSISTANT:
-            return STREAM_VOICE_ASSISTANT;
-        case STREAM_ALARM:
-            return STREAM_ALARM;
-        case STREAM_ACCESSIBILITY:
-            return STREAM_ACCESSIBILITY;
-        case STREAM_ULTRASONIC:
-            return STREAM_ULTRASONIC;
-        default:
-            return STREAM_MUSIC;
-    }
-}
 } // namespace AudioStandard
 } // namespace OHOS

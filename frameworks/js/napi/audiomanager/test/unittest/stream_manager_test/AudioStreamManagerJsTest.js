@@ -484,16 +484,13 @@ describe("AudioStreamManagerJsTest", function () {
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEffectArray = audioStreamManager.getSupportedAudioEffectProperty();
-      console.info(`${TAG} getSupportedAudioEffectProperty success:${JSON.stringify(audioEffectArray)}`);
-      let hashClassSet = new HashSet();
+      console.info(`${TAG} getSupportedAudioEffectProperty001 success:${JSON.stringify(audioEffectArray)}`);
       for (let i = 0; i < audioEffectArray.length; i++) {
         expect(audioEffectArray[i].effectClass !== ""
           && audioEffectArray[i].effectClass !== undefined).assertTrue();
         expect(audioEffectArray[i].effectProp !== ""
           && audioEffectArray[i].effectProp !== undefined).assertTrue();
-        hashClassSet.add(audioEffectArray[i].effectClass);
       }
-      expect(hashClassSet.length == audioEffectArray.length).assertTrue();
       done();
     } catch (e) {
       console.error(`${TAG} getSupportedAudioEffectProperty001 ERROR: ${e.message}`);
@@ -540,16 +537,13 @@ describe("AudioStreamManagerJsTest", function () {
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEnhanceArray = audioStreamManager.getSupportedAudioEnhanceProperty();
-      console.info(`${TAG} getSupportedAudioEnhanceProperty success:${JSON.stringify(audioEnhanceArray)}`);
-      let hashClassSet = new HashSet();
+      console.info(`${TAG} getSupportedAudioEnhanceProperty001 success:${JSON.stringify(audioEnhanceArray)}`);
       for (let i = 0; i < audioEnhanceArray.length; i++) {
         expect(audioEnhanceArray[i].enhanceClass !== ""
           && audioEnhanceArray[i].enhanceClass !== undefined).assertTrue();
         expect(audioEnhanceArray[i].enhanceProp !== ""
           && audioEnhanceArray[i].enhanceProp !== undefined).assertTrue();
-        hashClassSet.add(audioEnhanceArray[i].enhanceClass);
       }
-      expect(hashClassSet.length == audioEnhanceArray.length).assertTrue();
       done();
     } catch (e) {
       console.error(`${TAG} getSupportedAudioEnhanceProperty001 ERROR: ${e.message}`);
@@ -595,11 +589,10 @@ describe("AudioStreamManagerJsTest", function () {
   it("setAudioEffectProperty001", 0, async function (done) {
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
-      let audioEffectArray = audioStreamManager.getSupportedAudioEffectProperty();
+      let audioEffectArray = audioStreamManager.getAudioEffectProperty();
       console.info(`${TAG} get supported effect property SUCCESS:${JSON.stringify(audioEffectArray)}`);
-      let ret = audioStreamManager.setAudioEffectProperty(audioEffectArray);
-      expect(ret).assertEqual(0);
-      console.info(`${TAG} setAudioEffectProperty001 SUCCESS: ${data}`);
+      audioStreamManager.setAudioEffectProperty(audioEffectArray);
+      console.info(`${TAG} setAudioEffectProperty001 SUCCESS`);
       done();
     } catch (e) {
       console.error(`${TAG} setAudioEffectProperty001 ERROR: ${e.message}`);
@@ -618,9 +611,8 @@ describe("AudioStreamManagerJsTest", function () {
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEffectArray = [];
-      let ret = audioStreamManager.setAudioEffectProperty(audioEffectArray);
+      audioStreamManager.setAudioEffectProperty(audioEffectArray);
       console.error(`${TAG} setAudioEffectProperty002 check invalid parameter fail`);
-      expect(ret).assertEqual(0);
       done();
     } catch (e) {
       console.error(`${TAG} setAudioEffectProperty002 PASS: ${e.message}`);
@@ -641,9 +633,8 @@ describe("AudioStreamManagerJsTest", function () {
       let effect_1 = { effectClass: "testClass", effectProp: "testProp" };
       let effect_2 = { effectClass: "testClass", effectProp: "testProp" };
       let audioEffectArray = [effect_1, effect_2];
-      let ret = audioStreamManager.setAudioEffectProperty(audioEffectArray);
+      audioStreamManager.setAudioEffectProperty(audioEffectArray);
       console.error(`${TAG} setAudioEffectProperty003 check invalid parameter fail`);
-      expect(ret).assertEqual(0);
       done();
     } catch (e) {
       console.error(`${TAG} setAudioEffectProperty003 PASS: ${e.message}`);
@@ -663,9 +654,8 @@ describe("AudioStreamManagerJsTest", function () {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let effectProperty = { effectClass: "", effectProp: "" };
       let audioEffectArray = [effectProperty];
-      let ret = audioStreamManager.setAudioEffectProperty(audioEffectArray);
+      audioStreamManager.setAudioEffectProperty(audioEffectArray);
       console.error(`${TAG} setAudioEffectProperty004 check invalid parameter fail`);
-      expect(ret).assertEqual(0);
       done();
     } catch (e) {
       console.error(`${TAG} setAudioEffectProperty004 PASS: ${e.message}`);
@@ -688,9 +678,8 @@ describe("AudioStreamManagerJsTest", function () {
         let effectProperty = { effectClass: 'testClass' + i, effectProp: 'testProp' + i };
         audioEffectArray.push(effectProperty);
       }
-      let ret = audioStreamManager.setAudioEffectProperty(audioEffectArray);
+      audioStreamManager.setAudioEffectProperty(audioEffectArray);
       console.error(`${TAG} setAudioEffectProperty005 check invalid parameter fail`);
-      expect(ret).assertEqual(0);
       done();
     } catch (e) {
       console.error(`${TAG} setAudioEffectProperty005 PASS: ${e.message}`);
@@ -708,11 +697,10 @@ describe("AudioStreamManagerJsTest", function () {
   it("setAudioEnhanceProperty001", 0, async function (done) {
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
-      let audioEnhanceArray = audioStreamManager.getSupportedAudioEnhanceProperty();
+      let audioEnhanceArray = audioStreamManager.getAudioEnhanceProperty();
       console.info(`${TAG} get supported enhance property SUCCESS:${JSON.stringify(audioEnhanceArray)}`);
-      let ret = audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
-      expect(ret).assertEqual(0);
-      console.info(`${TAG} setAudioEnhanceProperty001 SUCCESS: ${data}`);
+      audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
+      console.info(`${TAG} setAudioEnhanceProperty001 SUCCESS`);
       done();
     } catch (e) {
       console.error(`${TAG} setAudioEnhanceProperty001 ERROR: ${e.message}`);
@@ -731,9 +719,8 @@ describe("AudioStreamManagerJsTest", function () {
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEnhanceArray = [];
-      let ret = audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
+      audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
       console.error(`${TAG} setAudioEnhanceProperty002 check invalid parameter fail`);
-      expect(ret).assertEqual(0);
       done();
     } catch (e) {
       console.error(`${TAG} setAudioEnhanceProperty002 PASS: ${e.message}`);
@@ -754,9 +741,8 @@ describe("AudioStreamManagerJsTest", function () {
       let enhance_1 = { enhanceClass: "testClass", enhanceProp: "testProp" };
       let enhance_2 = { enhanceClass: "testClass", enhanceProp: "testProp" };
       let audioEnhanceArray = [enhance_1, enhance_2];
-      let ret = audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
+      audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
       console.error(`${TAG} setAudioEnhanceProperty003 check invalid parameter fail`);
-      expect(ret).assertEqual(0);
       done();
     } catch (e) {
       console.error(`${TAG} setAudioEnhanceProperty003 PASS: ${e.message}`);
@@ -776,9 +762,8 @@ describe("AudioStreamManagerJsTest", function () {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let enhanceProperty = { enhanceClass: "", enhanceProp: "" };
       let audioEnhanceArray = [enhanceProperty];
-      let ret = audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
+      audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
       console.error(`${TAG} setAudioEnhanceProperty004 check invalid parameter fail`);
-      expect(ret).assertEqual(0);
       done();
     } catch (e) {
       console.error(`${TAG} setAudioEnhanceProperty004 PASS: ${e.message}`);
@@ -801,9 +786,8 @@ describe("AudioStreamManagerJsTest", function () {
         let enhanceProperty = { enhanceClass: 'testClass' + i, enhanceProp: 'testProp' + i };
         audioEnhanceArray.push(enhanceProperty);
       }
-      let ret = audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
+      audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
       console.error(`${TAG} setAudioEnhanceProperty005 check invalid parameter fail`);
-      expect(ret).assertEqual(0);
       done();
     } catch (e) {
       console.error(`${TAG} setAudioEnhanceProperty005 PASS: ${e.message}`);

@@ -19,7 +19,7 @@
 #ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"
 #endif
-
+#include "audio_utils.h"
 #include "media_monitor_manager.h"
 
 namespace OHOS {
@@ -68,6 +68,16 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
         xmlCleanupParser();
         return ERROR;
     }
+
+    bool isPCVolumeEnable = false;
+    xmlChar *pcEnableValue = xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("pcvolumeenable"));
+    if (pcEnableValue != nullptr) {
+      isPCVolumeEnable = static_cast<bool>(atoi(reinterpret_cast<char*>(pcEnableValue)));
+      AUDIO_INFO_LOG("PC Volume Enable: %{public}d", isPCVolumeEnable);
+      xmlFree(pcEnableValue);
+    }
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnable);
+
     if (currNode->children) {
         currNode = currNode->children;
     } else {
