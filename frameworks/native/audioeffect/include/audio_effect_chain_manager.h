@@ -130,6 +130,7 @@ public:
     int32_t SystemVolumeUpdate(const float systemVolume);
     uint32_t GetLatency(const std::string &sessionId);
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
+    int32_t SetSceneTypeSystemVolume(const std::string sceneType, const float systemVolume);
     bool GetCurSpatializationEnabled();
     void ResetEffectBuffer();
     void ResetInfo();  // Use for testing temporarily.

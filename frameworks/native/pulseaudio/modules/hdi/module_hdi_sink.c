@@ -172,6 +172,7 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, v
         !pa_safe_streq(clientUid, bootUpMusic)) {
         if (!EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
             EffectChainManagerMultichannelUpdate(sceneType);
+            EffectChainManagerVolumeUpdate(sessionID);
             EffectChainManagerEffectUpdate();
         }
     }
