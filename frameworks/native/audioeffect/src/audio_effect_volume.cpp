@@ -38,15 +38,22 @@ std::shared_ptr<AudioEffectVolume> AudioEffectVolume::GetInstance()
     return effectVolume;
 }
 
-void AudioEffectVolume::SetSystemVolume(const float systemVolume)
+void AudioEffectVolume::SetSystemVolume(const std::string sceneType, const float systemVolume)
 {
+    std::lock_guard<std::mutex> lock(volumeMutex_);
     AUDIO_DEBUG_LOG("systemVolume: %{public}f", systemVolume);
-    systemVolume_ = systemVolume;
+    SceneTypeToSystemVolumeMap_[sceneType] = systemVolume;
 }
 
-float AudioEffectVolume::GetSystemVolume()
+float AudioEffectVolume::GetSystemVolume(const std::string sceneType)
 {
-    return systemVolume_;
+    std::lock_guard<std::mutex> lock(volumeMutex_);
+    auto it = SceneTypeToSystemVolumeMap_.find(sceneType);
+    if (it == SceneTypeToSystemVolumeMap_.end()) {
+        return 1.0f;
+    } else {
+        return SceneTypeToSystemVolumeMap_[sceneType];
+    }
 }
 
 void AudioEffectVolume::SetStreamVolume(const std::string sessionID, const float streamVolume)
