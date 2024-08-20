@@ -8383,6 +8383,24 @@ void AudioPolicyService::UpdateSessionConnectionState(const int32_t &sessionID, 
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const std::string &netWorkId)
+{
+    AUDIO_INFO_LOG("start audio stream split, the split args is %{public}s", splitArgs.c_str());
+    std::string moduleName = GetRemoteModuleName(netWorkId, OUTPUT_DEVICE);
+
+    ClosePortAndEraseIOHandle(moduleName);
+
+    AudioModuleInfo moudleInfo = ConstructRemoteAudioModuleInfo(netWorkId, OUTPUT_DEVICE, DEVICE_TYPE_SPEAKER);
+    moudleInfo.lib = "libmodule-split-stream-sink.z.so";
+    moudleInfo.extra = splitArgs;
+    
+    int32_t openRet = OpenPortAndInsertIOHandle(moduleName, moudleInfo);
+    if (openRet != 0) {
+        AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
+    }
+    return openRet;
+}
+
 void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
 {
     if (deviceAddress == a2dpOffloadDeviceAddress_) {
