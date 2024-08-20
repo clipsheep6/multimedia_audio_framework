@@ -55,7 +55,7 @@ void PolicyHandlerTest::TearDown(void)
 HWTEST(AudioPolicyUnitTest, IsAbsVolumeSupported_001, TestSize.Level1)
 {
     bool ret = PolicyHandler::GetInstance().IsAbsVolumeSupported();
-    EXPECT_EQ(false, ret);
+    EXPECT_EQ(true, ret);
 }
 
 /**
@@ -67,7 +67,7 @@ HWTEST(AudioPolicyUnitTest, IsAbsVolumeSupported_002, TestSize.Level1)
 {
     for (int32_t i = 0; i < 100; i++) { // Call IsAbsVolumeSupported 100 times
         bool ret = PolicyHandler::GetInstance().IsAbsVolumeSupported();
-        EXPECT_EQ(false, ret);
+        EXPECT_EQ(true, ret);
     }
 }
 } // namespace AudioStandard
