@@ -409,7 +409,6 @@ ohos_shared_library("audio_policy_client") {
 
 group("audio_policy_test_packages") {
   testonly = true
-
   deps = [
     ":audio_dump_test",
     ":audio_policy_test",

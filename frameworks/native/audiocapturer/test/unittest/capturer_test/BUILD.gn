@@ -33,7 +33,6 @@ ohos_unittest("audio_capturer_unit_test") {
   ]
 
   cflags_cc = cflags
-  cflags_cc += [ "-fno-access-control" ]
 
   external_deps = [
     "c_utils:utils",
