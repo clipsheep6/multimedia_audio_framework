@@ -39,6 +39,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include <sys/types.h>
+#include <sys/eventfd.h>
+#include <poll.h>
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -249,6 +251,8 @@ struct Userdata {
         int32_t multiChannelSinkInIndex;
         int32_t multiChannelTmpSinkInIndex;
     } multiChannel;
+    pa_rtpoll_item *rtpollItem;
+    int eventFd;
 };
 
 static int32_t g_effectProcessFrameCount = 0;
@@ -3186,17 +3190,16 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         int ret;
         pthread_rwlock_wrlock(&u->rwlockSleep);
 
-        int64_t sleepForUsec = 0;
+        int64_t sleepForUsec = 500000; // 500ms
 
-        if (u->timestampSleep == -1) {
-            pa_rtpoll_set_timer_disabled(u->rtpoll); // sleep forever
-        } else if ((sleepForUsec = u->timestampSleep - (int64_t)(pa_rtclock_now())) <= 0) {
-            pa_rtpoll_set_timer_relative(u->rtpoll, 0);
-        } else {
-            pa_rtpoll_set_timer_relative(u->rtpoll, sleepForUsec);
+        pa_rtpoll_set_timer_relative(u->rtpoll, sleepForUsec);
+        if (u->rtpollItem) {
+            // make fd enable
+            struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
+            pollFd->events = (u->sink && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ? POLLIN : 0;
         }
 
-        AUTO_CTRACE("ProcessDataLoop %s sleep:%lld us", deviceClass, sleepForUsec);
+        AUTO_CTRACE("ProcessDataLoop %s in sleep status for %lld us", deviceClass, sleepForUsec);
         // Hmm, nothing to do. Let's sleep
         if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
             AUDIO_ERR_LOG("Thread %{public}s(use timing bus) shutting down, error %{public}d, "
@@ -3220,6 +3223,9 @@ static void ThreadFuncRendererTimerBus(void *userdata)
             pthread_rwlock_unlock(&u->rwlockSleep);
             break;
         }
+        uint64_t readEvent = 0;
+        size_t readRes = read(u->eventFd, &readEvent, sizeof(uint64_t));
+        AUTO_CTRACE("Handle %s readRes:%zu readEvent:%llu", deviceClass, readRes, readEvent);
 
         SetHdiParam(u);
 
@@ -3256,6 +3262,9 @@ static void ThreadFuncWriteHDIMultiChannel(void *userdata)
                     pa_atomic_sub(&u->multiChannel.dflag, 1);
                 }
                 u->multiChannel.writeTime = pa_rtclock_now() - now;
+                uint64_t writEvent = 1;
+                size_t writeRes = write(u->eventFd, &writEvent, sizeof(uint64_t));
+                AUTO_CTRACE("Handle write eventFd:%zu", writeRes);
                 break;
             }
             case QUIT:
@@ -3304,6 +3313,9 @@ static void ThreadFuncWriteHDI(void *userdata)
                     pa_atomic_sub(&u->primary.dflag, 1);
                 }
                 u->primary.writeTime = pa_rtclock_now() - now;
+                uint64_t writEvent = 1;
+                size_t writeRes = write(u->eventFd, &writEvent, sizeof(uint64_t));
+                AUTO_CTRACE("Handle write eventFd:%zu", writeRes);
                 break;
             }
             case QUIT:
@@ -3993,8 +4005,16 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
     }
     u->sink->userdata = u;
 
+    u->eventFd = eventfd(0, EFD_NONBLOCK);
+
     pa_sink_set_asyncmsgq(u->sink, u->thread_mq.inq);
     pa_sink_set_rtpoll(u->sink, u->rtpoll);
+
+    u->rtpollItem = pa_rtpoll_item_new(u->rtpoll, PA_RTPOLL_NEVER, 1);
+    struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
+    pollFd->fd = u->eventFd;
+    pollFd->events = 0;
+    pollFd->revents = 0;
 
     u->bytes_dropped = 0;
     u->buffer_size = DEFAULT_BUFFER_SIZE;
@@ -4209,6 +4229,11 @@ static void UserdataFree(struct Userdata *u)
 
     pa_xfree(u->bufferAttr);
     u->bufferAttr = NULL;
+
+    if (u->eventFd != 0) {
+        close(u->eventFd);
+        u->eventFd = 0;
+    }
 
     pa_xfree(u);
 

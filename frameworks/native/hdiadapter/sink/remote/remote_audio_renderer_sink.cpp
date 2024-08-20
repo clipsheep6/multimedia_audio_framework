@@ -70,6 +70,7 @@ const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
 const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
+const int64_t SLEEP_TIME_NS = 20000000; // 20ms
 const uint32_t REMOTE_OUTPUT_STREAM_ID = 29; // 13 + 2 * 8
 
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
@@ -151,6 +152,7 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
+    int64_t lastWriteTime_ = 0;
 };
 
 RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string &deviceNetworkId)
@@ -372,6 +374,14 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
     if (cost >= stampThreshold) {
         AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, cost);
     }
+    ClockTime::AbsoluteSleep(lastWriteTime_ + SLEEP_TIME_NS);
+    int64_t cur = ClockTime::GetCurNano();
+    if (std::abs(cur - lastWriteTime_ - SLEEP_TIME_NS) > SLEEP_TIME_NS) {
+        AUDIO_WARNING_LOG("cur is:%{public}" PRId64" lastWrite is %{public}" PRId64", reset it!", cur, lastWriteTime_);
+        lastWriteTime_ = ClockTime::GetCurNano();
+    } else {
+        lastWriteTime_ += SLEEP_TIME_NS;
+    }
 
     return SUCCESS;
 }
@@ -404,7 +414,7 @@ float RemoteAudioRendererSinkInner::GetMaxAmplitude()
 int32_t RemoteAudioRendererSinkInner::Start(void)
 {
     Trace trace("RemoteAudioRendererSinkInner::Start");
-    AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Start");
+    AUDIO_INFO_LOG("Remote::Start");
     std::lock_guard<std::mutex> lock(createRenderMutex_);
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME, &dumpFile_);
     if (!isRenderCreated_.load()) {
@@ -421,6 +431,7 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
     int32_t ret = audioRender_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Start fail, ret %{public}d.", ret);
     started_.store(true);
+    lastWriteTime_ = ClockTime::GetCurNano();
     return SUCCESS;
 }
 
