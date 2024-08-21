@@ -730,12 +730,13 @@ void AudioPolicyService::SetOffloadMode()
         AUDIO_INFO_LOG("Offload not available, skipped");
         return;
     }
-
+#ifdef FEATURE_POWER_MANAGER
     AUDIO_INFO_LOG("sessionId: %{public}d, PowerState: %{public}d, isAppBack: %{public}d",
         *offloadSessionID_, static_cast<int32_t>(currentPowerState_), currentOffloadSessionIsBackground_);
 
     streamCollector_.SetOffloadMode(*offloadSessionID_, static_cast<int32_t>(currentPowerState_),
         currentOffloadSessionIsBackground_);
+#endif
 }
 
 void AudioPolicyService::ResetOffloadMode(int32_t sessionId)
@@ -863,7 +864,7 @@ bool AudioPolicyService::GetOffloadAvailableFromXml() const
 {
     return isOffloadAvailable_;
 }
-
+#ifdef FEATURE_POWER_MANAGER
 void AudioPolicyService::HandlePowerStateChanged(PowerMgr::PowerState state)
 {
     if (currentPowerState_ == state) {
@@ -878,7 +879,7 @@ void AudioPolicyService::HandlePowerStateChanged(PowerMgr::PowerState state)
         SetOffloadMode();
     }
 }
-
+#endif
 float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
 {
     return streamCollector_.GetSingleStreamVolume(streamId);
