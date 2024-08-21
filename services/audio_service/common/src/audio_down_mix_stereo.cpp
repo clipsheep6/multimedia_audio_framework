@@ -23,7 +23,7 @@
 #include <cinttypes>
 
 namespace OHOS {
-namespace AudioStandard {  
+namespace AudioStandard {
 const char *DOWN_MIXER_FILE_NAME = "libaudio_downmixer_mcr.z.so";
 const char *DOWN_MIX_FUNC_NAME = "AudioMcrMixerClassCreate";
 
