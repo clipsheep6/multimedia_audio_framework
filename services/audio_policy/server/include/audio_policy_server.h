@@ -561,8 +561,8 @@ private:
 #ifdef FEATURE_POWER_MANAGER
     sptr<PowerStateListener> powerStateListener_;
     bool powerStateCallbackRegister_;
-#endif
     sptr<SyncHibernateListener> syncHibernateListener_;
+#endif
     
     std::mutex keyEventMutex_;
     std::mutex micStateChangeMutex_;

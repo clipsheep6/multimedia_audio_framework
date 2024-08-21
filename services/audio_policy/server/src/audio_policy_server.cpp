@@ -144,8 +144,8 @@ void AudioPolicyServer::OnStop()
     audioPolicyService_.Deinit();
 #ifdef FEATURE_POWER_MANAGER
     UnRegisterPowerStateListener();
-#endif
     UnRegisterSyncHibernateListener();
+#endif
     return;
 }
 
@@ -2295,7 +2295,7 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
         AUDIO_INFO_LOG("unregister sync sleep callback success");
     }
 }
-#endif
+
 void AudioPolicyServer::RegisterSyncHibernateListener()
 {
     if (syncHibernateListener_ == nullptr) {
@@ -2306,7 +2306,7 @@ void AudioPolicyServer::RegisterSyncHibernateListener()
         AUDIO_ERR_LOG("create sync hibernate listener failed");
         return;
     }
-#ifdef FEATURE_POWER_MANAGER
+
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     bool ret = powerMgrClient.RegisterSyncHibernateCallback(syncHibernateListener_);
     if (!ret) {
@@ -2314,7 +2314,7 @@ void AudioPolicyServer::RegisterSyncHibernateListener()
     } else {
         AUDIO_INFO_LOG("register sync hibernate callback success");
     }
-#endif
+
 }
 
 void AudioPolicyServer::UnRegisterSyncHibernateListener()
@@ -2323,7 +2323,6 @@ void AudioPolicyServer::UnRegisterSyncHibernateListener()
         AUDIO_ERR_LOG("sync hibernate listener is null");
         return;
     }
-#ifdef FEATURE_POWER_MANAGER
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     bool ret = powerMgrClient.UnRegisterSyncHibernateCallback(syncHibernateListener_);
     if (!ret) {
@@ -2333,8 +2332,8 @@ void AudioPolicyServer::UnRegisterSyncHibernateListener()
         syncHibernateListener_ = nullptr;
         AUDIO_INFO_LOG("unregister sync hibernate callback success");
     }
-#endif
 }
+#endif
 
 bool AudioPolicyServer::IsSpatializationEnabled()
 {
