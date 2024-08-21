@@ -75,7 +75,7 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredOutputDevi
     EXPECT_EQ(SUCCESS, ret);
     for (auto &device : desc) {
         sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
-        EXPECT_EQ(devDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+        EXPECT_EQ(devDesc->deviceType_, DEVICE_TYPE_WIRED_HEADSET);
     }
 }
 
