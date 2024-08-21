@@ -30,12 +30,6 @@ static constexpr int32_t AVS3METADATA_SIZE = 19824;
 static constexpr int32_t INVALID_FORMAT = -1;
 static constexpr uint64_t DEFAULT_LAYOUT = CH_LAYOUT_UNKNOWN;
 
-#if (defined(__aarch64__) || defined(__x86_64__))
-constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
-#else
-constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
-#endif
-
 static std::map<uint8_t, int8_t> format2bps = {
     {SAMPLE_U8, sizeof(uint8_t)},
     {SAMPLE_S16LE, sizeof(int16_t)},
@@ -166,18 +160,6 @@ uint32_t AudioSpatialChannelConverter::GetLatency()
     return loadSuccess_ ? externalLoader_.GetLatency() : 0;
 }
 
-static bool ResolveLibrary(const std::string &path, std::string &resovledPath)
-{
-    for (auto *libDir : LD_EFFECT_LIBRARY_PATH) {
-        std::string candidatePath = std::string(libDir) + "/" + path;
-        if (access(candidatePath.c_str(), R_OK) == 0) {
-            resovledPath = std::move(candidatePath);
-            return true;
-        }
-    }
-    return false;
-}
-
 LibLoader::~LibLoader()
 {
     if (libEntry_ != nullptr && libEntry_->audioEffectLibHandle != nullptr) {
@@ -191,13 +173,7 @@ LibLoader::~LibLoader()
 
 bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
 {
-    std::string absolutePath;
-    // find library in adsolutePath
-    bool ret = ResolveLibrary(relativePath, absolutePath);
-    CHECK_AND_RETURN_RET_LOG(ret, false, "<log error> find library falied in effect directories: %{public}s",
-        relativePath.c_str());
-
-    libHandle_ = dlopen(absolutePath.c_str(), 1);
+    libHandle_ = dlopen(relativePath.c_str(), 1);
     CHECK_AND_RETURN_RET_LOG(libHandle_, false, "<log error> dlopen lib %{public}s Fail", relativePath.c_str());
     AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
     dlerror(); // clear error, only need to check libHandle_ is not nullptr

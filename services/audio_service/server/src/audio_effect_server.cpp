@@ -29,36 +29,10 @@
 namespace OHOS {
 namespace AudioStandard {
 
-#if (defined(__aarch64__) || defined(__x86_64__))
-    constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/sys_prod/lib64/", "/system/lib64/"};
-#else
-    constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/sys_prod/lib/", "/system/lib/"};
-#endif
-
-bool ResolveLibrary(const std::string &path, std::string &resovledPath)
-{
-    for (auto *libDir: LD_EFFECT_LIBRARY_PATH) {
-        std::string candidatePath = std::string(libDir) + "/" + path;
-        if (access(candidatePath.c_str(), R_OK) == 0) {
-            resovledPath = std::move(candidatePath);
-            return true;
-        }
-    }
-
-    return false;
-}
-
 static bool LoadLibrary(const std::string &relativePath, std::shared_ptr<AudioEffectLibEntry> &libEntry) noexcept
 {
-    std::string absolutePath;
-    // find library in adsolutePath
-    if (!ResolveLibrary(relativePath, absolutePath)) {
-        AUDIO_ERR_LOG("<log error> find library falied in effect directories: %{public}s",
-            relativePath.c_str());
-        return false;
-    }
-
-    void* handle = dlopen(absolutePath.c_str(), 1);
+    //load library by dlopen(relativePath). it will be disabled that load library by dlopen(absolutePath)
+    void* handle = dlopen(relativePath.c_str(), 1);
     if (!handle) {
         AUDIO_ERR_LOG("<log error> dlopen lib %{public}s Fail", relativePath.c_str());
         return false;
