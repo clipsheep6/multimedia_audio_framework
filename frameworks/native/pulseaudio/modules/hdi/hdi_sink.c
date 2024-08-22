@@ -1551,7 +1551,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
     void *state = NULL;
     pa_sink_input *input;
     int32_t i;
-    for(i = 0; i < SCENE_TYPE_NUM; i++) {
+    for (i = 0; i < SCENE_TYPE_NUM; i++) {
         if (strcmp(SCENE_TYPE_SET[i], sceneType)) {
             break;
         }
