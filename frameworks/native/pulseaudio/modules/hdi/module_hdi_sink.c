@@ -27,6 +27,7 @@
 #include "audio_effect_chain_adapter.h"
 #include "audio_hdi_log.h"
 #include "playback_capturer_adapter.h"
+#include "sink_userdata.h"
 
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSinkFree(pa_sink *s);
@@ -81,11 +82,11 @@ static const char * const VALID_MODARGS[] = {
 
 static void IncreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type)
 {
-    if (sceneType == NULL) {
+    if (sceneMap == NULL) {
         return;
     }
     char *sceneType;
-    uint32_t *num = null;
+    uint32_t *num = NULL;
     if ((num = (uint32_t *)pa_hashmap_get(sceneMap, type)) != NULL) {
         (*num)++;
     } else {
@@ -98,11 +99,11 @@ static void IncreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type)
 
 static bool DecreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type)
 {
-    if (sceneType == NULL) {
-        return;
+    if (sceneMap == NULL) {
+        return false;
     }
     char *sceneType;
-    uint32_t *num = null;
+    uint32_t *num = NULL;
     if ((num = (uint32_t *)pa_hashmap_get(sceneMap, type)) != NULL) {
         (*num)--;
         if (*num == 0) {
@@ -113,7 +114,7 @@ static bool DecreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type)
     return false;
 }
 
-static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
+static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si, struct Userdata *u)
 {
     pa_assert(c);
 
@@ -158,7 +159,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u)
+static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, struct Userdata *u)
 {
     pa_assert(c);
 
@@ -193,7 +194,7 @@ static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, void *u)
+static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, struct Userdata *u)
 {
     pa_assert(c);
     pa_sink_input_assert_ref(si);
@@ -242,12 +243,12 @@ int pa__init(pa_module *m)
         goto fail;
     }
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE,
-        (pa_hook_cb_t)SinkInputNewCb, NULL);
+        (pa_hook_cb_t)SinkInputNewCb, m->userdata);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK], PA_HOOK_LATE,
-        (pa_hook_cb_t)SinkInputUnlinkCb, NULL);
+        (pa_hook_cb_t)SinkInputUnlinkCb, m->userdata);
     // SourceOutputStateChangedCb will be replaced by UpdatePlaybackCaptureConfig in CapturerInServer
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_LATE,
-        (pa_hook_cb_t)SinkInputStateChangedCb, NULL);
+        (pa_hook_cb_t)SinkInputStateChangedCb, m->userdata);
 
     pa_modargs_free(ma);
 

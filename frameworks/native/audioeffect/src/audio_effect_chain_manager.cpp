@@ -1409,7 +1409,7 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
     return;
 }
 
-int32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sceneType)
+uint32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sceneType)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
