@@ -1408,5 +1408,16 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
     UpdateSpatializationState(oldState);
     return;
 }
+
+int32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sceneType)
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    if (SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey)) {
+        return SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey];
+    } else {
+        return 0;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

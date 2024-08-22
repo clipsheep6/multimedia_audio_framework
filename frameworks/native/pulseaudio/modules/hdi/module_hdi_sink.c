@@ -79,6 +79,40 @@ static const char * const VALID_MODARGS[] = {
     NULL
 };
 
+static void IncreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type)
+{
+    if (sceneType == NULL) {
+        return;
+    }
+    char *sceneType;
+    uint32_t *num = null;
+    if ((num = (uint32_t *)pa_hashmap_get(sceneMap, type)) != NULL) {
+        (*num)++;
+    } else {
+        sceneType = strdup(type);
+        num = pa_xnew0(uint32_t, 1);
+        *num = 1;
+        pa_hashmap_put(sceneMap, sceneType, num);
+    }
+}
+
+static bool DecreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type)
+{
+    if (sceneType == NULL) {
+        return;
+    }
+    char *sceneType;
+    uint32_t *num = null;
+    if ((num = (uint32_t *)pa_hashmap_get(sceneMap, type)) != NULL) {
+        (*num)--;
+        if (*num == 0) {
+            pa_hashmap_remove_and_free(sceneMap, type);
+            return true;
+        }
+    }
+    return false;
+}
+
 static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
 {
     pa_assert(c);
@@ -107,7 +141,14 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
         if (!pa_safe_streq(sceneMode, "EFFECT_NONE") && pa_safe_streq(flush, "true")) {
             EffectChainManagerInitCb(sceneType);
         }
-        EffectChainManagerCreateCb(sceneType, sessionID);
+        if (EffectChainManagerCreateCb(sceneType, sessionID)) {
+            // update sceneTypeToCount hashmap
+            IncreaseSceneTypeCount(u->sceneToCountMap, sceneType);
+            if (EffectChainManagerSceneCheck(sceneType, "SCENE_DEFAULT")) {
+                IncreaseSceneTypeCount(u->sceneToCountMap, "SCENE_DEFAULT");
+            }
+            // todo get spec and update sceneTypeToResampler hashmap
+        }
         SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled};
         if (si->state == PA_SINK_INPUT_RUNNING && !EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
@@ -136,7 +177,14 @@ static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u
     const char *bootUpMusic = "1003";
     if (!pa_safe_streq(clientUid, bootUpMusic)) {
         const char *sessionID = pa_proplist_gets(si->proplist, "stream.sessionID");
-        EffectChainManagerReleaseCb(sceneType, sessionID);
+        if (EffectChainManagerReleaseCb(sceneType, sessionID)) {
+            // update sceneTypeToCount hashmap
+            DecreaseSceneTypeCount(u->sceneToCountMap, sceneType);
+            if (EffectChainManagerSceneCheck(sceneType, "SCENE_DEFAULT")) {
+                DecreaseSceneTypeCount(u->sceneToCountMap, "SCENE_DEFAULT");
+            }
+            // todo get spec and update sceneTypeToResampler hashmap
+        }
         if (si->state == PA_SINK_INPUT_RUNNING && !EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
             EffectChainManagerMultichannelUpdate(sceneType);
             EffectChainManagerEffectUpdate();
@@ -163,6 +211,7 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, v
         SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled};
         if (!EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
+            // todo get spec and update sceneTypeToResampler hashmap
             EffectChainManagerVolumeUpdate(sessionID);
         }
     }
@@ -171,6 +220,7 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, v
         !pa_safe_streq(clientUid, bootUpMusic)) {
         if (!EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
             EffectChainManagerMultichannelUpdate(sceneType);
+            // todo get spec and update sceneTypeToResampler hashmap
             EffectChainManagerVolumeUpdate(sessionID);
         }
     }

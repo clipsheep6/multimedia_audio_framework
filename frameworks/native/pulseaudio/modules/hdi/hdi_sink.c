@@ -192,6 +192,8 @@ struct Userdata {
     int8_t spatializationFadingCount; // for indicating the fading rate
     bool actualSpatializationEnabled; // the spatialization state that actually applies effect
     bool isFirstStarted;
+    pa_hashmap *sceneToCountMap;
+    // todo resampler map
     struct {
         int32_t sessionID;
         bool firstWrite;
@@ -1613,10 +1615,6 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
     void *dst = pa_memblock_acquire_chunk(chunkIn);
     int32_t frameLen = bitSize > 0 ? ((int32_t) length / bitSize) : 0;
-    for (int32_t i = 0; i < frameLen; i++) {
-        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
-        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
-    }
     DoSpatializationFading(u->bufferAttr->tempBufOut, u->spatializationFadingState, &u->spatializationFadingCount,
         frameLen / DEFAULT_IN_CHANNEL_NUM, DEFAULT_IN_CHANNEL_NUM);
     ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
@@ -1805,6 +1803,26 @@ static void PrimaryEffectProcess(struct Userdata *u, pa_memchunk *chunkIn, char 
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
 }
 
+static void UpdateSceneToCountMap(pa_hashmap *sceneToCountMap)
+{
+    uint32_t curNum;
+    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+        if (curNum = EffectChainManagerGetSceneCount(SCENE_TYPE_SET[i])) {
+            uint32_t *num = NULL;
+            if ((num = (uint32_t *)pa_hashmap_get(sceneMap, type)) != NULL) {
+                (*num) = curNum;
+            } else {
+                sceneType = strdup(SCENE_TYPE_SET[i]);
+                num = pa_xnew0(uint32_t, 1);
+                *num = curNum;
+                pa_hashmap_put(sceneMap, sceneType, num);
+            }
+        } else {
+            pa_hashmap_remove_and_free(sceneMap, SCENE_TYPE_SET[i]);
+        }
+    }
+}
+
 static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
     if (GetInnerCapturerState()) {
@@ -1830,15 +1848,18 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     PrepareSpatializationFading(&u->spatializationFadingState, &u->spatializationFadingCount,
         &u->actualSpatializationEnabled);
     g_effectProcessFrameCount++;
-    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+    const char *sceneKey;
+    UpdateSceneToCountMap(u->sceneToCountMap);
+    // to do update resampler when output device change
+    while ((pa_hashmap_iterate(u->sceneToCountMap, &state, &sceneKey))) {
         uint32_t processChannels = DEFAULT_NUM_CHANNEL;
         uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
-        EffectChainManagerReturnEffectChannelInfo(SCENE_TYPE_SET[i], &processChannels, &processChannelLayout);
+        EffectChainManagerReturnEffectChannelInfo(sceneKey, &processChannels, &processChannelLayout);
         char *sinkSceneType = CheckAndDealEffectZeroVolume(u, currentTime, i);
         size_t tmpLength = length * processChannels / DEFAULT_IN_CHANNEL_NUM;
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
-        int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, SCENE_TYPE_SET[i]);
+        int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, sceneKey);
         if (nSinkInput == 0) { continue; }
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
@@ -1850,6 +1871,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         u->bufferAttr->numChanIn = (int32_t)processChannels;
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
         PrimaryEffectProcess(u, chunkIn, sinkSceneType);
+        // todo resampler_run
     }
     if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) { g_effectProcessFrameCount = 0; }
     CheckAndDealSpeakerPaZeroVolume(u, currentTime);
@@ -4006,6 +4028,9 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
 
     pa_sink_set_max_request(u->sink, u->buffer_size);
 
+    u->sceneToCountMap = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
+        pa_xfree, pa_xfree);
+    // todo new resampler map
     return 0;
 }
 
@@ -4203,6 +4228,10 @@ static void UserdataFree(struct Userdata *u)
     pa_xfree(u->bufferAttr);
     u->bufferAttr = NULL;
 
+    if (u->sceneToCountMap) {
+        pa_hashmap_free(u->sceneToCountMap);
+    }
+    // todo free resampler map
     pa_xfree(u);
 
     AUDIO_DEBUG_LOG("UserdataFree done");
