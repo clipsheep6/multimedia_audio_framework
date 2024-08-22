@@ -87,8 +87,6 @@ OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(OH_AudioRoutingManager *
         deviceFlag == AUDIO_DEVICE_FLAG_INPUT ||
         deviceFlag == AUDIO_DEVICE_FLAG_ALL),
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "deviceFlag is invalid");
-    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptorArray is nullptr");
     DeviceFlag flag = static_cast<DeviceFlag>(deviceFlag);
     *audioDeviceDescriptorArray = ohAudioRoutingManager->GetDevices(flag);
     CHECK_AND_RETURN_RET_LOG(*audioDeviceDescriptorArray != nullptr,
