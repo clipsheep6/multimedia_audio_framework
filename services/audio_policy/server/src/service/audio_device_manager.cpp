@@ -25,8 +25,7 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-constexpr int32_t MS_PER_S = 1000;
-constexpr int32_t NS_PER_MS = 1000000;
+
 const int32_t ADDRESS_STR_LEN = 17;
 const int32_t START_POS = 6;
 const int32_t END_POS = 13;
@@ -53,7 +52,7 @@ static int64_t GetCurrentTimeMS()
 {
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+    return tm.tv_sec * AUDIO_MS_PER_S + (tm.tv_nsec / AUDIO_NS_PER_MS);
 }
 
 void AudioDeviceManager::ParseDeviceXml()

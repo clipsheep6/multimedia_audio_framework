@@ -51,7 +51,6 @@ const int32_t SIGNAL_DATA_SIZE = 96;
 const int32_t SIGNAL_THRESHOLD = 10;
 const int32_t BLANK_THRESHOLD_MS = 100;
 const int32_t DETECTED_ZERO_THRESHOLD = 1;
-const size_t MILLISECOND_PER_SECOND = 1000;
 const size_t MOCK_INTERVAL = 2000;
 const int32_t GET_EXTRA_PARAM_LEN = 200;
 const int32_t YEAR_BASE = 1900;
@@ -59,6 +58,12 @@ const int32_t DECIMAL_EXPONENT = 10;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
 const uint32_t STRING_BUFFER_SIZE = 4096;
+const uint64_t AUDIO_US_PER_MS = 1000;
+const uint64_t AUDIO_NS_PER_US = 1000;
+const uint64_t AUDIO_MS_PER_S = 1000;
+const uint64_t AUDIO_US_PER_S = 1000000;
+const uint64_t AUDIO_NS_PER_MS = 1000000;
+const uint64_t AUDIO_NS_PER_S = 1000000000;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;

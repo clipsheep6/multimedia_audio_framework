@@ -1113,5 +1113,21 @@ void AudioManagerProxy::UpdateSessionConnectionState(const int32_t &sessionID, c
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SESSION_CONNECTION_STATE), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
 }
+
+int64_t AudioManagerProxy::GetLatency(const std::string &devceClass)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteString(devceClass);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_LATENCY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "failed, error:%{public}d", error);
+    return reply.ReadInt64();
+}
 } // namespace AudioStandard
 } // namespace OHOS

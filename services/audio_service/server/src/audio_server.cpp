@@ -2098,6 +2098,24 @@ int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t d
     return audioRendererSinkInstance->SetRenderEmpty(durationUs);
 }
 
+int64_t AudioServer::GetLatency(const std::string &devceClass)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "refused for %{public}d",
+        callingUid);
+
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance(devceClass.c_str(), "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+
+    uint32_t latencyMs = 0;
+    int64_t ret = audioRendererSinkInstance->GetLatency(&latencyMs);
+    if (ret == SUCCESS) {
+        ret = static_cast<int64_t>(latencyMs);
+    }
+
+    return ret;
+}
+
 int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();

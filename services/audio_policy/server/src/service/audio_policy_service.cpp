@@ -152,8 +152,6 @@ const int CALL_RENDER_ID = 1;
 const int CALL_CAPTURE_ID = 2;
 const int RECORD_CAPTURE_ID = 3;
 const int32_t ONE_MINUTE = 60;
-constexpr int32_t MS_PER_S = 1000;
-constexpr int32_t NS_PER_MS = 1000000;
 const int32_t DATA_LINK_CONNECTING = 10;
 const int32_t DATA_LINK_CONNECTED = 11;
 const int32_t A2DP_PLAYING = 2;
@@ -274,7 +272,7 @@ static int64_t GetCurrentTimeMS()
 {
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+    return tm.tv_sec * AUDIO_MS_PER_S + (tm.tv_nsec / AUDIO_NS_PER_MS);
 }
 
 static uint32_t PcmFormatToBits(AudioSampleFormat format)
@@ -654,7 +652,7 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType, const s
     audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
 
     // The volume of voice_call needs to be adjusted separately
-    if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
+    if (audioScene_ == AUDIO_SCENE_PHONE_CALL && !modemCallSwitchMuted_) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
 
@@ -2270,6 +2268,19 @@ void AudioPolicyService::MuteSinkPort(const std::string &portName, int32_t durat
     CHECK_AND_RETURN_LOG(g_adProxy != nullptr, "Audio Server Proxy is null");
 
     std::string identity = IPCSkeleton::ResetCallingIdentity();
+    if (audioScene_ == AUDIO_SCENE_PHONE_CALL && !modemCallSwitchMuted_) {
+        int64_t latencyUs = g_adProxy->GetLatency(PRIMARY_CLASS) * AUDIO_US_PER_MS; // get latency from hdi. 1ms->1000us
+        if (latencyUs < 0) {
+            AUDIO_ERR_LOG("Get latency from hdi failed, using default mute duration");
+            latencyUs = duration;
+        };
+        g_adProxy->SetVoiceVolume(0);
+        modemCallSwitchMuted_ = true;
+
+        thread switchThread(&AudioPolicyService::SetVoiceVolumeAfterMuteDuration, this, latencyUs);
+        switchThread.detach();
+    }
+
     if (sinkPortStrToClassStrMap_.count(portName) > 0) {
         g_adProxy->SetSinkMuteForSwitchDevice(sinkPortStrToClassStrMap_.at(portName), duration, true);
         // Mute sink, unmute after empty frame is written, so return.
@@ -3167,6 +3178,15 @@ int32_t AudioPolicyService::HandleDpDevice(DeviceType deviceType, const std::str
     return SUCCESS;
 }
 
+void AudioPolicyService::SetVoiceVolumeAfterMuteDuration(int64_t muteDuration)
+{
+    Trace trace("SetVoiceVolumeAfterMuteDuration:" + std::to_string(muteDuration) + "us");
+    AUDIO_INFO_LOG("%{public}" PRId64" us for voice call volume", muteDuration);
+    usleep(muteDuration);
+    SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    modemCallSwitchMuted_ = false;
+}
+
 void AudioPolicyService::UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType)
 {
     Trace trace("UnmutePortAfterMuteDuration:" + portName + " for " + std::to_string(muteDuration) + "us");
@@ -3240,7 +3260,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
         }
 #endif
     }
-    FetchDevice(true);
+    FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 
@@ -3712,7 +3732,12 @@ int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &i
         CHECK_AND_RETURN_RET_LOG(g_adProxy != nullptr, ERROR, "Audio server Proxy is null");
         AUDIO_INFO_LOG("has hifi:%{public}d, has arm:%{public}d", hasHifiUsbDevice_, hasArmUsbDevice_);
         std::string identity = IPCSkeleton::ResetCallingIdentity();
+
+        // Hal only support one HiFi device, If HiFi is already online, the following devices should be ARM.
+        // But when the second usb device went online, the return value of this interface was not accurate.
+        // So special handling was done when usb device was connected and disconnected.
         const std::string value = g_adProxy->GetAudioParameter("need_change_usb_device");
+
         IPCSkeleton::SetCallingIdentity(identity);
         AUDIO_INFO_LOG("get value %{public}s  from hal when usb device connect", value.c_str());
         if (isConnected) {
@@ -7439,7 +7464,7 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
         }
 #endif
     }
-    FetchDevice(true);
+    FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 

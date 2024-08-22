@@ -878,7 +878,7 @@ int32_t AudioRendererSinkInner::SetVoiceVolume(float volume)
     Trace trace("AudioRendererSinkInner::SetVoiceVolume");
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "SetVoiceVolume failed, audioAdapter_ is null");
-    AUDIO_DEBUG_LOG("SetVoiceVolume %{public}f", volume);
+    AUDIO_INFO_LOG("SetVoiceVolume %{public}f", volume);
     return audioAdapter_->SetVoiceVolume(audioAdapter_, volume);
 }
 
@@ -1473,10 +1473,10 @@ void AudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
     }
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
     uint32_t byteSize = static_cast<uint32_t>(GetFormatByteSize(attr_.format));
-    size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
+    size_t newlyCheckedTime = len / (attr_.sampleRate / AUDIO_MS_PER_S) /
         (byteSize * sizeof(uint8_t) * attr_.channel);
     detectedTime_ += newlyCheckedTime;
-    if (detectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_ &&
+    if (detectedTime_ >= AUDIO_MS_PER_S && signalDetectAgent_->signalDetected_ &&
         !signalDetectAgent_->dspTimestampGot_) {
             char value[GET_EXTRA_PARAM_LEN];
             AudioParamKey key = NONE;

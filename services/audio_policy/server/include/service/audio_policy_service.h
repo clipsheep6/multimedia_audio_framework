@@ -651,6 +651,8 @@ private:
 
     DeviceRole GetDeviceRole(AudioPin pin) const;
 
+    void SetVoiceVolumeAfterMuteDuration(int64_t muteDuration);
+
     void UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType);
 
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
@@ -1091,6 +1093,8 @@ private:
     bool hasArmUsbDevice_ = false;
     bool hasHifiUsbDevice_ = false; // Only the first usb device is supported now, hifi or arm.
     bool hasDpDevice_ = false; // Only the first dp device is supported.
+
+    std::atomic<bool> modemCallSwitchMuted_ = false;
 
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;
