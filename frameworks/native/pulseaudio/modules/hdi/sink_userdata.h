@@ -32,6 +32,8 @@
 #include <pulsecore/protocol-native.h>
 #include <pulsecore/memblockq.h>
 
+#include "renderer_sink_adapter.h"
+
 struct Userdata {
     const char *adapterName;
     uint32_t buffer_size;

@@ -1128,7 +1128,7 @@ static void RecordEffectChainStatus(bool existFlag, const char *sinkSceneType, c
 }
 
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
-    unsigned maxInfo, char *sceneType)
+    unsigned maxInfo, const char *sceneType)
 {
     AUTO_CTRACE("hdi_sink::SinkRenderPrimaryCluster:%s len:%zu", sceneType, *length);
 
@@ -1297,7 +1297,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
     return n;
 }
 
-static int32_t SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
+static int32_t SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, const char *sceneType)
 {
     pa_mix_info info[MAX_MIX_CHANNELS];
     unsigned n;
@@ -1383,7 +1383,7 @@ static int32_t SinkRenderMultiChannelPeek(pa_sink *si, pa_memchunk *chunkIn)
     return n;
 }
 
-static int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
+static int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, const char *sceneType)
 {
     AUTO_CTRACE("hdi_sink::SinkRenderPrimaryGetData:%s", sceneType);
     pa_memchunk chunk;
@@ -1712,7 +1712,7 @@ static void UpdateSceneToCountMap(pa_hashmap *sceneMap)
 {
     uint32_t curNum;
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
-        if (curNum = EffectChainManagerGetSceneCount(SCENE_TYPE_SET[i])) {
+        if ((curNum = EffectChainManagerGetSceneCount(SCENE_TYPE_SET[i]))) {
             uint32_t *num = NULL;
             if ((num = (uint32_t *)pa_hashmap_get(sceneMap, SCENE_TYPE_SET[i])) != NULL) {
                 (*num) = curNum;
@@ -1753,7 +1753,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     PrepareSpatializationFading(&u->spatializationFadingState, &u->spatializationFadingCount,
         &u->actualSpatializationEnabled);
     g_effectProcessFrameCount++;
-    const char *sceneType;
+    const void *sceneType;
     UpdateSceneToCountMap(u->sceneToCountMap);
     // to do update resampler when output device change
     void *state = NULL;

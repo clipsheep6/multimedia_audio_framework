@@ -102,7 +102,6 @@ static bool DecreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type)
     if (sceneMap == NULL) {
         return false;
     }
-    char *sceneType;
     uint32_t *num = NULL;
     if ((num = (uint32_t *)pa_hashmap_get(sceneMap, type)) != NULL) {
         (*num)--;
