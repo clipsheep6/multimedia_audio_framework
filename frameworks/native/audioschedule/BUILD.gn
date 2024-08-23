@@ -53,6 +53,10 @@ ohos_shared_library("audio_schedule") {
   cflags_cc = cflags
   cflags_cc += [ "-std=c++20" ]
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }

@@ -13,6 +13,14 @@
 
 import("//foundation/multimedia/audio_framework/config.gni")
 
+
+config("coverage_flags") {
+  if (audio_framework_feature_coverage) {
+    cflags = [ "--coverage" ]
+    ldflags = [ "--coverage" ]
+  }
+}
+
 group("audio_unit_test") {
   testonly = true
 

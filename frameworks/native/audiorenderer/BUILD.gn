@@ -36,7 +36,10 @@ config("audio_renderer_config") {
 ohos_shared_library("audio_renderer") {
   install_enable = true
 
-  configs = [ ":audio_renderer_config" ]
+  configs = [ 
+    ":audio_renderer_config",
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   sources = [
     "src/audio_renderer.cpp",

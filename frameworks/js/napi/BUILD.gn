@@ -23,6 +23,11 @@ ohos_shared_library("audio") {
     cfi_vcall_icall_only = true
     debug = false
   }
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   include_dirs = [
     "common",
     "audiorenderer",

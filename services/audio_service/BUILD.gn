@@ -92,6 +92,10 @@ ohos_shared_library("audio_common") {
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 }
 
 config("audio_client_public_config") {
@@ -221,6 +225,10 @@ ohos_shared_library("audio_client") {
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 }
 
 ohos_prebuilt_etc("audio_server_init") {
@@ -311,7 +319,10 @@ ohos_shared_library("audio_process_service") {
     "server/src/renderer_in_server.cpp",
   ]
 
-  configs = [ ":audio_service_config" ]
+  configs = [ 
+    ":audio_service_config",
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   deps = [
     ":audio_common",
@@ -382,7 +393,10 @@ ohos_shared_library("audio_service") {
     "server/src/config/audio_param_parser.cpp",
   ]
 
-  configs = [ ":audio_service_config" ]
+  configs = [ 
+    ":audio_service_config",
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   deps = [
     ":audio_common",
@@ -464,6 +478,10 @@ ohos_shared_library("audio_sasdk") {
   ]
 
   public_configs = [ ":audio_sasdk_public_config" ]
+
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
 
   deps = [
     ":audio_common",

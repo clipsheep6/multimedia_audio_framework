@@ -54,7 +54,10 @@ ohos_shared_library("audio_effect") {
   }
   install_enable = true
 
-  configs = [ ":audio_effect_config" ]
+  configs = [ 
+    ":audio_effect_config",
+    "//foundation/multimedia/audio_framework/test:coverage_flags"
+  ]
 
   sources = [
     "src/audio_effect_chain.cpp",

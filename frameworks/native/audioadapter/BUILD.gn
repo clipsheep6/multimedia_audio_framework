@@ -26,6 +26,10 @@ ohos_shared_library("pulse_audio_service_adapter") {
   cflags += [ "-Wall" ]
   cflags_cc = cflags
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   include_dirs = [
     "include",
     "../audioutils/include",

@@ -27,6 +27,10 @@ ohos_shared_library("audio_device_manager") {
   cflags += [ "-Wall" ]
   cflags_cc = cflags
 
+  configs = [
+    "//foundation/multimedia/audio_framework/test:coverage_flags",
+  ]
+
   include_dirs = [
     "include",
     "interface",
