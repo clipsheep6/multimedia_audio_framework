@@ -80,11 +80,16 @@ static const char * const VALID_MODARGS[] = {
     NULL
 };
 
-static void IncreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type)
+static void IncreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type, const char* sessionID)
 {
-    if (sceneMap == NULL) {
+    if (sceneMap == NULL || type == NULL || sessionID == NULL) {
         return;
     }
+
+    if (EffectChainManagerCheckSessionID(sessionID)) {
+        return;
+    }
+
     char *sceneType;
     uint32_t *num = NULL;
     if ((num = (uint32_t *)pa_hashmap_get(sceneMap, type)) != NULL) {
@@ -99,7 +104,7 @@ static void IncreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type)
 
 static bool DecreaseSceneTypeCount(pa_hashmap *sceneMap, const char *type)
 {
-    if (sceneMap == NULL) {
+    if (sceneMap == NULL || type == NULL) {
         return false;
     }
     uint32_t *num = NULL;
@@ -143,7 +148,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si, struct Use
         }
         if (EffectChainManagerCreateCb(sceneType, sessionID)) {
             // update sceneTypeToCount hashmap
-            IncreaseSceneTypeCount(u->sceneToCountMap, sceneType);
+            IncreaseSceneTypeCount(u->sceneToCountMap, sceneType, sessionID);
             if (EffectChainManagerSceneCheck(sceneType, "SCENE_DEFAULT")) {
                 IncreaseSceneTypeCount(u->sceneToCountMap, "SCENE_DEFAULT");
             }

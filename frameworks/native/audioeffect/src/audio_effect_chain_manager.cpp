@@ -1419,5 +1419,14 @@ uint32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sc
         return 0;
     }
 }
+
+bool CheckSessionId(const std::string &sessionID)
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    if (SessionIDSet_.count(sessionID)) {
+        return true;
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

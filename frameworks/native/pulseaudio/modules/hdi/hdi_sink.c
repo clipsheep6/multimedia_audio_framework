@@ -3936,6 +3936,12 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
 
     u->sceneToCountMap = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
         pa_xfree, pa_xfree);
+    
+    char * sceneType = strdup("EFFECT_NONE");
+    uint32_t *num = NULL;
+    num = pa_xnew0(uint32_t, 1);
+    *num = 1;
+    pa_hashmap_put(u->sceneToCountMa, sceneType, num);
     // todo new resampler map
     return 0;
 }

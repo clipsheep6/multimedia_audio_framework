@@ -137,6 +137,7 @@ public:
     void InitHdiState();
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
     uint32_t GetSceneTypeToChainCount(const std::string &sceneType);
+    bool CheckSessionId(const std::string &sessionID);
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
