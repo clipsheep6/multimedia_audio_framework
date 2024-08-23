@@ -93,7 +93,6 @@ public:
     int32_t RestoreRenderSink(void) override;
 
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
-    int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, char *streamType) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetVoiceVolume(float volume) override;

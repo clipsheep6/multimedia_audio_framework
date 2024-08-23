@@ -21,7 +21,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class RemoteAudioRendererSink : public IRemoteAudioRendererSink {
+class RemoteAudioRendererSink : public IAudioRendererSink {
 public:
     static RemoteAudioRendererSink *GetInstance(const std::string &deviceNetworkId);
 
