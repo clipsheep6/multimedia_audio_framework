@@ -150,7 +150,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si, struct Use
             // update sceneTypeToCount hashmap
             IncreaseSceneTypeCount(u->sceneToCountMap, sceneType, sessionID);
             if (EffectChainManagerSceneCheck(sceneType, "SCENE_DEFAULT")) {
-                IncreaseSceneTypeCount(u->sceneToCountMap, "SCENE_DEFAULT");
+                IncreaseSceneTypeCount(u->sceneToCountMap, "SCENE_DEFAULT", sessionID);
             }
             // todo get spec and update sceneTypeToResampler hashmap
         }

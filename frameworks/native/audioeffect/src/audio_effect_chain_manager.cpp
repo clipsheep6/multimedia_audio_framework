@@ -1420,7 +1420,7 @@ uint32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sc
     }
 }
 
-bool CheckSessionId(const std::string &sessionID)
+bool AudioEffectChainManager::CheckSessionId(const std::string &sessionID)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (SessionIDSet_.count(sessionID)) {

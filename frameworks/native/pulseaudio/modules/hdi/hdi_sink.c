@@ -3941,7 +3941,7 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
     uint32_t *num = NULL;
     num = pa_xnew0(uint32_t, 1);
     *num = 1;
-    pa_hashmap_put(u->sceneToCountMa, sceneType, num);
+    pa_hashmap_put(u->sceneToCountMap, sceneType, num);
     // todo new resampler map
     return 0;
 }
