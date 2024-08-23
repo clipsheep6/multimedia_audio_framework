@@ -22,6 +22,8 @@
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
 #include "message_parcel.h"
+#include "audio_process_in_client.h"
+#include "audio_param_parser.h"
 using namespace std;
 
 namespace OHOS {
@@ -465,6 +467,80 @@ void AudioServerSetAudioSceneTest(const uint8_t *rawData, size_t size)
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE),
         data, reply, option);
 }
+
+void AudioServerSetSpatializationSceneTypeTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    MessageParcel reply;
+    MessageOption option;
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    uint32_t sizeMs = *reinterpret_cast<const uint32_t*>(rawData);
+    data.WriteUint32(sizeMs);
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE),
+        data, reply, option);
+}
+
+void AudioServerUpdateSpatialDeviceTypeTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    MessageParcel reply;
+    MessageOption option;
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    uint32_t sizeMs = *reinterpret_cast<const uint32_t*>(rawData);
+    data.WriteUint32(sizeMs);
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIAL_DEVICE_TYPE),
+        data, reply, option);
+}
+
+void AudioServerSetCaptureSilentStateTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    bool isSilent = *reinterpret_cast<const bool*>(rawData);
+    data.WriteBool(isSilent);
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE),
+        data, reply, option);
+}
+
+void AudioServerLoadConfigurationTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys = {};
+    std::unordered_map<std::string, std::set<std::string>> audioParameterKey = {};
+    std::set<std::string> audioParameterValue = {};
+    std::string audioParameterKeyStr_1(reinterpret_cast<const char*>(rawData), size - 1);
+    std::string audioParameterKeyStr_2(reinterpret_cast<const char*>(rawData), size - 1);
+    std::string audioParameterKeyValueStr_1(reinterpret_cast<const char*>(rawData), size - 1);
+    std::string audioParameterKeyValueStr_2(reinterpret_cast<const char*>(rawData), size - 1);
+    audioParameterValue.insert(audioParameterKeyValueStr_1);
+    audioParameterValue.insert(audioParameterKeyValueStr_2);
+    audioParameterKey.insert(std::make_pair(audioParameterKeyStr_1, audioParameterValue));
+    audioParameterKey.insert(std::make_pair(audioParameterKeyStr_2, audioParameterValue));
+    audioParameterKeys.insert(std::make_pair(audioParameterKeyStr_1, audioParameterKey));
+    audioParameterKeys.insert(std::make_pair(audioParameterKeyStr_2, audioParameterKey));
+
+    std::shared_ptr<AudioParamParser> audioParamParser = std::make_shared<AudioParamParser>();
+    audioParamParser->LoadConfiguration(audioParameterKeys);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -493,5 +569,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerSetAudioBalanceValueTest(data, size);
     OHOS::AudioStandard::AudioServerSetAudioSceneTest(data, size);
     OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest(data, size);
+    OHOS::AudioStandard::AudioServerSetSpatializationSceneTypeTest(data, size);
+    OHOS::AudioStandard::AudioServerUpdateSpatialDeviceTypeTest(data, size);
+    OHOS::AudioStandard::AudioServerSetCaptureSilentStateTest(data, size);
+    OHOS::AudioStandard::AudioServerLoadConfigurationTest(data, size);
     return 0;
 }

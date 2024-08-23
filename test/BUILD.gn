@@ -81,6 +81,9 @@ group("audio_fuzz_test") {
   testonly = true
 
   deps = [
+    "fuzztest/audio_audio_utils_fuzzer:fuzztest",
+    "fuzztest/audio_effect_fuzzer:fuzztest",
+    "fuzztest/audio_hdiadaptor_bluetooth_fuzzer:fuzztest",
     "fuzztest/audiobluetoothmanager_fuzzer:fuzztest",
     "fuzztest/audiointerruptservice_fuzzer:fuzztest",
     "fuzztest/audiomanager_fuzzer:fuzztest",
@@ -88,6 +91,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicyanother_fuzzer:fuzztest",
     "fuzztest/audioserver_fuzzer:fuzztest",
     "fuzztest/audioserverbalance_fuzzer:fuzztest",
+    "fuzztest/audioserviceclient_fuzzer:fuzztest",
   ]
 }
 
