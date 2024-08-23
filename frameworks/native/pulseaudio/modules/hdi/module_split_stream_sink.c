@@ -66,7 +66,7 @@
 #define USEC_PER_SEC 1000000
 #define SCENE_TYPE_NUM 7
 #define PA_ERR (-1)
-#define MAX_PART 10
+#define MAX_PARTS 10
 
 #define STREAM_TYPE_MEDIA "1"
 #define STREAM_TYPE_COMMUNICATION "2"
@@ -75,9 +75,9 @@
 char *splitArr[MAX_PARTS];
 int g_splitNums = 0;
 const char *SPLIT_MODE;
-cosnt uint32_t ONE_STREAM = 1;
-cosnt uint32_t TWO_STREAM = 2;
-cosnt uint32_t THREE_STREAM = 3;
+const uint32_t ONE_STREAM = 1;
+const uint32_t TWO_STREAM = 2;
+const uint32_t THREE_STREAM = 3;
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Split Stream Sink"));
@@ -346,7 +346,7 @@ static void StarSplitStreamHdiIfRunning(struct userdata *u)
         return;
     }
 
-    if (u->sinkAdapter->RenderSinkStart(u->sinkAdapter);) {
+    if (u->sinkAdapter->RendererSinkStart(u->sinkAdapter)) {
         AUDIO_ERR_LOG("split_stream_sink,audiorenderer control start failed!");
         u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter);
     } else {
@@ -404,7 +404,7 @@ static int IsPeekCurrentSinkInput(char *streamType, const char *usageStr)
     if (g_splitNums == TWO_STREAM) {
         if (strcmp(usageStr, STREAM_TYPE_NAVIGATION) && !strcmp(streamType, STREAM_TYPE_MEDIA)) {
             flag = 1;
-        } else if (!strcmp(usageStr, STREAM_TYPE_NAVIGATION) && !strcmp(streamtype, STREAM_TYPE_NAVIGATION)) {
+        } else if (!strcmp(usageStr, STREAM_TYPE_NAVIGATION) && !strcmp(streamType, STREAM_TYPE_NAVIGATION)) {
             flag = 1;
         }
     }
@@ -413,9 +413,9 @@ static int IsPeekCurrentSinkInput(char *streamType, const char *usageStr)
         if (strcmp(usageStr, STREAM_TYPE_NAVIGATION) && strcmp(usageStr, STREAM_TYPE_COMMUNICATION) &&
             !strcmp(streamType, STREAM_TYPE_MEDIA)) {
             flag = 1;
-        } else if (!strcmp(usageStr, STREAM_TYPE_NAVIGATION) && !strcmp(streamtype, STREAM_TYPE_NAVIGATION)) {
+        } else if (!strcmp(usageStr, STREAM_TYPE_NAVIGATION) && !strcmp(streamType, STREAM_TYPE_NAVIGATION)) {
             flag = 1;
-        } else if (!strcmp(usageStr, STREAM_TYPE_COMMUNICATION) && !strcmp(streamtype, STREAM_TYPE_COMMUNICATION)) {
+        } else if (!strcmp(usageStr, STREAM_TYPE_COMMUNICATION) && !strcmp(streamType, STREAM_TYPE_COMMUNICATION)) {
             flag = 1;
         }
     }
@@ -447,14 +447,14 @@ static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, 
             if (mixlength == 0 || info->chunk.length < mixlength)
                 mixlength = info->chunk.length;
 
-            if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
-                pa_memblock_unref(infoIn->chunk.memblock);
+            if (pa_memblock_is_silence(info->chunk.memblock)) {
+                pa_memblock_unref(info->chunk.memblock);
                 continue;
             }
 
-            infoIn->userdata = pa_sink_input_ref(sinkIn);
-            pa_assert(infoIn->chunk.memblock);
-            pa_assert(infoIn->chunk.length > 0);
+            info->userdata = pa_sink_input_ref(i);
+            pa_assert(info->chunk.memblock);
+            pa_assert(info->chunk.length > 0);
 
             info++;
             n++;
