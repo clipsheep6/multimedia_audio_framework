@@ -138,7 +138,7 @@ ohos_shared_library("module-split-stream-sink") {
     cfi_vcall_icall_only = true
     debug = false
   }
-  sources = [ "module_split_stream_sink.c"]
+  sources = [ "module_split_stream_sink.c" ]
 
   configs = [ ":hdi_config" ]
 
@@ -166,6 +166,7 @@ ohos_shared_library("module-split-stream-sink") {
     "pulseaudio:pulsecommon",
     "pulseaudio:pulsecore",
   ]
+
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
   }
