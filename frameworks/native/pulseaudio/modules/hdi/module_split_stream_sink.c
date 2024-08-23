@@ -394,7 +394,7 @@ static void SplitSinkRenderInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsigned
     }
 }
 
-int IsPeekCurrentSinkInput(char *streamType, const char *usageStr)
+static int IsPeekCurrentSinkInput(char *streamType, const char *usageStr)
 {
     int flag = 0;
     if (g_splitNums == ONE_STREAM) {
@@ -437,8 +437,8 @@ static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, 
 
     while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *usageStr = pa_proplist_gets(i->proplist, "stream.usage");
-        AUDIO_DEBUG_LOG("module_split_stream_sink, splitFillMixInfo usageStr = %{public}s, streamType = %{public}s", usageStr, streamType);
-        if (IsPeekCurrentSinkInput(streamType, usageStr)) {   
+        AUDIO_DEBUG_LOG("splitFillMixInfo usageStr = %{public}s, streamType = %{public}s", usageStr, streamType);
+        if (IsPeekCurrentSinkInput(streamType, usageStr)) {
             pa_sink_input_assert_ref(i);
 
             AUTO_CTRACE("module_split_stream_sink::splitFillMixInfo::pa_sink_input_peek:%u len:%zu", i->index, *length);
@@ -489,8 +489,9 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
 
         if (si->thread_info.soft_muted || pa_cvolume_is_muted(&volume)) {
             pa_memblock_unref(result.memblock);
-            pa_silence_memchunk_get(&s->core->silence_cache, &s->core->mempool, result, &s->sample_spec, result->length);
-        } else if (!pa_cvolume_is_norm(&volume)){
+            pa_silence_memchunk_get(
+                &s->core->silence_cache, &s->core->mempool, result, &s->sample_spec, result->length);
+        } else if (!pa_cvolume_is_norm(&volume)) {
             pa_memchunk_make_writable(result, 0);
             pa_volume_memchunk(result, &s->sample_spec, &volume);
         }
@@ -499,14 +500,15 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
         result->memblock = pa_memblock_new(s->core->mempool, length);
 
         ptr = pa_memblock_acquire(result->memblock);
-        result->length = pa_mix(info, n, ptr, length, &s->sample_spec, &s->thread_info.soft_volume, s->thread_info.soft_muted);
+        result->length =
+            pa_mix(info, n, ptr, length, &s->sample_spec, &s->thread_info.soft_volume, s->thread_info.soft_muted);
         pa_memblock_release(chunkIn->memblock);
 
         result->index = 0;
     }
 }
 
-static unsigned SplitPaSinkRender(pa_sink *s,size_t length, pa_memchunk *result, char *streamType)
+static unsigned SplitPaSinkRender(pa_sink *s, size_t length, pa_memchunk *result, char *streamType)
 {
     AUTO_CTRACE("module_split_stream_sink::SplitPaSinkRender:len:%zu", length);
     unsigned streamCount = 0;
@@ -534,9 +536,9 @@ static unsigned SplitPaSinkRender(pa_sink *s,size_t length, pa_memchunk *result,
     pa_sink_ref(s);
 
     AUDIO_DEBUG_LOG("module_split_stream_sink, splitSinkRender in  length = %{public}zu", length);
-     if (length <= 0) {
+    if (length <= 0) {
         length = pa_frame_align(MIX_BUFFER_LENGTH, &si->sample_spec);
-     }
+    }
 
     blockSizeMax = pa_mempool_block_size_max(s->core->mempool);
     if (length > blockSizeMax)
@@ -603,7 +605,7 @@ static void SplitSinkRenderIntoMix(pa_sink *s, size_t length, pa_mix_info *info,
     }
 }
 
-void  SplitPaSinkRenderInto(pa_sink *s, pa_memchunk *target, char *streamType)
+static void  SplitPaSinkRenderInto(pa_sink *s, pa_memchunk *target, char *streamType)
 {
     pa_mix_info info[MAX_MIX_CHANNELS];
     unsigned n;
@@ -639,10 +641,10 @@ void  SplitPaSinkRenderInto(pa_sink *s, pa_memchunk *target, char *streamType)
     pa_sink_unref(s);
 }
 
-void SplitPaSinkRenderIntoFull(pa_sink *s, pa_memchunk *target, char *streamType)
+static void SplitPaSinkRenderIntoFull(pa_sink *s, pa_memchunk *target, char *streamType)
 {
     pa_memchunk chunk;
-    size_t l,d;
+    size_t l, d;
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
@@ -674,7 +676,7 @@ void SplitPaSinkRenderIntoFull(pa_sink *s, pa_memchunk *target, char *streamType
     pa_sink_unref(s);
 }
 
-static unsigned SplitPaSinkRenderFull(pa_sink *s,size_t length, pa_memchunk *result, char *streamType)
+static unsigned SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_memchunk *result, char *streamType)
 {
     unsigned nSink;
     pa_sink_assert_ref(s);
@@ -1088,7 +1090,7 @@ static int32_t PaHdiSinkNewInit(pa_module *m, pa_modargs *ma, struct userdata *u
     return 0;
 }
 
-void convertToSplitArr(const char *str)
+static void ConvertToSplitArr(const char *str)
 {
     for (int i = 0; i < MAX_PARTS; ++i) {
         splitArr[i] = NULL;
@@ -1110,7 +1112,7 @@ void convertToSplitArr(const char *str)
             AUDIO_ERR_LOG("Memory allocation failed.\n");
             break;
         }
-        token = strtok(NULL,":");
+        token = strtok(NULL, ":");
     }
     g_splitNums = count;
     free(copy);
@@ -1132,7 +1134,7 @@ int pa__init(pa_module *m)
 
     SPLIT_MODE = pa_modargs_get_value(ma, "split_mode", "1");
     AUDIO_INFO_LOG("module_split_stream_sink pa__init splitMode is %{public}s", SPLIT_MODE);
-    convertToSplitArr(SPLIT_MODE);
+    ConvertToSplitArr(SPLIT_MODE);
 
     m->userdata = u = pa_xnew0(struct userdata, 1);
     u->core = m->core;
