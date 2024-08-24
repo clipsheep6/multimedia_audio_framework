@@ -487,7 +487,7 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
 
         pa_sw_cvolume_multiply(&volume, &s->thread_info.soft_volume, &info[0].volume);
 
-        if (si->thread_info.soft_muted || pa_cvolume_is_muted(&volume)) {
+        if (s->thread_info.soft_muted || pa_cvolume_is_muted(&volume)) {
             pa_memblock_unref(result.memblock);
             pa_silence_memchunk_get(
                 &s->core->silence_cache, s->core->mempool, result, &s->sample_spec, result->length);
@@ -514,7 +514,6 @@ static unsigned SplitPaSinkRender(pa_sink *s, size_t length, pa_memchunk *result
     unsigned streamCount = 0;
     pa_mix_info info[MAX_MIX_CHANNELS];
     unsigned n;
-    size_t length;
     size_t blockSizeMax;
 
     pa_sink_assert_ref(s);
