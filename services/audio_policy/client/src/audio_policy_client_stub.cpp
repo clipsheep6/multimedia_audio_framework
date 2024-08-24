@@ -262,7 +262,7 @@ void AudioPolicyClientStub::HandleCapturerStateChange(MessageParcel &data, Messa
 void AudioPolicyClientStub::HandleRendererDeviceChange(MessageParcel &data, MessageParcel &reply)
 {
     const uint32_t sessionId = data.ReadUint32();
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo;
     deviceInfo.Unmarshalling(data);
     const AudioStreamDeviceChangeReasonExt reason
         = static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum> (data.ReadInt32());

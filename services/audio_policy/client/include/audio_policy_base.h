@@ -24,6 +24,7 @@
 #include "iremote_stub.h"
 #include "audio_system_manager.h"
 #include "audio_effect.h"
+#include "audio_stream_change_info.h"
 #include "microphone_descriptor.h"
 
 namespace OHOS {

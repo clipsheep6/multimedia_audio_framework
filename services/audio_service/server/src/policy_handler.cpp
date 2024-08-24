@@ -86,7 +86,7 @@ bool PolicyHandler::ConfigPolicyProvider(const sptr<IPolicyProviderIpc> policyPr
     return ret;
 }
 
-bool PolicyHandler::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
+bool PolicyHandler::GetProcessDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo)
 {
     // send the config to AudioPolicyServer and get the device info.
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, false, "GetProcessDeviceInfo failed with null provider.");

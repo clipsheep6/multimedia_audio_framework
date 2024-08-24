@@ -130,7 +130,7 @@ void AudioPolicyServer::OnStart()
     if (iRes < 0) {
         AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
     }
-    
+
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
@@ -2549,9 +2549,9 @@ int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bo
         return ERR_SYSTEM_PERMISSION_DENIED;
     }
     switch (deviceType) {
-        case EARPIECE:
-        case SPEAKER:
-        case BLUETOOTH_SCO:
+        case DEVICE_TYPE_EARPIECE:
+        case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
             break;
         default:
             AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
@@ -2567,7 +2567,7 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevi
         AUDIO_ERR_LOG("No system permission");
         return make_unique<AudioDeviceDescriptor>();
     }
-   
+
     auto btdevice = audioPolicyService_.GetActiveBluetoothDevice();
 
     bool hasBTPermission = VerifyBluetoothPermission();
