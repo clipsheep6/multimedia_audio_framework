@@ -64,6 +64,7 @@ void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env
         for (auto ref = callbacks_.begin(); ref != callbacks_.end(); ++ref) {
             napi_status ret = napi_delete_reference(env, *ref);
             CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
+            *ref = nullptr;
         }
         callbacks_.clear();
         AUDIO_INFO_LOG("Remove all JS Callback");
@@ -81,6 +82,7 @@ void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env
             callbacks_.remove(*ref);
             napi_status status = napi_delete_reference(env, *ref);
             CHECK_AND_RETURN_LOG(status == napi_ok, "deleting reference for callback fail");
+            *ref = nullptr;
             return;
         }
     }
@@ -94,6 +96,7 @@ void NapiAudioRendererDeviceChangeCallback::RemoveAllCallbacks()
     for (auto ref = callbacks_.begin(); ref != callbacks_.end(); ++ref) {
         napi_status ret = napi_delete_reference(env_, *ref);
         CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
+        *ref = nullptr;
     }
     callbacks_.clear();
     AUDIO_INFO_LOG("RemoveAllCallbacks successful");
@@ -225,6 +228,7 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReferenc
         for (auto ref = callbacks_.begin(); ref != callbacks_.end(); ++ref) {
             napi_status ret = napi_delete_reference(env, *ref);
             CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
+            *ref = nullptr;
         }
         callbacks_.clear();
         AUDIO_INFO_LOG("Remove all JS Callback");
@@ -242,6 +246,7 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReferenc
             callbacks_.remove(*ref);
             napi_status status = napi_delete_reference(env, *ref);
             CHECK_AND_RETURN_LOG(status == napi_ok, "deleting reference for callback fail");
+            *ref = nullptr;
             return;
         }
     }
@@ -255,6 +260,7 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveAllCallbacks()
     for (auto ref = callbacks_.begin(); ref != callbacks_.end(); ++ref) {
         napi_status ret = napi_delete_reference(env_, *ref);
         CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
+        *ref = nullptr;
     }
     callbacks_.clear();
     AUDIO_INFO_LOG("RemoveAllCallbacks successful");
