@@ -21,16 +21,44 @@
 #include "audio_manager_listener_stub.h"
 #include "message_parcel.h"
 #include "audio_policy_client.h"
+#include "audio_socket_thread.h"
+#include "audio_pnp_server.h"
+#include "audio_input_thread.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
 bool g_hasServerInit = false;
+bool g_hasPnpServerInit = false;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
 const int32_t LIMITSIZE = 4;
+
+static AudioRendererInfo getAudioRenderInfo(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return {};
+    }
+    ContentType contentType = *reinterpret_cast<const ContentType *>(rawData);
+    StreamUsage streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    int32_t rendererFlags = *reinterpret_cast<const int32_t *>(rawData);
+    std::string sceneType(reinterpret_cast<const char*>(rawData), size - 1);
+    bool spatializationEnabled = *reinterpret_cast<const bool *>(rawData);
+    bool headTrackingEnabled = *reinterpret_cast<const bool *>(rawData);
+    int32_t originalFlag = *reinterpret_cast<const int32_t *>(rawData);
+    AudioRendererInfo rendererInfo = {
+        contentType,
+        streamUsage,
+        rendererFlags,
+        sceneType,
+        spatializationEnabled,
+        headTrackingEnabled,
+        originalFlag
+    };
+    return rendererInfo;
+}
 
 AudioPolicyServer* GetServerPtr()
 {
@@ -51,6 +79,16 @@ AudioPolicyServer* GetServerPtr()
     return &server;
 }
 
+AudioPnpServer* GetPnpServerPtr()
+{
+    static AudioPnpServer pnpServer;
+    if (!g_hasPnpServerInit) {
+        pnpServer.init();
+        g_hasPnpServerInit = true;
+    }
+    return &pnpServer;
+}
+
 void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -58,8 +96,13 @@ void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
     }
 
     AudioStreamType streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
+    VolumeAdjustType adjustType = *reinterpret_cast<const VolumeAdjustType *>(rawData);
     int32_t volume = *reinterpret_cast<const int32_t *>(rawData);
     int32_t streamId = *reinterpret_cast<const int32_t *>(rawData);
+    DeviceType deviceType = *reinterpret_cast<const DeviceType *>(rawData);
+    int32_t uid = *reinterpret_cast<const int32_t *>(rawData);
+    int32_t pid = *reinterpret_cast<const int32_t *>(rawData);
+
     bool mute = *reinterpret_cast<const bool *>(rawData);
     GetServerPtr()->SetSystemVolumeLevel(streamType, volume);
     GetServerPtr()->GetSystemVolumeLevel(streamType);
@@ -69,24 +112,16 @@ void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->SetStreamMute(streamType, mute);
     GetServerPtr()->GetStreamMute(streamType);
     GetServerPtr()->IsStreamActive(streamType);
+    GetServerPtr()->GetMaxVolumeLevel(streamType);
+    GetServerPtr()->GetMinVolumeLevel(streamType);
+    GetServerPtr()->SetSystemVolumeLevelLegacy(streamType, volume);
+    GetServerPtr()->IsVolumeUnadjustable();
+    GetServerPtr()->AdjustVolumeByStep(adjustType);
+    GetServerPtr()->AdjustSystemVolumeByStep(streamType, adjustType);
+    GetServerPtr()->GetSystemVolumeInDb(streamType, volume, deviceType);
+    GetServerPtr()->GetSelectedDeviceInfo(uid, pid, streamType);
 
-    ContentType contentType = *reinterpret_cast<const ContentType *>(rawData);
-    StreamUsage streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
-    int32_t rendererFlags = *reinterpret_cast<const int32_t *>(rawData);
-    std::string sceneType(reinterpret_cast<const char*>(rawData), size - 1);
-    bool spatializationEnabled = *reinterpret_cast<const bool *>(rawData);
-    bool headTrackingEnabled = *reinterpret_cast<const bool *>(rawData);
-    int32_t originalFlag = *reinterpret_cast<const int32_t *>(rawData);
-
-    AudioRendererInfo rendererInfo = {
-        contentType,
-        streamUsage,
-        rendererFlags,
-        sceneType,
-        spatializationEnabled,
-        headTrackingEnabled,
-        originalFlag
-    };
+    AudioRendererInfo rendererInfo = getAudioRenderInfo(rawData, size);
     GetServerPtr()->GetPreferredOutputStreamType(rendererInfo);
 
     SourceType sourceType = *reinterpret_cast<const SourceType *>(rawData);
@@ -100,36 +135,45 @@ void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
 
 void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
+    if (rawData == nullptr || size < LIMITSIZE) {return;}
+    DeviceFlag flag = *reinterpret_cast<const DeviceFlag *>(rawData);
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     data.WriteBuffer(rawData, size);
     data.RewindRead(0);
-
+    SourceType sourceType = *reinterpret_cast<const SourceType *>(rawData);
+    int32_t capturerFlags = *reinterpret_cast<const int32_t *>(rawData);
+    AudioCapturerInfo capturerInfo = {sourceType, capturerFlags};
+    AudioStreamInfo audioStreamInfo = {};
+    audioStreamInfo.samplingRate = *reinterpret_cast<const AudioSamplingRate *>(rawData);
+    audioStreamInfo.channels = *reinterpret_cast<const AudioChannel *>(rawData);
+    audioStreamInfo.format = *reinterpret_cast<const AudioSampleFormat *>(rawData);
+    audioStreamInfo.encoding = *reinterpret_cast<const AudioEncodingType *>(rawData);
     InternalDeviceType deviceType = *reinterpret_cast<const InternalDeviceType *>(rawData);
+    uint32_t sessionId = *reinterpret_cast<const uint32_t *>(rawData);
     bool active = *reinterpret_cast<const bool *>(rawData);
     GetServerPtr()->SetDeviceActive(deviceType, active);
     GetServerPtr()->IsDeviceActive(deviceType);
-
+    GetServerPtr()->NotifyCapturerAdded(capturerInfo, audioStreamInfo, sessionId);
+    GetServerPtr()->GetDevices(flag);
+    GetServerPtr()->GetDevicesInner(flag);
     AudioRingerMode ringMode = *reinterpret_cast<const AudioRingerMode *>(rawData);
     GetServerPtr()->SetRingerMode(ringMode);
-
 #ifdef FEATURE_DTMF_TONE
     int32_t ltonetype = *reinterpret_cast<const int32_t *>(rawData);
     GetServerPtr()->GetToneConfig(ltonetype);
 #endif
-
     AudioScene audioScene = *reinterpret_cast<const AudioScene *>(rawData);
     GetServerPtr()->SetAudioScene(audioScene);
-
     bool mute = *reinterpret_cast<const bool *>(rawData);
+    bool legacy = *reinterpret_cast<const bool *>(rawData);
     GetServerPtr()->SetMicrophoneMute(mute);
+    GetServerPtr()->SetMicrophoneMuteCommon(mute, legacy);
+    GetServerPtr()->SetMicrophoneMuteAudioConfig(mute);
     GetServerPtr()->SetMicrophoneMutePersistent(mute, PolicyType::PRIVACY_POLCIY_TYPE);
     GetServerPtr()->GetPersistentMicMuteState();
-
+    GetServerPtr()->IsMicrophoneMuteLegacy();
+    GetServerPtr()->GetAudioScene();
     const sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
     CastType type = *reinterpret_cast<const CastType *>(rawData);
     sptr<IRemoteObject> object = data.ReadRemoteObject();
@@ -159,6 +203,7 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
 
     int32_t clientId = *reinterpret_cast<const uint32_t *>(rawData);
     GetServerPtr()->SetAudioManagerInterruptCallback(clientId, object);
+    GetServerPtr()->UnsetAudioManagerInterruptCallback(clientId);
 
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = *reinterpret_cast<const ContentType *>(rawData);
@@ -166,6 +211,10 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
     GetServerPtr()->RequestAudioFocus(clientId, audioInterrupt);
     GetServerPtr()->AbandonAudioFocus(clientId, audioInterrupt);
+    GetServerPtr()->ActivateAudioInterrupt(audioInterrupt);
+    GetServerPtr()->DeactivateAudioInterrupt(audioInterrupt);
+    GetServerPtr()->GetStreamInFocus();
+    GetServerPtr()->GetSessionInfoInFocus(audioInterrupt);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
     std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
@@ -198,7 +247,17 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->RegisterPolicyCallbackClient(object);
 
     uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
+    SessionEvent sessionEvent = *reinterpret_cast<const SessionEvent *>(rawData);
+    sessionEvent.type = *reinterpret_cast<const SessionEvent::Type *>(rawData);
+    sessionEvent.sessionID = sessionID;
+    sessionEvent.sessionInfo_ = *reinterpret_cast<const SessionInfo *>(rawData);
+
     GetServerPtr()->OnAudioStreamRemoved(sessionID);
+    GetServerPtr()->ProcessSessionRemoved(sessionID);
+    GetServerPtr()->ProcessSessionAdded(sessionEvent);
+    GetServerPtr()->ProcessorCloseWakeupSource(sessionID);
+    GetServerPtr()->ProcessorCloseWakeupSource(sessionID);
+    GetServerPtr()->UnregisterSpatializationStateEventListener(sessionID);
 
     AudioPolicyServer::DeathRecipientId id =
         *reinterpret_cast<const AudioPolicyServer::DeathRecipientId *>(rawData);
@@ -261,17 +320,6 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->InjectInterruption(networkId, event);
 }
 
-void AudioSessionFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioSessionStrategy sessionStrategy;
-    sessionStrategy.concurrencyMode = *reinterpret_cast<const AudioConcurrencyMode *>(rawData);
-    GetServerPtr()->ActivateAudioSession(sessionStrategy);
-}
-
 void AudioConcurrencyFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -318,6 +366,43 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
     listener->OnRemoteRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
 }
 
+void AudioPolicyManagerFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    AudioEvent audioEvent;
+    uint32_t eventType = *reinterpret_cast<const uint32_t *>(rawData);
+    uint32_t deviceType = *reinterpret_cast<const uint32_t *>(rawData);
+    std::string name = std::string(reinterpret_cast<const char*>(rawData), size - 1);
+    std::string address = std::string(reinterpret_cast<const char*>(rawData), size - 1);
+    audioEvent.eventType = eventType;
+    audioEvent.deviceType = deviceType;
+    audioEvent.name = name;
+    audioEvent.address = address;
+    int fd = reinterpret_cast<int>(rawData);
+    int sockfd = reinterpret_cast<int>(rawData);
+    size_t length = reinterpret_cast<size_t>(rawData);
+    const ssize_t strLength = reinterpret_cast<ssize_t>(rawData);
+    const char *msg = reinterpret_cast<const char *>(rawData);
+    char* buffer = const_cast<char*>(reinterpret_cast<const char*>(rawData));
+    AudioSocketThread::IsUpdatePnpDeviceState(&audioEvent);
+    AudioSocketThread::UpdatePnpDeviceState(&audioEvent);
+    AudioSocketThread::AudioPnpUeventOpen(&fd);
+    AudioSocketThread::UpdateDeviceState(audioEvent);
+    AudioSocketThread::DetectUsbHeadsetState(&audioEvent);
+    AudioSocketThread::DetectAnalogHeadsetState(&audioEvent);
+    AudioSocketThread::AudioPnpUeventParse(msg, strLength);
+    AudioSocketThread::AudioPnpReadUeventMsg(sockfd, buffer, length);
+    AudioInputThread::AudioPnpInputOpen();
+    AudioInputThread::AudioPnpInputPollAndRead();
+
+    std::string info = std::string(reinterpret_cast<const char*>(rawData), size - 1);
+    GetPnpServerPtr()->GetAudioPnpServer();
+    GetPnpServerPtr()->UnRegisterPnpStatusListener();
+    GetPnpServerPtr()->OnPnpDeviceStatusChanged(info);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -337,6 +422,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioPolicyFuzzTest(data, size);
     OHOS::AudioStandard::AudioPolicyOtherFuzzTest(data, size);
     OHOS::AudioStandard::AudioVolumeKeyCallbackStub(data, size);
+    OHOS::AudioStandard::AudioConcurrencyFuzzTest(data, size);
+    OHOS::AudioStandard::AudioPolicyManagerFuzzTest(data, size);
+    OHOS::AudioStandard::AudioPolicyFuzzTest(data, size);
     return 0;
 }
 

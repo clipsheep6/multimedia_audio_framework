@@ -15,9 +15,9 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("AudioServerFuzzTest") {
+ohos_fuzztest("AudioServiceServerSrcFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file = "../audioserver_fuzzer"
+  fuzz_config_file = "../audioserviceserversrc_fuzzer"
 
   include_dirs = [
     "../../../frameworks/native/audioinnercall/include",
@@ -25,6 +25,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "../../../services/audio_service/server/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_policy/client/include",
+    "../../../services/audio_service/common/include",
   ]
 
   cflags = [
@@ -34,7 +35,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  sources = [ "audio_server_fuzzer.cpp" ]
+  sources = [ "audio_service_server_src_fuzzer.cpp" ]
 
   configs = [ "../../../services/audio_service:audio_service_config" ]
 
@@ -69,5 +70,5 @@ ohos_fuzztest("AudioServerFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioServerFuzzTest" ]
+  deps = [ ":AudioServiceServerSrcFuzzTest" ]
 }
