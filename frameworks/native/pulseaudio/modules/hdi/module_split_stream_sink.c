@@ -818,7 +818,7 @@ static void ProcessSplitHdiRender(struct userdata *u, pa_memchunk *chunk, char *
         pa_memblock_unref(chunk->memblock);
     } else if (!u->isHDISinkStarted) {
         pa_memblock_unref(chunk->memblock);
-    } else if (SplitPaSinkRender(u->sinkAdapter, chunk, STREAM_TYPE_MEDIA) < 0) {
+    } else if (SplitRenderWrite(u->sinkAdapter, chunk, STREAM_TYPE_MEDIA) < 0) {
         u->bytesDropped += chunk->length;
         AUDIO_ERR_LOG("RenderWrite failed");
     }
@@ -885,8 +885,8 @@ static ssize_t SplitRenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memc
     while (true) {
         uint64_t writeLen = 0;
 
-        int32_t ret = sinkAdapter->RendererSplitRenderFrame(sinkAdapter, ((char*)p + index),
-            (uint64_t)length, &writeLen, streamType);
+        int32_t ret = sinkAdapter->RendererRenderFrame(sinkAdapter, ((char*)p + index),
+            (uint64_t)length, &writeLen);
         if (writeLen > length) {
             AUDIO_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
