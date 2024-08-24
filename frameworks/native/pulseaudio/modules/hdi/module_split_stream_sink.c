@@ -72,7 +72,7 @@
 #define STREAM_TYPE_COMMUNICATION "2"
 #define STREAM_TYPE_NAVIGATION "13"
 
-char *splitArr[MAX_PARTS];
+char *g_splitArr[MAX_PARTS];
 int g_splitNums = 0;
 const char *SPLIT_MODE;
 const uint32_t ONE_STREAM = 1;
@@ -730,12 +730,12 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
 
     /* Fill the buffer up the latency size */
     for (int i = 0; i < g_splitNums; i++) {
-        AUTO_CTRACE("module_split_stream_sink::ProcessRender:streamType:%s", splitArr[i]);
-        AUDIO_DEBUG_LOG("module_split_stream_sink: ProcessRender:streamType:%{public}s", splitArr[i]);
+        AUTO_CTRACE("module_split_stream_sink::ProcessRender:streamType:%s", g_splitArr[i]);
+        AUDIO_DEBUG_LOG("module_split_stream_sink: ProcessRender:streamType:%{public}s", g_splitArr[i]);
         
         pa_memchunk chunk;
         unsigned chunkIsNull = 0;
-        chunkIsNull = SplitPaSinkRenderFull(u->sink, u->sink->thread_info.max_request, &chunk, splitArr[i]);
+        chunkIsNull = SplitPaSinkRenderFull(u->sink, u->sink->thread_info.max_request, &chunk, g_splitArr[i]);
         if (chunkIsNull == 0) {
             continue
         }
@@ -745,9 +745,9 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
 
         AUDIO_DEBUG_LOG("module_split_stream_sink: ProcessRender send msg, chunk length = %{public}zu", chunk.length);
         // send msg post data
-        if (!strcmp(splitArr[i], STREAM_TYPE_NAVIGATION)) {
+        if (!strcmp(g_splitArr[i], STREAM_TYPE_NAVIGATION)) {
             pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_NAVIGATION, NULL, 0, &chunk, NULL);
-        } else if (!strcmp(splitArr[i], STREAM_TYPE_COMMUNICATION)) {
+        } else if (!strcmp(g_splitArr[i], STREAM_TYPE_COMMUNICATION)) {
             pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_COMMUNICATION, NULL, 0, &chunk, NULL);
         } else {
             pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_MEDIA, NULL, 0, &chunk, NULL);
@@ -1093,7 +1093,7 @@ static int32_t PaHdiSinkNewInit(pa_module *m, pa_modargs *ma, struct userdata *u
 static void ConvertToSplitArr(const char *str)
 {
     for (int i = 0; i < MAX_PARTS; ++i) {
-        splitArr[i] = NULL;
+        g_splitArr[i] = NULL;
     }
 
     char *token;
@@ -1102,9 +1102,9 @@ static void ConvertToSplitArr(const char *str)
 
     token = strtok(copy, ":");
     while (token != NULL && count < MAX_PARTS) {
-        splitArr[count] = (char *)malloc(strlen(token) + 1);
-        if (splitArr[count] != NULL) {
-            if (strcpy_s(splitArr[count], strlen(token) + 1, token) != 0) {
+        g_splitArr[count] = (char *)malloc(strlen(token) + 1);
+        if (g_splitArr[count] != NULL) {
+            if (strcpy_s(g_splitArr[count], strlen(token) + 1, token) != 0) {
                 AUDIO_ERR_LOG("strcpy_s failed.");
             };
             count++;
