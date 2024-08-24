@@ -50,6 +50,7 @@
 #include "audio_log.h"
 #include "audio_schedule.h"
 #include "audio_utils_c.h"
+#include "audio_hdiadapter_info.h"
 
 #include "renderer_sink_adapter.h"
 #include "audio_effect_chain_adapter.h"
@@ -61,7 +62,6 @@
 #define DEFAULT_BUFFER_SIZE 8192
 #define MAX_SINK_VOLUME_LEVEL 1.0
 #define MIX_BUFFER_LENGTH (pa_page_size())
-#define MAX_MIX_CHANNELS 32
 #define MAX_REWIND (7000 * PA_USEC_PER_MSEC)
 #define USEC_PER_SEC 1000000
 #define SCENE_TYPE_NUM 7
@@ -488,7 +488,7 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
         pa_sw_cvolume_multiply(&volume, &s->thread_info.soft_volume, &info[0].volume);
 
         if (s->thread_info.soft_muted || pa_cvolume_is_muted(&volume)) {
-            pa_memblock_unref(result.memblock);
+            pa_memblock_unref(result->memblock);
             pa_silence_memchunk_get(
                 &s->core->silence_cache, s->core->mempool, result, &s->sample_spec, result->length);
         } else if (!pa_cvolume_is_norm(&volume)) {
@@ -528,7 +528,7 @@ static unsigned SplitPaSinkRender(pa_sink *s, size_t length, pa_memchunk *result
     if (s->thread_info.state == PA_SINK_SUSPENDED) {
         result->memblock = pa_memblock_ref(s->silence.memblock);
         result->index = s->silence.index;
-        result->length = PA_MIN(S->silence.length, length);
+        result->length = PA_MIN(s->silence.length, length);
         return 0;
     }
 
@@ -536,7 +536,7 @@ static unsigned SplitPaSinkRender(pa_sink *s, size_t length, pa_memchunk *result
 
     AUDIO_DEBUG_LOG("module_split_stream_sink, splitSinkRender in  length = %{public}zu", length);
     if (length <= 0) {
-        length = pa_frame_align(MIX_BUFFER_LENGTH, &si->sample_spec);
+        length = pa_frame_align(MIX_BUFFER_LENGTH, &s->sample_spec);
     }
 
     blockSizeMax = pa_mempool_block_size_max(s->core->mempool);
@@ -595,10 +595,10 @@ static void SplitSinkRenderIntoMix(pa_sink *s, size_t length, pa_mix_info *info,
         ptr = pa_memblock_acquire(target->memblock);
 
         target->length = pa_mix(info, n,
-                                 (uint8_t*) ptr + target->index, length,
-                                 &s->sample_spec,
-                                 &s->thread_info.soft_volume,
-                                 s->thread_info.soft_muted);
+                                (uint8_t*) ptr + target->index, length,
+                                &s->sample_spec,
+                                &s->thread_info.soft_volume,
+                                s->thread_info.soft_muted);
 
         pa_memblock_release(target->memblock);
     }
@@ -691,7 +691,7 @@ static unsigned SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_memchunk *re
     if (s->thread_info.state == PA_SINK_SUSPENDED) {
         result->memblock = pa_memblock_ref(s->silence.memblock);
         result->index = s->silence.index;
-        result->length = PA_MIN(S->silence.length, length);
+        result->length = PA_MIN(s->silence.length, length);
         return 0;
     }
 
@@ -736,7 +736,7 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
         unsigned chunkIsNull = 0;
         chunkIsNull = SplitPaSinkRenderFull(u->sink, u->sink->thread_info.max_request, &chunk, g_splitArr[i]);
         if (chunkIsNull == 0) {
-            continue
+            continue;
         }
 
         // start hdi
@@ -841,7 +841,6 @@ static void ThreadFuncWriteHDI(void *userdata)
         pa_memchunk chunk;
 
         pa_assert_se(pa_asyncmsgq_get(u->dq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
-        AUDIO_DEBUG_LOG("ThreadFuncWriteHDI code = %{public}d , chunk.length = %{public}lu", code, chunk.length);
 
         switch (code) {
             case HDI_RENDER_MEDIA: {
@@ -1016,7 +1015,6 @@ static int32_t InitRemoteSink(struct userdata *u, const char *filePath)
     sample_attrs.filePath = filePath;
     sample_attrs.deviceNetworkId = u->deviceNetworkId;
     sample_attrs.deviceType =  u->deviceType;
-    sample_attrs.aux =  SPLIT_MODE;
 
     ret = u->sinkAdapter->RendererSinkInit(u->sinkAdapter, &sample_attrs);
     if (ret != 0) {
