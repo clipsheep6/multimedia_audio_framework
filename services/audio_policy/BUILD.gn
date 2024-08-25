@@ -52,6 +52,7 @@ config("audio_policy_public_config") {
     "server/src/interface",
     "server/src/service/concurrency",
     "server/src/service/interrupt",
+    "server/src/service/session",
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../../frameworks/native/audioinnercall/include",
@@ -145,6 +146,9 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/routers/public_priority_router.cpp",
     "server/src/service/routers/stream_filter_router.cpp",
     "server/src/service/routers/user_select_router.cpp",
+    "server/src/service/session/audio_session.cpp",
+    "server/src/service/session/audio_session_service.cpp",
+    "server/src/service/session/audio_session_timer.cpp",
     "server/src/service/spatialization/audio_spatialization_service.cpp",
   ]
 
@@ -181,6 +185,7 @@ ohos_shared_library("audio_policy_service") {
   ]
 
   external_deps = [
+    "ability_base:session_info",
     "ability_base:want",
     "ability_base:zuri",
     "ability_runtime:ability_connect_callback_stub",
@@ -379,15 +384,17 @@ ohos_shared_library("audio_policy_client") {
     "../audio_service/client/src/microphone_descriptor.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
     "client/src/audio_concurrency_state_listener_stub.cpp",
-    "client/src/audio_policy_callback_proxy.cpp",
     "client/src/audio_policy_client_stub.cpp",
     "client/src/audio_policy_client_stub_impl.cpp",
     "client/src/audio_policy_manager.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
-    "client/src/audio_policy_proxy.cpp",
     "client/src/audio_routing_manager_listener_stub.cpp",
     "client/src/audio_spatialization_state_change_listener_stub.cpp",
     "client/src/audio_volume_group_info.cpp",
+    "client/src/proxy/audio_policy_callback_proxy.cpp",
+    "client/src/proxy/audio_policy_microphone_proxy.cpp",
+    "client/src/proxy/audio_policy_proxy.cpp",
+    "client/src/proxy/audio_policy_volume_proxy.cpp",
   ]
 
   deps = [ "../../frameworks/native/audioutils:audio_utils" ]
@@ -413,9 +420,12 @@ ohos_shared_library("audio_policy_client") {
 }
 
 group("audio_policy_test_packages") {
+  testonly = true
+
   deps = [
     ":audio_dump_test",
     ":audio_policy_test",
+    "test:audio_policy_unittest_packages",
   ]
 }
 

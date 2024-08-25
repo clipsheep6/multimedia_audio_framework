@@ -112,9 +112,13 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_AVAILABLE_DEVICE_CHANGE_CALLBACK",
     "UNSET_AVAILABLE_DEVICE_CHANGE_CALLBACK",
     "IS_SPATIALIZATION_ENABLED",
+    "IS_SPATIALIZATION_ENABLED_FOR_DEVICE",
     "SET_SPATIALIZATION_ENABLED",
+    "SET_SPATIALIZATION_ENABLED_FOR_DEVICE",
     "IS_HEAD_TRACKING_ENABLED",
+    "IS_HEAD_TRACKING_ENABLED_FOR_DEVICE",
     "SET_HEAD_TRACKING_ENABLED",
+    "SET_HEAD_TRACKING_ENABLED_FOR_DEVICE",
     "GET_SPATIALIZATION_STATE",
     "IS_SPATIALIZATION_SUPPORTED",
     "IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE",
@@ -151,11 +155,16 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_AUDIO_CONCURRENCY_CALLBACK",
     "UNSET_AUDIO_CONCURRENCY_CALLBACK",
     "ACTIVATE_AUDIO_CONCURRENCY",
-    "SET_RINGER_MODE_MUTE",
     "SET_MICROPHONE_MUTE_PERSISTENT",
     "GET_MICROPHONE_MUTE_PERSISTENT",
     "INJECT_INTERRUPTION",
+    "ACTIVATE_AUDIO_SESSION",
+    "DEACTIVATE_AUDIO_SESSION",
+    "IS_AUDIO_SESSION_ACTIVATED",
+    "LOAD_SPLIT_MODULE",
+    "SET_DEFAULT_OUTPUT_DEVICE",
 };
+
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),
     "keep same with AudioPolicyInterfaceCode");
@@ -511,6 +520,9 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
     for (int i = 0; i < size; i++) {
         sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+        if (IsArmUsbDevice(*audioDeviceDescriptor)) {
+            audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+        }
         targetOutputDevice.push_back(audioDeviceDescriptor);
     }
 
@@ -540,6 +552,9 @@ void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, Mess
     for (int i = 0; i < size; i++) {
         sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+        if (IsArmUsbDevice(*audioDeviceDescriptor)) {
+            audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+        }
         targetInputDevice.push_back(audioDeviceDescriptor);
     }
 
@@ -667,7 +682,7 @@ void AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal(MessageParcel &data, 
     reply.WriteUint32(ret);
 }
 
-void AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioRendererInfo rendererInfo;
     rendererInfo.Unmarshalling(data);
@@ -675,7 +690,7 @@ void AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal(MessageParcel 
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::GetPerferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioCapturerInfo capturerInfo;
     capturerInfo.Unmarshalling(data);
@@ -955,6 +970,9 @@ void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
 
+    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
+        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    }
     int32_t result =  GetHardwareOutputSamplingRate(audioDeviceDescriptor);
     reply.WriteInt32(result);
 }
@@ -1035,6 +1053,9 @@ void AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal(MessageP
 void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    if (IsArmUsbDevice(*descriptor)) {
+        descriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    }
     CastType type = static_cast<CastType>(data.ReadInt32());
     int32_t result = ConfigDistributedRoutingRole(descriptor, type);
     reply.WriteInt32(result);
@@ -1060,10 +1081,29 @@ void AudioPolicyManagerStub::IsSpatializationEnabledInternal(MessageParcel &data
     reply.WriteBool(result);
 }
 
+void AudioPolicyManagerStub::IsSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string address = data.ReadString();
+    bool result = IsSpatializationEnabled(address);
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply)
 {
     bool enable = data.ReadBool();
     int32_t result = SetSpatializationEnabled(enable);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
+        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    }
+    bool enable = data.ReadBool();
+    int32_t result = SetSpatializationEnabled(audioDeviceDescriptor, enable);
     reply.WriteInt32(result);
 }
 
@@ -1073,10 +1113,30 @@ void AudioPolicyManagerStub::IsHeadTrackingEnabledInternal(MessageParcel &data, 
     reply.WriteBool(result);
 }
 
+void AudioPolicyManagerStub::IsHeadTrackingEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string address = data.ReadString();
+    bool result = IsHeadTrackingEnabled(address);
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::SetHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply)
 {
     bool enable = data.ReadBool();
     int32_t result = SetHeadTrackingEnabled(enable);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetHeadTrackingEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+
+    if (IsArmUsbDevice(*audioDeviceDescriptor)) {
+        audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    }
+    bool enable = data.ReadBool();
+    int32_t result = SetHeadTrackingEnabled(audioDeviceDescriptor, enable);
     reply.WriteInt32(result);
 }
 
@@ -1153,6 +1213,26 @@ void AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal(MessageParcel 
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::ActivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = static_cast<AudioConcurrencyMode>(data.ReadInt32());
+    int32_t result = ActivateAudioSession(strategy);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::DeactivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = DeactivateAudioSession();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsAudioSessionActivatedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = IsAudioSessionActivated();
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::CreateAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::set<int32_t> pids;
@@ -1205,16 +1285,45 @@ void AudioPolicyManagerStub::ReleaseAudioInterruptZoneInternal(MessageParcel &da
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    uint32_t sessionID = data.ReadUint32();
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    bool isRunning = data.ReadBool();
+    int32_t result = SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED_FOR_DEVICE):
+            IsSpatializationEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SPATIALIZATION_ENABLED_FOR_DEVICE):
+            SetSpatializationEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_ENABLED_FOR_DEVICE):
+            IsHeadTrackingEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HEAD_TRACKING_ENABLED_FOR_DEVICE):
+            SetHeadTrackingEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEFAULT_OUTPUT_DEVICE):
+            SetDefaultOutputDeviceInternal(data, reply);
+            break;
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
 void AudioPolicyManagerStub::OnMiddleEigRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_DEVICE_REFINER_CALLBACK):
-            SetAudioDeviceRefinerCallbackInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_DEVICE_REFINER_CALLBACK):
-            UnsetAudioDeviceRefinerCallbackInternal(data, reply);
-            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::TRIGGER_FETCH_DEVICE):
             TriggerFetchDeviceInternal(data, reply);
             break;
@@ -1236,9 +1345,6 @@ void AudioPolicyManagerStub::OnMiddleEigRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_AUDIO_CONCURRENCY):
             ActivateAudioConcurrencyInternal(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGER_MODE_MUTE):
-            SetRingerStreamMuteInternal(data, reply);
-            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE_PERSISTENT):
             SetMicrophoneMutePersistentInternal(data, reply);
             break;
@@ -1248,9 +1354,17 @@ void AudioPolicyManagerStub::OnMiddleEigRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::INJECT_INTERRUPTION):
             InjectInterruptionInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_AUDIO_SESSION):
+            ActivateAudioSessionInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_AUDIO_SESSION):
+            DeactivateAudioSessionInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_SESSION_ACTIVATED):
+            IsAudioSessionActivatedInternal(data, reply);
+            break;
         default:
-            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            OnMiddleNinRemoteRequest(code, data, reply, option);
             break;
     }
 }
@@ -1294,6 +1408,12 @@ void AudioPolicyManagerStub::OnMiddleSevRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_DATA_REQUESTED):
             IsHeadTrackingDataRequestedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_DEVICE_REFINER_CALLBACK):
+            SetAudioDeviceRefinerCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_DEVICE_REFINER_CALLBACK):
+            UnsetAudioDeviceRefinerCallbackInternal(data, reply);
             break;
         default:
             OnMiddleEigRemoteRequest(code, data, reply, option);
@@ -1513,10 +1633,10 @@ void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
             GetSinkLatencyFromXmlInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_OUTPUT_STREAM_TYPE):
-            GetPerferredOutputStreamTypeInternal(data, reply);
+            GetPreferredOutputStreamTypeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INPUT_STREAM_TYPE):
-            GetPerferredInputStreamTypeInternal(data, reply);
+            GetPreferredInputStreamTypeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_TRACKER):
             RegisterTrackerInternal(data, reply);
@@ -1683,6 +1803,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_DEVICE_ACTIVE):
                 IsDeviceActiveInternal(data, reply);
                 break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
+                LoadSplitModuleInternal(data, reply);
+                break;
             default:
                 OnMiddlesRemoteRequest(code, data, reply, option);
                 break;
@@ -1827,12 +1950,6 @@ void AudioPolicyManagerStub::ActivateAudioConcurrencyInternal(MessageParcel &dat
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t result = ResetRingerModeMute();
-    reply.WriteInt32(result);
-}
-
 void AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply)
 {
     bool isMute = data.ReadBool();
@@ -1858,5 +1975,14 @@ void AudioPolicyManagerStub::InjectInterruptionInternal(MessageParcel &data, Mes
     int32_t result = InjectInterruption(networkId, event);
     reply.WriteInt32(result);
 }
+
+void AudioPolicyManagerStub::LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string splitArgs = data.ReadString();
+    std::string netWorkId = data.ReadString();
+    int32_t result = LoadSplitModule(splitArgs, netWorkId);
+    reply.WriteInt32(result);
+}
+
 } // namespace audio_policy
 } // namespace OHOS

@@ -180,6 +180,19 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendAudioSessionDeactiveCallback(
+    const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->sessionDeactivePair = sessionDeactivePair;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AUDIO_SESSION_DEACTIVE_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendAudioSessionDeactiveCallback event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendAudioFocusInfoChangeCallback(int32_t callbackCategory,
     const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
@@ -460,6 +473,20 @@ bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeEvent(const bool &e
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForAnyDeviceEvent(const sptr<AudioDeviceDescriptor>
+    &selectedAudioDevice, const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->spatializationEnabled = enabled;
+    eventContextObj->descriptor = selectedAudioDevice;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SPATIALIZATION_ENABLED_CHANGE event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeEvent(const bool &enabled)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -467,6 +494,21 @@ bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeEvent(const bool &en
     eventContextObj->headTrackingEnabled = enabled;
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::HEAD_TRACKING_ENABLED_CHANGE,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send HEAD_TRACKING_ENABLED_CHANGE event failed");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeForAnyDeviceEvent(const sptr<AudioDeviceDescriptor>
+    &selectedAudioDevice,
+    const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->headTrackingEnabled = enabled;
+    eventContextObj->descriptor = selectedAudioDevice;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send HEAD_TRACKING_ENABLED_CHANGE event failed");
     return ret;
@@ -542,8 +584,38 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
             continue;
         }
-        AUDIO_DEBUG_LOG("SetA2dpDeviceVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
+        AUDIO_PRERELEASE_LOGI("Trigger volumeChangeCb clientPid : %{public}d, volumeType : %{public}d," \
+            " volume : %{public}d, updateUi : %{public}d ", it->first,
+            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volume,
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
         volumeChangeCb->OnVolumeKeyEvent(eventContextObj->volumeEvent);
+    }
+}
+
+void AudioPolicyServerHandler::HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    int32_t clientPid = eventContextObj->sessionDeactivePair.first;
+    auto iterator = audioPolicyClientProxyAPSCbsMap_.find(clientPid);
+    if (iterator == audioPolicyClientProxyAPSCbsMap_.end()) {
+        AUDIO_ERR_LOG("AudioSessionDeactiveCallback: no client callback for client pid %{public}d", clientPid);
+        return;
+    }
+    if (clientCallbacksMap_.count(iterator->first) > 0 &&
+        clientCallbacksMap_[iterator->first].count(CALLBACK_AUDIO_SESSION) > 0 &&
+        clientCallbacksMap_[iterator->first][CALLBACK_AUDIO_SESSION]) {
+        // the client has registered audio session callback.
+        sptr<IAudioPolicyClient> audioSessionCb = iterator->second;
+        if (audioSessionCb == nullptr) {
+            AUDIO_ERR_LOG("AudioSessionDeactiveCallback: nullptr for client pid %{public}d", clientPid);
+            return;
+        }
+        AUDIO_INFO_LOG("Trigger AudioSessionDeactiveCallback for client pid : %{public}d", clientPid);
+        audioSessionCb->OnAudioSessionDeactive(eventContextObj->sessionDeactivePair.second);
+    } else {
+        AUDIO_ERR_LOG("AudioSessionDeactiveCallback: no registered callback for pid %{public}d", clientPid);
     }
 }
 
@@ -736,6 +808,26 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
             clientCallbacksMap_[it->first][CALLBACK_RENDERER_STATE_CHANGE]) {
                 Trace traceCallback("rendererStateChangeCb->OnRendererStateChange");
             rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
+            ResetRingerModeMute(eventContextObj->audioRendererChangeInfos);
+        }
+    }
+}
+
+void AudioPolicyServerHandler::ResetRingerModeMute(const std::vector<std::unique_ptr<AudioRendererChangeInfo>>
+    &audioRendererChangeInfos)
+{
+    for (const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
+        if (!rendererChangeInfo) {
+            AUDIO_ERR_LOG("Renderer change info null, something wrong!!");
+            continue;
+        }
+        StreamUsage streamUsage = rendererChangeInfo->rendererInfo.streamUsage;
+        RendererState rendererState = rendererChangeInfo->rendererState;
+        if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && (rendererState == RENDERER_PAUSED ||
+            rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
+            AUDIO_INFO_LOG("reset ringer mode mute, stream usage:%{public}d, renderer state:%{public}d",
+                streamUsage, rendererState);
+            AudioPolicyService::GetAudioPolicyService().ResetRingerModeMute();
         }
     }
 }
@@ -813,6 +905,7 @@ void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppEx
     std::lock_guard<std::mutex> lock(runnerMutex_);
     if (audioPolicyClientProxyAPSCbsMap_.count(eventContextObj->clientId) == 0) {
         AUDIO_ERR_LOG("No client id %{public}d", eventContextObj->clientId);
+        return;
     }
     sptr<IAudioPolicyClient> rendererCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
     CHECK_AND_RETURN_LOG(rendererCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
@@ -828,6 +921,7 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     std::lock_guard<std::mutex> lock(runnerMutex_);
     if (audioPolicyClientProxyAPSCbsMap_.count(eventContextObj->clientId) == 0) {
         AUDIO_ERR_LOG("No client id %{public}d", eventContextObj->clientId);
+        return;
     }
     sptr<IAudioPolicyClient> capturerCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
     CHECK_AND_RETURN_LOG(capturerCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
@@ -866,6 +960,23 @@ void AudioPolicyServerHandler::HandleSpatializatonEnabledChangeEvent(const AppEx
     }
 }
 
+void AudioPolicyServerHandler::HandleSpatializatonEnabledChangeForAnyDeviceEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> spatializationEnabledChangeCb = it->second;
+        if (spatializationEnabledChangeCb == nullptr) {
+            AUDIO_ERR_LOG("spatializationEnabledChangeCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        spatializationEnabledChangeCb->OnSpatializationEnabledChangeForAnyDevice(eventContextObj->descriptor,
+            eventContextObj->spatializationEnabled);
+    }
+}
+
 void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -878,6 +989,23 @@ void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeEvent(const AppExe
             continue;
         }
         headTrackingEnabledChangeCb->OnHeadTrackingEnabledChange(eventContextObj->headTrackingEnabled);
+    }
+}
+
+void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeForAnyDeviceEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> headTrackingEnabledChangeCb = it->second;
+        if (headTrackingEnabledChangeCb == nullptr) {
+            AUDIO_ERR_LOG("headTrackingEnabledChangeCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        headTrackingEnabledChangeCb->OnHeadTrackingEnabledChangeForAnyDevice(eventContextObj->descriptor,
+            eventContextObj->headTrackingEnabled);
     }
 }
 
@@ -957,6 +1085,15 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
     switch (eventId) {
         case EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID:
             HandleConcurrencyEventWithSessionID(event);
+            break;
+        case EventAudioServerCmd::SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE:
+            HandleSpatializatonEnabledChangeForAnyDeviceEvent(event);
+            break;
+        case EventAudioServerCmd::HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE:
+            HandleHeadTrackingEnabledChangeForAnyDeviceEvent(event);
+            break;
+        case EventAudioServerCmd::AUDIO_SESSION_DEACTIVE_EVENT:
+            HandleAudioSessionDeactiveCallback(event);
             break;
         default:
             break;

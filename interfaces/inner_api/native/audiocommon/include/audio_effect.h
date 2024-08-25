@@ -41,12 +41,15 @@ constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16; // max num of e
 
 constexpr int32_t HDI_EFFECT_NUM = 2;
 constexpr int32_t HDI_SET_PATAM = 6;
+
 constexpr int32_t HDI_INIT = 0;
 constexpr int32_t HDI_BYPASS = 1;
 constexpr int32_t HDI_HEAD_MODE = 2;
 constexpr int32_t HDI_ROOM_MODE = 3;
 constexpr int32_t HDI_BLUETOOTH_MODE = 4;
 constexpr int32_t HDI_DESTROY = 5;
+constexpr int32_t HDI_UPDATE_SPATIAL_DEVICE_TYPE = 6;
+
 constexpr int32_t HDI_VOLUME = 7;
 constexpr int32_t HDI_ROTATION = 8;
 
@@ -216,6 +219,8 @@ const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
     {DEVICE_TYPE_MIC, "DEVICE_TYPE_MIC"},
     {DEVICE_TYPE_WAKEUP, "DEVICE_TYPE_WAKEUP"},
     {DEVICE_TYPE_USB_HEADSET, "DEVICE_TYPE_USB_HEADSET"},
+    {DEVICE_TYPE_USB_ARM_HEADSET, "DEVICE_TYPE_USB_ARM_HEADSET"},
+    {DEVICE_TYPE_DP, "DEVICE_TYPE_DP"},
     {DEVICE_TYPE_FILE_SINK, "DEVICE_TYPE_FILE_SINK"},
     {DEVICE_TYPE_FILE_SOURCE, "DEVICE_TYPE_FILE_SOURCE"},
     {DEVICE_TYPE_EXTERN_CABLE, "DEVICE_TYPE_EXTERN_CABLE"},
@@ -311,8 +316,8 @@ struct AudioEffectLibEntry {
 };
 
 struct AudioSpatializationState {
-    bool spatializationEnabled;
-    bool headTrackingEnabled;
+    bool spatializationEnabled = false;
+    bool headTrackingEnabled = false;
 };
 
 struct ConverterConfig {
@@ -353,4 +358,4 @@ struct AudioRendererInfoForSpatialization {
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif //AUDIO_FRAMEWORK_AUDIO_EFFECT_H
+#endif // AUDIO_FRAMEWORK_AUDIO_EFFECT_H

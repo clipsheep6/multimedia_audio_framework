@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "renderer_sink_adapter.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,6 +89,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
     adapter->RendererSinkOffloadRunningLockLock = IAudioRendererSinkOffloadRunningLockLock;
     adapter->RendererSinkOffloadRunningLockUnlock = IAudioRendererSinkOffloadRunningLockUnlock;
     adapter->RendererSinkSetPaPower = IAudioRendererSinkSetPaPower;
+    adapter->RendererSinkSetPriPaPower = IAudioRendererSinkSetPriPaPower;
     adapter->RendererSinkUpdateAppsUid = IAudioRendererSinkUpdateAppsUid;
 
     *sinkAdapter = adapter;

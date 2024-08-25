@@ -285,6 +285,11 @@ void AudioServer::OnStart()
         AUDIO_ERR_LOG("start err");
         WriteServiceStartupError();
     }
+    int32_t fastControlFlag = 0;
+    GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
+    if (fastControlFlag == 1) {
+        isFastControlled_ = true;
+    }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
 #ifdef PA
@@ -1494,8 +1499,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str());
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
-    if ((IsNormalIpcStream(resetConfig)) || IsFastBlocked(resetConfig.appInfo.appUid)) {
-        AUDIO_INFO_LOG("Create normal ipc stream.");
+    if (IsNormalIpcStream(resetConfig) || (isFastControlled_ && IsFastBlocked(resetConfig.appInfo.appUid))) {
+        AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(resetConfig, ret);
         CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, nullptr, "GetIpcStream failed.");
@@ -1921,6 +1926,17 @@ int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatiali
     return audioEffectChainManager->UpdateSpatializationState(spatializationState);
 }
 
+int32_t AudioServer::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+
+    return audioEffectChainManager->UpdateSpatialDeviceType(spatialDeviceType);
+}
+
 int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -1928,7 +1944,43 @@ int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float
         AUDIO_ERR_LOG("NotifyStreamVolumeChanged refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
+
+    SetSystemVolumeToEffect(streamType, volume);
+
     return AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
+}
+
+int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, float volume)
+{
+    std::string sceneType;
+    switch (streamType) {
+        case STREAM_RING:
+        case STREAM_ALARM:
+            sceneType = "SCENE_RING";
+            break;
+        case STREAM_VOICE_ASSISTANT:
+            sceneType = "SCENE_SPEECH";
+            break;
+        case STREAM_MUSIC:
+            sceneType = "SCENE_MUSIC";
+            break;
+        case STREAM_ACCESSIBILITY:
+            sceneType = "SCENE_OTHERS";
+            break;
+        default:
+            return SUCCESS;
+    }
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    AUDIO_INFO_LOG("streamType : %{public}d , systemVolume : %{public}f", streamType, volume);
+    audioEffectChainManager->SetSceneTypeSystemVolume(sceneType, volume);
+    
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
+    audioEffectChainManager->EffectVolumeUpdate(audioEffectVolume);
+
+    return SUCCESS;
 }
 
 int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
@@ -2051,19 +2103,19 @@ int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, i
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "refused for %{public}d",
         callingUid);
-    if (devceClass == "primary") {
-        if (durationUs <= 0) {
-            return SUCCESS;
-        }
-        IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-        CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-        return audioRendererSinkInstance->SetRenderEmpty(durationUs);
-    } else if (devceClass == "offload") {
+
+    if (durationUs <= 0) {
+        return SUCCESS;
+    }
+    if (devceClass == "offload") {
         IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
         CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
         return audioRendererSinkInstance->SetSinkMuteForSwitchDevice(mute);
     }
-    return SUCCESS;
+
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance(devceClass.c_str(), "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    return audioRendererSinkInstance->SetRenderEmpty(durationUs);
 }
 
 void AudioServer::LoadHdiEffectModel()
@@ -2094,6 +2146,22 @@ void AudioServer::SetRotationToEffect(const uint32_t rotate)
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->EffectRotationUpdate(rotate);
+}
+
+void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const int32_t &state)
+{
+    AUDIO_INFO_LOG("Server get sessionID: %{public}d, state: %{public}d", sessionId, state);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(),
+        "Update session connection state refused for %{public}d", callingUid);
+    std::shared_ptr<RendererInServer> renderer =
+        AudioService::GetInstance()->GetRendererBySessionID(static_cast<uint32_t>(sessionId));
+
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("No render in server has sessionID");
+        return;
+    }
+    renderer->OnDataLinkConnectionUpdate(static_cast<IOperation>(state));
 }
 } // namespace AudioStandard
 } // namespace OHOS

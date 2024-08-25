@@ -33,7 +33,7 @@
 #include "v4_0/iaudio_manager.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
 
@@ -120,6 +120,7 @@ public:
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     float GetMaxAmplitude() override;
     int32_t SetPaPower(int32_t flag) override;
+    int32_t SetPriPaPower() override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
@@ -410,6 +411,7 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
 int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
     Trace trace("OffloadSink::GetPresentationPosition");
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
     int32_t ret;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "failed audioRender_ is NULL");
     uint64_t frames_;
@@ -695,6 +697,7 @@ float OffloadAudioRendererSinkInner::GetMaxAmplitude()
 int32_t OffloadAudioRendererSinkInner::Start(void)
 {
     Trace trace("OffloadSink::Start");
+    AUDIO_INFO_LOG("Start");
     InitLatencyMeasurement();
     if (started_) {
         if (isFlushing_) {
@@ -744,7 +747,7 @@ int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
     float thevolume;
     int32_t ret;
     if (audioRender_ == nullptr) {
-        AUDIO_WARNING_LOG("OffloadAudioRendererSinkInner::SetVolume failed, audioRender_ null, "
+        AUDIO_PRERELEASE_LOGW("OffloadAudioRendererSinkInner::SetVolume failed, audioRender_ null, "
                           "this will happen when set volume on devices which offload not available");
         return ERR_INVALID_HANDLE;
     }
@@ -846,6 +849,7 @@ int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 int32_t OffloadAudioRendererSinkInner::Stop(void)
 {
     Trace trace("OffloadSink::Stop");
+    AUDIO_INFO_LOG("Stop");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "failed audio render null");
@@ -947,6 +951,7 @@ int32_t OffloadAudioRendererSinkInner::RestoreRenderSink(void)
 int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 {
     Trace trace("OffloadSink::SetBufferSize");
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
     int32_t ret;
     // bytewidth is 4
     uint32_t size = (uint64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND;
@@ -1074,6 +1079,11 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
 int32_t OffloadAudioRendererSinkInner::SetPaPower(int32_t flag)
 {
     (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t OffloadAudioRendererSinkInner::SetPriPaPower()
+{
     return ERR_NOT_SUPPORTED;
 }
 

@@ -101,6 +101,12 @@ public:
 
     virtual AudioScene GetAudioScene() = 0;
 
+    virtual int32_t ActivateAudioSession(const AudioSessionStrategy &strategy) = 0;
+
+    virtual int32_t DeactivateAudioSession() = 0;
+
+    virtual bool IsAudioSessionActivated() = 0;
+
     virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
@@ -232,11 +238,21 @@ public:
 
     virtual bool IsSpatializationEnabled() = 0;
 
+    virtual bool IsSpatializationEnabled(const std::string address) = 0;
+
     virtual int32_t SetSpatializationEnabled(const bool enable) = 0;
+
+    virtual int32_t SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+        const bool enable) = 0;
 
     virtual bool IsHeadTrackingEnabled() = 0;
 
+    virtual bool IsHeadTrackingEnabled(const std::string address) = 0;
+
     virtual int32_t SetHeadTrackingEnabled(const bool enable) = 0;
+
+    virtual int32_t SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+        const bool enable) = 0;
 
     virtual AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) = 0;
 
@@ -308,9 +324,12 @@ public:
 
     virtual int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) = 0;
 
-    virtual int32_t ResetRingerModeMute() = 0;
-
     virtual int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) = 0;
+
+    virtual int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");

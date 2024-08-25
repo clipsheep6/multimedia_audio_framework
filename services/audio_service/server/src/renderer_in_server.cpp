@@ -38,6 +38,7 @@ namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const int64_t MOCK_LATENCY = 45000000; // 45000000 -> 45ms
+    static const int64_t START_MIN_COST = 80000000; // 80000000 -> 80ms
     static const int32_t NO_FADING = 0;
     static const int32_t DO_FADINGOUT = 1;
     static const int32_t FADING_OUT_DONE = 2;
@@ -168,12 +169,22 @@ int32_t RendererInServer::Init()
 
     // eg: /data/data/.pulse_dir/10000_100001_48000_2_1_server_in.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
-    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + std::to_string(streamIndex_)
-        + "renderer_server_in_" + std::to_string(tempInfo.samplingRate) + "_"
+    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
+        + "_renderer_server_in_" + std::to_string(tempInfo.samplingRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpC2S_);
 
     return SUCCESS;
+}
+
+void RendererInServer::WriterRenderStreamStandbySysEvent()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_STANDBY,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("STREAMID", static_cast<int32_t>(streamIndex_));
+    bean->Add("STANDBY", standByEnable_ ? 1 : 0);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
@@ -190,15 +201,18 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 standByEnable_ = false;
                 AUDIO_INFO_LOG("%{public}u recv stand by started", streamIndex_);
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
+                WriterRenderStreamStandbySysEvent();
                 return;
             }
             status_ = I_STATUS_STARTED;
+            startedTime_ = ClockTime::GetCurNano();
             stateListener->OnOperationHandled(START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
             if (standByEnable_) {
                 AUDIO_INFO_LOG("%{public}s recv stand by paused", traceTag_.c_str());
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_STAND_BY);
+                WriterRenderStreamStandbySysEvent();
                 return;
             }
             status_ = I_STATUS_PAUSED;
@@ -222,10 +236,6 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             }
             afterDrain = true;
             break;
-        case OPERATION_RELEASED:
-            stateListener->OnOperationHandled(RELEASE_STREAM, 0);
-            status_ = I_STATUS_RELEASED;
-            break;
         default:
             OnStatusUpdateSub(operation);
     }
@@ -235,6 +245,10 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     switch (operation) {
+        case OPERATION_RELEASED:
+            stateListener->OnOperationHandled(RELEASE_STREAM, 0);
+            status_ = I_STATUS_RELEASED;
+            break;
         case OPERATION_UNDERRUN:
             AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
                 audioServerBuffer_->GetAvailableDataFrames());
@@ -248,8 +262,10 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             }
             break;
         case OPERATION_UNDERFLOW:
-            underrunCount_++;
-            audioServerBuffer_->SetUnderrunCount(underrunCount_);
+            if (ClockTime::GetCurNano() - startedTime_ > START_MIN_COST) {
+                underrunCount_++;
+                audioServerBuffer_->SetUnderrunCount(underrunCount_);
+            }
             StandByCheck(); // if stand by is enbaled here, stream will be paused and not recv UNDERFLOW any more.
             break;
         case OPERATION_SET_OFFLOAD_ENABLE:
@@ -277,9 +293,13 @@ void RendererInServer::StandByCheck()
     }
 
     // call enable stand by
-    std::unique_lock<std::mutex> lock(statusLock_);
     standByEnable_ = true;
-    IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
+    // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
+    if (managerType_ == PLAYBACK) {
+        stream_->Pause(true);
+    } else if (managerType_ == DIRECT_PLAYBACK) {
+        IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
+    }
 }
 
 bool RendererInServer::ShouldEnableStandBy()
@@ -529,9 +549,12 @@ int32_t RendererInServer::UpdateWriteIndex()
     }
 
     if (afterDrain == true) {
-        afterDrain = false;
-        AUDIO_DEBUG_LOG("After drain, start write data");
-        WriteData();
+        if (writeLock_.try_lock()) {
+            afterDrain = false;
+            AUDIO_DEBUG_LOG("After drain, start write data");
+            WriteData();
+            writeLock_.unlock();
+        }
     }
     return SUCCESS;
 }
@@ -557,6 +580,7 @@ int32_t RendererInServer::Start()
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
+        audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
         return IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
     }
     needForceWrite_ = 0;
@@ -574,6 +598,7 @@ int32_t RendererInServer::Start()
     int ret = IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
 
+    startedTime_ = ClockTime::GetCurNano();
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     int64_t tempTime = ClockTime::GetCurNano() + MOCK_LATENCY;
     audioServerBuffer_->SetHandleInfo(currentReadFrame, tempTime);
@@ -605,6 +630,11 @@ int32_t RendererInServer::Pause()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_PAUSING;
+    if (standByEnable_) {
+        AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
+        standByEnable_ = false;
+        audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
+    }
     int ret = IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
@@ -625,7 +655,7 @@ int32_t RendererInServer::Pause()
 
 int32_t RendererInServer::Flush()
 {
-    AUDIO_INFO_LOG("Flush.");
+    AUDIO_PRERELEASE_LOGI("Flush.");
     Trace trace(traceTag_ + " Flush");
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_STARTED) {
@@ -723,6 +753,11 @@ int32_t RendererInServer::Stop()
         }
         status_ = I_STATUS_STOPPING;
     }
+    if (standByEnable_) {
+        AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
+        standByEnable_ = false;
+        audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
+    }
     {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
@@ -792,7 +827,7 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp)
 {
     if (status_ == I_STATUS_STOPPED) {
-        AUDIO_WARNING_LOG("Current status is stopped");
+        AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
     stream_->GetCurrentPosition(framePos, timestamp);
@@ -1005,7 +1040,7 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
         return ERR_INVALID_PARAM;
     }
 
-    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(processConfig_.streamType);
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     Volume vol = {false, 0.0f, 0};
     PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
@@ -1041,10 +1076,6 @@ bool RendererInServer::IsHighResolution() const noexcept
         DeviceInfo deviceInfo;
         bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(processConfig_, deviceInfo);
         CHECK_AND_RETURN_RET_LOG(result, false, "GetProcessDeviceInfo failed.");
-        if (deviceInfo.isArmUsbDevice) {
-            AUDIO_INFO_LOG("normal stream,device is arm usb");
-            return false;
-        }
     }
     if (processConfig_.streamType != STREAM_MUSIC || processConfig_.streamInfo.samplingRate < SAMPLE_RATE_48000 ||
         processConfig_.streamInfo.format < SAMPLE_S24LE ||
@@ -1078,6 +1109,112 @@ int32_t RendererInServer::SetClientVolume()
     float clientVolume = audioServerBuffer_->GetStreamVolume();
     int32_t ret = stream_->SetClientVolume(clientVolume);
     return ret;
+}
+
+void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
+    switch (operation) {
+        case OPERATION_DATA_LINK_CONNECTING:
+            AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTING received");
+            stateListener->OnOperationHandled(DATA_LINK_CONNECTING, 0);
+            break;
+        case OPERATION_DATA_LINK_CONNECTED:
+            AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTED received");
+            stateListener->OnOperationHandled(DATA_LINK_CONNECTED, 0);
+            break;
+        default:
+            return;
+    }
+}
+
+static std::string GetStatusStr(IStatus status)
+{
+    switch (status) {
+        case I_STATUS_INVALID:
+            return "INVALID";
+        case I_STATUS_IDLE:
+            return "IDEL";
+        case I_STATUS_STARTING:
+            return "STARTING";
+        case I_STATUS_STARTED:
+            return "STARTED";
+        case I_STATUS_PAUSING:
+            return "PAUSING";
+        case I_STATUS_PAUSED:
+            return "PAUSED";
+        case I_STATUS_FLUSHING_WHEN_STARTED:
+            return "FLUSHING_WHEN_STARTED";
+        case I_STATUS_FLUSHING_WHEN_PAUSED:
+            return "FLUSHING_WHEN_PAUSED";
+        case I_STATUS_FLUSHING_WHEN_STOPPED:
+            return "FLUSHING_WHEN_STOPPED";
+        case I_STATUS_DRAINING:
+            return "DRAINING";
+        case I_STATUS_DRAINED:
+            return "DRAINED";
+        case I_STATUS_STOPPING:
+            return "STOPPING";
+        case I_STATUS_STOPPED:
+            return "STOPPED";
+        case I_STATUS_RELEASING:
+            return "RELEASING";
+        case I_STATUS_RELEASED:
+            return "RELEASED";
+        default:
+            break;
+    }
+    return "NO_SUCH_STATUS";
+}
+
+static std::string GetManagerTypeStr(ManagerType type)
+{
+    switch (type) {
+        case PLAYBACK:
+            return "Normal";
+        case DUP_PLAYBACK:
+            return "Dup Playback";
+        case DUAL_PLAYBACK:
+            return "DUAL Playback";
+        case DIRECT_PLAYBACK:
+            return "Direct";
+        case VOIP_PLAYBACK:
+            return "Voip";
+        case RECORDER:
+            return "Recorder";
+        default:
+            break;
+    }
+    return "NO_SUCH_TYPE";
+}
+
+bool RendererInServer::Dump(std::string &dumpString)
+{
+    if (managerType_ != DIRECT_PLAYBACK && managerType_ != VOIP_PLAYBACK) {
+        return false;
+    }
+    // dump audio stream info
+    dumpString += "audio stream info:\n";
+    AppendFormat(dumpString, "  - session id:%d\n", streamIndex_);
+    AppendFormat(dumpString, "  - appid:%d\n", processConfig_.appInfo.appPid);
+    AppendFormat(dumpString, "  - stream type:%d\n", processConfig_.streamType);
+
+    AppendFormat(dumpString, "  - samplingRate: %d\n", processConfig_.streamInfo.samplingRate);
+    AppendFormat(dumpString, "  - channels: %u\n", processConfig_.streamInfo.channels);
+    AppendFormat(dumpString, "  - format: %u\n", processConfig_.streamInfo.format);
+    AppendFormat(dumpString, "  - device type: %u\n", processConfig_.deviceType);
+    AppendFormat(dumpString, "  - sink type: %s\n", GetManagerTypeStr(managerType_).c_str());
+
+    // dump status info
+    AppendFormat(dumpString, "  - Current stream status: %s\n", GetStatusStr(status_).c_str());
+    if (audioServerBuffer_ != nullptr) {
+        AppendFormat(dumpString, "  - Current read position: %u\n", audioServerBuffer_->GetCurReadFrame());
+        AppendFormat(dumpString, "  - Current write position: %u\n", audioServerBuffer_->GetCurWriteFrame());
+    }
+
+    dumpString += "\n";
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

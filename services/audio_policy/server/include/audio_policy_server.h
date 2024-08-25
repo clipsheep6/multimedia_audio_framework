@@ -57,6 +57,7 @@ constexpr int32_t LOCAL_USER_ID = 100;
 class AudioPolicyService;
 class AudioInterruptService;
 class AudioPolicyServerHandler;
+class AudioSessionService;
 class BluetoothEventSubscriber;
 
 class AudioPolicyServer : public SystemAbility,
@@ -125,6 +126,8 @@ public:
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) override;
 
+    bool IsArmUsbDevice(const AudioDeviceDescriptor &desc) override;
+
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
 
@@ -177,6 +180,12 @@ public:
     bool IsMicrophoneMute() override;
 
     AudioScene GetAudioScene() override;
+
+    int32_t ActivateAudioSession(const AudioSessionStrategy &strategy) override;
+
+    int32_t DeactivateAudioSession() override;
+
+    bool IsAudioSessionActivated() override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const sptr<IRemoteObject> &object, const int32_t zoneId = 0) override;
@@ -302,11 +311,20 @@ public:
 
     bool IsSpatializationEnabled() override;
 
+    bool IsSpatializationEnabled(const std::string address) override;
+
     int32_t SetSpatializationEnabled(const bool enable) override;
+
+    int32_t SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+        const bool enable) override;
 
     bool IsHeadTrackingEnabled() override;
 
+    bool IsHeadTrackingEnabled(const std::string address) override;
+
     int32_t SetHeadTrackingEnabled(const bool enable) override;
+
+    int32_t SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 
@@ -377,9 +395,12 @@ public:
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
 
-    int32_t ResetRingerModeMute() override;
-
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) override;
+
+    int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
+
+    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -405,6 +426,7 @@ public:
 
         void PermStateChangeCallback(Security::AccessToken::PermStateChangeInfo& result);
         int32_t getUidByBundleName(std::string bundle_name, int user_id);
+        void UpdateMicPrivacyByCapturerState(bool targetMuteState, uint32_t targetTokenId, int32_t appUid);
 
         bool ready_;
     private:
@@ -417,7 +439,6 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
-    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     // for hidump
     void AudioDevicesDump(std::string &dumpString);
     void AudioModeDump(std::string &dumpString);
@@ -471,6 +492,7 @@ private:
     void CheckSubscribePowerStateChange();
 
     void CheckStreamMode(const int64_t activateSessionId);
+    bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
@@ -481,7 +503,6 @@ private:
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi);
     bool GetStreamMuteInternal(AudioStreamType streamType);
-    AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
 
@@ -518,8 +539,6 @@ private:
     void UnRegisterPowerStateListener();
     void RegisterSyncHibernateListener();
     void UnRegisterSyncHibernateListener();
-    void RegisterCommonEventReceiver();
-    void UnregisterCommonEventReceiver();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
     void InitPolicyDumpMap();
@@ -554,7 +573,6 @@ private:
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
-    std::shared_ptr<BluetoothEventSubscriber> bluetoothEventSubscriberOb_ = nullptr;
     bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
 
@@ -593,19 +611,6 @@ public:
     }
 private:
     AudioPolicyServer *audioPolicyServer_;
-};
-
-class BluetoothEventSubscriber : public EventFwk::CommonEventSubscriber,
-                                 public std::enable_shared_from_this<BluetoothEventSubscriber> {
-public:
-    explicit BluetoothEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
-        sptr<AudioPolicyServer> audioPolicyServer) : EventFwk::CommonEventSubscriber(subscribeInfo),
-        audioPolicyServer_(audioPolicyServer) {}
-    ~BluetoothEventSubscriber() {}
-    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
-private:
-    BluetoothEventSubscriber() = default;
-    sptr<AudioPolicyServer> audioPolicyServer_;
 };
 
 class AudioCommonEventSubscriber : public EventFwk::CommonEventSubscriber {

@@ -561,6 +561,7 @@ int32_t OHAudioBuffer::SetCurWriteFrame(uint64_t writeFrame)
 
 int32_t OHAudioBuffer::SetCurReadFrame(uint64_t readFrame)
 {
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, ERR_INVALID_PARAM, "basicBufferInfo_ is nullptr");
     uint64_t oldBasePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t oldReadPos = basicBufferInfo_->curReadFrame.load();
     if (readFrame == oldReadPos) {
@@ -608,7 +609,6 @@ int32_t OHAudioBuffer::GetBufferByFrame(uint64_t posInFrame, BufferDesc &bufferD
     deltaToBase = (deltaToBase / spanSizeInFrame_) * spanSizeInFrame_;
     size_t offset = deltaToBase * byteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(offset < totalSizeInByte_, ERR_INVALID_PARAM, "invalid deltaToBase:%{public}zu", offset);
-
     bufferDesc.buffer = dataBase_ + offset;
     bufferDesc.bufLength = spanSizeInByte_;
     bufferDesc.dataLength = spanSizeInByte_;
@@ -645,11 +645,15 @@ SpanInfo *OHAudioBuffer::GetSpanInfo(uint64_t posInFrame)
     if (deltaToBase >= totalSizeInFrame_) {
         deltaToBase -= totalSizeInFrame_;
     }
-    CHECK_AND_RETURN_RET_LOG(deltaToBase < UINT32_MAX && deltaToBase < totalSizeInFrame_, nullptr, "invalid "
-        "deltaToBase, posInFrame %{public}" PRIu64" basePos %{public}" PRIu64".", posInFrame, basePos);
-    uint32_t spanIndex = deltaToBase / spanSizeInFrame_;
-    CHECK_AND_RETURN_RET_LOG(spanIndex < spanConut_, nullptr, "invalid spanIndex:%{public}d", spanIndex);
-    return &spanInfoList_[spanIndex];
+    CHECK_AND_RETURN_RET_LOG(deltaToBase < UINT32_MAX && deltaToBase < totalSizeInFrame_, nullptr,"invalid "
+        "deltaToBase, posInFrame %{public}"  PRIu64" basePos %{public}" PRIu64".", posInFrame, basePos);
+         
+    if (spanSizeInFrame_ > 0) {
+        uint32_t spanIndex = deltaToBase / spanSizeInFrame_;
+        CHECK_AND_RETURN_RET_LOG(spanIndex < spanConut_, nullptr, "invalid spanIndex:%{public}d", spanIndex);
+        return &spanInfoList_[spanIndex];
+    }
+    return nullptr;
 }
 
 SpanInfo *OHAudioBuffer::GetSpanInfoByIndex(uint32_t spanIndex)
@@ -661,6 +665,16 @@ SpanInfo *OHAudioBuffer::GetSpanInfoByIndex(uint32_t spanIndex)
 uint32_t OHAudioBuffer::GetSpanCount()
 {
     return spanConut_;
+}
+
+int64_t OHAudioBuffer::GetLastWrittenTime()
+{
+    return lastWrittenTime_;
+}
+
+void OHAudioBuffer::SetLastWrittenTime(int64_t time)
+{
+    lastWrittenTime_ = time;
 }
 
 std::atomic<uint32_t> *OHAudioBuffer::GetFutex()

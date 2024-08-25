@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -60,6 +60,7 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "policy_handler.h"
+#include "audio_log_utils.h"
 
 #include "media_monitor_manager.h"
 
@@ -77,14 +78,16 @@ const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const uint64_t MAX_CBBUF_IN_USEC = 100000;
 const uint64_t MIN_CBBUF_IN_USEC = 20000;
-const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
+const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 8; // 8S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
-static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 3000; // 3000ms
+static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
+static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 300; // ms
+static const int32_t HALF_FACTOR = 2;
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
@@ -120,6 +123,7 @@ RendererInClientInner::~RendererInClientInner()
         runnerReleased_ = true;
         callbackHandler_ = nullptr;
     }
+    AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
@@ -134,6 +138,16 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         }
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
+        return SUCCESS;
+    }
+
+    if (operation == DATA_LINK_CONNECTING || operation == DATA_LINK_CONNECTED) {
+        if (operation == DATA_LINK_CONNECTING) {
+            isDataLinkConnected_ = false;
+        } else {
+            isDataLinkConnected_ = true;
+            dataConnectionCV_.notify_all();
+        }
         return SUCCESS;
     }
 
@@ -190,7 +204,7 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         effectMode_ = EFFECT_NONE;
     }
     rendererInfo_.sceneType = GetEffectSceneName(rendererInfo_.streamUsage);
-    AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
+    AUDIO_PRERELEASE_LOGI("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
         rendererInfo_.sceneType.c_str());
     AudioSpatializationState spatializationState =
         AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
@@ -289,18 +303,27 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
-    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
-        int32_t type = ipcStream_->GetStreamManagerType();
-        if (type == AUDIO_DIRECT_MANAGER_TYPE) {
-            rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
-                PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
-        }
-    }
+    logUtilsTag_ = "IpcClientPlay::" + std::to_string(sessionId_);
+    InitDirectPipeType();
 
     proxyObj_ = proxyObj;
     RegisterTracker(proxyObj);
     RegisterSpatializationStateEventListener();
     return SUCCESS;
+}
+
+void RendererInClientInner::InitDirectPipeType()
+{
+    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
+        AudioPipeType originType = rendererInfo_.pipeType;
+        int32_t type = ipcStream_->GetStreamManagerType();
+        if (type == AUDIO_DIRECT_MANAGER_TYPE) {
+            rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
+                PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
+        } else if (originType == PIPE_TYPE_DIRECT_MUSIC) {
+            rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+        }
+    }
 }
 
 std::mutex g_serverProxyMutex;
@@ -415,8 +438,6 @@ int32_t RendererInClientInner::DeinitIpcStream()
 {
     Trace trace("RendererInClientInner::DeinitIpcStream");
     ipcStream_->Release();
-    // in plan:
-    ipcStream_ = nullptr;
     ringCache_->ResetBuffer();
     return SUCCESS;
 }
@@ -713,7 +734,7 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
         AUDIO_ERR_LOG("Set Client Volume failed:%{public}u", ret);
         return -1;
     }
-    AUDIO_INFO_LOG("SetClientVolume success, volume: %{public}f", volume);
+    AUDIO_PRERELEASE_LOGI("SetClientVolume success, volume: %{public}f", volume);
     return SUCCESS;
 }
 
@@ -980,14 +1001,9 @@ void RendererInClientInner::WriteCallbackFunc()
         if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
             AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
         }
-        while (!cbBufferQueue_.IsEmpty()) {
+        BufferDesc temp;
+        while (cbBufferQueue_.PopNotWait(temp)) {
             Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
-            // If client didn't call Enqueue in OnWriteData, pop will block here.
-            BufferDesc temp = cbBufferQueue_.Pop();
-            if (temp.buffer == nullptr) {
-                AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
-                break;
-            }
             if (state_ != RUNNING) { break; }
             traceQueuePop.End();
             // call write here.
@@ -1134,8 +1150,8 @@ int32_t RendererInClientInner::UnsetOffloadMode()
 
 float RendererInClientInner::GetSingleStreamVolume()
 {
-    // in plan
-    return 0.0;
+    // in plan. For now, keep it consistent with fast_audio_stream
+    return 1.0f;
 }
 
 AudioEffectMode RendererInClientInner::GetAudioEffectMode()
@@ -1232,6 +1248,20 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     waitLock.unlock();
 
+    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    UpdateTracker("RUNNING");
+
+    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
+    if (!isDataLinkConnected_) {
+        AUDIO_INFO_LOG("data-connection blocking starts.");
+        stopWaiting = dataConnectionCV_.wait_for(
+            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
+                return isDataLinkConnected_;
+            });
+        AUDIO_INFO_LOG("data-connection blocking ends.");
+    }
+    dataConnectionWaitLock.unlock();
+
     offloadStartReadPos_ = 0;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         // start the callback-write thread
@@ -1242,9 +1272,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     int64_t param = -1;
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
-
-    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
-    UpdateTracker("RUNNING");
     return true;
 }
 
@@ -1292,7 +1319,6 @@ bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
-    ResetRingerModeMute();
     if (!offloadEnable_) {
         DrainAudioStream(true);
     }
@@ -1344,7 +1370,7 @@ bool RendererInClientInner::StopAudioStream()
 
 bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_PRERELEASE_LOGI("Enter");
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already released, do nothing");
@@ -1363,7 +1389,6 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     // no lock, call release in any case, include blocked case.
     std::unique_lock<std::mutex> runnerlock(runnerMutex_);
     if (releaseRunner && callbackHandler_ != nullptr) {
-        AUDIO_INFO_LOG("runner remove");
         callbackHandler_->ReleaseEventRunner();
         runnerReleased_ = true;
         callbackHandler_ = nullptr;
@@ -1373,10 +1398,6 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     // clear write callback
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         cbThreadReleased_ = true; // stop loop
-        if (cbBufferQueue_.IsEmpty()) {
-            std::lock_guard<std::mutex> lockWriteCb(writeCbMutex_);
-            cbBufferQueue_.PushNoWait({nullptr, 0, 0});
-        }
         cbThreadCv_.notify_all();
         FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
         if (callbackLoop_.joinable()) {
@@ -1394,6 +1415,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     lock.unlock();
 
     UpdateTracker("RELEASED");
+    RemoveRendererOrCapturerPolicyServiceDiedCB();
     AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
 
     audioSpeed_.reset();
@@ -1515,6 +1537,8 @@ bool RendererInClientInner::DrainAudioStream(bool stopFlag)
 
 void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
+    std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
+    userSettedPreferredFrameSize_ = frameSize;
     CHECK_AND_RETURN_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID,
         "playing audiovivid, frameSize is always 1024.");
     size_t maxCbBufferSize =
@@ -1677,7 +1701,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     FirstFrameProcess();
 
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
+    CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
         "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
 
     // hold lock
@@ -1695,7 +1719,7 @@ void RendererInClientInner::ResetFramePosition()
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
     int32_t ret = ipcStream_->GetAudioPosition(lastFlushPosition_, timestampVal);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Get position failed: %{public}u", ret);
+        AUDIO_PRERELEASE_LOGE("Get position failed: %{public}u", ret);
         return;
     }
     lastFramePosition_ = 0;
@@ -1757,18 +1781,15 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
 
-    int32_t tryCount = 3; // try futex wait for 3 times.
+    int32_t tryCount = 2; // try futex wait for 2 times.
     FutexCode futexRes = FUTEX_OPERATION_FAILED;
     while (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_ && tryCount > 0) {
         tryCount--;
         int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
-        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) *
-            AUDIO_US_PER_SECOND);
+        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND);
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
-        if (futexRes == FUTEX_TIMEOUT) {
-            AUDIO_WARNING_LOG("write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
+            "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
         if (futexRes == FUTEX_SUCCESS) { break; }
     }
@@ -1795,12 +1816,24 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
     }
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
+    DfxOperation(desc, clientConfig_.streamInfo.format, clientConfig_.streamInfo.channels);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
     return SUCCESS;
+}
+
+void RendererInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
@@ -2084,6 +2117,11 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.sessionId = sessionId_;
     info.streamTrackerRegistered = streamTrackerRegistered_;
     GetStreamSwitchInfo(info);
+
+    {
+        std::lock_guard<std::mutex> lock(setPreferredFrameSizeMutex_);
+        info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
+    }
 }
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
@@ -2095,6 +2133,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;
     info.volume = clientVolume_;
+    info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
 
     info.frameMarkPosition = static_cast<uint64_t>(rendererMarkPosition_);
     info.renderPositionCb = rendererPositionCallback_;
@@ -2230,7 +2269,7 @@ int32_t RendererInClientInner::UnregisterRendererInClientPolicyServerDiedCb()
 int32_t RendererInClientInner::RegisterRendererOrCapturerPolicyServiceDiedCB(
     const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
 {
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "Callback is null");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "Callback expired");
 
     int32_t ret = RegisterRendererInClientPolicyServerDiedCb();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RegisterRendererInClientPolicyServerDiedCb failed");
@@ -2256,8 +2295,8 @@ int32_t RendererInClientInner::RemoveRendererOrCapturerPolicyServiceDiedCB()
 bool RendererInClientInner::RestoreAudioStream()
 {
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
-    CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID, true,
-        "state_ is NEW/INVALID, no need for restore");
+    CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
+        "state_ is %{public}d, no need for restore", state_.load());
     bool result = false;
     State oldState = state_;
     state_ = NEW;
@@ -2293,50 +2332,6 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
-}
-
-void RendererInClientInner::ResetRingerModeMute()
-{
-    if (Util::IsDualToneStreamType(eStreamType_)) {
-        AUDIO_INFO_LOG("reset ringer tone mode, stream type %{public}d", eStreamType_);
-        AudioPolicyManager::GetInstance().ResetRingerModeMute();
-    }
-}
-
-RendererInClientPolicyServiceDiedCallbackImpl::RendererInClientPolicyServiceDiedCallbackImpl()
-{
-    AUDIO_DEBUG_LOG("instance create");
-}
-
-RendererInClientPolicyServiceDiedCallbackImpl::~RendererInClientPolicyServiceDiedCallbackImpl()
-{
-    AUDIO_DEBUG_LOG("instance destory");
-}
-
-void RendererInClientPolicyServiceDiedCallbackImpl::OnAudioPolicyServiceDied()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("OnAudioPolicyServiceDied");
-    if (policyServiceDiedCallback_ != nullptr) {
-        policyServiceDiedCallback_->OnAudioPolicyServiceDied();
-    }
-}
-
-void RendererInClientPolicyServiceDiedCallbackImpl::SaveRendererOrCapturerPolicyServiceDiedCB(
-    const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (callback != nullptr) {
-        policyServiceDiedCallback_ = callback;
-    }
-}
-
-void RendererInClientPolicyServiceDiedCallbackImpl::RemoveRendererOrCapturerPolicyServiceDiedCB()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (policyServiceDiedCallback_ != nullptr) {
-        policyServiceDiedCallback_ = nullptr;
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

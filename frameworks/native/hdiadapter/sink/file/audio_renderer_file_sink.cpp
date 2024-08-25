@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 
 using namespace std;
 
@@ -232,6 +232,11 @@ float AudioRendererFileSink::GetMaxAmplitude()
 int32_t AudioRendererFileSink::SetPaPower(int32_t flag)
 {
     (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t AudioRendererFileSink::SetPriPaPower()
+{
     return ERR_NOT_SUPPORTED;
 }
 

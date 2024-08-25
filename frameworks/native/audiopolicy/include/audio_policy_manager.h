@@ -159,6 +159,18 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
+    int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);
+
+    int32_t DeactivateAudioSession();
+
+    bool IsAudioSessionActivated();
+
+    int32_t SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
+
+    int32_t UnsetAudioSessionCallback();
+
+    int32_t UnsetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
+
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
 
@@ -297,11 +309,19 @@ public:
 
     bool IsSpatializationEnabled();
 
+    bool IsSpatializationEnabled(const std::string address);
+
     int32_t SetSpatializationEnabled(const bool enable);
+
+    int32_t SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
     bool IsHeadTrackingEnabled();
 
+    bool IsHeadTrackingEnabled(const std::string address);
+
     int32_t SetHeadTrackingEnabled(const bool enable);
+
+    int32_t SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
     int32_t RegisterSpatializationEnabledEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
@@ -391,9 +411,13 @@ public:
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 
-    int32_t ResetRingerModeMute();
-
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
+
+    int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+
+    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning);
+
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

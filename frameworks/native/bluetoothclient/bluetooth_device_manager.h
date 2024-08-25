@@ -21,7 +21,7 @@
 #include "bluetooth_device_utils.h"
 #include "audio_info.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_system_manager.h"
 #include "idevice_status_observer.h"
 
@@ -48,11 +48,15 @@ public:
     static void HandleWearEnable(const BluetoothRemoteDevice &device);
     static void HandleWearDisable(const BluetoothRemoteDevice &device);
     static void HandleUserSelection(const BluetoothRemoteDevice &device);
+    static void HandleVirtualConnectDevice(const BluetoothRemoteDevice &device);
+    static void HandleRemoveVirtualConnectDevice(const BluetoothRemoteDevice &device);
     static void AddDeviceInConfigVector(const BluetoothRemoteDevice &device,
         std::vector<BluetoothRemoteDevice> &deviceVector);
     static void RemoveDeviceInConfigVector(const BluetoothRemoteDevice &device,
         std::vector<BluetoothRemoteDevice> &deviceVector);
     static void NotifyToUpdateAudioDevice(const BluetoothRemoteDevice &device,
+        AudioStandard::AudioDeviceDescriptor &desc, DeviceStatus deviceStatus);
+    static void NotifyToUpdateVirtualDevice(const BluetoothRemoteDevice &device,
         AudioStandard::AudioDeviceDescriptor &desc, DeviceStatus deviceStatus);
     static bool IsA2dpBluetoothDeviceExist(const std::string& macAddress);
     static int32_t GetConnectedA2dpBluetoothDevice(const std::string& macAddress, BluetoothRemoteDevice &device);
@@ -89,11 +93,15 @@ public:
     static void HandleWearDisable(const BluetoothRemoteDevice &device);
     static void HandleUserSelection(const BluetoothRemoteDevice &device);
     static void HandleStopVirtualCall(const BluetoothRemoteDevice &device);
+    static void HandleVirtualConnectDevice(const BluetoothRemoteDevice &device);
+    static void HandleRemoveVirtualConnectDevice(const BluetoothRemoteDevice &device);
     static void AddDeviceInConfigVector(const BluetoothRemoteDevice &device,
         std::vector<BluetoothRemoteDevice> &deviceVector);
     static void RemoveDeviceInConfigVector(const BluetoothRemoteDevice &device,
         std::vector<BluetoothRemoteDevice> &deviceVector);
     static void NotifyToUpdateAudioDevice(const BluetoothRemoteDevice &device,
+        AudioStandard::AudioDeviceDescriptor &desc, DeviceStatus deviceStatus);
+    static void NotifyToUpdateVirtualDevice(const BluetoothRemoteDevice &device,
         AudioStandard::AudioDeviceDescriptor &desc, DeviceStatus deviceStatus);
     static bool IsHfpBluetoothDeviceExist(const std::string& macAddress);
     static void UpdateHfpDeviceConfiguration(const BluetoothRemoteDevice &device,

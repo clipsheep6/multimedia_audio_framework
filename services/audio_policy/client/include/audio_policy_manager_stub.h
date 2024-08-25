@@ -24,6 +24,7 @@ class AudioPolicyManagerStub : public IRemoteStub<IAudioPolicy> {
 public:
     virtual int32_t OnRemoteRequest(uint32_t code, MessageParcel &data,
         MessageParcel &reply, MessageOption &option) override;
+    virtual bool IsArmUsbDevice(const AudioDeviceDescriptor &desc) = 0;
 
 private:
     void GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
@@ -67,8 +68,8 @@ private:
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
     void GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
-    void GetPerferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
-    void GetPerferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
@@ -114,9 +115,13 @@ private:
     void SetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void IsSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void IsHeadTrackingEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void SetHeadTrackingEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetSpatializationStateInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply);
@@ -157,7 +162,13 @@ private:
     void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply);
+    void ActivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply);
+    void DeactivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply);
+    void IsAudioSessionActivatedInternal(MessageParcel &data, MessageParcel &reply);
+    void LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply);
+    void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
 
+    void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEigRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleSevRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleSixRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

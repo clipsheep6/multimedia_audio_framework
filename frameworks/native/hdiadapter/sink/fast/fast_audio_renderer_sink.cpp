@@ -37,7 +37,7 @@
 #include "v4_0/iaudio_manager.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 
 using namespace std;
@@ -100,6 +100,7 @@ public:
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     float GetMaxAmplitude() override;
     int32_t SetPaPower(int32_t flag) override;
+    int32_t SetPriPaPower() override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
@@ -204,7 +205,6 @@ void FastAudioRendererSinkInner::DeInit()
 #ifdef FEATURE_POWER_MANAGER
     KeepRunningUnlock();
 
-    runningLockManager_ = nullptr;
 #endif
 
     started_ = false;
@@ -584,6 +584,11 @@ int32_t FastAudioRendererSinkInner::SetPaPower(int32_t flag)
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t FastAudioRendererSinkInner::SetPriPaPower()
+{
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t FastAudioRendererSinkInner::CheckPositionTime()
 {
     int32_t tryCount = 50;
@@ -894,13 +899,11 @@ int32_t FastAudioRendererSinkInner::Flush(void)
 
 void FastAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
 {
-    AUDIO_WARNING_LOG("not supported.");
 }
 
 int32_t FastAudioRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
     const size_t size)
 {
-    AUDIO_WARNING_LOG("not supported.");
     return SUCCESS;
 }
 

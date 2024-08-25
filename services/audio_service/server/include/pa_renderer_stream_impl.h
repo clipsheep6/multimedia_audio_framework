@@ -28,7 +28,7 @@ public:
     ~PaRendererStreamImpl();
     int32_t InitParams();
     int32_t Start() override;
-    int32_t Pause() override;
+    int32_t Pause(bool isStandby = false) override;
     int32_t Flush() override;
     int32_t Drain() override;
     int32_t Stop() override;
@@ -94,6 +94,11 @@ private:
     int32_t OffloadUpdatePolicyInWrite();
     // offload end
 
+    uint32_t GetEffectChainLatency();
+    uint32_t GetA2dpOffloadLatency();
+
+    void UpdatePaTimingInfo();
+
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
     pa_stream *paStream_ = nullptr;
@@ -120,6 +125,7 @@ private:
     int32_t privacyType_ = 0;
 
     float powerVolumeFactor_ = 1.0f;
+    bool isStandbyPause_ = false;
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
@@ -134,6 +140,7 @@ private:
     // offload end
     std::mutex fadingMutex_;
     std::condition_variable fadingCondition_;
+    float clientVolume_ = 1.0f;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
 
@@ -141,6 +148,8 @@ private:
     uint64_t preLatency_ = 50000; // 50000 default
     pa_usec_t preTimeGetLatency_ = pa_rtclock_now();
     bool firstGetLatency_ = true;
+    pa_usec_t preTimeGetPaLatency_ = pa_rtclock_now();
+    bool firstGetPaLatency_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

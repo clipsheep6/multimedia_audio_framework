@@ -122,6 +122,8 @@ public:
 
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
 
+    int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
+
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
 
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
@@ -150,6 +152,8 @@ public:
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 
     void SetRotationToEffect(const uint32_t rotate) override;
+
+    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -183,6 +187,7 @@ private:
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
+    int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     const std::string GetBundleNameFromUid(int32_t uid);
     bool IsFastBlocked(int32_t uid);
 
@@ -210,6 +215,7 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
+    bool isFastControlled_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

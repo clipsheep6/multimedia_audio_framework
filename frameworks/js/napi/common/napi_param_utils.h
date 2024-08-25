@@ -27,7 +27,7 @@
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
 #include "napi_base_context.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_info.h"
 #include "audio_capturer.h"
 #include "audio_system_manager.h"
@@ -150,6 +150,8 @@ public:
         napi_value &result);
     static napi_status SetDeviceDescriptors(const napi_env &env,
         const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result);
+    static napi_status SetAudioSpatialEnabledStateForDevice(const napi_env &env,
+    const AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice, napi_value &result);
     static napi_status SetValueDeviceInfo(const napi_env &env, const DeviceInfo &deviceInfo, napi_value &result);
     static napi_status SetInterruptEvent(const napi_env &env, const InterruptEvent &interruptEvent,
         napi_value &result);
@@ -205,6 +207,10 @@ public:
     static napi_status GetExtraParametersVector(const napi_env &env, std::vector<std::string> &subKeys, napi_value in);
     static napi_status SetExtraAudioParametersInfo(const napi_env &env,
         const std::vector<std::pair<std::string, std::string>> &extraParameters, napi_value &result);
+    static napi_status GetAudioSessionStrategy(const napi_env &env,
+        AudioSessionStrategy &audioSessionStrategy, napi_value in);
+    static napi_status SetAudioSessionDeactiveEvent(const napi_env &env,
+        const AudioSessionDeactiveEvent &deactiveEvent, napi_value &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS

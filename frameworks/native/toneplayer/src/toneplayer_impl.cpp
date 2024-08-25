@@ -23,7 +23,7 @@
 #include <cmath>
 #include <cfloat>
 #include "securec.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_policy_manager.h"
 #include "tone_player_impl.h"
 #include "audio_utils.h"
@@ -374,7 +374,7 @@ bool TonePlayerImpl::AudioToneSequenceGen(BufferDesc &bufDesc)
         totalSample_ += reqSamples;
         if (CheckToneStopped()) {
             // in plan: do smooth works
-            AUDIO_INFO_LOG("CheckToneStopped true toneType_ %{public}d", toneType_);
+            AUDIO_PRERELEASE_LOGI("CheckToneStopped true toneType_ %{public}d", toneType_);
             if (toneState_ == TONE_STOPPING) {
                 toneState_ = TONE_STOPPED;
                 totalBufAvailable = 0;
@@ -427,6 +427,10 @@ bool TonePlayerImpl::InitAudioRenderer()
     }
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false,
         "Renderer create failed");
+
+    if (rendererOptions_.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        audioRenderer_->EnableVoiceModemCommunicationStartStream(true);
+    }
 
     size_t targetSize = 0;
     int32_t ret = audioRenderer_->GetBufferSize(targetSize);

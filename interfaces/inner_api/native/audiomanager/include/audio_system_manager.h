@@ -73,6 +73,12 @@ public:
         int32_t channelIndexMasks = 0);
 
     bool isSameDevice(const DeviceInfo &deviceInfo);
+    bool isSameDeviceDesc(const std::unique_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+};
+
+struct AudioSpatialEnabledStateForDevice {
+    sptr<AudioDeviceDescriptor> deviceDescriptor;
+    bool enabled;
 };
 
 struct DistributedRoutingInfo {
@@ -383,6 +389,7 @@ public:
 private:
     std::list<std::shared_ptr<AudioDistributedRoutingRoleCallback>> callbackList_;
     std::shared_ptr<AudioDistributedRoutingRoleCallback> cb_;
+    std::mutex cbListMutex_;
 };
 
 class AudioDeviceRefiner {
@@ -1251,6 +1258,17 @@ public:
      * @since 12
      */
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
+
+    /**
+    * @brief Load the split module for audio stream separation.
+    *
+    * @param splitArgs Specifies the types of audio to be split into different streams.
+    * @param networkId The network identifier of the output device.
+    * @return Returns {@link SUCCESS} if the module is loaded successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    * @since 12
+    */
+    int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {

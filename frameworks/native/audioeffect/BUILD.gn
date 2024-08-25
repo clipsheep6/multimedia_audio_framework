@@ -79,14 +79,11 @@ ohos_shared_library("audio_effect") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "pulseaudio:pulse",
+    "samgr:samgr_proxy",
   ]
 
   if (sensor_enable == true) {
     external_deps += [ "sensor:sensor_interface_native" ]
-  }
-
-  if (window_manager_enable == true) {
-    external_deps += [ "window_manager:libdm" ]
   }
 
   version_script = "../../../audio_framework.versionscript"
