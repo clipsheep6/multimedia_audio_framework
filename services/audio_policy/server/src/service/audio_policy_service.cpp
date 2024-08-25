@@ -307,6 +307,7 @@ bool AudioPolicyService::Init(void)
     audioPolicyManager_.Init();
     audioEffectManager_.EffectManagerInit();
     audioDeviceManager_.ParseDeviceXml();
+    audioDeviceAffinityManager.ParseAffinityDeviceXml();
     audioPnpServer_.init();
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>(this);
     if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}

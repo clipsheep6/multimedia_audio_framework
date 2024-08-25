@@ -1127,6 +1127,12 @@ enum RouterType {
      * @since 12
      */
     ROUTER_TYPE_USER_SELECT,
+
+    /**
+     * App select router.
+     * @since 12
+     */
+    ROUTER_TYPE_APP_SELECT,
 };
 
 enum RenderMode {

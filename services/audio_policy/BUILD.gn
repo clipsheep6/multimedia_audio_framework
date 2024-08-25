@@ -26,6 +26,7 @@ group("audio_policy_packages") {
     ":audio_strategy_router",
     ":audio_usage_strategy",
     ":audio_volume_config",
+    ":audio_device_affinity_config",
   ]
 
   if (audio_framework_feature_dtmf_tone) {
@@ -121,6 +122,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/config/audio_strategy_router_parser.cpp",
     "server/src/service/config/audio_usage_strategy_parser.cpp",
     "server/src/service/config/audio_volume_parser.cpp",
+    "server/src/service/config/audio_device_affinity_parser.cpp",
     "server/src/service/data_share_observer_callback.cpp",
     "server/src/service/device_init_callback.cpp",
     "server/src/service/effect/audio_effect_config_parser.cpp",
@@ -293,6 +295,14 @@ ohos_prebuilt_etc("audio_device_config") {
 
 ohos_prebuilt_etc("audio_volume_config") {
   source = "server/config/audio_volume_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_device_affinity_config") {
+  source = "server/config/audio_device_affinity_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
