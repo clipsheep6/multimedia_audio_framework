@@ -346,7 +346,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetDefaultOutputDevice(
         deviceType == AUDIO_DEVICE_TYPE_DEFAULT) ? true : false;
     CHECK_AND_RETURN_RET_LOG(result != false, AUDIOSTREAM_ERROR_INVALID_PARAM, "deviceType is not valid");
     int32_t ret = audioRenderer->SetDefaultOutputDevice((OHOS::AudioStandard::DeviceType)deviceType);
-    if (ret == ERR_NOT_SUPPORTED) {
+    if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
         AUDIO_ERR_LOG("This audiorenderer can not reset the output device");
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
     } else if (ret != AUDIOSTREAM_SUCCESS) {
