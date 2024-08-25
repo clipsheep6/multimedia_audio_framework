@@ -2163,5 +2163,30 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
     }
     renderer->OnDataLinkConnectionUpdate(static_cast<IOperation>(state));
 }
+
+void AudioServer::RestoreSession(const int32_t &sessionID, bool isOutput)
+{
+    AUDIO_INFO_LOG("restore output: %{public}d, sessionID: %{public}d", isOutput, sessionID);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(),
+        "Update session connection state refused for %{public}d", callingUid);
+    if (isOutput) {
+        std::shared_ptr<RendererInServer> renderer =
+            AudioService::GetInstance()->GetRendererBySessionID(static_cast<uint32_t>(sessionId));
+        if (renderer == nullptr) {
+            AUDIO_ERR_LOG("No render in server has sessionID");
+            return;
+        }
+        renderer->RestoreSession();
+    } else {
+        std::shared_ptr<CapturerInClient> capturer =
+            AudioService::GetInstance()->GetCapturerBySessionID(static_cast<uint32_t>(sessionId));
+        if (capturer == nullptr) {
+            AUDIO_ERR_LOG("No capturer in server has sessionID");
+            return;
+        }
+        capturer->RestoreSession();
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

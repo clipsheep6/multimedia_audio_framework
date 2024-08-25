@@ -116,6 +116,14 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
         }
     }
 
+    if (ipcStreamInServer != nullptr && config.audioMode == AUDIO_MODE_RECORD) {
+        uint32_t sessionId = 0;
+        std::shared_ptr<CapturerInClient> capturer = ipcStreamInServer->GetCapturer();
+        if (capturer != nullptr && capturer->GetSessionId(sessionId) == SUCCESS) {
+            InsertCapturer(sessionId, capturer);
+        }
+    }
+
     return ipcStreamInServer;
 }
 
@@ -124,6 +132,13 @@ void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererIn
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
     AUDIO_INFO_LOG("Insert renderer:%{public}u into map", sessionId);
     allRendererMap_[sessionId] = renderer;
+}
+
+void AudioService::InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInClient> capturer)
+{
+    std::unique_lock<std::mutex> lock(capturerMapMutex_);
+    AUDIO_INFO_LOG("Insert capturer:%{public}u into map", sessionId);
+    allCapturerMap_[sessionId] = capturer;
 }
 
 void AudioService::RemoveRenderer(uint32_t sessionId)
@@ -135,6 +150,17 @@ void AudioService::RemoveRenderer(uint32_t sessionId)
         return;
     }
     allRendererMap_.erase(sessionId);
+}
+
+void AudioService::RemoveRenderer(uint32_t sessionId)
+{
+    std::unique_lock<std::mutex> lock(capturerMapMutex_);
+    AUDIO_INFO_LOG("capturer:%{public}u will be removed.", sessionId);
+    if (!allCapturerMap_.count(sessionId)) {
+        AUDIO_WARNING_LOG("capturer in not in map!");
+        return;
+    }
+    allCapturerMap_.erase(sessionId);
 }
 
 void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)

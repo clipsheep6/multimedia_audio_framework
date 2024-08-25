@@ -312,10 +312,11 @@ struct DevicePrivacyInfo {
 struct AffinityDeviceInfo {
     std::string groupName;
     DeviceType deviceType;
-    int networkId;
+    DeviceFlag deviceFlag;
+    std::string networkID;
+    uint64_t chooseTimeStamp;
     bool isPrimary;
     bool SupportedConcurrency;
-    bool isOutputDevice;
 };
 
 template<typename T> bool MarshallingSetInt32(const std::set<T> &value, Parcel &parcel)

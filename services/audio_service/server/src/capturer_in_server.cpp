@@ -21,6 +21,7 @@
 #include "securec.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_service.h"
 #include "audio_service_log.h"
 #include "audio_process_config.h"
 #include "i_stream_manager.h"
@@ -388,6 +389,7 @@ int32_t CapturerInServer::Stop()
 
 int32_t CapturerInServer::Release()
 {
+    AudioService::GetInstance()->RemoveCapturer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ == I_STATUS_RELEASED) {
@@ -515,6 +517,13 @@ int32_t CapturerInServer::InitCacheBuffer(size_t targetSize)
     }
 
     return SUCCESS;
+}
+
+void CapturerInServer::RestoreSession()
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    stateListener->OnOperationHandled(RESTORE_SESSION, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

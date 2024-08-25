@@ -25,43 +25,42 @@ namespace AudioStandard {
 unique_ptr<AudioDeviceDescriptor> AppSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     unique_ptr<AudioDeviceDescriptor> device =
-        AudioStateManager::GetAudioAffinityDeviceManager().GetRendererDevice(clientUID);
+        AudioAffinityManager::GetAudioAffinityManager().GetRendererDevice(clientUID);
     return device;
 }
 
 unique_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     unique_ptr<AudioDeviceDescriptor> device =
-        AudioStateManager::GetAudioAffinityDeviceManager().GetRendererDevice(clientUID);
+        AudioAffinityManager::GetAudioAffinityManager().GetRendererDevice(clientUID);
     return device;
 }
 
 unique_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
     unique_ptr<AudioDeviceDescriptor> device =
-        AudioStateManager::GetAudioAffinityDeviceManager().GetCaptureDevice(clientUID);
+        AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
     return device;
 }
 
 vector<std::unique_ptr<AudioDeviceDescriptor>> AppSelectRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> device =
-        AudioStateManager::GetAudioAffinityDeviceManager().GetRendererDevice(clientUID);
-    return device;
+    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    return descs;
 }
 
 unique_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
     unique_ptr<AudioDeviceDescriptor> device =
-        AudioStateManager::GetAudioAffinityDeviceManager().GetCaptureDevice(clientUID);
+        AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
     return device;
 }
 
 unique_ptr<AudioDeviceDescriptor> AppSelectRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     unique_ptr<AudioDeviceDescriptor> device =
-        AudioStateManager::GetAudioAffinityDeviceManager().GetRendererDevice(clientUID);
+        AudioAffinityManager::GetAudioAffinityManager().GetRendererDevice(clientUID);
     return device;
 }
 
