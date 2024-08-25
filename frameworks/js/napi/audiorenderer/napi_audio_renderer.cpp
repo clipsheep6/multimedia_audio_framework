@@ -1585,7 +1585,7 @@ napi_value NapiAudioRenderer::SetDefaultOutputDevice(napi_env env, napi_callback
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
             "incorrect parameter types: The type of mode must be number", NAPI_ERR_INPUT_INVALID);
         NAPI_CHECK_ARGS_RETURN_VOID(context,
-            NapiAudioEnum::IsLegalInputArgumentOutputDeviceType(context->deviceType),
+            NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(context->deviceType),
             "parameter verification failed: The param of mode must be enum deviceType", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
