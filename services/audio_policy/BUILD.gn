@@ -26,6 +26,7 @@ group("audio_policy_packages") {
     ":audio_interrupt_policy_config",
     ":audio_policy_service",
     ":audio_strategy_router",
+    "safe_volume_notification:audio_safe_volume_notification_impl",
     ":audio_usage_strategy",
     ":audio_volume_config",
   ]
@@ -54,6 +55,7 @@ config("audio_policy_public_config") {
     "server/src/service/concurrency",
     "server/src/service/interrupt",
     "server/src/service/session",
+    "safe_volume_notification/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../../frameworks/native/audioinnercall/include",

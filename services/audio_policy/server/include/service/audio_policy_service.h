@@ -33,6 +33,7 @@
 #include "datashare_helper.h"
 #include "ipc_skeleton.h"
 #include "power_mgr_client.h"
+#include "common_event_manager.h"
 #ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
 #endif
@@ -562,6 +563,8 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
+    void SubscribeSafeVolumeEvent();
 
 private:
     AudioPolicyService()
@@ -1033,6 +1036,8 @@ private:
         std::vector<sptr<AudioDeviceDescriptor>> selectedDesc);
     int32_t SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> selectedDesc);
+    void PublishSafeVolumeNotification(int32_t notificationId);
+    void CancelSafeVolumeNotification(int32_t notificationId);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -1196,6 +1201,13 @@ private:
     std::atomic<bool> isSafeVolumeDialogShowing_ = false;
     std::mutex safeVolumeMutex_;
 
+    std::mutex notifyMutex_;
+    int32_t streamMusicVol_;
+    bool isSelectRestoreVol_ = false;
+    bool isSelectIncreaseVol_ = false;
+    bool restoreNIsShowing_ = false;
+    bool increaseNIsShowing_ = false;
+
     DeviceType priorityOutputDevice_ = DEVICE_TYPE_INVALID;
     DeviceType priorityInputDevice_ = DEVICE_TYPE_INVALID;
     ConnectType conneceType_ = CONNECT_TYPE_LOCAL;
@@ -1237,6 +1249,18 @@ private:
     std::mutex connectionMutex_;
     std::condition_variable connectionCV_;
     static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
+};
+
+class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {
+public:
+    explicit SafeVolumeEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
+        std::function<void(const EventFwk::CommonEventData&)> receiver)
+        : EventFwk::CommonEventSubscriber(subscribeInfo), eventReceiver_(receiver) {}
+    ~SafeVolumeEventSubscriber() {}
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
+private:
+    SafeVolumeEventSubscriber() = default;
+    std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
