@@ -533,6 +533,7 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 
     int32_t ResetRingerModeMute();
+
     bool IsRingerModeMute();
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
@@ -542,6 +543,11 @@ public:
     void FetchStreamForA2dpOffload(const bool &requireReset);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     bool getFastControlParam();
+
+    int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+
+    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning);
 
 private:
     AudioPolicyService()
@@ -989,6 +995,7 @@ private:
     void UpdateDeviceList(AudioDeviceDescriptor &updatedDesc, bool isConnected,
         std::vector<sptr<AudioDeviceDescriptor>> &descForCb,
         AudioStreamDeviceChangeReasonExt &reason);
+    void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

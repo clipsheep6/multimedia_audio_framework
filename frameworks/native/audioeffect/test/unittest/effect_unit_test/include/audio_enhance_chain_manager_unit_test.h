@@ -13,16 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_INTERRUPT_UNIT_TEST_H
-#define AUDIO_INTERRUPT_UNIT_TEST_H
+#ifndef AUDIO_ENHANCE_CHAIN_MANAGER_UNIT_TEST_H
+#define AUDIO_ENHANCE_CHAIN_MANAGER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
-#include "audio_interrupt_service.h"
+#include "audio_enhance_chain_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
-class AudioInterruptUnitTest : public testing::Test {
+class AudioEnhanceChainManagerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -33,6 +32,7 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
 };
-} // namespace AudioStandard
-} // namespace OHOS
-#endif // AUDIO_INTERRUPT_UNIT_TEST_H
+}
+}
+
+#endif

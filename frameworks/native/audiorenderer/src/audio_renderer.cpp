@@ -224,6 +224,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 
     audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
+    audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
@@ -676,7 +677,8 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         }
     }
     // When the cellular call stream is starting, only need to activate audio interrupt.
-    CHECK_AND_RETURN_RET(audioInterrupt_.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION, true);
+    CHECK_AND_RETURN_RET(audioInterrupt_.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        isEnableVoiceModemCommunicationStartStream_, true);
 
     bool result = audioStream_->StartAudioStream(cmdType);
     if (!result) {
@@ -774,7 +776,8 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Pause failed. Switching state: %{public}d", isSwitching_);
 
-    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        !isEnableVoiceModemCommunicationStartStream_) {
         // When the cellular call stream is pausing, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
             AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
@@ -803,7 +806,8 @@ bool AudioRendererPrivate::Stop() const
     std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
         "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
-    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        !isEnableVoiceModemCommunicationStartStream_) {
         // When the cellular call stream is stopping, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
             AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
@@ -824,6 +828,7 @@ bool AudioRendererPrivate::Stop() const
 
 bool AudioRendererPrivate::Release()
 {
+    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
 
     bool result = audioStream_->ReleaseAudioStream();
@@ -1836,6 +1841,23 @@ void AudioRendererPrivate::ConcedeStream()
         default:
             break;
     }
+}
+
+void AudioRendererPrivate::EnableVoiceModemCommunicationStartStream(bool enable)
+{
+    isEnableVoiceModemCommunicationStartStream_ = enable;
+}
+
+int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
+{
+    bool isSupportedStreamUsage = (find(AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.begin(),
+        AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end(), rendererInfo_.streamUsage) !=
+        AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end());
+    CHECK_AND_RETURN_RET_LOG(isSupportedStreamUsage, ERR_NOT_SUPPORTED, "stream usage not supported");
+    int32_t ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType, sessionID_,
+        rendererInfo_.streamUsage, GetStatus() == RENDERER_RUNNING);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "select default output device failed");
+    return SUCCESS;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
