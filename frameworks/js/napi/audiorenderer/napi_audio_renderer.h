@@ -69,7 +69,7 @@ private:
         DeviceRole deviceRole;
         DeviceType deviceType;
         AudioRendererOptions rendererOptions;
-        DeviceInfo deviceInfo;
+        AudioDeviceDescriptor deviceInfo;
         AudioRendererInfo rendererInfo;
         AudioStreamInfo streamInfo;
     };

@@ -280,7 +280,7 @@ void AudioPolicyClientProxy::OnCapturerStateChange(
 }
 
 void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
-    const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     MessageParcel data;
     MessageParcel reply;

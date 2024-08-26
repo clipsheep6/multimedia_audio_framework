@@ -47,7 +47,7 @@ void NoneMixEngineUnitTest::TearDownTestCase(void)
 
 void NoneMixEngineUnitTest::SetUp(void)
 {
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo;
     deviceInfo.deviceType = DEVICE_TYPE_USB_HEADSET;
     playbackEngine_ = std::make_unique<NoneMixEngine>(deviceInfo, false);
 }

@@ -1073,7 +1073,7 @@ bool RendererInServer::IsHighResolution() const noexcept
         return false;
     }
     if (processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) {
-        DeviceInfo deviceInfo;
+        AudioDeviceDescriptor deviceInfo;
         bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(processConfig_, deviceInfo);
         CHECK_AND_RETURN_RET_LOG(result, false, "GetProcessDeviceInfo failed.");
     }

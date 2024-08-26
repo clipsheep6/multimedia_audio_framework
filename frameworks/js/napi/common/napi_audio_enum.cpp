@@ -290,8 +290,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeTypeMap = {
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::activeDeviceTypeMap = {
-    {"SPEAKER", SPEAKER},
-    {"BLUETOOTH_SCO", BLUETOOTH_SCO}
+    {"SPEAKER", DEVICE_TYPE_SPEAKER},
+    {"BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::interruptModeMap = {
@@ -314,7 +314,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioErrorsMap = {
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::communicationDeviceTypeMap = {
-    {"SPEAKER", COMMUNICATION_SPEAKER},
+    {"SPEAKER", DEVICE_TYPE_SPEAKER},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::interruptRequestTypeMap = {
@@ -1260,7 +1260,7 @@ bool NapiAudioEnum::IsLegalInputArgumentCommunicationDeviceType(int32_t communic
 {
     bool result = false;
     switch (communicationDeviceType) {
-        case CommunicationDeviceType::COMMUNICATION_SPEAKER:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
             result = true;
             break;
         default:
@@ -1295,8 +1295,8 @@ bool NapiAudioEnum::IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFla
 {
     bool result = false;
     switch (activeDeviceFlag) {
-        case ActiveDeviceType::SPEAKER:
-        case ActiveDeviceType::BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
             result = true;
             break;
         default:

@@ -342,7 +342,7 @@ public:
     void RegiestPolicy();
 
     // override for IPolicyProvider
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo);
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
 
@@ -569,7 +569,7 @@ private:
 
     ~AudioPolicyService();
 
-    void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
+    void UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
         bool hasSystemPermission);
 
     std::string GetSinkPortName(InternalDeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
@@ -831,9 +831,7 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
 
-    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
-
-    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc);
+    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo);
 
     void UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
 
@@ -850,8 +848,6 @@ private:
 
     void MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
-
-    std::string GetSinkName(const DeviceInfo& desc, int32_t sessionId);
 
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
 
@@ -894,11 +890,11 @@ private:
 
     int32_t ShowDialog();
 
-    int32_t GetVoipPlaybackDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
+    int32_t GetVoipPlaybackDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo);
 
-    int32_t GetVoipRecordDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
+    int32_t GetVoipRecordDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo);
 
-    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo, int32_t type,
+    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo, int32_t type,
         std::vector<sptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
