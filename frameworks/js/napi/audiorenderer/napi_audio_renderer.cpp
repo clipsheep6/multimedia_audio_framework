@@ -1595,7 +1595,7 @@ napi_value NapiAudioRenderer::SetDefaultOutputDevice(napi_env env, napi_callback
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    auto executor = [context]() {
+    auto executor = [context, env]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
         auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
         ObjectRefMap objectGuard(obj);
@@ -1604,8 +1604,9 @@ napi_value NapiAudioRenderer::SetDefaultOutputDevice(napi_env env, napi_callback
             "context object state is error.");
         DeviceType deviceType = static_cast<DeviceType>(context->deviceType);
         context->intValue = napiAudioRenderer->audioRenderer_->SetDefaultOutputDevice(deviceType);
-        CHECK_AND_RETURN_RET_LOG(context->intValue != ERR_ILLEGAL_STATE,
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE), "err illegal state");
+        if (context->intValue != SUCCESS) {
+            NapiAudioError::ThrowError(env, NAPI_ERR_ILLEGAL_STATE);
+        }
     };
 
     auto complete = [env](napi_value &output) {
