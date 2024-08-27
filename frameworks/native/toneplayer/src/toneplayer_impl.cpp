@@ -118,11 +118,12 @@ void TonePlayerImpl::OnStateChange(const RendererState state, const StateChangeC
 
 void TonePlayerImpl::OnWriteData(size_t length)
 {
+    std::lock_guard<std::mutex> lock(optMutex_);
     if (toneState_ == TONE_RELEASED) {
         AUDIO_WARNING_LOG("Tone %{public}d is already released", toneType_);
         return;
     }
-    std::lock_guard<std::mutex> lock(optMutex_);
+
     BufferDesc bufDesc = {};
     if (audioRenderer_ != nullptr) {
         audioRenderer_->GetBufferDesc(bufDesc);
@@ -335,6 +336,7 @@ int32_t TonePlayerImpl::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t req
 
 bool TonePlayerImpl::CheckToneStarted(uint32_t reqSample, int8_t *audioBuffer)
 {
+    std::lock_guard<std::mutex> lock(optMutex_);
     if (toneState_ != TONE_STARTING) {
         return false;
     }
