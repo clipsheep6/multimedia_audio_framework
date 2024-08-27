@@ -2076,9 +2076,9 @@ void AudioEndpointInner::CheckPlaySignal(uint8_t *buffer, size_t bufferSize)
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
     size_t byteSize = static_cast<size_t>(GetFormatByteSize(dstStreamInfo_.format));
     size_t newlyCheckedTime = bufferSize / (dstStreamInfo_.samplingRate /
-        MILLISECOND_PER_SECOND) / (byteSize * sizeof(uint8_t) * dstStreamInfo_.channels);
+        AUDIO_MS_PER_S) / (byteSize * sizeof(uint8_t) * dstStreamInfo_.channels);
     detectedTime_ += newlyCheckedTime;
-    if (detectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_ &&
+    if (detectedTime_ >= AUDIO_MS_PER_S && signalDetectAgent_->signalDetected_ &&
         !signalDetectAgent_->dspTimestampGot_) {
             AudioParamKey key = NONE;
             std::string condition = "debug_audio_latency_measurement";

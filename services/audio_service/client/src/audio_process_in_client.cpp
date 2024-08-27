@@ -161,7 +161,6 @@ private:
     void DoFadeInOut(uint64_t &curWritePos);
 
 private:
-    static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
     static constexpr int64_t MAX_WRITE_COST_DURATION_NANO = 5000000; // 5ms
@@ -520,7 +519,7 @@ bool AudioProcessInClientInner::InitAudioBuffer()
 
     audioBuffer_->GetSizeParameter(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
-    spanSizeInMs_ = spanSizeInFrame_ * MILLISECOND_PER_SECOND / processConfig_.streamInfo.samplingRate;
+    spanSizeInMs_ = spanSizeInFrame_ * AUDIO_MS_PER_S / processConfig_.streamInfo.samplingRate;
 
     clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {

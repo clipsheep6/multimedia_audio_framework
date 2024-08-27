@@ -824,7 +824,7 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
         blankHaveOutput_ = false;
         blankPeriod_ = static_cast<int32_t>(frameCount - rightZeroSignal);
     }
-    int32_t thresholdBlankPeriod = BLANK_THRESHOLD_MS * sampleRate_ / MILLISECOND_PER_SECOND;
+    int32_t thresholdBlankPeriod = BLANK_THRESHOLD_MS * sampleRate_ / AUDIO_MS_PER_S;
     if (blankPeriod_ > thresholdBlankPeriod) {
         return !blankHaveOutput_;
     }
@@ -845,7 +845,7 @@ bool AudioLatencyMeasurement::MockPcmData(uint8_t *buffer, size_t bufferLen)
 {
     memset_s(buffer, bufferLen, 0, bufferLen);
     int16_t *signal = signalData_.get();
-    size_t newlyMocked = bufferLen * MILLISECOND_PER_SECOND /
+    size_t newlyMocked = bufferLen * AUDIO_MS_PER_S /
         static_cast<size_t>(channelCount_ * sampleRate_ * formatByteSize_);
     mockedTime_ += newlyMocked;
     if (mockedTime_ >= MOCK_INTERVAL) {

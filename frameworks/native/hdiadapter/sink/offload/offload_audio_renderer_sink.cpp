@@ -1050,10 +1050,10 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
     }
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
     size_t byteSize = static_cast<size_t>(GetFormatByteSize(attr_.format));
-    size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
+    size_t newlyCheckedTime = len / (attr_.sampleRate / AUDIO_MS_PER_S) /
         (byteSize * sizeof(uint8_t) * attr_.channel);
     detectedTime_ += newlyCheckedTime;
-    if (detectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_ &&
+    if (detectedTime_ >= AUDIO_MS_PER_S && signalDetectAgent_->signalDetected_ &&
         !signalDetectAgent_->dspTimestampGot_) {
             char value[GET_EXTRA_PARAM_LEN];
             AudioParamKey key = NONE;

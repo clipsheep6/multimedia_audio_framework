@@ -92,6 +92,7 @@ public:
     int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) override;
     void SetRotationToEffect(const uint32_t rotate) override;
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;
+    int64_t GetLatency(const std::string &devceClass) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

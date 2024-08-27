@@ -77,7 +77,8 @@ namespace AudioStandard {
         SET_SINK_MUTE_FOR_SWITCH_DEVICE,
         SET_ROTATION_TO_EFFECT,
         UPDATE_SESSION_CONNECTION_STATE,
-        AUDIO_SERVER_CODE_MAX = UPDATE_SESSION_CONNECTION_STATE,
+        GET_LATENCY,
+        AUDIO_SERVER_CODE_MAX = GET_LATENCY,
     };
 } // namespace AudioStandard
 } // namespace OHOS
