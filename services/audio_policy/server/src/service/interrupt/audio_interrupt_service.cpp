@@ -1018,7 +1018,10 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         zonesMap_[zoneId] = itZone->second;
         if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pid)) {
-            sessionService_->GetAudioSessionByPid(pid)->RemoveAudioInterrptByStreamId(incomingSessionId);
+            std::shared_ptr<AudioSession> session = sessionService_->GetAudioSessionByPid(pid);
+            if (session != nullptr) {
+                sessionService_->GetAudioSessionByPid(pid)->RemoveAudioInterrptByStreamId(incomingSessionId);
+            }
         }
     }
     if (audioFocusInfoList.empty()) {
@@ -1030,7 +1033,10 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
             zonesMap_[zoneId] = itZone->second;
         }
         if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pid)) {
-            sessionService_->GetAudioSessionByPid(pid)->AddAudioInterrpt(std::make_pair(audioInterrupt, ACTIVE));
+            std::shared_ptr<AudioSession> session = sessionService_->GetAudioSessionByPid(pid);
+            if (session != nullptr) {
+                sessionService_->GetAudioSessionByPid(pid)->AddAudioInterrpt(std::make_pair(audioInterrupt, ACTIVE));
+            }
         }
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
@@ -1125,6 +1131,10 @@ void AudioInterruptService::AddToAudioFocusInfoList(std::shared_ptr<AudioInterru
 
     if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(incomingInterrupt.pid)) {
         auto audioSession = sessionService_->GetAudioSessionByPid(incomingInterrupt.pid);
+        if (audioSession == nullptr) {
+            AUDIO_ERR_LOG("audioSession is nullptr!");
+            return;
+        }
         audioSession->AddAudioInterrpt(std::make_pair(incomingInterrupt, incomingState));
     }
 }
