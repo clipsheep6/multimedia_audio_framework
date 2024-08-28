@@ -2567,8 +2567,8 @@ bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, D
     if (desc->networkId_ == deviceInfo.networkId && desc->deviceType_ == deviceInfo.deviceType &&
         desc->macAddress_ == deviceInfo.macAddress && desc->connectState_ == deviceInfo.connectState) {
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-            deviceInfo.a2dpOffloadFlag == A2DP_OFFLOAD &&
-            deviceInfo.a2dpOffloadFlag != a2dpOffloadFlag_) {
+            ((deviceInfo.a2dpOffloadFlag == A2DP_OFFLOAD && a2dpOffloadFlag_ != A2DP_OFFLOAD) ||
+            (deviceInfo.a2dpOffloadFlag != A2DP_OFFLOAD && a2dpOffloadFlag_ == A2DP_OFFLOAD))) {
             return false;
         }
         return true;
