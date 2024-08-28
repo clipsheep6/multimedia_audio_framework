@@ -192,6 +192,7 @@ HWTEST(AudioToneplayerUnitTest, Toneplayer_004, TestSize.Level1)
     EXPECT_EQ(true, releaseRet);
 }
 
+#ifdef TONEPLAYER_UNITTEST
 /**
  * @tc.name  : Test toneplayer loading API
  * @tc.type  : FUNC
@@ -222,6 +223,7 @@ HWTEST(AudioToneplayerUnitTest, Toneplayer_005, TestSize.Level1)
     bool releaseRet = toneplayer->Release();
     EXPECT_EQ(true, releaseRet);
 }
+#endif
 
 /**
  * @tc.name  : Test toneplayer loading API

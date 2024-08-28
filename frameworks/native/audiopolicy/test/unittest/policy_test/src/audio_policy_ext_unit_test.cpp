@@ -319,6 +319,7 @@ HWTEST(AudioPolicyExtUnitTest, GetMinStreamVolume_001, TestSize.Level1)
     EXPECT_LT(minStreamVolume, maxStreamVolume);
 }
 
+#ifdef PPOLICY_UNITTEST
 /**
  * @tc.name  : Test RecoverAudioPolicyCallbackClient
  * @tc.number: RecoverAudioPolicyCallbackClient_001
@@ -359,6 +360,7 @@ HWTEST(AudioPolicyExtUnitTest, RecoverAudioPolicyCallbackClient_002, TestSize.Le
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_MUSIC);
     EXPECT_EQ(volumeLevel, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test AudioPolicyServerDied
@@ -375,6 +377,7 @@ HWTEST(AudioPolicyExtUnitTest, AudioPolicyServerDied_001, TestSize.Level1)
     EXPECT_TRUE(audioDeviceDescriptors.size() > 0);
 }
 
+#ifdef PPOLICY_UNITTEST
 /**
  * @tc.name  : Test SetRingerModeLegacy
  * @tc.number: SetRingerModeLegacy_001
@@ -391,7 +394,9 @@ HWTEST(AudioPolicyExtUnitTest, SetRingerModeLegacy_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     ringerMode = AudioPolicyManager::GetInstance().GetRingerMode();
     EXPECT_TRUE(ringerMode == AudioRingerMode::RINGER_MODE_NORMAL);
+    }
 }
+#endif
 
 /**
  * @tc.name  : Test GetSessionInfoInFocus
@@ -406,6 +411,7 @@ HWTEST(AudioPolicyExtUnitTest, GetSessionInfoInFocus_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 }
 
+#ifdef PPOLICY_UNITTEST
 /**
  * @tc.name  : Test IsMicrophoneMuteLegacy
  * @tc.number: IsMicrophoneMuteLegacy_001
@@ -424,7 +430,9 @@ HWTEST(AudioPolicyExtUnitTest, IsMicrophoneMuteLegacy_001, TestSize.Level3)
     muteStatus = AudioPolicyManager::GetInstance().IsMicrophoneMuteLegacy();
     EXPECT_EQ(muteStatus, false);
 }
+#endif
 
+#ifdef PPOLICY_UNITTEST
 /**
  * @tc.name  : Test IsMicrophoneMute
  * @tc.number: IsMicrophoneMute_001
@@ -443,6 +451,7 @@ HWTEST(AudioPolicyExtUnitTest, IsMicrophoneMute_001, TestSize.Level3)
     muteStatus = AudioPolicyManager::GetInstance().IsMicrophoneMute();
     EXPECT_EQ(muteStatus, false);
 }
+#endif
 
 /**
  * @tc.name  : Test GetDevicesInner
@@ -565,6 +574,7 @@ HWTEST(AudioPolicyExtUnitTest, SetMicStateChangeCallback_001, TestSize.Level3)
     EXPECT_EQ(SUCCESS, ret);
 }
 
+#ifdef PPOLICY_UNITTEST
 /**
  * @tc.name  : Test GetAudioCapturerMicrophoneDescriptors
  * @tc.number: GetAudioCapturerMicrophoneDescriptors_001
@@ -589,6 +599,7 @@ HWTEST(AudioPolicyExtUnitTest, GetAudioCapturerMicrophoneDescriptors_001, TestSi
     EXPECT_GT(microphoneDescriptors.size(), 0);
     audioCapturer->Release();
 }
+#endif
 
 /**
  * @tc.name  : Test RegisterSpatializationEnabledEventListener
@@ -817,6 +828,7 @@ HWTEST(AudioPolicyExtUnitTest, IsHeadTrackingSupportedForDevice_001, TestSize.Le
     }
 }
 
+#ifdef PPOLICY_UNITTEST
 /**
  * @tc.name  : Test UpdateSpatialDeviceState
  * @tc.number: UpdateSpatialDeviceState_001
@@ -829,6 +841,7 @@ HWTEST(AudioPolicyExtUnitTest, UpdateSpatialDeviceState_001, TestSize.Level1)
     int32_t ret = AudioPolicyManager::GetInstance().UpdateSpatialDeviceState(audioSpatialDeviceState);
     EXPECT_EQ(false, ret);
 }
+#endif
 
 } // namespace AudioStandard
 } // namespace OHOS

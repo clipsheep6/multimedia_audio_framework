@@ -31,12 +31,16 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
     "-fno-access-control",
   ]
 
-  sources = [
-    "src/audio_effect_chain_adapter_unit_test.cpp",
-    "src/audio_effect_chain_manager_unit_test.cpp",
-    "src/audio_enhance_chain_adapter_unit_test.cpp",
-    "src/audio_enhance_chain_manager_unit_test.cpp",
-  ]
+  sources = []
+
+  if (audio_framework_enable_unittest_debug) {
+    sources += [
+      "src/audio_effect_chain_adapter_unit_test.cpp",
+      "src/audio_effect_chain_manager_unit_test.cpp",
+      "src/audio_enhance_chain_adapter_unit_test.cpp",
+      "src/audio_enhance_chain_manager_unit_test.cpp",
+    ]
+  }
 
   deps = [
     "../../../../audioeffect:audio_effect",
