@@ -157,7 +157,7 @@ private:
     bool signalDetected_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::mutex managerAndAdapterMutex_;
-
+    std::mutex signalDetectAgentMutex_;
     std::mutex statusMutex_;
 };
 
@@ -749,9 +749,11 @@ int32_t AudioCapturerSourceInner::SetMute(bool isMute)
         }
     }
 
+    std::unique_lock<std::mutex> lock(managerAndAdapterMutex_);
     if ((halName_ == "primary") && !adapterLoaded_) {
         InitManagerAndAdapter();
     }
+    lock.unlock();
 
     if (audioAdapter_ != nullptr) {
         int32_t ret = audioAdapter_->SetMicMute(audioAdapter_, isMute);
@@ -1209,6 +1211,7 @@ void AudioCapturerSourceInner::InitLatencyMeasurement()
     if (!AudioLatencyMeasurement::CheckIfEnabled()) {
         return;
     }
+    std::lock_guard<std::mutex> lock(signalDetectAgentMutex_);
     signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
     signalDetectAgent_->sampleFormat_ = attr_.format;
@@ -1218,6 +1221,7 @@ void AudioCapturerSourceInner::InitLatencyMeasurement()
 
 void AudioCapturerSourceInner::DeinitLatencyMeasurement()
 {
+    std::lock_guard<std::mutex> lock(signalDetectAgentMutex_);
     signalDetected_ = false;
     signalDetectAgent_ = nullptr;
 }
@@ -1227,6 +1231,7 @@ void AudioCapturerSourceInner::CheckLatencySignal(uint8_t *frame, size_t replyBy
     if (!latencyMeasEnabled_) {
         return;
     }
+    std::lock_guard<std::mutex> lock(signalDetectAgentMutex_);
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
     signalDetected_ = signalDetectAgent_->CheckAudioData(frame, replyBytes);
     if (signalDetected_) {
@@ -1297,6 +1302,7 @@ int32_t AudioCapturerSourceWakeup::Init(const IAudioSourceAttr &attr)
 
 bool AudioCapturerSourceWakeup::IsInited(void)
 {
+    std::lock_guard<std::mutex> lock(wakeupMutex_);
     return isInited;
 }
 
