@@ -749,7 +749,7 @@ int32_t AudioCapturerSourceInner::SetMute(bool isMute)
         }
     }
 
-    std::unique_lock<std::mutex> lock(wakeupMutex_);
+    std::unique_lock<std::mutex> lock(managerAndAdapterMutex_);
     if ((halName_ == "primary") && !adapterLoaded_) {
         InitManagerAndAdapter();
     }
