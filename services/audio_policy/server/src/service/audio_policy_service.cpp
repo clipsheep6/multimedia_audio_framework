@@ -8509,9 +8509,15 @@ void AudioA2dpOffloadManager::DisconnectA2dpOffload()
         return;
     }
     a2dpOffloadDeviceAddress_ = "";
-    AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
-        currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTING);
-    currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTING;
+    if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
+        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+            currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTED);
+        currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED
+    } else {
+        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+            currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTING);
+        currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTING;
+    }
 }
 
 void AudioA2dpOffloadManager::WaitForConnectionCompleted()
@@ -8523,6 +8529,11 @@ void AudioA2dpOffloadManager::WaitForConnectionCompleted()
         });
     // a2dp connection timeout, anyway we should notify client dataLink OK in order to allow the data flow begin
     if (!connectionCompleted) {
+        if (currentOffloadConnectionState_ != CONNECTION_STATUS_CONNECTING) {
+            AUDIO_INFO_LOG("wait timeout but currentOffloadConnectionState_ is not connecting, missed");
+            waitLock.unlock();
+            return;
+        }
         AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
             currentOffloadConnectionState_, CONNECTION_STATUS_TIMEOUT);
         currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
