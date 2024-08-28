@@ -8512,7 +8512,7 @@ void AudioA2dpOffloadManager::DisconnectA2dpOffload()
     if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
         AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
             currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTED);
-        currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED
+        currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     } else {
         AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
             currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTING);
