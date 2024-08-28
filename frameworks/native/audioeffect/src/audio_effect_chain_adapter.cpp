@@ -362,3 +362,25 @@ bool EffectChainManagerSceneCheck(const char *sinkSceneType, const char *sceneTy
     std::string sinkSceneTypeString = sinkSceneType;
     return audioEffectChainManager->CheckSceneTypeMatch(sinkSceneType, sceneType);
 }
+
+uint32_t EffectChainManagerGetSceneCount(const char *sceneType)
+{
+    if (sceneType == nullptr) {
+        return 0;
+    }
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
+    std::string sceneTypeString = sceneType;
+    return audioEffectChainManager->GetSceneTypeToChainCount(sceneType);
+}
+
+bool EffectChainManagerCheckSessionID(const char *sessionID)
+{
+    if (sessionID == nullptr) {
+        return 0;
+    }
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
+    std::string sessionIDString = sessionID;
+    return audioEffectChainManager->GetSceneTypeToChainCount(sessionIDString);
+}
