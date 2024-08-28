@@ -691,7 +691,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, concurrencyModeMap, concurrencyMode_)),
         DECLARE_NAPI_PROPERTY("AudioSessionDeactivatedReason", CreateEnumObject(env, reasonMap, reason_)),
         DECLARE_NAPI_PROPERTY("PolicyType", CreateEnumObject(env, policyTypeMap, policyType_)),
-    }; 
+    };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
 
