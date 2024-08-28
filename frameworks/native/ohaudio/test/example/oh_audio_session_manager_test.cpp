@@ -41,11 +41,11 @@ public:
     SessionNdkTest() = default;
     ~SessionNdkTest() = default;
     void Init();
-    void RegisterCallback(OH_AudioSession_DeactivatedCallback callback);
-    void UnRegisterCallback(OH_AudioSession_DeactivatedCallback callback);
+    static void RegisterCallback(OH_AudioSession_DeactivatedCallback callback);
+    static void UnRegisterCallback(OH_AudioSession_DeactivatedCallback callback);
     void ActivateAudioSession(OH_AudioSession_Strategy strategy);
-    void DeActivateAudioSession();
-    void IsAudioSessionActivated();
+    static void DeActivateAudioSession();
+    static void IsAudioSessionActivated();
     void RegisterAndActive(OH_AudioSession_DeactivatedCallback callback, OH_AudioSession_Strategy strategy);
     int32_t MyCallbackFunction(OH_AudioSession_DeactivatedEvent event);
     OH_AudioRenderer* StartPlay();
