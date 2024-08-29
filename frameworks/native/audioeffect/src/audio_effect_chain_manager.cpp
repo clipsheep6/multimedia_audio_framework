@@ -1280,7 +1280,6 @@ void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType
 std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChain(const std::string &sceneType)
 {
     std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
-    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
 
     if ((DEFAULT_NUM_EFFECT_INSTANCES - SceneTypeToSpecialEffectSet_.size()) > 1 && sceneType != COMMON_SCENE_TYPE) {
