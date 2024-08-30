@@ -1065,7 +1065,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         }
         if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pid)) {
             std::shared_ptr<AudioSession> session = sessionService_->GetAudioSessionByPid(pid);
-            std::shared_ptr<AudioSession> tempSession = sessionService_->GetAudioSessionByPid(pid);
+            std::shared_ptr<AudioSession> tempAudioSession = sessionService_->GetAudioSessionByPid(pid);
             CHECK_AND_RETURN_LOG(tempAudioSession != nullptr, "the audio session is null");
             tempAudioSession->AddAudioInterrptByStreamId(incomingSessionId);
         }
