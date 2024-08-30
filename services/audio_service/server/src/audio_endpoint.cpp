@@ -1714,10 +1714,9 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
                 "GetSpanInfo failed, can not get process read span");
             SpanStatus targetStatus = SpanStatus::SPAN_READING;
 
-            StreamStatus *tempStatus = processBufferList_[i]->GetStreamStatus();
-            CHECK_AND_RETURN_RET_LOG(tempStatus != nullptr, false,
-                "GetStreamStatus failed, can not get stream status");
 
+            CHECK_AND_RETURN_RET_LOG(processBuffer[i]->GetStreamStatus() != nullptr, ERR_INVALID_PARAM,
+            "stream status is null");
             if (tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READ_DONE)) {
                 tempSpan->readDoneTime = curReadDoneTime;
                 BufferDesc bufferReadDone = { nullptr, 0, 0};
@@ -1726,7 +1725,7 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
                     memset_s(bufferReadDone.buffer, bufferReadDone.bufLength, 0, bufferReadDone.bufLength);
                 }
                 processBufferList_[i]->SetCurReadFrame(eachCurReadPos + dstSpanSizeInframe_); // use client span size
-            } else if (tempStatus && tempStatus->load() == StreamStatus::STREAM_RUNNING) {
+            } else if (processBufferList_[i]->GetStreamStatus() && processBufferList_[i]->GetStreamStatus()->load() == StreamStatus::STREAM_RUNNING) {
                 AUDIO_DEBUG_LOG("Current %{public}" PRIu64" span not ready:%{public}d", eachCurReadPos, targetStatus);
             }
         }
