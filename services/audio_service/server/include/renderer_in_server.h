@@ -100,6 +100,7 @@ public:
     void OnDataLinkConnectionUpdate(IOperation operation);
 
     bool Dump(std::string &dumpString);
+    void RestoreSession();
 
 public:
     const AudioProcessConfig processConfig_;

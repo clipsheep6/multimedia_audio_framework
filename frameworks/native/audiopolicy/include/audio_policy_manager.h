@@ -82,6 +82,10 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType);

@@ -68,12 +68,14 @@ public:
     int32_t EnableDualToneList(uint32_t sessionId);
     int32_t DisableDualToneList(uint32_t sessionId);
     std::shared_ptr<RendererInServer> GetRendererBySessionID(const uint32_t &session);
+    std::shared_ptr<CapturerInServer> GetCapturerBySessionID(const uint32_t &session);
 
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs);
 
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
+    void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
     // for inner-capturer
     void CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
@@ -101,8 +103,10 @@ private:
     AudioPlaybackCaptureConfig workingConfig_;
 
     std::mutex rendererMapMutex_;
+    std::mutex capturerMapMutex_;
     std::vector<std::weak_ptr<RendererInServer>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
+    std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};
 
     std::vector<std::weak_ptr<RendererInServer>> filteredDualToneRendererMap_ = {};
 };
