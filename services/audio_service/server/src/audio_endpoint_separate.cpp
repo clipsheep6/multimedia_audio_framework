@@ -717,7 +717,6 @@ void AudioEndpointSeparate::WriteToProcessBuffers(const BufferDesc &readBuf)
         }
         if (processBufferList_[i]->GetStreamStatus() &&
             processBufferList_[i]->GetStreamStatus()->load() != STREAM_RUNNING) {
-                
             AUDIO_WARNING_LOG("%{public}s process buffer %{public}zu not running, stream status %{public}d.",
                 __func__, i, processBufferList_[i]->GetStreamStatus()->load());
             continue;
