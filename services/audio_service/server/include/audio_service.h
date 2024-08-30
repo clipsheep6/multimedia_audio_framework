@@ -67,6 +67,8 @@ public:
     void RemoveRenderer(uint32_t sessionId);
     int32_t EnableDualToneList(uint32_t sessionId);
     int32_t DisableDualToneList(uint32_t sessionId);
+    int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack);
+    int32_t UnsetOffloadMode(uint32_t sessionId);
     std::shared_ptr<RendererInServer> GetRendererBySessionID(const uint32_t &session);
 
 private:
