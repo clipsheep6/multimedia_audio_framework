@@ -1721,7 +1721,7 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
                     memset_s(bufferReadDone.buffer, bufferReadDone.bufLength, 0, bufferReadDone.bufLength);
                 }
                 processBufferList_[i]->SetCurReadFrame(eachCurReadPos + dstSpanSizeInframe_); // use client span size
-            } else if (processBufferList_[i]->GetStreamStatus() &&
+            } else if (processBufferList_[i]->GetStreamStatus()!=nullptr && processBufferList_[i]->GetStreamStatus() &&
                 processBufferList_[i]->GetStreamStatus()->load() == StreamStatus::STREAM_RUNNING) {
                 AUDIO_DEBUG_LOG("Current %{public}" PRIu64" span not ready:%{public}d", eachCurReadPos, targetStatus);
             }
