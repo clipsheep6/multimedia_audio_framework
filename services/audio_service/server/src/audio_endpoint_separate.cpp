@@ -711,10 +711,13 @@ void AudioEndpointSeparate::WriteToProcessBuffers(const BufferDesc &readBuf)
             AUDIO_ERR_LOG("%{public}s process buffer %{public}zu is null.", __func__, i);
             continue;
         }
-        CHECK_AND_RETURN_RET_LOG(processBuffer[i]->GetStreamStatus() != nullptr, ERR_INVALID_PARAM,
-            "stream status is null");
+        if (processBuffer[i]->GetStreamStatus() == nullptr) {
+            AUDIO_ERR_LOG("%{public}s process buffer %{public}zu has a null stream status.", __func__, i);
+            continue;
+        }
         if (processBufferList_[i]->GetStreamStatus() &&
             processBufferList_[i]->GetStreamStatus()->load() != STREAM_RUNNING) {
+                
             AUDIO_WARNING_LOG("%{public}s process buffer %{public}zu not running, stream status %{public}d.",
                 __func__, i, processBufferList_[i]->GetStreamStatus()->load());
             continue;
