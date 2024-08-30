@@ -1071,7 +1071,6 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
             std::shared_ptr<AudioSession> tempSession = sessionService_->GetAudioSessionByPid(pid);
             CHECK_AND_RETURN_LOG(tempAudioSession != nullptr, "the audio session is null");
             tempAudioSession->AddAudioInterrptByStreamId(incomingSessionId);
-
         }
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
