@@ -1056,7 +1056,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pid)) {
             std::shared_ptr<AudioSession> session = sessionService_->GetAudioSessionByPid(pid);
             if (session != nullptr) {
-                sessionService_->GetAudioSessionByPid(pid)->RemoveAudioInterrptByStreamId(incomingSessionId);
+                session->RemoveAudioInterrptByStreamId(incomingSessionId);
             }
         }
     }
@@ -1071,7 +1071,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pid)) {
             std::shared_ptr<AudioSession> session = sessionService_->GetAudioSessionByPid(pid);
             if (session != nullptr) {
-                sessionService_->GetAudioSessionByPid(pid)->RemoveAudioInterrptByStreamId(incomingSessionId);
+                session->AddAudioInterrptByStreamId(incomingSessionId);
             }
         }
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
