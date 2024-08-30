@@ -399,8 +399,8 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
             impl->registered, impl->cookie == nullptr, impl->renderCallback == nullptr);
     }
 
-    CHECK_AND_RETURN_RET_LOG(impl->cookie != nullptr, ERR_INVALID_HANDLE, "impl->cookie is null");
     auto *sink = reinterpret_cast<OffloadAudioRendererSinkInner *>(impl->cookie);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "sink is null");
     if (!sink->started_ || sink->isFlushing_) {
         AUDIO_DEBUG_LOG("invalid renderCallback call, started_ %d, isFlushing_ %d", sink->started_, sink->isFlushing_);
         return 0;
