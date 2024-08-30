@@ -838,7 +838,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_002, TestSize.Level1)
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
+    AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
