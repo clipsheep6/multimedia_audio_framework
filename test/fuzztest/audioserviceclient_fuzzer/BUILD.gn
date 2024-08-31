@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+# Copyright (c) 2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,9 +15,9 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("AudioServerFuzzTest") {
+ohos_fuzztest("AudioServiceClientFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file = "../audioserver_fuzzer"
+  fuzz_config_file = "../audioserviceclient_fuzzer"
 
   include_dirs = [
     "../../../frameworks/native/audioinnercall/include",
@@ -34,14 +34,13 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  sources = [ "audio_server_fuzzer.cpp" ]
+  sources = [ "audio_service_client_fuzzer.cpp" ]
 
   configs = [ "../../../services/audio_service:audio_service_config" ]
 
   deps = [
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
-    "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
   ]
@@ -69,5 +68,5 @@ ohos_fuzztest("AudioServerFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioServerFuzzTest" ]
+  deps = [ ":AudioServiceClientFuzzTest" ]
 }
