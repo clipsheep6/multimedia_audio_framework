@@ -287,7 +287,7 @@ int32_t AudioEndpointSeparate::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
     dstAudioBuffer_ = OHAudioBuffer::CreateFromRemote(dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
         AUDIO_SERVER_INDEPENDENT, dstBufferFd_, OHAudioBuffer::INVALID_BUFFER_FD);
     if (dstAudioBuffer_ == nullptr || (dstAudioBuffer_->GetStreamStatus() == nullptr)) {
-        AUDIO_ERR_LOG("%{public}s create buffer from remote fail.", __func__);
+        AUDIO_ERR_LOG("%{public}s create buffer fail from remote.", __func__);
         return ERR_ILLEGAL_STATE;
     }
 
@@ -711,7 +711,7 @@ void AudioEndpointSeparate::WriteToProcessBuffers(const BufferDesc &readBuf)
             AUDIO_ERR_LOG("%{public}s process buffer %{public}zu is null.", __func__, i);
             continue;
         }
-        if (processBuffer[i]->GetStreamStatus() == nullptr) {
+        if (processBufferList_[i]->GetStreamStatus() == nullptr) {
             AUDIO_ERR_LOG("%{public}s process buffer %{public}zu has a null stream status.", __func__, i);
             continue;
         }
