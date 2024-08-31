@@ -627,7 +627,7 @@ void AudioPolicyService::SetOffloadVolume(AudioStreamType streamType, int32_t vo
         auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
         if (dev == DEVICE_TYPE_BLUETOOTH_A2DP && configInfoPos != connectedA2dpDeviceMap_.end() &&
             configInfoPos->second.absVolumeSupport) {
-            volumeDb = 1;
+            volumeDb = 0.63957f; // 0.63957 = -4dB
         } else {
             volumeDb = GetSystemVolumeInDb(streamType, volume, currentActiveDevice_.deviceType_);
         }

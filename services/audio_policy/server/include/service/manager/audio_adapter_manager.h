@@ -322,7 +322,7 @@ public:
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
         if (streamForVolumeMap == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
-            int32_t vol = audioAdapterManager_->IsAbsVolumeMute() ? 0.0f : 1.0f;
+            float vol = audioAdapterManager_->IsAbsVolumeMute() ? 0.0f : 0.63957f; // 0.63957 = -4dB
             return {vol, volumeLevel};
         }
 
