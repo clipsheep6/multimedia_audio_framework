@@ -71,8 +71,9 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
-
+#ifdef FEATURE_POWER_MANAGER
     powerStateCallbackRegister_ = false;
+#endif
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
     if (volumeApplyToAll_) {
         audioPolicyService_.SetNormalVoipFlag(true);
@@ -108,7 +109,9 @@ void AudioPolicyServer::OnStart()
 #endif
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
+#ifdef FEATURE_POWER_MANAGER
     AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
+#endif
     AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
 #ifdef SUPPORT_USER_ACCOUNT
     AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
@@ -142,8 +145,10 @@ void AudioPolicyServer::OnStart()
 void AudioPolicyServer::OnStop()
 {
     audioPolicyService_.Deinit();
+#ifdef FEATURE_POWER_MANAGER
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
+#endif
     return;
 }
 
@@ -175,12 +180,14 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             InitKVStore();
             RegisterDataObserver();
             break;
+#ifdef FEATURE_POWER_MANAGER
         case POWER_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
             SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
             RegisterSyncHibernateListener();
             break;
+#endif
         case SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN:
             AUDIO_INFO_LOG("OnAddSystemAbility os_account service start");
             SubscribeOsAccountChangeEvents();
@@ -192,12 +199,10 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
             break;
         default:
-            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
     // eg. done systemAbilityId: [3001] cost 780ms
-    AUDIO_INFO_LOG("done systemAbilityId: [%{public}d] cost %{public}" PRId64 " ms", systemAbilityId,
-        (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
+    AUDIO_INFO_LOG("done cost %{public}" PRId64 " ms", (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
 }
 
 void AudioPolicyServer::HandleKvDataShareEvent()
@@ -408,7 +413,7 @@ void AudioPolicyServer::AddAudioServiceOnStart()
         AUDIO_WARNING_LOG("OnAddSystemAbility audio service is not first start");
     }
 }
-
+#ifdef FEATURE_POWER_MANAGER
 void AudioPolicyServer::SubscribePowerStateChangeEvents()
 {
     sptr<PowerMgr::IPowerStateCallback> powerStateCallback_;
@@ -430,7 +435,7 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
         powerStateCallbackRegister_ = true;
     }
 }
-
+#endif
 void AudioCommonEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
 {
     if (eventReceiver_ == nullptr) {
@@ -479,7 +484,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
     }
 }
-
+#ifdef FEATURE_POWER_MANAGER
 void AudioPolicyServer::CheckSubscribePowerStateChange()
 {
     if (powerStateCallbackRegister_) {
@@ -494,10 +499,12 @@ void AudioPolicyServer::CheckSubscribePowerStateChange()
         AUDIO_ERR_LOG("PowerState CallBack Register Failed");
     }
 }
-
+#endif
 void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId)
 {
+#ifdef FEATURE_POWER_MANAGER
     CheckSubscribePowerStateChange();
+#endif
     if (deactivateSessionId != OFFLOAD_NO_SESSION_ID) {
         audioPolicyService_.OffloadStreamReleaseCheck(deactivateSessionId);
     }
@@ -505,21 +512,21 @@ void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, int64_t de
         audioPolicyService_.OffloadStreamSetCheck(activateSessionId);
     }
 }
-
+#ifdef FEATURE_POWER_MANAGER
 AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerStateCallback(
     AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
-
+#endif
 void AudioPolicyServer::CheckStreamMode(const int64_t activateSessionId)
 {
     audioPolicyService_.CheckStreamMode(activateSessionId);
 }
-
+#ifdef FEATURE_POWER_MANAGER
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
 {
     policyServer_->audioPolicyService_.HandlePowerStateChanged(state);
 }
-
+#endif
 void AudioPolicyServer::InitKVStore()
 {
     audioPolicyService_.InitKVStore();
@@ -2268,7 +2275,7 @@ void AudioPolicyServer::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDes
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendDistributedRoutingRoleChange(descriptor, type);
 }
-
+#ifdef FEATURE_POWER_MANAGER
 void AudioPolicyServer::RegisterPowerStateListener()
 {
     if (powerStateListener_ == nullptr) {
@@ -2324,6 +2331,7 @@ void AudioPolicyServer::RegisterSyncHibernateListener()
     } else {
         AUDIO_INFO_LOG("register sync hibernate callback success");
     }
+
 }
 
 void AudioPolicyServer::UnRegisterSyncHibernateListener()
@@ -2332,7 +2340,6 @@ void AudioPolicyServer::UnRegisterSyncHibernateListener()
         AUDIO_ERR_LOG("sync hibernate listener is null");
         return;
     }
-
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     bool ret = powerMgrClient.UnRegisterSyncHibernateCallback(syncHibernateListener_);
     if (!ret) {
@@ -2343,6 +2350,7 @@ void AudioPolicyServer::UnRegisterSyncHibernateListener()
         AUDIO_INFO_LOG("unregister sync hibernate callback success");
     }
 }
+#endif
 
 bool AudioPolicyServer::IsSpatializationEnabled()
 {

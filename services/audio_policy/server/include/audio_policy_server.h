@@ -27,8 +27,10 @@
 
 #include "accesstoken_kit.h"
 #include "perm_state_change_callback_customize.h"
+#ifdef FEATURE_POWER_MANAGER
 #include "power_state_callback_stub.h"
 #include "power_state_listener.h"
+#endif
 #include "common_event_subscriber.h"
 #include "common_event_support.h"
 
@@ -475,7 +477,7 @@ private:
 
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
-
+#ifdef FEATURE_POWER_MANAGER
     class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
     public:
         AudioPolicyServerPowerStateCallback(AudioPolicyServer *policyServer);
@@ -484,13 +486,14 @@ private:
     private:
         AudioPolicyServer *policyServer_;
     };
-
+#endif
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
 
     // offload session
     void OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId);
+#ifdef FEATURE_POWER_MANAGER
     void CheckSubscribePowerStateChange();
-
+#endif
     void CheckStreamMode(const int64_t activateSessionId);
     bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
@@ -524,7 +527,6 @@ private:
 #endif
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();
-    void SubscribePowerStateChangeEvents();
     void SubscribeCommonEvent(const std::string event);
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void HandleKvDataShareEvent();
@@ -535,8 +537,11 @@ private:
     void RegisterBluetoothListener();
     void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
+#ifdef FEATURE_POWER_MANAGER
+    void SubscribePowerStateChangeEvents();
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
+#endif
     void RegisterSyncHibernateListener();
     void UnRegisterSyncHibernateListener();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
@@ -558,10 +563,12 @@ private:
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif
     std::vector<pid_t> clientDiedListenerState_;
+#ifdef FEATURE_POWER_MANAGER
     sptr<PowerStateListener> powerStateListener_;
-    sptr<SyncHibernateListener> syncHibernateListener_;
     bool powerStateCallbackRegister_;
-
+    sptr<SyncHibernateListener> syncHibernateListener_;
+#endif
+    
     std::mutex keyEventMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;

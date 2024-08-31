@@ -56,7 +56,7 @@ declare_args() {
 
   if (!defined(global_parts_info) ||
       defined(global_parts_info.powermgr_power_manager)) {
-    audio_framework_feature_power_manager = true
+    audio_framework_feature_power_manager = false
   } else {
     audio_framework_feature_power_manager = false
   }
