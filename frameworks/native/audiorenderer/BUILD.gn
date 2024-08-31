@@ -31,6 +31,9 @@ config("audio_renderer_config") {
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
   }
+
+  cflags_cc = cflags
+  cflags_cc += [ "-std=c++23" ]
 }
 
 ohos_shared_library("audio_renderer") {

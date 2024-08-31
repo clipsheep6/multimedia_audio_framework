@@ -17,6 +17,7 @@
 #define AUDIO_RENDERER_PRIVATE_H
 
 #include <shared_mutex>
+#include <memory>
 
 #include "audio_interrupt_callback.h"
 #include "audio_concurrency_callback.h"
@@ -146,7 +147,8 @@ public:
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
     std::string cachePath_;
-    std::shared_ptr<IAudioStream> audioStream_;
+    // std::shared_ptr<IAudioStream> audioStream_;
+    std::atomic<std::shared_ptr<IAudioStream>> audioStream_;
     bool abortRestore_ = false;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
