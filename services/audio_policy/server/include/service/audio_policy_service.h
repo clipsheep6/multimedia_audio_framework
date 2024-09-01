@@ -224,9 +224,13 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
-    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
+    int32_t GetUserSetDeviceNameFromDataShareHelper(std::string &deviceName);
 
-    void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
+    int32_t GetDefaultDeviceNameFromDataShareHelper(std::string &deviceName);
+
+    std::string GetDeviceNameFromDataShare();
+
+    void SetDisplayName(const std::string deviceName, bool isLocalDevice);
 
     bool IsDataShareReady();
 #ifdef FEATURE_DTMF_TONE
@@ -780,8 +784,6 @@ private:
     DeviceType FindConnectedHeadset();
 
     std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
-
-    void RegisterNameMonitorHelper();
 
     bool IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc);
 
