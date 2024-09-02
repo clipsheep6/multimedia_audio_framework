@@ -29,6 +29,7 @@
 #ifdef FEATURE_DEVICE_MANAGER
 #endif
 
+#include "audio_affinity_manager.h"
 #include "audio_spatialization_service.h"
 #include "audio_converter_parser.h"
 #include "audio_dialog_ability_connection.h"
@@ -314,6 +315,7 @@ bool AudioPolicyService::Init(void)
     audioPolicyManager_.Init();
     audioEffectManager_.EffectManagerInit();
     audioDeviceManager_.ParseDeviceXml();
+    audioAffinityManager_.ParseAffinityXml();
     audioPnpServer_.init();
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>(this);
     if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
@@ -1165,6 +1167,16 @@ int32_t AudioPolicyService::ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &se
     return SUCCESS;
 }
 
+void AudioPolicyService::RestoreSession(const int32_t &sessionID, bool isOutput)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: g_adProxy null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->RestoreSession(sessionID, isOutput);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
 {
@@ -1177,6 +1189,17 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     // check size == 1 && output device
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, selectedDesc);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
+    if (audioRendererFilter->uid != -1) {
+        audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, selectedDesc[0]);
+        vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+        streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
+        for (auto &changeInfo : rendererChangeInfos) {
+            if (changeInfo->clientUID == audioRendererFilter->uid && changeInfo->sessionId != 0) {
+                RestoreSession(changeInfo->sessionId, true);
+            }
+        }
+        return SUCCESS;
+    }
     if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
         SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
         SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
@@ -1485,6 +1508,17 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     // check size == 1 && input device
     int32_t res = DeviceParamsCheck(DeviceRole::INPUT_DEVICE, selectedDesc);
     CHECK_AND_RETURN_RET(res == SUCCESS, res);
+    if (audioCapturerFilter->uid != -1) {
+        audioAffinityManager_.AddSelectCapturerDevice(audioCapturerFilter->uid, selectedDesc[0]);
+        vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+        streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
+        for (auto &changeInfo : capturerChangeInfos) {
+            if (changeInfo->clientUID == audioCapturerFilter->uid && changeInfo->sessionId != 0) {
+                RestoreSession(changeInfo->sessionId, true);
+            }
+        }
+        return SUCCESS;
+    }
 
     SourceType srcType = audioCapturerFilter->capturerInfo.sourceType;
 
@@ -2041,6 +2075,32 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
         }
     }
 
+    return deviceList;
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetOutputDevice(
+    sptr<AudioRendererFilter> audioRendererFilter)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+    if (audioRendererFilter->uid != -1) {
+        unique_ptr<AudioDeviceDescriptor> preferredDesc =
+            audioAffinityManager_.GetRendererDevice(audioRendererFilter->uid);
+        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*preferredDesc);
+        deviceList.push_back(devDesc);
+    }
+    return deviceList;
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetInputDevice(
+    sptr<AudioCapturerFilter> audioCapturerFilter)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+    if (audioCapturerFilter->uid != -1) {
+        unique_ptr<AudioDeviceDescriptor> preferredDesc =
+            audioAffinityManager_.GetCapturerDevice(audioCapturerFilter->uid);
+        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*preferredDesc);
+        deviceList.push_back(devDesc);
+    }
     return deviceList;
 }
 
@@ -3580,6 +3640,12 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceD
 void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
     std::vector<sptr<AudioDeviceDescriptor>> &descForCb)
 {
+    if (IsOutputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
+        audioAffinityManager_.RemoveOfflineRendererDevice(updatedDesc);
+    }
+    if (IsInputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
+        audioAffinityManager_.RemoveOfflineCapturerDevice(updatedDesc);
+    }
     AUDIO_INFO_LOG("[%{public}s], devType:[%{public}d]", __func__, updatedDesc.deviceType_);
     auto isPresent = [&updatedDesc](const sptr<AudioDeviceDescriptor>& descriptor) {
         return descriptor->deviceType_ == updatedDesc.deviceType_ &&
@@ -5009,6 +5075,7 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     if (mode == AUDIO_MODE_RECORD && streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
+        audioAffinityManager_.DelSelectCapturerDevice(streamChangeInfo.audioCapturerChangeInfo.clientUID);
         audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
     }
 
@@ -5028,6 +5095,7 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
         audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(streamChangeInfo.audioRendererChangeInfo.sessionId);
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
+            audioAffinityManager_.DelSelectRendererDevice(streamChangeInfo.audioRendererChangeInfo.clientUID);
         }
         FetchDevice(true);
     }
