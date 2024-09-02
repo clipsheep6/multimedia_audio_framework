@@ -5027,46 +5027,43 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     if (mode == AUDIO_MODE_RECORD && streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
+        audioAffinityManager_.DelSelectCapturerDevice(streamChangeInfo.audioCapturerChangeInfo.clientUID);
         audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
     }
 
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
-    if (mode == AUDIO_MODE_RECORD) {
-        const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
-        if (capturerState == CAPTURER_RELEASED) {
-            audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
-            audioAffinityManager_.DelSelectCapturerDevice(streamChangeInfo.audioCapturerChangeInfo.clientUID);
-        }
-    } else {
-        const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
-        if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
-            return ret; // only update tracker in new and prepared
-        }
-        if (rendererState == RENDERER_RELEASED) {
-            audioAffinityManager_.DelSelectRendererDevice(streamChangeInfo.audioRendererChangeInfo.clientUID);
-            if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
-                DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
-            }
-        }
-        if (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED ||
-            rendererState == RENDERER_RELEASED) {
-            audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(streamChangeInfo.audioRendererChangeInfo.sessionId);
-            FetchDevice(true);
-        }
-        if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)
-            && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
-            const int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
-            const StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
-            if ((sessionId == enableDualHalToneSessionId_) && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
-                AUDIO_INFO_LOG("disable dual hal tone when ringer/alarm renderer stop/release.");
-                UpdateDualToneState(false, enableDualHalToneSessionId_);
-            }
-        }
 
-        UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
-        SendA2dpConnectedWhileRunning(rendererState, streamChangeInfo.audioRendererChangeInfo.sessionId);
+    const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
+    if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
+        return ret; // only update tracker in new and prepared
     }
 
+    if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
+        DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
+    }
+
+    if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED ||
+        rendererState == RENDERER_RELEASED)) {
+        audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(streamChangeInfo.audioRendererChangeInfo.sessionId);
+        if (rendererState == RENDERER_RELEASED) {
+            audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
+            audioAffinityManager_.DelSelectRendererDevice(streamChangeInfo.audioRendererChangeInfo.clientUID);
+        }
+        FetchDevice(true);
+    }
+
+    if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)
+        && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
+        const int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+        const StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
+        if ((sessionId == enableDualHalToneSessionId_) && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+            AUDIO_INFO_LOG("disable dual hal tone when ringer/alarm renderer stop/release.");
+            UpdateDualToneState(false, enableDualHalToneSessionId_);
+        }
+    }
+
+    UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
+    SendA2dpConnectedWhileRunning(rendererState, streamChangeInfo.audioRendererChangeInfo.sessionId);
     return ret;
 }
 
