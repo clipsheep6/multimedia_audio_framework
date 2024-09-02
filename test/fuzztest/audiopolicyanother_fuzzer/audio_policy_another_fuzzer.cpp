@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -41,9 +41,7 @@ AudioPolicyServer* GetServerPtr()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
 #endif
-        server.OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
         server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server.OnAddSystemAbility(ACCESSIBILITY_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
         server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
@@ -155,8 +153,7 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
 
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
-    uint32_t clientUid = *reinterpret_cast<const uint32_t *>(rawData);
-    GetServerPtr()->SetAudioInterruptCallback(sessionID, object, clientUid);
+    GetServerPtr()->SetAudioInterruptCallback(sessionID, object);
     GetServerPtr()->UnsetAudioInterruptCallback(sessionID);
 
     int32_t clientId = *reinterpret_cast<const uint32_t *>(rawData);
@@ -320,6 +317,109 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
     listener->OnRemoteRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
 }
 
+void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    bool fuzzBool = *reinterpret_cast<const bool *>(rawData);
+    int32_t fuzzInt32One = *reinterpret_cast<const int8_t *>(rawData);
+    int32_t fuzzInt32Two = *reinterpret_cast<const int8_t *>(rawData);
+    int32_t fuzzInt32Three = *reinterpret_cast<const int8_t *>(rawData);
+    int32_t fuzzFloat = *reinterpret_cast<const float *>(rawData);
+    std::string fuzzNetworkId = "FUZZNETWORKID";
+    std::string fuzzString(reinterpret_cast<const char*>(rawData), size - 1);
+
+    AudioStreamType fuzzAudioStreamType = *reinterpret_cast<const AudioStreamType *>(rawData);
+    DeviceType fuzzDeviceType = *reinterpret_cast<const DeviceType *>(rawData);
+    DeviceRole fuzzDeviceRole = *reinterpret_cast<const DeviceRole *>(rawData);
+    StreamUsage fuzzStreamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+
+    AudioDeviceDescriptor fuzzAudioDeviceDescriptor;
+    sptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = new AudioDeviceDescriptor();
+    std::vector<sptr<AudioDeviceDescriptor>> fuzzAudioDeviceDescriptorSptrVector;
+    fuzzAudioDeviceDescriptorSptrVector.push_back(fuzzAudioDeviceDescriptorSptr);
+    sptr<AudioRendererFilter> fuzzAudioRendererFilter = new AudioRendererFilter();
+
+    GetServerPtr()->audioPolicyService_.isOffloadAvailable_ = true; // set offload support on for covery
+
+    GetServerPtr()->audioPolicyService_.HandleRecoveryPreferredDevices(fuzzInt32One, fuzzInt32Two, fuzzInt32Three);
+    GetServerPtr()->audioPolicyService_.GetVolumeGroupType(fuzzDeviceType);
+    GetServerPtr()->audioPolicyService_.GetSystemVolumeDb(fuzzAudioStreamType);
+    GetServerPtr()->audioPolicyService_.SetLowPowerVolume(fuzzInt32One, fuzzFloat);
+    GetServerPtr()->audioPolicyService_.SetOffloadMode();
+    GetServerPtr()->audioPolicyService_.ResetOffloadMode(fuzzInt32One);
+    GetServerPtr()->audioPolicyService_.OffloadStreamReleaseCheck(fuzzInt32One);
+    GetServerPtr()->audioPolicyService_.RemoteOffloadStreamRelease(fuzzInt32One);
+    GetServerPtr()->audioPolicyService_.CheckActiveOutputDeviceSupportOffload();
+    GetServerPtr()->audioPolicyService_.GetOffloadAvailableFromXml();
+    GetServerPtr()->audioPolicyService_.SetSourceOutputStreamMute(fuzzInt32One, fuzzBool);
+    GetServerPtr()->audioPolicyService_.NotifyRemoteRenderState(fuzzNetworkId, fuzzString, fuzzString);
+    GetServerPtr()->audioPolicyService_.IsArmUsbDevice(fuzzAudioDeviceDescriptor);
+    GetServerPtr()->audioPolicyService_.IsDeviceConnected(fuzzAudioDeviceDescriptorSptr);
+    GetServerPtr()->audioPolicyService_.DeviceParamsCheck(fuzzDeviceRole, fuzzAudioDeviceDescriptorSptrVector);
+    GetServerPtr()->audioPolicyService_.NotifyUserSelectionEventToBt(fuzzAudioDeviceDescriptorSptr);
+    GetServerPtr()->audioPolicyService_.SetRenderDeviceForUsage(fuzzStreamUsage, fuzzAudioDeviceDescriptorSptr);
+    GetServerPtr()->audioPolicyService_.SelectOutputDevice(
+        fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptrVector);
+    GetServerPtr()->audioPolicyService_.WriteSelectOutputSysEvents(
+        fuzzAudioDeviceDescriptorSptrVector, fuzzStreamUsage);
+    GetServerPtr()->audioPolicyService_.SelectFastOutputDevice(
+        fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptr);
+    GetServerPtr()->audioPolicyService_.FilterSinkInputs(fuzzInt32One);
+    GetServerPtr()->audioPolicyService_.FilterSourceOutputs(fuzzInt32One);
+    GetServerPtr()->audioPolicyService_.RememberRoutingInfo(fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptr);
+    GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(fuzzDeviceType, fuzzBool);
+    GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(fuzzDeviceType, fuzzBool, fuzzString, fuzzString);
+}
+
+void AudioDeviceConnectTest(const uint8_t *rawData, size_t size)
+{
+    // Coverage first
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamInfo.channels = AudioChannel::STEREO;
+    streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_WIRED_HEADSET, true,
+        "", "fuzzDevice", streamInfo);
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_WIRED_HEADSET, false,
+        "", "fuzzDevice", streamInfo);
+
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_USB_HEADSET, true,
+        "", "fuzzDevice", streamInfo);
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_USB_HEADSET, false,
+        "", "fuzzDevice", streamInfo);
+
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_DP, true,
+        "", "fuzzDevice", streamInfo);
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_DP, false,
+        "", "fuzzDevice", streamInfo);
+
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, true,
+        "08:00:20:0A:8C:6D", "fuzzBtDevice", streamInfo);
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, false,
+        "08:00:20:0A:8C:6D", "fuzzBtDevice", streamInfo);
+
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, true,
+        "08:00:20:0A:8C:6D", "fuzzBtDevice", streamInfo);
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, false,
+        "08:00:20:0A:8C:6D", "fuzzBtDevice", streamInfo);
+
+    bool fuzzBool = *reinterpret_cast<const bool *>(rawData);
+    std::string fuzzString(reinterpret_cast<const char*>(rawData), size - 1);
+    DeviceType fuzzDeviceType = *reinterpret_cast<const DeviceType *>(rawData);
+    AudioSamplingRate fuzzAudioSamplingRate = *reinterpret_cast<const AudioSamplingRate *>(rawData);
+    AudioChannel fuzzAudioChannel = *reinterpret_cast<const AudioChannel *>(rawData);
+    AudioSampleFormat fuzzAudioSampleFormat = *reinterpret_cast<const AudioSampleFormat *>(rawData);
+    streamInfo.samplingRate = fuzzAudioSamplingRate;
+    streamInfo.channels = fuzzAudioChannel;
+    streamInfo.format = fuzzAudioSampleFormat;
+
+    GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(fuzzDeviceType, fuzzBool, fuzzString,
+        "fuzzDevice", streamInfo);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -333,12 +433,14 @@ extern "C" int LLVMFuzzerInitialize(const uint8_t *data, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
+    OHOS::AudioStandard::AudioPolicyServiceInterfaceTest(data, size);
+    OHOS::AudioStandard::AudioDeviceConnectTest(data, size);
     OHOS::AudioStandard::AudioVolumeFuzzTest(data, size);
     OHOS::AudioStandard::AudioDeviceFuzzTest(data, size);
     OHOS::AudioStandard::AudioInterruptFuzzTest(data, size);
     OHOS::AudioStandard::AudioPolicyFuzzTest(data, size);
     OHOS::AudioStandard::AudioPolicyOtherFuzzTest(data, size);
     OHOS::AudioStandard::AudioVolumeKeyCallbackStub(data, size);
+
     return 0;
 }
-
