@@ -12,8 +12,8 @@
 # limitations under the License.
 
 import("//build/test.gni")
-
-module_output_path = "multimedia_audio_framework/audio_utils"
+import("../../../../../config.gni")
+module_output_path = "audio_framework/audio_utils"
 
 ohos_unittest("audio_utils_unit_test") {
   module_out_path = module_output_path
@@ -25,7 +25,16 @@ ohos_unittest("audio_utils_unit_test") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-fno-access-control",
   ]
+
+  if (sonic_enable == true) {
+    cflags += [ "-DSONIC_ENABLE" ]
+  }
+
+  if (sonic_enable == true) {
+    external_deps = [ "pulseaudio:sonic" ]
+  }
 
   sources = [ "audio_utils_unit_test.cpp" ]
 
