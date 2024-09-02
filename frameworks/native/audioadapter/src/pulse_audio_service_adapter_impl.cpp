@@ -371,11 +371,10 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
 std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
 {
     AUDIO_PRERELEASE_LOGI("GetAllSinks enter.");
-    int32_t XcollieFlag = 2; // flag 1 generate log file, flag 2 die when timeout, restart server
+    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSinks", PA_SERVICE_IMPL_TIMEOUT,
-        [this](void *) {
+        [](void *) {
             AUDIO_ERR_LOG("GetAllSinks timeout, trigger signal");
-            pa_threaded_mainloop_signal(this->mMainLoop, 0);
         }, nullptr, XcollieFlag);
     lock_guard<mutex> lock(lock_);
     unique_ptr<UserData> userData = make_unique<UserData>();
@@ -830,8 +829,7 @@ void PulseAudioServiceAdapterImpl::HandleSinkInputInfoVolume(pa_context *c, cons
 
     if (streamTypeID == userData->streamType || userData->isSubscribingCb) {
         AUDIO_INFO_LOG("set pa volume type:%{public}d id:%{public}d vol:%{public}f db:%{public}f stream:%{public}f " \
-            "power:%{public}f duck:%{public}f", streamTypeID, sessionID, vol, volumeDbCb, volumeFactor,
-            powerVolumeFactor, duckVolumeFactor);
+            "volumelevel:%{public}d", streamTypeID, sessionID, vol, volumeDbCb, volumeFactor, volumeLevel);
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
     }
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
