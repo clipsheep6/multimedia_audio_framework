@@ -106,7 +106,7 @@ void AudioAffinityManager::AddSelectRendererDevice(int32_t clientUID, const sptr
     affinityDeviceInfo.chooseTimeStamp = GetCurrentTimeMS();
 
     std::unordered_map<int32_t, AffinityDeviceInfo> affinityDeviceInfoMap =
-        GetActiveAffinityDeviceMapByGroupName(,activeRendererGroupAffinityMap_ affinityDeviceInfo.groupName);
+        GetActiveAffinityDeviceMapByGroupName(activeRendererGroupAffinityMap_, affinityDeviceInfo.groupName);
 
     affinityDeviceInfoMap[clientUID] = affinityDeviceInfo;
     activeRendererGroupAffinityMap_[affinityDeviceInfo.groupName] = affinityDeviceInfoMap;

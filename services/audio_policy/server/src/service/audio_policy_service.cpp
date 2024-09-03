@@ -1178,7 +1178,8 @@ void AudioPolicyService::RestoreSession(const int32_t &sessionID, bool isOutput)
 }
 
 int32_t AudioPolicyService::SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> selectedDesc) {
+    std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
+{
     bool isVirtualDevice = false;
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -1200,6 +1201,15 @@ int32_t AudioPolicyService::SelectOutputDeviceByFilterInner(sptr<AudioRendererFi
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
+{
+    SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
+    SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
+    FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
+    return true;
+}
+
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
 {
@@ -1216,10 +1226,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         return SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc);
     }
     if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
-        SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
-        SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
-        FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-        return true;
+        return SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
     }
     bool isVirtualDevice = false;
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||

@@ -1028,6 +1028,8 @@ private:
     int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
     int32_t SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> selectedDesc);
+    int32_t SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
