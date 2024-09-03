@@ -160,6 +160,7 @@ constexpr int32_t NS_PER_MS = 1000000;
 const int32_t DATA_LINK_CONNECTING = 10;
 const int32_t DATA_LINK_CONNECTED = 11;
 const int32_t A2DP_PLAYING = 2;
+const int32_t A2DP_STOPPED = 1;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -2623,8 +2624,10 @@ bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, D
     if (desc->networkId_ == deviceInfo.networkId && desc->deviceType_ == deviceInfo.deviceType &&
         desc->macAddress_ == deviceInfo.macAddress && desc->connectState_ == deviceInfo.connectState) {
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-            deviceInfo.a2dpOffloadFlag == A2DP_OFFLOAD &&
-            deviceInfo.a2dpOffloadFlag != a2dpOffloadFlag_) {
+            // switch to A2dp
+            (deviceInfo.a2dpOffloadFlag == A2DP_OFFLOAD && a2dpOffloadFlag_ != A2DP_OFFLOAD) ||
+            // switch to A2dp offload 
+            (deviceinfo.a2dpOffloadFlag != A2DP_OFFLOAD && a2dpOffloadFlag_ == A2DP_OFFLOAD)) {
             return false;
         }
         return true;
@@ -8646,7 +8649,8 @@ int32_t AudioPolicyService::ErasePreferredDeviceByType(const PreferredType prefe
 
 void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
 {
-    AUDIO_INFO_LOG("Current A2dpOffload MacAddr:%{public}s, incoming MacAddr:%{public}s, state:%{public}d",
+    AUDIO_INFO_LOG("Current A2dpOffload MacAddr:%{public}s, incoming MacAddr:%{public}s,
+        currentStatus:%{public}d, incommingState:%{public}d",
         GetEncryptAddr(a2dpOffloadDeviceAddress_).c_str(), GetEncryptAddr(deviceAddress).c_str(), playingState);
     if (deviceAddress == a2dpOffloadDeviceAddress_) {
         if (playingState == A2DP_PLAYING) {
@@ -8662,7 +8666,7 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
                 std::vector<int32_t>().swap(connectionTriggerSessionIds_);
                 connectionCV_.notify_all();
             }
-        } else {
+        } else if (playingState == A2DP_STOPPED) {
             currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
             a2dpOffloadDeviceAddress_ = "";
         }
