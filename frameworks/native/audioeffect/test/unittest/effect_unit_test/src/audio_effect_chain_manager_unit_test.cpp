@@ -897,6 +897,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_005, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
+
 /**
 * @tc.name   : Test SessionInfoMapAdd API
 * @tc.number : SessionInfoMapAdd_001
