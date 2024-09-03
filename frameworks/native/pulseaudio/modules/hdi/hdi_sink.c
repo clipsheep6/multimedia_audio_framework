@@ -4133,6 +4133,7 @@ static void UserdataFree(struct Userdata *u)
     }
 
     UserdataFreeOffload(u);
+    UserdataFreeMultiChannel(u);
 
     if (u->primary.msgq) {
         pa_asyncmsgq_unref(u->primary.msgq);
@@ -4147,8 +4148,6 @@ static void UserdataFree(struct Userdata *u)
         u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
         UnLoadSinkAdapter(u->primary.sinkAdapter);
     }
-
-    UserdataFreeMultiChannel(u);
 
     // free heap allocated in userdata init
     if (u->bufferAttr == NULL) {
