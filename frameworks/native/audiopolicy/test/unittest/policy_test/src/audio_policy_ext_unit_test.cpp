@@ -354,7 +354,37 @@ HWTEST(AudioPolicyExtUnitTest, RecoverAudioPolicyCallbackClient_002, TestSize.Le
     EXPECT_EQ(volumeLevel, ret);
 
     AudioPolicyManager::GetInstance().audioStaticPolicyClientStubCB_ = nullptr;
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
     AudioPolicyManager::GetInstance().RecoverAudioPolicyCallbackClient();
+
+    std::shared_ptr<AudioSessionCallback> callback = make_shared<AudioSessionCallbackTest>();
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().SetAudioSessionCallback(callback);
+
+    ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_MUSIC);
+    EXPECT_EQ(volumeLevel, ret);
+}
+
+/**
+ * @tc.name  : Test RecoverAudioPolicyCallbackClient
+ * @tc.number: RecoverAudioPolicyCallbackClient_003
+ * @tc.desc  : Test RecoverAudioPolicyCallbackClient interface abnormal branch.
+ */
+HWTEST(AudioPolicyExtUnitTest, RecoverAudioPolicyCallbackClient_003, TestSize.Level3)
+{
+    int32_t ret;
+    int32_t volumeLevel = 4;
+    ret = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(AudioVolumeType::STREAM_MUSIC, volumeLevel);
+    EXPECT_EQ(SUCCESS, ret);
+
+    std::shared_ptr<AudioManagerMicStateChangeCallback> cb = make_shared<AudioManagerMicStateChangeCallbackTest>();
+    ret = AudioPolicyManager::GetInstance().audioStaticPolicyClientStubCB_->AddMicStateChangeCallback(cb);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioPolicyManager::GetInstance().RecoverAudioPolicyCallbackClient();
+
+    AudioPolicyManager::GetInstance().callbackChangeInfos_[0].isEnable = true;
+    AudioPolicyManager::GetInstance().RecoverAudioPolicyCallbackClient();
+    AudioPolicyManager::GetInstance().callbackChangeInfos_[0].isEnable = false;
 
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_MUSIC);
     EXPECT_EQ(volumeLevel, ret);
@@ -372,6 +402,32 @@ HWTEST(AudioPolicyExtUnitTest, AudioPolicyServerDied_001, TestSize.Level1)
 
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
         AudioPolicyManager::GetInstance().GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
+    EXPECT_TRUE(audioDeviceDescriptors.size() > 0);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServerDied
+ * @tc.number: AudioPolicyServerDied_002
+ * @tc.desc  : Test AudioPolicyServerDied interface.
+ */
+HWTEST(AudioPolicyExtUnitTest, AudioPolicyServerDied_002, TestSize.Level1)
+{
+    int32_t pid = getpid();
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    shared_ptr<AudioRendererPolicyServiceDiedCallback> callback_Renderer =
+        make_shared<AudioRendererPolicyServiceDiedCallbackTest>();
+    weak_ptr<AudioRendererPolicyServiceDiedCallback> callback_Renderer_weak = callback_Renderer;
+    AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(pid, callback_Renderer_weak);
+    AudioPolicyManager::GetInstance().AudioPolicyServerDied(pid);
+    audioDeviceDescriptors = AudioPolicyManager::GetInstance().GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
+    EXPECT_TRUE(audioDeviceDescriptors.size() > 0);
+
+    shared_ptr<AudioStreamPolicyServiceDiedCallback> callback_Stream =
+        make_shared<AudioStreamPolicyServiceDiedCallbackTest>();
+    AudioPolicyManager::GetInstance().RegisterAudioStreamPolicyServerDiedCb(callback_Stream);
+    AudioPolicyManager::GetInstance().AudioPolicyServerDied(pid);
+    audioDeviceDescriptors = AudioPolicyManager::GetInstance().GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     EXPECT_TRUE(audioDeviceDescriptors.size() > 0);
 }
 
@@ -488,6 +544,25 @@ HWTEST(AudioPolicyExtUnitTest, RegisterFocusInfoChangeCallback_001, TestSize.Lev
 }
 
 /**
+ * @tc.name  : Test UnregisterFocusInfoChangeCallback
+ * @tc.number: UnregisterFocusInfoChangeCallback_001
+ * @tc.desc  : Test UnregisterFocusInfoChangeCallback interface legal situation.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, UnregisterFocusInfoChangeCallback_001, TestSize.Level1)
+{
+    int32_t clientId = getpid();
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterFocusInfoChangeCallback(clientId);
+    EXPECT_EQ(ret, SUCCESS);
+
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback = make_shared<AudioFocusInfoChangeCallbackTest>();
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().RegisterFocusInfoChangeCallback(clientId, callback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name  : Test SetPreferredOutputDeviceChangeCallback
  * @tc.number: SetPreferredOutputDeviceChangeCallback_001
  * @tc.desc  : Test SetPreferredOutputDeviceChangeCallback interface abnormal branch.
@@ -562,6 +637,38 @@ HWTEST(AudioPolicyExtUnitTest, SetMicStateChangeCallback_001, TestSize.Level3)
     EXPECT_EQ(SUCCESS, ret);
 
     ret = AudioPolicyManager::GetInstance().UnsetMicStateChangeCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test UnsetMicStateChangeCallback
+ * @tc.number: UnsetMicStateChangeCallback_001
+ * @tc.desc  : Test UnsetMicStateChangeCallback interface abnormal branch.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, UnsetMicStateChangeCallback_001, TestSize.Level3)
+{
+    std::shared_ptr<AudioManagerMicStateChangeCallbackTest> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetMicStateChangeCallback(callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+ * @tc.name  : Test SetAudioInterruptCallback
+ * @tc.number: SetAudioInterruptCallback_001
+ * @tc.desc  : Test SetAudioInterruptCallback interface abnormal branch.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, SetAudioInterruptCallback_001, TestSize.Level3)
+{
+    uint32_t sessionID = 0;
+    int32_t zoneID = 0;
+    std::shared_ptr<AudioInterruptCallback> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID, callback, zoneID);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    callback = std::make_shared<AudioInterruptCallbackTest>();
+    ret = AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID, callback, zoneID);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -782,6 +889,27 @@ HWTEST(AudioPolicyExtUnitTest, IsSpatializationSupportedForDevice_001, TestSize.
 }
 
 /**
+ * @tc.name  : Test RegisterAudioStreamPolicyServerDiedCb
+ * @tc.number: RegisterAudioStreamPolicyServerDiedCb_001
+ * @tc.desc  : Test RegisterAudioStreamPolicyServerDiedCb interface.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, RegisterAudioStreamPolicyServerDiedCb_001, TestSize.Level1)
+{
+    shared_ptr<AudioStreamPolicyServiceDiedCallback> callback =
+        make_shared<AudioStreamPolicyServiceDiedCallbackTest>();
+
+    int ret = AudioPolicyManager::GetInstance().RegisterAudioStreamPolicyServerDiedCb(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(callback);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test IsHeadTrackingSupported
  * @tc.number: IsHeadTrackingSupported_001
  * @tc.desc  : Test IsHeadTrackingSupported interface.
@@ -827,7 +955,253 @@ HWTEST(AudioPolicyExtUnitTest, UpdateSpatialDeviceState_001, TestSize.Level1)
 {
     AudioSpatialDeviceState audioSpatialDeviceState;
     int32_t ret = AudioPolicyManager::GetInstance().UpdateSpatialDeviceState(audioSpatialDeviceState);
-    EXPECT_EQ(false, ret);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test CreateAudioInterruptZone
+ * @tc.number: CreateAudioInterruptZone_001
+ * @tc.desc  : Test CreateAudioInterruptZone interface.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, CreateAudioInterruptZone_001, TestSize.Level1)
+{
+    std::set<int32_t> pids = {1, 2, 3};
+    int32_t zoneID = 0;
+
+    int32_t ret = AudioPolicyManager::GetInstance().CreateAudioInterruptZone(pids, zoneID);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().ReleaseAudioInterruptZone(zoneID);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test AddAudioInterruptZonePids
+ * @tc.number: AddAudioInterruptZonePids_001
+ * @tc.desc  : Test AddAudioInterruptZonePids interface.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, AddAudioInterruptZonePids_001, TestSize.Level1)
+{
+    std::set<int32_t> pids = {1, 2, 3};
+    int32_t zoneID = 0;
+
+    int32_t ret = AudioPolicyManager::GetInstance().AddAudioInterruptZonePids(pids, zoneID);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().RemoveAudioInterruptZonePids(pids, zoneID);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test NotifyCapturerAdded
+ * @tc.number: NotifyCapturerAdded_001
+ * @tc.desc  : Test NotifyCapturerAdded function illegal situation.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, NotifyCapturerAdded_001, TestSize.Level3)
+{
+    AudioCapturerInfo capturerInfo;
+    AudioStreamInfo streamInfo;
+    uint32_t sessionId = 0;
+    int32_t ret = AudioPolicyManager::GetInstance().NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+}
+/**
+ * @tc.name  : Test GetConverterConfig
+ * @tc.number: GetConverterConfig_001
+ * @tc.desc  : Test GetConverterConfig function illegal situation.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, GetConverterConfig_001, TestSize.Level3)
+{
+    ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
+    EXPECT_EQ(cfg.library.name, "mcr");
+    EXPECT_EQ(cfg.library.path, "libaudio_integration_mcr.z.so");
+}
+
+/**
+ * @tc.name  : Test ActivateAudioSession
+ * @tc.number: ActivateAudioSession_001
+ * @tc.desc  : Test ActivateAudioSession interface.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, ActivateAudioSession_001, TestSize.Level1)
+{
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    bool isActivated = -1;
+
+    isActivated = AudioPolicyManager::GetInstance().IsAudioSessionActivated();
+    EXPECT_EQ(false, isActivated);
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioSession(strategy);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().ActivateAudioSession(strategy);
+    EXPECT_EQ(SUCCESS, ret);
+
+    isActivated = AudioPolicyManager::GetInstance().IsAudioSessionActivated();
+    EXPECT_EQ(true, isActivated);
+
+    ret = AudioPolicyManager::GetInstance().DeactivateAudioSession();
+    EXPECT_EQ(SUCCESS, ret);
+
+    isActivated = AudioPolicyManager::GetInstance().IsAudioSessionActivated();
+    EXPECT_EQ(false, isActivated);
+}
+
+/**
+ * @tc.name  : Test SetAudioSessionCallback
+ * @tc.number: SetAudioSessionCallback_001
+ * @tc.desc  : Test SetAudioSessionCallback interface illegal situation.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, SetAudioSessionCallback_001, TestSize.Level3)
+{
+    std::shared_ptr<AudioSessionCallback> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioSessionCallback(callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    callback = make_shared<AudioSessionCallbackTest>();
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = true;
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
+    ret = AudioPolicyManager::GetInstance().SetAudioSessionCallback(callback);
+    EXPECT_EQ(ERROR_ILLEGAL_STATE, ret);
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().SetAudioSessionCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_->RemoveAudioSessionCallback();
+    std::shared_ptr<AudioSessionCallback> cb = std::make_shared<AudioSessionCallbackTest>();
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_->AddAudioSessionCallback(cb);
+    EXPECT_TRUE(AudioPolicyManager::GetInstance().audioPolicyClientStubCB_->GetAudioSessionCallbackSize() == 1);
+    ret = AudioPolicyManager::GetInstance().SetAudioSessionCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetAudioSessionCallback();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test UnsetAudioSessionCallback
+ * @tc.number: UnsetAudioSessionCallback_001
+ * @tc.desc  : Test UnsetAudioSessionCallback interface illegal situation.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, UnsetAudioSessionCallback_001, TestSize.Level3)
+{
+    std::shared_ptr<AudioSessionCallback> callback = make_shared<AudioSessionCallbackTest>();
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioSessionCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetAudioSessionCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioPolicyManager::GetInstance().UnsetAudioSessionCallback();
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
+    ret = AudioPolicyManager::GetInstance().UnsetAudioSessionCallback(callback);
+    EXPECT_EQ(ERROR_ILLEGAL_STATE, ret);
+    ret = AudioPolicyManager::GetInstance().UnsetAudioSessionCallback();
+    EXPECT_EQ(ERROR_ILLEGAL_STATE, ret);
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().SetAudioSessionCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test GetSpatializationSceneType
+ * @tc.number: GetSpatializationSceneType_001
+ * @tc.desc  : Test GetSpatializationSceneType interface.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, GetSpatializationSceneType_001, TestSize.Level1)
+{
+    AudioSpatializationSceneType spatializationSceneType = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    int32_t ret = AudioPolicyManager::GetInstance().SetSpatializationSceneType(spatializationSceneType);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioSpatializationSceneType type_ret = AudioPolicyManager::GetInstance().GetSpatializationSceneType();
+    EXPECT_EQ(spatializationSceneType, type_ret);
+
+    spatializationSceneType = SPATIALIZATION_SCENE_TYPE_MUSIC;
+    ret = AudioPolicyManager::GetInstance().SetSpatializationSceneType(spatializationSceneType);
+    EXPECT_EQ(SUCCESS, ret);
+    type_ret = AudioPolicyManager::GetInstance().GetSpatializationSceneType();
+    EXPECT_EQ(spatializationSceneType, type_ret);
+}
+
+/**
+ * @tc.name  : Test SetAudioDeviceRefinerCallback
+ * @tc.number: SetAudioDeviceRefinerCallback_001
+ * @tc.desc  : Test SetAudioDeviceRefinerCallback interface illegal situation.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, SetAudioDeviceRefinerCallback_001, TestSize.Level3)
+{
+    std::shared_ptr<AudioDeviceRefiner> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioDeviceRefinerCallback(callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    callback = make_shared<AudioDeviceRefinerTest>();
+    ret = AudioPolicyManager::GetInstance().SetAudioDeviceRefinerCallback(callback);
+    EXPECT_EQ(ERROR, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetAudioDeviceRefinerCallback();
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+ * @tc.name  : Test TriggerFetchDevice
+ * @tc.number: TriggerFetchDevice_001
+ * @tc.desc  : Test TriggerFetchDevice interface illegal situation.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, TriggerFetchDevice_001, TestSize.Level3)
+{
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE);
+    int32_t ret = AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+ * @tc.name  : Test MoveToNewPipe
+ * @tc.number: MoveToNewPipe_001
+ * @tc.desc  : Test MoveToNewPipe interface illegal situation.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, MoveToNewPipe_001, TestSize.Level3)
+{
+    uint32_t sessionId = 0;
+    AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
+    int32_t ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, pipeType);
+    EXPECT_EQ(ERROR, ret);
+
+    pipeType = PIPE_TYPE_UNKNOWN;
+    ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, pipeType);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+ * @tc.name  : Test InjectInterruption
+ * @tc.number: InjectInterruption_001
+ * @tc.desc  : Test InjectInterruption interface illegal situation.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, InjectInterruption_001, TestSize.Level3)
+{
+    std::string networkId = "";
+    InterruptEvent event;
+    int32_t ret = AudioPolicyManager::GetInstance().InjectInterruption(networkId, event);
+    EXPECT_EQ(ERROR, ret);
+
+    networkId = LOCAL_NETWORK_ID;
+    ret = AudioPolicyManager::GetInstance().InjectInterruption(networkId, event);
+    EXPECT_EQ(ERROR, ret);
 }
 
 } // namespace AudioStandard

@@ -14,7 +14,7 @@
  */
 
 #include "audio_manager_unit_test.h"
-
+#include "audio_asr.h"
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_renderer.h"
@@ -1723,6 +1723,21 @@ HWTEST(AudioManagerUnitTest, SetRingerModeTest_003, TestSize.Level1)
 }
 
 /**
+* @tc.name   : Test SetRingerMode API
+* @tc.number : SetRingerModeTest_004
+* @tc.desc   : Test SetRingerMode illegal states.
+*/
+HWTEST(AudioManagerUnitTest, SetRingerModeTest_004, TestSize.Level3)
+{
+    AudioSystemManager::GetInstance()->ringerModeCallback_ = nullptr;
+    int32_t ret = AudioSystemManager::GetInstance()->SetRingerMode(AudioRingerMode::RINGER_MODE_VIBRATE);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioRingerMode ringerMode = AudioSystemManager::GetInstance()->GetRingerMode();
+    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_SILENT);
+}
+
+/**
 * @tc.name   : Test SetMicrophoneMute API
 * @tc.number : SetMicrophoneMute_001
 * @tc.desc   : Test muting of microphone to true
@@ -2923,5 +2938,280 @@ HWTEST(AudioManagerUnitTest, LoadSplitModule_004, TestSize.Level1)
     EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
+/**
+ * @tc.name   : Test GetStreamType API
+ * @tc.number : GetStreamType_001
+ * @tc.desc   : Test GetStreamType interface illegal states.
+ */
+HWTEST(AudioManagerUnitTest, GetStreamType_001, TestSize.Level3)
+{
+    ContentType contentType = CONTENT_TYPE_GAME;
+    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+
+    AudioStreamType audioStreamType = AudioSystemManager::GetInstance()->GetStreamType(contentType, streamUsage);
+    EXPECT_EQ(AudioStreamType::STREAM_MUSIC, audioStreamType);
+}
+
+/**
+ * @tc.name   : Test GetActiveOutputDevice API
+ * @tc.number : GetActiveOutputDevice_001
+ * @tc.desc   : Test GetActiveOutputDevice interface.
+ */
+HWTEST(AudioManagerUnitTest, GetActiveOutputDevice_001, TestSize.Level1)
+{
+    DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
+    EXPECT_TRUE(deviceType == DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name   : Test GetActiveInputDevice API
+ * @tc.number : GetActiveInputDevice_001
+ * @tc.desc   : Test GetActiveInputDevice interface.
+ */
+HWTEST(AudioManagerUnitTest, GetActiveInputDevice_001, TestSize.Level1)
+{
+    DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveInputDevice();
+    EXPECT_TRUE(deviceType == DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name   : Test SetAsrAecMode API
+ * @tc.number : SetAsrAecMode_001
+ * @tc.desc   : Test SetAsrAecMode interface.
+ */
+HWTEST(AudioManagerUnitTest, SetAsrAecMode_001, TestSize.Level1)
+{
+    AsrAecMode asrAecMode = AsrAecMode::BYPASS;
+    int32_t ret = AudioSystemManager::GetInstance()->SetAsrAecMode(asrAecMode);
+    EXPECT_EQ(ret, SUCCESS);
+
+    asrAecMode = AsrAecMode::STANDARD;
+    ret = AudioSystemManager::GetInstance()->SetAsrAecMode(asrAecMode);
+    EXPECT_EQ(ret, SUCCESS);
+
+    asrAecMode = (AsrAecMode)666;
+    ret = AudioSystemManager::GetInstance()->SetAsrAecMode(asrAecMode);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name   : Test GetAsrAecMode API
+ * @tc.number : GetAsrAecMode_001
+ * @tc.desc   : Test GetAsrAecMode interface.
+ */
+HWTEST(AudioManagerUnitTest, GetAsrAecMode_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AsrAecMode asrAecMode = AsrAecMode::BYPASS;
+    AsrAecMode asrAecModeRet;
+
+    ret = AudioSystemManager::GetInstance()->SetAsrAecMode(asrAecMode);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = AudioSystemManager::GetInstance()->GetAsrAecMode(asrAecModeRet);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(asrAecMode, asrAecModeRet);
+
+    asrAecMode = AsrAecMode::STANDARD;
+    ret = AudioSystemManager::GetInstance()->SetAsrAecMode(asrAecMode);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = AudioSystemManager::GetInstance()->GetAsrAecMode(asrAecModeRet);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(asrAecMode, asrAecModeRet);
+
+    asrAecMode = (AsrAecMode)666;
+    ret = AudioSystemManager::GetInstance()->SetAsrAecMode(asrAecMode);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    ret = AudioSystemManager::GetInstance()->GetAsrAecMode(asrAecModeRet);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(AsrAecMode::STANDARD, asrAecModeRet);
+}
+
+/**
+ * @tc.name   : Test GetMaxVolume API
+ * @tc.number : GetMaxVolume_001
+ * @tc.desc   : Test GetMaxVolume interface.
+ */
+HWTEST(AudioManagerUnitTest, GetMaxVolume_001, TestSize.Level1)
+{
+    AudioVolumeType volumeType = STREAM_ALL;
+    EXPECT_EQ(15, AudioSystemManager::GetInstance()->GetMaxVolume(volumeType));
+
+    volumeType = STREAM_RING;
+    EXPECT_EQ(15, AudioSystemManager::GetInstance()->GetMaxVolume(volumeType));
+
+    volumeType = STREAM_MUSIC;
+    EXPECT_EQ(15, AudioSystemManager::GetInstance()->GetMaxVolume(volumeType));
+
+    volumeType = STREAM_MEDIA;
+    EXPECT_EQ(15, AudioSystemManager::GetInstance()->GetMaxVolume(volumeType));
+}
+
+/**
+ * @tc.name   : Test GetMinVolume API
+ * @tc.number : GetMinVolume_001
+ * @tc.desc   : Test GetMinVolume interface.
+ */
+HWTEST(AudioManagerUnitTest, GetMinVolume_001, TestSize.Level1)
+{
+    AudioVolumeType volumeType = STREAM_ALL;
+    EXPECT_EQ(0, AudioSystemManager::GetInstance()->GetMinVolume(volumeType));
+
+    volumeType = STREAM_RING;
+    EXPECT_EQ(0, AudioSystemManager::GetInstance()->GetMinVolume(volumeType));
+
+    volumeType = STREAM_MUSIC;
+    EXPECT_EQ(0, AudioSystemManager::GetInstance()->GetMinVolume(volumeType));
+
+    volumeType = STREAM_MEDIA;
+    EXPECT_EQ(0, AudioSystemManager::GetInstance()->GetMinVolume(volumeType));
+}
+
+/**
+ * @tc.name   : Test IsStreamMute API
+ * @tc.number : IsStreamMute_001
+ * @tc.desc   : Test IsStreamMute interface.
+ */
+HWTEST(AudioManagerUnitTest, IsStreamMute_001, TestSize.Level1)
+{
+    bool isStreamMute = false;
+    isStreamMute = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_MUSIC);
+    EXPECT_EQ(true, isStreamMute);
+
+    isStreamMute = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_ULTRASONIC);
+    EXPECT_EQ(true, isStreamMute);
+
+    isStreamMute = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_DEFAULT);
+    EXPECT_EQ(false, isStreamMute);
+}
+
+/**
+ * @tc.name   : Test OtherDeviceTypeCases API
+ * @tc.number : OtherDeviceTypeCases_001
+ * @tc.desc   : Test OtherDeviceTypeCases interface.
+ */
+HWTEST(AudioManagerUnitTest, OtherDeviceTypeCases_001, TestSize.Level1)
+{
+    isStreamMute = AudioSystemManager::GetInstance()->OtherDeviceTypeCases(AudioVolumeType::STREAM_MUSIC);
+    EXPECT_EQ(true, isStreamMute);
+
+    isStreamMute = AudioSystemManager::GetInstance()->OtherDeviceTypeCases(AudioVolumeType::STREAM_ULTRASONIC);
+    EXPECT_EQ(true, isStreamMute);
+
+    isStreamMute = AudioSystemManager::GetInstance()->OtherDeviceTypeCases(AudioVolumeType::STREAM_DEFAULT);
+    EXPECT_EQ(false, isStreamMute);
+}
+
+/**
+ * @tc.name   : Test AudioFocusInfoChangeCallbackImpl::SaveCallback API
+ * @tc.number : AudioFocusInfoChangeCallbackImpl_SaveCallback_001
+ * @tc.desc   : Test SaveCallback interface.
+ */
+HWTEST(AudioManagerUnitTest, AudioFocusInfoChangeCallbackImpl_SaveCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioFocusInfoChangeCallbackImpl> audioFocusInfoImpl =
+        std::make_shared<AudioFocusInfoChangeCallbackImpl>();
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback_shared = make_shared<AudioFocusInfoChangeCallbackTest>();
+    std::weak_ptr<AudioFocusInfoChangeCallback> callback_weak = callback_shared;
+
+    audioFocusInfoImpl->SaveCallback(callback_weak);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 1);
+
+    audioFocusInfoImpl->SaveCallback(callback_weak);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 1);
+
+    audioFocusInfoImpl->RemoveCallback(callback_weak);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 0);
+}
+
+/**
+ * @tc.name   : Test AudioFocusInfoChangeCallbackImpl::OnAudioFocusInfoChange API
+ * @tc.number : AudioFocusInfoChangeCallbackImpl_OnAudioFocusInfoChange_001
+ * @tc.desc   : Test OnAudioFocusInfoChange interface.
+ */
+HWTEST(AudioManagerUnitTest, AudioFocusInfoChangeCallbackImpl_OnAudioFocusInfoChange_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioFocusInfoChangeCallbackImpl> audioFocusInfoImpl =
+        std::make_shared<AudioFocusInfoChangeCallbackImpl>();
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback_shared = make_shared<AudioFocusInfoChangeCallbackTest>();
+    std::weak_ptr<AudioFocusInfoChangeCallback> callback_weak = callback_shared;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
+
+    audioFocusInfoImpl->SaveCallback(callback_weak);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 1);
+    callback_shared = nullptr;
+
+    audioFocusInfoImpl->OnAudioFocusInfoChange(focusInfoList);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 1);
+
+    audioFocusInfoImpl->RemoveCallback(callback_weak);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 0);
+}
+
+/**
+ * @tc.name   : Test AudioFocusInfoChangeCallbackImpl::OnAudioFocusRequested API
+ * @tc.number : AudioFocusInfoChangeCallbackImpl_OnAudioFocusRequested_001
+ * @tc.desc   : Test OnAudioFocusRequested interface.
+ */
+HWTEST(AudioManagerUnitTest, AudioFocusInfoChangeCallbackImpl_OnAudioFocusRequested_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioFocusInfoChangeCallbackImpl> audioFocusInfoImpl =
+        std::make_shared<AudioFocusInfoChangeCallbackImpl>();
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback_shared = make_shared<AudioFocusInfoChangeCallbackTest>();
+    std::weak_ptr<AudioFocusInfoChangeCallback> callback_weak = callback_shared;
+    AudioInterrupt requestFocus;
+
+    audioFocusInfoImpl->SaveCallback(callback_weak);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 1);
+    callback_shared = nullptr;
+
+    audioFocusInfoImpl->OnAudioFocusRequested(requestFocus);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 1);
+
+    audioFocusInfoImpl->RemoveCallback(callback_weak);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 0);
+}
+
+/**
+ * @tc.name   : Test AudioFocusInfoChangeCallbackImpl::OnAudioFocusAbandoned API
+ * @tc.number : AudioFocusInfoChangeCallbackImpl_OnAudioFocusAbandoned_001
+ * @tc.desc   : Test OnAudioFocusAbandoned interface.
+ */
+HWTEST(AudioManagerUnitTest, AudioFocusInfoChangeCallbackImpl_OnAudioFocusAbandoned_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioFocusInfoChangeCallbackImpl> audioFocusInfoImpl =
+        std::make_shared<AudioFocusInfoChangeCallbackImpl>();
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback_shared = make_shared<AudioFocusInfoChangeCallbackTest>();
+    std::weak_ptr<AudioFocusInfoChangeCallback> callback_weak = callback_shared;
+    AudioInterrupt requestFocus;
+
+    audioFocusInfoImpl->SaveCallback(callback_weak);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 1);
+    callback_shared = nullptr;
+
+    audioFocusInfoImpl->OnAudioFocusAbandoned(requestFocus);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 1);
+
+    audioFocusInfoImpl->RemoveCallback(callback_weak);
+    EXPECT_TRUE(audioFocusInfoImpl->callbackList_.size() == 0);
+}
+
+/**
+ * @tc.name   : Test AudioManagerInterruptCallbackImpl::SaveCallback API
+ * @tc.number : AudioManagerInterruptCallbackImpl_SaveCallback_001
+ * @tc.desc   : Test SaveCallback interface.
+ */
+HWTEST(AudioManagerUnitTest, AudioManagerInterruptCallbackImpl_SaveCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioManagerInterruptCallbackImpl> audioManagerInterruptImpl =
+        std::make_shared<AudioManagerInterruptCallbackImpl>();
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback_shared = make_shared<AudioFocusInfoChangeCallbackTest>();
+    std::weak_ptr<AudioFocusInfoChangeCallback> callback_weak = callback_shared;
+    AudioInterrupt requestFocus;
+
+    audioManagerInterruptImpl->SaveCallback(callback_weak);
+    EXPECT_TRUE(audioFocusInfoImpl->callb.size() == 1);
+    callback_shared = nullptr;
+
+}
 } // namespace AudioStandard
 } // namespace OHOS
