@@ -55,7 +55,6 @@ public:
         return affinityDeviceInfoArray_;
     }
 
-
 private:
     bool ParseInternal(xmlNode *node);
     void ParserAffinityGroups(xmlNode *node, const DeviceFlag& deviceFlag);

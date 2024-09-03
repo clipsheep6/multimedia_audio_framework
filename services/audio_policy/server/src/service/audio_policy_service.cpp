@@ -1177,6 +1177,29 @@ void AudioPolicyService::RestoreSession(const int32_t &sessionID, bool isOutput)
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+int32_t AudioPolicyService::SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> selectedDesc) {
+    bool isVirtualDevice = false;
+    if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        selectedDesc[0]->isEnable_ = true;
+        audioDeviceManager_.UpdateDevicesListInfo(selectedDesc[0], ENABLE_UPDATE);
+        isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(selectedDesc[0]);
+        if (isVirtualDevice == true) {
+            selectedDesc[0]->connectState_ = VIRTUAL_CONNECTED;
+        }
+    }
+    audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, selectedDesc[0]);
+    vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
+    for (auto &changeInfo : rendererChangeInfos) {
+        if (changeInfo->clientUID == audioRendererFilter->uid && changeInfo->sessionId != 0) {
+            RestoreSession(changeInfo->sessionId, true);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
 {
@@ -1190,15 +1213,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, selectedDesc);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
     if (audioRendererFilter->uid != -1) {
-        audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, selectedDesc[0]);
-        vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-        streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
-        for (auto &changeInfo : rendererChangeInfos) {
-            if (changeInfo->clientUID == audioRendererFilter->uid && changeInfo->sessionId != 0) {
-                RestoreSession(changeInfo->sessionId, true);
-            }
-        }
-        return SUCCESS;
+        return SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc);
     }
     if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
         SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);

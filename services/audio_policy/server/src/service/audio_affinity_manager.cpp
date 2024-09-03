@@ -233,11 +233,9 @@ int32_t AudioAffinityManager::GetAffinityClientUID(
     const int32_t &clientUID, std::unordered_map<int32_t, AffinityDeviceInfo> &affinityDeviceInfoMap)
 {
     std::unordered_map<int32_t, AffinityDeviceInfo>::iterator item = affinityDeviceInfoMap.find(clientUID);
-
     if (item != affinityDeviceInfoMap.end() && item->second.SupportedConcurrency) {
         return clientUID;
     }
-
     int32_t affinityClientID = 0;
     uint64_t chooseTimeStamp = 0;
     item = affinityDeviceInfoMap.begin();
@@ -255,7 +253,6 @@ void AudioAffinityManager::DelActiveGroupAffinityMap(const int32_t &clientUID,
     std::unordered_map<int32_t, AffinityDeviceInfo> &affinityDeviceInfoMap)
 {
     std::unordered_map<int32_t, AffinityDeviceInfo>::iterator item = affinityDeviceInfoMap.find(clientUID);
-
     if (item != affinityDeviceInfoMap.end()) {
         affinityDeviceInfoMap.erase(item);
     }
@@ -272,7 +269,6 @@ void AudioAffinityManager::DelActiveGroupAffinityMap(const int32_t &clientUID, c
     DelActiveGroupAffinityMap(clientUID, affinityDeviceInfoMap);
     activeGroupNameMap[affinityDeviceInfo.groupName] = affinityDeviceInfoMap;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
 
