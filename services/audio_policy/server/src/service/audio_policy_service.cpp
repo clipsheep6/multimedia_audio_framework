@@ -1631,6 +1631,7 @@ std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType, A
     std::string portName = PORT_NONE;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+            // BTH tells us that a2dpoffload is OK and also a2dpOffload path has setup
             if (a2dpOffloadFlag_ == A2DP_OFFLOAD && IsA2dpOffloadConnected()) {
                 if (pipeType == PIPE_TYPE_OFFLOAD) {
                     portName = OFFLOAD_PRIMARY_SPEAKER;
@@ -7095,7 +7096,7 @@ int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sess
     int32_t ret = Bluetooth::AudioA2dpManager::OffloadStartPlaying(sessionIds);
     if (audioA2dpOffloadManager_ != nullptr) {
         A2dpOffloadConnectionState state = audioA2dpOffloadManager_->GetA2dOffloadConnectionState();
-        if (ret == SUCCESS && (state == CONNECTION_STATUS_DISCONNECTED || state == CONNECTION_STATUS_DISCONNECTING)) {
+        if (ret == SUCCESS && (state == CONNECTION_STATUS_DISCONNECTED)) {
             audioA2dpOffloadManager_->ConnectA2dpOffload(
                 Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), sessionIds);
         }
@@ -7114,11 +7115,7 @@ int32_t AudioPolicyService::OffloadStopPlaying(const std::vector<int32_t> &sessi
     if (a2dpOffloadFlag_ != A2DP_OFFLOAD || sessionIds.size() == 0) {
         return SUCCESS;
     }
-    int32_t ret = Bluetooth::AudioA2dpManager::OffloadStopPlaying(sessionIds);
-    if (audioA2dpOffloadManager_ != nullptr) {
-        audioA2dpOffloadManager_->DisconnectA2dpOffload();
-    }
-    return ret;
+    return Bluetooth::AudioA2dpManager::OffloadStopPlaying(sessionIds);
 #else
     return SUCCESS;
 #endif
@@ -8539,7 +8536,7 @@ bool AudioPolicyService::IsA2dpOffloadConnected()
         return true;
     }
     A2dpOffloadConnectionState state = audioA2dpOffloadManager_->GetA2dOffloadConnectionState();
-    return state == CONNECTION_STATUS_CONNECTED || state == CONNECTION_STATUS_DISCONNECTING;
+    return state == CONNECTION_STATUS_CONNECTED;
 }
 
 void AudioPolicyService::UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state)
@@ -8652,21 +8649,28 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
     AUDIO_INFO_LOG("Current A2dpOffload MacAddr:%{public}s, incoming MacAddr:%{public}s, state:%{public}d",
         GetEncryptAddr(a2dpOffloadDeviceAddress_).c_str(), GetEncryptAddr(deviceAddress).c_str(), playingState);
     if (deviceAddress == a2dpOffloadDeviceAddress_) {
-        if (playingState == A2DP_PLAYING && currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
-            AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
-                currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTED);
+        if (playingState == A2DP_PLAYING) {
             currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
-            for (int32_t sessionId : connectionTriggerSessionIds_) {
-                audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTED);
+
+            if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
+                AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+                currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTED);
+
+                for (int32_t sessionId : connectionTriggerSessionIds_) {
+                    audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTED);
+                }
+                std::vector<int32_t>().swap(connectionTriggerSessionIds_);
+                connectionCV_.notify_all();
             }
-            std::vector<int32_t>().swap(connectionTriggerSessionIds_);
-            connectionCV_.notify_all();
+        } else {
+            currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+            a2dpOffloadDeviceAddress_ = "";
         }
-    } else if (a2dpOffloadDeviceAddress_ == "") {
-        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
-            currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTED);
-        currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+        return;
     }
+
+    currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+    return;
 }
 
 void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddress, const vector<int32_t> &sessionIds)
@@ -8675,10 +8679,8 @@ void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddres
     a2dpOffloadDeviceAddress_ = deviceAddress;
     connectionTriggerSessionIds_.assign(sessionIds.begin(), sessionIds.end());
 
-    if (currentOffloadConnectionState_ == CONNECTION_STATUS_DISCONNECTING) {
-        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
-            currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTED);
-        currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+    if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTED) {
+        AUDIO_INFO_LOG("currentOffloadConnectionState_ already in connected status");
         return;
     }
 
@@ -8691,18 +8693,6 @@ void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddres
     AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
         currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTING);
     currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
-}
-
-void AudioA2dpOffloadManager::DisconnectA2dpOffload()
-{
-    if (currentOffloadConnectionState_ == CONNECTION_STATUS_DISCONNECTED ||
-        currentOffloadConnectionState_ == CONNECTION_STATUS_DISCONNECTING) {
-        return;
-    }
-    a2dpOffloadDeviceAddress_ = "";
-    AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
-        currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTING);
-    currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTING;
 }
 
 void AudioA2dpOffloadManager::WaitForConnectionCompleted()
