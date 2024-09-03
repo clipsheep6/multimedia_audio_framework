@@ -344,6 +344,9 @@ ohos_shared_library("audio_process_service") {
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
+    "qos_manager:qos",
+    "ipc:ipc_single",
+    "qos_manager:concurrent_task_client",
   ]
 
   public_external_deps = [ "bounds_checking_function:libsec_static" ]

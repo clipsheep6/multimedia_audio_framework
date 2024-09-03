@@ -41,6 +41,8 @@
 #include "policy_handler.h"
 #include "media_monitor_manager.h"
 #include "audio_log_utils.h"
+#include "qos.h"
+#include "concurrent_task_client.h"
 #ifdef DAUDIO_ENABLE
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
@@ -1954,7 +1956,10 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
 
 void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 {
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    std::unordered_map<std::string, std::string> payload;
+    payload["pid"] = std::to_string(getpid());
+    OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
+    OHOS::QOS::SetThreadQos(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE);
     int64_t curTime = 0;
     uint64_t curReadPos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
@@ -1990,11 +1995,15 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
+    OHOS::QOS::ResetThreadQos();
 }
 
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    std::unordered_map<std::string, std::string> payload;
+    payload["pid"] = std::to_string(getpid());
+    OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
+    OHOS::QOS::SetThreadQos(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE);
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
@@ -2047,6 +2056,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
     AUDIO_DEBUG_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
+    OHOS::QOS::ResetThreadQos();
 }
 
 void AudioEndpointInner::InitLatencyMeasurement()
