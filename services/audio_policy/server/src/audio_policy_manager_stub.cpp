@@ -1302,6 +1302,12 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_OUTPUT_DEVICE):
+            GetOutputDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_INPUT_DEVICE):
+            GetInputDeviceInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED_FOR_DEVICE):
             IsSpatializationEnabledForDeviceInternal(data, reply);
             break;
@@ -1316,12 +1322,6 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEFAULT_OUTPUT_DEVICE):
             SetDefaultOutputDeviceInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_OUTPUT_DEVICE):
-            GetOutputDeviceInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_INPUT_DEVICE):
-            GetInputDeviceInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
