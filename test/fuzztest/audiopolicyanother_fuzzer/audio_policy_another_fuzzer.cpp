@@ -377,6 +377,10 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
 
 void AudioDeviceConnectTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
     // Coverage first
     AudioStreamInfo streamInfo;
     streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
