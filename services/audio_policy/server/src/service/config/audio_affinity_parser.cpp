@@ -159,7 +159,7 @@ void audioAffinityParser::ParserAffinityGroupDeviceInfos(xmlNode *node, Affinity
             pValue = reinterpret_cast<char *>(
                 xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("deviceType")));
             std::map<std::string, DeviceType>::iterator item = deviceTypeMap_.find(std::string(pValue));
-            deviceInfo.deviceType_ = (item != deviceTypeMap_.end() ? item->second : DEVICE_TYPE_INVALID);
+            deviceInfo.deviceType = (item != deviceTypeMap_.end() ? item->second : DEVICE_TYPE_INVALID);
             xmlFree(pValue);
 
             pValue = reinterpret_cast<char *>(

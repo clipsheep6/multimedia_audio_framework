@@ -151,7 +151,7 @@ void AudioAffinityManager::DelSelectCapturerDevice(int32_t clientUID)
         CHECK_AND_RETURN_LOG(item->second != nullptr, "AudioDeviceDescriptor sptr not valid");
         DelActiveGroupAffinityMap(clientUID, item->second->getType(), item->second->networkId_,
             capturerAffinityDeviceArray_, activeCapturerGroupAffinityMap_);
-        activeCaptureDeviceMap_.erase(item);
+        activeCapturerDeviceMap_.erase(item);
     }
 }
 
