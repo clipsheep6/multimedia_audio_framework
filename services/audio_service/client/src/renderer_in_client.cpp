@@ -293,7 +293,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         int32_t type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
             rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
-                PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
+                PIPE_TYPE_CALL_OUT : PIPE_TYPE_DIRECT_MUSIC;
         }
     }
 
