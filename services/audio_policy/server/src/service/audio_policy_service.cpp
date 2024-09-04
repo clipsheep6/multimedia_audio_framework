@@ -7099,7 +7099,7 @@ int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sess
     int32_t ret = Bluetooth::AudioA2dpManager::OffloadStartPlaying(sessionIds);
     if (audioA2dpOffloadManager_ != nullptr) {
         A2dpOffloadConnectionState state = audioA2dpOffloadManager_->GetA2dOffloadConnectionState();
-        if (ret == SUCCESS && (state == CONNECTION_STATUS_DISCONNECTED)) {
+        if (ret == SUCCESS && (state != CONNECTION_STATUS_CONNECTED)) {
             audioA2dpOffloadManager_->ConnectA2dpOffload(
                 Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), sessionIds);
         }
@@ -8692,13 +8692,15 @@ void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddres
     a2dpOffloadDeviceAddress_ = deviceAddress;
     connectionTriggerSessionIds_.assign(sessionIds.begin(), sessionIds.end());
 
-    if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTED) {
-        AUDIO_INFO_LOG("currentOffloadConnectionState_ already in connected status");
-        return;
-    }
-
     for (int32_t sessionId : connectionTriggerSessionIds_) {
         audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTING);
+    }
+
+    if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTED ||
+        currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
+        AUDIO_INFO_LOG("currentOffloadConnectionState_ already in %{public}d, status, no need to trigger another waiting", 
+        currentOffloadConnectionState_);
+        return;
     }
 
     std::thread switchThread(&AudioA2dpOffloadManager::WaitForConnectionCompleted, this);
