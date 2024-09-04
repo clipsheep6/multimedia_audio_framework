@@ -173,8 +173,8 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.SetCaptureSilentState(captureSilentState);
 
     uint32_t sessionId = static_cast<uint32_t>(num);
-    // the max value of AudioPipeType is PIPE_TYPE_DIRECT_VOIP.
-    AudioPipeType pipeType = static_cast<AudioPipeType>(num % (PIPE_TYPE_DIRECT_VOIP + 1));
+    // the max value of AudioPipeType is PIPE_TYPE_MAX.
+    AudioPipeType pipeType = static_cast<AudioPipeType>(num % (PIPE_TYPE_MAX + 1));
     GetServerPtr()->audioPolicyService_.MoveToNewPipeInner(sessionId, pipeType);
 
     GetServerPtr()->audioPolicyService_.LoadMchModule();
