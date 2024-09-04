@@ -2592,7 +2592,7 @@ void AudioPolicyService::FetchStreamForA2dpOffload(const bool &requireReset)
 {
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
-    AUDIO_INFO_LOG("start for %{public}zu stream", rendererChangeInfos.size());
+    AUDIO_INFO_LOG("FetchStreamForA2dpOffload start for %{public}zu stream", rendererChangeInfos.size());
     for (auto &rendererChangeInfo : rendererChangeInfos) {
         if (!IsRendererStreamRunning(rendererChangeInfo)) {
             continue;
@@ -8716,6 +8716,8 @@ void AudioA2dpOffloadManager::WaitForConnectionCompleted()
             return currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTED;
         });
     // a2dp connection timeout, anyway we should notify client dataLink OK in order to allow the data flow begin
+    AUDIO_INFO_LOG("WaitForConnectionCompleted unblocked, connectionCompleted is %{public}d", connectionCompleted);
+
     if (!connectionCompleted) {
         AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
             currentOffloadConnectionState_, CONNECTION_STATUS_TIMEOUT);
