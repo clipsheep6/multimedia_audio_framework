@@ -150,6 +150,8 @@ private:
     int32_t EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     AudioEffectScene GetSceneTypeFromSpatializationSceneType(AudioEffectScene sceneType);
     void UpdateEffectChainParams(AudioEffectScene sceneType);
+    void SetSpatializationSceneTypeToChains();
+    void SetSpatializationEnabledToChains();
     void SetSpkOffloadState();
     void UpdateCurrSceneType(AudioEffectScene &currSceneType, std::string &sceneType);
     void ChangeEffectChainCountMapForCreate(const std::string &sceneType);
