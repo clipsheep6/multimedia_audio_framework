@@ -8649,7 +8649,7 @@ int32_t AudioPolicyService::ErasePreferredDeviceByType(const PreferredType prefe
 
 void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
 {
-    AUDIO_INFO_LOG("Current A2dpOffload MacAddr:%{public}s, incoming MacAddr:%{public}s,
+    AUDIO_INFO_LOG("OnA2dpPlayingStateChanged current A2dpOffload MacAddr:%{public}s, incoming MacAddr:%{public}s,
         currentStatus:%{public}d, incommingState:%{public}d",
         GetEncryptAddr(a2dpOffloadDeviceAddress_).c_str(), GetEncryptAddr(deviceAddress).c_str(), playingState);
     if (deviceAddress == a2dpOffloadDeviceAddress_) {
@@ -8657,7 +8657,7 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
             currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
 
             if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
-                AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+                AUDIO_INFO_LOG("OnA2dpPlayingStateChanged currentOffloadConnectionState_ change from %{public}d to %{public}d",
                 currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTED);
 
                 for (int32_t sessionId : connectionTriggerSessionIds_) {
@@ -8667,8 +8667,17 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
                 connectionCV_.notify_all();
             }
         } else if (playingState == A2DP_STOPPED) {
+            AUDIO_INFO_LOG("OnA2dpPlayingStateChanged currentOffloadConnectionState_ change from %{public}d to %{public}d",
+            currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTED);
+
             currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
             a2dpOffloadDeviceAddress_ = "";
+            std::vector<int32_t>().swap(connectionTriggerSessionIds_);
+        } else {
+            // TO-DO:
+            // at the current moment, we only handle the PLAYING and STOPPED state, will handle other state in the future
+            AUDIO_INFO_LOG("OnA2dpPlayingStateChanged currentOffloadConnectionState_: %{public}d, reveives unexpected state: 
+            %{public}d", currentOffloadConnectionState_, playingState);
         }
         return;
     }
