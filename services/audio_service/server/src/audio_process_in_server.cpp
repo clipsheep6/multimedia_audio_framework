@@ -45,8 +45,9 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
-    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
-        sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
+    if (processConfig.originalSessionId < static_cast<int32_t>(MIN_SESSIONID) ||
+        processConfig.originalSessionId > static_cast<int32_t>(MAX_SESSIONID)) {
+            sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
     } else {
         sessionId_ = processConfig.originalSessionId;
     }

@@ -100,10 +100,11 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     uint32_t sessionId = 0;
-    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
-        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    if (processConfig.originalSessionId < static_cast<int32_t>(MIN_SESSIONID) ||
+        processConfig.originalSessionId > static_cast<int32_t>(MAX_SESSIONID)) {
+            sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
     } else {
-        sessionId = processConfig.originalSessionId;
+        sessionId = static_cast<uint32_t>(processConfig.originalSessionId);
     }
     AUDIO_DEBUG_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
 
@@ -207,10 +208,11 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     uint32_t sessionId = 0;
-    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
-        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    if (processConfig.originalSessionId < static_cast<int32_t>(MIN_SESSIONID) ||
+        processConfig.originalSessionId > static_cast<int32_t>(MAX_SESSIONID)) {
+            sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
     } else {
-        sessionId = processConfig.originalSessionId;
+        sessionId = static_cast<uint32_t>(processConfig.originalSessionId);
     }
 
     // PaAdapterManager is solely responsible for creating paStream objects
