@@ -22,6 +22,8 @@
 #include <unordered_map>
 #include <set>
 
+#include "qos.h"
+#include "concurrent_task_client.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
@@ -114,6 +116,17 @@ void OnAddResSchedService(uint32_t audioServerPid) {};
 void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
 #endif
 
+void SetThreadQosLevel()
+{
+    std::unordered_map<std::string, std::string> payload;
+    payload["pid"] = std::to_string(getpid());
+    OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
+    OHOS::QOS::SetThreadQos(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE);
+}
+void ResetThreadQosLevel()
+{
+    OHOS::QOS::ResetThreadQos();
+}
 #ifdef __cplusplus
 }
 #endif
