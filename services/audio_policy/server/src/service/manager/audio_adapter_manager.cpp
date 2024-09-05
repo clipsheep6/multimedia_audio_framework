@@ -197,6 +197,9 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         InitSafeTime(true);
         AUDIO_INFO_LOG("Copy audio_policy private database success to settings database, delete private database...");
         DeleteAudioPolicyKvStore();
+        if (audioPolicyServerHandler_ != nullptr) {
+            audioPolicyServerHandler_->SendRingerModeUpdatedCallback(ringerMode_);
+        }
     }
 
     // Make sure that the volume value is applied.
