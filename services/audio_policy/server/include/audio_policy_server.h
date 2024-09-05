@@ -200,6 +200,8 @@ public:
 
     int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) override;
 
+    int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
@@ -252,6 +254,8 @@ public:
     void RegisteredStreamListenerClientDied(int pid);
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
+
+    int32_t ResumeStreamState();
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
         StreamUsage streamUsage) override;
@@ -539,6 +543,7 @@ private:
     void UnRegisterPowerStateListener();
     void RegisterSyncHibernateListener();
     void UnRegisterSyncHibernateListener();
+    void AddRemoteDevstatusCallback();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
     void InitPolicyDumpMap();
@@ -573,7 +578,6 @@ private:
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
-    bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
 
     bool isHighResolutionExist_ = false;

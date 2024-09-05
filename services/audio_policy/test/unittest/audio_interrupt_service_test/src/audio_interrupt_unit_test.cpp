@@ -359,6 +359,32 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_015, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioInterruptService.
+* @tc.number: AudioInterruptService_016
+* @tc.desc  : Test UpdateAudioSceneFromInterrupt.
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_016, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+
+    interruptServiceTest->UpdateAudioSceneFromInterrupt(AUDIO_SCENE_INVALID,
+            AudioInterruptChangeType::ACTIVATE_AUDIO_INTERRUPT);
+    EXPECT_EQ(interruptServiceTest->policyServer_, nullptr);
+    interruptServiceTest->Init(GetPolicyServerTest());
+
+    interruptServiceTest->UpdateAudioSceneFromInterrupt(AUDIO_SCENE_INVALID,
+            static_cast<AudioInterruptChangeType>(-2));
+    for (int audioScene = AUDIO_SCENE_INVALID; audioScene <= AUDIO_SCENE_MAX; audioScene++) {
+        interruptServiceTest->UpdateAudioSceneFromInterrupt(static_cast<AudioScene>(audioScene),
+            AudioInterruptChangeType::ACTIVATE_AUDIO_INTERRUPT);
+        interruptServiceTest->UpdateAudioSceneFromInterrupt(static_cast<AudioScene>(audioScene),
+            AudioInterruptChangeType::DEACTIVATE_AUDIO_INTERRUPT);
+    }
+
+    EXPECT_NE(interruptServiceTest->policyServer_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptService_017
 * @tc.desc  : Test IsActiveStreamLowPriority and IsIncomingStreamLowPriority.
 */

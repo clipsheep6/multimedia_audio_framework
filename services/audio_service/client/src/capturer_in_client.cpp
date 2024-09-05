@@ -98,6 +98,7 @@ public:
     float GetVolume() override;
     int32_t SetVolume(float volume) override;
     int32_t SetDuckVolume(float volume) override;
+    int32_t SetMute(bool mute) override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
@@ -707,6 +708,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
     config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(streamParams_.channelLayout);
+    config.originalSessionId = streamParams_.originalSessionId;
 
     config.audioMode = AUDIO_MODE_RECORD;
 
@@ -917,6 +919,12 @@ float CapturerInClientInner::GetVolume()
 {
     AUDIO_WARNING_LOG("GetVolume is only for renderer");
     return 0.0;
+}
+
+int32_t CapturerInClientInner::SetMute(bool mute)
+{
+    AUDIO_WARNING_LOG("only for renderer");
+    return ERROR;
 }
 
 int32_t CapturerInClientInner::SetDuckVolume(float volume)

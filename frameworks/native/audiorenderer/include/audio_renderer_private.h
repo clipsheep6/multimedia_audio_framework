@@ -51,6 +51,8 @@ public:
     bool Drain() const override;
     bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
     bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
+    bool Mute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
+    bool Unmute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
     bool Stop() const override;
     bool Flush() const override;
     bool Release() override;
@@ -201,6 +203,7 @@ private:
     bool isFastVoipSupported_ = false;
     bool isDirectVoipSupported_ = false;
     bool isEnableVoiceModemCommunicationStartStream_ = false;
+    DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
 
     float speed_ = 1.0;
 

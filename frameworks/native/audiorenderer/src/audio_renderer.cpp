@@ -773,6 +773,26 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType) const
     return result;
 }
 
+bool AudioRendererPrivate::Mute(StateChangeCmdType cmdType) const
+{
+    Trace trace("AudioRenderer::Mute");
+    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
+
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Mute. id: %{public}u", sessionID_);
+    (void)audioStream_->SetMute(true);
+    return true;
+}
+
+bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
+{
+    Trace trace("AudioRenderer::Unmute");
+    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
+
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
+    (void)audioStream_->SetMute(false);
+    return true;
+}
+
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Pause");
@@ -1452,6 +1472,7 @@ void AudioRendererPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass,
         info.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
         info.rendererFlags = AUDIO_FLAG_DIRECT;
     }
+    info.params.originalSessionId = sessionID_;
     return;
 }
 
@@ -1464,16 +1485,15 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         std::lock_guard<std::shared_mutex> lock(switchStreamMutex_);
         isSwitching_ = true;
         RendererState previousState = GetStatus();
-        AUDIO_INFO_LOG("Previous stream state: %{public}d", previousState);
+        AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
         if (previousState == RENDERER_RUNNING) {
             switchResult = audioStream_->StopAudioStream();
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "StopAudioStream failed.");
         }
         IAudioStream::SwitchInfo info;
         InitSwitchInfo(targetClass, info);
-        if (targetClass == AUDIO_FLAG_MMAP) {
-            switchResult = audioStream_->ReleaseAudioStream();
-        }
+
+        switchResult = audioStream_->ReleaseAudioStream();
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, info.params,
             info.eStreamType, appInfo_.appPid);
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
@@ -1482,9 +1502,6 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         // set new stream info
         SetSwitchInfo(info, newAudioStream);
 
-        if (targetClass != AUDIO_FLAG_MMAP) {
-            switchResult = audioStream_->ReleaseAudioStream();
-        }
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 
         if (previousState == RENDERER_RUNNING) {
@@ -1497,6 +1514,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
+        SetDefaultOutputDevice(selectedDefaultOutputDevice_);
     }
     WriteSwitchStreamLogMsg();
     return switchResult;
@@ -1860,11 +1878,18 @@ void AudioRendererPrivate::EnableVoiceModemCommunicationStartStream(bool enable)
 
 int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
 {
+    if (deviceType != DEVICE_TYPE_EARPIECE && deviceType != DEVICE_TYPE_SPEAKER &&
+        deviceType != DEVICE_TYPE_DEFAULT) {
+        return ERR_NOT_SUPPORTED;
+    }
     bool isSupportedStreamUsage = (find(AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.begin(),
         AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end(), rendererInfo_.streamUsage) !=
         AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES.end());
     CHECK_AND_RETURN_RET_LOG(isSupportedStreamUsage, ERR_NOT_SUPPORTED, "stream usage not supported");
-    int32_t ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType, sessionID_,
+    selectedDefaultOutputDevice_ = deviceType;
+    uint32_t currentSessionID = 0;
+    audioStream_->GetAudioSessionID(currentSessionID);
+    int32_t ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType, currentSessionID,
         rendererInfo_.streamUsage, GetStatus() == RENDERER_RUNNING);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "select default output device failed");
     return SUCCESS;
