@@ -3391,6 +3391,58 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
     return audioPolicyManager_.GetRingerMode();
 }
 
+void AudioPolicyService::SendLvmParameter(bool isKeyUp, bool isForceOff)
+{
+    const std::string LVM_KEY = "device_status";
+    const std::string SUB_KEY = "VOICE_LVM_Enable";
+    const std::string SEND_LVM_ON  = "true";
+    const std::string SEND_LVM_OFF = "false";
+    std::string curLvmState;
+    std::vector<std::string> subkeys;
+    std::vector<std::pair<std::string, std::string>> extrParam;
+    std::vector<std::pair<std::string, std::string>> results;
+ 
+    subkeys.emplace_back(SUB_KEY);
+ 
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->GetExtraParameters(LVM_KEY, subkeys, results);
+    IPCSkeleton::SetCallingIdentity(identity);
+ 
+    if (!results.empty()) {
+        curLvmState = results[0].second;
+    }
+ 
+    if (curLvmState.empty()) {
+        curLvmState = voiceLvmState_ ? "true" : "false";
+    }
+    AUDIO_INFO_LOG("CurLvmState %{public}s", curLvmState.c_str());
+ 
+    if (isForceOff && (curLvmState == SEND_LVM_ON)) {
+        extrParam.emplace_back(std::make_pair(SUB_KEY, SEND_LVM_OFF));
+        identity = IPCSkeleton::ResetCallingIdentity();
+        gsp->SetExtraParameters(LVM_KEY, extrParam);
+        IPCSkeleton::SetCallingIdentity(identity);
+        voiceLvmState_ = false;
+        return;
+    }
+    
+    if (isKeyUp && (curLvmState != SEND_LVM_ON)) {
+        extrParam.emplace_back(std::make_pair(SUB_KEY, SEND_LVM_ON));
+        identity = IPCSkeleton::ResetCallingIdentity();
+        gsp->SetExtraParameters(LVM_KEY, extrParam);
+        IPCSkeleton::SetCallingIdentity(identity);
+        voiceLvmState_ = true;
+    } else if (!isKeyUp && (curLvmState == SEND_LVM_ON)) {
+        extrParam.emplace_back(std::make_pair(SUB_KEY, SEND_LVM_OFF));
+        identity = IPCSkeleton::ResetCallingIdentity();
+        gsp->SetExtraParameters(LVM_KEY, extrParam);
+        IPCSkeleton::SetCallingIdentity(identity);
+        voiceLvmState_ = false;
+    }
+}
+
 int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
@@ -3408,6 +3460,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::DisconnectSco();
 #endif
+        SendLvmParameter(false, true); // force off lvm when call end
     }
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
         ClearScoDeviceSuspendState();

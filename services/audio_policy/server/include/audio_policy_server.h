@@ -509,6 +509,7 @@ private:
     bool GetStreamMuteInternal(AudioStreamType streamType);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
+    bool IsCallMaxVolume(const int32_t &volLevel, const AudioStreamType &streamInFocus);
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
