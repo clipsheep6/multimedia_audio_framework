@@ -233,6 +233,8 @@ public:
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
 
     bool IsDataShareReady();
+
+    int32_t ResumeStreamState();
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
@@ -309,6 +311,8 @@ public:
         const sptr<IRemoteObject> &object, bool hasBTPermission);
 
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage);
+
+    int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object, const int32_t apiVersion);
@@ -451,8 +455,6 @@ public:
 #ifdef BLUETOOTH_ENABLE
     void UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
         DeviceType deviceType = DEVICE_TYPE_NONE);
-
-    void UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions);
 
     void CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc);
 #endif
@@ -659,7 +661,7 @@ private:
     void MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
         unique_ptr<AudioDeviceDescriptor> &inputDevice);
 
-    void SetRenderDeviceForUsage(StreamUsage streamUsage, sptr<AudioDeviceDescriptor> desc);
+    int32_t SetRenderDeviceForUsage(StreamUsage streamUsage, sptr<AudioDeviceDescriptor> desc);
 
     void SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType, sptr<AudioDeviceDescriptor> desc);
 
@@ -997,6 +999,8 @@ private:
 
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
 
+    void SetSharedAbsVolumeScene(const bool support);
+
     void LoadHdiEffectModel();
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
@@ -1082,6 +1086,7 @@ private:
 
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
+    volatile bool *sharedAbsVolumeScene_ = nullptr;
 
     std::vector<DeviceType> outputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,
@@ -1159,7 +1164,6 @@ private:
     SourceType currentSourceType = SOURCE_TYPE_MIC;
     uint32_t currentRate = 0;
     bool updateA2dpOffloadLogFlag = false;
-    std::unordered_map<uint32_t, bool> sessionHasBeenSpatialized_;
     std::mutex checkSpatializedMutex_;
     SafeStatus safeStatusBt_ = SAFE_UNKNOWN;
     SafeStatus safeStatus_ = SAFE_UNKNOWN;

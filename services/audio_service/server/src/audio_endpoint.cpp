@@ -328,8 +328,6 @@ private:
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
 
-    bool isSupportAbsVolume_ = false;
-
     // for get amplitude
     float maxAmplitude_ = 0;
     int64_t lastGetMaxAmplitudeTime_ = 0;
@@ -1090,7 +1088,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
             CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
         }
     }
-    isSupportAbsVolume_ = PolicyHandler::GetInstance().IsAbsVolumeSupported();
+
     endpointStatus_ = RUNNING;
     delayStopTime_ = INT64_MAX;
     return SUCCESS;
@@ -1172,7 +1170,6 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
 {
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBuffer> processBuffer = processStream->GetStreamBuffer();
-    processBuffer->SetSessionId(processStream->GetAudioSessionId());
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
     CHECK_AND_RETURN_RET_LOG(processBuffer->GetStreamStatus() != nullptr, ERR_INVALID_PARAM,
         "the stream status is null");
@@ -1180,7 +1177,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     CHECK_AND_RETURN_RET_LOG(processList_.size() < MAX_LINKED_PROCESS, ERR_OPERATION_FAILED, "reach link limit.");
 
     AUDIO_INFO_LOG("LinkProcessStream start status is:%{public}s.", GetStatusStr(endpointStatus_).c_str());
-
+    processBuffer->SetSessionId(processStream->GetAudioSessionId());
     bool needEndpointRunning = processBuffer->GetStreamStatus()->load() == STREAM_RUNNING;
 
     if (endpointStatus_ == STARTING) {
@@ -1521,7 +1518,8 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
         bool muteFlag = processList_[i]->GetMuteFlag();
         if (deviceInfo_.networkId == LOCAL_NETWORK_ID &&
-            (deviceInfo_.deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || !isSupportAbsVolume_) &&
+            (deviceInfo_.deviceType != DEVICE_TYPE_BLUETOOTH_A2DP ||
+            !PolicyHandler::GetInstance().IsAbsVolumeSupported()) &&
             PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol)) {
             streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat);
         } else {

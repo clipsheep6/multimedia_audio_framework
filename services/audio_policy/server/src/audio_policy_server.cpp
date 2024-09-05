@@ -1221,16 +1221,9 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         ERR_INVALID_PARAM, "param is invalid");
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
-    if (audioScene == AUDIO_SCENE_CALL_START) {
-        AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_START means voip start.");
-        isAvSessionSetVoipStart = true;
-        return SUCCESS;
-    }
-    if (audioScene == AUDIO_SCENE_CALL_END) {
-        AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_END means voip end, need reset audio scene.");
-        isAvSessionSetVoipStart = false;
-        AudioScene audioScene = interruptService_->GetHighestPriorityAudioScene(0);
-        return audioPolicyService_.SetAudioScene(audioScene);
+    if (audioScene == AUDIO_SCENE_CALL_START || audioScene == AUDIO_SCENE_CALL_END) {
+        AUDIO_ERR_LOG("param is invalid");
+        return ERR_INVALID_PARAM;
     }
     return audioPolicyService_.SetAudioScene(audioScene);
 }
@@ -1278,6 +1271,15 @@ int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const int32_t /* c
         return interruptService_->UnsetAudioManagerInterruptCallback();
     }
     return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::SetQueryClientTypeCallback(const sptr<IRemoteObject> &object)
+{
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return ERR_OPERATION_FAILED;
+    }
+    return audioPolicyService_.SetQueryClientTypeCallback(object);
 }
 
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
@@ -1768,6 +1770,12 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
     audioPolicyService_.ReduceAudioPolicyClientProxyMap(pid);
 }
 
+int32_t AudioPolicyServer::ResumeStreamState()
+{
+    AUDIO_INFO_LOG("AVSession is not alive.");
+    return audioPolicyService_.ResumeStreamState();
+}
+
 int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, StreamUsage streamUsage)
 {
@@ -1780,11 +1788,22 @@ int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d streamSetState:%{public}d audioStreamUsage:%{public}d",
         clientUid, streamSetState, streamUsage);
     StreamSetState setState = StreamSetState::STREAM_PAUSE;
-    if (streamSetState == StreamSetState::STREAM_RESUME) {
-        setState  = StreamSetState::STREAM_RESUME;
-    } else if (streamSetState != StreamSetState::STREAM_PAUSE) {
-        AUDIO_ERR_LOG("UpdateStreamState streamSetState value is error");
-        return ERROR;
+    switch (streamSetState) {
+        case StreamSetState::STREAM_PAUSE:
+            setState = StreamSetState::STREAM_PAUSE;
+            break;
+        case StreamSetState::STREAM_RESUME:
+            setState = StreamSetState::STREAM_RESUME;
+            break;
+        case StreamSetState::STREAM_MUTE:
+            setState = StreamSetState::STREAM_MUTE;
+            break;
+        case StreamSetState::STREAM_UNMUTE:
+            setState = StreamSetState::STREAM_UNMUTE;
+            break;
+        default:
+            AUDIO_INFO_LOG("UpdateStreamState::streamSetState value is error");
+            break;
     }
     StreamSetStateEventInternal setStateEvent = {};
     setStateEvent.streamSetState = setState;
