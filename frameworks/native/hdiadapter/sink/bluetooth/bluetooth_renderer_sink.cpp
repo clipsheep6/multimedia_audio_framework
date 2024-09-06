@@ -360,14 +360,9 @@ int32_t BluetoothRendererSinkInner::InitAudioManager()
 {
     AUDIO_INFO_LOG("Initialize audio proxy manager");
 
-#if (defined(__aarch64__) || defined(__x86_64__))
-    char resolvedPath[100] = "/vendor/lib64/chipsetsdk/libaudio_bluetooth_hdi_proxy_server.z.so";
-#else
-    char resolvedPath[100] = "/vendor/lib/chipsetsdk/libaudio_bluetooth_hdi_proxy_server.z.so";
-#endif
     struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
-    handle_ = dlopen(resolvedPath, 1);
+    handle_ = dlopen("libaudio_bluetooth_hdi_proxy_server.z.so", 1);
     CHECK_AND_RETURN_RET_LOG(handle_ != nullptr, ERR_INVALID_HANDLE, "Open so Fail");
     AUDIO_DEBUG_LOG("dlopen successful");
 

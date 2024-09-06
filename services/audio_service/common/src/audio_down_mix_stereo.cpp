@@ -24,11 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-#if (defined(__aarch64__) || defined(__x86_64__))
-const char *DOWN_MIXER_FILE_NAME = "/system/lib64/libaudio_downmixer_mcr.z.so";
-#else
-const char *DOWN_MIXER_FILE_NAME = "/system/lib/libaudio_downmixer_mcr.z.so";
-#endif
+const char *DOWN_MIXER_FILE_NAME = "libaudio_downmixer_mcr.z.so";
 const char *DOWN_MIX_FUNC_NAME = "AudioMcrMixerClassCreate";
 
 AudioDownMixStereo::AudioDownMixStereo() : handle_(nullptr), mixer_(nullptr)
