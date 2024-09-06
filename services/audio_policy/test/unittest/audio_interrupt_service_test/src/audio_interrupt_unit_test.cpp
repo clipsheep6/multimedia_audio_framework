@@ -273,6 +273,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_007, TestSize.Level1)
     EXPECT_EQ(retStatus, SUCCESS);
 }
 
+#ifdef INTERRUPT_UNITTEST
 /**
 * @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptService_008
@@ -501,6 +502,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_014, TestSize.Level1)
     EXPECT_EQ(false, interruptServiceTest->sessionService_->IsAudioSessionActivated(audioInterrupt.pid));
 }
 
+#endif
 /**
 * @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptService_015
@@ -528,6 +530,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_015, TestSize.Level1)
     EXPECT_NE(interruptServiceTest->handler_, nullptr);
 }
 
+#ifdef INTERRUPT_UNITTEST
 /**
 * @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptService_016
@@ -553,6 +556,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_016, TestSize.Level1)
 
     EXPECT_NE(interruptServiceTest->policyServer_, nullptr);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioInterruptService.

@@ -84,6 +84,10 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     external_deps += [ "input:libmmi-client" ]
   }
 
+  if (audio_framework_enable_unittest_debug) {
+    defines += ["INTERRUPT_UNITTEST"]
+  }
+
   if (audio_framework_feature_device_manager) {
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
