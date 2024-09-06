@@ -26,7 +26,6 @@ namespace AudioStandard {
 void AudioInterruptUnitTest::SetUpTestCase(void) {}
 void AudioInterruptUnitTest::TearDownTestCase(void) {}
 void AudioInterruptUnitTest::SetUp(void) {}
-
 void AudioInterruptUnitTest::TearDown(void) {}
 
 std::shared_ptr<AudioInterruptService> GetTnterruptServiceTest()
@@ -82,7 +81,10 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_001, TestSize.Level1)
     interruptServiceTest->AddActiveInterruptToSession(0);
     retStatus = interruptServiceTest->DeactivateAudioSession(0);
     interruptServiceTest->sessionService_->sessionTimer_->timerThread_->join();
+    interruptServiceTest->AddActiveInterruptToSession(-2);
     EXPECT_EQ(retStatus, SUCCESS);
+    retStatus = interruptServiceTest->DeactivateAudioSession(-2);
+    EXPECT_EQ(retStatus, ERR_ILLEGAL_STATE);
 }
 
 /**
@@ -92,7 +94,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_001, TestSize.Level1)
 */
 HWTEST(AudioInterruptUnitTest, AudioInterruptService_002, TestSize.Level1)
 {
-    sptr<AudioPolicyServer> server = nullptr;
+    sptr<AudioPolicyServer> server = GetPolicyServerTest();
     auto interruptServiceTest = GetTnterruptServiceTest();
     EXPECT_EQ(interruptServiceTest->sessionService_, nullptr);
     interruptServiceTest->RemovePlaceholderInterruptForSession(0, false);
@@ -106,6 +108,31 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_002, TestSize.Level1)
     interruptServiceTest->RemovePlaceholderInterruptForSession(0, true);
     retStatus = interruptServiceTest->IsAudioSessionActivated(0);
     EXPECT_EQ(retStatus, interruptServiceTest->sessionService_->IsAudioSessionActivated(0));
+
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->RemovePlaceholderInterruptForSession(0, false);
+    interruptServiceTest->zonesMap_[0] = nullptr;
+    interruptServiceTest->RemovePlaceholderInterruptForSession(0, true);
+
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.sessionId = 0;
+    audioInterrupt.pid = 0;
+    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.push_back(std::make_pair(audioInterrupt, PLACEHOLDER));
+    interruptServiceTest->RemovePlaceholderInterruptForSession(0, false);
+    retStatus = interruptServiceTest->IsAudioSessionActivated(0);
+    EXPECT_EQ(retStatus, interruptServiceTest->sessionService_->IsAudioSessionActivated(0));
+
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    retStatus = interruptServiceTest->ActivateAudioSession(0, strategy);
+    EXPECT_EQ(retStatus, SUCCESS);
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->RemovePlaceholderInterruptForSession(0, false);
+    bool ret = interruptServiceTest->IsAudioSessionActivated(0);
+    interruptServiceTest->DeactivateAudioSession(0);
+    interruptServiceTest->sessionService_->sessionTimer_->timerThread_->join();
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -214,19 +241,37 @@ public:
 HWTEST(AudioInterruptUnitTest, AudioInterruptService_006, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
-    auto retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0, nullptr, 0);
+    auto retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0, nullptr);
     EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
 
     retStatus = interruptServiceTest->UnsetAudioInterruptCallback(0, 0);
     EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
 
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
-    retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0, sptr<RemoteObjectTestStub>::MakeSptr(), 0);
+    retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0, sptr<RemoteObjectTestStub>::MakeSptr());
     EXPECT_EQ(retStatus, SUCCESS);
 
-    retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0, sptr<RemoteObjectTestStub>::MakeSptr(), 0);
+    retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0, sptr<RemoteObjectTestStub>::MakeSptr());
     EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
 
+    retStatus = interruptServiceTest->UnsetAudioInterruptCallback(0, 0);
+    EXPECT_EQ(retStatus, SUCCESS);
+
+    retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0, sptr<RemoteObjectTestStub>::MakeSptr());
+    EXPECT_EQ(retStatus, SUCCESS);
+    interruptServiceTest->zonesMap_[0]->interruptCbsMap.clear();
+    retStatus = interruptServiceTest->UnsetAudioInterruptCallback(0, 0);
+    EXPECT_EQ(retStatus, SUCCESS);
+
+    retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0, sptr<RemoteObjectTestStub>::MakeSptr());
+    EXPECT_EQ(retStatus, SUCCESS);
+    interruptServiceTest->zonesMap_[0] = nullptr;
+    retStatus = interruptServiceTest->UnsetAudioInterruptCallback(0, 0);
+    EXPECT_EQ(retStatus, SUCCESS);
+
+    retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0, sptr<RemoteObjectTestStub>::MakeSptr());
+    EXPECT_EQ(retStatus, SUCCESS);
+    interruptServiceTest->zonesMap_.clear();
     retStatus = interruptServiceTest->UnsetAudioInterruptCallback(0, 0);
     EXPECT_EQ(retStatus, SUCCESS);
 }
@@ -379,6 +424,33 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_010, TestSize.Level1)
     interruptServiceTest->ResumeAudioFocusList(0, true);
     interruptServiceTest->ResumeAudioFocusList(0, false);
     EXPECT_EQ(newAudioFocuInfoList.size(), 2);
+
+    audioInterruptZone->audioFocusInfoList.clear();
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt1, AudioFocuState{DUCK});
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt2, AudioFocuState{});
+    interruptServiceTest->zonesMap_[0] = audioInterruptZone;
+    newAudioFocuInfoList = interruptServiceTest->SimulateFocusEntry(0);
+    interruptServiceTest->ResumeAudioFocusList(0, true);
+    interruptServiceTest->ResumeAudioFocusList(0, false);
+    EXPECT_EQ(newAudioFocuInfoList.size(), 2);
+
+    audioInterruptZone->audioFocusInfoList.clear();
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt1, AudioFocuState{PAUSE});
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt2, AudioFocuState{DUCK});
+    interruptServiceTest->zonesMap_[0] = audioInterruptZone;
+    newAudioFocuInfoList = interruptServiceTest->SimulateFocusEntry(0);
+    interruptServiceTest->ResumeAudioFocusList(0, true);
+    interruptServiceTest->ResumeAudioFocusList(0, false);
+    EXPECT_EQ(newAudioFocuInfoList.size(), 2);
+
+    audioInterruptZone->audioFocusInfoList.clear();
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt1, AudioFocuState{PAUSE});
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt2, AudioFocuState{STOP});
+    interruptServiceTest->zonesMap_[0] = audioInterruptZone;
+    newAudioFocuInfoList = interruptServiceTest->SimulateFocusEntry(0);
+    interruptServiceTest->ResumeAudioFocusList(0, true);
+    interruptServiceTest->ResumeAudioFocusList(0, false);
+    EXPECT_EQ(newAudioFocuInfoList.size(), 2);
 }
 
 /**
@@ -508,23 +580,24 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_014, TestSize.Level1)
 */
 HWTEST(AudioInterruptUnitTest, AudioInterruptService_015, TestSize.Level1)
 {
-    bool removeFocusInfo = false;
     auto interruptServiceTest = GetTnterruptServiceTest();
     std::list<std::pair<AudioInterrupt, AudioFocuState>> pairList;
     pairList.emplace_back(AudioInterrupt(), AudioFocuState::ACTIVE);
     AudioFocuState oldState{};
     AudioFocuState newState{};
     auto it = pairList.begin();
-    interruptServiceTest->SendInterruptEvent(oldState, newState, it, removeFocusInfo);
+    interruptServiceTest->SendInterruptEvent(oldState, newState, it);
     interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
-    interruptServiceTest->SendInterruptEvent(oldState, newState, it, removeFocusInfo);
+    interruptServiceTest->SendInterruptEvent(oldState, newState, it);
 
-    interruptServiceTest->SendInterruptEvent(PAUSE, ACTIVE, it, removeFocusInfo);
-    interruptServiceTest->SendInterruptEvent(DUCK, ACTIVE, it, removeFocusInfo);
-    interruptServiceTest->SendInterruptEvent(PAUSE, DUCK, it, removeFocusInfo);
-    interruptServiceTest->SendInterruptEvent(DUCK, PAUSE, it, removeFocusInfo);
-    interruptServiceTest->SendInterruptEvent(DUCK, PLACEHOLDER, it, removeFocusInfo);
-    interruptServiceTest->SendInterruptEvent(DUCK, STOP, it, removeFocusInfo);
+    interruptServiceTest->SendInterruptEvent(PAUSE, ACTIVE, it);
+    interruptServiceTest->SendInterruptEvent(DUCK, ACTIVE, it);
+    interruptServiceTest->SendInterruptEvent(PAUSE, DUCK, it);
+    interruptServiceTest->SendInterruptEvent(DUCK, DUCK, it);
+    interruptServiceTest->SendInterruptEvent(DUCK, PAUSE, it);
+    interruptServiceTest->SendInterruptEvent(PAUSE, PAUSE, it);
+    interruptServiceTest->SendInterruptEvent(DUCK, PLACEHOLDER, it);
+    interruptServiceTest->SendInterruptEvent(DUCK, STOP, it);
     EXPECT_NE(interruptServiceTest->handler_, nullptr);
 }
 
@@ -646,5 +719,75 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_019, TestSize.Level1)
     );
 }
 
+/**
+* @tc.name  : Test AudioInterruptService.
+* @tc.number: AudioInterruptService_020
+* @tc.desc  : Test GetAudioSceneFromAudioInterrupt.
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_020, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    sptr<AudioPolicyServer> server = nullptr;
+    interruptServiceTest->Init(server);
+    interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
+    interruptServiceTest->OnSessionTimeout(0);
+
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+
+    interruptServiceTest->zonesMap_.clear();
+    auto retStatus = interruptServiceTest->ActivateAudioSession(0, strategy);
+    EXPECT_EQ(retStatus, SUCCESS);
+    interruptServiceTest->AddActiveInterruptToSession(0);
+    interruptServiceTest->zonesMap_[0] = nullptr;
+    interruptServiceTest->AddActiveInterruptToSession(0);
+
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.sessionId = 2;
+    audioInterrupt.pid = 2;
+    EXPECT_EQ(interruptServiceTest->zonesMap_.empty(), false);
+    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.push_back(std::make_pair(audioInterrupt, ACTIVE));
+    interruptServiceTest->AddActiveInterruptToSession(0);
+
+    retStatus = interruptServiceTest->DeactivateAudioSession(0);
+    interruptServiceTest->sessionService_->sessionTimer_->timerThread_->join();
+    EXPECT_EQ(retStatus, SUCCESS);
+    interruptServiceTest->zonesMap_[0] = nullptr;
+    retStatus = interruptServiceTest->ReleaseAudioInterruptZone(0);
+    EXPECT_EQ(retStatus, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
+* @tc.number: AudioInterruptService_021
+* @tc.desc  : Test ClearAudioFocusInfoListOnAccountsChanged.
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_021, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    sptr<AudioPolicyServer> server = nullptr;
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0);
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    interruptServiceTest->handler_ = nullptr;
+
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.empty(), true);
+    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0);
+    
+    interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.empty(), true);
+    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0);
+    AudioInterrupt a1, a2, a3;
+    a1.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    a2.streamUsage = StreamUsage::STREAM_USAGE_VOICE_RINGTONE;
+    a3.streamUsage = StreamUsage::STREAM_USAGE_UNKNOWN;
+    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.push_back({a2, AudioFocuState::ACTIVE});
+    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.push_back({a3, AudioFocuState::ACTIVE});
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 3);
+    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 2);
+}
 } // namespace AudioStandard
 } // namespace OHOS
