@@ -127,8 +127,10 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
     napiCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
 
     if (napiCapturer->audioCapturer_ == nullptr) {
+        std::unique_lock<std::mutex> createLock(NapiAudioCapturer::createMutex_);
         AUDIO_ERR_LOG("Capturer Create failed");
         NapiAudioCapturer::isConstructSuccess_ = NAPI_ERR_SYSTEM;
+        createLock.unlock();
         napiCapturer.release();
         return nullptr;
     }
@@ -254,10 +256,12 @@ napi_value NapiAudioCapturer::CreateAudioCapturer(napi_env env, napi_callback_in
 
     auto complete = [env, context](napi_value &output) {
         output = CreateAudioCapturerWrapper(env, context->capturerOptions);
+        std::unique_lock<std::mutex> createLock(NapiAudioCapturer::createMutex_);
         if (NapiAudioCapturer::isConstructSuccess_ != SUCCESS) {
             context->SignError(NapiAudioCapturer::isConstructSuccess_);
             NapiAudioCapturer::isConstructSuccess_ = SUCCESS;
         }
+        createLock.unlock();
     };
 
     return NapiAsyncWork::Enqueue(env, context, "CreateAudioCapturer", nullptr, complete);
