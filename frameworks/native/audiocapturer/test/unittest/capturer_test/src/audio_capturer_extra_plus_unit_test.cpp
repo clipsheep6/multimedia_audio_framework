@@ -98,7 +98,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_001, TestSize.Level1)
 
     auto audioStream = IAudioStream::GetRecordStream(IAudioStream::FAST_STREAM, tempParams,
         STREAM_MUSIC, getpid());
-
     auto interruptCallback = std::make_unique<AudioCapturerInterruptCallbackImpl>(nullptr);
     interruptCallback->UpdateAudioStream(audioStream);
     EXPECT_EQ(interruptCallback->audioStream_, audioStream);
@@ -163,7 +162,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_002, TestSize.Level1)
     AudioStreamParams tempParams = {};
     capturer->audioStream_ = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM,
         tempParams, STREAM_MUSIC, getpid());
-
     capturer->FindStreamTypeBySourceType(SourceType::SOURCE_TYPE_VOICE_COMMUNICATION);
     capturer->FindStreamTypeBySourceType(SourceType::SOURCE_TYPE_VIRTUAL_CAPTURE);
     capturer->FindStreamTypeBySourceType(SourceType::SOURCE_TYPE_WAKEUP);
@@ -181,7 +179,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_002, TestSize.Level1)
 
     capturer->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     status = capturer->SetCaptureMode(AudioCaptureMode::CAPTURE_MODE_CALLBACK);
-
     EXPECT_EQ(status, ERR_ILLEGAL_STATE);
 }
 
