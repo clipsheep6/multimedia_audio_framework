@@ -754,9 +754,14 @@ void AudioService::Dump(std::string &dumpString)
         item.second->Dump(dumpString);
     }
     // dump voip and direct
-    for (const auto &item : allRendererMap_) {
-        std::shared_ptr<RendererInServer> renderer = item.second.lock();
-        renderer->Dump(dumpString);
+    {
+        std::unique_lock<std::mutex> lock(rendererMapMutex_);
+        for (const auto &item : allRendererMap_) {
+            std::shared_ptr<RendererInServer> renderer = item.second.lock();
+            if (renderer) {
+                renderer->Dump(dumpString);
+            }
+        }
     }
     PolicyHandler::GetInstance().Dump(dumpString);
 }
@@ -789,10 +794,11 @@ float AudioService::GetMaxAmplitude(bool isOutputDevice)
 
 std::shared_ptr<RendererInServer> AudioService::GetRendererBySessionID(const uint32_t &sessionID)
 {
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
     if (allRendererMap_.count(sessionID)) {
         return allRendererMap_[sessionID].lock();
     } else {
-        return std::shared_ptr<RendererInServer>();
+        return nullptr;
     }
 }
 
