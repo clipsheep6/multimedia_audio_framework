@@ -253,9 +253,7 @@ napi_value NapiAudioRenderer::CreateAudioRendererWrapper(napi_env env, const Aud
         AUDIO_ERR_LOG("Failed in CreateAudioRendererWrapper, %{public}d", status);
         goto fail;
     }
-    if (sRendererOptions_ != nullptr) {
-        sRendererOptions_.release();
-    }
+
     sRendererOptions_ = make_unique<AudioRendererOptions>();
     CHECK_AND_RETURN_RET_LOG(sRendererOptions_ != nullptr, result, "sRendererOptions_ create failed");
     *sRendererOptions_ = rendererOptions;
