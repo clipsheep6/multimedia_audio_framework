@@ -1155,8 +1155,12 @@ int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 int32_t RendererInClientInner::UnsetOffloadMode()
 {
     rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+
+    std::unique_lock<std::mutex> ipcStreamLock(ipcStreamMutex_);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
-    return ipcStream_->UnsetOffloadMode();
+    int32_t ret = ipcStream_->UnsetOffloadMode();
+    ipcStreamMutex_.unlock();
+    return ret;
 }
 
 float RendererInClientInner::GetSingleStreamVolume()
@@ -1391,11 +1395,14 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     statusLock.unlock();
 
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
+
+    std::unique_lock<std::mutex> ipcStreamLock(ipcStreamMutex_);
     if (ipcStream_ != nullptr) {
         ipcStream_->Release();
     } else {
         AUDIO_WARNING_LOG("release while ipcStream is null");
     }
+    ipcStreamLock.unlock();
 
     // no lock, call release in any case, include blocked case.
     std::unique_lock<std::mutex> runnerlock(runnerMutex_);
@@ -1405,9 +1412,8 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
         callbackHandler_ = nullptr;
     }
     runnerlock.unlock();
-
-    // clear write callback
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
+    
+    if (renderMode_ == RENDER_MODE_CALLBACK) { // clear write callback
         cbThreadReleased_ = true; // stop loop
         cbThreadCv_.notify_all();
         FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
