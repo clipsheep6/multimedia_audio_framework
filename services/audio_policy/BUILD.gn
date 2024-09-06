@@ -90,6 +90,9 @@ ohos_shared_library("audio_policy_service") {
   stack_protector_ret = true
   sanitize = {
     cfi = true
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
