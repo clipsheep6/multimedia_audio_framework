@@ -216,17 +216,18 @@ public:
         size_t numBuffersToCapture = 256;
         while (numBuffersToCapture) {
             size_t bytesRead = 0;
+            int32_t readFail = 0;
             while (bytesRead < bufferLen) {
                 int32_t len = audioCapturer->Read(*(buffer.get() + bytesRead), bufferLen - bytesRead, isBlocking);
                 if (len >= 0) {
                     bytesRead += len;
                 } else {
-                    bytesRead = len;
+                    readFail = len;
                     break;
                 }
             }
-            if (bytesRead < 0) {
-                AUDIO_ERR_LOG("Bytes read failed. error code %{public}zu", bytesRead);
+            if (readFail < 0) {
+                AUDIO_ERR_LOG("Bytes read failed. error code %{public}zu", readFail);
                 break;
             } else if (bytesRead == 0) {
                 continue;
