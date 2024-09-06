@@ -215,10 +215,25 @@ void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std
     AUDIO_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
 }
 
+bool AudioPolicyServer::IsCallMaxVolume(const int32_t &volLevel, const AudioStreamType &streamInFocus)
+{
+    if ((volLevel >= GetMaxVolumeLevel(streamInFocus)) &&
+        ((streamInFocus == STREAM_VOICE_CALL) || (streamInFocus == STREAM_VOICE_COMMUNICATION))) {
+        return true;
+    }
+ 
+    return false;
+}
+
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType,
     const AudioStreamType &streamInFocus)
 {
+    if (IsCallMaxVolume(volLevel, streamInFocus)) {
+        bool isKeyUp = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? true : false;
+        audioPolicyService_.SendLvmParameter(isKeyUp, false);
+    }
+ 
     bool volLevelCheck = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ?
         volLevel >= GetMaxVolumeLevel(streamInFocus) : volLevel <= GetMinVolumeLevel(streamInFocus);
     if (volLevelCheck) {

@@ -571,6 +571,8 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 
+    void SendLvmParameter(bool isKeyUp, bool isForceOff);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -1061,6 +1063,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = false;
+    bool voiceLvmState_ = false;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
