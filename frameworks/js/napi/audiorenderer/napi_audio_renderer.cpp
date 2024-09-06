@@ -167,7 +167,6 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
 
     if (rendererNapi->audioRenderer_ == nullptr) {
         CreateRendererFailed();
-        rendererNapi.release();
         return nullptr;
     }
 
