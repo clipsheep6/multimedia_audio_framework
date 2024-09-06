@@ -456,7 +456,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.streamInfo.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
     config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(curStreamParams_.channelLayout);
-    config.originalSessionId = curStreamParams_.originalSessionId;
+    config.originalSessionId = static_cast<int32_t>(curStreamParams_.originalSessionId);
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 

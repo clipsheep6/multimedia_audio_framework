@@ -511,7 +511,7 @@ int32_t AudioInterruptService::SetAudioInterruptCallback(const int32_t zoneId, c
             std::make_shared<AudioInterruptClient>(callback, object, deathRecipient);
         auto callingUid = IPCSkeleton::GetCallingUid();
         if (callingUid == MEDIA_SA_UID) {
-            callingUid = uid;
+            callingUid = static_cast<int32_t>(uid);
         }
         client->SetCallingUid(callingUid);
 
@@ -1757,6 +1757,7 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t session
     switch (hintType) {
         case INTERRUPT_HINT_RESUME:
             muteFlag = false;
+            break;
         case INTERRUPT_HINT_PAUSE:
         case INTERRUPT_HINT_STOP:
             AUDIO_INFO_LOG("mute flag is: %{public}d", muteFlag);
