@@ -42,6 +42,8 @@ ohos_shared_library("audio_schedule") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "qos_manager:concurrent_task_client",
+    "qos_manager:qos",
     "samgr:samgr_proxy",
   ]
 

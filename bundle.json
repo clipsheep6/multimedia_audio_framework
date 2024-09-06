@@ -74,6 +74,7 @@
             "libuv",
             "cJSON",
             "opensles",
+            "qos_manager",
             "media_foundation"
             ],
           "third_party": [
