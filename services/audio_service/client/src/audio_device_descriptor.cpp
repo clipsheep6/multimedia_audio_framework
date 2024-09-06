@@ -37,7 +37,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     deviceCategory_ = CATEGORY_DEFAULT;
     connectTimeStamp_ = 0;
     connectState_ = CONNECTED;
-    pairDeviceDescriptor_ = nullptr;
+    pairDeviceDescriptor_.reset();
     isScoRealConnected_ = false;
     isEnable_ = true;
     exceptionFlag_ = false;
@@ -59,7 +59,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) :
     deviceCategory_ = CATEGORY_DEFAULT;
     connectTimeStamp_ = 0;
     connectState_ = CONNECTED;
-    pairDeviceDescriptor_ = nullptr;
+    pairDeviceDescriptor_.reset();
     isScoRealConnected_ = false;
     isEnable_ = true;
     exceptionFlag_ = false;
@@ -124,7 +124,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
 {
-    pairDeviceDescriptor_ = nullptr;
+    pairDeviceDescriptor_.reset();
 }
 
 DeviceType AudioDeviceDescriptor::getType()

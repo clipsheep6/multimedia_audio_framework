@@ -257,8 +257,8 @@ void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDesc
     for (auto it = connectedDevices_.begin(); it != connectedDevices_.end();) {
         it = find_if(it, connectedDevices_.end(), isPresent);
         if (it != connectedDevices_.end()) {
-            if ((*it)->pairDeviceDescriptor_ != nullptr) {
-                (*it)->pairDeviceDescriptor_->pairDeviceDescriptor_ = nullptr;
+            if ((*it)->pairDeviceDescriptor_.lock() != nullptr) {
+                (*it)->pairDeviceDescriptor_.lock()->pairDeviceDescriptor_.lock() = nullptr;
             }
             it = connectedDevices_.erase(it);
         }
