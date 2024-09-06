@@ -1738,6 +1738,7 @@ void RendererInClientInner::ResetFramePosition()
         return;
     }
     lastFramePosition_ = 0;
+    totalBytesWritten_ = 0;
 }
 
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
