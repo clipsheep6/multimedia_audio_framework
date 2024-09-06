@@ -53,6 +53,8 @@
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
+#include "mem_mgr_client.h"
+#include "mem_mgr_proxy.h"
 
 #define PA
 #ifdef PA
@@ -65,6 +67,11 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr int32_t SYSTEM_STATUS_START = 1;
+constexpr int32_t SYSTEM_STATUS_STOP = 0;
+constexpr int32_t SYSTEM_PROCESS_TYPE = 1;
+
 uint32_t AudioServer::paDaemonTid_;
 std::map<std::string, std::string> AudioServer::audioParameters;
 std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> AudioServer::audioParameterKeys;
@@ -296,6 +303,7 @@ void AudioServer::OnStart()
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
+    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
 #ifdef PA
     int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
     pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
@@ -340,6 +348,10 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
             AUDIO_INFO_LOG("ressched service start");
             OnAddResSchedService(getpid());
             break;
+        case MEMORY_MANAGER_SA_ID:
+            Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(),
+                SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_START, OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
+            break;
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
@@ -349,6 +361,8 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
 void AudioServer::OnStop()
 {
     AUDIO_DEBUG_LOG("OnStop");
+    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(),
+        SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_STOP, OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
 }
 
 void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
