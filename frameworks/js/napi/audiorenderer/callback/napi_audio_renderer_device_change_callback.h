@@ -44,7 +44,7 @@ private:
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
-    std::list<napi_ref> callbacks_ {};
+    std::list<std::shared_ptr<AutoRef>> callbacks_ {};
 };
 
 class NapiAudioRendererOutputDeviceChangeWithInfoCallback : public AudioRendererOutputDeviceChangeCallback {
@@ -70,7 +70,7 @@ private:
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
-    std::list<napi_ref> callbacks_ {};
+    std::list<std::shared_ptr<AutoRef>> callbacks_ {};
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
