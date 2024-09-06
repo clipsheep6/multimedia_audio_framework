@@ -150,6 +150,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_AUDIO_DEVICE_REFINER_CALLBACK",
     "UNSET_AUDIO_DEVICE_REFINER_CALLBACK",
     "TRIGGER_FETCH_DEVICE",
+    "SET_AUDIO_DEVICE_ANAHS_CALLBACK",
+    "UNSET_AUDIO_DEVICE_ANAHS_CALLBACK",
     "MOVE_TO_NEW_PIPE",
     "DISABLE_SAFE_MEDIA_VOLUME",
     "GET_DEVICES_INNER",
@@ -1340,6 +1342,11 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_CLIENT_TYPE_CALLBACK):
             SetQueryClientTypeCallbackInternal(data, reply);
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_DEVICE_ANAHS_CALLBACK):
+            SetAudioDeviceAnahsCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_DEVICE_ANAHS_CALLBACK):
+            UnsetAudioDeviceAnahsCallbackInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORT_AUDIO_ENHANCE_PROPERTY):
             GetSupportedAudioEnhancePropertyInternal(data, reply);
@@ -1955,6 +1962,19 @@ void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, Mes
 {
     AudioStreamDeviceChangeReasonExt reason(static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum>(data.ReadInt32()));
     int32_t result = TriggerFetchDevice(reason);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    int32_t result = SetAudioDeviceAnahsCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = UnsetAudioDeviceAnahsCallback();
     reply.WriteInt32(result);
 }
 
