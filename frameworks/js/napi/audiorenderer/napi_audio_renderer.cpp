@@ -141,6 +141,7 @@ napi_value NapiAudioRenderer::Init(napi_env env, napi_value exports)
 
 void NapiAudioRenderer::CreateRendererFailed()
 {
+    std::lock_guard<std::mutex> lock(NapiAudioRenderer::createMutex_);
     NapiAudioRenderer::isConstructSuccess_ = NAPI_ERR_SYSTEM;
     if (AudioRenderer::CheckMaxRendererInstances() == ERR_OVERFLOW) {
         NapiAudioRenderer::isConstructSuccess_ = NAPI_ERR_STREAM_LIMIT;
@@ -292,6 +293,7 @@ napi_value NapiAudioRenderer::CreateAudioRenderer(napi_env env, napi_callback_in
         output = CreateAudioRendererWrapper(env, context->rendererOptions);
 
         // IsConstructSuccess_ Used when creating a renderer fails.
+        std::lock_guard<std::mutex> lock(NapiAudioRenderer::createMutex_);
         if (isConstructSuccess_ != SUCCESS) {
             context->SignError(isConstructSuccess_);
             isConstructSuccess_ = SUCCESS;
