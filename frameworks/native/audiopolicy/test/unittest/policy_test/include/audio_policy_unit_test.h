@@ -132,6 +132,85 @@ public:
         const bool &enabled) {};
 };
 
+class AudioDeviceRefinerTest : public AudioDeviceRefiner {
+public:
+    virtual ~AudioDeviceRefinerTest() = default;
+
+    virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) {return SUCCESS;}
+    virtual int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) {return SUCCESS;}
+};
+
+class AudioSessionCallbackTest : public AudioSessionCallback {
+public:
+    virtual ~AudioSessionCallbackTest() = default;
+    /**
+     * @brief OnAudioSessionDeactive will be executed when the audio session is deactivated be others.
+     *
+     * @param deactiveEvent the audio session deactive event info.
+     * @since 12
+     */
+    virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) {};
+};
+
+class AudioStreamPolicyServiceDiedCallbackTest : public AudioStreamPolicyServiceDiedCallback {
+    virtual ~AudioStreamPolicyServiceDiedCallbackTest() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 11
+     */
+    virtual void OnAudioPolicyServiceDied() {};
+};
+
+class AudioRendererPolicyServiceDiedCallbackTest : public AudioRendererPolicyServiceDiedCallback {
+public:
+    virtual ~AudioRendererPolicyServiceDiedCallbackTest() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 10
+     */
+    virtual void OnAudioPolicyServiceDied() {};
+};
+
+class AudioInterruptCallbackTest : public AudioInterruptCallback {
+public:
+    virtual ~AudioInterruptCallbackTest() = default;
+    /**
+     * Called when an interrupt is received.
+     *
+     * @param interruptEvent Indicates the InterruptEvent information needed by client.
+     * For details, refer InterruptEventInternal struct in audio_info.h
+     */
+    virtual void OnInterrupt(const InterruptEventInternal &interruptEvent) {};
+};
+
+class DeviceChangeWithInfoCallbackTest : public DeviceChangeWithInfoCallback {
+public:
+    virtual ~DeviceChangeWithInfoCallbackTest() = default;
+
+    virtual void OnDeviceChangeWithInfo(
+        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) {};
+
+    virtual void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason) {};
+};
+
+class HeadTrackingDataRequestedChangeCallbackTest : public HeadTrackingDataRequestedChangeCallback {
+public:
+    virtual ~HeadTrackingDataRequestedChangeCallbackTest() = default;
+    /**
+     * @brief HeadTrackingDataRequestedChangeCallback will be executed when
+     * whether head tracking data is requested changes
+     *
+     * @param isRequested whethet the head tracking data is requested.
+     * @since 12
+     */
+    virtual void OnHeadTrackingDataRequestedChange(bool isRequested) {};
+};
+
 class AudioClientTrackerTest : public AudioClientTracker {
 public:
     virtual ~AudioClientTrackerTest() = default;

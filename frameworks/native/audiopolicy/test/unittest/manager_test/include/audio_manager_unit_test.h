@@ -67,6 +67,12 @@ public:
     ~AudioFocusInfoChangeCallbackTest() = default;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 };
+
+class AudioRingerModeCallbackTest : public AudioRingerModeCallback {
+public:
+    virtual ~AudioRingerModeCallbackTest() = default;
+    virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) {};
+};
 } // namespace AudioStandard
 } // namespace OHOS
 

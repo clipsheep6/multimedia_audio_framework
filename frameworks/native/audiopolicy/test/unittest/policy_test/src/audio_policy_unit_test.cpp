@@ -285,6 +285,77 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioCapturerEventListe
 }
 
 /**
+ * @tc.name  : Test UnregisterAudioCapturerEventListener
+ * @tc.number: Audio_Policy_Manager_UnregisterAudioCapturerEventListener_001
+ * @tc.desc  : Test UnregisterAudioCapturerEventListener exception branch.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_UnregisterAudioCapturerEventListener_001, TestSize.Level1)
+{
+    int32_t clientId = getpid();
+    std::shared_ptr<AudioCapturerStateChangeCallback> callback =
+        std::make_shared<AudioCapturerStateChangeCallbackTest>();
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioCapturerEventListener(clientId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().isAudioCapturerEventListenerRegistered = false;
+    ret = AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientId);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
+    AudioPolicyManager::GetInstance().isAudioCapturerEventListenerRegistered = true;
+    ret = AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientId);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().RegisterAudioCapturerEventListener(clientId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test RegisterDeviceChangeWithInfoCallback
+ * @tc.number: Audio_Policy_Manager_RegisterDeviceChangeWithInfoCallback_001
+ * @tc.desc  : Test RegisterDeviceChangeWithInfoCallback exception branch.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterDeviceChangeWithInfoCallback_001, TestSize.Level1)
+{
+    uint32_t sessionID = 0;
+    std::shared_ptr<DeviceChangeWithInfoCallback> callback_shared = nullptr;
+    std::weak_ptr<DeviceChangeWithInfoCallback> callback_weak = callback_shared;
+
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(sessionID, callback_weak);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+ * @tc.name  : Test UnregisterDeviceChangeWithInfoCallback
+ * @tc.number: Audio_Policy_Manager_UnregisterDeviceChangeWithInfoCallback_001
+ * @tc.desc  : Test UnregisterDeviceChangeWithInfoCallback exception branch.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_UnregisterDeviceChangeWithInfoCallback_001, TestSize.Level1)
+{
+    uint32_t sessionID = 0;
+    std::shared_ptr<DeviceChangeWithInfoCallback> callback_shared = std::make_shared<DeviceChangeWithInfoCallbackTest>();
+    std::weak_ptr<DeviceChangeWithInfoCallback> callback_weak = callback_shared;
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(sessionID, callback_weak);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
+    ret = AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(sessionID, callback_weak);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001 via legal state
  * @tc.number: Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001
  * @tc.desc  : Test IsAudioRendererLowLatencySupported interface. Returns success.
@@ -475,6 +546,28 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetRingerModeCallback_002, Test
 }
 
 /**
+ * @tc.name  : Test UnsetRingerModeCallback
+ * @tc.number: Audio_Policy_Manager_UnsetRingerModeCallback_001
+ * @tc.desc  : Test UnsetRingerModeCallback interface abnormal branch.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_UnsetRingerModeCallback_001, TestSize.Level3)
+{
+    int32_t clientId = getpid();
+    int32_t ret = -1;
+    std::shared_ptr<AudioRingerModeCallback> callback = make_shared<AudioRingerModeCallbackTest>();
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
+    ret = AudioPolicyManager::GetInstance().UnsetRingerModeCallback(clientId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetRingerModeCallback(clientId);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().SetRingerModeCallback(clientId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test Audio_Policy_Manager_SetDeviceChangeCallback_002 via illegal state
  * @tc.number: Audio_Policy_Manager_SetDeviceChangeCallback_002
  * @tc.desc  : Test SetDeviceChangeCallback interface. Returns invalid.
@@ -566,6 +659,40 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_UnregisterAudioRendererEventLis
     callbacks.push_back(callback2);
 
     ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(callbacks);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test RegisterAudioRendererEventListener
+ * @tc.number: Audio_Policy_Manager_UnregisterAudioRendererEventListener_002
+ * @tc.desc  : Test registerAudioRendererEventListener interface illegal states.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_UnregisterAudioRendererEventListener_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioRendererStateChangeCallback> callback1 =
+        std::make_shared<AudioRendererStateChangeCallbackTest>();
+    std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> callbacks;
+    callbacks.push_back(callback1);
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(callback1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().isAudioRendererEventListenerRegistered = false;
+    ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(callback1);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(callbacks);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
+    AudioPolicyManager::GetInstance().isAudioRendererEventListenerRegistered = true;
+    ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(callback1);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(callbacks);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(callback1);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -901,6 +1028,26 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsHeadTrackingEnabled_001, Test
     EXPECT_EQ(SUCCESS, ret);
     isEnable = AudioPolicyManager::GetInstance().IsHeadTrackingEnabled();
     EXPECT_EQ(false, isEnable);
+}
+
+/**
+ * @tc.name  : Test RegisterHeadTrackingDataRequestedEventListener
+ * @tc.number: RegisterHeadTrackingDataRequestedEventListener_001
+ * @tc.desc  : Test RegisterHeadTrackingDataRequestedEventListener illegal state.
+ */
+HWTEST(AudioPolicyUnitTest, RegisterHeadTrackingDataRequestedEventListener_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    std::string macAddress = "";
+    std::shared_ptr<HeadTrackingDataRequestedChangeCallback> callback =
+        make_shared<HeadTrackingDataRequestedChangeCallbackTest>();
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().RegisterHeadTrackingDataRequestedEventListener(macAddress, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().RegisterHeadTrackingDataRequestedEventListener(macAddress, callback);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1708,5 +1855,22 @@ HWTEST(AudioPolicyUnitTest, UpdateTracker_004, TestSize.Level1)
     ret = AudioPolicyManager::GetInstance().UpdateTracker(audioMode, streamChangeInfo);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+ * @tc.name   : Test SetDistributedRoutingRoleCallback
+ * @tc.number : SetDistributedRoutingRoleCallback_001
+ * @tc.desc   : Test SetDistributedRoutingRoleCallback interface illegal state.
+ */
+HWTEST(AudioManagerUnitTest, SetDistributedRoutingRoleCallback_001, TestSize.Level1)
+{
+    int32_t ret;
+    shared_ptr<AudioDistributedRoutingRoleCallback> callback = nullptr;
+    ret = AudioPolicyManager::GetInstance().SetDistributedRoutingRoleCallback(callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetDistributedRoutingRoleCallback();
+    EXPECT_EQ(ERROR, ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
