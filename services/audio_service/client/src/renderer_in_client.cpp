@@ -155,6 +155,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     notifiedOperation_ = operation;
     notifiedResult_ = result;
 
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (notifiedResult_ == SUCCESS) {
         switch (operation) {
             case START_STREAM :
@@ -173,6 +174,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         AUDIO_ERR_LOG("operation %{public}d failed, result: %{public}" PRId64 "", operation, result);
     }
 
+    statusLock.unlock();
     callServerCV_.notify_all();
     return SUCCESS;
 }
