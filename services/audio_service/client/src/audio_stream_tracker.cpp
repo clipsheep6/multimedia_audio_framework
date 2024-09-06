@@ -65,13 +65,16 @@ void AudioStreamTracker::UpdateTracker(const int32_t sessionId, const State stat
     AUDIO_DEBUG_LOG("Update tracker entered");
     AudioStreamChangeInfo streamChangeInfo;
 
+    std::unique_lock<std::mutex> trackStateLock(trackStateLock_);
     if (state_ == INVALID || (state_ == state &&
         isOffloadAllowed == rendererInfo.isOffloadAllowed && pipeType == rendererInfo.pipeType)) {
         AUDIO_DEBUG_LOG("Update tracker is called in wrong state/same state");
+        trackStateLock.unlock();
         return;
     }
 
     state_ = state;
+    trackStateLock.unlock();
     isOffloadAllowed = rendererInfo.isOffloadAllowed;
     pipeType = rendererInfo.pipeType;
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
