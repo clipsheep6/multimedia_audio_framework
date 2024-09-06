@@ -32,6 +32,7 @@ namespace AudioStandard {
 static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10ms
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3ms
+static const uint32_t UPDATE_MUTE_CONTROL_SET_TIME_OUT = 15; // 15s
 
 AudioService *AudioService::GetInstance()
 {
@@ -132,6 +133,9 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
 
 void AudioService::UpdateMuteControlSet(uint32_t sessionId, bool muteFlag)
 {
+    int32_t xCollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout
+    AudioXCollie audioXCollie("AudioService::UpdateMuteControlSet", UPDATE_MUTE_CONTROL_SET_TIME_OUT,
+        nullptr, nullptr, xCollieFlag);
     if (sessionId < MIN_SESSIONID || sessionId > MAX_SESSIONID) {
         AUDIO_WARNING_LOG("Invalid sessionid %{public}u", sessionId);
         return;
@@ -160,8 +164,9 @@ void AudioService::RemoveIdFromMuteControlSet(uint32_t sessionId)
 
 void AudioService::CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
-    std::lock_guard<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
+    std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
     if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+        mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         renderer->SetNonInterruptMute(true);
     }
@@ -169,16 +174,18 @@ void AudioService::CheckRenderSessionMuteState(uint32_t sessionId, std::shared_p
 
 void AudioService::CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer)
 {
-    std::lock_guard<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
+    std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
     if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+        mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         capturer->SetNonInterruptMute(true);
     }
 }
 void AudioService::CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process)
 {
-    std::lock_guard<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
+    std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
     if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+        mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         process->SetNonInterruptMute(true);
     }
